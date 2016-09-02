@@ -6,4 +6,7 @@ django-filter==0.14.0
 djangorestframework==3.4.6
 Markdown==2.6.6
 psycopg2==2.6.2
+py==1.4.31
+pytest==3.0.2
+pytest-django==3.0.0
 sqlparse==0.2.1
