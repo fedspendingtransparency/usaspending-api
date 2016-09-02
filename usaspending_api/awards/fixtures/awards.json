@@ -1,0 +1,1 @@
+[{"model": "awards.award", "pk": 1, "fields": {"award_id": "1234abcd5678efgh", "type": "G"}}, {"model": "awards.award", "pk": 2, "fields": {"award_id": "123lalala8989beee", "type": "C"}}]
