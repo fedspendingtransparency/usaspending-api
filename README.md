@@ -17,15 +17,15 @@ Assumptions:
 [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL) is an object-relational database management system (ORDBMS) with an emphasis on extensibility and standards-compliance.
 
 1. Download the correct PostgreSQL installer for your operating system from [EnterpriseDB](http://www.enterprisedb.com/products-services-training/pgdownload) (we recommend PostgreSQL 9.4.x).
-2. Run the installer. As you proceed through the installation wizard, note your choices for port number, username, and password. You will need those when creating the broker's configuration file.
+2. Run the installer. As you proceed through the installation wizard, note your choices for port number, username, and password. You will need those when creating the `settings.py` file.
 
 More complete install documentation is available on the PostgreSQL [wiki](https://wiki.postgresql.org/wiki/Detailed_installation_guides).
 
-**Note:** If you're setting up the broker on Mac OSX, we recommend using [homebrew](http://brew.sh) to install PostgreSQL.
+**Note:** If you're setting up the project on Mac OSX, we recommend using [homebrew](http://brew.sh) to install PostgreSQL.
 
 ### Install Python and Create Virtual Environment
 
-The broker's backend components currently run on Python 3.x. These instructions will walk you through the process of installing Python and creating a Python-based virtual environment to house the API. A virtual environment will isolate the broker software and its libraries from those running on your local system and prevent potential conflicts.
+The API's backend components currently run on Python 3.x. These instructions will walk you through the process of installing Python and creating a Python-based virtual environment to house the API. A virtual environment will isolate the project and its libraries from those running on your local system and prevent potential conflicts.
 
 If you already have a Python development environment on your machine and a preferred way of managing it, feel free to skip to the next section. We wrote the directions below for folks who don't have a Python environment up and running yet and need the quickest way to get started.
 
@@ -80,7 +80,12 @@ Install the dependencies.
 
         $ pip install -r requirements.txt
 
-Next, configure your `local_settings.py` file. This file shouldn't be checked in to source control, but you can see an example in `local_settings.example.py`. Update the database settings to the appropriate database name, user, and password. 
+Next, configure your local settings. The `settings.py` file will check for an environment variable named `DATABASE_URL`. You can export this variable on the command line, or use a library like [autoenv](https://github.com/kennethreitz/autoenv) to load your environment variables when you `cd` into that directory. 
+
+Exporting your `DATABASE_URL` environment variable should look something like this:
+
+        $ export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/NAME'
+        
 
 To test your database connection, try running the migrations that come with the project to set up your tables.
 
@@ -98,7 +103,7 @@ Once you've done that, you're ready to start the development server
 
     $ python manage.py runserver
 
-This will run the application at `0.0.0.0:8000` by default. You can change that by passing the host and port number in to the `runserver` command.
+This will run the application at `127.0.0.1:8000` by default. You can change that by passing the host and port number in to the `runserver` command.
 
 you should see something like this:
     

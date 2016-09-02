@@ -1,3 +1,5 @@
+autoenv==1.0.0
+dj-database-url==0.4.1
 Django==1.10.1
 django-debug-toolbar==1.5
 django-filter==0.14.0
