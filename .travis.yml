@@ -16,5 +16,8 @@ install: "pip install -r requirements.txt"
 before_script:
 - psql -c "CREATE DATABASE usaspending_api;" -U postgres
 
-script: pytest
+script: pytest --cov=usaspending_api
+
+after_success:
+- coveralls
 
