@@ -1,4 +1,5 @@
 autoenv==1.0.0
+coverage==4.2
 dj-database-url==0.4.1
 Django==1.10.1
 django-debug-toolbar==1.5
@@ -8,5 +9,6 @@ Markdown==2.6.6
 psycopg2==2.6.2
 py==1.4.31
 pytest==3.0.2
+pytest-cov==2.3.1
 pytest-django==3.0.0
 sqlparse==0.2.1
