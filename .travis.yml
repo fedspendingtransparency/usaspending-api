@@ -14,7 +14,7 @@ env:
 install: "pip install -r requirements.txt"
 
 before_script:
-- psql -c "CREATE DATABASE mydb;" -U postgres
+- psql -c "CREATE DATABASE usaspending_api;" -U postgres
 
 script: pytest
 
