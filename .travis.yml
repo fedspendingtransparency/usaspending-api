@@ -1,22 +1,20 @@
 language: python
 
 python: 
-  - "3.3"
-  - "3.4"
-  - "3.5"
+- "3.3"
+- "3.4"
+- "3.5"
 
 services: postgresql
 
 env:
-  - DJANGO=1.10.1
-
-before_install:
-  - export DJANGO_SETTINGS_MODULE=your_project.settings
+  global:
+  - DATABASE_URL=postgres://postgres@localhost/usaspending_api
 
 install: "pip install -r requirements.txt"
 
 before_script:
-  - psql -c "CREATE DATABASE mydb;" -U postgres
+- psql -c "CREATE DATABASE mydb;" -U postgres
 
 script: pytest
 
