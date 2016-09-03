@@ -1,7 +1,6 @@
 # USASpending API
 
 [![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api)
-[![Coverage Status](https://coveralls.io/repos/github/fedspendingtransparency/usaspending-api/badge.svg?branch=master)](https://coveralls.io/github/fedspendingtransparency/usaspending-api?branch=master)
 
 
 This is the API that will drive the new USAspending.gov. It is currently under active development and not stable. 
