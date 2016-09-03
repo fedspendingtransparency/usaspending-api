@@ -9,6 +9,7 @@ services: postgresql
 env:
   global:
   - DATABASE_URL=postgres://postgres@localhost/usaspending_api
+  - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
 
 install: "pip install -r requirements.txt"
 
