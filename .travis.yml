@@ -11,7 +11,9 @@ env:
   - DATABASE_URL=postgres://postgres@localhost/usaspending_api
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
 
-install: "pip install -r requirements.txt"
+install: 
+- pip install -r requirements.txt
+- pip install coveralls
 
 before_script:
 - psql -c "CREATE DATABASE usaspending_api;" -U postgres
