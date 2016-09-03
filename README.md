@@ -1,5 +1,7 @@
 # USASpending API
 
+[![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api)
+
 This is the API that will drive the new USAspending.gov. It is currently under active development and not stable. 
 
 ## Getting Started
@@ -85,7 +87,7 @@ Next, configure your local settings. The `settings.py` file will check for an en
 Exporting your `DATABASE_URL` environment variable should look something like this:
 
         $ export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/NAME'
-        
+
 
 To test your database connection, try running the migrations that come with the project to set up your tables.
 
