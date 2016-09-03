@@ -1,0 +1,20 @@
+language: python
+
+python: 
+- "3.4"
+- "3.5"
+
+services: postgresql
+
+env:
+  global:
+  - DATABASE_URL=postgres://postgres@localhost/usaspending_api
+  - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
+
+install: "pip install -r requirements.txt"
+
+before_script:
+- psql -c "CREATE DATABASE usaspending_api;" -U postgres
+
+script: pytest
+
