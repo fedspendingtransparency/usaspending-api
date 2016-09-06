@@ -21,5 +21,5 @@ before_script:
 script: pytest --cov=usaspending_api
 
 after_success:
-- coveralls
-
+- codeclimate-test-reporter
+#- coveralls
