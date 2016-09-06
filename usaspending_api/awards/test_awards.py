@@ -3,6 +3,7 @@ import pytest
 
 class AwardTests(TestCase):
 
+
     #load the test fixture
     fixtures = ['awards']
 

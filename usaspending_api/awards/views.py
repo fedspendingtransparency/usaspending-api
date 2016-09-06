@@ -9,6 +9,7 @@ class AwardList(APIView):
     """
     List all awards
     """
+    
     def get(self, request, format=None):
         awards = Award.objects.all()
         serializer = AwardSerializer(awards, many=True)
