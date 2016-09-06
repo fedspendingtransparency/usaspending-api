@@ -1,0 +1,13 @@
+---
+languages:
+  Python: true
+#exclude_paths:
+engines:
+  pep8:
+    enabled: true
+    checks:
+      E501:
+        enabled: false
+ratings:
+  paths:
+  - "**.py"
