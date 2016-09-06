@@ -1,0 +1,5 @@
+*.pyc
+*.swp
+*.env
+.cache
+.coverage
