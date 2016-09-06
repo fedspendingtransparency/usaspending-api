@@ -1,7 +1,7 @@
 from django.db import models
 
-class Award(models.Model):
 
+class Award(models.Model):
 
     AWARD_TYPES = (
         ('C', 'Contract'),
@@ -18,6 +18,6 @@ class Award(models.Model):
         return '%s #%s' % (self.get_type_display(), self.award_id)
 
     class Meta:
-        # use the meta class to override the table name 
+        # use the meta class to override the table name
         # so it's 'awards' instead of 'awards_awards'
         db_table = 'awards'

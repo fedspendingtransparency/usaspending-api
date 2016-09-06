@@ -1,10 +1,10 @@
 from django.test import TestCase, Client
 import pytest
 
+
 class AwardTests(TestCase):
 
-
-    #load the test fixture
+    # load the test fixture
     fixtures = ['awards']
 
     @pytest.mark.django_db
