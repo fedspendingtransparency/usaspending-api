@@ -5,6 +5,9 @@ languages:
 engines:
   pep8:
     enabled: true
+    checks:
+      E501:
+        enabled: false
 ratings:
   paths:
   - "**.py"
