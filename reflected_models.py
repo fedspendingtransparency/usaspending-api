@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 
-
+#aj comment
 class AdtAgency(models.Model):
     adt_agency_id = models.AutoField(primary_key=True)
     agency_id = models.IntegerField(blank=True, null=True)
