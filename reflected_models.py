@@ -9,7 +9,6 @@ from __future__ import unicode_literals
 
 from django.db import models
 
-#aj comment
 class AdtAgency(models.Model):
     adt_agency_id = models.AutoField(primary_key=True)
     agency_id = models.IntegerField(blank=True, null=True)
@@ -970,7 +969,7 @@ class AdtUsers(models.Model):
         managed = False
         db_table = 'adt_users'
 
-
+#AJ START
 class Agency(models.Model):
     agency_id = models.AutoField(primary_key=True)
     location = models.ForeignKey('Location', models.DO_NOTHING)
@@ -1309,7 +1308,9 @@ class FctSubmission(models.Model):
         managed = False
         db_table = 'fct_submission'
 
+#AJ END
 
+#BD START
 class FinancialAccounts(models.Model):
     financial_accounts_id = models.AutoField()
     username = models.TextField(blank=True, null=True)
@@ -1984,8 +1985,9 @@ class RefSubtierAgencyOfficeCode(models.Model):
     class Meta:
         managed = False
         db_table = 'ref_subtier_agency_office_code'
+#BD END
 
-
+#AR START
 class StagingRefCgacCode(models.Model):
     agency_code_cgac = models.CharField(primary_key=True, max_length=3)
     agency_name = models.CharField(max_length=150, blank=True, null=True)
@@ -2376,3 +2378,4 @@ class Users(models.Model):
     class Meta:
         managed = False
         db_table = 'users'
+#AR END
