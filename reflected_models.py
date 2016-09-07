@@ -969,16 +969,16 @@ class AdtUsers(models.Model):
         managed = False
         db_table = 'adt_users'
 
-#AJ START
+#AJ 09/07/2016...moved foreign key to the top
 class Agency(models.Model):
     agency_id = models.AutoField(primary_key=True)
     location = models.ForeignKey('Location', models.DO_NOTHING)
+    agency_code_cgac = models.ForeignKey('RefCgacCode', models.DO_NOTHING, db_column='agency_code_cgac', blank=True, null=True)
+    agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
+    agency_code_fpds = models.CharField(max_length=4, blank=True, null=True)
     department_parent_id = models.IntegerField(blank=True, null=True)
     sub_tier_parent_id = models.IntegerField(blank=True, null=True)
     agency_name = models.CharField(max_length=150, blank=True, null=True)
-    agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
-    agency_code_cgac = models.ForeignKey('RefCgacCode', models.DO_NOTHING, db_column='agency_code_cgac', blank=True, null=True)
-    agency_code_fpds = models.CharField(max_length=4, blank=True, null=True)
     valid_period_start = models.DateField(blank=True, null=True)
     valid_period_end = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(blank=True, null=True)
@@ -986,8 +986,9 @@ class Agency(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'agency'
 
 
@@ -1021,8 +1022,9 @@ class AppropriationAccountBalances(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'appropriation_account_balances'
 
 
@@ -1045,8 +1047,9 @@ class Award(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'award'
 
 
@@ -1064,8 +1067,9 @@ class AwardAction(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'award_action'
 
 
@@ -1080,104 +1084,107 @@ class AwardSubawardRelationship(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'award_subaward_relationship'
 
 
-class AwardsData(models.Model):
-    awards_data_id = models.AutoField()
-    username = models.TextField(blank=True, null=True)
-    agencyidentifier = models.TextField(db_column='AgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
-    parentawardid = models.TextField(db_column='ParentAwardId', blank=True, null=True)  # Field name made lowercase.
-    uri = models.TextField(db_column='URI', blank=True, null=True)  # Field name made lowercase.
-    piid = models.TextField(db_column='PIID', blank=True, null=True)  # Field name made lowercase.
-    objectclass = models.TextField(db_column='ObjectClass', blank=True, null=True)  # Field name made lowercase.
-    transactionobligatedamount = models.TextField(db_column='TransactionObligatedAmount', blank=True, null=True)  # Field name made lowercase.
-    programactivitycode = models.TextField(db_column='ProgramActivityCode', blank=True, null=True)  # Field name made lowercase.
-    programactivityname = models.TextField(db_column='ProgramActivityName', blank=True, null=True)  # Field name made lowercase.
-    fain = models.TextField(db_column='FAIN', blank=True, null=True)  # Field name made lowercase.
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#AJ 09/07/2016...this table is not needed
+# class AwardsData(models.Model):
+#    awards_data_id = models.AutoField()
+#    username = models.TextField(blank=True, null=True)
+#    agencyidentifier = models.TextField(db_column='AgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
+#    parentawardid = models.TextField(db_column='ParentAwardId', blank=True, null=True)  # Field name made lowercase.
+#    uri = models.TextField(db_column='URI', blank=True, null=True)  # Field name made lowercase.
+#    piid = models.TextField(db_column='PIID', blank=True, null=True)  # Field name made lowercase.
+#    objectclass = models.TextField(db_column='ObjectClass', blank=True, null=True)  # Field name made lowercase.
+#    transactionobligatedamount = models.TextField(db_column='TransactionObligatedAmount', blank=True, null=True)  # Field name made lowercase.
+#    programactivitycode = models.TextField(db_column='ProgramActivityCode', blank=True, null=True)  # Field name made lowercase.
+#    programactivityname = models.TextField(db_column='ProgramActivityName', blank=True, null=True)  # Field name made lowercase.
+#    fain = models.TextField(db_column='FAIN', blank=True, null=True)  # Field name made lowercase.
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'awards_data'
 
-    class Meta:
-        managed = False
-        db_table = 'awards_data'
+#AJ 09/07/2016...this table is not needed
+#class AwardsDataOld(models.Model):
+#    vendorfaxnumber = models.TextField(db_column='VendorFaxNumber', blank=True, null=True)  # Field name made lowercase.
+#    legalentitycityname = models.TextField(db_column='LegalEntityCityName', blank=True, null=True)  # Field name made lowercase.
+#    legalentityzip4 = models.TextField(db_column='LegalEntityZip4', blank=True, null=True)  # Field name made lowercase.
+#    parentawardid = models.TextField(db_column='ParentAwardId', blank=True, null=True)  # Field name made lowercase.
+#    agencyidentifier = models.TextField(db_column='AgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
+#    legalentitystatecode = models.TextField(db_column='LegalEntityStateCode', blank=True, null=True)  # Field name made lowercase.
+#    uri = models.TextField(db_column='URI', blank=True, null=True)  # Field name made lowercase.
+#    currenttotalvalueofaward = models.TextField(db_column='CurrentTotalValueOfAward', blank=True, null=True)  # Field name made lowercase.
+#    idv_type = models.TextField(db_column='IDV Type', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+#    piid = models.TextField(db_column='PIID', blank=True, null=True)  # Field name made lowercase.
+#    objectclass = models.TextField(db_column='ObjectClass', blank=True, null=True)  # Field name made lowercase.
+#    northamericanindustrialclassificationsystemcode = models.TextField(db_column='NorthAmericanIndustrialClassificationSystemCode', blank=True, null=True)  # Field name made lowercase.
+#    subaccountcode = models.TextField(db_column='SubAccountCode', blank=True, null=True)  # Field name made lowercase.
+#    transactionobligatedamount = models.TextField(db_column='TransactionObligatedAmount', blank=True, null=True)  # Field name made lowercase.
+#    legalentitycountrycode = models.TextField(db_column='LegalEntityCountryCode', blank=True, null=True)  # Field name made lowercase.
+#    primaryplaceofperformancezip4 = models.TextField(db_column='PrimaryPlaceOfPerformanceZip4', blank=True, null=True)  # Field name made lowercase.
+#    periodofperformancestartdate = models.TextField(db_column='PeriodOfPerformanceStartDate', blank=True, null=True)  # Field name made lowercase.
+#    awarddescription = models.TextField(db_column='AwardDescription', blank=True, null=True)  # Field name made lowercase.
+#    referencedidvagencyidentifier = models.TextField(db_column='ReferencedIDVAgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
+#    awardingofficecode = models.TextField(db_column='AwardingOfficeCode', blank=True, null=True)  # Field name made lowercase.
+#    actiondate = models.TextField(db_column='ActionDate', blank=True, null=True)  # Field name made lowercase.
+#    awardingsubtieragencycode = models.TextField(db_column='AwardingSubTierAgencyCode', blank=True, null=True)  # Field name made lowercase.
+#    awardmodificationamendmentnumber = models.TextField(db_column='AwardModificationAmendmentNumber', blank=True, null=True)  # Field name made lowercase.
+#    potentialtotalvalueofaward = models.TextField(db_column='PotentialTotalValueOfAward', blank=True, null=True)  # Field name made lowercase.
+#    allocationtransferagencyidentifier = models.TextField(db_column='AllocationTransferAgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
+#    awardtype = models.TextField(db_column='AwardType', blank=True, null=True)  # Field name made lowercase.
+#    programactivitycode = models.TextField(db_column='ProgramActivityCode', blank=True, null=True)  # Field name made lowercase.
+#    primaryplaceofperformancecongressionaldistrict = models.TextField(db_column='PrimaryPlaceofPerformanceCongressionalDistrict', blank=True, null=True)  # Field name made lowercase.
+#    periodofperformancecurrentenddate = models.TextField(db_column='PeriodOfPerformanceCurrentEndDate', blank=True, null=True)  # Field name made lowercase.
+#    programactivityname = models.TextField(db_column='ProgramActivityName', blank=True, null=True)  # Field name made lowercase.
+#    availabilitytypecode = models.TextField(db_column='AvailabilityTypeCode', blank=True, null=True)  # Field name made lowercase.
+#    mainaccountcode = models.TextField(db_column='MainAccountCode', blank=True, null=True)  # Field name made lowercase.
+#    legalentitycongressionaldistrict = models.TextField(db_column='LegalEntityCongressionalDistrict', blank=True, null=True)  # Field name made lowercase.
+#    awardeeorrecipientuniqueidentifier = models.TextField(db_column='AwardeeOrRecipientUniqueIdentifier', blank=True, null=True)  # Field name made lowercase.
+#    fain = models.TextField(db_column='FAIN', blank=True, null=True)  # Field name made lowercase.
+#    awardeeorrecipientlegalentityname = models.TextField(db_column='AwardeeOrRecipientLegalEntityName', blank=True, null=True)  # Field name made lowercase.
+#    fundingofficecode = models.TextField(db_column='FundingOfficeCode', blank=True, null=True)  # Field name made lowercase.
+#    vendorphonenumber = models.TextField(db_column='VendorPhoneNumber', blank=True, null=True)  # Field name made lowercase.
+#    federalactionobligation = models.TextField(db_column='FederalActionObligation', blank=True, null=True)  # Field name made lowercase.
+#    periodofperformancepotentialenddate = models.TextField(db_column='PeriodOfPerformancePotentialEndDate', blank=True, null=True)  # Field name made lowercase.
+#    fundingsubtieragencycode = models.TextField(db_column='FundingSubTierAgencyCode', blank=True, null=True)  # Field name made lowercase.
+#    endingperiodofavailability = models.TextField(db_column='EndingPeriodOfAvailability', blank=True, null=True)  # Field name made lowercase.
+#    vendordoingasbusinessname = models.TextField(db_column='VendorDoingAsBusinessName', blank=True, null=True)  # Field name made lowercase.
+#    beginningperiodofavailability = models.TextField(db_column='BeginningPeriodOfAvailability', blank=True, null=True)  # Field name made lowercase.
+#    legalentityaddressline2 = models.TextField(db_column='LegalEntityAddressLine2', blank=True, null=True)  # Field name made lowercase.
+#    legalentityaddressline1 = models.TextField(db_column='LegalEntityAddressLine1', blank=True, null=True)  # Field name made lowercase.
+#    vendoraddressline3 = models.TextField(db_column='VendorAddressLine3', blank=True, null=True)  # Field name made lowercase.
+#    typeofidc = models.TextField(db_column='TypeofIDC', blank=True, null=True)  # Field name made lowercase.
+#    multipleorsingleawardidv = models.TextField(db_column='MultipleorSingleAwardIDV', blank=True, null=True)  # Field name made lowercase.
+#    username = models.TextField(blank=True, null=True)
+#    awards_data_old_id = models.AutoField()
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'awards_data_old'
 
-
-class AwardsDataOld(models.Model):
-    vendorfaxnumber = models.TextField(db_column='VendorFaxNumber', blank=True, null=True)  # Field name made lowercase.
-    legalentitycityname = models.TextField(db_column='LegalEntityCityName', blank=True, null=True)  # Field name made lowercase.
-    legalentityzip4 = models.TextField(db_column='LegalEntityZip4', blank=True, null=True)  # Field name made lowercase.
-    parentawardid = models.TextField(db_column='ParentAwardId', blank=True, null=True)  # Field name made lowercase.
-    agencyidentifier = models.TextField(db_column='AgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
-    legalentitystatecode = models.TextField(db_column='LegalEntityStateCode', blank=True, null=True)  # Field name made lowercase.
-    uri = models.TextField(db_column='URI', blank=True, null=True)  # Field name made lowercase.
-    currenttotalvalueofaward = models.TextField(db_column='CurrentTotalValueOfAward', blank=True, null=True)  # Field name made lowercase.
-    idv_type = models.TextField(db_column='IDV Type', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    piid = models.TextField(db_column='PIID', blank=True, null=True)  # Field name made lowercase.
-    objectclass = models.TextField(db_column='ObjectClass', blank=True, null=True)  # Field name made lowercase.
-    northamericanindustrialclassificationsystemcode = models.TextField(db_column='NorthAmericanIndustrialClassificationSystemCode', blank=True, null=True)  # Field name made lowercase.
-    subaccountcode = models.TextField(db_column='SubAccountCode', blank=True, null=True)  # Field name made lowercase.
-    transactionobligatedamount = models.TextField(db_column='TransactionObligatedAmount', blank=True, null=True)  # Field name made lowercase.
-    legalentitycountrycode = models.TextField(db_column='LegalEntityCountryCode', blank=True, null=True)  # Field name made lowercase.
-    primaryplaceofperformancezip4 = models.TextField(db_column='PrimaryPlaceOfPerformanceZip4', blank=True, null=True)  # Field name made lowercase.
-    periodofperformancestartdate = models.TextField(db_column='PeriodOfPerformanceStartDate', blank=True, null=True)  # Field name made lowercase.
-    awarddescription = models.TextField(db_column='AwardDescription', blank=True, null=True)  # Field name made lowercase.
-    referencedidvagencyidentifier = models.TextField(db_column='ReferencedIDVAgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
-    awardingofficecode = models.TextField(db_column='AwardingOfficeCode', blank=True, null=True)  # Field name made lowercase.
-    actiondate = models.TextField(db_column='ActionDate', blank=True, null=True)  # Field name made lowercase.
-    awardingsubtieragencycode = models.TextField(db_column='AwardingSubTierAgencyCode', blank=True, null=True)  # Field name made lowercase.
-    awardmodificationamendmentnumber = models.TextField(db_column='AwardModificationAmendmentNumber', blank=True, null=True)  # Field name made lowercase.
-    potentialtotalvalueofaward = models.TextField(db_column='PotentialTotalValueOfAward', blank=True, null=True)  # Field name made lowercase.
-    allocationtransferagencyidentifier = models.TextField(db_column='AllocationTransferAgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
-    awardtype = models.TextField(db_column='AwardType', blank=True, null=True)  # Field name made lowercase.
-    programactivitycode = models.TextField(db_column='ProgramActivityCode', blank=True, null=True)  # Field name made lowercase.
-    primaryplaceofperformancecongressionaldistrict = models.TextField(db_column='PrimaryPlaceofPerformanceCongressionalDistrict', blank=True, null=True)  # Field name made lowercase.
-    periodofperformancecurrentenddate = models.TextField(db_column='PeriodOfPerformanceCurrentEndDate', blank=True, null=True)  # Field name made lowercase.
-    programactivityname = models.TextField(db_column='ProgramActivityName', blank=True, null=True)  # Field name made lowercase.
-    availabilitytypecode = models.TextField(db_column='AvailabilityTypeCode', blank=True, null=True)  # Field name made lowercase.
-    mainaccountcode = models.TextField(db_column='MainAccountCode', blank=True, null=True)  # Field name made lowercase.
-    legalentitycongressionaldistrict = models.TextField(db_column='LegalEntityCongressionalDistrict', blank=True, null=True)  # Field name made lowercase.
-    awardeeorrecipientuniqueidentifier = models.TextField(db_column='AwardeeOrRecipientUniqueIdentifier', blank=True, null=True)  # Field name made lowercase.
-    fain = models.TextField(db_column='FAIN', blank=True, null=True)  # Field name made lowercase.
-    awardeeorrecipientlegalentityname = models.TextField(db_column='AwardeeOrRecipientLegalEntityName', blank=True, null=True)  # Field name made lowercase.
-    fundingofficecode = models.TextField(db_column='FundingOfficeCode', blank=True, null=True)  # Field name made lowercase.
-    vendorphonenumber = models.TextField(db_column='VendorPhoneNumber', blank=True, null=True)  # Field name made lowercase.
-    federalactionobligation = models.TextField(db_column='FederalActionObligation', blank=True, null=True)  # Field name made lowercase.
-    periodofperformancepotentialenddate = models.TextField(db_column='PeriodOfPerformancePotentialEndDate', blank=True, null=True)  # Field name made lowercase.
-    fundingsubtieragencycode = models.TextField(db_column='FundingSubTierAgencyCode', blank=True, null=True)  # Field name made lowercase.
-    endingperiodofavailability = models.TextField(db_column='EndingPeriodOfAvailability', blank=True, null=True)  # Field name made lowercase.
-    vendordoingasbusinessname = models.TextField(db_column='VendorDoingAsBusinessName', blank=True, null=True)  # Field name made lowercase.
-    beginningperiodofavailability = models.TextField(db_column='BeginningPeriodOfAvailability', blank=True, null=True)  # Field name made lowercase.
-    legalentityaddressline2 = models.TextField(db_column='LegalEntityAddressLine2', blank=True, null=True)  # Field name made lowercase.
-    legalentityaddressline1 = models.TextField(db_column='LegalEntityAddressLine1', blank=True, null=True)  # Field name made lowercase.
-    vendoraddressline3 = models.TextField(db_column='VendorAddressLine3', blank=True, null=True)  # Field name made lowercase.
-    typeofidc = models.TextField(db_column='TypeofIDC', blank=True, null=True)  # Field name made lowercase.
-    multipleorsingleawardidv = models.TextField(db_column='MultipleorSingleAwardIDV', blank=True, null=True)  # Field name made lowercase.
-    username = models.TextField(blank=True, null=True)
-    awards_data_old_id = models.AutoField()
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-
-    class Meta:
-        managed = False
-        db_table = 'awards_data_old'
-
-
+#AJ 09/07/2016...moved foreign key to the top
 class Error(models.Model):
     error_id = models.AutoField(primary_key=True)
-    error_name = models.CharField(max_length=100, blank=True, null=True)
     error_type = models.ForeignKey('ErrorType', models.DO_NOTHING, blank=True, null=True)
+    job = models.ForeignKey('Job', models.DO_NOTHING, blank=True, null=True)    
+    error_name = models.CharField(max_length=100, blank=True, null=True)
     error_description = models.CharField(max_length=150, blank=True, null=True)
-    job = models.ForeignKey('Job', models.DO_NOTHING, blank=True, null=True)
     create_date = models.DateTimeField(blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'error'
 
 
@@ -1190,151 +1197,150 @@ class ErrorType(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'error_type'
 
-
-class FctContextAspectValueSet(models.Model):
-    context_aspect_value_set_id = models.AutoField()
-    context_aspect_concept_id = models.IntegerField(blank=True, null=True)
-    context_value_concept_id = models.IntegerField(blank=True, null=True)
-    context_aspect_value = models.TextField(blank=True, null=True)
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-
-    class Meta:
-        managed = False
-        db_table = 'fct_context_aspect_value_set'
-
-
-class FctElement(models.Model):
-    element_id = models.AutoField()
-    element_name = models.TextField(blank=True, null=True)
-    element_label = models.TextField(blank=True, null=True)
-    data_type_complex = models.TextField(blank=True, null=True)
-    data_type_simple = models.TextField(blank=True, null=True)
-    period_type = models.TextField(blank=True, null=True)
-    abstract = models.TextField(blank=True, null=True)
-    value_source_type = models.TextField(blank=True, null=True)
-    nillable = models.TextField(blank=True, null=True)
-    required_context = models.TextField(blank=True, null=True)
-    context_aspect_set_id = models.IntegerField(blank=True, null=True)
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-
-    class Meta:
-        managed = False
-        db_table = 'fct_element'
+#AJ 09/07/2016...these Fct tables are not needed
+#class FctContextAspectValueSet(models.Model):
+#    context_aspect_value_set_id = models.AutoField()
+#    context_aspect_concept_id = models.IntegerField(blank=True, null=True)
+#    context_value_concept_id = models.IntegerField(blank=True, null=True)
+#    context_aspect_value = models.TextField(blank=True, null=True)
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'fct_context_aspect_value_set'
 
 
-class FctElementCalcRelationship(models.Model):
-    calc_relationship_id = models.AutoField()
-    parent_element_id = models.IntegerField(blank=True, null=True)
-    child_element_id = models.IntegerField(blank=True, null=True)
-    weight = models.TextField(blank=True, null=True)
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#class FctElement(models.Model):
+#    element_id = models.AutoField()
+#    element_name = models.TextField(blank=True, null=True)
+#    element_label = models.TextField(blank=True, null=True)
+#    data_type_complex = models.TextField(blank=True, null=True)
+#    data_type_simple = models.TextField(blank=True, null=True)
+#    period_type = models.TextField(blank=True, null=True)
+#    abstract = models.TextField(blank=True, null=True)
+#    value_source_type = models.TextField(blank=True, null=True)
+#    nillable = models.TextField(blank=True, null=True)
+#    required_context = models.TextField(blank=True, null=True)
+#    context_aspect_set_id = models.IntegerField(blank=True, null=True)
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'fct_element'
+#
+#
+#class FctElementCalcRelationship(models.Model):
+#    calc_relationship_id = models.AutoField()
+#    parent_element_id = models.IntegerField(blank=True, null=True)
+#    child_element_id = models.IntegerField(blank=True, null=True)
+#    weight = models.TextField(blank=True, null=True)
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'fct_element_calc_relationship'
+#
+#
+#class FctElementCompositionRelationship(models.Model):
+#    composition_relationship_id = models.AutoField()
+#    parent_element_id = models.IntegerField(blank=True, null=True)
+#    child_element_id = models.IntegerField(blank=True, null=True)
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'fct_element_composition_relationship'
+#
+#
+#class FctFact(models.Model):
+#    fact_id = models.AutoField()
+#    element_id = models.IntegerField(blank=True, null=True)
+#    package_id = models.IntegerField(blank=True, null=True)
+#    entity_owner = models.TextField(blank=True, null=True)
+#    period_start = models.DateField(blank=True, null=True)
+#    period_end = models.DateField(blank=True, null=True)
+#    unit = models.TextField(blank=True, null=True)
+#    lang = models.TextField(blank=True, null=True)
+#    value = models.TextField(blank=True, null=True)
+#    normalized_string_value = models.TextField(blank=True, null=True)
+#    is_nil = models.NullBooleanField()
+#    context_aspect_value_set_id = models.IntegerField(blank=True, null=True)
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'fct_fact'
+#
+#
+#class FctOwner(models.Model):
+#    owner_id = models.IntegerField(blank=True, null=True)
+#    entity_owner = models.TextField(blank=True, null=True)
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'fct_owner'
+#
+#
+#class FctPackage(models.Model):
+#    package_id = models.AutoField()
+#    submission_id = models.IntegerField(blank=True, null=True)
+#    package_name = models.TextField(blank=True, null=True)
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'fct_package'
+#
+#
+#class FctSubmission(models.Model):
+#    submission_id = models.AutoField()
+#    owner_id = models.IntegerField(blank=True, null=True)
+#    accept_date = models.DateTimeField(blank=True, null=True)
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'fct_submission'
 
-    class Meta:
-        managed = False
-        db_table = 'fct_element_calc_relationship'
+#AJ 09/07/2016...this tables is not needed
+#class FinancialAccounts(models.Model):
+#    financial_accounts_id = models.AutoField()
+#    username = models.TextField(blank=True, null=True)
+#    agencyidentifier = models.TextField(db_column='AgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
+#    mainaccountcode = models.TextField(db_column='MainAccountCode', blank=True, null=True)  # Field name made lowercase.
+#    obligationsincurredtotalbytas_cpe = models.TextField(db_column='ObligationsIncurredTotalByTAS_CPE', blank=True, null=True)  # Field name made lowercase.
+#    grossoutlayamountbytas_cpe = models.TextField(db_column='GrossOutlayAmountByTAS_CPE', blank=True, null=True)  # Field name made lowercase.
+#    deobligationsrecoveriesrefundsbytas_cpe = models.TextField(db_column='DeobligationsRecoveriesRefundsByTAS_CPE', blank=True, null=True)  # Field name made lowercase.
+#    borrowingauthorityamounttotal_cpe = models.TextField(db_column='BorrowingAuthorityAmountTotal_CPE', blank=True, null=True)  # Field name made lowercase.
+#    statusofbudgetaryresourcestotal_cpe = models.TextField(db_column='StatusOfBudgetaryResourcesTotal_CPE', blank=True, null=True)  # Field name made lowercase.
+#    unobligatedbalance_cpe = models.TextField(db_column='UnobligatedBalance_CPE', blank=True, null=True)  # Field name made lowercase.
+#    beginningperiodofavailability = models.TextField(db_column='BeginningPeriodOfAvailability', blank=True, null=True)  # Field name made lowercase.
+#    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'financial_accounts'
 
-
-class FctElementCompositionRelationship(models.Model):
-    composition_relationship_id = models.AutoField()
-    parent_element_id = models.IntegerField(blank=True, null=True)
-    child_element_id = models.IntegerField(blank=True, null=True)
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-
-    class Meta:
-        managed = False
-        db_table = 'fct_element_composition_relationship'
-
-
-class FctFact(models.Model):
-    fact_id = models.AutoField()
-    element_id = models.IntegerField(blank=True, null=True)
-    package_id = models.IntegerField(blank=True, null=True)
-    entity_owner = models.TextField(blank=True, null=True)
-    period_start = models.DateField(blank=True, null=True)
-    period_end = models.DateField(blank=True, null=True)
-    unit = models.TextField(blank=True, null=True)
-    lang = models.TextField(blank=True, null=True)
-    value = models.TextField(blank=True, null=True)
-    normalized_string_value = models.TextField(blank=True, null=True)
-    is_nil = models.NullBooleanField()
-    context_aspect_value_set_id = models.IntegerField(blank=True, null=True)
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-
-    class Meta:
-        managed = False
-        db_table = 'fct_fact'
-
-
-class FctOwner(models.Model):
-    owner_id = models.IntegerField(blank=True, null=True)
-    entity_owner = models.TextField(blank=True, null=True)
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-
-    class Meta:
-        managed = False
-        db_table = 'fct_owner'
-
-
-class FctPackage(models.Model):
-    package_id = models.AutoField()
-    submission_id = models.IntegerField(blank=True, null=True)
-    package_name = models.TextField(blank=True, null=True)
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-
-    class Meta:
-        managed = False
-        db_table = 'fct_package'
-
-
-class FctSubmission(models.Model):
-    submission_id = models.AutoField()
-    owner_id = models.IntegerField(blank=True, null=True)
-    accept_date = models.DateTimeField(blank=True, null=True)
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-
-    class Meta:
-        managed = False
-        db_table = 'fct_submission'
-
-#AJ END
-
-#BD START
-class FinancialAccounts(models.Model):
-    financial_accounts_id = models.AutoField()
-    username = models.TextField(blank=True, null=True)
-    agencyidentifier = models.TextField(db_column='AgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
-    mainaccountcode = models.TextField(db_column='MainAccountCode', blank=True, null=True)  # Field name made lowercase.
-    obligationsincurredtotalbytas_cpe = models.TextField(db_column='ObligationsIncurredTotalByTAS_CPE', blank=True, null=True)  # Field name made lowercase.
-    grossoutlayamountbytas_cpe = models.TextField(db_column='GrossOutlayAmountByTAS_CPE', blank=True, null=True)  # Field name made lowercase.
-    deobligationsrecoveriesrefundsbytas_cpe = models.TextField(db_column='DeobligationsRecoveriesRefundsByTAS_CPE', blank=True, null=True)  # Field name made lowercase.
-    borrowingauthorityamounttotal_cpe = models.TextField(db_column='BorrowingAuthorityAmountTotal_CPE', blank=True, null=True)  # Field name made lowercase.
-    statusofbudgetaryresourcestotal_cpe = models.TextField(db_column='StatusOfBudgetaryResourcesTotal_CPE', blank=True, null=True)  # Field name made lowercase.
-    unobligatedbalance_cpe = models.TextField(db_column='UnobligatedBalance_CPE', blank=True, null=True)  # Field name made lowercase.
-    beginningperiodofavailability = models.TextField(db_column='BeginningPeriodOfAvailability', blank=True, null=True)  # Field name made lowercase.
-    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-    update_date = models.DateTimeField(db_column='update date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
-
-    class Meta:
-        managed = False
-        db_table = 'financial_accounts'
-
-
+#AJ...program_activity_code & TAS have to be a combo key
 class FinancialAccountsByAwards(models.Model):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.DO_NOTHING)
-    program_activity_name = models.CharField(max_length=164, blank=True, null=True)
+    program_activity_name = models.CharField(max_length=164, blank=True, null=True)    
     program_activity_code = models.ForeignKey('RefProgramActivity', models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
     object_class = models.ForeignKey('RefObjectClassCode', models.DO_NOTHING, db_column='object_class')
     by_direct_reimbursable_fun = models.CharField(max_length=1, blank=True, null=True)
@@ -1384,13 +1390,15 @@ class FinancialAccountsByAwards(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'financial_accounts_by_awards'
 
 
 class FinancialAccountsByAwardsTransactionObligations(models.Model):
     financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)
+    financial_accounts_by_awards = models.ForeignKey(FinancialAccountsByAwards, models.DO_NOTHING)
     transaction_obligated_amou = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
@@ -1398,13 +1406,13 @@ class FinancialAccountsByAwardsTransactionObligations(models.Model):
     update_date = models.DateTimeField(blank=True, null=True)
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
-    financial_accounts_by_awards = models.ForeignKey(FinancialAccountsByAwards, models.DO_NOTHING)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'financial_accounts_by_awards_transaction_obligations'
 
-
+#AJ...program_activity_code & TAS have to be a combo key
 class FinancialAccountsByProgramActivityObjectClass(models.Model):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity_name = models.CharField(max_length=164)
@@ -1453,8 +1461,9 @@ class FinancialAccountsByProgramActivityObjectClass(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'financial_accounts_by_program_activity_object_class'
 
 
@@ -1484,8 +1493,9 @@ class FinancialAssistanceAward(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'financial_assistance_award'
 
 
@@ -1506,8 +1516,9 @@ class HighlyCompensatedOfficer(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'highly_compensated_officer'
 
 
@@ -1523,8 +1534,9 @@ class Job(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'job'
 
 
@@ -1537,8 +1549,9 @@ class JobStatus(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'job_status'
 
 
@@ -1551,8 +1564,9 @@ class JobType(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'job_type'
 
 
@@ -1662,8 +1676,9 @@ class LegalEntity(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'legal_entity'
 
 
@@ -1682,8 +1697,9 @@ class LinkAward(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'link_award'
 
 
@@ -1717,8 +1733,9 @@ class Location(models.Model):
     update_date = models.DateTimeField(blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'location'
 
 
@@ -1732,8 +1749,9 @@ class Permission(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'permission'
 
 
@@ -1749,8 +1767,9 @@ class PlaceOfPerformanceRelationship(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'place_of_performance_relationship'
 
 
@@ -1828,8 +1847,9 @@ class Procurement(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'procurement'
 
 
@@ -1844,8 +1864,9 @@ class RefCgacCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ref_cgac_code'
 
 
@@ -1865,8 +1886,9 @@ class RefCityCountyCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ref_city_county_code'
 
 
@@ -1881,8 +1903,9 @@ class RefCountryCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ref_country_code'
 
 
@@ -1900,8 +1923,9 @@ class RefDomainEnumerationType(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ref_domain_enumeration_type'
 
 
@@ -1918,8 +1942,9 @@ class RefObjectClassCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ref_object_class_code'
 
 
@@ -1935,8 +1960,9 @@ class RefProgramActivity(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ref_program_activity'
         unique_together = (('program_activity_code', 'program_activity_name'),)
 
@@ -1953,8 +1979,9 @@ class RefStateCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ref_state_code'
 
 
@@ -1982,12 +2009,12 @@ class RefSubtierAgencyOfficeCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ref_subtier_agency_office_code'
-#BD END
 
-#AR START
+
 class StagingRefCgacCode(models.Model):
     agency_code_cgac = models.CharField(primary_key=True, max_length=3)
     agency_name = models.CharField(max_length=150, blank=True, null=True)
@@ -1999,8 +2026,9 @@ class StagingRefCgacCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'staging_ref_cgac_code'
 
 
@@ -2020,8 +2048,9 @@ class StagingRefCityCountyCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'staging_ref_city_county_code'
 
 
@@ -2036,8 +2065,9 @@ class StagingRefCountryCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'staging_ref_country_code'
 
 
@@ -2055,8 +2085,9 @@ class StagingRefDomainEnumerationType(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'staging_ref_domain_enumeration_type'
 
 
@@ -2073,8 +2104,9 @@ class StagingRefObjectClassCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'staging_ref_object_class_code'
 
 
@@ -2090,8 +2122,9 @@ class StagingRefProgramActivity(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'staging_ref_program_activity'
         unique_together = (('program_activity_code', 'program_activity_name'),)
 
@@ -2108,8 +2141,9 @@ class StagingRefStateCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'staging_ref_state_code'
 
 
@@ -2137,8 +2171,9 @@ class StagingRefSubtierAgencyOfficeCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'staging_ref_subtier_agency_office_code'
 
 
@@ -2160,8 +2195,9 @@ class StagingTreasuryAppropriationAccount(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'staging_treasury_appropriation_account'
 
 
@@ -2190,8 +2226,9 @@ class SubAward(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'sub_award'
 
 
@@ -2210,8 +2247,9 @@ class SubmissionAttributes(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'submission_attributes'
 
 
@@ -2231,109 +2269,111 @@ class SubmissionProcess(models.Model):
     update_date = models.DateTimeField(blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'submission_process'
 
 
-class TestEmp(models.Model):
-    test_emp_id = models.AutoField(primary_key=True)
-    empname = models.TextField()
-    salary = models.IntegerField(blank=True, null=True)
+#AJ 09/07/2016...these Test tables are not needed
+#class TestEmp(models.Model):
+#    test_emp_id = models.AutoField(primary_key=True)
+#    empname = models.TextField()
+#    salary = models.IntegerField(blank=True, null=True)
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'test_emp'
+#
+#
+#class TestEmpAudit(models.Model):
+#    adt_test_emp_id = models.AutoField()
+#    test_emp_id = models.IntegerField(blank=True, null=True)
+#    operation = models.CharField(max_length=1)
+#    stamp = models.DateTimeField()
+#    userid = models.TextField()
+#    empname = models.TextField()
+#    salary = models.IntegerField(blank=True, null=True)
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'test_emp_audit'
+#
+#
+#class TestStateCountyCityCodes(models.Model):
+#    state_code = models.CharField(max_length=2, blank=True, null=True)
+#    county_code = models.CharField(max_length=3, blank=True, null=True)
+#    county_name = models.CharField(max_length=40, blank=True, null=True)
+#    city_code = models.CharField(max_length=5, blank=True, null=True)
+#    city_name = models.CharField(max_length=50, blank=True, null=True)
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'test_state_county_city_codes'
+#
+#
+#class TestTreasuryAppropriationAccount1(models.Model):
+#    treasury_account_identifier = models.IntegerField(primary_key=True)
+#    tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
+#    responsible_agency_id = models.CharField(max_length=3)
+#    responsible_agency_id_nvl = models.CharField(max_length=3)
+#    allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
+#    allocation_transfer_agency_id_nvl = models.CharField(max_length=3, blank=True, null=True)
+#    beginning_period_of_availa = models.CharField(max_length=4, blank=True, null=True)
+#    beginning_period_of_availa_nvl = models.CharField(max_length=4, blank=True, null=True)
+#    ending_period_of_availabil = models.CharField(max_length=4, blank=True, null=True)
+#    ending_period_of_availabil_nvl = models.CharField(max_length=4, blank=True, null=True)
+#    availability_type_code = models.CharField(max_length=1, blank=True, null=True)
+#    availability_type_code_nvl = models.CharField(max_length=1, blank=True, null=True)
+#    main_account_code = models.CharField(max_length=4)
+#    main_account_code_nvl = models.CharField(max_length=4)
+#    sub_account_code = models.CharField(max_length=3)
+#    sub_account_code_nvl = models.CharField(max_length=3)
+#    drv_approp_avail_pd_start_date = models.DateField(blank=True, null=True)
+#    drv_approp_avail_pd_end_date = models.DateField(blank=True, null=True)
+#    drv_approp_account_exp_status = models.CharField(max_length=10, blank=True, null=True)
+#    create_date = models.DateTimeField(blank=True, null=True)
+#    update_date = models.DateTimeField(blank=True, null=True)
+#    create_user_id = models.CharField(max_length=50, blank=True, null=True)
+#    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'test_treasury_appropriation_account_1'
+#
+#
+#class TestTreasuryAppropriationAccount2(models.Model):
+#    treasury_account_identifier = models.IntegerField(primary_key=True)
+#    tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
+#    responsible_agency_id = models.CharField(max_length=3)
+#    responsible_agency_id_nvl = models.CharField(max_length=3)
+#    allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
+#    allocation_transfer_agency_id_nvl = models.CharField(max_length=3, blank=True, null=True)
+#    beginning_period_of_availa = models.CharField(max_length=4, blank=True, null=True)
+#    beginning_period_of_availa_nvl = models.CharField(max_length=4, blank=True, null=True)
+#    ending_period_of_availabil = models.CharField(max_length=4, blank=True, null=True)
+#    ending_period_of_availabil_nvl = models.CharField(max_length=4, blank=True, null=True)
+#    availability_type_code = models.CharField(max_length=1, blank=True, null=True)
+#    availability_type_code_nvl = models.CharField(max_length=1, blank=True, null=True)
+#    main_account_code = models.CharField(max_length=4)
+#    main_account_code_nvl = models.CharField(max_length=4)
+#    sub_account_code = models.CharField(max_length=3)
+#    sub_account_code_nvl = models.CharField(max_length=3)
+#    drv_approp_avail_pd_start_date = models.DateField(blank=True, null=True)
+#    drv_approp_avail_pd_end_date = models.DateField(blank=True, null=True)
+#    drv_approp_account_exp_status = models.CharField(max_length=10, blank=True, null=True)
+#    create_date = models.DateTimeField(blank=True, null=True)
+#    update_date = models.DateTimeField(blank=True, null=True)
+#    create_user_id = models.CharField(max_length=50, blank=True, null=True)
+#    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+#
+#    class Meta:
+#        managed = False
+#        db_table = 'test_treasury_appropriation_account_2'
 
-    class Meta:
-        managed = False
-        db_table = 'test_emp'
-
-
-class TestEmpAudit(models.Model):
-    adt_test_emp_id = models.AutoField()
-    test_emp_id = models.IntegerField(blank=True, null=True)
-    operation = models.CharField(max_length=1)
-    stamp = models.DateTimeField()
-    userid = models.TextField()
-    empname = models.TextField()
-    salary = models.IntegerField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'test_emp_audit'
-
-
-class TestStateCountyCityCodes(models.Model):
-    state_code = models.CharField(max_length=2, blank=True, null=True)
-    county_code = models.CharField(max_length=3, blank=True, null=True)
-    county_name = models.CharField(max_length=40, blank=True, null=True)
-    city_code = models.CharField(max_length=5, blank=True, null=True)
-    city_name = models.CharField(max_length=50, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'test_state_county_city_codes'
-
-
-class TestTreasuryAppropriationAccount1(models.Model):
-    treasury_account_identifier = models.IntegerField(primary_key=True)
-    tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
-    responsible_agency_id = models.CharField(max_length=3)
-    responsible_agency_id_nvl = models.CharField(max_length=3)
-    allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
-    allocation_transfer_agency_id_nvl = models.CharField(max_length=3, blank=True, null=True)
-    beginning_period_of_availa = models.CharField(max_length=4, blank=True, null=True)
-    beginning_period_of_availa_nvl = models.CharField(max_length=4, blank=True, null=True)
-    ending_period_of_availabil = models.CharField(max_length=4, blank=True, null=True)
-    ending_period_of_availabil_nvl = models.CharField(max_length=4, blank=True, null=True)
-    availability_type_code = models.CharField(max_length=1, blank=True, null=True)
-    availability_type_code_nvl = models.CharField(max_length=1, blank=True, null=True)
-    main_account_code = models.CharField(max_length=4)
-    main_account_code_nvl = models.CharField(max_length=4)
-    sub_account_code = models.CharField(max_length=3)
-    sub_account_code_nvl = models.CharField(max_length=3)
-    drv_approp_avail_pd_start_date = models.DateField(blank=True, null=True)
-    drv_approp_avail_pd_end_date = models.DateField(blank=True, null=True)
-    drv_approp_account_exp_status = models.CharField(max_length=10, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'test_treasury_appropriation_account_1'
-
-
-class TestTreasuryAppropriationAccount2(models.Model):
-    treasury_account_identifier = models.IntegerField(primary_key=True)
-    tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
-    responsible_agency_id = models.CharField(max_length=3)
-    responsible_agency_id_nvl = models.CharField(max_length=3)
-    allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
-    allocation_transfer_agency_id_nvl = models.CharField(max_length=3, blank=True, null=True)
-    beginning_period_of_availa = models.CharField(max_length=4, blank=True, null=True)
-    beginning_period_of_availa_nvl = models.CharField(max_length=4, blank=True, null=True)
-    ending_period_of_availabil = models.CharField(max_length=4, blank=True, null=True)
-    ending_period_of_availabil_nvl = models.CharField(max_length=4, blank=True, null=True)
-    availability_type_code = models.CharField(max_length=1, blank=True, null=True)
-    availability_type_code_nvl = models.CharField(max_length=1, blank=True, null=True)
-    main_account_code = models.CharField(max_length=4)
-    main_account_code_nvl = models.CharField(max_length=4)
-    sub_account_code = models.CharField(max_length=3)
-    sub_account_code_nvl = models.CharField(max_length=3)
-    drv_approp_avail_pd_start_date = models.DateField(blank=True, null=True)
-    drv_approp_avail_pd_end_date = models.DateField(blank=True, null=True)
-    drv_approp_account_exp_status = models.CharField(max_length=10, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'test_treasury_appropriation_account_2'
-
-
+#AJ 09/07/2016...For treasury_account_identifier, changed AutoField to IntegerField
 class TreasuryAppropriationAccount(models.Model):
-    treasury_account_identifier = models.AutoField(primary_key=True)
+    treasury_account_identifier = models.IntegerField(primary_key=True)
     tas_rendering_label = models.CharField(max_length=22)
     allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
     responsible_agency_id = models.CharField(max_length=3)
@@ -2350,8 +2390,9 @@ class TreasuryAppropriationAccount(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'treasury_appropriation_account'
 
 
@@ -2375,7 +2416,7 @@ class Users(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+#AJ 09/07/2016...changed managed to TRUE
     class Meta:
-        managed = False
+        managed = True
         db_table = 'users'
-#AR END
