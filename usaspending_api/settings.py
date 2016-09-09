@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'usaspending_api.awards',
     'usaspending_api.accounts',
     'usaspending_api.submissions',
-    'usaspending_api.financial_activites'
+    'usaspending_api.financial_activities'
 ]
 
 MIDDLEWARE = [

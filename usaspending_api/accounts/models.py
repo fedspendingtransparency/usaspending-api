@@ -1,4 +1,5 @@
 from django.db import models
+from usaspending_api.submissions.models import SubmissionProcess
 
 # Table #3 - Treasury Appropriation Accounts.
 class TreasuryAppropriationAccount(models.Model):
@@ -27,7 +28,7 @@ class TreasuryAppropriationAccount(models.Model):
 class AppropriationAccountBalances(models.Model):
     appropriation_account_balances_id = models.AutoField(primary_key=True)
     treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.DO_NOTHING, db_column='treasury_account_identifier')
-    submission_process = models.ForeignKey('SubmissionProcess', models.DO_NOTHING)
+    submission_process = models.ForeignKey('submissions.SubmissionProcess', models.DO_NOTHING)
     budget_authority_unobligat_fyb = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     adjustments_to_unobligated_cpe = models.DecimalField(max_digits=21, decimal_places=0)
     budget_authority_appropria_cpe = models.DecimalField(max_digits=21, decimal_places=0)

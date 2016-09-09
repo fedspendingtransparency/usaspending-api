@@ -9,8 +9,9 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 class FinancialAccountsByProgramActivityObjectClass(models.Model):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity_name = models.CharField(max_length=164)
-    program_activity_code = models.ForeignKey('RefProgramActivity', models.DO_NOTHING, db_column='program_activity_code')
-    object_class = models.ForeignKey('RefObjectClassCode', models.DO_NOTHING, db_column='object_class')
+    # Temporarily commenting out these reference table keys TODO: Get them in here!
+    # program_activity_code = models.ForeignKey('RefProgramActivity', models.DO_NOTHING, db_column='program_activity_code')
+    # object_class = models.ForeignKey('RefObjectClassCode', models.DO_NOTHING, db_column='object_class')
     by_direct_reimbursable_fun = models.CharField(max_length=1)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.DO_NOTHING)
     ussgl480100_undelivered_or_fyb = models.DecimalField(max_digits=21, decimal_places=0)
@@ -62,8 +63,9 @@ class FinancialAccountsByAwards(models.Model):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.DO_NOTHING)
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
-    program_activity_code = models.ForeignKey('RefProgramActivity', models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
-    object_class = models.ForeignKey('RefObjectClassCode', models.DO_NOTHING, db_column='object_class')
+    # Temporarily commenting out these reference table keys TODO: Get them in here!
+    # program_activity_code = models.ForeignKey('RefProgramActivity', models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
+    # object_class = models.ForeignKey('RefObjectClassCode', models.DO_NOTHING, db_column='object_class')
     by_direct_reimbursable_fun = models.CharField(max_length=1, blank=True, null=True)
     piid = models.CharField(max_length=50, blank=True, null=True)
     parent_award_id = models.CharField(max_length=50, blank=True, null=True)
