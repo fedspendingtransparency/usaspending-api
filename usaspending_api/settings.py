@@ -42,6 +42,9 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'usaspending_api.awards',
+    'usaspending_api.accounts',
+    'usaspending_api.submissions',
+    'usaspending_api.financial_activites'
 ]
 
 MIDDLEWARE = [

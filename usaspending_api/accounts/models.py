@@ -2,7 +2,7 @@ from django.db import models
 
 # Table #3 - Treasury Appropriation Accounts.
 class TreasuryAppropriationAccount(models.Model):
-    treasury_account_identifier = models.AutoField(primary_key=True)
+    treasury_account_identifier = models.IntegerField(primary_key=True)
     tas_rendering_label = models.CharField(max_length=22)
     allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
     responsible_agency_id = models.CharField(max_length=3)
@@ -20,7 +20,7 @@ class TreasuryAppropriationAccount(models.Model):
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'treasury_appropriation_account'
 
 # Table #4 - Appropriation Account Balances
@@ -55,5 +55,5 @@ class AppropriationAccountBalances(models.Model):
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'appropriation_account_balances'
