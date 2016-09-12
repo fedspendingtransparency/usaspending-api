@@ -5,6 +5,7 @@ import csv
 import logging
 import django
 
+
 class Command(BaseCommand):
     help = "Loads contracts from a usaspending contracts download"
     logger = logging.getLogger('console')
@@ -31,19 +32,14 @@ class Command(BaseCommand):
 
                         for key, value in updated_fields.items():
                             setattr(award, key, value)
-                       
+
                         award.save()
-                         
-                    
+
                     except django.db.utils.IntegrityError:
                         self.logger.log(20, "Could not insert duplicate award")
-
 
         except IOError:
             print("Please specify a file to load from")
 
-    
     def convert_date(self, date):
         return datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
-
-

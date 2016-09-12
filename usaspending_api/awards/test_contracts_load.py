@@ -17,4 +17,3 @@ class ContractsLoadTests(TestCase):
 
     def teardown():
         Award.objects.all().delete()
-
