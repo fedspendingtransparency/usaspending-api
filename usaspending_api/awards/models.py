@@ -58,6 +58,7 @@ class FinancialAccountsByAwards(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
+
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_awards'
@@ -76,3 +77,34 @@ class FinancialAccountsByAwardsTransactionObligations(models.Model):
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_awards_transaction_obligations'
+
+
+
+class Award(models.Model):
+
+    AWARD_TYPES = (
+        ('C', 'Contract'),
+        ('G', 'Grant'),
+        ('DP', 'Direct Payment'),
+        ('L', 'Loan'),
+    )
+
+    award_id = models.CharField(unique=True, max_length=50)
+    type = models.CharField(max_length=5, choices=AWARD_TYPES)
+    #dollarsobligated
+    obligated_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True)
+    #maj_agency_cat
+    awarding_agency = models.CharField(max_length=50, null=True)
+    #signeddate
+    date_signed = models.DateField(null=True)
+    #vendorname
+    recipient_name = models.CharField(max_length=250, null=True)
+
+    def __str__(self):
+        # define a string representation of an award object
+        return '%s #%s' % (self.get_type_display(), self.award_id)
+
+    class Meta:
+        db_table = 'awards'
+
+

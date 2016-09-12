@@ -12,6 +12,6 @@ class AwardTests(TestCase):
         """
         Ensure the awards endpoint lists the right number of awards
         """
-        resp = self.client.get('/api/v1/awards/')
+        resp = self.client.get('/api/v1/awards/summary')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data), 2)

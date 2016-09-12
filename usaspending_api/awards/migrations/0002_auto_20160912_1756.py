@@ -93,7 +93,4 @@ class Migration(migrations.Migration):
                 'managed': True,
             },
         ),
-        migrations.DeleteModel(
-            name='Award',
-        ),
     ]
