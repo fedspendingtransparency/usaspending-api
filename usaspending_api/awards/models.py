@@ -1,51 +1,16 @@
 from django.db import models
 from usaspending_api.accounts.models import AppropriationAccountBalances
-
-# Reference tables
-
-class RefObjectClassCode(models.Model):
-    object_class = models.CharField(primary_key=True, max_length=4)
-    max_object_class_name = models.CharField(max_length=60, blank=True, null=True)
-    direct_or_reimbursable = models.CharField(max_length=25, blank=True, null=True)
-    label = models.CharField(max_length=100, blank=True, null=True)
-    valid_begin_date = models.DateTimeField(blank=True, null=True)
-    valid_end_date = models.DateTimeField(blank=True, null=True)
-    valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'ref_object_class_code'
-
-
-class RefProgramActivity(models.Model):
-    program_activity_code = models.CharField(max_length=4)
-    program_activity_name = models.CharField(max_length=164)
-    budget_year = models.CharField(max_length=4, blank=True, null=True)
-    valid_begin_date = models.DateTimeField(blank=True, null=True)
-    valid_end_date = models.DateTimeField(blank=True, null=True)
-    valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'ref_program_activity'
-        unique_together = (('program_activity_code', 'program_activity_name'),)
+from usaspending_api.references.models import RefProgramActivity
+from usaspending_api.references.models import RefObjectClassCode
 
 # Model Objects
 
 class FinancialAccountsByAwards(models.Model):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
-    appropriation_account_balances = models.ForeignKey('AppropriationAccountBalances', models.DO_NOTHING)
+    appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.DO_NOTHING)
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
-    program_activity_code = models.ForeignKey('RefProgramActivity', models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
-    object_class = models.ForeignKey('RefObjectClassCode', models.DO_NOTHING, db_column='object_class')
+    program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
+    object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, db_column='object_class')
     by_direct_reimbursable_fun = models.CharField(max_length=1, blank=True, null=True)
     piid = models.CharField(max_length=50, blank=True, null=True)
     parent_award_id = models.CharField(max_length=50, blank=True, null=True)

@@ -2,8 +2,8 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from usaspending_api.submissions.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.submissions.serializers import FinancialAccountsByProgramActivityObjectClassSerializer
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.serializers import FinancialAccountsByProgramActivityObjectClassSerializer
 
 
 class FinancialAccountsByProgramActivityObjectClassList(APIView):
