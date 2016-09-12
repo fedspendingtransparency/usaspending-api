@@ -3,7 +3,7 @@ from usaspending_api.submissions.models import SubmissionProcess
 
 # Table #3 - Treasury Appropriation Accounts.
 class TreasuryAppropriationAccount(models.Model):
-    treasury_account_identifier = models.IntegerField(primary_key=True)
+    treasury_account_identifier = models.AutoField(primary_key=True)
     tas_rendering_label = models.CharField(max_length=22)
     allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
     responsible_agency_id = models.CharField(max_length=3)

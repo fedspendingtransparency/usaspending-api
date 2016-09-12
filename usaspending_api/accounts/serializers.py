@@ -12,7 +12,7 @@ class TreasuryAppropriationAccountSerializer(serializers.ModelSerializer):
 
 
 class AppropriationAccountBalancesSerializer(serializers.ModelSerializer):
-
+    treasury_account_identifier = TreasuryAppropriationAccountSerializer(read_only=True)
     class Meta:
 
         model = AppropriationAccountBalances
