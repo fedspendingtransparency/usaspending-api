@@ -1,11 +1,11 @@
 from django.test import TestCase, Client
 import pytest
 
+from model_mommy import mommy
 
 class AwardTests(TestCase):
-
-    # load the test fixture
-    fixtures = ['awards']
+    def setUp(self):
+        self.award = mommy.make('awards.FinancialAccountsByAwardsTransactionObligations', _quantity=2)
 
     @pytest.mark.django_db
     def test_award_list(self):
