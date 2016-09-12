@@ -8,12 +8,12 @@ class TreasuryAppropriationAccountSerializer(serializers.ModelSerializer):
     class Meta:
 
         model = TreasuryAppropriationAccount
-        fields = ('treasury_account_identifier', 'allocation_transfer_agency_id')
+        fields = '__all__'
 
 
 class AppropriationAccountBalancesSerializer(serializers.ModelSerializer):
-
+    treasury_account_identifier = TreasuryAppropriationAccountSerializer(read_only=True)
     class Meta:
 
         model = AppropriationAccountBalances
-        fields = ('budget_authority_unobligat_fyb', 'budget_authority_appropria_cpe')
+        fields = '__all__'

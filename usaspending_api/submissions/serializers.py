@@ -8,11 +8,11 @@ class SubmissionAttributesSerializer(serializers.ModelSerializer):
     class Meta:
 
         model = SubmissionAttributes
-        fields = ('submission_id', 'cgac_code')
+        fields = '__all__'
 
 class SubmissionProcessSerializer(serializers.ModelSerializer):
 
     class Meta:
 
         model = SubmissionProcess
-        fields = ('submission_process_id', 'status')
+        fields = '__all__'
