@@ -3,6 +3,7 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import RefProgramActivity
 from usaspending_api.references.models import RefObjectClassCode
 
+
 class FinancialAccountsByProgramActivityObjectClass(models.Model):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity_name = models.CharField(max_length=164)

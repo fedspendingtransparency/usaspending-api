@@ -18,6 +18,7 @@ class TreasuryAppropriationAccountList(APIView):
         serializer = TreasuryAppropriationAccountSerializer(taa, many=True)
         return Response(serializer.data)
 
+
 class AppropriationAccountBalancesList(APIView):
 
     """

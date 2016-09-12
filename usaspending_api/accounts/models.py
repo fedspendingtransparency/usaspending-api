@@ -1,6 +1,7 @@
 from django.db import models
 from usaspending_api.submissions.models import SubmissionProcess
 
+
 # Table #3 - Treasury Appropriation Accounts.
 class TreasuryAppropriationAccount(models.Model):
     treasury_account_identifier = models.AutoField(primary_key=True)
@@ -23,6 +24,7 @@ class TreasuryAppropriationAccount(models.Model):
     class Meta:
         managed = True
         db_table = 'treasury_appropriation_account'
+
 
 # Table #4 - Appropriation Account Balances
 class AppropriationAccountBalances(models.Model):

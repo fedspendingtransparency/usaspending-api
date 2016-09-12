@@ -3,6 +3,7 @@ import pytest
 
 from model_mommy import mommy
 
+
 class AccountsTest(TestCase):
     def setUp(self):
         self.award = mommy.make('accounts.AppropriationAccountBalances', _quantity=2)

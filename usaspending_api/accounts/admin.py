@@ -8,6 +8,7 @@ class TreasuryAppropriationAccountAdmin(admin.ModelAdmin):
 
     pass
 
+
 @admin.register(AppropriationAccountBalances)
 class AppropriationAccountBalancesAdmin(admin.ModelAdmin):
 

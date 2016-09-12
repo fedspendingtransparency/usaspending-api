@@ -1,7 +1,7 @@
 from django.db import models
 
-# Reference tables
 
+# Reference tables
 class RefObjectClassCode(models.Model):
     object_class = models.CharField(primary_key=True, max_length=4)
     max_object_class_name = models.CharField(max_length=60, blank=True, null=True)

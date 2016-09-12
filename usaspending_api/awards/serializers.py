@@ -10,8 +10,10 @@ class FinancialAccountsByAwardsSerializer(serializers.ModelSerializer):
         model = FinancialAccountsByAwards
         fields = '__all__'
 
+
 class FinancialAccountsByAwardsTransactionObligationsSerializer(serializers.ModelSerializer):
     financial_accounts_by_awards = FinancialAccountsByAwardsSerializer(read_only=True)
+
     class Meta:
         model = FinancialAccountsByAwardsTransactionObligations
         fields = '__all__'

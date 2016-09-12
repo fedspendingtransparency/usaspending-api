@@ -10,6 +10,7 @@ class SubmissionAttributesSerializer(serializers.ModelSerializer):
         model = SubmissionAttributes
         fields = '__all__'
 
+
 class SubmissionProcessSerializer(serializers.ModelSerializer):
 
     class Meta:

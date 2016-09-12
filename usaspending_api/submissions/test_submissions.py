@@ -3,6 +3,7 @@ import pytest
 
 from model_mommy import mommy
 
+
 class SubmissionsTest(TestCase):
     def setUp(self):
         self.award = mommy.make('submissions.SubmissionProcess', _quantity=2)

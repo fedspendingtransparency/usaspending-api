@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 
+
 class AdtAgency(models.Model):
     adt_agency_id = models.AutoField(primary_key=True)
     agency_id = models.IntegerField(blank=True, null=True)
@@ -969,7 +970,8 @@ class AdtUsers(models.Model):
         managed = False
         db_table = 'adt_users'
 
-#AJ 09/07/2016...moved foreign key to the top
+
+# AJ 09/07/2016...moved foreign key to the top
 class Agency(models.Model):
     agency_id = models.AutoField(primary_key=True)
     location = models.ForeignKey('Location', models.DO_NOTHING)
@@ -986,7 +988,7 @@ class Agency(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'agency'
@@ -1022,7 +1024,7 @@ class AppropriationAccountBalances(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'appropriation_account_balances'
@@ -1047,7 +1049,7 @@ class Award(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'award'
@@ -1067,7 +1069,7 @@ class AwardAction(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'award_action'
@@ -1084,13 +1086,13 @@ class AwardSubawardRelationship(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'award_subaward_relationship'
 
 
-#AJ 09/07/2016...this table is not needed
+# AJ 09/07/2016...this table is not needed
 # class AwardsData(models.Model):
 #    awards_data_id = models.AutoField()
 #    username = models.TextField(blank=True, null=True)
@@ -1110,8 +1112,8 @@ class AwardSubawardRelationship(models.Model):
 #        managed = False
 #        db_table = 'awards_data'
 
-#AJ 09/07/2016...this table is not needed
-#class AwardsDataOld(models.Model):
+# AJ 09/07/2016...this table is not needed
+# class AwardsDataOld(models.Model):
 #    vendorfaxnumber = models.TextField(db_column='VendorFaxNumber', blank=True, null=True)  # Field name made lowercase.
 #    legalentitycityname = models.TextField(db_column='LegalEntityCityName', blank=True, null=True)  # Field name made lowercase.
 #    legalentityzip4 = models.TextField(db_column='LegalEntityZip4', blank=True, null=True)  # Field name made lowercase.
@@ -1170,11 +1172,11 @@ class AwardSubawardRelationship(models.Model):
 #        managed = False
 #        db_table = 'awards_data_old'
 
-#AJ 09/07/2016...moved foreign key to the top
+# AJ 09/07/2016...moved foreign key to the top
 class Error(models.Model):
     error_id = models.AutoField(primary_key=True)
     error_type = models.ForeignKey('ErrorType', models.DO_NOTHING, blank=True, null=True)
-    job = models.ForeignKey('Job', models.DO_NOTHING, blank=True, null=True)    
+    job = models.ForeignKey('Job', models.DO_NOTHING, blank=True, null=True)
     error_name = models.CharField(max_length=100, blank=True, null=True)
     error_description = models.CharField(max_length=150, blank=True, null=True)
     create_date = models.DateTimeField(blank=True, null=True)
@@ -1182,7 +1184,7 @@ class Error(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'error'
@@ -1197,13 +1199,13 @@ class ErrorType(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'error_type'
 
-#AJ 09/07/2016...these Fct tables are not needed
-#class FctContextAspectValueSet(models.Model):
+# AJ 09/07/2016...these Fct tables are not needed
+# class FctContextAspectValueSet(models.Model):
 #    context_aspect_value_set_id = models.AutoField()
 #    context_aspect_concept_id = models.IntegerField(blank=True, null=True)
 #    context_value_concept_id = models.IntegerField(blank=True, null=True)
@@ -1216,7 +1218,7 @@ class ErrorType(models.Model):
 #        db_table = 'fct_context_aspect_value_set'
 
 
-#class FctElement(models.Model):
+# class FctElement(models.Model):
 #    element_id = models.AutoField()
 #    element_name = models.TextField(blank=True, null=True)
 #    element_label = models.TextField(blank=True, null=True)
@@ -1236,7 +1238,7 @@ class ErrorType(models.Model):
 #        db_table = 'fct_element'
 #
 #
-#class FctElementCalcRelationship(models.Model):
+# class FctElementCalcRelationship(models.Model):
 #    calc_relationship_id = models.AutoField()
 #    parent_element_id = models.IntegerField(blank=True, null=True)
 #    child_element_id = models.IntegerField(blank=True, null=True)
@@ -1249,7 +1251,7 @@ class ErrorType(models.Model):
 #        db_table = 'fct_element_calc_relationship'
 #
 #
-#class FctElementCompositionRelationship(models.Model):
+# class FctElementCompositionRelationship(models.Model):
 #    composition_relationship_id = models.AutoField()
 #    parent_element_id = models.IntegerField(blank=True, null=True)
 #    child_element_id = models.IntegerField(blank=True, null=True)
@@ -1261,7 +1263,7 @@ class ErrorType(models.Model):
 #        db_table = 'fct_element_composition_relationship'
 #
 #
-#class FctFact(models.Model):
+# class FctFact(models.Model):
 #    fact_id = models.AutoField()
 #    element_id = models.IntegerField(blank=True, null=True)
 #    package_id = models.IntegerField(blank=True, null=True)
@@ -1282,7 +1284,7 @@ class ErrorType(models.Model):
 #        db_table = 'fct_fact'
 #
 #
-#class FctOwner(models.Model):
+# class FctOwner(models.Model):
 #    owner_id = models.IntegerField(blank=True, null=True)
 #    entity_owner = models.TextField(blank=True, null=True)
 #    create_date = models.DateTimeField(db_column='create date', blank=True, null=True)  # Field renamed to remove unsuitable characters.
@@ -1293,7 +1295,7 @@ class ErrorType(models.Model):
 #        db_table = 'fct_owner'
 #
 #
-#class FctPackage(models.Model):
+# class FctPackage(models.Model):
 #    package_id = models.AutoField()
 #    submission_id = models.IntegerField(blank=True, null=True)
 #    package_name = models.TextField(blank=True, null=True)
@@ -1305,7 +1307,7 @@ class ErrorType(models.Model):
 #        db_table = 'fct_package'
 #
 #
-#class FctSubmission(models.Model):
+# class FctSubmission(models.Model):
 #    submission_id = models.AutoField()
 #    owner_id = models.IntegerField(blank=True, null=True)
 #    accept_date = models.DateTimeField(blank=True, null=True)
@@ -1316,8 +1318,8 @@ class ErrorType(models.Model):
 #        managed = False
 #        db_table = 'fct_submission'
 
-#AJ 09/07/2016...this tables is not needed
-#class FinancialAccounts(models.Model):
+# AJ 09/07/2016...this tables is not needed
+# class FinancialAccounts(models.Model):
 #    financial_accounts_id = models.AutoField()
 #    username = models.TextField(blank=True, null=True)
 #    agencyidentifier = models.TextField(db_column='AgencyIdentifier', blank=True, null=True)  # Field name made lowercase.
@@ -1336,11 +1338,11 @@ class ErrorType(models.Model):
 #        managed = False
 #        db_table = 'financial_accounts'
 
-#AJ...program_activity_code & TAS have to be a combo key
+# AJ...program_activity_code & TAS have to be a combo key
 class FinancialAccountsByAwards(models.Model):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.DO_NOTHING)
-    program_activity_name = models.CharField(max_length=164, blank=True, null=True)    
+    program_activity_name = models.CharField(max_length=164, blank=True, null=True)
     program_activity_code = models.ForeignKey('RefProgramActivity', models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
     object_class = models.ForeignKey('RefObjectClassCode', models.DO_NOTHING, db_column='object_class')
     by_direct_reimbursable_fun = models.CharField(max_length=1, blank=True, null=True)
@@ -1390,7 +1392,7 @@ class FinancialAccountsByAwards(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_awards'
@@ -1407,12 +1409,13 @@ class FinancialAccountsByAwardsTransactionObligations(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_awards_transaction_obligations'
 
-#AJ...program_activity_code & TAS have to be a combo key
+
+# AJ...program_activity_code & TAS have to be a combo key
 class FinancialAccountsByProgramActivityObjectClass(models.Model):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity_name = models.CharField(max_length=164)
@@ -1461,7 +1464,7 @@ class FinancialAccountsByProgramActivityObjectClass(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_program_activity_object_class'
@@ -1493,7 +1496,7 @@ class FinancialAssistanceAward(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'financial_assistance_award'
@@ -1516,7 +1519,7 @@ class HighlyCompensatedOfficer(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'highly_compensated_officer'
@@ -1534,7 +1537,7 @@ class Job(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'job'
@@ -1549,7 +1552,7 @@ class JobStatus(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'job_status'
@@ -1564,7 +1567,7 @@ class JobType(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'job_type'
@@ -1676,7 +1679,7 @@ class LegalEntity(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'legal_entity'
@@ -1697,7 +1700,7 @@ class LinkAward(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'link_award'
@@ -1733,7 +1736,7 @@ class Location(models.Model):
     update_date = models.DateTimeField(blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'location'
@@ -1749,7 +1752,7 @@ class Permission(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'permission'
@@ -1767,7 +1770,7 @@ class PlaceOfPerformanceRelationship(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'place_of_performance_relationship'
@@ -1847,7 +1850,7 @@ class Procurement(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'procurement'
@@ -1864,7 +1867,7 @@ class RefCgacCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'ref_cgac_code'
@@ -1886,7 +1889,7 @@ class RefCityCountyCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'ref_city_county_code'
@@ -1903,7 +1906,7 @@ class RefCountryCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'ref_country_code'
@@ -1923,7 +1926,7 @@ class RefDomainEnumerationType(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'ref_domain_enumeration_type'
@@ -1942,7 +1945,7 @@ class RefObjectClassCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'ref_object_class_code'
@@ -1960,7 +1963,7 @@ class RefProgramActivity(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'ref_program_activity'
@@ -1979,7 +1982,7 @@ class RefStateCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'ref_state_code'
@@ -2009,7 +2012,7 @@ class RefSubtierAgencyOfficeCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'ref_subtier_agency_office_code'
@@ -2026,7 +2029,7 @@ class StagingRefCgacCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'staging_ref_cgac_code'
@@ -2048,7 +2051,7 @@ class StagingRefCityCountyCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'staging_ref_city_county_code'
@@ -2065,7 +2068,7 @@ class StagingRefCountryCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'staging_ref_country_code'
@@ -2085,7 +2088,7 @@ class StagingRefDomainEnumerationType(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'staging_ref_domain_enumeration_type'
@@ -2104,7 +2107,7 @@ class StagingRefObjectClassCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'staging_ref_object_class_code'
@@ -2122,7 +2125,7 @@ class StagingRefProgramActivity(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'staging_ref_program_activity'
@@ -2141,7 +2144,7 @@ class StagingRefStateCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'staging_ref_state_code'
@@ -2171,7 +2174,7 @@ class StagingRefSubtierAgencyOfficeCode(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'staging_ref_subtier_agency_office_code'
@@ -2195,7 +2198,7 @@ class StagingTreasuryAppropriationAccount(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'staging_treasury_appropriation_account'
@@ -2226,7 +2229,7 @@ class SubAward(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'sub_award'
@@ -2247,7 +2250,7 @@ class SubmissionAttributes(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'submission_attributes'
@@ -2269,14 +2272,14 @@ class SubmissionProcess(models.Model):
     update_date = models.DateTimeField(blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'submission_process'
 
 
-#AJ 09/07/2016...these Test tables are not needed
-#class TestEmp(models.Model):
+# AJ 09/07/2016...these Test tables are not needed
+# class TestEmp(models.Model):
 #    test_emp_id = models.AutoField(primary_key=True)
 #    empname = models.TextField()
 #    salary = models.IntegerField(blank=True, null=True)
@@ -2286,7 +2289,7 @@ class SubmissionProcess(models.Model):
 #        db_table = 'test_emp'
 #
 #
-#class TestEmpAudit(models.Model):
+# class TestEmpAudit(models.Model):
 #    adt_test_emp_id = models.AutoField()
 #    test_emp_id = models.IntegerField(blank=True, null=True)
 #    operation = models.CharField(max_length=1)
@@ -2300,7 +2303,7 @@ class SubmissionProcess(models.Model):
 #        db_table = 'test_emp_audit'
 #
 #
-#class TestStateCountyCityCodes(models.Model):
+# class TestStateCountyCityCodes(models.Model):
 #    state_code = models.CharField(max_length=2, blank=True, null=True)
 #    county_code = models.CharField(max_length=3, blank=True, null=True)
 #    county_name = models.CharField(max_length=40, blank=True, null=True)
@@ -2312,7 +2315,7 @@ class SubmissionProcess(models.Model):
 #        db_table = 'test_state_county_city_codes'
 #
 #
-#class TestTreasuryAppropriationAccount1(models.Model):
+# class TestTreasuryAppropriationAccount1(models.Model):
 #    treasury_account_identifier = models.IntegerField(primary_key=True)
 #    tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
 #    responsible_agency_id = models.CharField(max_length=3)
@@ -2342,7 +2345,7 @@ class SubmissionProcess(models.Model):
 #        db_table = 'test_treasury_appropriation_account_1'
 #
 #
-#class TestTreasuryAppropriationAccount2(models.Model):
+# class TestTreasuryAppropriationAccount2(models.Model):
 #    treasury_account_identifier = models.IntegerField(primary_key=True)
 #    tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
 #    responsible_agency_id = models.CharField(max_length=3)
@@ -2371,7 +2374,7 @@ class SubmissionProcess(models.Model):
 #        managed = False
 #        db_table = 'test_treasury_appropriation_account_2'
 
-#AJ 09/07/2016...For treasury_account_identifier, changed AutoField to IntegerField
+# AJ 09/07/2016...For treasury_account_identifier, changed AutoField to IntegerField
 class TreasuryAppropriationAccount(models.Model):
     treasury_account_identifier = models.IntegerField(primary_key=True)
     tas_rendering_label = models.CharField(max_length=22)
@@ -2390,7 +2393,7 @@ class TreasuryAppropriationAccount(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'treasury_appropriation_account'
@@ -2416,7 +2419,7 @@ class Users(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-#AJ 09/07/2016...changed managed to TRUE
+# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'users'

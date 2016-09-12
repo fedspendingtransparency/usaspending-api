@@ -3,8 +3,8 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import RefProgramActivity
 from usaspending_api.references.models import RefObjectClassCode
 
-# Model Objects
 
+# Model Objects
 class FinancialAccountsByAwards(models.Model):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.DO_NOTHING)
@@ -61,6 +61,7 @@ class FinancialAccountsByAwards(models.Model):
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_awards'
+
 
 class FinancialAccountsByAwardsTransactionObligations(models.Model):
     financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)

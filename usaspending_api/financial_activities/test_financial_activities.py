@@ -3,6 +3,7 @@ import pytest
 
 from model_mommy import mommy
 
+
 class FinancialActivitiesTests(TestCase):
     def setUp(self):
         self.award = mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', _quantity=2)
