@@ -4,6 +4,9 @@ import pytest
 from model_mommy import mommy
 
 class AwardTests(TestCase):
+
+    fixtures=['awards']
+
     def setUp(self):
         self.award = mommy.make('awards.FinancialAccountsByAwardsTransactionObligations', _quantity=2)
 
