@@ -29,7 +29,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -41,7 +40,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'usaspending_api.references',
     'usaspending_api.awards',
+    'usaspending_api.accounts',
+    'usaspending_api.submissions',
+    'usaspending_api.financial_activities'
 ]
 
 MIDDLEWARE = [
@@ -129,7 +132,30 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-try:
-    from usaspending_api.local_settings import *
-except:
-    pass
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/debug.log'),
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'console': {
+            'handlers': ['console', ],
+            'level': 'INFO',
+            'propagate': True,
+        }
+    },
+}
