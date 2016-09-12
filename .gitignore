@@ -3,3 +3,5 @@
 *.env
 .cache
 .coverage
+
+usaspending_api/logs/*
