@@ -1,10 +1,9 @@
 from rest_framework import serializers
-from usaspending_api.awards.models import Award
+from usaspending_api.awards.models import FinancialAccountsByAwardsTransactionObligations
 
 
-class AwardSerializer(serializers.ModelSerializer):
+class FinancialAccountsByAwardsTransactionObligationsSerializer(serializers.ModelSerializer):
 
     class Meta:
-
-        model = Award
-        fields = ('award_id', 'type')
+        model = FinancialAccountsByAwardsTransactionObligations
+        fields = '__all__'
