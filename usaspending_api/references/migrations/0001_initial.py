@@ -5,19 +5,6 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 from django.core.management import call_command
 
-fixture = '2016_09_12_data.json'
-
-def load_fixture(apps, schema_editor):
-    call_command('loaddata', fixture, app_label='references')
-
-def unload_fixture(apps, schema_editor):
-    "Brutally deleting all entries for this model..."
-
-    objclass = apps.get_model("references", "RefObjectClassCode")
-    objclass.objects.all().delete()
-    prgactiv = apps.get_model("references", "RefProgramActivity")
-    prgactiv.objects.all().delete()
-
 class Migration(migrations.Migration):
 
     initial = True
@@ -70,5 +57,4 @@ class Migration(migrations.Migration):
             name='refprogramactivity',
             unique_together=set([('program_activity_code', 'program_activity_name')]),
         ),
-        migrations.RunPython(load_fixture, reverse_code=unload_fixture),
     ]
