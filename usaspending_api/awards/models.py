@@ -10,8 +10,16 @@ class Award(models.Model):
         ('L', 'Loan'),
     )
 
-    award_id = models.CharField(max_length=50)
+    award_id = models.CharField(unique=True, max_length=50)
     type = models.CharField(max_length=5, choices=AWARD_TYPES)
+    #dollarsobligated
+    obligated_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True)
+    #maj_agency_cat
+    awarding_agency = models.CharField(max_length=50, null=True)
+    #signeddate
+    date_signed = models.DateField(null=True)
+    #vendorname
+    recipient_name = models.CharField(max_length=250, null=True)
 
     def __str__(self):
         # define a string representation of an award object
