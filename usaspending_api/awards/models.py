@@ -104,4 +104,7 @@ class Award(models.Model):
         # define a string representation of an award object
         return '%s #%s' % (self.get_type_display(), self.award_id)
 
+    class Meta:
+        db_table = 'awards'
+
 
