@@ -10,7 +10,7 @@ class FinancialAccountsByProgramActivityObjectClass(models.Model):
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code')
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, db_column='object_class')
     by_direct_reimbursable_fun = models.CharField(max_length=1)
-    appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.DO_NOTHING)
+    appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
     ussgl480100_undelivered_or_fyb = models.DecimalField(max_digits=21, decimal_places=0)
     ussgl480100_undelivered_or_cpe = models.DecimalField(max_digits=21, decimal_places=0)
     ussgl483100_undelivered_or_cpe = models.DecimalField(max_digits=21, decimal_places=0)
