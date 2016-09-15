@@ -3,11 +3,11 @@
 [![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api)
 [![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage)[![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
 
-This is the API that will drive the new USAspending.gov. It is currently under active development and not stable. 
+This is the API that will drive the new USAspending.gov. It is currently under active development and not stable.
 
 ## Getting Started
 
-This API is built on Python 3.3+, Django, and Django Rest Framework. 
+This API is built on Python 3.3+, Django, and Django Rest Framework.
 
 Assumptions:
 
@@ -83,7 +83,7 @@ Install the dependencies.
 
         $ pip install -r requirements.txt
 
-Next, configure your local settings. The `settings.py` file will check for an environment variable named `DATABASE_URL`. You can export this variable on the command line, or use a library like [autoenv](https://github.com/kennethreitz/autoenv) to load your environment variables when you `cd` into that directory. 
+Next, configure your local settings. The `settings.py` file will check for an environment variable named `DATABASE_URL`. You can export this variable on the command line, or use a library like [autoenv](https://github.com/kennethreitz/autoenv) to load your environment variables when you `cd` into that directory.
 
 Exporting your `DATABASE_URL` environment variable should look something like this:
 
@@ -109,7 +109,7 @@ Once you've done that, you're ready to start the development server
 This will run the application at `127.0.0.1:8000` by default. You can change that by passing the host and port number in to the `runserver` command.
 
 you should see something like this:
-    
+
     Performing system checks...
     System check identified no issues (0 silenced).
     September 02, 2016 - 01:46:02
@@ -117,7 +117,17 @@ you should see something like this:
     Starting development server at http://127.0.0.1:8000/
     Quit the server with CONTROL-C.
 
-Now, go to `http://localhost:8000/api/v1/awards/` to see the API! There aren't any other urls set up at the moment. 
+Now, go to `http://localhost:8000/api/v1/awards/` to see the API! There aren't any other urls set up at the moment.
+
+## ETL Process
+
+The Django server has an ETL process built in as a custom management command. Follow these steps to import data from a data broker database:
+
+  1. Configure the `DATA_BROKER_DATABASE_URL` environment variable. This is the same process as setting up the API backend. Exporting `DATA_BROKER_DATABASE_URL` should look like this:
+  
+  ```
+  $ export DATA_BROKER_DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/NAME'
+  ```
 
 ## Public Domain License
 
