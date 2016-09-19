@@ -74,32 +74,34 @@ class Command(BaseCommand):
         except ObjectDoesNotExist:
             submission_attributes = SubmissionAttributes()
 
-        submission_attributes.submission_id = submission_data['submission_id']
-        # User id is deprecated - need to move to Django Auth
-        submission_attributes.user_id = 1
-        submission_attributes.cgac_code = submission_data['cgac_code']
-        submission_attributes.reporting_period_start = submission_data['reporting_start_date']
-        submission_attributes.reporting_period_end = submission_data['reporting_end_date']
-        if update:
-            submission_attributes.update_date = timezone.now()
-        else:
-            submission_attributes.create_date = timezone.now()
+        # Update and save submission attributes
+        # Create our value map - specific data to load
+        value_map = {
+            'user_id': 1,
+            'update_date': timezone.now()
+        }
 
-        submission_attributes.save()
+        # If we're not updating, we're creating - set the date
+        if not update:
+            value_map['create_date'] = timezone.now()
+        load_data_into_model(submission_attributes, submission_data, value_map=value_map, save=True)
 
+        # Update and save submission process
+        value_map = {
+            'update_date': timezone.now(),
+            'submission': submission_attributes
+        }
+
+        if not update:
+            value_map['create_date'] = timezone.now()
+
+        submission_process = SubmissionProcess()
         if update:
             submission_process = SubmissionProcess.objects.get(submission=submission_attributes)
-        else:
-            submission_process = SubmissionProcess()
-        submission_process.submission = submission_attributes
-        if update:
-            submission_process.update_date = timezone.now()
-        else:
-            submission_process.create_date = timezone.now()
 
-        submission_process.save()
+        load_data_into_model(submission_process, [], value_map=value_map, save=True)
 
-        # Move on, and grab file data
+        # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
         self.logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
@@ -112,17 +114,19 @@ class Command(BaseCommand):
                 treasury_account = TreasuryAppropriationAccount.objects.get(tas_rendering_label=row['tas'])
             except ObjectDoesNotExist:
                 treasury_account = TreasuryAppropriationAccount()
-                treasury_account.tas_rendering_label = row['tas']
-                treasury_account.allocation_transfer_agency_id = row['allocation_transfer_agency']
-                treasury_account.responsible_agency_id = row['agency_identifier']
-                treasury_account.beginning_period_of_availa = row['beginning_period_of_availa']
-                treasury_account.ending_period_of_availabil = row['ending_period_of_availabil']
-                treasury_account.availability_type_code = row['availability_type_code']
-                treasury_account.main_account_code = row['main_account_code']
-                treasury_account.sub_account_code = row['sub_account_code']
-                treasury_account.create_date = timezone.now()
 
-                treasury_account.save()
+                field_map = {
+                    'tas_rendering_label': 'tas',
+                    'allocation_transfer_agency_id': 'allocation_transfer_agency',
+                    'responsible_agency_id': 'agency_identifier'
+                }
+
+                value_map = {
+                    'create_date': timezone.now(),
+                    'update_date': timezone.now()
+                }
+
+                load_data_into_model(treasury_account, row, field_map=field_map, value_map=value_map, save=True)
 
             # Now that we have the account, we can load the appropriation balances
             # TODO: Figure out how we want to determine what row is overriden by what row
@@ -130,25 +134,69 @@ class Command(BaseCommand):
             # data broker data that might be useful: appropriation_id, row_number
             # appropriation_balances = somethingsomething get appropriation balances...
             appropriation_balances = AppropriationAccountBalances()
-            appropriation_balances.treasury_account_identifier = treasury_account
-            appropriation_balances.submission_process = submission_process
-            appropriation_balances.budget_authority_unobligat_fyb = row['budget_authority_unobligat_fyb']
-            appropriation_balances.adjustments_to_unobligated_cpe = row['adjustments_to_unobligated_cpe']
-            appropriation_balances.budget_authority_appropria_cpe = row['budget_authority_appropria_cpe']
-            appropriation_balances.borrowing_authority_amount_cpe = row['borrowing_authority_amount_cpe']
-            appropriation_balances.contract_authority_amount_cpe = row['contract_authority_amount_cpe']
-            appropriation_balances.spending_authority_from_of_cpe = row['spending_authority_from_of_cpe']
-            appropriation_balances.other_budgetary_resources_cpe = row['other_budgetary_resources_cpe']
-            appropriation_balances.budget_authority_available_cpe = row['budget_authority_available_cpe']
-            appropriation_balances.gross_outlay_amount_by_tas_cpe = row['gross_outlay_amount_by_tas_cpe']
-            appropriation_balances.deobligations_recoveries_r_cpe = row['deobligations_recoveries_r_cpe']
-            appropriation_balances.unobligated_balance_cpe = row['unobligated_balance_cpe']
-            appropriation_balances.status_of_budgetary_resour_cpe = row['status_of_budgetary_resour_cpe']
-            appropriation_balances.obligations_incurred_total_cpe = row['obligations_incurred_total_cpe']
-            appropriation_balances.tas_rendering_label = row['tas']
-            appropriation_balances.create_date = timezone.now()
 
-            appropriation_balances.save()
+            value_map = {
+                'treasury_account_identifier': treasury_account,
+                'submission_process': submission_process,
+                'create_date': timezone.now(),
+                'update_date': timezone.now()
+            }
+
+            field_map = {
+                'tas_rendering_label': 'tas'
+            }
+
+            load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True)
+
+        # Let's get File B information
+        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
+        prg_act_obj_cls_data = dictfetchall(db_cursor)
+        self.logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
+
+
+# Loads data into a model instance
+# Data should be a row, a dict of field -> value pairs
+# Keyword args are:
+#  field_map - A map of field columns to data columns. This is so you can map
+#               a field in the data to a different field in the model. For instance,
+#               model.tas_rendering_label = data['tas'] could be set up like this:
+#               field_map = {'tas_rendering_label': 'tas'}
+#               The algorithm checks for a value map before a field map, so if the
+#               column is present in both value_map and field_map, value map takes
+#               precedence over the other
+#  value_map - Want to force or override a value? Specify the field name for the
+#               instance and the data you want to load. Example:
+#               {'update_date': timezone.now()}
+#               The algorithm checks for a value map before a field map, so if the
+#               column is present in both value_map and field_map, value map takes
+#               precedence over the other
+#  save - Defaults to False, but when set to true will save the model at the end
+def load_data_into_model(model_instance, data, **kwargs):
+    field_map = None
+    value_map = None
+    save = False
+
+    if 'field_map' in kwargs:
+        field_map = kwargs['field_map']
+    if 'value_map' in kwargs:
+        value_map = kwargs['value_map']
+    if 'save' in kwargs:
+        save = kwargs['save']
+
+    # Grab all the field names from the meta class of the model instance
+    fields = [field.name for field in model_instance._meta.get_fields()]
+    for field in fields:
+        if field in data:
+            setattr(model_instance, field, data[field])
+        elif value_map:
+            if field in value_map:
+                setattr(model_instance, field, value_map[field])
+        elif field_map:
+            if field in field_map:
+                setattr(model_instance, field, data[field_map[field]])
+
+    if save:
+        model_instance.save()
 
 
 def dictfetchall(cursor):
