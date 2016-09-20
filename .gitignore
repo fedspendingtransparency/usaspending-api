@@ -3,5 +3,6 @@
 *.env
 .cache
 .coverage
+.DS_Store
 
 usaspending_api/logs/*

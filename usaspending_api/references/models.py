@@ -37,43 +37,40 @@ class RefCountryCode(models.Model):
         managed = True
         db_table = 'ref_country_code'
 
-
-class RefCgacCode(models.Model):
-
-    agency_code_cgac = models.CharField(primary_key=True, max_length=3)
-    agency_name = models.CharField(max_length=150, blank=True, null=True)
-    valid_begin_date = models.DateTimeField(blank=True, null=True)
-    valid_end_date = models.DateTimeField(blank=True, null=True)
-    valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'ref_cgac_code'
-
 class Agency(models.Model):
-    agency_id = models.AutoField(primary_key=True)
-    location = models.ForeignKey('Location', models.DO_NOTHING)
-    agency_code_cgac = models.ForeignKey('RefCgacCode', models.DO_NOTHING, db_column='agency_code_cgac', blank=True, null=True)
-    agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
-    agency_code_fpds = models.CharField(max_length=4, blank=True, null=True)
-    department_parent_id = models.IntegerField(blank=True, null=True)
-    sub_tier_parent_id = models.IntegerField(blank=True, null=True)
-    agency_name = models.CharField(max_length=150, blank=True, null=True)
-    valid_period_start = models.DateField(blank=True, null=True)
-    valid_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    cgac_code = models.IntegerField(primary_key=True) # CGAC code
+    # agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
+    fpds_code = models.CharField(max_length=4, blank=True, null=True)
+    name = models.CharField(max_length=150, blank=True, null=True)
 
-# AJ 09/07/2016...changed managed to TRUE
     class Meta:
         managed = True
         db_table = 'agency'
+
+class SubtierAgency(models.Model):
+    agency = models.ForeignKey(Agency, related_name='subtier_agencies', null=True)
+    code = models.CharField(primary_key=True, max_length=4)
+    name = models.CharField(max_length=150, blank=True, null=True)
+
+    # commented the below out from the reflected model because I don't know what
+    # these fields all refer to
+
+    # contracting_office_code = models.CharField(max_length=6, blank=True, null=True)
+    # contracting_office_name = models.CharField(max_length=150, blank=True, null=True)
+    # address_line_1 = models.CharField(max_length=150, blank=True, null=True)
+    # address_line_2 = models.CharField(max_length=150, blank=True, null=True)
+    # address_line_3 = models.CharField(max_length=55, blank=True, null=True)
+    # address_city = models.CharField(max_length=40, blank=True, null=True)
+    # address_state = models.CharField(max_length=2, blank=True, null=True)
+    # zip_code = models.CharField(max_length=10, blank=True, null=True)
+    # country_code = models.CharField(max_length=3, blank=True, null=True)
+    # valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
+    # create_date = models.DateTimeField(blank=True, null=True)
+    # update_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = 'references_subtier_agency'
 
 class Location(models.Model):
     location_id = models.AutoField(primary_key=True)
