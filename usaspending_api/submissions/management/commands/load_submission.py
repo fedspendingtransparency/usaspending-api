@@ -7,6 +7,9 @@ import django
 
 from usaspending_api.submissions.models import *
 from usaspending_api.accounts.models import *
+from usaspending_api.financial_activities.models import *
+from usaspending_api.awards.models import *
+from usaspending_api.references.models import *
 
 
 # This command will load a single submission from the data broker database into
@@ -153,6 +156,49 @@ class Command(BaseCommand):
         prg_act_obj_cls_data = dictfetchall(db_cursor)
         self.logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
 
+        for row in prg_act_obj_cls_data:
+            account_balances = None
+            try:
+                account_balances = AppropriationAccountBalances.objects.get(tas_rendering_label=row['tas'])
+            except:
+                continue
+
+            financial_by_prg_act_obj_cls = FinancialAccountsByProgramActivityObjectClass()
+
+            value_map = {
+                'appropriation_account_balances': account_balances,
+                'object_class': RefObjectClassCode.objects.get(pk=row['object_class']),
+                'program_activity_code': RefProgramActivity.objects.get(pk=row['program_activity_code']),
+                'create_date': timezone.now(),
+                'update_date': timezone.now()
+            }
+
+            load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
+
+        # Let's get File C information
+        db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
+        award_financial_data = dictfetchall(db_cursor)
+        self.logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
+
+        for row in award_financial_data:
+            account_balances = None
+            try:
+                account_balances = AppropriationAccountBalances.objects.get(tas_rendering_label=row['tas'])
+            except:
+                continue
+
+            award_financial_data = FinancialAccountsByAwards()
+
+            value_map = {
+                'appropriation_account_balances': account_balances,
+                'object_class': RefObjectClassCode.objects.get(pk=row['object_class']),
+                'program_activity_code': RefProgramActivity.objects.get(pk=row['program_activity_code']),
+                'create_date': timezone.now(),
+                'update_date': timezone.now()
+            }
+
+            load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
+
 
 # Loads data into a model instance
 # Data should be a row, a dict of field -> value pairs
@@ -186,14 +232,17 @@ def load_data_into_model(model_instance, data, **kwargs):
     # Grab all the field names from the meta class of the model instance
     fields = [field.name for field in model_instance._meta.get_fields()]
     for field in fields:
-        if field in data:
-            setattr(model_instance, field, data[field])
-        elif value_map:
+        sts = False
+        if value_map:
             if field in value_map:
                 setattr(model_instance, field, value_map[field])
-        elif field_map:
+                sts = True
+        if field_map and not sts:
             if field in field_map:
                 setattr(model_instance, field, data[field_map[field]])
+                sts = True
+        if field in data and not sts:
+            setattr(model_instance, field, data[field])
 
     if save:
         model_instance.save()
