@@ -102,9 +102,10 @@ class Location(models.Model):
 
 class LegalEntity(models.Model):
     legal_entity_id = models.AutoField(primary_key=True)
-    location = models.ForeignKey('Location', models.DO_NOTHING)
-    ultimate_parent_legal_entity_id = models.IntegerField()
-    awardee_or_recipient_legal = models.CharField(max_length=120, blank=True, null=True)
+    location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
+    ultimate_parent_legal_entity_id = models.IntegerField(null=True)
+    # duns number ?
+    awardee_or_recipient_legal = models.CharField(max_length=120, blank=True)
     vendor_doing_as_business_n = models.CharField(max_length=400, blank=True, null=True)
     vendor_phone_number = models.CharField(max_length=30, blank=True, null=True)
     vendor_fax_number = models.CharField(max_length=30, blank=True, null=True)

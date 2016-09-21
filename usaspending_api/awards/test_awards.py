@@ -18,4 +18,4 @@ class AwardTests(TestCase):
         """
         resp = self.client.get('/api/v1/awards/summary')
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(len(resp.data), 2)
+        self.assertTrue(len(resp.data) > 2)

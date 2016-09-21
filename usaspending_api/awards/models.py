@@ -2,7 +2,7 @@ from django.db import models
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity
-
+from django.db.models import F, Sum
 
 # Model Objects
 class FinancialAccountsByAwards(models.Model):
@@ -88,7 +88,7 @@ class Award(models.Model):
         ('L', 'Loan'),
     )
 
-    award_id = models.CharField(unique=True, max_length=50)
+    award_identifier = models.CharField(unique=True, max_length=50)
     type = models.CharField(max_length=5, choices=AWARD_TYPES)
     # dollarsobligated
     # This is a sum that should get updated when a transaction is entered
@@ -123,6 +123,14 @@ class Award(models.Model):
     def __get_latest_submission(self):
         return self.actions.all().order_by('-action_date').first()
 
+    def update_from_mod(self, mod):
+        if self.type == 'C':
+            # only contract loading/summing supported right now
+            self.total_obligation = Procurement.objects.filter(piid=self.award_identifier)\
+                                .aggregate(total_obs=Sum(F('federal_action_obligation'))) \
+                                ['total_obs']
+            self.save()
+
     latest_award_transaction = property(__get_latest_submission) #models.ForeignKey('AwardAction')
 
     class Meta:
@@ -131,10 +139,13 @@ class Award(models.Model):
 
 class AwardAction(models.Model):
     award = models.ForeignKey(Award, related_name="actions")
-    action_date = models.CharField(max_length=8)
+    action_date = models.CharField(max_length=10)
     action_type = models.CharField(max_length=1, blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
     award_modification_amendme = models.CharField(max_length=50, blank=True, null=True)
+    awarding_agency = models.ForeignKey(Agency, null=True)
+    recipient = models.ForeignKey(LegalEntity, null=True)
+    description = models.CharField(max_length=255, null=True)
 
     class Meta:
         abstract = True
