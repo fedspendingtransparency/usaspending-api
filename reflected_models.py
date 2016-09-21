@@ -972,6 +972,7 @@ class AdtUsers(models.Model):
 
 
 # AJ 09/07/2016...moved foreign key to the top
+# Moved to references app
 class Agency(models.Model):
     agency_id = models.AutoField(primary_key=True)
     location = models.ForeignKey('Location', models.DO_NOTHING)
@@ -1469,7 +1470,7 @@ class FinancialAccountsByProgramActivityObjectClass(models.Model):
         managed = True
         db_table = 'financial_accounts_by_program_activity_object_class'
 
-
+# Moved to awards app
 class FinancialAssistanceAward(models.Model):
     financial_assistance_award_id = models.AutoField(primary_key=True)
     award = models.ForeignKey(Award, models.DO_NOTHING)
@@ -1572,7 +1573,7 @@ class JobType(models.Model):
         managed = True
         db_table = 'job_type'
 
-
+# Moved to reference app, for now
 class LegalEntity(models.Model):
     legal_entity_id = models.AutoField(primary_key=True)
     location = models.ForeignKey('Location', models.DO_NOTHING)
@@ -1705,7 +1706,7 @@ class LinkAward(models.Model):
         managed = True
         db_table = 'link_award'
 
-
+# moved to reference app`
 class Location(models.Model):
     location_id = models.AutoField(primary_key=True)
     location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True)
@@ -1775,8 +1776,8 @@ class PlaceOfPerformanceRelationship(models.Model):
         managed = True
         db_table = 'place_of_performance_relationship'
 
-
-class Procurement(models.Model):
+# moved to awards app
+    class Procurement(models.Model):
     procurement_id = models.AutoField(primary_key=True)
     award = models.ForeignKey(Award, models.DO_NOTHING)
     piid = models.CharField(max_length=50, blank=True, null=True)
@@ -1855,7 +1856,7 @@ class Procurement(models.Model):
         managed = True
         db_table = 'procurement'
 
-
+# moved to reference app
 class RefCgacCode(models.Model):
     agency_code_cgac = models.CharField(primary_key=True, max_length=3)
     agency_name = models.CharField(max_length=150, blank=True, null=True)
@@ -1872,7 +1873,7 @@ class RefCgacCode(models.Model):
         managed = True
         db_table = 'ref_cgac_code'
 
-
+# moved to reference app
 class RefCityCountyCode(models.Model):
     city_county_code_id = models.AutoField(primary_key=True)
     state_code = models.CharField(max_length=2, blank=True, null=True)

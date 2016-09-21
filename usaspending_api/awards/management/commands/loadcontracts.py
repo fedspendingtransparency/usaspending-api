@@ -39,7 +39,7 @@ class Command(BaseCommand):
                         self.logger.log(20, "Could not insert duplicate award")
 
         except IOError:
-            print("Please specify a file to load from")
+            self.logger.log(20, "Please specify a file to load from")
 
     def convert_date(self, date):
         return datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
