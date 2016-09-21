@@ -241,8 +241,8 @@ class RefProgramActivity(models.Model):
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
-class Meta:
-    managed = True
-    db_table = 'ref_program_activity'
-    unique_together = (('program_activity_code', 'program_activity_name','budget_year','responsible_agency_id','allocation_transfer_agency_id','main_account_code'),)
+    class Meta:
+        managed = True
+        db_table = 'ref_program_activity'
+        unique_together = (('program_activity_code', 'program_activity_name','budget_year','responsible_agency_id','allocation_transfer_agency_id','main_account_code'),)
     
