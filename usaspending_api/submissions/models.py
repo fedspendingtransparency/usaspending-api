@@ -23,7 +23,7 @@ class SubmissionAttributes(models.Model):
 
 class SubmissionProcess(models.Model):
     submission_process_id = models.AutoField(primary_key=True)
-    submission = models.ForeignKey(SubmissionAttributes, models.DO_NOTHING)
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     status = models.CharField(max_length=50, blank=True, null=True)
     file_a_submission = models.NullBooleanField()
     file_b_submission = models.NullBooleanField()

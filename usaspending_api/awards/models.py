@@ -7,7 +7,7 @@ from django.db.models import F, Sum
 # Model Objects
 class FinancialAccountsByAwards(models.Model):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
-    appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.DO_NOTHING)
+    appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, db_column='object_class')
@@ -65,7 +65,7 @@ class FinancialAccountsByAwards(models.Model):
 
 class FinancialAccountsByAwardsTransactionObligations(models.Model):
     financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)
-    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.DO_NOTHING)
+    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE)
     transaction_obligated_amou = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
