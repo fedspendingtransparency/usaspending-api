@@ -192,4 +192,14 @@ class Migration(migrations.Migration):
             name='award',
             field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='awards.Award'),
         ),
+        migrations.AlterField(
+            model_name='financialaccountsbyawards',
+            name='appropriation_account_balances',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='accounts.AppropriationAccountBalances'),
+        ),
+        migrations.AlterField(
+            model_name='financialaccountsbyawardstransactionobligations',
+            name='financial_accounts_by_awards',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='awards.FinancialAccountsByAwards'),
+        ),
     ]

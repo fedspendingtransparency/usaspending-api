@@ -26,4 +26,4 @@ class AwardSerializer(serializers.ModelSerializer):
     class Meta:
 
         model = Award
-        fields = ('award_id', 'type', 'obligated_amount', 'awarding_agency', 'date_signed', 'recipient_name')
+        fields = ('award_identifier', 'type', 'total_obligation', 'awarding_agency', 'date_signed')
