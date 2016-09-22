@@ -227,7 +227,7 @@ class RefObjectClassCode(models.Model):
 """BD 09/21 - Added the ref_program_activity_id, responsible_agency_id, allocation_transfer_agency_id,main_account_code to the RefProgramActivity model as well as unique concatenated key"""
 
 class RefProgramActivity(models.Model):
-    ref_program_activity_id = models.AutoField(primary_key=True)    
+    ref_program_activity_id = models.IntegerField(primary_key=True)    
     program_activity_code = models.CharField(max_length=4)
     program_activity_name = models.CharField(max_length=164)
     budget_year = models.CharField(max_length=4, blank=True, null=True)
@@ -246,4 +246,3 @@ class RefProgramActivity(models.Model):
         managed = True
         db_table = 'ref_program_activity'
         unique_together = (('program_activity_code', 'program_activity_name','budget_year','responsible_agency_id','allocation_transfer_agency_id','main_account_code'),)
-    
