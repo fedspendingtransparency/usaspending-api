@@ -37,40 +37,34 @@ class RefCountryCode(models.Model):
         managed = True
         db_table = 'ref_country_code'
 
+"""{
+    'agency_name': 'name',
+    'agency_code_fpds': 'fpds_code',
+    'agency_code_cgac': 'cgac_code',
+    'department_parent_id': 'department',
+    'sub_tier_parent_id': 'parent_agency',
+    'agency_code_aac': 'acc_code',
+    'agency_code_4cc': 'fourcc_code',
+
+    }"""
+
 class Agency(models.Model):
-    cgac_code = models.IntegerField(primary_key=True) # CGAC code
+    #id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True) # CGAC code
     # agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
     name = models.CharField(max_length=150, blank=True, null=True)
+    department = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sub_departments')
+    parent_agency = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sub_agencies')
+    aac_code = models.CharField(max_length=6, blank=True, null=True)
+    fourcc_code = models.CharField(max_length=4, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+    location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
 
     class Meta:
         managed = True
         db_table = 'agency'
-
-class SubtierAgency(models.Model):
-    agency = models.ForeignKey(Agency, related_name='subtier_agencies', null=True)
-    code = models.CharField(primary_key=True, max_length=4)
-    name = models.CharField(max_length=150, blank=True, null=True)
-
-    # commented the below out from the reflected model because I don't know what
-    # these fields all refer to
-
-    # contracting_office_code = models.CharField(max_length=6, blank=True, null=True)
-    # contracting_office_name = models.CharField(max_length=150, blank=True, null=True)
-    # address_line_1 = models.CharField(max_length=150, blank=True, null=True)
-    # address_line_2 = models.CharField(max_length=150, blank=True, null=True)
-    # address_line_3 = models.CharField(max_length=55, blank=True, null=True)
-    # address_city = models.CharField(max_length=40, blank=True, null=True)
-    # address_state = models.CharField(max_length=2, blank=True, null=True)
-    # zip_code = models.CharField(max_length=10, blank=True, null=True)
-    # country_code = models.CharField(max_length=3, blank=True, null=True)
-    # valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    # create_date = models.DateTimeField(blank=True, null=True)
-    # update_date = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'references_subtier_agency'
 
 class Location(models.Model):
     location_id = models.AutoField(primary_key=True)
@@ -227,7 +221,7 @@ class RefObjectClassCode(models.Model):
 """BD 09/21 - Added the ref_program_activity_id, responsible_agency_id, allocation_transfer_agency_id,main_account_code to the RefProgramActivity model as well as unique concatenated key"""
 
 class RefProgramActivity(models.Model):
-    ref_program_activity_id = models.IntegerField(primary_key=True)    
+    ref_program_activity_id = models.IntegerField(primary_key=True)
     program_activity_code = models.CharField(max_length=4)
     program_activity_name = models.CharField(max_length=164)
     budget_year = models.CharField(max_length=4, blank=True, null=True)
