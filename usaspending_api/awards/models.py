@@ -4,6 +4,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity
 from django.db.models import F, Sum
 
+
 # Model Objects
 class FinancialAccountsByAwards(models.Model):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
@@ -82,6 +83,16 @@ class FinancialAccountsByAwardsTransactionObligations(models.Model):
 class Award(models.Model):
 
     AWARD_TYPES = (
+        ('2', 'Block Grant'),
+        ('3', 'Formula Grant'),
+        ('4', 'Project Grant'),
+        ('5', 'Cooperative Agreement'),
+        ('6', 'Direct Payment for Specified Use'),
+        ('7', 'Direct Loan'),
+        ('8', 'Guaranteed/Insured Loan'),
+        ('9', 'Insurance'),
+        ('10', 'Direct Payment unrestricted'),
+        ('11', 'Other'),
         ('C', 'Contract'),
         ('G', 'Grant'),
         ('DP', 'Direct Payment'),
@@ -106,19 +117,18 @@ class Award(models.Model):
     description = models.CharField(max_length=255, null=True)
     period_of_performance_star = models.DateField(null=True)
 
-
     # this is a pointer to the latest mod, which should include most up
     # to date info on the location, etc.
 
     # Can use award.actions to get reverse reference to all actions
 
     latest_submission = models.ForeignKey(SubmissionAttributes, null=True)
-    #recipient_name = models.CharField(max_length=250, null=True)
-    #recipient_address_line1 = models.CharField(max_length=100, null=True)
+    # recipient_name = models.CharField(max_length=250, null=True)
+    # recipient_address_line1 = models.CharField(max_length=100, null=True)
 
     def __str__(self):
         # define a string representation of an award object
-        return '%s #%s' % (self.get_type_display(), self.award_id)
+        return '%s #%s' % (self.get_type_display(), self.award_identifier)
 
     def __get_latest_submission(self):
         return self.actions.all().order_by('-action_date').first()
@@ -127,11 +137,10 @@ class Award(models.Model):
         if self.type == 'C':
             # only contract loading/summing supported right now
             self.total_obligation = Procurement.objects.filter(piid=self.award_identifier)\
-                                .aggregate(total_obs=Sum(F('federal_action_obligation'))) \
-                                ['total_obs']
+                                .aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
             self.save()
 
-    latest_award_transaction = property(__get_latest_submission) #models.ForeignKey('AwardAction')
+    latest_award_transaction = property(__get_latest_submission)  # models.ForeignKey('AwardAction')
 
     class Meta:
         db_table = 'awards'
@@ -149,6 +158,7 @@ class AwardAction(models.Model):
 
     class Meta:
         abstract = True
+
 
 class Procurement(AwardAction):
     procurement_id = models.AutoField(primary_key=True)
@@ -223,6 +233,7 @@ class Procurement(AwardAction):
     reporting_period_end = models.DateField(blank=True, null=True)
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
     update_user_id = models.CharField(max_length=50, blank=True, null=True)
+
 
 class FinancialAssistanceAward(AwardAction):
     financial_assistance_award_id = models.AutoField(primary_key=True)

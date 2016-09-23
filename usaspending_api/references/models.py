@@ -37,8 +37,9 @@ class RefCountryCode(models.Model):
         managed = True
         db_table = 'ref_country_code'
 
+
 class Agency(models.Model):
-    cgac_code = models.IntegerField(primary_key=True) # CGAC code
+    cgac_code = models.IntegerField(primary_key=True)  # CGAC code
     # agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
     name = models.CharField(max_length=150, blank=True, null=True)
@@ -46,6 +47,7 @@ class Agency(models.Model):
     class Meta:
         managed = True
         db_table = 'agency'
+
 
 class SubtierAgency(models.Model):
     agency = models.ForeignKey(Agency, related_name='subtier_agencies', null=True)
@@ -71,6 +73,7 @@ class SubtierAgency(models.Model):
     class Meta:
         managed = True
         db_table = 'references_subtier_agency'
+
 
 class Location(models.Model):
     location_id = models.AutoField(primary_key=True)
@@ -99,6 +102,34 @@ class Location(models.Model):
     reporting_period_end = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(blank=True, null=True)
     create_user_id = models.CharField(max_length=50, blank=True, null=True)
+
+    class Meta:
+        # Let's make almost every column unique together so we don't have to
+        # perform heavy lifting on checking if a location already exists or not
+        unique_together = ("location_country_code",
+                           "location_country_name",
+                           "location_state_code",
+                           "location_state_name",
+                           "location_state_text",
+                           "location_city_name",
+                           "location_city_code",
+                           "location_county_name",
+                           "location_county_code",
+                           "location_address_line1",
+                           "location_address_line2",
+                           "location_address_line3",
+                           "location_foreign_location_description",
+                           "location_zip4",
+                           "location_congressional_code",
+                           "location_performance_code",
+                           "location_zip_last4",
+                           "location_zip5",
+                           "location_foreign_postal_code",
+                           "location_foreign_province",
+                           "location_foreign_city_name",
+                           "reporting_period_start",
+                           "reporting_period_end")
+
 
 class LegalEntity(models.Model):
     legal_entity_id = models.AutoField(primary_key=True)
@@ -205,6 +236,7 @@ class LegalEntity(models.Model):
     create_date = models.DateTimeField(blank=True, null=True)
     update_date = models.DateTimeField(blank=True, null=True)
 
+
 # Reference tables
 class RefObjectClassCode(models.Model):
     object_class = models.CharField(primary_key=True, max_length=4)
@@ -226,8 +258,9 @@ class RefObjectClassCode(models.Model):
 
 """BD 09/21 - Added the ref_program_activity_id, responsible_agency_id, allocation_transfer_agency_id,main_account_code to the RefProgramActivity model as well as unique concatenated key"""
 
+
 class RefProgramActivity(models.Model):
-    ref_program_activity_id = models.IntegerField(primary_key=True)    
+    ref_program_activity_id = models.IntegerField(primary_key=True)
     program_activity_code = models.CharField(max_length=4)
     program_activity_name = models.CharField(max_length=164)
     budget_year = models.CharField(max_length=4, blank=True, null=True)
@@ -245,4 +278,4 @@ class RefProgramActivity(models.Model):
     class Meta:
         managed = True
         db_table = 'ref_program_activity'
-        unique_together = (('program_activity_code', 'program_activity_name','budget_year','responsible_agency_id','allocation_transfer_agency_id','main_account_code'),)
+        unique_together = (('program_activity_code', 'program_activity_name', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)

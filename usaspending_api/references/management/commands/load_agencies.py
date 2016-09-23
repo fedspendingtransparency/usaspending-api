@@ -15,13 +15,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         try:
-            with open(os.path.join(django.conf.settings.BASE_DIR, \
-            'usaspending_api/references/management/commands/agency_list.csv')) \
-            as csvfile:
+            with open(os.path.join(django.conf.settings.BASE_DIR,
+                      'usaspending_api/references/management/commands/agency_list.csv')) \
+                      as csvfile:
 
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    agency, created = Agency.objects.get_or_create( \
+                    agency, created = Agency.objects.get_or_create(
                                     cgac_code=row['CGAC AGENCY CODE'])
 
                     agency.name = row['AGENCY NAME']
@@ -30,8 +30,8 @@ class Command(BaseCommand):
 
                     self.logger.log(20, "loaded %s" % agency)
 
-                    subtier, created = SubtierAgency.objects.get_or_create( \
-                                    code=row['SUB TIER CODE'], \
+                    subtier, created = SubtierAgency.objects.get_or_create(
+                                    code=row['SUB TIER CODE'],
                                     name=row['SUB TIER NAME'])
 
                     subtier.agency = agency

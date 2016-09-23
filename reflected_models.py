@@ -1470,6 +1470,7 @@ class FinancialAccountsByProgramActivityObjectClass(models.Model):
         managed = True
         db_table = 'financial_accounts_by_program_activity_object_class'
 
+
 # Moved to awards app
 class FinancialAssistanceAward(models.Model):
     financial_assistance_award_id = models.AutoField(primary_key=True)
@@ -1572,6 +1573,7 @@ class JobType(models.Model):
     class Meta:
         managed = True
         db_table = 'job_type'
+
 
 # Moved to reference app, for now
 class LegalEntity(models.Model):
@@ -1706,6 +1708,7 @@ class LinkAward(models.Model):
         managed = True
         db_table = 'link_award'
 
+
 # moved to reference app`
 class Location(models.Model):
     location_id = models.AutoField(primary_key=True)
@@ -1776,8 +1779,9 @@ class PlaceOfPerformanceRelationship(models.Model):
         managed = True
         db_table = 'place_of_performance_relationship'
 
+
 # moved to awards app
-    class Procurement(models.Model):
+class Procurement(models.Model):
     procurement_id = models.AutoField(primary_key=True)
     award = models.ForeignKey(Award, models.DO_NOTHING)
     piid = models.CharField(max_length=50, blank=True, null=True)
@@ -1856,6 +1860,7 @@ class PlaceOfPerformanceRelationship(models.Model):
         managed = True
         db_table = 'procurement'
 
+
 # moved to reference app
 class RefCgacCode(models.Model):
     agency_code_cgac = models.CharField(primary_key=True, max_length=3)
@@ -1872,6 +1877,7 @@ class RefCgacCode(models.Model):
     class Meta:
         managed = True
         db_table = 'ref_cgac_code'
+
 
 # moved to reference app
 class RefCityCountyCode(models.Model):
