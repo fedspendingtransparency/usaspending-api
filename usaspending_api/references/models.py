@@ -65,7 +65,8 @@ class Agency(models.Model):
     class Meta:
         managed = True
         db_table = 'agency'
-
+ 
+# comment to remove later
 class Location(models.Model):
     location_id = models.AutoField(primary_key=True)
     location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True)
