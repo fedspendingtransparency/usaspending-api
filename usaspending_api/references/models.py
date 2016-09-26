@@ -82,6 +82,7 @@ class Location(models.Model):
     location_address_line3 = models.CharField(max_length=55, blank=True, null=True)
     location_foreign_location_description = models.CharField(max_length=100, blank=True, null=True)
     location_zip4 = models.CharField(max_length=10, blank=True, null=True)
+    location_zip_4a = models.CharField(max_length=10, blank=True, null=True)
     location_congressional_code = models.CharField(max_length=2, blank=True, null=True)
     location_performance_code = models.CharField(max_length=9, blank=True, null=True)
     location_zip_last4 = models.CharField(max_length=4, blank=True, null=True)
