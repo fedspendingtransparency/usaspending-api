@@ -149,6 +149,9 @@ class AwardAction(models.Model):
     awarding_agency = models.ForeignKey(Agency, null=True)
     recipient = models.ForeignKey(LegalEntity, null=True)
     description = models.CharField(max_length=255, null=True)
+    award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    current_total_value_award = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    potential_total_value_adju = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
 
     class Meta:
         abstract = True
