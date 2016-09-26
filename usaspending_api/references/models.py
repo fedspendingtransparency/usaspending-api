@@ -194,6 +194,8 @@ class LegalEntity(models.Model):
     us_local_government = models.CharField(max_length=1, blank=True, null=True)
     undefinitized_action = models.CharField(max_length=1, blank=True, null=True)
     domestic_or_foreign_entity = models.CharField(max_length=1, blank=True, null=True)
+    division_name = models.CharField(max_length=100, blank=True, null=True)
+    division_number = models.CharField(max_length=100, blank=True, null=True)  
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(blank=True, null=True)
