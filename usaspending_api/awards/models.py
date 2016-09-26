@@ -88,8 +88,11 @@ class Award(models.Model):
         ('L', 'Loan'),
     )
 
-    award_identifier = models.CharField(unique=True, max_length=50)
     type = models.CharField(max_length=5, choices=AWARD_TYPES)
+    piid = models.CharField(max_length=50, blank=True, null=True)
+    parent_award_id = models.CharField(max_length=50, blank=True, null=True)
+    fain = models.CharField(max_length=30, blank=True, null=True)
+    uri = models.CharField(max_length=70, blank=True, null=True)
     # dollarsobligated
     # This is a sum that should get updated when a transaction is entered
     total_obligation = models.DecimalField(max_digits=15, decimal_places=2, null=True)
