@@ -1,10 +1,12 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.serializers.json import json, DjangoJSONEncoder
 from django.db import connections
 from django.utils import timezone
 from datetime import datetime
 import logging
 import django
+import os
 
 from usaspending_api.submissions.models import *
 from usaspending_api.accounts.models import *
@@ -31,15 +33,27 @@ class Command(BaseCommand):
             help='Delete the submission if it exists instead of updating it',
         )
 
+        parser.add_argument(
+            '--test',
+            action='store_true',
+            dest='test',
+            default=False,
+            help='Runs the submission loader in test mode, sets the delete flag enabled, and uses stored data rather than pulling from a database'
+        )
+
     def handle(self, *args, **options):
         # Grab the data broker database connections
-        try:
-            db_conn = connections['data_broker']
-            db_cursor = db_conn.cursor()
-        except Exception as err:
-            self.logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
-            self.logger.critical(print(err))
-            return
+        if not options['test']:
+            try:
+                db_conn = connections['data_broker']
+                db_cursor = db_conn.cursor()
+            except Exception as err:
+                self.logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                self.logger.critical(print(err))
+                return
+        else:
+            options['delete'] = True
+            db_cursor = PhonyCursor()
 
         # Grab the submission id
         submission_id = options['submission_id'][0]
@@ -168,8 +182,8 @@ class Command(BaseCommand):
 
             value_map = {
                 'appropriation_account_balances': account_balances,
-                'object_class': RefObjectClassCode.objects.get(pk=row['object_class']),
-                'program_activity_code': RefProgramActivity.objects.get(pk=row['program_activity_code']),
+                'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
+                'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
                 'create_date': timezone.now(),
                 'update_date': timezone.now()
             }
@@ -192,8 +206,8 @@ class Command(BaseCommand):
 
             value_map = {
                 'appropriation_account_balances': account_balances,
-                'object_class': RefObjectClassCode.objects.get(pk=row['object_class']),
-                'program_activity_code': RefProgramActivity.objects.get(pk=row['program_activity_code']),
+                'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
+                'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
                 'create_date': timezone.now(),
                 'update_date': timezone.now()
             }
@@ -290,8 +304,6 @@ class Command(BaseCommand):
                 self.logger.info('Award has no good identifiers')
                 continue
 
-            print(award_identifier)
-
             award_value_map = {
                 "period_of_performance_star": format_date(row['period_of_performance_star']),
                 "date_signed": format_date(row['action_date']),
@@ -384,9 +396,26 @@ def store_value(model_instance_or_dict, field, value):
 
 
 def dictfetchall(cursor):
-    "Return all rows from a cursor as a dict"
-    columns = [col[0] for col in cursor.description]
-    return [
-        dict(zip(columns, row))
-        for row in cursor.fetchall()
-    ]
+    if isinstance(cursor, PhonyCursor):
+        return cursor.results
+    else:
+        "Return all rows from a cursor as a dict"
+        columns = [col[0] for col in cursor.description]
+        return [
+            dict(zip(columns, row))
+            for row in cursor.fetchall()
+        ]
+
+
+# Spoofs the db cursor responses
+class PhonyCursor:
+
+    def __init__(self):
+        json_data = open(os.path.join(os.path.dirname(__file__), '../../test_data/etl_test_data.json'))
+        self.db_responses = json.load(json_data)
+        json_data.close()
+
+        self.results = None
+
+    def execute(self, statement, parameters):
+        self.results = self.db_responses[statement]

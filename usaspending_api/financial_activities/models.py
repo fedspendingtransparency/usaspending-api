@@ -7,8 +7,8 @@ from usaspending_api.references.models import RefObjectClassCode
 class FinancialAccountsByProgramActivityObjectClass(models.Model):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity_name = models.CharField(max_length=164)
-    program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code')
-    object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, db_column='object_class')
+    program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code', null=True)
+    object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, db_column='object_class', null=True)
     by_direct_reimbursable_fun = models.CharField(max_length=1)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
     ussgl480100_undelivered_or_fyb = models.DecimalField(max_digits=21, decimal_places=0)
