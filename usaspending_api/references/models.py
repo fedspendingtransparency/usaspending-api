@@ -12,10 +12,8 @@ class RefCityCountyCode(models.Model):
     valid_begin_date = models.DateTimeField(blank=True, null=True)
     valid_end_date = models.DateTimeField(blank=True, null=True)
     valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
@@ -28,10 +26,8 @@ class RefCountryCode(models.Model):
     valid_begin_date = models.DateTimeField(blank=True, null=True)
     valid_end_date = models.DateTimeField(blank=True, null=True)
     valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
@@ -93,8 +89,9 @@ class Location(models.Model):
     location_foreign_city_name = models.CharField(max_length=40, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+
 
 class LegalEntity(models.Model):
     legal_entity_id = models.AutoField(primary_key=True)
@@ -200,8 +197,8 @@ class LegalEntity(models.Model):
     division_number = models.CharField(max_length=100, blank=True, null=True)  
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
 # Reference tables
 class RefObjectClassCode(models.Model):
@@ -212,10 +209,8 @@ class RefObjectClassCode(models.Model):
     valid_begin_date = models.DateTimeField(blank=True, null=True)
     valid_end_date = models.DateTimeField(blank=True, null=True)
     valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
@@ -235,10 +230,8 @@ class RefProgramActivity(models.Model):
     valid_begin_date = models.DateTimeField(blank=True, null=True)
     valid_end_date = models.DateTimeField(blank=True, null=True)
     valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
