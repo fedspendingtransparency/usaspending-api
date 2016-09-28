@@ -21,7 +21,7 @@ class Command(BaseCommand):
                 reader = csv.DictReader(csvfile)
                 for row in reader:
                     # try:
-                    award, created = Award.objects.get_or_create(award_identifier=row['piid'], type='C')
+                    award, created = Award.objects.get_or_create(piid=row['piid'], type='C')
                     # need to update existing instance, probably add as child transaction
                     # right now awards get overwritten -- this needs to be updated after table
                     # structure more finalized

@@ -83,11 +83,11 @@ class Command(BaseCommand):
         try:
             submission_attributes = SubmissionAttributes.objects.get(pk=submission_id)
             if options['delete']:
-                self.logger.info('Submission id ' + str(submission_id) + ' already exists. It will be deleted.')
+                # self.logger.info('Submission id ' + str(submission_id) + ' already exists. It will be deleted.')
                 submission_attributes.delete()
                 submission_attributes = SubmissionAttributes()
             else:
-                self.logger.info('Submission id ' + str(submission_id) + ' already exists. Records will be updated.')
+                # self.logger.info('Submission id ' + str(submission_id) + ' already exists. Records will be updated.')
                 update = True
         except ObjectDoesNotExist:
             submission_attributes = SubmissionAttributes()
@@ -122,7 +122,7 @@ class Command(BaseCommand):
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
+        # self.logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
 
         # Create account objects
         for row in appropriation_data:
@@ -169,7 +169,7 @@ class Command(BaseCommand):
         # Let's get File B information
         db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
         prg_act_obj_cls_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
+        # self.logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
 
         for row in prg_act_obj_cls_data:
             account_balances = None
@@ -193,7 +193,7 @@ class Command(BaseCommand):
         # Let's get File C information
         db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
         award_financial_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
+        # self.logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
 
         for row in award_financial_data:
             account_balances = None
@@ -227,7 +227,7 @@ class Command(BaseCommand):
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
         award_financial_assistance_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
+        # self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
 
         for row in award_financial_assistance_data:
             # Create LegalEntity
@@ -293,23 +293,11 @@ class Command(BaseCommand):
                 "type": "assistance_type"
             }
 
-            # For now, award_identifier is whatever we have
-            # Temporary
-            award_identifier = row['fain']
-            if award_identifier is None or len(award_identifier) == 0:
-                award_identifier = row['uri']
-            if award_identifier is None or len(award_identifier) == 0:
-                award_identifier = row['piid']
-            if award_identifier is None or len(award_identifier) == 0:
-                self.logger.info('Award has no good identifiers')
-                continue
-
             award_value_map = {
                 "period_of_performance_star": format_date(row['period_of_performance_star']),
                 "date_signed": format_date(row['action_date']),
                 "latest_submission": submission_attributes,
                 "recipient": legal_entity,
-                "award_identifier": award_identifier,
             }
 
             award = load_data_into_model(Award(), row, field_map=award_field_map, value_map=award_value_map, as_dict=True)
@@ -318,7 +306,7 @@ class Command(BaseCommand):
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
         procurement_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
+        # self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
         for row in procurement_data:
             pass
