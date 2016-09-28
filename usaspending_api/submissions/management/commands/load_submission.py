@@ -1,9 +1,12 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.serializers.json import json, DjangoJSONEncoder
 from django.db import connections
 from django.utils import timezone
+from datetime import datetime
 import logging
 import django
+import os
 
 from usaspending_api.submissions.models import *
 from usaspending_api.accounts.models import *
@@ -30,15 +33,27 @@ class Command(BaseCommand):
             help='Delete the submission if it exists instead of updating it',
         )
 
+        parser.add_argument(
+            '--test',
+            action='store_true',
+            dest='test',
+            default=False,
+            help='Runs the submission loader in test mode, sets the delete flag enabled, and uses stored data rather than pulling from a database'
+        )
+
     def handle(self, *args, **options):
         # Grab the data broker database connections
-        try:
-            db_conn = connections['data_broker']
-            db_cursor = db_conn.cursor()
-        except Exception as err:
-            self.logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
-            self.logger.critical(print(err))
-            return
+        if not options['test']:
+            try:
+                db_conn = connections['data_broker']
+                db_cursor = db_conn.cursor()
+            except Exception as err:
+                self.logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                self.logger.critical(print(err))
+                return
+        else:
+            options['delete'] = True
+            db_cursor = PhonyCursor()
 
         # Grab the submission id
         submission_id = options['submission_id'][0]
@@ -167,8 +182,8 @@ class Command(BaseCommand):
 
             value_map = {
                 'appropriation_account_balances': account_balances,
-                'object_class': RefObjectClassCode.objects.get(pk=row['object_class']),
-                'program_activity_code': RefProgramActivity.objects.get(pk=row['program_activity_code']),
+                'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
+                'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
                 'create_date': timezone.now(),
                 'update_date': timezone.now()
             }
@@ -191,13 +206,122 @@ class Command(BaseCommand):
 
             value_map = {
                 'appropriation_account_balances': account_balances,
-                'object_class': RefObjectClassCode.objects.get(pk=row['object_class']),
-                'program_activity_code': RefProgramActivity.objects.get(pk=row['program_activity_code']),
+                'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
+                'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
                 'create_date': timezone.now(),
                 'update_date': timezone.now()
             }
 
             load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
+
+            afd_trans = FinancialAccountsByAwardsTransactionObligations()
+
+            value_map = {
+                'financial_accounts_by_awards': award_financial_data,
+                'create_date': timezone.now(),
+                'update_date': timezone.now()
+            }
+
+            load_data_into_model(afd_trans, row, value_map=value_map, save=True)
+
+        # File D2
+        db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
+        award_financial_assistance_data = dictfetchall(db_cursor)
+        self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
+
+        for row in award_financial_assistance_data:
+            # Create LegalEntity
+            legal_entity_location_field_map = {
+                "location_address_line1": "legal_entity_address_line1",
+                "location_address_line2": "legal_entity_address_line2",
+                "location_address_line3": "legal_entity_address_line3",
+                "location_city_code": "legal_entity_city_code",
+                "location_city_name": "legal_entity_city_name",
+                "location_congressional_code": "legal_entity_congressional",
+                # Since the country code is actually the id, we add _id to set up FK
+                "location_country_code_id": "legal_entity_country_code",
+                "location_county_code": "legal_entity_county_code",
+                "location_county_name": "legal_entity_county_name",
+                "location_foreign_city_name": "legal_entity_foreign_city",
+                "location_foreign_postal_code": "legal_entity_foreign_posta",
+                "location_foreign_province": "legal_entity_foreign_provi",
+                "location_state_code": "legal_entity_state_code",
+                "location_state_name": "legal_entity_state_name",
+                "location_zip5": "legal_entity_zip5",
+                "location_zip_last4": "legal_entity_zip_last4",
+            }
+
+            location = load_data_into_model(Location(), row, field_map=legal_entity_location_field_map, as_dict=True)
+            legal_entity_location, created = Location.objects.get_or_create(**location)
+
+            # Create the legal entity if it doesn't exist
+            legal_entity = None
+            try:
+                legal_entity = LegalEntity.objects.get(row['awardee_or_recipient_uniqu'])
+            except:
+                legal_entity = LegalEntity()
+
+                legal_entity_value_map = {
+                    "location": legal_entity_location,
+                    "legal_entity_id": row['awardee_or_recipient_uniqu']
+                }
+
+                load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
+
+            # Create the place of performance location
+            place_of_performance_field_map = {
+                "location_city_name": "place_of_performance_city",
+                "location_performance_code": "place_of_performance_code",
+                "location_congressional_code": "place_of_performance_congr",
+                # Tagging ID on the following to set the FK
+                "location_country_code_id": "place_of_perform_country_c",
+                "location_county_name": "place_of_perform_county_na",
+                "location_foreign_location_description": "place_of_performance_forei",
+                "location_state_name": "place_of_perform_state_nam",
+                "location_zip4": "place_of_performance_zip4a",
+            }
+
+            location = load_data_into_model(Location(), row, field_map=place_of_performance_field_map, as_dict=True)
+            pop_location, created = Location.objects.get_or_create(**location)
+
+            # Create the base award, create actions, then tally the totals for the award
+            award_field_map = {
+                # Adding _id on to create the FK
+                "awarding_agency_id": "awarding_agency_code",
+                "funding_agency_id": "funding_agency_code",
+                "description": "award_description",
+                "type": "assistance_type"
+            }
+
+            # For now, award_identifier is whatever we have
+            # Temporary
+            award_identifier = row['fain']
+            if award_identifier is None or len(award_identifier) == 0:
+                award_identifier = row['uri']
+            if award_identifier is None or len(award_identifier) == 0:
+                award_identifier = row['piid']
+            if award_identifier is None or len(award_identifier) == 0:
+                self.logger.info('Award has no good identifiers')
+                continue
+
+            award_value_map = {
+                "period_of_performance_star": format_date(row['period_of_performance_star']),
+                "date_signed": format_date(row['action_date']),
+                "latest_submission": submission_attributes,
+                "recipient": legal_entity,
+                "award_identifier": award_identifier,
+            }
+
+            award = load_data_into_model(Award(), row, field_map=award_field_map, value_map=award_value_map, as_dict=True)
+            award, created = Award.objects.get_or_create(**award)
+
+        # File D1
+        db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
+        procurement_data = dictfetchall(db_cursor)
+        self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
+
+        for row in procurement_data:
+            pass
 
 
 # Loads data into a model instance
@@ -217,10 +341,12 @@ class Command(BaseCommand):
 #               column is present in both value_map and field_map, value map takes
 #               precedence over the other
 #  save - Defaults to False, but when set to true will save the model at the end
+#  as_dict - If true, returns the model as a dict instead of saving or altering
 def load_data_into_model(model_instance, data, **kwargs):
     field_map = None
     value_map = None
     save = False
+    as_dict = False
 
     if 'field_map' in kwargs:
         field_map = kwargs['field_map']
@@ -228,30 +354,68 @@ def load_data_into_model(model_instance, data, **kwargs):
         value_map = kwargs['value_map']
     if 'save' in kwargs:
         save = kwargs['save']
+    if 'as_dict' in kwargs:
+        as_dict = kwargs['as_dict']
 
     # Grab all the field names from the meta class of the model instance
     fields = [field.name for field in model_instance._meta.get_fields()]
+    mod = model_instance
+
+    if as_dict:
+        mod = {}
+
     for field in fields:
         sts = False
         if value_map:
             if field in value_map:
-                setattr(model_instance, field, value_map[field])
+                store_value(mod, field, value_map[field])
                 sts = True
         if field_map and not sts:
             if field in field_map:
-                setattr(model_instance, field, data[field_map[field]])
+                store_value(mod, field, data[field_map[field]])
                 sts = True
         if field in data and not sts:
-            setattr(model_instance, field, data[field])
+            store_value(mod, field, data[field])
 
     if save:
         model_instance.save()
+    if as_dict:
+        return mod
+
+
+def format_date(date):
+    return datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
+
+
+def store_value(model_instance_or_dict, field, value):
+    # print('Loading ' + str(field) + ' with ' + str(value))
+    if isinstance(model_instance_or_dict, dict):
+        model_instance_or_dict[field] = value
+    else:
+        setattr(model_instance_or_dict, field, value)
 
 
 def dictfetchall(cursor):
-    "Return all rows from a cursor as a dict"
-    columns = [col[0] for col in cursor.description]
-    return [
-        dict(zip(columns, row))
-        for row in cursor.fetchall()
-    ]
+    if isinstance(cursor, PhonyCursor):
+        return cursor.results
+    else:
+        "Return all rows from a cursor as a dict"
+        columns = [col[0] for col in cursor.description]
+        return [
+            dict(zip(columns, row))
+            for row in cursor.fetchall()
+        ]
+
+
+# Spoofs the db cursor responses
+class PhonyCursor:
+
+    def __init__(self):
+        json_data = open(os.path.join(os.path.dirname(__file__), '../../test_data/etl_test_data.json'))
+        self.db_responses = json.load(json_data)
+        json_data.close()
+
+        self.results = None
+
+    def execute(self, statement, parameters):
+        self.results = self.db_responses[statement]

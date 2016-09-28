@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from usaspending_api.awards.models import *
 from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer
+from usaspending_api.references.serializers import *
 
 
 class FinancialAccountsByAwardsSerializer(serializers.ModelSerializer):
@@ -23,7 +24,11 @@ class FinancialAccountsByAwardsTransactionObligationsSerializer(serializers.Mode
 
 class AwardSerializer(serializers.ModelSerializer):
 
+    recipient = LegalEntitySerializer(read_only=True)
+    awarding_agency = AgencySerializer(read_only=True)
+    funding_agency = AgencySerializer(read_only=True)
+
     class Meta:
 
         model = Award
-        fields = ('award_identifier', 'type', 'total_obligation', 'awarding_agency', 'date_signed')
+        fields = '__all__'

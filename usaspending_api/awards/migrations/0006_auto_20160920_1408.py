@@ -5,9 +5,11 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 import django.db.models.deletion
 
+
 def drop_award_data(apps, schema_editor):
     awards = apps.get_model('awards', 'Award')
     awards.objects.all().delete()
+
 
 class Migration(migrations.Migration):
 
