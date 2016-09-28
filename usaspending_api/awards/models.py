@@ -54,10 +54,8 @@ class FinancialAccountsByAwards(models.Model):
     drv_oblig_incur_total_by_award = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
@@ -70,10 +68,8 @@ class FinancialAccountsByAwardsTransactionObligations(models.Model):
     transaction_obligated_amou = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
@@ -99,8 +95,11 @@ class Award(models.Model):
         ('L', 'Loan'),
     )
 
-    award_identifier = models.CharField(unique=True, max_length=50)
     type = models.CharField(max_length=5, choices=AWARD_TYPES)
+    piid = models.CharField(max_length=50, blank=True, null=True)
+    parent_award_id = models.CharField(max_length=50, blank=True, null=True)
+    fain = models.CharField(max_length=30, blank=True, null=True)
+    uri = models.CharField(max_length=70, blank=True, null=True)
     # dollarsobligated
     # This is a sum that should get updated when a transaction is entered
     total_obligation = models.DecimalField(max_digits=15, decimal_places=2, null=True)
@@ -155,11 +154,15 @@ class AwardAction(models.Model):
     awarding_agency = models.ForeignKey(Agency, null=True)
     recipient = models.ForeignKey(LegalEntity, null=True)
     description = models.CharField(max_length=255, null=True)
+    award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    current_total_value_award = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    potential_total_value_adju = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
 
     class Meta:
         abstract = True
 
 
+# BD 09/26/2016 Added rec_flag data, parent_award_awarding_agency_code, current_aggregated_total_v, current_total_value_adjust,potential_idv_total_est, potential_aggregated_idv_t, potential_aggregated_total, and potential_total_value_adju data elements to the procurement table
 class Procurement(AwardAction):
     procurement_id = models.AutoField(primary_key=True)
     award = models.ForeignKey(Award, models.DO_NOTHING)
@@ -227,12 +230,18 @@ class Procurement(AwardAction):
     walsh_healey_act = models.CharField(max_length=1, blank=True, null=True)
     transaction_number = models.CharField(max_length=6, blank=True, null=True)
     referenced_idv_modificatio = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
+    rec_flag = models.CharField(max_length=1, blank=True, null=True)
+    parent_award_awarding_agency_code = models.CharField(max_length=4, blank=True, null=True)
+    current_aggregated_total_v = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    current_total_value_adjust = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    potential_idv_total_est = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    potential_aggregated_idv_t = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    potential_aggregated_total = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    potential_total_value_adju = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
 
 class FinancialAssistanceAward(AwardAction):
@@ -256,10 +265,8 @@ class FinancialAssistanceAward(AwardAction):
     drv_awd_fin_assist_type_label = models.CharField(max_length=50, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
