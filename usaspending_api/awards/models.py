@@ -137,7 +137,7 @@ class Award(models.Model):
     def update_from_mod(self, mod):
         if self.type == 'C':
             # only contract loading/summing supported right now
-            self.total_obligation = Procurement.objects.filter(piid=self.award_identifier)\
+            self.total_obligation = Procurement.objects.filter(piid=self.piid)\
                                 .aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
             self.save()
 
