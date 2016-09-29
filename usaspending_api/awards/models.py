@@ -276,10 +276,11 @@ class FinancialAssistanceAward(AwardAction):
         managed = True
         db_table = 'financial_assistance_award'
 
+
 class SubAward(models.Model):
     sub_award_id = models.AutoField(primary_key=True)
     award = models.ForeignKey(Award, models.DO_NOTHING)
-    place_of_performance_relationship = models.ForeignKey(PlaceOfPerformanceRelationship, models.DO_NOTHING)
+    place_of_performance_relationship = models.ForeignKey("PlaceOfPerformanceRelationship", models.DO_NOTHING)
     legal_entity = models.ForeignKey(LegalEntity, models.DO_NOTHING)
     sub_awardee_or_recipient_u = models.CharField(max_length=9, blank=True, null=True)
     sub_awardee_ultimate_pa_id = models.CharField(max_length=9, blank=True, null=True)
@@ -303,6 +304,7 @@ class SubAward(models.Model):
     class Meta:
         managed = True
         db_table = 'sub_award'
+
 
 class PlaceOfPerformanceRelationship(models.Model):
     place_of_performance_relationship_id = models.AutoField(primary_key=True)
