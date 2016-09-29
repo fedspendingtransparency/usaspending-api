@@ -6,4 +6,4 @@
 .DS_Store
 
 usaspending_api/logs/*
-.idea/*
+usaspending_api/.idea/*
