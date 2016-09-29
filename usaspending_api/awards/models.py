@@ -115,6 +115,8 @@ class Award(models.Model):
     recipient = models.ForeignKey(LegalEntity, null=True)
     description = models.CharField(max_length=255, null=True)
     period_of_performance_star = models.DateField(null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     # this is a pointer to the latest mod, which should include most up
     # to date info on the location, etc.
@@ -157,6 +159,8 @@ class AwardAction(models.Model):
     award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
     current_total_value_award = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
     potential_total_value_adju = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         abstract = True
@@ -271,3 +275,46 @@ class FinancialAssistanceAward(AwardAction):
     class Meta:
         managed = True
         db_table = 'financial_assistance_award'
+
+class SubAward(models.Model):
+    sub_award_id = models.AutoField(primary_key=True)
+    award = models.ForeignKey(Award, models.DO_NOTHING)
+    place_of_performance_relationship = models.ForeignKey(PlaceOfPerformanceRelationship, models.DO_NOTHING)
+    legal_entity = models.ForeignKey(LegalEntity, models.DO_NOTHING)
+    sub_awardee_or_recipient_u = models.CharField(max_length=9, blank=True, null=True)
+    sub_awardee_ultimate_pa_id = models.CharField(max_length=9, blank=True, null=True)
+    sub_awardee_ultimate_paren = models.CharField(max_length=120, blank=True, null=True)
+    subawardee_business_type = models.CharField(max_length=255, blank=True, null=True)
+    sub_awardee_or_recipient_l = models.CharField(max_length=120, blank=True, null=True)
+    subcontract_award_amount = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    cfda_number_and_title = models.CharField(max_length=255, blank=True, null=True)
+    prime_award_report_id = models.CharField(max_length=40, blank=True, null=True)
+    award_report_month = models.CharField(max_length=25, blank=True, null=True)
+    award_report_year = models.CharField(max_length=4, blank=True, null=True)
+    rec_model_question1 = models.CharField(max_length=1, blank=True, null=True)
+    rec_model_question2 = models.CharField(max_length=1, blank=True, null=True)
+    subaward_number = models.CharField(max_length=32, blank=True, null=True)
+    reporting_period_start = models.DateField(blank=True, null=True)
+    reporting_period_end = models.DateField(blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+
+# AJ 09/07/2016...changed managed to TRUE
+    class Meta:
+        managed = True
+        db_table = 'sub_award'
+
+class PlaceOfPerformanceRelationship(models.Model):
+    place_of_performance_relationship_id = models.AutoField(primary_key=True)
+    award = models.ForeignKey(Award, models.DO_NOTHING)
+    sub_award = models.ForeignKey('SubAward', models.DO_NOTHING)
+    location = models.ForeignKey(Location, models.DO_NOTHING)
+    reporting_period_start = models.DateField(blank=True, null=True)
+    reporting_period_end = models.DateField(blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+
+# AJ 09/07/2016...changed managed to TRUE
+    class Meta:
+        managed = True
+        db_table = 'place_of_performance_relationship'
