@@ -1,0 +1,68 @@
+// Response from /awards/summary endpoint
+{
+  "results":
+    [{
+      "award_id": "1212jnjn",
+      "type_of_award": "contract",
+      "financial_data": {
+        "total_obligation": 1234.50,
+        "total_outlay": 1200.00,
+        "financial_transactions": [
+          {
+            "account": "TAS IDENTIFIER",
+            "obligated_amount": 1234.50,
+            "outlay_amount": 1234.00,
+            "object_class": "Contract",
+            "program_activity_code": 1234,
+            "program_activity_name": "Carbon sequestration"
+          },
+          {}
+        ],
+        "award_transactions": [
+          {
+            "modification_number": "0001",
+            "obligated_amount": 1234,
+          },
+          {}
+        ],
+      },
+      "recipient_data": {
+        "name": "Some Business LLC",
+        "duns_number": "012345123",
+        "address": {
+          "street": "123 Main st",
+          "street2": "Suite 405",
+          "city": "Atlanta",
+          "state": "GA",
+          "zip": "30350"
+        }
+      },
+      "award_data": {
+        "date_signed": "2016/05/09",
+        "awarding_agency": "Department of Education",
+        "funding_agency": "Department of Education",
+        "description": "a contract to implement the DATA Act",
+        "period_of_performance": {
+          "start": "2016/05/30",
+          "end": "2017/05/30",
+        },
+        "place_of_performance": {
+          "street": "123 Main st",
+          "street2": "Suite 405",
+          "city": "Atlanta",
+          "state": "GA",
+          "zip": "30350"
+        }
+      },
+      "meta_data": {
+        "last_updated": "2016/06/30",
+        "financial_reporting_period":{
+          "start": "2016/04/01",
+          "end": "2016/06/30"
+        },
+      }
+    },
+    {},
+  ],
+  "count": 342,
+}

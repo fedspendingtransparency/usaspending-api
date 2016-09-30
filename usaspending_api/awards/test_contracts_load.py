@@ -8,6 +8,8 @@ import pytest
 
 class ContractsLoadTests(TestCase):
 
+    fixtures = ['agencies']
+
     @pytest.mark.django_db
     def test_contract_load(self):
         """

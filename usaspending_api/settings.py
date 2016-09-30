@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 
 import os
 import dj_database_url
+import sys
 from django.utils.crypto import get_random_string
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -86,6 +87,11 @@ WSGI_APPLICATION = 'usaspending_api.wsgi.application'
 
 DATABASES = {'default': dj_database_url.config(conn_max_age=600)}
 
+# import a second database connection for ETL, connecting to the data broker
+# using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
+# Also - skip this if we're testing - we won't need it and it will take time
+if os.environ.get('DATA_BROKER_DATABASE_URL') and not sys.argv[1] == 'test':
+    DATABASES['data_broker'] = dj_database_url.parse(os.environ.get('DATA_BROKER_DATABASE_URL'), conn_max_age=600)
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators

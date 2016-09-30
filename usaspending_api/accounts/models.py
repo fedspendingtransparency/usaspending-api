@@ -16,10 +16,8 @@ class TreasuryAppropriationAccount(models.Model):
     drv_approp_avail_pd_start_date = models.DateField(blank=True, null=True)
     drv_approp_avail_pd_end_date = models.DateField(blank=True, null=True)
     drv_approp_account_exp_status = models.CharField(max_length=10, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
@@ -29,8 +27,8 @@ class TreasuryAppropriationAccount(models.Model):
 # Table #4 - Appropriation Account Balances
 class AppropriationAccountBalances(models.Model):
     appropriation_account_balances_id = models.AutoField(primary_key=True)
-    treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.DO_NOTHING, db_column='treasury_account_identifier')
-    submission_process = models.ForeignKey('submissions.SubmissionProcess', models.DO_NOTHING)
+    treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE, db_column='treasury_account_identifier')
+    submission_process = models.ForeignKey('submissions.SubmissionProcess', models.CASCADE)
     budget_authority_unobligat_fyb = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     adjustments_to_unobligated_cpe = models.DecimalField(max_digits=21, decimal_places=0)
     budget_authority_appropria_cpe = models.DecimalField(max_digits=21, decimal_places=0)
@@ -52,10 +50,8 @@ class AppropriationAccountBalances(models.Model):
     drv_other_obligated_amount = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
