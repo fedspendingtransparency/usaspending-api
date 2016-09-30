@@ -96,22 +96,14 @@ class Command(BaseCommand):
         # Create our value map - specific data to load
         value_map = {
             'user_id': 1,
-            'update_date': timezone.now()
         }
 
-        # If we're not updating, we're creating - set the date
-        if not update:
-            value_map['create_date'] = timezone.now()
         load_data_into_model(submission_attributes, submission_data, value_map=value_map, save=True)
 
         # Update and save submission process
         value_map = {
-            'update_date': timezone.now(),
             'submission': submission_attributes
         }
-
-        if not update:
-            value_map['create_date'] = timezone.now()
 
         submission_process = SubmissionProcess()
         if update:
@@ -139,10 +131,7 @@ class Command(BaseCommand):
                     'responsible_agency_id': 'agency_identifier'
                 }
 
-                value_map = {
-                    'create_date': timezone.now(),
-                    'update_date': timezone.now()
-                }
+                value_map = {}
 
                 load_data_into_model(treasury_account, row, field_map=field_map, value_map=value_map, save=True)
 
@@ -156,8 +145,6 @@ class Command(BaseCommand):
             value_map = {
                 'treasury_account_identifier': treasury_account,
                 'submission_process': submission_process,
-                'create_date': timezone.now(),
-                'update_date': timezone.now()
             }
 
             field_map = {
@@ -184,8 +171,6 @@ class Command(BaseCommand):
                 'appropriation_account_balances': account_balances,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
                 'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
-                'create_date': timezone.now(),
-                'update_date': timezone.now()
             }
 
             load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
@@ -208,8 +193,6 @@ class Command(BaseCommand):
                 'appropriation_account_balances': account_balances,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
                 'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
-                'create_date': timezone.now(),
-                'update_date': timezone.now()
             }
 
             load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
@@ -218,8 +201,6 @@ class Command(BaseCommand):
 
             value_map = {
                 'financial_accounts_by_awards': award_financial_data,
-                'create_date': timezone.now(),
-                'update_date': timezone.now()
             }
 
             load_data_into_model(afd_trans, row, value_map=value_map, save=True)
@@ -229,28 +210,41 @@ class Command(BaseCommand):
         award_financial_assistance_data = dictfetchall(db_cursor)
         # self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
 
-        for row in award_financial_assistance_data:
-            # Create LegalEntity
-            legal_entity_location_field_map = {
-                "location_address_line1": "legal_entity_address_line1",
-                "location_address_line2": "legal_entity_address_line2",
-                "location_address_line3": "legal_entity_address_line3",
-                "location_city_code": "legal_entity_city_code",
-                "location_city_name": "legal_entity_city_name",
-                "location_congressional_code": "legal_entity_congressional",
-                # Since the country code is actually the id, we add _id to set up FK
-                "location_country_code_id": "legal_entity_country_code",
-                "location_county_code": "legal_entity_county_code",
-                "location_county_name": "legal_entity_county_name",
-                "location_foreign_city_name": "legal_entity_foreign_city",
-                "location_foreign_postal_code": "legal_entity_foreign_posta",
-                "location_foreign_province": "legal_entity_foreign_provi",
-                "location_state_code": "legal_entity_state_code",
-                "location_state_name": "legal_entity_state_name",
-                "location_zip5": "legal_entity_zip5",
-                "location_zip_last4": "legal_entity_zip_last4",
-            }
+        # Create LegalEntity
+        legal_entity_location_field_map = {
+            "location_address_line1": "legal_entity_address_line1",
+            "location_address_line2": "legal_entity_address_line2",
+            "location_address_line3": "legal_entity_address_line3",
+            "location_city_code": "legal_entity_city_code",
+            "location_city_name": "legal_entity_city_name",
+            "location_congressional_code": "legal_entity_congressional",
+            # Since the country code is actually the id, we add _id to set up FK
+            "location_country_code_id": "legal_entity_country_code",
+            "location_county_code": "legal_entity_county_code",
+            "location_county_name": "legal_entity_county_name",
+            "location_foreign_city_name": "legal_entity_foreign_city",
+            "location_foreign_postal_code": "legal_entity_foreign_posta",
+            "location_foreign_province": "legal_entity_foreign_provi",
+            "location_state_code": "legal_entity_state_code",
+            "location_state_name": "legal_entity_state_name",
+            "location_zip5": "legal_entity_zip5",
+            "location_zip_last4": "legal_entity_zip_last4",
+        }
 
+        # Create the place of performance location
+        place_of_performance_field_map = {
+            "location_city_name": "place_of_performance_city",
+            "location_performance_code": "place_of_performance_code",
+            "location_congressional_code": "place_of_performance_congr",
+            # Tagging ID on the following to set the FK
+            "location_country_code_id": "place_of_perform_country_c",
+            "location_county_name": "place_of_perform_county_na",
+            "location_foreign_location_description": "place_of_performance_forei",
+            "location_state_name": "place_of_perform_state_nam",
+            "location_zip4": "place_of_performance_zip4a",
+        }
+
+        for row in award_financial_assistance_data:
             location = load_data_into_model(Location(), row, field_map=legal_entity_location_field_map, as_dict=True)
             legal_entity_location, created = Location.objects.get_or_create(**location)
 
@@ -268,19 +262,6 @@ class Command(BaseCommand):
 
                 load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
-            # Create the place of performance location
-            place_of_performance_field_map = {
-                "location_city_name": "place_of_performance_city",
-                "location_performance_code": "place_of_performance_code",
-                "location_congressional_code": "place_of_performance_congr",
-                # Tagging ID on the following to set the FK
-                "location_country_code_id": "place_of_perform_country_c",
-                "location_county_name": "place_of_perform_county_na",
-                "location_foreign_location_description": "place_of_performance_forei",
-                "location_state_name": "place_of_perform_state_nam",
-                "location_zip4": "place_of_performance_zip4a",
-            }
-
             location = load_data_into_model(Location(), row, field_map=place_of_performance_field_map, as_dict=True)
             pop_location, created = Location.objects.get_or_create(**location)
 
@@ -295,6 +276,7 @@ class Command(BaseCommand):
 
             award_value_map = {
                 "period_of_performance_star": format_date(row['period_of_performance_star']),
+                "place_of_performance": pop_location,
                 "date_signed": format_date(row['action_date']),
                 "latest_submission": submission_attributes,
                 "recipient": legal_entity,
