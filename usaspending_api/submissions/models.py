@@ -11,8 +11,10 @@ class SubmissionAttributes(models.Model):
     version_number = models.IntegerField(blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
+    create_date = models.DateTimeField(blank=True, null=True)
+    update_date = models.DateTimeField(blank=True, null=True)
+    create_user_id = models.CharField(max_length=50, blank=True, null=True)
+    update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -30,8 +32,10 @@ class SubmissionProcess(models.Model):
     file_d2_submission = models.NullBooleanField()
     file_e_submission = models.NullBooleanField()
     file_f_submission = models.NullBooleanField()
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
+    create_date = models.DateTimeField(blank=True, null=True)
+    create_user_id = models.CharField(max_length=50, blank=True, null=True)
+    update_date = models.DateTimeField(blank=True, null=True)
+    update_user_id = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
         managed = True
