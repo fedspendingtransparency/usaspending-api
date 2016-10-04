@@ -5,7 +5,7 @@ from usaspending_api.references.models import RefProgramActivity, RefObjectClass
 from django.db.models import F, Sum
 
 
-# Model Objects
+# Model Objects added white spaces
 class FinancialAccountsByAwards(models.Model):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.DO_NOTHING)
@@ -39,10 +39,10 @@ class FinancialAccountsByAwards(models.Model):
     obligations_delivered_orders_unpaid_total_cpe = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     gross_outlays_undelivered_orders_prepaid_total_fyb = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     gross_outlays_undelivered_orders_prepaid_total_cpe = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
-    gross_outlays_delivered_orders_paid_total_fyb = models.DecimalField(max_digits=21, decimal_places=0, blank=True,null=True)
+    gross_outlays_delivered_orders_paid_total_fyb = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     gross_outlay_amount_by_award_fyb = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     gross_outlay_amount_by_award_cpe = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
-    obligations_incurred_total_by_award_cpe = models.DecimalField(max_digits=21, decimal_places=0, blank=True,null=True)
+    obligations_incurred_total_by_award_cpe = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
