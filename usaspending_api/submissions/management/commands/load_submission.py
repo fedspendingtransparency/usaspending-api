@@ -291,7 +291,21 @@ class Command(BaseCommand):
         # self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
         for row in procurement_data:
-            pass
+            # Yes, I could use Q objects here but for maintainability I broke it out
+            award = Award.objects.filter(piid=row['parent_award_id']).first()
+            if award is None:
+                award = Award.objects.filter(fain=row['parent_award_id']).first()
+            if award is None:
+                award = Award.objects.filter(uri=row['parent_award_id']).first()
+            if award is None:
+                self.logger.error('Could not find an award object with a matching identifier')
+                continue
+
+            procurement_value_map = {
+                "award": award
+            }
+
+            procurement = load_data_into_model(Procurement(), row, value_map=procurement_value_map, save=True)
 
 
 # Loads data into a model instance
@@ -358,6 +372,8 @@ def format_date(date):
 
 
 def store_value(model_instance_or_dict, field, value):
+    if value is None:
+        return
     # print('Loading ' + str(field) + ' with ' + str(value))
     if isinstance(model_instance_or_dict, dict):
         model_instance_or_dict[field] = value
