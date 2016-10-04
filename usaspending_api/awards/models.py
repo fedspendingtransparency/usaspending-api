@@ -114,7 +114,8 @@ class Award(models.Model):
     # vendorname
     recipient = models.ForeignKey(LegalEntity, null=True)
     description = models.CharField(max_length=255, null=True)
-    period_of_performance_star = models.DateField(null=True)
+    period_of_performance_start_date = models.DateField(null=True)
+    period_of_performance_current_end_date = models.DateField(null=True)
     place_of_performance = models.ForeignKey(Location, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
