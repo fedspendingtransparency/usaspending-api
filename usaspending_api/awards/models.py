@@ -130,7 +130,7 @@ class Award(models.Model):
 
     def __str__(self):
         # define a string representation of an award object
-        return '%s #%s' % (self.get_type_display(), self.award_identifier)
+        return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
 
     def __get_latest_submission(self):
         return self.actions.all().order_by('-action_date').first()
