@@ -13,13 +13,11 @@ class TreasuryAppropriationAccount(models.Model):
     availability_type_code = models.CharField(max_length=1, blank=True, null=True)
     main_account_code = models.CharField(max_length=4)
     sub_account_code = models.CharField(max_length=3)
-    drv_approp_avail_pd_start_date = models.DateField(blank=True, null=True)
-    drv_approp_avail_pd_end_date = models.DateField(blank=True, null=True)
-    drv_approp_account_exp_status = models.CharField(max_length=10, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    drv_appropriation_availability_period_start_date = models.DateField(blank=True, null=True)
+    drv_appropriation_availability_period_end_date = models.DateField(blank=True, null=True)
+    drv_appropriation_account_expired_status = models.CharField(max_length=10, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
@@ -44,18 +42,16 @@ class AppropriationAccountBalances(models.Model):
     unobligated_balance_cpe = models.DecimalField(max_digits=21, decimal_places=0)
     status_of_budgetary_resources_total_cpe = models.DecimalField(max_digits=21, decimal_places=0)
     obligations_incurred_total_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=0)
-    drv_approp_avail_pd_start_date = models.DateField(blank=True, null=True)
-    drv_approp_avail_pd_end_date = models.DateField(blank=True, null=True)
-    drv_approp_account_exp_status = models.CharField(max_length=10, blank=True, null=True)
+    drv_appropriation_availability_period_start_date = models.DateField(blank=True, null=True)
+    drv_appropriation_availability_period_end_date = models.DateField(blank=True, null=True)
+    drv_appropriation_account_expired_status = models.CharField(max_length=10, blank=True, null=True)
     tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
     drv_obligations_unpaid_amount = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     drv_other_obligated_amount = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
