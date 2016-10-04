@@ -65,7 +65,7 @@ class FinancialAccountsByAwards(models.Model):
 class FinancialAccountsByAwardsTransactionObligations(models.Model):
     financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)
     financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE)
-    transaction_obligated_amou = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
+    transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
