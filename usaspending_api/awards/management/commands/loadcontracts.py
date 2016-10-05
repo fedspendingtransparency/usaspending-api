@@ -26,7 +26,7 @@ class Command(BaseCommand):
                     # right now awards get overwritten -- this needs to be updated after table
                     # structure more finalized
                     mod, created = Procurement.objects.get_or_create(piid=row['piid'],
-                                                                     award_modification_amendme=row['modnumber'],
+                                                                     award_modification_amendment_number=row['modnumber'],
                                                                      award=award)
 
                     recipient, created = LegalEntity.objects.get_or_create(awardee_or_recipient_legal=row['dunsnumber'])
