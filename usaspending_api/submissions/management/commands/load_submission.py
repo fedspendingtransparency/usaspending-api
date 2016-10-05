@@ -3,6 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import json, DjangoJSONEncoder
 from django.db import connections
 from django.utils import timezone
+from django.conf import settings
 from datetime import datetime
 import logging
 import django
@@ -275,7 +276,8 @@ class Command(BaseCommand):
             }
 
             award_value_map = {
-                "period_of_performance_star": format_date(row['period_of_performance_star']),
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "place_of_performance": pop_location,
                 "date_signed": format_date(row['action_date']),
                 "latest_submission": submission_attributes,
@@ -349,16 +351,29 @@ def load_data_into_model(model_instance, data, **kwargs):
         mod = {}
 
     for field in fields:
+        broker_field = field
+        # If our field is the 'long form' field, we need to get what it maps to
+        # in the broker so we can map the data properly
+        if broker_field in settings.LONG_TO_TERSE_LABELS:
+            broker_field = settings.LONG_TO_TERSE_LABELS[broker_field]
         sts = False
         if value_map:
-            if field in value_map:
+            if broker_field in value_map:
+                store_value(mod, field, value_map[broker_field])
+                sts = True
+            elif field in value_map:
                 store_value(mod, field, value_map[field])
                 sts = True
         if field_map and not sts:
-            if field in field_map:
+            if broker_field in field_map:
+                store_value(mod, field, data[field_map[broker_field]])
+                sts = True
+            elif field in field_map:
                 store_value(mod, field, data[field_map[field]])
                 sts = True
-        if field in data and not sts:
+        if broker_field in data and not sts:
+            store_value(mod, field, data[broker_field])
+        elif field in data and not sts:
             store_value(mod, field, data[field])
 
     if save:
