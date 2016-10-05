@@ -13,6 +13,7 @@ from model_mommy import mommy
 
 class LoadSubmissionTest(TestCase):
     def setUp(self):
+        Procurement.objects.all().delete()
         SubmissionAttributes.objects.all().delete()
         SubmissionProcess.objects.all().delete()
         TreasuryAppropriationAccount.objects.all().delete()
@@ -41,3 +42,4 @@ class LoadSubmissionTest(TestCase):
         self.assertEqual(Location.objects.all().count(), 2)
         self.assertEqual(LegalEntity.objects.all().count(), 1)
         self.assertEqual(Award.objects.all().count(), 1)
+        self.assertEqual(Procurement.objects.all().count(), 1)
