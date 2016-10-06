@@ -4,6 +4,7 @@ from usaspending_api.references.models import RefProgramActivity
 from usaspending_api.references.models import RefObjectClassCode
 from usaspending_api.submissions.models import SubmissionAttributes
 
+
 class FinancialAccountsByProgramActivityObjectClass(models.Model):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity_name = models.CharField(max_length=164)
