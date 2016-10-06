@@ -40,7 +40,7 @@ class Command(BaseCommand):
 
                     agency.save()
 
-                    #self.logger.log(20, "loaded %s" % agency)
+                    # self.logger.log(20, "loaded %s" % agency)
 
         except IOError:
             self.logger.log("Could not open file to load from")
