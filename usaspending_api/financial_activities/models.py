@@ -2,12 +2,13 @@ from django.db import models
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import RefProgramActivity
 from usaspending_api.references.models import RefObjectClassCode
-
+from usaspending_api.submissions.models import SubmissionAttributes
 
 class FinancialAccountsByProgramActivityObjectClass(models.Model):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity_name = models.CharField(max_length=164)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code')
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, db_column='object_class')
     by_direct_reimbursable_funding_source = models.CharField(max_length=1)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)

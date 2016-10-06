@@ -9,6 +9,7 @@ from django.db.models import F, Sum
 class FinancialAccountsByAwards(models.Model):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, null=True, db_column='object_class')
@@ -65,6 +66,7 @@ class FinancialAccountsByAwards(models.Model):
 class FinancialAccountsByAwardsTransactionObligations(models.Model):
     financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)
     financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE)
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=0, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
@@ -151,6 +153,7 @@ class Award(models.Model):
 
 class AwardAction(models.Model):
     award = models.ForeignKey(Award, related_name="actions")
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     action_date = models.CharField(max_length=10)
     action_type = models.CharField(max_length=1, blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
@@ -172,6 +175,7 @@ class AwardAction(models.Model):
 class Procurement(AwardAction):
     procurement_id = models.AutoField(primary_key=True)
     award = models.ForeignKey(Award, models.DO_NOTHING)
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     piid = models.CharField(max_length=50, blank=True)
     parent_award_id = models.CharField(max_length=50, blank=True, null=True)
     cost_or_pricing_data = models.CharField(max_length=1, blank=True, null=True)
@@ -253,6 +257,7 @@ class Procurement(AwardAction):
 class FinancialAssistanceAward(AwardAction):
     financial_assistance_award_id = models.AutoField(primary_key=True)
     award = models.ForeignKey(Award, models.DO_NOTHING)
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
     cfda_number = models.CharField(max_length=7, blank=True, null=True)
