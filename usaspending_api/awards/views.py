@@ -32,7 +32,7 @@ class AwardListSummary(APIView):
     """
     List all awards (summary level)
     """
-    def get(self, request, uri=None, piid=None, fain=None, fy=None, agency=None, format=None):
+    def get(self, request, uri=None, piid=None, fain=None, format=None):
         # Because these are all GET requests and mutually exclusive, we chain an
         # if statement here. We could use some nifty Q object nonsense but for
         # clarity we skip that here. For POST filters we will want to set that up
@@ -43,12 +43,20 @@ class AwardListSummary(APIView):
             awards = Award.objects.filter(piid=piid)
         elif fain:
             awards = Award.objects.filter(fain=fain)
-        elif fy:
-            awards = Award.objects.filter(date_signed__year=fy)
-        elif agency:
-            awards = Award.objects.filter(Q(awarding_agency__fpds_code=agency) | Q(funding_agency__fpds_code=agency))
         else:
             awards = Award.objects.all()
+
+        agency = request.GET.get('agency')
+        fy = request.GET.get('fy')
+        query = Q()
+
+        if agency:
+            query = Q(awarding_agency__fpds_code=agency)
+            query |= Q(funding_agency__fpds_code=agency)
+        if fy:
+            query &= Q(date_signed__year=fy)
+
+        awards = awards.filter(query)
 
         serializer = AwardSerializer(awards, many=True)
         return Response(serializer.data)
