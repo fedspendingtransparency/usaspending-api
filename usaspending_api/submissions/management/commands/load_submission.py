@@ -128,8 +128,8 @@ class Command(BaseCommand):
 
                 field_map = {
                     'tas_rendering_label': 'tas',
-                    'allocation_transfer_agency_id': 'allocation_transfer_agency',
-                    'responsible_agency_id': 'agency_identifier'
+                    'allocation_transfer_agency__cgac_code': 'allocation_transfer_agency',
+                    'responsible_agency__cgac_code': 'agency_identifier'
                 }
 
                 value_map = {}
@@ -269,14 +269,14 @@ class Command(BaseCommand):
             # Create the base award, create actions, then tally the totals for the award
             award_field_map = {
                 "description": "award_description",
+                "awarding_agency__cgac_code": "awarding_agency_code",
+                "funding_agency__cgac_code": "functing_agency_code",
                 "type": "assistance_type"
             }
 
             award_value_map = {
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                "awarding_agency": Agency.objects.filter(pk=row["awarding_agency_code"]).first(),
-                "funding_agency": Agency.objects.filter(pk=row["funding_agency_code"]).first(),
                 "place_of_performance": pop_location,
                 "date_signed": format_date(row['action_date']),
                 "latest_submission": submission_attributes,
