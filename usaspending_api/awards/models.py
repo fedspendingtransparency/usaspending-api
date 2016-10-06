@@ -217,7 +217,7 @@ class Procurement(AwardAction):
     other_statutory_authority = models.CharField(max_length=1, blank=True, null=True)
     performance_based_service_acquisition = models.CharField(max_length=1, blank=True, null=True)
     place_of_manufacture = models.CharField(max_length=1, blank=True, null=True)
-    price_evaluation_adjustment_preference_percent_difference = models.CharField(max_length=2, blank=True, null=True)
+    price_evaluation_adjustment_preference_percent_difference = models.DecimalField(max_digits=2, decimal_places=2, blank=True, null=True)
     product_or_service_code = models.CharField(max_length=4, blank=True, null=True)
     program_acronym = models.CharField(max_length=25, blank=True, null=True)
     other_than_full_and_open_competition = models.CharField(max_length=3, blank=True, null=True)

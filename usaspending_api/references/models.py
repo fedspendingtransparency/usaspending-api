@@ -48,7 +48,8 @@ class RefCountryCode(models.Model):
 
 class Agency(models.Model):
     # id = models.AutoField(primary_key=True)
-    id = models.AutoField(primary_key=True)  # CGAC code
+    id = models.AutoField(primary_key=True)  # meaningless id
+    cgac_code = models.CharField(max_length=3, blank=True, null=True)
     # agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
     name = models.CharField(max_length=150, blank=True, null=True)
