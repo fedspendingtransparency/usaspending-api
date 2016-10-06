@@ -128,8 +128,8 @@ class Command(BaseCommand):
 
                 field_map = {
                     'tas_rendering_label': 'tas',
-                    'allocation_transfer_agency_id': 'allocation_transfer_agency',
-                    'responsible_agency_id': 'agency_identifier'
+                    'allocation_transfer_agency__cgac_code': 'allocation_transfer_agency',
+                    'responsible_agency__cgac_code': 'agency_identifier'
                 }
 
                 value_map = {}
@@ -268,10 +268,9 @@ class Command(BaseCommand):
 
             # Create the base award, create actions, then tally the totals for the award
             award_field_map = {
-                # Adding _id on to create the FK
-                "awarding_agency_id": "awarding_agency_code",
-                "funding_agency_id": "funding_agency_code",
                 "description": "award_description",
+                "awarding_agency__cgac_code": "awarding_agency_code",
+                "funding_agency__cgac_code": "functing_agency_code",
                 "type": "assistance_type"
             }
 
@@ -300,7 +299,7 @@ class Command(BaseCommand):
             if award is None:
                 award = Award.objects.filter(uri=row['parent_award_id']).first()
             if award is None:
-                self.logger.error('Could not find an award object with a matching identifier')
+                # self.logger.error('Could not find an award object with a matching identifier')
                 continue
 
             procurement_value_map = {
