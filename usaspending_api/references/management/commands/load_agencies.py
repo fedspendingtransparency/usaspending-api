@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from usaspending_api.references.models import Agency, SubtierAgency
+from usaspending_api.references.models import Agency
 import os
 import csv
 import logging
@@ -22,22 +22,25 @@ class Command(BaseCommand):
                 reader = csv.DictReader(csvfile)
                 for row in reader:
                     agency, created = Agency.objects.get_or_create(
-                                    cgac_code=row['CGAC AGENCY CODE'])
+                                    cgac_code=row['CGAC AGENCY CODE'],
+                                    fpds_code=row['FPDS DEPARTMENT ID'],
+                                    subtier_code=row['SUB TIER CODE'])
 
                     agency.name = row['AGENCY NAME']
-                    agency.fpds_code = row['FPDS DEPARTMENT ID']
+
+                    if agency.subtier_code != agency.fpds_code:
+                        # it's not department level
+                        department = Agency.objects.get(
+                                    cgac_code=agency.cgac_code,
+                                    fpds_code=agency.fpds_code,
+                                    subtier_code=agency.fpds_code)
+
+                        agency.department = department
+                        agency.name = row['SUB TIER NAME']
+
                     agency.save()
 
                     self.logger.log(20, "loaded %s" % agency)
-
-                    subtier, created = SubtierAgency.objects.get_or_create(
-                                    code=row['SUB TIER CODE'],
-                                    name=row['SUB TIER NAME'])
-
-                    subtier.agency = agency
-                    subtier.save()
-
-                    self.logger.log(20, "loaded %s" % subtier)
 
         except IOError:
             self.logger.log("Could not open file to load from")
