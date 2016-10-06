@@ -12,10 +12,8 @@ class RefCityCountyCode(models.Model):
     valid_begin_date = models.DateTimeField(blank=True, null=True)
     valid_end_date = models.DateTimeField(blank=True, null=True)
     valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
@@ -28,14 +26,13 @@ class RefCountryCode(models.Model):
     valid_begin_date = models.DateTimeField(blank=True, null=True)
     valid_end_date = models.DateTimeField(blank=True, null=True)
     valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
         db_table = 'ref_country_code'
+
 
 """{
     'agency_name': 'name',
@@ -85,6 +82,7 @@ class Location(models.Model):
     location_address_line3 = models.CharField(max_length=55, blank=True, null=True)
     location_foreign_location_description = models.CharField(max_length=100, blank=True, null=True)
     location_zip4 = models.CharField(max_length=10, blank=True, null=True)
+    location_zip_4a = models.CharField(max_length=10, blank=True, null=True)
     location_congressional_code = models.CharField(max_length=2, blank=True, null=True)
     location_performance_code = models.CharField(max_length=9, blank=True, null=True)
     location_zip_last4 = models.CharField(max_length=4, blank=True, null=True)
@@ -94,8 +92,35 @@ class Location(models.Model):
     location_foreign_city_name = models.CharField(max_length=40, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        # Let's make almost every column unique together so we don't have to
+        # perform heavy lifting on checking if a location already exists or not
+        unique_together = ("location_country_code",
+                           "location_country_name",
+                           "location_state_code",
+                           "location_state_name",
+                           "location_state_text",
+                           "location_city_name",
+                           "location_city_code",
+                           "location_county_name",
+                           "location_county_code",
+                           "location_address_line1",
+                           "location_address_line2",
+                           "location_address_line3",
+                           "location_foreign_location_description",
+                           "location_zip4",
+                           "location_congressional_code",
+                           "location_performance_code",
+                           "location_zip_last4",
+                           "location_zip5",
+                           "location_foreign_postal_code",
+                           "location_foreign_province",
+                           "location_foreign_city_name",
+                           "reporting_period_start",
+                           "reporting_period_end")
 
 
 class LegalEntity(models.Model):
@@ -202,8 +227,12 @@ class LegalEntity(models.Model):
     division_number = models.CharField(max_length=100, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = 'legal_entity'
 
 
 # Reference tables
@@ -215,10 +244,8 @@ class RefObjectClassCode(models.Model):
     valid_begin_date = models.DateTimeField(blank=True, null=True)
     valid_end_date = models.DateTimeField(blank=True, null=True)
     valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
@@ -239,12 +266,10 @@ class RefProgramActivity(models.Model):
     valid_begin_date = models.DateTimeField(blank=True, null=True)
     valid_end_date = models.DateTimeField(blank=True, null=True)
     valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(blank=True, null=True)
-    update_date = models.DateTimeField(blank=True, null=True)
-    create_user_id = models.CharField(max_length=50, blank=True, null=True)
-    update_user_id = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
         db_table = 'ref_program_activity'
-        unique_together = (('program_activity_code', 'program_activity_name', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
+        unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
