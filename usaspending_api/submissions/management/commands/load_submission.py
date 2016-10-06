@@ -268,9 +268,6 @@ class Command(BaseCommand):
 
             # Create the base award, create actions, then tally the totals for the award
             award_field_map = {
-                # Adding _id on to create the FK
-                "awarding_agency_id": "awarding_agency_code",
-                "funding_agency_id": "funding_agency_code",
                 "description": "award_description",
                 "type": "assistance_type"
             }
@@ -278,6 +275,8 @@ class Command(BaseCommand):
             award_value_map = {
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "awarding_agency": Agency.objects.filter(pk=row["awarding_agency_code"]).first(),
+                "funding_agency": Agency.objects.filter(pk=row["funding_agency_code"]).first(),
                 "place_of_performance": pop_location,
                 "date_signed": format_date(row['action_date']),
                 "latest_submission": submission_attributes,
@@ -300,7 +299,7 @@ class Command(BaseCommand):
             if award is None:
                 award = Award.objects.filter(uri=row['parent_award_id']).first()
             if award is None:
-                self.logger.error('Could not find an award object with a matching identifier')
+                # self.logger.error('Could not find an award object with a matching identifier')
                 continue
 
             procurement_value_map = {

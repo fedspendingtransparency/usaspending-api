@@ -10,9 +10,11 @@ award_id_patterns = [
 
 award_summary_id_patterns = [
     url(r'^$', views.AwardListSummary.as_view()),
-    url(r'^uri/(?P<uri>\w+)', views.AwardListSummary.as_view()),
-    url(r'^fain/(?P<fain>\w+)', views.AwardListSummary.as_view()),
-    url(r'^piid/(?P<piid>\w+)', views.AwardListSummary.as_view())
+    url(r'^uri/(?P<uri>.+)', views.AwardListSummary.as_view()),
+    url(r'^fain/(?P<fain>.+)', views.AwardListSummary.as_view()),
+    url(r'^piid/(?P<piid>.+)', views.AwardListSummary.as_view()),
+    url(r'^fy/(?P<fy>[0-9]{4})', views.AwardListSummary.as_view()),
+    url(r'^agency/(?P<agency>.{4})', views.AwardListSummary.as_view())
 ]
 
 urlpatterns = [
