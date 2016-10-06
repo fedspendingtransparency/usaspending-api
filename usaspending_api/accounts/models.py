@@ -1,5 +1,5 @@
 from django.db import models
-from usaspending_api.submissions.models import SubmissionProcess, SubmissionAttributes
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 # Table #3 - Treasury Appropriation Accounts.

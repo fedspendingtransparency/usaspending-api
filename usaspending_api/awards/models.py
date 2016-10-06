@@ -174,7 +174,7 @@ class AwardAction(models.Model):
 # BD 09/26/2016 Added rec_flag data, parent_award_awarding_agency_code, current_aggregated_total_v, current_total_value_adjust,potential_idv_total_est, potential_aggregated_idv_t, potential_aggregated_total, and potential_total_value_adju data elements to the procurement table
 class Procurement(AwardAction):
     procurement_id = models.AutoField(primary_key=True)
-    award = models.ForeignKey(Award, models.DO_NOTHING)
+    award = models.ForeignKey(Award, models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     piid = models.CharField(max_length=50, blank=True)
     parent_award_id = models.CharField(max_length=50, blank=True, null=True)
@@ -256,7 +256,7 @@ class Procurement(AwardAction):
 
 class FinancialAssistanceAward(AwardAction):
     financial_assistance_award_id = models.AutoField(primary_key=True)
-    award = models.ForeignKey(Award, models.DO_NOTHING)
+    award = models.ForeignKey(Award, models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
