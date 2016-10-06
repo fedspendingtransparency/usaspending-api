@@ -14,4 +14,8 @@ class SubmissionAttributesList(APIView):
     def get(self, request, format=None):
         subs = SubmissionAttributes.objects.all()
         serializer = SubmissionAttributesSerializer(subs, many=True)
-        return Response(serializer.data)
+        response_object = {
+            "count": subs.count(),
+            "results": serializer.data
+        }
+        return Response(response_object)

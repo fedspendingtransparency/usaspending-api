@@ -16,7 +16,11 @@ class TreasuryAppropriationAccountList(APIView):
     def get(self, request, format=None):
         taa = TreasuryAppropriationAccount.objects.all()
         serializer = TreasuryAppropriationAccountSerializer(taa, many=True)
-        return Response(serializer.data)
+        response_object = {
+            "count": taa.count(),
+            "results": serializer.data
+        }
+        return Response(response_object)
 
 
 class AppropriationAccountBalancesList(APIView):
@@ -27,4 +31,8 @@ class AppropriationAccountBalancesList(APIView):
     def get(self, request, format=None):
         taa = AppropriationAccountBalances.objects.all()
         serializer = AppropriationAccountBalancesSerializer(taa, many=True)
-        return Response(serializer.data)
+        response_object = {
+            "count": taa.count(),
+            "results": serializer.data
+        }
+        return Response(response_object)
