@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Q
+from django.db.models import Q, Sum
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -24,7 +24,11 @@ class AwardList(APIView):
             awards = FinancialAccountsByAwardsTransactionObligations.objects.all()
 
         serializer = FinancialAccountsByAwardsTransactionObligationsSerializer(awards, many=True)
-        return Response(serializer.data)
+        response_object = {
+            "count": awards.count(),
+            "results": serializer.data
+        }
+        return Response(response_object)
 
 
 class AwardListSummary(APIView):
@@ -59,4 +63,9 @@ class AwardListSummary(APIView):
         awards = awards.filter(query)
 
         serializer = AwardSerializer(awards, many=True)
-        return Response(serializer.data)
+        response_object = {
+            "count": awards.count(),
+            "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            "results": serializer.data
+        }
+        return Response(response_object)

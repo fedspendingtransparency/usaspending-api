@@ -14,4 +14,8 @@ class FinancialAccountsByProgramActivityObjectClassList(APIView):
     def get(self, request, format=None):
         subs = FinancialAccountsByProgramActivityObjectClass.objects.all()
         serializer = FinancialAccountsByProgramActivityObjectClassSerializer(subs, many=True)
-        return Response(serializer.data)
+        response_object = {
+            "count": subs.count(),
+            "results": serializer.data
+        }
+        return Response(response_object)
