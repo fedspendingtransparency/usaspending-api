@@ -52,6 +52,8 @@ class Agency(models.Model):
     cgac_code = models.CharField(max_length=3, blank=True, null=True)
     # agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
+    # will equal fpds_code if a top level department
+    subtier_code = models.CharField(max_length=4, blank=True, null=True)
     name = models.CharField(max_length=150, blank=True, null=True)
     department = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sub_departments')
     parent_agency = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sub_agencies')
@@ -64,6 +66,12 @@ class Agency(models.Model):
     class Meta:
         managed = True
         db_table = 'agency'
+
+    def __str__(self):
+        if self.department:
+            return "%s - %s" % (self.department.name or '', self.name)
+        else:
+            return "%s" % (self.name)
 
 
 class Location(models.Model):

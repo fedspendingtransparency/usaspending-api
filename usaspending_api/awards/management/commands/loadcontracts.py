@@ -35,7 +35,7 @@ class Command(BaseCommand):
                     }
                     recipient.save()
 
-                    awarding_agency = Agency.objects.get(fpds_code=self.get_agency_code(row['maj_agency_cat']))
+                    awarding_agency = Agency.objects.get(subtier_code=self.get_agency_code(row['maj_agency_cat']))
 
                     updated_fields = {
                         'federal_action_obligation': row['dollarsobligated'],
