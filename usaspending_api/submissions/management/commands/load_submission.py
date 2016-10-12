@@ -128,13 +128,12 @@ class Command(BaseCommand):
 
                 field_map = {
                     'tas_rendering_label': 'tas',
+                    'submission_id': submission_attributes.submission_id,
                     'allocation_transfer_agency__cgac_code': 'allocation_transfer_agency',
                     'responsible_agency__cgac_code': 'agency_identifier'
                 }
 
-                value_map = {}
-
-                load_data_into_model(treasury_account, row, field_map=field_map, value_map=value_map, save=True)
+                load_data_into_model(treasury_account, row, field_map=field_map, save=True)
 
             # Now that we have the account, we can load the appropriation balances
             # TODO: Figure out how we want to determine what row is overriden by what row
@@ -146,6 +145,7 @@ class Command(BaseCommand):
             value_map = {
                 'treasury_account_identifier': treasury_account,
                 'submission_process': submission_process,
+                'submission': submission_attributes
             }
 
             field_map = {
@@ -169,6 +169,7 @@ class Command(BaseCommand):
             financial_by_prg_act_obj_cls = FinancialAccountsByProgramActivityObjectClass()
 
             value_map = {
+                'submission': submission_attributes,
                 'appropriation_account_balances': account_balances,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
                 'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
@@ -191,6 +192,7 @@ class Command(BaseCommand):
             award_financial_data = FinancialAccountsByAwards()
 
             value_map = {
+                'submission': submission_attributes,
                 'appropriation_account_balances': account_balances,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
                 'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
@@ -202,6 +204,7 @@ class Command(BaseCommand):
 
             value_map = {
                 'financial_accounts_by_awards': award_financial_data,
+                'submission': submission_attributes
             }
 
             load_data_into_model(afd_trans, row, value_map=value_map, save=True)
@@ -303,7 +306,8 @@ class Command(BaseCommand):
                 continue
 
             procurement_value_map = {
-                "award": award
+                "award": award,
+                'submission': submission_attributes
             }
 
             procurement = load_data_into_model(Procurement(), row, value_map=procurement_value_map, save=True)
