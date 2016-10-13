@@ -23,6 +23,7 @@ class Command(BaseCommand):
             with open(options['file'][0]) as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
+                    # TODO: We'll need to get a proper submission ID to tie these to in the future
                     submission = mommy.make('submissions.SubmissionAttributes')
                     # try:
                     award, created = Award.objects.get_or_create(piid=row['piid'], type='C')

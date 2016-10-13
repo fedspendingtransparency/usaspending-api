@@ -140,9 +140,9 @@ class Award(models.Model):
 
     def update_from_mod(self, mod):
         if self.type == 'C':
+            self.date_signed = mod.action_date
             # only contract loading/summing supported right now
-            self.total_obligation = Procurement.objects.filter(piid=self.piid)\
-                                .aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
+            self.total_obligation = Procurement.objects.filter(piid=self.piid).aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
             self.save()
 
     latest_award_transaction = property(__get_latest_submission)  # models.ForeignKey('AwardAction')
