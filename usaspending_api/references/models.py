@@ -81,7 +81,8 @@ class Location(models.Model):
     location_state_code = models.CharField(max_length=2, blank=True, null=True)
     location_state_name = models.CharField(max_length=50, blank=True, null=True)
     location_state_text = models.CharField(max_length=100, blank=True, null=True)
-    location_city_name = models.CharField(max_length=40, blank=True, null=True)
+    # Changed by KPJ to 100 from 40, on 20161013
+    location_city_name = models.CharField(max_length=100, blank=True, null=True)
     location_city_code = models.CharField(max_length=5, blank=True, null=True)
     location_county_name = models.CharField(max_length=40, blank=True, null=True)
     location_county_code = models.CharField(max_length=3, blank=True, null=True)
