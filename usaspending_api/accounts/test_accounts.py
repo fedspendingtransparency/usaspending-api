@@ -16,3 +16,12 @@ class AccountsTest(TestCase):
         resp = self.client.get('/api/v1/accounts/')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data), 2)
+
+    @pytest.mark.django_db
+    def test_tas_list(self):
+        """
+        Ensure the accounts endpoint lists the right number of entities
+        """
+        resp = self.client.get('/api/v1/accounts/tas/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 2)

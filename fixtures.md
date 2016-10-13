@@ -9,3 +9,5 @@ Use the following commands to load default data into appropriate models.
 `python manage.py loaddata usaspending_api/references/fixtures/agencies.json`
 
 `python manage.py loaddata usaspending_api/references/fixtures/country_codes.json`
+
+`python manage.py loadcontracts usaspending_api/data/usaspending_treasury_contracts.csv`
