@@ -115,7 +115,8 @@ class Award(models.Model):
     date_signed = models.DateField(null=True)
     # vendorname
     recipient = models.ForeignKey(LegalEntity, null=True)
-    description = models.CharField(max_length=255, null=True)
+    # Changed by KPJ to 4000 from 255, on 20161013
+    description = models.CharField(max_length=4000, null=True)
     period_of_performance_start_date = models.DateField(null=True)
     period_of_performance_current_end_date = models.DateField(null=True)
     place_of_performance = models.ForeignKey(Location, null=True)
@@ -160,7 +161,8 @@ class AwardAction(models.Model):
     modification_number = models.CharField(max_length=50, blank=True, null=True)
     awarding_agency = models.ForeignKey(Agency, null=True)
     recipient = models.ForeignKey(LegalEntity, null=True)
-    award_description = models.CharField(max_length=255, null=True)
+    # Changed by KPJ to 4000 from 255, on 20161013
+    award_description = models.CharField(max_length=4000, null=True)
     drv_award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_potential_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -239,7 +241,8 @@ class Procurement(AwardAction):
     epa_designated_product = models.CharField(max_length=1, blank=True, null=True)
     walsh_healey_act = models.CharField(max_length=1, blank=True, null=True)
     transaction_number = models.CharField(max_length=6, blank=True, null=True)
-    referenced_idv_modification_number = models.CharField(max_length=1, blank=True, null=True)
+    # Changed by KPJ to 25 from 1, on 20161013
+    referenced_idv_modification_number = models.CharField(max_length=25, blank=True, null=True)
     rec_flag = models.CharField(max_length=1, blank=True, null=True)
     drv_parent_award_awarding_agency_code = models.CharField(max_length=4, blank=True, null=True)
     drv_current_aggregated_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
