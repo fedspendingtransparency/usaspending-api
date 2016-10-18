@@ -153,7 +153,7 @@ class Award(models.Model):
 
 
 class AwardAction(models.Model):
-    award = models.ForeignKey(Award, related_name="actions")
+    award = models.ForeignKey(Award, models.CASCADE, related_name="actions")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     action_date = models.CharField(max_length=10)
     action_type = models.CharField(max_length=1, blank=True, null=True)
@@ -264,7 +264,7 @@ class FinancialAssistanceAward(AwardAction):
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
     cfda_number = models.CharField(max_length=7, blank=True, null=True)
-    cfda_title = models.CharField(max_length=100, blank=True, null=True)
+    cfda_title = models.CharField(max_length=250, blank=True, null=True)
     business_funds_indicator = models.CharField(max_length=3)
     non_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     total_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)

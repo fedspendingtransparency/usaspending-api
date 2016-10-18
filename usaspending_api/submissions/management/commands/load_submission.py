@@ -49,8 +49,8 @@ class Command(BaseCommand):
                 db_conn = connections['data_broker']
                 db_cursor = db_conn.cursor()
             except Exception as err:
-                self.logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
-                self.logger.critical(print(err))
+                # self.logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                # self.logger.critical(print(err))
                 return
         else:
             options['delete'] = True
@@ -64,10 +64,10 @@ class Command(BaseCommand):
         submission_data = dictfetchall(db_cursor)
 
         if len(submission_data) == 0:
-            self.logger.error('Could not find submission with id ' + str(submission_id))
+            # self.logger.error('Could not find submission with id ' + str(submission_id))
             return
         elif len(submission_data) > 1:
-            self.logger.error('Found multiple submissions with id ' + str(submission_id))
+            # self.logger.error('Found multiple submissions with id ' + str(submission_id))
             return
 
         # We have a single submission, which is what we want
@@ -288,6 +288,15 @@ class Command(BaseCommand):
 
             award = load_data_into_model(Award(), row, field_map=award_field_map, value_map=award_value_map, as_dict=True)
             award, created = Award.objects.get_or_create(**award)
+
+            fad_value_map = {
+                "award": award,
+                "submission": submission_attributes
+
+            }
+
+            financial_assistance_data = load_data_into_model(FinancialAssistanceAward(), row, value_map=fad_value_map, as_dict=True)
+            fad, created = FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
 
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
