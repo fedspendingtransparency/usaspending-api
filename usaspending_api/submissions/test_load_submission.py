@@ -24,6 +24,7 @@ class LoadSubmissionTest(TestCase):
         FinancialAccountsByProgramActivityObjectClass.objects.all().delete()
         FinancialAccountsByAwards.objects.all().delete()
         FinancialAccountsByAwardsTransactionObligations.objects.all().delete()
+        FinancialAssistanceAward.objects.all().delete()
         Location.objects.all().delete()
         LegalEntity.objects.all().delete()
         Award.objects.all().delete()
@@ -46,3 +47,4 @@ class LoadSubmissionTest(TestCase):
         self.assertEqual(LegalEntity.objects.all().count(), 1)
         self.assertEqual(Award.objects.all().count(), 1)
         self.assertEqual(Procurement.objects.all().count(), 1)
+        self.assertEqual(FinancialAssistanceAward.objects.all().count(), 1)
