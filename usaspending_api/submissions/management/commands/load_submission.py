@@ -296,7 +296,11 @@ class Command(BaseCommand):
             }
 
             financial_assistance_data = load_data_into_model(FinancialAssistanceAward(), row, value_map=fad_value_map, as_dict=True)
-            fad, created = FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
+            fad = FinancialAssistanceAward.objects.filter(award=award, modification_number=row['award_modification_amendme']).first()
+            if not fad:
+                fad, created = FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
+            else:
+                FinancialAssistanceAward.objects.filter(pk=fad.pk).update(**financial_assistance_data)
 
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
