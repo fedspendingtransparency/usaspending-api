@@ -284,6 +284,7 @@ class RefProgramActivity(models.Model):
         unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
 
 class RefCFDAProgramInfo(models.Model):
+    program_number= models.TextField(primary_key = True)
     program_title= models.TextField(blank=True, null=True)
     popular_name= models.TextField(blank=True, null=True)
     federal_agency= models.TextField(blank=True, null=True)
