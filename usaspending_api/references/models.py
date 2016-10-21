@@ -283,6 +283,7 @@ class RefProgramActivity(models.Model):
         db_table = 'ref_program_activity'
         unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
 
+
 class RefCFDAProgramInfo(models.Model):
     program_number = models.CharField(primary_key=True, max_length=7)
     program_title = models.TextField(blank=True, null=True)
