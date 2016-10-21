@@ -294,7 +294,6 @@ class RefCFDAProgramInfo(models.Model):
     uses_and_use_restrictions= models.TextField(blank=True, null=True)
     applicant_eligibility= models.TextField(blank=True, null=True)
     beneficiary_eligibility= models.TextField(blank=True, null=True)
-#    beneficiary_eligibility_1= models.TextField(blank=True, null=True)
     credentials_documentation= models.TextField(blank=True, null=True)
     pre_application_coordination= models.TextField(blank=True, null=True)
     application_procedures= models.TextField(blank=True, null=True)
