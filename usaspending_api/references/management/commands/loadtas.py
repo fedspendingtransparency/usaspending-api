@@ -5,6 +5,7 @@ import csv
 import logging
 import django
 
+
 class Command(BaseCommand):
 
     help = "Loads tas and agencies info from CARS list in \
