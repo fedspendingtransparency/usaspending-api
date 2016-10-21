@@ -7,7 +7,6 @@ import django
 
 class Command(BaseCommand):
     
-    
     help = "Loads tas and agencies info from CARS list in \
             the folder of this management command."
 
