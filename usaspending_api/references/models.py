@@ -331,3 +331,6 @@ class CFDAProgram(models.Model):
     class Meta:
         managed = True
         db_table = 'cfda_program'
+
+    def __str__(self):
+        return "%s" % (self.program_title)
