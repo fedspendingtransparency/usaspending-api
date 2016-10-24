@@ -16,7 +16,7 @@ class Command(BaseCommand):
 
         try:
             with open(os.path.join(django.conf.settings.BASE_DIR,
-                      'usaspending_api/references/management/commands/programs-full-usaspending16296.csv')) \
+                      'usaspending_api/references/management/commands/programs-full-usaspending16296.csv'), errors='backslashreplace') \
                       as csvfile:
 
                 reader = csv.DictReader(csvfile)
