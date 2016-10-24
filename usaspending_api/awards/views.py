@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q, Sum
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -62,10 +63,40 @@ class AwardListSummary(APIView):
 
         awards = awards.filter(query)
 
-        serializer = AwardSerializer(awards, many=True)
+        # In the future this should be refactored out to accept arbitrary QS and
+        # be reused in other views
+        limit = request.GET.get('limit')
+        page = request.GET.get('page')
+        if limit:
+            limit = int(limit)
+        else:
+            limit = 100
+
+        paginator = Paginator(awards, limit)
+
+        try:
+            paged_awards = paginator.page(page)
+        except PageNotAnInteger:
+            # Either no page or garbage page
+            paged_awards = paginator.page(1)
+            page = 1
+        except EmptyPage:
+            # Page is too far, give last page
+            paged_awards = paginator.page(paginator.num_pages)
+            page = paginator.num_pages
+
+        serializer = AwardSerializer(paged_awards, many=True)
         response_object = {
-            "count": awards.count(),
-            "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            "total_metadata": {
+                "count": awards.count(),
+                "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            },
+            "page_metadata": {
+                "page_number": paged_awards.number,
+                "page_max_length": limit,
+                "count": len(paged_awards),
+                "total_obligation_sum": paged_awards.object_list.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            },
             "results": serializer.data
         }
         return Response(response_object)
