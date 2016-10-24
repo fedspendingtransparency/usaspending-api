@@ -310,6 +310,8 @@ class CFDAProgram(models.Model):
     account_identification = models.TextField(blank=True, null=True)
     obligations = models.TextField(blank=True, null=True)
     range_and_average_of_financial_assistance = models.TextField(blank=True, null=True)
+    appeals = models.TextField(blank=True, null=True)
+    renewals = models.TextField(blank=True, null=True)
     program_accomplishments = models.TextField(blank=True, null=True)
     regulations_guidelines_and_literature = models.TextField(blank=True, null=True)
     regional_or_local_office = models.TextField(blank=True, null=True)
