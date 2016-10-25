@@ -87,24 +87,24 @@ class FilterGenerator():
     # Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range
     # Note that contains is always case insensitive
     def create_from_post(self, parameters):
-        return create_q_from_filter_list(parameters['filter_list'])
+        return self.create_q_from_filter_list(parameters.get('filters', []))
 
     def create_q_from_filter_list(self, filter_list, combine_method='AND'):
         q_object = Q()
         for filt in filter_list:
             if combine_method is 'AND':
-                q_object &= create_q_from_filter(filt)
+                q_object &= self.create_q_from_filter(filt)
             elif combine_method is 'OR':
-                q_object |= create_q_from_filter(filt)
+                q_object |= self.create_q_from_filter(filt)
         return q_object
 
     def create_q_from_filter(self, filt):
         if 'combine_method' in filt:
-            return create_q_from_filter_list(filt['filter_list'], filt['combine_method'])
+            return self.create_q_from_filter_list(filt['filters'], filt['combine_method'])
         else:
             q_kwargs = {}
             field = filt['field']
-            operation = FilterGenerator.operatiors[filt['operation']]
+            operation = FilterGenerator.operators[filt['operation']]
             value = filt['value']
 
             # It's unlikely anyone would specify and ignored parameter via post

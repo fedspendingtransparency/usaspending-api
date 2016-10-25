@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwardsTransactionObligations, Award
 from usaspending_api.awards.serializers import FinancialAccountsByAwardsTransactionObligationsSerializer, AwardSerializer
 from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator
+import json
 
 
 class AwardList(APIView):
@@ -33,6 +34,31 @@ class AwardList(APIView):
 
 
 class AwardListSummary(APIView):
+    def post(self, request, format=None):
+        fg = FilterGenerator()
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+        filters = fg.create_from_post(body)
+
+        awards = Award.objects.all().filter(filters)
+
+        paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=body)
+
+        serializer = AwardSerializer(paged_data, many=True)
+        response_object = {
+            "total_metadata": {
+                "count": awards.count(),
+                "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            },
+            "page_metadata": {
+                "page_number": paged_data.number,
+                "num_pages": paged_data.paginator.num_pages,
+                "count": len(paged_data),
+                "total_obligation_sum": paged_data.object_list.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            },
+            "results": serializer.data
+        }
+        return Response(response_object)
 
     """
     List all awards (summary level)
