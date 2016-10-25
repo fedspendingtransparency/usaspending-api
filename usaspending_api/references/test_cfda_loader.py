@@ -22,12 +22,12 @@ class CDFALoadTests(TestCase):
         Make sure an instance of a program number is properly created
         """
 
-        program_number = CFDAProgram.objects.get(program_number='98.012', program_title='USAID Development Partnerships for University Cooperation and Development)
+        program_number = CFDAProgram.objects.get(program_number='98.011', program_title='Global Development Alliance')
 
     def test_account_identification(self):
         """
         Make sure a account identication is properly mapped to program_number
         """
 
-        account_identification = CFDAProgram.objects.get(program_number='15.918', account_identification='14-1042-0-1-303.')
+        account_identification = CFDAProgram.objects.get(program_number='98.009', account_identification='12-2278-0-1-151.')
 #        assert(subtier.department == department)
