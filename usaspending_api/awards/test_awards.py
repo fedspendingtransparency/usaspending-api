@@ -36,4 +36,4 @@ class AwardTests(TestCase):
         self.assertEqual(self.client.get('/api/v1/awards/summary/fain/ABCD').status_code, 200)
         self.assertEqual(self.client.get('/api/v1/awards/summary/uri/ABCD').status_code, 200)
         self.assertEqual(self.client.get('/api/v1/awards/summary/piid/ABCD').status_code, 200)
-        self.assertEqual(self.client.get('/api/v1/awards/summary/?fy=2016&agency=3100').status_code, 200)
+        self.assertEqual(self.client.get('/api/v1/awards/summary/?fy=2016&funding_fpds=3100').status_code, 200)
