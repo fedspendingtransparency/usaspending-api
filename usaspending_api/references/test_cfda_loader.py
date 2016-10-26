@@ -8,7 +8,6 @@ import pytest
 
 class CDFALoadTests(TestCase):
 
-
     @pytest.mark.django_db
     def test_cfda_load(self):
         """
