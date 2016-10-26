@@ -8,7 +8,7 @@ import django
 
 
 class Command(BaseCommand):
-    help = "Loads program informaiton obtained from ftp.cfda.gov"
+    help = "Loads program information obtained from csv file on ftp.cfda.gov"
 
     logger = logging.getLogger('console')
 
