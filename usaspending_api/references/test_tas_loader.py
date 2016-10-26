@@ -8,7 +8,7 @@ import pytest
 
 class TreasuryAppropriationAccountLoadTests(TestCase):
 
-    #fixtures = ['tas']
+    # fixtures = ['tas']
 
     @pytest.mark.django_db
 #    def test_tas_load(self):
@@ -16,11 +16,9 @@ class TreasuryAppropriationAccountLoadTests(TestCase):
 #        Ensure tas can be loaded from source file
 #        """
 #        call_command('loadtas')
-
     def test_gwa_tas(self):
         """
         Make sure an instance of a tas is properly created
         """
-
         call_command('loadtas')
         gwa_tas = TreasuryAppropriationAccount.objects.get(gwa_tas='00110100', beginning_period_of_availability='2011', ending_period_of_availability='2011')
