@@ -37,6 +37,9 @@ class TreasuryAppropriationAccount(models.Model):
         managed = True
         db_table = 'treasury_appropriation_account'
 
+    def __str__(self):
+        return "%s" % (self.gwa_tas)
+
 
 # Table #4 - Appropriation Account Balances
 class AppropriationAccountBalances(models.Model):
