@@ -19,7 +19,7 @@ class Command(BaseCommand):
                       'usaspending_api/references/management/commands/programs-full-usaspending.csv'), errors='backslashreplace') \
                       as csvfile:
 
-                reader = csv.DictReader(csvfile, delimiter=',', quotechar='"')
+                reader = csv.DictReader(csvfile, delimiter=',', quotechar='"', skipinitialspace='true')
                 for row in reader:
                     cfda_program, created = CFDAProgram.objects.get_or_create(
                                     program_number = row['Program Number'])
