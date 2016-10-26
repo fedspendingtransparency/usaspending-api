@@ -37,7 +37,8 @@ class FilterGenerator():
         'in': '__in',
         'less_than_or_equal': '__lte',
         'greather_than_or_equal': '__gte',
-        'range': '__range'
+        'range': '__range',
+        'is_null': '__isnull'
     }
 
     # Creating the class requires a filter map - this maps one parameter filter
@@ -87,6 +88,10 @@ class FilterGenerator():
     # Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range
     # Note that contains is always case insensitive
     def create_from_post(self, parameters):
+        try:
+            self.validate_post_request(parameters)
+        except Exception:
+            raise
         return self.create_q_from_filter_list(parameters.get('filters', []))
 
     def create_q_from_filter_list(self, filter_list, combine_method='AND'):
@@ -116,6 +121,27 @@ class FilterGenerator():
             q_kwargs[field + operation] = value
 
             return Q(**q_kwargs)
+
+    def validate_post_request(self, request):
+        if 'filters' in request:
+            for filt in request['filters']:
+                if 'combine_method' in filt:
+                    try:
+                        self.validate_post_request(filt)
+                    except Exception:
+                        raise
+                else:
+                    if 'field' in filt and 'operation' in filt and 'value' in filt:
+                        if filt['operation'] not in FilterGenerator.operators:
+                            raise Exception("Invalid operation: " + filt['operation'])
+                        if filt['operation'] == 'in':
+                            if not isinstance(filt['value'], list):
+                                raise Exception("Invalid value, operation 'in' requires an array value")
+                        if filt['operation'] == 'range':
+                            if not isinstance(filt['value'], list) or len(filt['value']) != 2:
+                                raise Exception("Invalid value, operation 'range' requires an array value of length 2")
+                    else:
+                        raise Exception("Malformed filter - missing field, operation, or value")
 
 
 class ResponsePaginator():

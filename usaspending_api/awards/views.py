@@ -36,9 +36,12 @@ class AwardList(APIView):
 class AwardListSummary(APIView):
     def post(self, request, format=None):
         fg = FilterGenerator()
-        body_unicode = request.body.decode('utf-8')
-        body = json.loads(body_unicode)
-        filters = fg.create_from_post(body)
+        try:
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            filters = fg.create_from_post(body)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         awards = Award.objects.all().filter(filters)
 
