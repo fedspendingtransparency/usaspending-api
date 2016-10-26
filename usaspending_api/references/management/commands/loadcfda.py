@@ -22,7 +22,7 @@ class Command(BaseCommand):
                 reader = csv.DictReader(csvfile, delimiter=',', quotechar='"', skipinitialspace='true')
                 for row in reader:
                     cfda_program, created = CFDAProgram.objects.get_or_create(
-                                    program_number = row['Program Number'])
+                                    program_number=row['Program Number'])
 
                     cfda_program.program_title = row['Program Title']
                     cfda_program.popular_name = row['Popular Name (020)']
@@ -61,8 +61,6 @@ class Command(BaseCommand):
                     cfda_program.recovery = row['Recovery']
                     cfda_program.omb_agency_code = row['OMB Agency Code']
                     cfda_program.omb_bureau_code = row['OMB Bureau Code']
-                    #cfda_program.published_date = datetime.strptime(row['Published Date'], '%b, %d %Y')
-                    #cfda_program.archived_date = datetime.strptime(row['Archived Date'], '%b, %d %Y')
                     if row['Published Date']:
                         cfda_program.published_date = datetime.strptime(row['Published Date'], '%b, %d %Y')
                     if row['Archived Date']:
