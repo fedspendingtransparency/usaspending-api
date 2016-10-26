@@ -22,11 +22,27 @@ class FinancialAccountsByAwardsTransactionObligationsSerializer(serializers.Mode
         fields = '__all__'
 
 
+class ProcurementSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Procurement
+        fields = '__all__'
+
+
+class FinancialAssistanceAwardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FinancialAssistanceAward
+        fields = '__all__'
+
+
 class AwardSerializer(serializers.ModelSerializer):
 
     recipient = LegalEntitySerializer(read_only=True)
     awarding_agency = AgencySerializer(read_only=True)
     funding_agency = AgencySerializer(read_only=True)
+    procurement_set = ProcurementSerializer(many=True, read_only=True)
+    financialassistanceaward_set = FinancialAssistanceAwardSerializer(many=True, read_only=True)
 
     class Meta:
 

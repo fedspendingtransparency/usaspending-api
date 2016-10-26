@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwardsTransactionObligations, Award
 from usaspending_api.awards.serializers import FinancialAccountsByAwardsTransactionObligationsSerializer, AwardSerializer
+from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator
+import json
 
 
 class AwardList(APIView):
@@ -32,40 +34,74 @@ class AwardList(APIView):
 
 
 class AwardListSummary(APIView):
+    def post(self, request, format=None):
+        fg = FilterGenerator()
+        try:
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            filters = fg.create_from_post(body)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        awards = Award.objects.all().filter(filters)
+
+        paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=body)
+
+        serializer = AwardSerializer(paged_data, many=True)
+        response_object = {
+            "total_metadata": {
+                "count": awards.count(),
+                "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            },
+            "page_metadata": {
+                "page_number": paged_data.number,
+                "num_pages": paged_data.paginator.num_pages,
+                "count": len(paged_data),
+                "total_obligation_sum": paged_data.object_list.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            },
+            "results": serializer.data
+        }
+        return Response(response_object)
 
     """
     List all awards (summary level)
     """
     def get(self, request, uri=None, piid=None, fain=None, format=None):
-        # Because these are all GET requests and mutually exclusive, we chain an
-        # if statement here. We could use some nifty Q object nonsense but for
-        # clarity we skip that here. For POST filters we will want to set that up
-        awards = None
+        filter_map = {
+            'awarding_fpds': 'awarding_agency__fpds_code',
+            'funding_fpds': 'funding_agency__fpds_code',
+        }
+        fg = FilterGenerator(filter_map=filter_map, ignored_parameters=['fy'])
+        filter_arguments = fg.create_from_get(request.GET)
+        # We need to parse the FY to be the appropriate value
+        if 'fy' in request.GET:
+            fy = FiscalYear(request.GET.get('fy'))
+            fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
+            filter_arguments = {**filter_arguments, **fy_arguments}
+
         if uri:
-            awards = Award.objects.filter(uri=uri)
+            filter_arguments['uri'] = uri
         elif piid:
-            awards = Award.objects.filter(piid=piid)
+            filter_arguments['piid'] = piid
         elif fain:
-            awards = Award.objects.filter(fain=fain)
-        else:
-            awards = Award.objects.all()
+            filter_arguments['fain'] = fain
 
-        agency = request.GET.get('agency')
-        fy = request.GET.get('fy')
-        query = Q()
+        awards = Award.objects.all().filter(**filter_arguments)
 
-        if agency:
-            query = Q(awarding_agency__fpds_code=agency)
-            query |= Q(funding_agency__fpds_code=agency)
-        if fy:
-            query &= Q(date_signed__year=fy)
+        paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=request.GET)
 
-        awards = awards.filter(query)
-
-        serializer = AwardSerializer(awards, many=True)
+        serializer = AwardSerializer(paged_data, many=True)
         response_object = {
-            "count": awards.count(),
-            "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            "total_metadata": {
+                "count": awards.count(),
+                "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            },
+            "page_metadata": {
+                "page_number": paged_data.number,
+                "num_pages": paged_data.paginator.num_pages,
+                "count": len(paged_data),
+                "total_obligation_sum": paged_data.object_list.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+            },
             "results": serializer.data
         }
         return Response(response_object)
