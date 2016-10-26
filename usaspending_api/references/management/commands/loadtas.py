@@ -5,6 +5,7 @@ import csv
 import logging
 import django
 
+
 class Command(BaseCommand):
     help = "Loads tas and agencies info from CARS list in \
             the folder of this management command."
@@ -47,12 +48,11 @@ class Command(BaseCommand):
 
                     treasury_appropriation_account.save()
                     self.logger.log(20, "loaded account number %s %s %s ", treasury_appropriation_account.treasury_account_identifier, treasury_appropriation_account, treasury_appropriation_account.gwa_tas_name)
-                    #self.logger.log(20, "loaded %s %s ", cfda_program.program_number, cfda_program)
+                    # self.logger.log(20, "loaded %s %s ", cfda_program.program_number, cfda_program)
 
+                    # self.logger.log(20, "loaded %s" % treasury_appropriation_account)
 
-                    #self.logger.log(20, "loaded %s" % treasury_appropriation_account)
-
-                    #for item in enumerate(treasury_appropriation_account.gwa_tas_name):
+                    # for item in enumerate(treasury_appropriation_account.gwa_tas_name):
                     #    print (item)
 
         except IOError:
