@@ -63,8 +63,10 @@ class Command(BaseCommand):
                     cfda_program.omb_bureau_code = row['OMB Bureau Code']
                     #cfda_program.published_date = datetime.strptime(row['Published Date'], '%b, %d %Y')
                     #cfda_program.archived_date = datetime.strptime(row['Archived Date'], '%b, %d %Y')
-                    cfda_program.published_date = row['Published Date']
-                    cfda_program.archived_date = row['Archived Date']
+                    if row['Published Date']:
+                        cfda_program.published_date = datetime.strptime(row['Published Date'], '%b, %d %Y')
+                    if row['Archived Date']:
+                        cfda_program.archived_date = datetime.strptime(row['Archived Date'], '%b, %d %Y')
 
                     cfda_program.save()
 
