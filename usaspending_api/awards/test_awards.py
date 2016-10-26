@@ -1,5 +1,6 @@
 from django.test import TestCase, Client
 import pytest
+import json
 
 from model_mommy import mommy
 
@@ -36,4 +37,9 @@ class AwardTests(TestCase):
         self.assertEqual(self.client.get('/api/v1/awards/summary/fain/ABCD').status_code, 200)
         self.assertEqual(self.client.get('/api/v1/awards/summary/uri/ABCD').status_code, 200)
         self.assertEqual(self.client.get('/api/v1/awards/summary/piid/ABCD').status_code, 200)
-        self.assertEqual(self.client.get('/api/v1/awards/summary/?fy=2016&agency=3100').status_code, 200)
+        self.assertEqual(self.client.get('/api/v1/awards/summary/?fy=2016&funding_fpds=3100').status_code, 200)
+
+        self.assertEqual(self.client.post('/api/v1/awards/summary/', content_type='application/json', data=json.dumps({"page": 1, "limit": 10})).status_code, 200)
+        self.assertEqual(self.client.post('/api/v1/awards/summary/', content_type='application/json', data=json.dumps({"page": 1, "limit": 10, "filters": [{"field": "funding_agency__fpds_code", "operation": "equals", "value": "0300"}]})).status_code, 200)
+        self.assertEqual(self.client.post('/api/v1/awards/summary/', content_type='application/json', data=json.dumps({"page": 1, "limit": 10, "filters": [{"combine_method": "OR", "filters": [{"field": "funding_agency__fpds_code", "operation": "equals", "value": "0300"}, {"field": "awarding_agency__fpds_code", "operation": "equals", "value": "0300"}]}]})).status_code, 200)
+        self.assertEqual(self.client.post('/api/v1/awards/summary/', content_type='application/json', data=json.dumps({"page": 1, "limit": 10, "filters": [{"field": "funding_agency__fpds_code", "operation": "ff", "value": "0300"}]})).status_code, 400)
