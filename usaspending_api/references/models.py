@@ -101,6 +101,8 @@ class Location(models.Model):
     location_foreign_city_name = models.CharField(max_length=40, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
+    certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
@@ -234,6 +236,8 @@ class LegalEntity(models.Model):
     domestic_or_foreign_entity = models.CharField(max_length=1, blank=True, null=True)
     division_name = models.CharField(max_length=100, blank=True, null=True)
     division_number = models.CharField(max_length=100, blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
+    certified_date = models.DateField(blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
