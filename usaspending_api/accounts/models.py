@@ -67,6 +67,8 @@ class AppropriationAccountBalances(models.Model):
     drv_other_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
+    certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
