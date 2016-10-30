@@ -246,6 +246,7 @@ class LegalEntity(models.Model):
     class Meta:
         managed = True
         db_table = 'legal_entity'
+        unique_together = (('recipient_name'),)
 
 
 # Reference tables
