@@ -55,6 +55,8 @@ class FinancialAccountsByAwards(models.Model):
     drv_obligations_incurred_total_by_award = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
+    certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
@@ -70,6 +72,8 @@ class FinancialAccountsByAwardsTransactionObligations(models.Model):
     transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
+    certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
@@ -120,6 +124,8 @@ class Award(models.Model):
     period_of_performance_start_date = models.DateField(null=True)
     period_of_performance_current_end_date = models.DateField(null=True)
     place_of_performance = models.ForeignKey(Location, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
+    certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
@@ -166,6 +172,8 @@ class AwardAction(models.Model):
     drv_award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_potential_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
+    certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
@@ -253,6 +261,8 @@ class Procurement(AwardAction):
     drv_potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
+    certified_date = models.DateField(blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
 
@@ -279,6 +289,8 @@ class FinancialAssistanceAward(AwardAction):
     drv_award_finance_assistance_type_label = models.CharField(max_length=50, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
+    certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
