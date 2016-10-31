@@ -24,4 +24,4 @@ class AccountsTest(TestCase):
         """
         resp = self.client.get('/api/v1/accounts/tas/')
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(len(resp.data), 2)
+        self.assertEqual(len(resp.data), 3)

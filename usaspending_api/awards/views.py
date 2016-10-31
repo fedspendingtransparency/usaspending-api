@@ -25,9 +25,23 @@ class AwardList(APIView):
         else:
             awards = FinancialAccountsByAwardsTransactionObligations.objects.all()
 
-        serializer = FinancialAccountsByAwardsTransactionObligationsSerializer(awards, many=True)
+        fg = FilterGenerator()
+        filter_arguments = fg.create_from_get(request.GET)
+
+        awards = awards.filter(**filter_arguments)
+
+        paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=request.GET)
+
+        serializer = FinancialAccountsByAwardsTransactionObligationsSerializer(paged_data, many=True)
         response_object = {
-            "count": awards.count(),
+            "total_metadata": {
+                "count": awards.count(),
+            },
+            "page_metadata": {
+                "page_number": paged_data.number,
+                "num_pages": paged_data.paginator.num_pages,
+                "count": len(paged_data),
+            },
             "results": serializer.data
         }
         return Response(response_object)
