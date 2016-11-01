@@ -30,6 +30,7 @@ class FiscalYear():
 # This class supports multiple methods of dynamically creating filter queries
 class FilterGenerator():
     operators = {
+        # Django standard operations
         'equals': '',
         'less_than': '__lt',
         'greater_than': '__gt',
@@ -38,7 +39,10 @@ class FilterGenerator():
         'less_than_or_equal': '__lte',
         'greather_than_or_equal': '__gte',
         'range': '__range',
-        'is_null': '__isnull'
+        'is_null': '__isnull',
+
+        # Special operations follow
+        'fy': 'fy'
     }
 
     # Creating the class requires a filter map - this maps one parameter filter
@@ -85,7 +89,7 @@ class FilterGenerator():
     # If the 'combine_method' is present in a filter, you MUST specify another
     # 'filters' set in that object of filters to combine
     # The combination method for filters at the root level is 'AND'
-    # Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range
+    # Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range, fy
     # Note that contains is always case insensitive
     def create_from_post(self, parameters):
         try:
@@ -117,6 +121,10 @@ class FilterGenerator():
                 return Q()
             if field in self.filter_map:
                 field = self.filter_map[field]
+
+            if operation is 'fy':
+                fy = FiscalYear(value)
+                return fy.get_filter_object(field)
 
             q_kwargs[field + operation] = value
 

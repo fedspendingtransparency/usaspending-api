@@ -2,12 +2,11 @@ from django.core.management.base import BaseCommand, CommandError
 from usaspending_api.awards.models import Award, Procurement
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
 from datetime import datetime
 import csv
 import logging
 import django
-
-from model_mommy import mommy
 
 
 class Command(BaseCommand):
@@ -19,53 +18,28 @@ class Command(BaseCommand):
         parser.add_argument('file', nargs=1, help='the file to load')
 
     def handle(self, *args, **options):
-        try:
-            with open(options['file'][0]) as csvfile:
-                reader = csv.DictReader(csvfile)
-                for row in reader:
-                    # TODO: We'll need to get a proper submission ID to tie these to in the future
-                    submission = mommy.make('submissions.SubmissionAttributes')
-                    # try:
-                    award, created = Award.objects.get_or_create(piid=row['piid'], type='C')
-                    # need to update existing instance, probably add as child transaction
-                    # right now awards get overwritten -- this needs to be updated after table
-                    # structure more finalized
-                    mod, created = Procurement.objects.get_or_create(piid=row['piid'],
-                                                                     modification_number=row['modnumber'],
-                                                                     award=award,
-                                                                     submission=SubmissionAttributes.objects.all().first())
+        field_map = {
+            "federal_action_obligation": "dollarsobligated",
+            "description": "descriptionofcontractrequirement",
+            "modification_number": "modnumber"
+        }
 
-                    recipient, created = LegalEntity.objects.get_or_create(recipient_name=row['dunsnumber'])
-                    recipient_data = {
-                        'vendor_doing_as_business_n': row['vendordoingasbusinessname'],
-                    }
-                    recipient.save()
+        value_map = {
+            "award": lambda row: Award.objects.get_or_create(piid=row['piid'], type='C')[0],
+            "recipient": lambda row: LegalEntity.objects.get_or_create(recipient_name=row['dunsnumber'])[0],
+            "awarding_agency": lambda row: Agency.objects.get(subtier_code=self.get_agency_code(row['maj_agency_cat'])),
+            "action_date": lambda row: self.convert_date(row['signeddate']),
+            "submission": SubmissionAttributes.objects.all().first()  # Probably want to change this?
+        }
 
-                    awarding_agency = Agency.objects.get(subtier_code=self.get_agency_code(row['maj_agency_cat']))
-
-                    updated_fields = {
-                        'federal_action_obligation': row['dollarsobligated'],
-                        'awarding_agency': awarding_agency,
-                        'action_date': self.convert_date(row['signeddate']),
-                        'recipient': recipient,
-                        'award': award,
-                        'description': row['descriptionofcontractrequirement'],
-                    }
-
-                    for key, value in updated_fields.items():
-                        setattr(mod, key, value)
-
-                    mod.save()
-
-                    award.update_from_mod(mod)
-                    # except django.db.utils.IntegrityError:
-                    #    self.logger.log(20, "Could not insert duplicate award")
-
-        except IOError:
-            self.logger.log(20, "Please specify a file to load from")
+        loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map, post_row_function=self.post_row_process_function)
+        loader.load_from_file(options['file'][0])
 
     def convert_date(self, date):
         return datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
 
     def get_agency_code(self, maj_agency_cat):
         return maj_agency_cat.split(':')[0]
+
+    def post_row_process_function(self, row, instance):
+        instance.award.update_from_mod(instance)
