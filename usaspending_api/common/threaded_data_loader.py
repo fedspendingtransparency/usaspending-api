@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db import connection
 from retrying import retry
 import time
+import logging
 import csv
 import queue
 import threading
@@ -33,7 +34,8 @@ class ThreadedDataLoader():
     #   pre_row_function - Like post_row_function, but before the model class is updated
     #   post_process_function - A function to call when all rows have been processed, uses the same
     #                           function parameters as post_row_function
-    def __init__(self, model_class, threads=10, field_map={}, value_map={}, collision_field=None, collision_behavior='delete', pre_row_function=None, post_row_function=None, post_process_function=None):
+    def __init__(self, model_class, threads=10, field_map={}, value_map={}, collision_field=None, collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None):
+        self.logger = logging.getLogger('console')
         self.model_class = model_class
         self.threads = threads
         self.field_map = field_map
@@ -48,8 +50,7 @@ class ThreadedDataLoader():
     # Loads data from a file using parameters set during creation of the loader
     # The filepath parameter should be the string location of the file for use with open()
     def load_from_file(self, filepath):
-        start_time = time.time()
-        print('Started processing file ' + filepath + ' at ' + str(start_time))
+        self.logger.info('Started processing file ' + filepath)
         # Create the Queue object - this will hold all the rows in the CSV
         row_queue = queue.Queue(maxsize=100)
         self.exit_flag = False
@@ -77,9 +78,7 @@ class ThreadedDataLoader():
         if self.post_process_function is not None:
             self.post_process_function()
 
-        end_time = time.time()
-        elapsed = end_time - start_time
-        print('Finished processing at ' + str(end_time) + '; Elapsed: ' + str(elapsed))
+        self.logger.info('Finished processing all threads')
 
 
 class DataLoaderThread(threading.Thread):
@@ -90,9 +89,9 @@ class DataLoaderThread(threading.Thread):
         self.loader = loader
 
     def run(self):
-        print("Starting " + self.name)
+        self.loader.logger.info("Starting " + self.name)
         self.process_data()
-        print("Exiting " + self.name)
+        self.loader.logger.info("Exiting " + self.name)
 
     def process_data(self):
         # Make sure we weren't flagged to exit
@@ -115,13 +114,14 @@ class DataLoaderThread(threading.Thread):
                     if collision_instance is not None:
                         behavior = self.loader.collision_behavior
                         if behavior is "delete":  # Delete the row from the data store and load new row
-                            collision_instnace.delete()
+                            collision_instance.delete()
                         if behavior is "update":  # Update the row in the data store with new values from the CSV
                             update = True
                         if behavior is "skip":  # Skip the row
                             continue
                         if behavior is "skip_and_complain":  # Log a warning and skip the row
-                            print('Hit a collision on row %s' % (row))
+                            self.loader.logger.warning('Hit a collision on row %s' % (row))
+                            continue
                         if behavior is "die":  # Raise an exception and cease execution
                             raise Exception("Hit collision on row %s" % (row))
 
@@ -140,7 +140,7 @@ class DataLoaderThread(threading.Thread):
                                                               self.loader.value_map,
                                                               row)
                 except Exception as e:
-                    print(e)
+                    self.loader.logger.error(e)
                 # If we have a post row function, run it before saving
                 if self.loader.post_row_function is not None:
                     self.loader.post_row_function(row=row, instance=model_instance)

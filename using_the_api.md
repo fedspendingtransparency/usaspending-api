@@ -1,6 +1,6 @@
-# The DATA Act Data Store Application Programming Interface (API)
+# The USAspending Application Programming Interface (API)
 
-The DATA Act Data Store API allows the public to accesss data published via the Broker or USASpending.
+The USAspending API allows the public to accesss data published via the Broker or USAspending.
 
 ## Background
 

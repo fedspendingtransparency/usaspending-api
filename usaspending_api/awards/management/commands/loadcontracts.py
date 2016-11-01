@@ -28,7 +28,7 @@ class Command(BaseCommand):
             "award": lambda row: Award.objects.get_or_create(piid=row['piid'], type='C')[0],
             "recipient": lambda row: LegalEntity.objects.get_or_create(recipient_name=row['dunsnumber'])[0],
             "awarding_agency": lambda row: Agency.objects.get(subtier_code=self.get_agency_code(row['maj_agency_cat'])),
-            "action_date": lambda row: datetime.strptime(row['signeddate'], '%m/%d/%Y').strftime('%Y-%m-%d'),
+            "action_date": lambda row: self.convert_date(row['signeddate']),
             "submission": SubmissionAttributes.objects.all().first()  # Probably want to change this?
         }
 
