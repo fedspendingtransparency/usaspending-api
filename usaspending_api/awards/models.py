@@ -297,3 +297,32 @@ class FinancialAssistanceAward(AwardAction):
     class Meta:
         managed = True
         db_table = 'financial_assistance_award'
+
+
+class SubAward(models.Model):
+    sub_award_id = models.AutoField(primary_key=True)
+    award = models.ForeignKey(Award, models.CASCADE)
+    legal_entity = models.ForeignKey(LegalEntity, models.CASCADE)
+    sub_recipient_unique_id = models.CharField(max_length=9, blank=True, null=True)
+    sub_recipient_ultimate_parent_unique_id = models.CharField(max_length=9, blank=True, null=True)
+    sub_recipient_ultimate_parent_name = models.CharField(max_length=120, blank=True, null=True)
+    subawardee_business_type = models.CharField(max_length=255, blank=True, null=True)
+    sub_recipient_name = models.CharField(max_length=120, blank=True, null=True)
+    subcontract_award_amount = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
+    cfda_number_and_title = models.CharField(max_length=255, blank=True, null=True)
+    prime_award_report_id = models.CharField(max_length=40, blank=True, null=True)
+    award_report_month = models.CharField(max_length=25, blank=True, null=True)
+    award_report_year = models.CharField(max_length=4, blank=True, null=True)
+    rec_model_question1 = models.CharField(max_length=1, blank=True, null=True)
+    rec_model_question2 = models.CharField(max_length=1, blank=True, null=True)
+    subaward_number = models.CharField(max_length=32, blank=True, null=True)
+    reporting_period_start = models.DateField(blank=True, null=True)
+    reporting_period_end = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
+    certified_date = models.DateField(blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = 'sub_award'
