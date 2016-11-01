@@ -12,16 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='cfdaprogram',
-            name='archived_date',
-            field=models.TextField(blank=True, null=True),
-        ),
-        migrations.AlterField(
-            model_name='cfdaprogram',
-            name='published_date',
-            field=models.TextField(blank=True, null=True),
-        ),
         migrations.AlterUniqueTogether(
             name='legalentity',
             unique_together=set([('recipient_name',)]),
