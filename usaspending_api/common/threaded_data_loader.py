@@ -108,6 +108,9 @@ class DataLoaderThread(threading.Thread):
                     # If it's a long label, we need to look it up to map to data
                     if model_collision_field in settings.LONG_TO_TERSE_LABELS:
                         data_collision_field = settings.LONG_TO_TERSE_LABELS[model_collision_field]
+                    # If it's in the field map, we need to look it up
+                    elif model_collision_field in self.loader.field_map:
+                        data_collision_field = self.loader.field_map[model_collision_field]
                     query_object = Q({model_collision_field: row[data_collision_field]})
                     collision_instance = self.loader.model_class.objects.filter(query_object).first()
 
