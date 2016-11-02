@@ -40,6 +40,7 @@ class FilterGenerator():
         'greather_than_or_equal': '__gte',
         'range': '__range',
         'is_null': '__isnull',
+        'search': '__search',
 
         # Special operations follow
         'fy': 'fy'
