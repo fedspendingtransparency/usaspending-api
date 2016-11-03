@@ -43,5 +43,5 @@ class Command(BaseCommand):
         }
 
         loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, collision_field=treasury_account_identifier, collision_behavior=update)
-        loader.load_from_file(open(os.path.join(django.conf.settings.BASE_DIR,'usaspending_api/references/management/commands/tas_list.csv')))
+        loader.load_from_file(options['file'][0])
 # self.logger.log(20, "loaded account number %s %s %s ", treasury_appropriation_account.treasury_account_identifier, treasury_appropriation_account, treasury_appropriation_account.gwa_tas_name)
