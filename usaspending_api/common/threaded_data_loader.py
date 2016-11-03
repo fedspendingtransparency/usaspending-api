@@ -111,8 +111,8 @@ class DataLoaderThread(threading.Thread):
                     # If it's in the field map, we need to look it up
                     elif model_collision_field in self.loader.field_map:
                         data_collision_field = self.loader.field_map[model_collision_field]
-                    query_object = Q({model_collision_field: row[data_collision_field]})
-                    collision_instance = self.loader.model_class.objects.filter(query_object).first()
+                    query = {model_collision_field: row[data_collision_field]}
+                    collision_instance = self.loader.model_class.objects.filter(**query).first()
 
                     if collision_instance is not None:
                         behavior = self.loader.collision_behavior
