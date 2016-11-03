@@ -141,7 +141,8 @@ class DataLoaderThread(threading.Thread):
                                                               self.loader.fields,
                                                               self.loader.field_map,
                                                               self.loader.value_map,
-                                                              row)
+                                                              row,
+                                                              logger=self.loader.logger)
                 except Exception as e:
                     self.loader.logger.error(e)
                 # If we have a post row function, run it before saving
@@ -154,7 +155,7 @@ class DataLoaderThread(threading.Thread):
 
     # Retry decorator to help resolve race conditions when constructing auxilliary objects
     @retry(stop_max_attempt_number=3, wait_fixed=1000)
-    def load_data_into_model(self, model_instance, fields, field_map, value_map, row, as_dict=False):
+    def load_data_into_model(self, model_instance, fields, field_map, value_map, row, logger, as_dict=False):
         mod = model_instance
         loaded = False
 
@@ -183,7 +184,10 @@ class DataLoaderThread(threading.Thread):
 
             # If we haven't loaded via value map, load in the data using the source field
             if not loaded:
-                self.store_value(mod, model_field, row[source_field])
+                if source_field in row:
+                    self.store_value(mod, model_field, row[source_field])
+                else:
+                    logger.warning('Could not find any data for field ' + model_field)
 
         if as_dict:
             return mod
