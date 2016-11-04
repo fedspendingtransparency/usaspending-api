@@ -1,4 +1,5 @@
 from django.db import models
+from usaspending_api.common.models import DataSourceTrackedModel
 
 
 class RefCityCountyCode(models.Model):
@@ -74,7 +75,7 @@ class Agency(models.Model):
             return "%s" % (self.name)
 
 
-class Location(models.Model):
+class Location(DataSourceTrackedModel):
     location_id = models.AutoField(primary_key=True)
     location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True)
     location_country_name = models.CharField(max_length=100, blank=True, null=True)
@@ -134,7 +135,7 @@ class Location(models.Model):
                            "reporting_period_end")
 
 
-class LegalEntity(models.Model):
+class LegalEntity(DataSourceTrackedModel):
     legal_entity_id = models.AutoField(primary_key=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
     ultimate_parent_legal_entity_id = models.IntegerField(null=True)
@@ -289,7 +290,7 @@ class RefProgramActivity(models.Model):
         unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
 
 
-class CFDAProgram(models.Model):
+class CFDAProgram(DataSourceTrackedModel):
     program_number = models.CharField(primary_key=True, max_length=7)
     program_title = models.TextField(blank=True, null=True)
     popular_name = models.TextField(blank=True, null=True)

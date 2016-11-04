@@ -25,6 +25,7 @@ class Command(BaseCommand):
         }
 
         value_map = {
+            "data_source": "USA",
             "award": lambda row: Award.objects.get_or_create(piid=row['piid'], type='C')[0],
             "recipient": lambda row: LegalEntity.objects.get_or_create(recipient_name=row['dunsnumber'])[0],
             "awarding_agency": lambda row: Agency.objects.get(subtier_code=self.get_agency_code(row['maj_agency_cat'])),

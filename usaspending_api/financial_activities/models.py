@@ -3,9 +3,10 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import RefProgramActivity
 from usaspending_api.references.models import RefObjectClassCode
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.common.models import DataSourceTrackedModel
 
 
-class FinancialAccountsByProgramActivityObjectClass(models.Model):
+class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity_name = models.CharField(max_length=164)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code')
