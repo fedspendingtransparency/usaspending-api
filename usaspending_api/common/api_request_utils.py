@@ -38,7 +38,7 @@ class FilterGenerator():
         'contains': '__icontains',
         'in': '__in',
         'less_than_or_equal': '__lte',
-        'greather_than_or_equal': '__gte',
+        'greater_than_or_equal': '__gte',
         'range': '__range',
         'is_null': '__isnull',
         'search': '__search',
