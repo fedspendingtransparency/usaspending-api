@@ -24,6 +24,7 @@ class Command(BaseCommand):
                     treasury_appropriation_account, created = TreasuryAppropriationAccount.objects.get_or_create(
                                     treasury_account_identifier=row['ACCT_NUM'])
 
+                    treasury_appropriation_account.data_source = "USA"
                     treasury_appropriation_account.allocation_transfer_agency_id = row['ATA']
                     treasury_appropriation_account.agency_id = row['AID']
                     treasury_appropriation_account.beginning_period_of_availability = row['BPOA']

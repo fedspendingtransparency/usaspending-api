@@ -2,11 +2,12 @@ from django.db import models
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity
+from usaspending_api.common.models import DataSourceTrackedModel
 from django.db.models import F, Sum
 
 
 # Model Objects added white spaces
-class FinancialAccountsByAwards(models.Model):
+class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
@@ -65,7 +66,7 @@ class FinancialAccountsByAwards(models.Model):
         db_table = 'financial_accounts_by_awards'
 
 
-class FinancialAccountsByAwardsTransactionObligations(models.Model):
+class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
     financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)
     financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
@@ -82,7 +83,7 @@ class FinancialAccountsByAwardsTransactionObligations(models.Model):
         db_table = 'financial_accounts_by_awards_transaction_obligations'
 
 
-class Award(models.Model):
+class Award(DataSourceTrackedModel):
 
     AWARD_TYPES = (
         ('2', 'Block Grant'),
@@ -158,7 +159,7 @@ class Award(models.Model):
         db_table = 'awards'
 
 
-class AwardAction(models.Model):
+class AwardAction(DataSourceTrackedModel):
     award = models.ForeignKey(Award, models.CASCADE, related_name="actions")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     action_date = models.CharField(max_length=10)
@@ -299,7 +300,7 @@ class FinancialAssistanceAward(AwardAction):
         db_table = 'financial_assistance_award'
 
 
-class SubAward(models.Model):
+class SubAward(DataSourceTrackedModel):
     sub_award_id = models.AutoField(primary_key=True)
     award = models.ForeignKey(Award, models.CASCADE)
     legal_entity = models.ForeignKey(LegalEntity, models.CASCADE)
