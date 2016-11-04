@@ -39,8 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
 
     'rest_framework',
+    'corsheaders',
     'usaspending_api.references',
     'usaspending_api.awards',
     'usaspending_api.accounts',
@@ -49,6 +51,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -78,6 +82,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'usaspending_api.wsgi.application'
 
+# CORS Settings
+CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
