@@ -50,15 +50,15 @@ class RefCountryCode(models.Model):
 class Agency(models.Model):
     # id = models.AutoField(primary_key=True)
     id = models.AutoField(primary_key=True)  # meaningless id
-    cgac_code = models.CharField(max_length=3, blank=True, null=True)
+    cgac_code = models.CharField(max_length=3, blank=True, null=True, verbose_name="Agency Code")
     # agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
     # will equal fpds_code if a top level department
-    subtier_code = models.CharField(max_length=4, blank=True, null=True)
-    name = models.CharField(max_length=150, blank=True, null=True)
+    subtier_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Sub-Tier Agency Code")
+    name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Agency Name")
     department = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sub_departments')
     parent_agency = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sub_agencies')
-    aac_code = models.CharField(max_length=6, blank=True, null=True)
+    aac_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Office Code")
     fourcc_code = models.CharField(max_length=4, blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
