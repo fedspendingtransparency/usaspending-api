@@ -141,10 +141,9 @@ class DataLoaderThread(threading.Thread):
                                                               self.loader.fields,
                                                               self.loader.field_map,
                                                               self.loader.value_map,
-                                                              row,
-                                                              self.loader.logger)
+                                                              row)
                 except Exception as e:
-                    self.loader.logger.error('Exception ' + str(e))
+                    self.loader.logger.error(e)
                 # If we have a post row function, run it before saving
                 if self.loader.post_row_function is not None:
                     self.loader.post_row_function(row=row, instance=model_instance)
@@ -155,9 +154,10 @@ class DataLoaderThread(threading.Thread):
 
     # Retry decorator to help resolve race conditions when constructing auxilliary objects
     @retry(stop_max_attempt_number=3, wait_fixed=1000)
-    def load_data_into_model(self, model_instance, fields, field_map, value_map, row, logger, as_dict=False):
+    def load_data_into_model(self, model_instance, fields, field_map, value_map, row, as_dict=False):
         mod = model_instance
         loaded = False
+
         if as_dict:
             mod = {}
 
@@ -173,16 +173,17 @@ class DataLoaderThread(threading.Thread):
                 else:
                     self.store_value(mod, model_field, value_map[model_field])
                     loaded = True
+            # If our field is the 'long form' field, we need to get what it maps to
+            # in the data so we can map the data properly
+            elif model_field in settings.LONG_TO_TERSE_LABELS:
+                source_field = settings.LONG_TO_TERSE_LABELS[model_field]
             # If we're not in the value map or the long_to_terse_labels, check the field map
             elif model_field in field_map:
                 source_field = field_map[model_field]
 
             # If we haven't loaded via value map, load in the data using the source field
             if not loaded:
-                if source_field in row:
-                    self.store_value(mod, model_field, row[source_field])
-                else:
-                    logger.warning("Field " + source_field + " not available in data")
+                self.store_value(mod, model_field, row[source_field])
 
         if as_dict:
             return mod
