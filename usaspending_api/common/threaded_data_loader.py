@@ -36,11 +36,11 @@ class ThreadedDataLoader():
     #   pre_row_function - Like post_row_function, but before the model class is updated
     #   post_process_function - A function to call when all rows have been processed, uses the same
     #                           function parameters as post_row_function
-    def __init__(self, model_class, processes=-1, field_map={}, value_map={}, collision_field=None, collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None):
+    def __init__(self, model_class, processes=None, field_map={}, value_map={}, collision_field=None, collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None):
         self.logger = logging.getLogger('console')
         self.model_class = model_class
         self.processes = processes
-        if self.processes == -1:
+        if self.processes is None:
             self.processes = multiprocessing.cpu_count() * 2
             self.logger.info('Setting processes count to ' + str(self.processes))
         self.field_map = field_map
@@ -69,6 +69,9 @@ class ThreadedDataLoader():
         }
 
         # Spawn our processes
+        # We have to kill any DB connections before forking processes, as Django
+        # will want to share the single connection with all processes and we
+        # don't want to have any deadlock/effeciency problems due to that
         db.connections.close_all()
         pool = []
         while len(pool) < self.processes:
