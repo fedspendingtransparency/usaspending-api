@@ -74,9 +74,8 @@ class ThreadedDataLoader():
         # don't want to have any deadlock/effeciency problems due to that
         db.connections.close_all()
         pool = []
-        while len(pool) < self.processes:
-            process = DataLoaderThread("Process-" + str(len(pool)), self.model_class, row_queue, self.field_map.copy(), self.value_map.copy(), references)
-            pool.append(process)
+        for i in range(self.processes):
+            pool.append(DataLoaderThread("Process-" + str(len(pool)), self.model_class, row_queue, self.field_map.copy(), self.value_map.copy(), references))
 
         for process in pool:
             process.start()
