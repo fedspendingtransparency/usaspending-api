@@ -115,9 +115,9 @@ class FilterGenerator():
     def create_q_from_filter_list(self, filter_list, combine_method='AND'):
         q_object = Q()
         for filt in filter_list:
-            if combine_method is 'AND':
+            if combine_method == 'AND':
                 q_object &= self.create_q_from_filter(filt)
-            elif combine_method is 'OR':
+            elif combine_method == 'OR':
                 q_object |= self.create_q_from_filter(filt)
         return q_object
 
