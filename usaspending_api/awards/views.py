@@ -57,7 +57,15 @@ class AwardListSummary(APIView):
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        awards = Award.objects.all().filter(filters)
+        awards = Award.objects.all()
+
+        if len(fg.search_vectors) > 0:
+            vector_sum = fg.search_vectors[0]
+            for vector in fg.search_vectors[1:]:
+                vector_sum += vector
+            awards = awards.annotate(search=vector_sum)
+
+        awards = awards.filter(filters)
 
         paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=body)
 

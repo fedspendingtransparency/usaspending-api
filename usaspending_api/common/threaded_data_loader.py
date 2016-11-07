@@ -2,11 +2,13 @@ from django.db.models import Q
 from django.conf import settings
 from django.db import connection
 from retrying import retry
+from multiprocessing import Process, JoinableQueue
+from django import db
+import multiprocessing
 import time
 import logging
 import csv
 import queue
-import threading
 
 
 # This class is a threaded data loader
@@ -14,7 +16,7 @@ class ThreadedDataLoader():
     # The threaded data loader requires a bit of set up, and explanation of the
     # parameters are below. Most parameter defaults are about where you'd want them:
     #   model_class - The class of the model each row of the file corresponds to
-    #   threads - The number of threads to use. Default: 10
+    #   processes - The number of processes to use. Default: 2 * number of machine cores
     #   field_map - A dict map from the CSV's columns to model field names. Default: Empty
     #   value_map - A dict map of default or processed values to use. Keys should be model fields
     #               To process values, create a lambda function that accepts a parameter which is
@@ -34,10 +36,13 @@ class ThreadedDataLoader():
     #   pre_row_function - Like post_row_function, but before the model class is updated
     #   post_process_function - A function to call when all rows have been processed, uses the same
     #                           function parameters as post_row_function
-    def __init__(self, model_class, threads=10, field_map={}, value_map={}, collision_field=None, collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None):
+    def __init__(self, model_class, processes=None, field_map={}, value_map={}, collision_field=None, collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None):
         self.logger = logging.getLogger('console')
         self.model_class = model_class
-        self.threads = threads
+        self.processes = processes
+        if self.processes is None:
+            self.processes = multiprocessing.cpu_count() * 2
+            self.logger.info('Setting processes count to ' + str(self.processes))
         self.field_map = field_map
         self.value_map = value_map
         self.collision_field = collision_field
@@ -52,116 +57,132 @@ class ThreadedDataLoader():
     def load_from_file(self, filepath):
         self.logger.info('Started processing file ' + filepath)
         # Create the Queue object - this will hold all the rows in the CSV
-        row_queue = queue.Queue(maxsize=100)
-        self.exit_flag = False
+        row_queue = JoinableQueue()
 
-        # Spawn our threads
+        references = {
+            "collision_field": self.collision_field,
+            "collision_behavior": self.collision_behavior,
+            "logger": self.logger,
+            "pre_row_function": self.pre_row_function,
+            "post_row_function": self.post_row_function,
+            "fields": self.fields.copy()
+        }
+
+        # Spawn our processes
+        # We have to kill any DB connections before forking processes, as Django
+        # will want to share the single connection with all processes and we
+        # don't want to have any deadlock/effeciency problems due to that
+        db.connections.close_all()
         pool = []
-        while len(pool) < self.threads:
-            thread = DataLoaderThread("Thread-" + str(len(pool)), row_queue, self)
-            thread.start()
-            pool.append(thread)
+        for i in range(self.processes):
+            pool.append(DataLoaderThread("Process-" + str(len(pool)), self.model_class, row_queue, self.field_map.copy(), self.value_map.copy(), references))
+
+        for process in pool:
+            process.start()
 
         with open(filepath) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 row_queue.put(row)
 
-        while not row_queue.empty():
-            pass
+        for i in range(self.processes):
+            row_queue.put(None)
 
-        self.exit_flag = True
-
-        for thread in pool:
-            thread.join()
+        row_queue.join()
 
         if self.post_process_function is not None:
             self.post_process_function()
 
-        self.logger.info('Finished processing all threads')
+        self.logger.info('Finished processing all rows')
 
 
-class DataLoaderThread(threading.Thread):
-    def __init__(self, name, data_queue, loader):
-        threading.Thread.__init__(self)
+class DataLoaderThread(Process):
+    def __init__(self, name, model_class, data_queue, field_map, value_map, references):
+        super(DataLoaderThread, self).__init__()
         self.name = name
+        self.model_class = model_class
         self.data_queue = data_queue
-        self.loader = loader
+        self.field_map = field_map
+        self.value_map = value_map
+        self.references = references
 
     def run(self):
-        self.loader.logger.info("Starting " + self.name)
+        self.references['logger'].info("Starting " + self.name)
+        connection.connect()
         self.process_data()
-        self.loader.logger.info("Exiting " + self.name)
+        self.references['logger'].info("Exiting " + self.name)
 
     def process_data(self):
         # Make sure we weren't flagged to exit
-        while not self.loader.exit_flag:
-            if not self.data_queue.empty():
-                row = self.data_queue.get()
-                # Grab the collision field
-                update = False
-                collision_instance = None
-                model_instance = None
-                if self.loader.collision_field is not None:
-                    model_collision_field = self.loader.collision_field
-                    data_collision_field = model_collision_field
-                    # If it's a long label, we need to look it up to map to data
-                    if model_collision_field in settings.LONG_TO_TERSE_LABELS:
-                        data_collision_field = settings.LONG_TO_TERSE_LABELS[model_collision_field]
-                    # If it's in the field map, we need to look it up
-                    elif model_collision_field in self.loader.field_map:
-                        data_collision_field = self.loader.field_map[model_collision_field]
-                    query = {model_collision_field: row[data_collision_field]}
-                    collision_instance = self.loader.model_class.objects.filter(**query).first()
+        while True:
+            row = self.data_queue.get()
+            # If row is none, we need to die.
+            if row is None:
+                self.data_queue.task_done()
+                connection.close()
+                return
+            # Grab the collision field
+            update = False
+            collision_instance = None
+            model_instance = None
+            if self.references["collision_field"] is not None:
+                model_collision_field = self.references["collision_field"]
+                data_collision_field = model_collision_field
+                # If it's in the field map, we need to look it up
+                if model_collision_field in self.field_map:
+                    data_collision_field = self.field_map[model_collision_field]
+                query = {model_collision_field: row[data_collision_field]}
+                collision_instance = self.model_class.objects.filter(**query).first()
 
-                    if collision_instance is not None:
-                        behavior = self.loader.collision_behavior
-                        if behavior is "delete":  # Delete the row from the data store and load new row
-                            collision_instance.delete()
-                        if behavior is "update":  # Update the row in the data store with new values from the CSV
-                            update = True
-                        if behavior is "skip":  # Skip the row
-                            continue
-                        if behavior is "skip_and_complain":  # Log a warning and skip the row
-                            self.loader.logger.warning('Hit a collision on row %s' % (row))
-                            continue
-                        if behavior is "die":  # Raise an exception and cease execution
-                            raise Exception("Hit collision on row %s" % (row))
+                if collision_instance is not None:
+                    behavior = self.references["collision_field"]
+                    if behavior is "delete":  # Delete the row from the data store and load new row
+                        collision_instance.delete()
+                    if behavior is "update":  # Update the row in the data store with new values from the CSV
+                        update = True
+                    if behavior is "skip":  # Skip the row
+                        continue
+                    if behavior is "skip_and_complain":  # Log a warning and skip the row
+                        self.references['logger'].warning('Hit a collision on row %s' % (row))
+                        continue
+                    if behavior is "die":  # Raise an exception and cease execution
+                        raise Exception("Hit collision on row %s" % (row))
 
-                if not update:
-                    model_instance = self.loader.model_class()
-                else:
-                    model_instance = collision_instance
+            if not update:
+                model_instance = self.model_class()
+            else:
+                model_instance = collision_instance
 
-                if self.loader.pre_row_function is not None:
-                    self.loader.pre_row_function(row=row, instance=model_instance)
+            if self.references["pre_row_function"] is not None:
+                self.references["pre_row_function"](row=row, instance=model_instance)
 
-                try:
-                    processed_row = self.load_data_into_model(model_instance,
-                                                              self.loader.fields,
-                                                              self.loader.field_map,
-                                                              self.loader.value_map,
-                                                              row)
-                except Exception as e:
-                    self.loader.logger.error(e)
-                # If we have a post row function, run it before saving
-                if self.loader.post_row_function is not None:
-                    self.loader.post_row_function(row=row, instance=model_instance)
+            try:
+                processed_row = self.load_data_into_model(model_instance,
+                                                          self.references["fields"],
+                                                          self.field_map,
+                                                          self.value_map,
+                                                          row,
+                                                          self.references["logger"])
+            except Exception as e:
+                self.references["logger"].error(e)
+            # If we have a post row function, run it before saving
+            if self.references["post_row_function"] is not None:
+                self.references["post_row_function"](row=row, instance=model_instance)
 
-                model_instance.save()
-            time.sleep(1)
-        connection.close()
+            model_instance.save()
+            self.data_queue.task_done()
 
     # Retry decorator to help resolve race conditions when constructing auxilliary objects
-    @retry(stop_max_attempt_number=3, wait_fixed=1000)
-    def load_data_into_model(self, model_instance, fields, field_map, value_map, row, as_dict=False):
+    @retry(stop_max_attempt_number=3, wait_fixed=10)
+    def load_data_into_model(self, model_instance, fields, field_map, value_map, row, logger, as_dict=False):
         mod = model_instance
-        loaded = False
 
         if as_dict:
             mod = {}
 
         for model_field in fields:
+            loaded = False
+
             source_field = model_field
             # If our model_field is present in the value map, use that value
             if model_field in value_map:
@@ -173,17 +194,21 @@ class DataLoaderThread(threading.Thread):
                 else:
                     self.store_value(mod, model_field, value_map[model_field])
                     loaded = True
+            # If we're not in the value map or the long_to_terse_labels, check the field map
+            elif model_field in field_map:
+                source_field = field_map[model_field]
             # If our field is the 'long form' field, we need to get what it maps to
             # in the data so we can map the data properly
             elif model_field in settings.LONG_TO_TERSE_LABELS:
                 source_field = settings.LONG_TO_TERSE_LABELS[model_field]
-            # If we're not in the value map or the long_to_terse_labels, check the field map
-            elif model_field in field_map:
-                source_field = field_map[model_field]
 
             # If we haven't loaded via value map, load in the data using the source field
             if not loaded:
-                self.store_value(mod, model_field, row[source_field])
+                if source_field in row:
+                    self.store_value(mod, model_field, row[source_field])
+                else:
+                    pass
+                    # logger.warning("Field " + source_field + " not available in data")
 
         if as_dict:
             return mod

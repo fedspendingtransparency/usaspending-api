@@ -1,4 +1,4 @@
-from django.test import TestCase, Client
+from django.test import TransactionTestCase, Client
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from django.core.management import call_command
 from django.conf import settings
@@ -6,7 +6,7 @@ import os
 import pytest
 
 
-class TreasuryAppropriationAccountLoadTests(TestCase):
+class TreasuryAppropriationAccountLoadTests(TransactionTestCase):
 
     # fixtures = ['tas']
 
@@ -20,5 +20,5 @@ class TreasuryAppropriationAccountLoadTests(TestCase):
         """
         Make sure an instance of a tas is properly created
         """
-        call_command('loadtas')
+        call_command('loadtas', os.path.join(settings.BASE_DIR, 'usaspending_api/data/tas_list.csv'))
         gwa_tas = TreasuryAppropriationAccount.objects.get(gwa_tas='00110100', beginning_period_of_availability='2011', ending_period_of_availability='2011')

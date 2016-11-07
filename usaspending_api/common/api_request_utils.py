@@ -1,4 +1,5 @@
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from datetime import date
 
@@ -37,9 +38,10 @@ class FilterGenerator():
         'contains': '__icontains',
         'in': '__in',
         'less_than_or_equal': '__lte',
-        'greather_than_or_equal': '__gte',
+        'greater_than_or_equal': '__gte',
         'range': '__range',
         'is_null': '__isnull',
+        'search': '__search',
 
         # Special operations follow
         'fy': 'fy'
@@ -54,6 +56,18 @@ class FilterGenerator():
     def __init__(self, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
         self.ignored_parameters = ['page', 'limit'] + ignored_parameters
+        # When using full-text search the surrounding code must check for search vectors!
+        self.search_vectors = []
+
+    # Attaches this generator's search vectors to the query_set, if there are any
+    def attach_search_vectors(self, query_set):
+        qs = query_set
+        if len(self.search_vectors) > 0:
+            vector_sum = self.search_vectors[0]
+            for vector in self.search_vectors[1:]:
+                vector_sum += vector
+            qs.annotate(search=vector_sum)
+        return qs
 
     # Pass in request.GET and you'll get back a **kwargs object suitable for use
     # in .filter()
@@ -116,6 +130,15 @@ class FilterGenerator():
             operation = FilterGenerator.operators[filt['operation']]
             value = filt['value']
 
+            # Special multi-field case for full-text search
+            if isinstance(field, list) and operation is '__search':
+                # We create the search vector and attach it to this object
+                sv = SearchVector(*field)
+                self.search_vectors.append(sv)
+                # Our Q object is simpler now
+                q_kwargs['search'] = value
+                # Return our Q and skip the rest
+                return Q(**q_kwargs)
             # It's unlikely anyone would specify and ignored parameter via post
             if field in self.ignored_parameters:
                 return Q()

@@ -163,6 +163,22 @@ The structure of the post request allows for a flexible and complex query with b
       "value": false
     }
     ```
+    * `search` - Executes a full text search on the specified field or fields
+    ```
+    {
+      "field": "awarding_agency__name",
+      "operation": "search",
+      "value": "congress"
+    }
+    ```
+    **_or_**
+    ```
+    {
+      "field": ["awarding_agency__name", "recipient__name"]
+      "operation": "search",
+      "value": "treasury"
+    }
+    ```
     * `fy` - Evaluates if the field (generally should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a 4-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017.
     ```
     {
