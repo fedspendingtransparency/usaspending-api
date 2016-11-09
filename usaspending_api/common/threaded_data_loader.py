@@ -12,6 +12,10 @@ import queue
 
 
 # This class is a threaded data loader
+# IMPLEMENTATION NOTE!!
+# If you make a test case with a class what will use this loader, ensure you use
+# TransactionTestCase rather than the normal TestCase as the base for your test,
+# otherwise you may run into some concurrency issues!
 class ThreadedDataLoader():
     # The threaded data loader requires a bit of set up, and explanation of the
     # parameters are below. Most parameter defaults are about where you'd want them:
@@ -108,6 +112,7 @@ class DataLoaderThread(Process):
 
     def run(self):
         self.references['logger'].info("Starting " + self.name)
+        connection.connect()
         self.process_data()
         self.references['logger'].info("Exiting " + self.name)
 
@@ -117,8 +122,8 @@ class DataLoaderThread(Process):
             row = self.data_queue.get()
             # If row is none, we need to die.
             if row is None:
-                connection.close()
                 self.data_queue.task_done()
+                connection.close()
                 return
             # Grab the collision field
             update = False
@@ -130,8 +135,8 @@ class DataLoaderThread(Process):
                 # If it's in the field map, we need to look it up
                 if model_collision_field in self.field_map:
                     data_collision_field = self.field_map[model_collision_field]
-                query_object = Q({model_collision_field: row[data_collision_field]})
-                collision_instance = self.model_class.objects.filter(query_object).first()
+                query = {model_collision_field: row[data_collision_field]}
+                collision_instance = self.model_class.objects.filter(**query).first()
 
                 if collision_instance is not None:
                     behavior = self.references["collision_field"]
