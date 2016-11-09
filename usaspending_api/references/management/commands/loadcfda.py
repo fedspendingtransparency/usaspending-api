@@ -24,6 +24,7 @@ class Command(BaseCommand):
                     cfda_program, created = CFDAProgram.objects.get_or_create(
                                     program_number=row['Program Number'])
 
+                    cfda_program.data_source = "USA"
                     cfda_program.program_title = row['Program Title']
                     cfda_program.popular_name = row['Popular Name (020)']
                     cfda_program.federal_agency = row['Federal Agency (030)']

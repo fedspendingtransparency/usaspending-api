@@ -1,9 +1,10 @@
 from django.db import models
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.common.models import DataSourceTrackedModel
 
 
 # Table #3 - Treasury Appropriation Accounts.
-class TreasuryAppropriationAccount(models.Model):
+class TreasuryAppropriationAccount(DataSourceTrackedModel):
     treasury_account_identifier = models.AutoField(primary_key=True)
     tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
     allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
@@ -42,7 +43,7 @@ class TreasuryAppropriationAccount(models.Model):
 
 
 # Table #4 - Appropriation Account Balances
-class AppropriationAccountBalances(models.Model):
+class AppropriationAccountBalances(DataSourceTrackedModel):
     appropriation_account_balances_id = models.AutoField(primary_key=True)
     treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE, db_column='treasury_account_identifier')
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)

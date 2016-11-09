@@ -1,4 +1,5 @@
 from django.db import models
+from usaspending_api.common.models import DataSourceTrackedModel
 
 
 class RefCityCountyCode(models.Model):
@@ -49,15 +50,15 @@ class RefCountryCode(models.Model):
 class Agency(models.Model):
     # id = models.AutoField(primary_key=True)
     id = models.AutoField(primary_key=True)  # meaningless id
-    cgac_code = models.CharField(max_length=3, blank=True, null=True)
+    cgac_code = models.CharField(max_length=3, blank=True, null=True, verbose_name="Agency Code")
     # agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
     # will equal fpds_code if a top level department
-    subtier_code = models.CharField(max_length=4, blank=True, null=True)
-    name = models.CharField(max_length=150, blank=True, null=True)
+    subtier_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Sub-Tier Agency Code")
+    name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Agency Name")
     department = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sub_departments')
     parent_agency = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sub_agencies')
-    aac_code = models.CharField(max_length=6, blank=True, null=True)
+    aac_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Office Code")
     fourcc_code = models.CharField(max_length=4, blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
@@ -74,26 +75,26 @@ class Agency(models.Model):
             return "%s" % (self.name)
 
 
-class Location(models.Model):
+class Location(DataSourceTrackedModel):
     location_id = models.AutoField(primary_key=True)
-    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True)
-    location_country_name = models.CharField(max_length=100, blank=True, null=True)
-    location_state_code = models.CharField(max_length=2, blank=True, null=True)
-    location_state_name = models.CharField(max_length=50, blank=True, null=True)
+    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
+    location_country_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Country Name")
+    location_state_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="State Code")
+    location_state_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="State Name")
     location_state_text = models.CharField(max_length=100, blank=True, null=True)
     # Changed by KPJ to 100 from 40, on 20161013
-    location_city_name = models.CharField(max_length=100, blank=True, null=True)
+    location_city_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="City Name")
     location_city_code = models.CharField(max_length=5, blank=True, null=True)
     location_county_name = models.CharField(max_length=40, blank=True, null=True)
     location_county_code = models.CharField(max_length=3, blank=True, null=True)
-    location_address_line1 = models.CharField(max_length=150, blank=True, null=True)
-    location_address_line2 = models.CharField(max_length=150, blank=True, null=True)
-    location_address_line3 = models.CharField(max_length=55, blank=True, null=True)
+    location_address_line1 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 1")
+    location_address_line2 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 2")
+    location_address_line3 = models.CharField(max_length=55, blank=True, null=True, verbose_name="Address Line 3")
     location_foreign_location_description = models.CharField(max_length=100, blank=True, null=True)
-    location_zip4 = models.CharField(max_length=10, blank=True, null=True)
+    location_zip4 = models.CharField(max_length=10, blank=True, null=True, verbose_name="ZIP+4")
     location_zip_4a = models.CharField(max_length=10, blank=True, null=True)
-    location_congressional_code = models.CharField(max_length=2, blank=True, null=True)
-    location_performance_code = models.CharField(max_length=9, blank=True, null=True)
+    location_congressional_code = models.CharField(max_length=2, blank=True, null=True,  verbose_name="Congressional District Code")
+    location_performance_code = models.CharField(max_length=9, blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
     location_zip_last4 = models.CharField(max_length=4, blank=True, null=True)
     location_zip5 = models.CharField(max_length=5, blank=True, null=True)
     location_foreign_postal_code = models.CharField(max_length=50, blank=True, null=True)
@@ -134,17 +135,17 @@ class Location(models.Model):
                            "reporting_period_end")
 
 
-class LegalEntity(models.Model):
+class LegalEntity(DataSourceTrackedModel):
     legal_entity_id = models.AutoField(primary_key=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
     ultimate_parent_legal_entity_id = models.IntegerField(null=True)
     # duns number ?
-    recipient_name = models.CharField(max_length=120, blank=True)
+    recipient_name = models.CharField(max_length=120, blank=True, verbose_name="Recipient Name")
     vendor_doing_as_business_name = models.CharField(max_length=400, blank=True, null=True)
     vendor_phone_number = models.CharField(max_length=30, blank=True, null=True)
     vendor_fax_number = models.CharField(max_length=30, blank=True, null=True)
     business_types = models.CharField(max_length=3, blank=True, null=True)
-    recipient_unique_id = models.CharField(max_length=9, blank=True, null=True)
+    recipient_unique_id = models.CharField(max_length=9, blank=True, null=True, verbose_name="DUNS Number")
     limited_liability_corporation = models.CharField(max_length=1, blank=True, null=True)
     sole_proprietorship = models.CharField(max_length=1, blank=True, null=True)
     partnership_or_limited_liability_partnership = models.CharField(max_length=1, blank=True, null=True)
@@ -175,7 +176,7 @@ class LegalEntity(models.Model):
     international_organization = models.CharField(max_length=1, blank=True, null=True)
     us_government_entity = models.CharField(max_length=1, blank=True, null=True)
     emerging_small_business = models.CharField(max_length=1, blank=True, null=True)
-    c8a_program_participant = models.CharField(db_column='8a_program_participant', max_length=1, blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
+    c8a_program_participant = models.CharField(db_column='8a_program_participant', max_length=1, blank=True, null=True, verbose_name="8a Program Participant")  # Field renamed because it wasn't a valid Python identifier.
     sba_certified_8a_joint_venture = models.CharField(max_length=1, blank=True, null=True)
     dot_certified_disadvantage = models.CharField(max_length=1, blank=True, null=True)
     self_certified_small_disadvantaged_business = models.CharField(max_length=1, blank=True, null=True)
@@ -183,9 +184,9 @@ class LegalEntity(models.Model):
     small_disadvantaged_business = models.CharField(max_length=1, blank=True, null=True)
     the_ability_one_program = models.CharField(max_length=1, blank=True, null=True)
     historically_black_college = models.CharField(max_length=1, blank=True, null=True)
-    c1862_land_grant_college = models.CharField(db_column='1862_land_grant_college', max_length=1, blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    c1890_land_grant_college = models.CharField(db_column='1890_land_grant_college', max_length=1, blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    c1994_land_grant_college = models.CharField(db_column='1994_land_grant_college', max_length=1, blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
+    c1862_land_grant_college = models.CharField(db_column='1862_land_grant_college', max_length=1, blank=True, null=True, verbose_name="1862 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
+    c1890_land_grant_college = models.CharField(db_column='1890_land_grant_college', max_length=1, blank=True, null=True, verbose_name="1890 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
+    c1994_land_grant_college = models.CharField(db_column='1994_land_grant_college', max_length=1, blank=True, null=True, verbose_name="1894 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
     minority_institution = models.CharField(max_length=1, blank=True, null=True)
     private_university_or_college = models.CharField(max_length=1, blank=True, null=True)
     school_of_forestry = models.CharField(max_length=1, blank=True, null=True)
@@ -193,7 +194,7 @@ class LegalEntity(models.Model):
     tribal_college = models.CharField(max_length=1, blank=True, null=True)
     veterinary_college = models.CharField(max_length=1, blank=True, null=True)
     educational_institution = models.CharField(max_length=1, blank=True, null=True)
-    alaskan_native_servicing_institution = models.CharField(max_length=1, blank=True, null=True)
+    alaskan_native_servicing_institution = models.CharField(max_length=1, blank=True, null=True, verbose_name="Alaskan Native Owned Servicing Institution")
     community_development_corporation = models.CharField(max_length=1, blank=True, null=True)
     native_hawaiian_servicing_institution = models.CharField(max_length=1, blank=True, null=True)
     domestic_shelter = models.CharField(max_length=1, blank=True, null=True)
@@ -212,7 +213,7 @@ class LegalEntity(models.Model):
     contracts = models.CharField(max_length=1, blank=True, null=True)
     grants = models.CharField(max_length=1, blank=True, null=True)
     receives_contracts_and_grants = models.CharField(max_length=1, blank=True, null=True)
-    airport_authority = models.CharField(max_length=1, blank=True, null=True)
+    airport_authority = models.CharField(max_length=1, blank=True, null=True, verbose_name="Airport Authority")
     council_of_governments = models.CharField(max_length=1, blank=True, null=True)
     housing_authorities_public_tribal = models.CharField(max_length=1, blank=True, null=True)
     interstate_entity = models.CharField(max_length=1, blank=True, null=True)
@@ -220,12 +221,12 @@ class LegalEntity(models.Model):
     port_authority = models.CharField(max_length=1, blank=True, null=True)
     transit_authority = models.CharField(max_length=1, blank=True, null=True)
     foreign_owned_and_located = models.CharField(max_length=1, blank=True, null=True)
-    american_indian_owned_business = models.CharField(max_length=1, blank=True, null=True)
-    alaskan_native_owned_corporation_or_firm = models.CharField(max_length=1, blank=True, null=True)
+    american_indian_owned_business = models.CharField(max_length=1, blank=True, null=True, verbose_name="American Indian Owned Business")
+    alaskan_native_owned_corporation_or_firm = models.CharField(max_length=1, blank=True, null=True, verbose_name="Alaskan Native Owned Corporation or Firm")
     indian_tribe_federally_recognized = models.CharField(max_length=1, blank=True, null=True)
     native_hawaiian_owned_business = models.CharField(max_length=1, blank=True, null=True)
     tribally_owned_business = models.CharField(max_length=1, blank=True, null=True)
-    asian_pacific_american_owned_business = models.CharField(max_length=1, blank=True, null=True)
+    asian_pacific_american_owned_business = models.CharField(max_length=1, blank=True, null=True, verbose_name="Asian Pacific American Owned business")
     black_american_owned_business = models.CharField(max_length=1, blank=True, null=True)
     hispanic_american_owned_business = models.CharField(max_length=1, blank=True, null=True)
     native_american_owned_business = models.CharField(max_length=1, blank=True, null=True)
@@ -246,6 +247,7 @@ class LegalEntity(models.Model):
     class Meta:
         managed = True
         db_table = 'legal_entity'
+        unique_together = (('recipient_name'),)
 
 
 # Reference tables
@@ -288,7 +290,7 @@ class RefProgramActivity(models.Model):
         unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
 
 
-class CFDAProgram(models.Model):
+class CFDAProgram(DataSourceTrackedModel):
     program_number = models.CharField(primary_key=True, max_length=7)
     program_title = models.TextField(blank=True, null=True)
     popular_name = models.TextField(blank=True, null=True)

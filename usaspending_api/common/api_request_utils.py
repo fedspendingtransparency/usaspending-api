@@ -1,4 +1,5 @@
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from datetime import date
 
@@ -30,15 +31,20 @@ class FiscalYear():
 # This class supports multiple methods of dynamically creating filter queries
 class FilterGenerator():
     operators = {
+        # Django standard operations
         'equals': '',
         'less_than': '__lt',
         'greater_than': '__gt',
         'contains': '__icontains',
         'in': '__in',
         'less_than_or_equal': '__lte',
-        'greather_than_or_equal': '__gte',
+        'greater_than_or_equal': '__gte',
         'range': '__range',
-        'is_null': '__isnull'
+        'is_null': '__isnull',
+        'search': '__search',
+
+        # Special operations follow
+        'fy': 'fy'
     }
 
     # Creating the class requires a filter map - this maps one parameter filter
@@ -50,6 +56,18 @@ class FilterGenerator():
     def __init__(self, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
         self.ignored_parameters = ['page', 'limit'] + ignored_parameters
+        # When using full-text search the surrounding code must check for search vectors!
+        self.search_vectors = []
+
+    # Attaches this generator's search vectors to the query_set, if there are any
+    def attach_search_vectors(self, query_set):
+        qs = query_set
+        if len(self.search_vectors) > 0:
+            vector_sum = self.search_vectors[0]
+            for vector in self.search_vectors[1:]:
+                vector_sum += vector
+            qs.annotate(search=vector_sum)
+        return qs
 
     # Pass in request.GET and you'll get back a **kwargs object suitable for use
     # in .filter()
@@ -85,7 +103,7 @@ class FilterGenerator():
     # If the 'combine_method' is present in a filter, you MUST specify another
     # 'filters' set in that object of filters to combine
     # The combination method for filters at the root level is 'AND'
-    # Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range
+    # Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range, fy
     # Note that contains is always case insensitive
     def create_from_post(self, parameters):
         try:
@@ -97,9 +115,9 @@ class FilterGenerator():
     def create_q_from_filter_list(self, filter_list, combine_method='AND'):
         q_object = Q()
         for filt in filter_list:
-            if combine_method is 'AND':
+            if combine_method == 'AND':
                 q_object &= self.create_q_from_filter(filt)
-            elif combine_method is 'OR':
+            elif combine_method == 'OR':
                 q_object |= self.create_q_from_filter(filt)
         return q_object
 
@@ -112,11 +130,24 @@ class FilterGenerator():
             operation = FilterGenerator.operators[filt['operation']]
             value = filt['value']
 
+            # Special multi-field case for full-text search
+            if isinstance(field, list) and operation is '__search':
+                # We create the search vector and attach it to this object
+                sv = SearchVector(*field)
+                self.search_vectors.append(sv)
+                # Our Q object is simpler now
+                q_kwargs['search'] = value
+                # Return our Q and skip the rest
+                return Q(**q_kwargs)
             # It's unlikely anyone would specify and ignored parameter via post
             if field in self.ignored_parameters:
                 return Q()
             if field in self.filter_map:
                 field = self.filter_map[field]
+
+            if operation is 'fy':
+                fy = FiscalYear(value)
+                return fy.get_filter_object(field)
 
             q_kwargs[field + operation] = value
 
