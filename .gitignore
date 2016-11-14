@@ -5,6 +5,7 @@
 .coverage
 .DS_Store
 
+log/*
 usaspending_api/logs/*
 usaspending_api/.idea/*
 usaspending_api/references/.idea/*
