@@ -95,8 +95,7 @@ DATABASES = {'default': dj_database_url.config(conn_max_age=600)}
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
-# Also - skip this if we're testing - we won't need it and it will take time
-if os.environ.get('DATA_BROKER_DATABASE_URL') and (len(sys.argv) >= 2 and not sys.argv[1] == 'test'):
+if os.environ.get('DATA_BROKER_DATABASE_URL') and not sys.argv[1:2] == ['test']:
     DATABASES['data_broker'] = dj_database_url.parse(os.environ.get('DATA_BROKER_DATABASE_URL'), conn_max_age=600)
 
 # Password validation
