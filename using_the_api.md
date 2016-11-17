@@ -179,7 +179,7 @@ The structure of the post request allows for a flexible and complex query with b
       "value": "treasury"
     }
     ```
-    * `fy` - Evaluates if the field (generally should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a 4-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017.
+    * `fy` - Evaluates if the field (generally should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a 4-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017. Does not need `value_format` as it is assumed.
     ```
     {
       "field": "date_signed",
@@ -187,7 +187,28 @@ The structure of the post request allows for a flexible and complex query with b
       "value": 2017
     }
     ```
+    * `range_intersect` - Evaluates if the range defined by a two-field list intersects with the range defined
+    by the two length array `value`. `value` can be a single item _only_ if `value_format` is also set to a
+    range converting value.
+    ```
+    {
+      "field": ["create_date", "update_date"],
+      "operation": "range_intersect",
+      "value": ["2016-11-01", "2016-11-02"]
+    }
+    ```
+    **_or_**
+    ```
+    {
+      "field": ["create_date", "update_date"],
+      "operation": "range_intersect",
+      "value": 2017,
+      "value_format": "fy"
+    }
+    ```
   * `value` - Specifies the value to compare the field against. Some operations require specific datatypes for the value, and they are documented in the `operation` section.
+  * `value_format` - Specifies the format for the value. Only used in some operations where noted. Valid choices are enumerated below
+    * `fy` - Treats a single value as a fiscal year range
   * `combine_method` - This is a special field which modifies how the filter behaves. When `combine_method` is specified, the only other allowed parameter on the filter is `filters` which should contain an array of filter objects. The `combine_method` will be used to logically join the filters in this list. Options are `AND` or `OR`.
   ```
   {
