@@ -411,7 +411,8 @@ Autocomplete queries currently require the endpoint to have additional handling,
     * `startswith` - Matches if the field's value starts with the specified value
 
 #### Response
-```{
+```
+{
   "results": {
     "recipient__location__location_state_name": [
       "Texas",
