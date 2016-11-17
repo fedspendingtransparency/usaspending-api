@@ -9,12 +9,12 @@ The U.S. Department of the Treasury is building a suite of open-source tools to 
 For more information about the DATA Act Broker codebase, please visit this repository's [main README](../README.md "DATA Act Broker Backend README").
 
 ## Table of Contents
-  * [Status Codes](###status-codes)
-  * [Data Routes](###data-routes)
-    * [Routes and Methods](####routes-and-methods)
-  * [GET Requests](####get-requests)
-  * [POST Requests](####post-requests)
-  * [Autocomplete Queries](####autocomplete-queries)
+  * [Status Codes](#status-codes)
+  * [Data Routes](#data-routes)
+    * [Routes and Methods](#routes-and-methods)
+  * [GET Requests](#get-requests)
+  * [POST Requests](#post-requests)
+  * [Autocomplete Queries](#autocomplete-queries)
 
 
 ## DATA Act Data Store Route Documentation
