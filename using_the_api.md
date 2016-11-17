@@ -8,6 +8,15 @@ The U.S. Department of the Treasury is building a suite of open-source tools to 
 
 For more information about the DATA Act Broker codebase, please visit this repository's [main README](../README.md "DATA Act Broker Backend README").
 
+## Table of Contents
+  * [Status Codes](###status-codes)
+  * [Data Routes](###data-routes)
+    * [Routes and Methods](####routes-and-methods)
+  * [GET Requests](####get-requests)
+  * [POST Requests](####post-requests)
+  * [Autocomplete Queries](####autocomplete-queries)
+
+
 ## DATA Act Data Store Route Documentation
 
 Routes do not currently require any authorization
@@ -29,6 +38,10 @@ The currently available routes are:
     - _Description_: Provides award level summary data
     - _Methods_: GET, POST
     - _Metadata_: Provides `total_obligation_sum`, a sum of the `total_obligation` for all data in the dataset
+
+  * **/v1/awards/summary/autocomplete/**
+    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards/summary endpoint
+    - _Methods_: POST
 
   * **/v1/awards/**
     - _Description_: Returns all `FinancialAccountsByAwardsTransactionObligations` data. _NB_: This endpoint is due for a rework in the near future
@@ -379,3 +392,43 @@ The response has three functional parts:
   * `total_metadata` - Includes data about the total dataset and any dataset-level metadata specific to the endpoint
     * `count` - The total number of items in this dataset, spanning all pages
   * `results` - An array of objects corresponding to the data returned by the specified route. Will _always_ be an array, even if the number of results is only one.
+
+### Autocomplete Queries
+Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably awards/summary).
+#### Body
+```
+{
+	"fields": ["recipient__location__location_state_code", "recipient__location__location_state_name"],
+	"value": "a",
+	"mode": "contains"
+}
+```
+#### Body Description
+  * `fields` - A list of fields to be searched for autocomplete. This allows for foreign key traversal using the usual Django patterns. This should _always_ be a list, even if the length is only one
+  * `value` - The value to use as the autocomplete pattern. Typically a string, but could be a number in uncommon circumstances. The search will currently _always_ be case insensitive
+  * `mode` - The search mode. Options available are:
+    * `contains` - Matches if the field's value contains the specified value
+    * `startswith` - Matches if the field's value starts with the specified value
+
+#### Response
+```{
+  "results": {
+    "recipient__location__location_state_name": [
+      "Texas",
+      "California",
+      "Georgia"
+    ],
+    "recipient__location__location_state_code": [
+      "CA",
+      "GA"
+    ]
+  },
+  "counts": {
+    "recipient__location__location_state_name": 3,
+    "recipient__location__location_state_code": 2
+  }
+}
+```
+#### Response Description
+  * `results` - The actual results. For each field search, will contain a list of all unique values matching the requested value and mode
+  * `counts` - Contains the length of each array in the results object

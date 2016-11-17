@@ -219,6 +219,54 @@ class FilterGenerator():
         return Q(**q_case)
 
 
+# Handles autocomplete requests
+class AutoCompleteHandler():
+    @staticmethod
+    # Data set to be searched for the value, and which fields to look in
+    # Mode is either "contains" or "startswith"
+    def get_values_and_counts(data_set, fields, value, mode="contains"):
+        value_dict = {}
+        count_dict = {}
+
+        if mode == "contains":
+            mode = "__icontains"
+        elif mode == "startswith":
+            mode = "__istartswith"
+
+        for field in fields:
+            q_args = {}
+            q_args[field + mode] = value
+            value_dict[field] = list(set(data_set.filter(Q(**q_args)).values_list(field, flat=True)))  # Why this weirdness? To ensure we eliminate duplicates
+            count_dict[field] = len(value_dict[field])
+
+        return value_dict, count_dict
+
+    @staticmethod
+    def handle(data_set, body):
+        try:
+            AutoCompleteHandler.validate(body)
+        except:
+            raise
+        if "mode" not in body:
+            body["mode"] = "contains"
+        value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set, body["fields"], body["value"], body["mode"])
+        return {
+            "counts": count_dict,
+            "results": value_dict
+        }
+
+    @staticmethod
+    def validate(body):
+        if "fields" in body and "value" in body:
+            if not isinstance(body["fields"], list):
+                raise Exception("Invalid field, autocomplete fields value must be a list")
+        else:
+            raise Exception("Invalid request, autocomplete requests need parameters 'fields' and 'value'")
+        if "mode" in body:
+            if body["mode"] not in ["contains", "startswith"]:
+                raise Exception("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
+
+
 class ResponsePaginator():
     @staticmethod
     def get_paged_data(data_set, page=1, page_limit=100, request_parameters={}):
