@@ -7,7 +7,7 @@ This is the API that will drive the new USAspending.gov. It is currently under a
 
 ## Getting Started
 
-This API is built on Python 3.3+, Django, and Django Rest Framework.
+This API is built on Python 3.5+, Django, and Django Rest Framework.
 
 Assumptions:
 
@@ -124,7 +124,7 @@ Now, go to `http://localhost:8000/api/v1/awards/` to see the API! There aren't a
 The Django server has an ETL process built in as a custom management command. Follow these steps to import data from a data broker database:
 
   1. Configure the `DATA_BROKER_DATABASE_URL` environment variable. This is the same process as setting up the API backend. Exporting `DATA_BROKER_DATABASE_URL` should look like this:
-  
+
   ```
   $ export DATA_BROKER_DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/NAME'
   ```
