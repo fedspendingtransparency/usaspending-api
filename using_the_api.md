@@ -202,7 +202,7 @@ The structure of the post request allows for a flexible and complex query with b
     ```
     * `range_intersect` - Evaluates if the range defined by a two-field list intersects with the range defined
     by the two length array `value`. `value` can be a single item _only_ if `value_format` is also set to a
-    range converting value.
+    range converting value. An example of where this is useful is when a contract spans multiple fiscal years, to evaluate whether it overlaps with any one particular fiscal year - that is, the range defined by `period_of_performance_start` to `period_of_performance_end` intersects with the fiscal year.
     ```
     {
       "field": ["create_date", "update_date"],
