@@ -8,6 +8,15 @@ The U.S. Department of the Treasury is building a suite of open-source tools to 
 
 For more information about the DATA Act Broker codebase, please visit this repository's [main README](../README.md "DATA Act Broker Backend README").
 
+## Table of Contents
+  * [Status Codes](#status-codes)
+  * [Data Routes](#data-routes)
+    * [Routes and Methods](#routes-and-methods)
+  * [GET Requests](#get-requests)
+  * [POST Requests](#post-requests)
+  * [Autocomplete Queries](#autocomplete-queries)
+
+
 ## DATA Act Data Store Route Documentation
 
 Routes do not currently require any authorization
@@ -29,6 +38,10 @@ The currently available routes are:
     - _Description_: Provides award level summary data
     - _Methods_: GET, POST
     - _Metadata_: Provides `total_obligation_sum`, a sum of the `total_obligation` for all data in the dataset
+
+  * **/v1/awards/summary/autocomplete/**
+    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards/summary endpoint
+    - _Methods_: POST
 
   * **/v1/awards/**
     - _Description_: Returns all `FinancialAccountsByAwardsTransactionObligations` data. _NB_: This endpoint is due for a rework in the near future
@@ -179,7 +192,7 @@ The structure of the post request allows for a flexible and complex query with b
       "value": "treasury"
     }
     ```
-    * `fy` - Evaluates if the field (generally should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a 4-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017.
+    * `fy` - Evaluates if the field (generally should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a 4-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017. Does not need `value_format` as it is assumed.
     ```
     {
       "field": "date_signed",
@@ -187,7 +200,36 @@ The structure of the post request allows for a flexible and complex query with b
       "value": 2017
     }
     ```
+    * `range_intersect` - Evaluates if the range defined by a two-field list intersects with the range defined
+    by the two length array `value`. `value` can be a single item _only_ if `value_format` is also set to a
+    range converting value. An example of where this is useful is when a contract spans multiple fiscal years, to evaluate whether it overlaps with any one particular fiscal year - that is, the range defined by `period_of_performance_start` to `period_of_performance_end` intersects with the fiscal year.
+
+    For example, if your `field` parameter defines a range as `[3,5]` then the following ranges will intersect:
+      * `[2,3]` - As the 3 overlaps
+      * `[4,4]` - As the entire range is contained within another
+      * `[0,100]` - As the entire range is contained within another
+      * `[5,10]` - As the 5 overlaps
+      
+    Mathematically speaking, ranges will intersect as long as there exists some value `C` such that `r1 <= C <= r2` and `f1 <= C <= f2`
+    ```
+    {
+      "field": ["create_date", "update_date"],
+      "operation": "range_intersect",
+      "value": ["2016-11-01", "2016-11-02"]
+    }
+    ```
+    **_or_**
+    ```
+    {
+      "field": ["create_date", "update_date"],
+      "operation": "range_intersect",
+      "value": 2017,
+      "value_format": "fy"
+    }
+    ```
   * `value` - Specifies the value to compare the field against. Some operations require specific datatypes for the value, and they are documented in the `operation` section.
+  * `value_format` - Specifies the format for the value. Only used in some operations where noted. Valid choices are enumerated below
+    * `fy` - Treats a single value as a fiscal year range
   * `combine_method` - This is a special field which modifies how the filter behaves. When `combine_method` is specified, the only other allowed parameter on the filter is `filters` which should contain an array of filter objects. The `combine_method` will be used to logically join the filters in this list. Options are `AND` or `OR`.
   ```
   {
@@ -358,3 +400,44 @@ The response has three functional parts:
   * `total_metadata` - Includes data about the total dataset and any dataset-level metadata specific to the endpoint
     * `count` - The total number of items in this dataset, spanning all pages
   * `results` - An array of objects corresponding to the data returned by the specified route. Will _always_ be an array, even if the number of results is only one.
+
+### Autocomplete Queries
+Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably awards/summary).
+#### Body
+```
+{
+	"fields": ["recipient__location__location_state_code", "recipient__location__location_state_name"],
+	"value": "a",
+	"mode": "contains"
+}
+```
+#### Body Description
+  * `fields` - A list of fields to be searched for autocomplete. This allows for foreign key traversal using the usual Django patterns. This should _always_ be a list, even if the length is only one
+  * `value` - The value to use as the autocomplete pattern. Typically a string, but could be a number in uncommon circumstances. The search will currently _always_ be case insensitive
+  * `mode` - The search mode. Options available are:
+    * `contains` - Matches if the field's value contains the specified value
+    * `startswith` - Matches if the field's value starts with the specified value
+
+#### Response
+```
+{
+  "results": {
+    "recipient__location__location_state_name": [
+      "Texas",
+      "California",
+      "Georgia"
+    ],
+    "recipient__location__location_state_code": [
+      "CA",
+      "GA"
+    ]
+  },
+  "counts": {
+    "recipient__location__location_state_name": 3,
+    "recipient__location__location_state_code": 2
+  }
+}
+```
+#### Response Description
+  * `results` - The actual results. For each field search, will contain a list of all unique values matching the requested value and mode
+  * `counts` - Contains the length of each array in the results object

@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwardsTransactionObligations, Award
 from usaspending_api.awards.serializers import FinancialAccountsByAwardsTransactionObligationsSerializer, AwardSerializer
-from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator
+from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator, AutoCompleteHandler
 import json
 
 
@@ -45,6 +45,18 @@ class AwardList(APIView):
             "results": serializer.data
         }
         return Response(response_object)
+
+
+# Autocomplete support for award summary objects
+class AwardListSummaryAutocomplete(APIView):
+    # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
+    def post(self, request, format=None):
+        try:
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            return Response(AutoCompleteHandler.handle(Award.objects.all(), body))
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AwardListSummary(APIView):
