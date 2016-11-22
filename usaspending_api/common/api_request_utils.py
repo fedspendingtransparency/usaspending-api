@@ -1,7 +1,8 @@
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
-from datetime import date
+from django.utils import timezone
+from datetime import date, time, datetime
 
 
 # This class represents a fiscal year
@@ -10,10 +11,11 @@ from datetime import date
 class FiscalYear():
     def __init__(self, fy):
         self.fy = fy
+        tz = time(0, 0, 1, tzinfo=timezone.utc)
         # FY start previous year on Oct 1st. i.e. FY 2017 starts 10-1-2016
-        self.fy_start_date = date(int(fy)-1, 10, 1)
+        self.fy_start_date = datetime.combine(date(int(fy)-1, 10, 1), tz)
         # FY ends current FY year on Sept 30th i.e. FY 2017 ends 9-30-2017
-        self.fy_end_date = date(int(fy), 9, 30)
+        self.fy_end_date = datetime.combine(date(int(fy), 9, 30), tz)
 
     # Creates a filter object using date field, will return a Q object such that
     # Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
@@ -44,7 +46,8 @@ class FilterGenerator():
         'search': '__search',
 
         # Special operations follow
-        'fy': 'fy'
+        'fy': 'fy',
+        'range_intersect': 'range_intersect'
     }
 
     # Creating the class requires a filter map - this maps one parameter filter
@@ -130,6 +133,10 @@ class FilterGenerator():
             operation = FilterGenerator.operators[filt['operation']]
             value = filt['value']
 
+            value_format = None
+            if 'value_format' in filt:
+                value_format = filt['value_format']
+
             # Special multi-field case for full-text search
             if isinstance(field, list) and operation is '__search':
                 # We create the search vector and attach it to this object
@@ -139,15 +146,25 @@ class FilterGenerator():
                 q_kwargs['search'] = value
                 # Return our Q and skip the rest
                 return Q(**q_kwargs)
+
+            # Handle special operations
+            if operation is 'fy':
+                fy = FiscalYear(value)
+                return fy.get_filter_object(field)
+            if operation is 'range_intersect':
+                # If we have a value_format and it is fy, convert it to the
+                # date range for that fiscal year
+                if value_format and value_format == 'fy':
+                    fy = FiscalYear(value)
+                    value = [fy.fy_start_date, fy.fy_end_date]
+                return self.range_intersect(field, value)
+
+            # We don't have a special operation, so handle the remaining cases
             # It's unlikely anyone would specify and ignored parameter via post
             if field in self.ignored_parameters:
                 return Q()
             if field in self.filter_map:
                 field = self.filter_map[field]
-
-            if operation is 'fy':
-                fy = FiscalYear(value)
-                return fy.get_filter_object(field)
 
             q_kwargs[field + operation] = value
 
@@ -171,8 +188,83 @@ class FilterGenerator():
                         if filt['operation'] == 'range':
                             if not isinstance(filt['value'], list) or len(filt['value']) != 2:
                                 raise Exception("Invalid value, operation 'range' requires an array value of length 2")
+                        if filt['operation'] == 'range_intersect':
+                            if not isinstance(filt['field'], list) or len(filt['field']) != 2:
+                                raise Exception("Invalid field, operation 'range_intersect' requires an array of length 2 for field")
+                            if (not isinstance(filt['value'], list) or len(filt['value']) != 2) and 'value_format' not in filt:
+                                raise Exception("Invalid value, operation 'range_intersect' requires an array value of length 2, or a single value with value_format set to a ranged format (such as fy)")
                     else:
                         raise Exception("Malformed filter - missing field, operation, or value")
+
+    # Special operation functions follow
+
+    # Range intersect function - evaluates if a range defined by two fields overlaps
+    # a range of values
+    # Here's a picture:
+    #                 f1 - - - f2
+    #                       r1 - - - r2     - Case 1
+    #             r1 - - - r2               - Case 2
+    #                 r1 - - - r2           - Case 3
+    # All of the ranges defined by [r1,r2] intersect [f1,f2]
+    # i.e. f1 <= r2 && r1 <= f2 we intersect!
+    # Returns: Q object to perform this operation
+    # Parameters - Make sure these are in order:
+    #           fields - A list defining the fields forming the first range (in order)
+    #           values - A list of the values which define the second range (in order)
+    def range_intersect(self, fields, values):
+        # Create the Q filter case
+        q_case = {}
+        q_case[fields[0] + "__lte"] = values[1]  # f1 <= r2
+        q_case[fields[1] + "__gte"] = values[0]  # f2 >= r1
+        return Q(**q_case)
+
+
+# Handles autocomplete requests
+class AutoCompleteHandler():
+    @staticmethod
+    # Data set to be searched for the value, and which fields to look in
+    # Mode is either "contains" or "startswith"
+    def get_values_and_counts(data_set, fields, value, mode="contains"):
+        value_dict = {}
+        count_dict = {}
+
+        if mode == "contains":
+            mode = "__icontains"
+        elif mode == "startswith":
+            mode = "__istartswith"
+
+        for field in fields:
+            q_args = {}
+            q_args[field + mode] = value
+            value_dict[field] = list(set(data_set.filter(Q(**q_args)).values_list(field, flat=True)))  # Why this weirdness? To ensure we eliminate duplicates
+            count_dict[field] = len(value_dict[field])
+
+        return value_dict, count_dict
+
+    @staticmethod
+    def handle(data_set, body):
+        try:
+            AutoCompleteHandler.validate(body)
+        except:
+            raise
+        if "mode" not in body:
+            body["mode"] = "contains"
+        value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set, body["fields"], body["value"], body["mode"])
+        return {
+            "counts": count_dict,
+            "results": value_dict
+        }
+
+    @staticmethod
+    def validate(body):
+        if "fields" in body and "value" in body:
+            if not isinstance(body["fields"], list):
+                raise Exception("Invalid field, autocomplete fields value must be a list")
+        else:
+            raise Exception("Invalid request, autocomplete requests need parameters 'fields' and 'value'")
+        if "mode" in body:
+            if body["mode"] not in ["contains", "startswith"]:
+                raise Exception("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
 
 
 class ResponsePaginator():
