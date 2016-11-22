@@ -2,6 +2,7 @@ from rest_framework import serializers
 from usaspending_api.awards.models import *
 from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer
 from usaspending_api.references.serializers import *
+from usaspending_api.common.serializers import LimitableSerializer
 
 
 class FinancialAccountsByAwardsSerializer(serializers.ModelSerializer):
@@ -36,7 +37,7 @@ class FinancialAssistanceAwardSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class AwardSerializer(serializers.ModelSerializer):
+class AwardSerializer(LimitableSerializer):
 
     recipient = LegalEntitySerializer(read_only=True)
     awarding_agency = AgencySerializer(read_only=True)

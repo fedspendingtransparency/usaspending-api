@@ -79,6 +79,8 @@ The structure of the post request allows for a flexible and complex query with b
 {
     "page": 1,
     "limit": 1000,
+    "fields": ["fain", "total_obligation"]
+    "exclude": ["recipient"]
     "filters": [
       {
         "field": "fain",
@@ -97,8 +99,10 @@ The structure of the post request allows for a flexible and complex query with b
 
 * `page` - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
 * `limit` - The maximum length of a page in the response. Default: 100
+* `fields` - What fields to return. Must be a list. Omitting this will return all fields.
+* `exclude` - What fields to exclude from the return. Must be a list.
 * `filters` - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
-  * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__fpds_code` will filter on the field `fpds_code` for the referenced object stored in `funding_agency`. Some fields have special handling functions, see the section _Special Fields_ for more information.
+  * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__fpds_code` will filter on the field `fpds_code` for the referenced object stored in `funding_agency`.
   * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. The options for this field are:
     * `equals` - Evaluates the equality of the value with that stored in the field
       ```
