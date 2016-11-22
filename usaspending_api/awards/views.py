@@ -69,7 +69,10 @@ class AwardListSummary(APIView):
 
         paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=body)
 
-        serializer = AwardSerializer(paged_data, many=True)
+        fields = body.get('fields', None)
+        exclude = body.get('exclude', None)
+
+        serializer = AwardSerializer(paged_data, fields=fields, exclude=exclude, many=True)
         response_object = {
             "total_metadata": {
                 "count": awards.count(),
