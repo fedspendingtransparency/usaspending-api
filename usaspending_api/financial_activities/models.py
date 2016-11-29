@@ -11,7 +11,7 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     program_activity_name = models.CharField(max_length=164)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code')
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, db_column='object_class')
+    object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, db_column='object_class', null=True)
     by_direct_reimbursable_funding_source = models.CharField(max_length=1)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
     ussgl480100_undelivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=21, decimal_places=2)
