@@ -28,15 +28,15 @@ More complete install documentation is available on the PostgreSQL [wiki](https:
 
 ### Install Python and Create Virtual Environment
 
-The API's backend components currently run on Python 3.x. These instructions will walk you through the process of installing Python and creating a Python-based virtual environment to house the API. A virtual environment will isolate the project and its libraries from those running on your local system and prevent potential conflicts.
+The API's backend components currently run on Python 3.5 or higher. These instructions will walk you through the process of installing Python and creating a Python-based virtual environment to house the API. A virtual environment will isolate the project and its libraries from those running on your local system and prevent potential conflicts.
 
 If you already have a Python development environment on your machine and a preferred way of managing it, feel free to skip to the next section. We wrote the directions below for folks who don't have a Python environment up and running yet and need the quickest way to get started.
 
-1. Install Python 3.x:
-    * Windows and OSX users can download a 3.x Python installer here: [https://www.python.org/downloads/](https://www.python.org/downloads/ "Python installer downloads")
-    * Linux users can install Python 3.x using their distribution's package manager.
+1. Install Python 3.5 or higher:
+    * Windows and OSX users can download a Python installer here: [https://www.python.org/downloads/](https://www.python.org/downloads/ "Python installer downloads")
+    * Linux users can install Python using their distribution's package manager.
 
-2. Use pip to install virtualenv (pip is Python's package manager and is automatically installed with Python 3.x):
+2. Use pip to install virtualenv (pip is Python's package manager and is automatically installed with Python):
 
         pip install virtualenv
 3. Use pip to install virtualenvwrapper:
@@ -52,15 +52,15 @@ If you already have a Python development environment on your machine and a prefe
 
     **Note:** If you're running multiple versions of Python on your machine, you can make sure your environment is running the correct Python version by pointing to a specific binary
 
-        mkvirtualenv --python=[path to installed Python 3.x executable] usaspending-api
+        mkvirtualenv --python=[path to installed Python executable] usaspending-api
 
 6. You should see some output that looks similar to the example below. Essentially, this command creates and activates a new virtualenv named `usaspending-api` with its own set of Python libraries.  Anything you pip install from this point forward will be installed into the *usaspending-api* environment rather than your machine's global Python environment. Your command line prompt indicates which (if any) virtualenv is active.
 
- **Note:** in the command below, replace `/usr/local/bin/python3.4` with the path to your local Python 3.x executable.
+ **Note:** in the command below, replace `/usr/local/bin/python3.5` with the path to your local Python executable.
 
-        $ mkvirtualenv --python=/usr/local/bin/python3.4 usaspending-api
-        Running virtualenv with interpreter /usr/local/bin/python3.4
-        New python executable in usaspending-api/bin/python3.4
+        $ mkvirtualenv --python=/usr/local/bin/python3.5 usaspending-api
+        Running virtualenv with interpreter /usr/local/bin/python3.5
+        New python executable in usaspending-api/bin/python3.5
         Also creating executable in usaspending-api/bin/python
         Installing setuptools, pip...done.
 
