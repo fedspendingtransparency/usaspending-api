@@ -96,10 +96,6 @@ class Award(DataSourceTrackedModel):
         ('9', 'Insurance'),
         ('10', 'Direct Payment unrestricted'),
         ('11', 'Other'),
-        ('C', 'Contract'),
-        ('G', 'Grant'),
-        ('DP', 'Direct Payment'),
-        ('L', 'Loan'),
     )
 
     type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type")
@@ -107,6 +103,8 @@ class Award(DataSourceTrackedModel):
     parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
+    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE)
+
     # dollarsobligated
     # This is a sum that should get updated when a transaction is entered
     total_obligation = models.DecimalField(max_digits=15, decimal_places=2, null=True, verbose_name="Total Obligated")
