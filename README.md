@@ -20,7 +20,8 @@ Assumptions:
 [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL) is an object-relational database management system (ORDBMS) with an emphasis on extensibility and standards-compliance.
 
 1. Download the correct PostgreSQL installer for your operating system from [EnterpriseDB](http://www.enterprisedb.com/products-services-training/pgdownload) (we recommend PostgreSQL 9.4.x).
-2. Run the installer. As you proceed through the installation wizard, note your choices for port number, username, and password. You will need those when creating the `settings.py` file.
+2. Run the installer. As you proceed through the installation wizard, note your choices for port number, username, and password.
+3. Once PostgreSQL is installed, create the database you will use for this project.
 
 More complete install documentation is available on the PostgreSQL [wiki](https://wiki.postgresql.org/wiki/Detailed_installation_guides).
 
@@ -87,7 +88,7 @@ Next, configure your local settings. The `settings.py` file will check for an en
 
 Exporting your `DATABASE_URL` environment variable should look something like this:
 
-        $ export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/NAME'
+        $ export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENAME'
 
 
 To test your database connection, try running the migrations that come with the project to set up your tables.
@@ -126,7 +127,7 @@ The Django server has an ETL process built in as a custom management command. Fo
   1. Configure the `DATA_BROKER_DATABASE_URL` environment variable. This is the same process as setting up the API backend. Exporting `DATA_BROKER_DATABASE_URL` should look like this:
 
   ```
-  $ export DATA_BROKER_DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/NAME'
+  $ export DATA_BROKER_DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENAME'
   ```
 
 ## Public Domain License
