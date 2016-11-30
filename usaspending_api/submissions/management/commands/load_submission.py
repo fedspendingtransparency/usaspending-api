@@ -120,10 +120,8 @@ class Command(BaseCommand):
         # Create account objects
         for row in appropriation_data:
             # Check and see if there is an entry for this TAS
-            treasury_account = None
-            try:
-                treasury_account = TreasuryAppropriationAccount.objects.get(tas_rendering_label=row['tas'])
-            except ObjectDoesNotExist:
+            treasury_account = TreasuryAppropriationAccount.objects.filter(tas_rendering_label=row['tas']).first()
+            if treasury_account is None:
                 treasury_account = TreasuryAppropriationAccount()
 
                 field_map = {
@@ -272,14 +270,14 @@ class Command(BaseCommand):
             # Create the base award, create actions, then tally the totals for the award
             award_field_map = {
                 "description": "award_description",
-                "awarding_agency__cgac_code": "awarding_agency_code",
-                "funding_agency__cgac_code": "functing_agency_code",
                 "type": "assistance_type"
             }
 
             award_value_map = {
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'], subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'], subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "place_of_performance": pop_location,
                 "date_signed": format_date(row['action_date']),
                 "latest_submission": submission_attributes,
@@ -315,7 +313,7 @@ class Command(BaseCommand):
             if award is None:
                 award = Award.objects.filter(uri=row['parent_award_id']).first()
             if award is None:
-                self.logger.error('Could not find an award object with a matching identifier')
+                self.logger.error('Could not find an award object with a matching identifier: ' + row['parent_award_id'])
                 continue
 
             procurement_value_map = {
