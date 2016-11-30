@@ -15,10 +15,11 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from usaspending_api import views as views
 
 
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
+    url(r'^status/', views.StatusView.as_view()),
     url(r'^api/v1/awards/', include('usaspending_api.awards.urls')),
     url(r'^api/v1/submissions/', include('usaspending_api.submissions.urls')),
     url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
