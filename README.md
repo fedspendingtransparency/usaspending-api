@@ -120,15 +120,19 @@ you should see something like this:
 
 Now, go to `http://localhost:8000/api/v1/awards/` to see the API! There aren't any other urls set up at the moment.
 
-## ETL Process
+## ETL Setup
 
-The Django server has an ETL process built in as a custom management command. Follow these steps to import data from a data broker database:
+The Django server has extract, transform, and load (ETL) processes built in as custom management commands. To use them, follow these setup steps:
 
   1. Configure the `DATA_BROKER_DATABASE_URL` environment variable. This is the same process as setting up the API backend. Exporting `DATA_BROKER_DATABASE_URL` should look like this:
 
   ```
   $ export DATA_BROKER_DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENAME'
   ```
+
+## Loading Data
+
+For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [fixtures.md](fixtures.md).
 
 ## Public Domain License
 
