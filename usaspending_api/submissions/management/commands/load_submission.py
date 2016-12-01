@@ -228,6 +228,7 @@ class Command(BaseCommand):
             "location_foreign_postal_code": "legal_entity_foreign_posta",
             "location_foreign_province": "legal_entity_foreign_provi",
             "location_state_code": "legal_entity_state_code",
+            "location_state_description": "legal_entity_state_description",            
             "location_state_name": "legal_entity_state_name",
             "location_zip5": "legal_entity_zip5",
             "location_zip_last4": "legal_entity_zip_last4",

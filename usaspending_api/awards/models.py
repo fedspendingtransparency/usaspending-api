@@ -163,7 +163,7 @@ class AwardAction(DataSourceTrackedModel):
     action_date = models.CharField(max_length=10, verbose_name="Transaction Date")
     action_type = models.CharField(max_length=1, blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    modification_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modification Number")
+    modification_number = models.CharField(max_length=25, blank=True, null=True, verbose_name="Modification Number")
     awarding_agency = models.ForeignKey(Agency, null=True)
     recipient = models.ForeignKey(LegalEntity, null=True)
     # Changed by KPJ to 4000 from 255, on 20161013
@@ -289,6 +289,7 @@ class FinancialAssistanceAward(AwardAction):
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
+    submitted_type = models.CharField(max_length=1, blank=True, null=True, verbose_name="Submitted Type")
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
