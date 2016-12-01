@@ -11,6 +11,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    award = models.ForeignKey('Award', models.CASCADE)
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, null=True, db_column='object_class')
@@ -103,7 +104,6 @@ class Award(DataSourceTrackedModel):
     parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
-    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE)
 
     # dollarsobligated
     # This is a sum that should get updated when a transaction is entered
