@@ -2,9 +2,8 @@ from django.db import models
 
 
 class SubmissionAttributes(models.Model):
-    submission_id = models.AutoField(primary_key=True)
-    db_submission_id = models.IntegerField()
-    usaspending_flag = models.CharField(max_length=1, blank=True, null=True)
+    id = models.AutoField(primary_key=True)
+    broker_submission_id = models.IntegerField()
     user_id = models.IntegerField()
     cgac_code = models.CharField(max_length=3, blank=True, null=True)
     submitting_agency = models.CharField(max_length=150, blank=True, null=True)
