@@ -1,6 +1,6 @@
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.postgres.search import SearchVector
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import date, time, datetime
 
@@ -217,6 +217,33 @@ class FilterGenerator():
         q_case[fields[0] + "__lte"] = values[1]  # f1 <= r2
         q_case[fields[1] + "__gte"] = values[0]  # f2 >= r1
         return Q(**q_case)
+
+
+# Handles unique value requests
+class UniqueValueHandler():
+    @staticmethod
+    # Data set to use (should be filtered already)
+    # Fields to find unique values for
+    # Returns a dictionary containing fields, values and their counts
+    # {
+    #   "recipient__name": {
+    #       "Jon": 5,
+    #       "Joe": 2
+    #   }
+    # }
+    def get_values_and_counts(data_set, fields):
+        data_set = data_set.all()  # Do this because we don't want to get finnicky with annotations
+        response_object = {}
+        if fields:
+            for field in fields:
+                response_object[field] = {}
+                unique_values = data_set.values(field).distinct()
+                for value in unique_values:
+                    q_kwargs = {}
+                    q_kwargs[field] = value[field]
+                    print(q_kwargs)
+                    response_object[field][value[field]] = data_set.filter(**q_kwargs).count()
+        return response_object
 
 
 # Handles autocomplete requests
