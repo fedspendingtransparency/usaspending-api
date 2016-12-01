@@ -4,6 +4,7 @@ from django.db import models
 class SubmissionAttributes(models.Model):
     id = models.AutoField(primary_key=True)
     broker_submission_id = models.IntegerField()
+    usaspending_update = models.DateField(blank=True, null=True)
     user_id = models.IntegerField()
     cgac_code = models.CharField(max_length=3, blank=True, null=True)
     submitting_agency = models.CharField(max_length=150, blank=True, null=True)
