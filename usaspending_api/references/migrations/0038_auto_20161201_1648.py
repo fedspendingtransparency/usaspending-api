@@ -27,12 +27,12 @@ class Migration(migrations.Migration):
             name='name',
             field=models.CharField(blank=True, max_length=100, null=True, verbose_name='Agency Name'),
         ),
-        migrations.RemoveField(
-            model_name='location',
-            name='location_state_text',
-        ),
         migrations.AlterUniqueTogether(
             name='location',
             unique_together=set([('location_country_code', 'location_country_name', 'location_state_code', 'location_state_name', 'location_state_description', 'location_city_name', 'location_city_code', 'location_county_name', 'location_county_code', 'location_address_line1', 'location_address_line2', 'location_address_line3', 'location_foreign_location_description', 'location_zip4', 'location_congressional_code', 'location_performance_code', 'location_zip_last4', 'location_zip5', 'location_foreign_postal_code', 'location_foreign_province', 'location_foreign_city_name', 'reporting_period_start', 'reporting_period_end')]),
+        ),
+        migrations.RemoveField(
+            model_name='location',
+            name='location_state_text',
         ),
     ]
