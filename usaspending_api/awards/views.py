@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwardsTransactionObligations, Award
 from usaspending_api.awards.serializers import FinancialAccountsByAwardsTransactionObligationsSerializer, AwardSerializer
-from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator, AutoCompleteHandler
+from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator, AutoCompleteHandler, UniqueValueHandler
 import json
 
 
@@ -79,6 +79,8 @@ class AwardListSummary(APIView):
 
         awards = awards.filter(filters)
 
+        unique_values = UniqueValueHandler.get_values_and_counts(awards, body.get('unique_values', None))
+
         paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=body)
 
         fields = body.get('fields', None)
@@ -86,6 +88,7 @@ class AwardListSummary(APIView):
 
         serializer = AwardSerializer(paged_data, fields=fields, exclude=exclude, many=True)
         response_object = {
+            "unique_values_metadata": unique_values,
             "total_metadata": {
                 "count": awards.count(),
                 "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
