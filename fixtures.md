@@ -6,11 +6,7 @@ Data is loaded to the USASpending API via a series of Django management commands
 
 Use the following commands to load reference data into appropriate models (for example, the list of agencies, object classes, etc.). You'll need to load this information before running any DATA Act broker or USAspending loads (see below).
 
-`python manage.py loaddata usaspending_api/references/fixtures/2016_09_12_data.json`
-
-`python manage.py loaddata usaspending_api/references/fixtures/agencies.json`
-
-`python manage.py loaddata usaspending_api/references/fixtures/country_codes.json`
+`python manage.py loaddata usaspending_api/references/fixtures/reference_fixture.json`
 
 **Note:** If any of these load commands result in an error due to a missing field (_i.e._, `x has no field named y`), try running it again with the `--ignorenonexistent` parameter.
 
