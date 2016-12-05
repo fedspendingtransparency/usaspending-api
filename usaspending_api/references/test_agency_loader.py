@@ -8,7 +8,7 @@ import pytest
 
 class AgencyLoadTests(TestCase):
 
-    fixtures = ['agencies']
+    fixtures = ['endpoint_fixture_db']
 
     @pytest.mark.django_db
     def test_contract_load(self):

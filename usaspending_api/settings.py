@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'rest_framework',
     'corsheaders',
+    'usaspending_api.common',
     'usaspending_api.references',
     'usaspending_api.awards',
     'usaspending_api.accounts',
