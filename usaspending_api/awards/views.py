@@ -47,6 +47,32 @@ class AwardList(APIView):
         }
         return Response(response_object)
 
+    def post(self, request, format=None):
+        try:
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            dq = DataQueryHandler(
+                FinancialAccountsByAwardsTransactionObligations,
+                FinancialAccountsByAwardsTransactionObligationsSerializer,
+                body)
+            response_data = dq.serialize_data()
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        response_object = {
+            "unique_values_metadata": response_data.unique_values,
+            "total_metadata": {
+                "count": response_data.query.count(),
+            },
+            "page_metadata": {
+                "page_number": response_data.paged_data.number,
+                "num_pages": response_data.paged_data.paginator.num_pages,
+                "count": len(response_data.paged_data),
+            },
+            "results": response_data.serialized_data
+        }
+        return Response(response_object)
+
 
 # Autocomplete support for award summary objects
 class AwardListSummaryAutocomplete(APIView):
