@@ -1,5 +1,6 @@
 from django.test import TransactionTestCase, Client
 from django.core.serializers.json import json
+import logging
 import os
 import pytest
 
@@ -33,7 +34,7 @@ class EndpointTests(TransactionTestCase):
         json_data = open(os.path.join(os.path.dirname(__file__), '../../data/testing_data/endpoint_testing_data.json'))
         endpoints = json.load(json_data)
         json_data.close()
-        self.maxDiff = None
+        logger = logging.getLogger('console')
 
         for endpoint in endpoints:
             url = endpoint.get('url', None)
@@ -41,7 +42,7 @@ class EndpointTests(TransactionTestCase):
             request_object = endpoint.get('request_object', None)
             response_object = endpoint.get('response_object', None)
             status_code = endpoint.get('status_code', None)
-            print("Running endpoint test: \n\t" + method + " " + url + "\n\t" + endpoint.get('name', "Unnamed"))
+            logger.info("Running endpoint test: \n\t" + method + " " + url + "\n\t" + endpoint.get('name', "Unnamed"))
 
             response = None
             if method == "POST":
@@ -55,4 +56,3 @@ class EndpointTests(TransactionTestCase):
             # because the native assertDictEqual cares about order (and we don't)
             # we will convert our data to sets
             self.assertEqual(set(response.data), set(response_object))
-            print("\tPASSED")
