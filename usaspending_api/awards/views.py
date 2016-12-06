@@ -1,19 +1,20 @@
-from django.shortcuts import render
-from django.db.models import Q, Sum
+import json
+
+from django.db.models import Sum
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+
 from usaspending_api.awards.models import FinancialAccountsByAwardsTransactionObligations, Award
-from usaspending_api.awards.serializers import FinancialAccountsByAwardsTransactionObligationsSerializer, AwardSerializer
-from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator, AutoCompleteHandler, UniqueValueHandler
-import json
+from usaspending_api.awards.serializers import (
+    FinancialAccountsByAwardsTransactionObligationsSerializer, AwardSerializer)
+from usaspending_api.common.api_request_utils import (
+    AutoCompleteHandler, FilterGenerator, FiscalYear, DataQueryHandler,
+    ResponsePaginator)
 
 
 class AwardList(APIView):
-
-    """
-    List all awards (financials)
-    """
+    """Return award-level data (financials)"""
     def get(self, request, uri=None, piid=None, fain=None, format=None):
         awards = None
         if uri:
@@ -60,52 +61,35 @@ class AwardListSummaryAutocomplete(APIView):
 
 
 class AwardListSummary(APIView):
+    """Return summary-level awards."""
     def post(self, request, format=None):
-        fg = FilterGenerator()
         try:
             body_unicode = request.body.decode('utf-8')
             body = json.loads(body_unicode)
-            filters = fg.create_from_post(body)
+            dq = DataQueryHandler(Award, AwardSerializer, body)
+            response_data = dq.serialize_data()
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        awards = Award.objects.all()
-
-        if len(fg.search_vectors) > 0:
-            vector_sum = fg.search_vectors[0]
-            for vector in fg.search_vectors[1:]:
-                vector_sum += vector
-            awards = awards.annotate(search=vector_sum)
-
-        awards = awards.filter(filters)
-
-        unique_values = UniqueValueHandler.get_values_and_counts(awards, body.get('unique_values', None))
-
-        paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=body)
-
-        fields = body.get('fields', None)
-        exclude = body.get('exclude', None)
-
-        serializer = AwardSerializer(paged_data, fields=fields, exclude=exclude, many=True)
         response_object = {
-            "unique_values_metadata": unique_values,
+            "unique_values_metadata": response_data.unique_values,
             "total_metadata": {
-                "count": awards.count(),
-                "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+                "count": response_data.query.count(),
+                "total_obligation_sum": response_data.query.aggregate(
+                    Sum('total_obligation'))["total_obligation__sum"],
             },
             "page_metadata": {
-                "page_number": paged_data.number,
-                "num_pages": paged_data.paginator.num_pages,
-                "count": len(paged_data),
-                "total_obligation_sum": paged_data.object_list.aggregate(Sum('total_obligation'))["total_obligation__sum"],
+                "page_number": response_data.paged_data.number,
+                "num_pages": response_data.paged_data.paginator.num_pages,
+                "count": len(response_data.paged_data),
+                # todo: fix this...page.object_list is no longer a queryset after it's passed around
+                # "total_obligation_sum": response_data.paged_data.object_list.aggregate(
+                #     Sum('total_obligation'))["total_obligation__sum"],
             },
-            "results": serializer.data
+            "results": response_data.serialized_data
         }
         return Response(response_object)
 
-    """
-    List all awards (summary level)
-    """
     def get(self, request, uri=None, piid=None, fain=None, format=None):
         filter_map = {
             'awarding_fpds': 'awarding_agency__fpds_code',

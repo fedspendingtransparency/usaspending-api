@@ -1,14 +1,14 @@
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.contrib.postgres.search import SearchVector
-from django.db.models import Q, Count
-from django.utils import timezone
+from collections import namedtuple
 from datetime import date, time, datetime
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.postgres.search import SearchVector
+from django.db.models import Q
+from django.utils import timezone
 
-# This class represents a fiscal year
-# Currently it functions only on the basis of federal fiscal years, more rules
-# may be added for other jurisdictions
+
 class FiscalYear():
+    """Represents a federal fiscal year."""
     def __init__(self, fy):
         self.fy = fy
         tz = time(0, 0, 1, tzinfo=timezone.utc)
@@ -22,6 +22,10 @@ class FiscalYear():
     Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
     """
     def get_filter_object(self, date_field, as_dict=False):
+        """
+        Create a filter object using date field, will return a Q object
+        such that Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
+        """
         date_start = {}
         date_end = {}
         date_start[date_field + '__gte'] = self.fy_start_date
@@ -32,8 +36,8 @@ class FiscalYear():
             return (Q(**date_start) & Q(**date_end))
 
 
-# This class supports multiple methods of dynamically creating filter queries
 class FilterGenerator():
+    """Support for multiple methods of dynamically creating filter queries."""
     operators = {
         # Django standard operations
         'equals': '',
@@ -303,6 +307,48 @@ class AutoCompleteHandler():
         if "mode" in body:
             if body["mode"] not in ["contains", "startswith"]:
                 raise Exception("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
+
+
+class DataQueryHandler:
+    """Handles complex queries via POST requests data."""
+
+    ResponseData = namedtuple('ResponseData',
+                              ['query', 'serialized_data', 'paged_data', 'unique_values'])
+
+    def __init__(self, model, serializer, request_body):
+        self.request_body = request_body
+        self.serializer = serializer
+        self.model = model
+
+    def serialize_data(self):
+        """Returns serialized data from a POST request."""
+        fg = FilterGenerator()
+        filters = fg.create_from_post(self.request_body)
+
+        records = self.model.objects.all()
+
+        if len(fg.search_vectors) > 0:
+            vector_sum = fg.search_vectors[0]
+            for vector in fg.search_vectors[1:]:
+                vector_sum += vector
+            records = records.annotate(search=vector_sum)
+
+        # filter model records
+        records = records.filter(filters)
+
+        # if this request specifies unique values, get those
+        unique_values = UniqueValueHandler.get_values_and_counts(
+            records, self.request_body.get('unique_values', None))
+
+        paged_data = ResponsePaginator.get_paged_data(
+            records, request_parameters=self.request_body)
+
+        fields = self.request_body.get('fields', None)
+        exclude = self.request_body.get('exclude', None)
+        serializer = self.serializer(paged_data, fields=fields, exclude=exclude, many=True)
+        serialized_data = serializer.data
+
+        return DataQueryHandler.ResponseData(records, serialized_data, paged_data, unique_values)
 
 
 class ResponsePaginator():
