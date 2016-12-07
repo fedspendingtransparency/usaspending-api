@@ -1,3 +1,4 @@
+from collections import namedtuple
 import json
 
 from django.db.models import Sum
@@ -11,6 +12,8 @@ from usaspending_api.awards.serializers import (
 from usaspending_api.common.api_request_utils import (
     AutoCompleteHandler, FilterGenerator, FiscalYear, DataQueryHandler,
     ResponsePaginator)
+
+AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
 class AwardList(APIView):
@@ -55,23 +58,11 @@ class AwardList(APIView):
                 FinancialAccountsByAwardsTransactionObligations,
                 FinancialAccountsByAwardsTransactionObligationsSerializer,
                 body)
-            response_data = dq.serialize_data()
+            response_data = dq.build_response()
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        response_object = {
-            "unique_values_metadata": response_data.unique_values,
-            "total_metadata": {
-                "count": response_data.query.count(),
-            },
-            "page_metadata": {
-                "page_number": response_data.paged_data.number,
-                "num_pages": response_data.paged_data.paginator.num_pages,
-                "count": len(response_data.paged_data),
-            },
-            "results": response_data.serialized_data
-        }
-        return Response(response_object)
+        return Response(response_data)
 
 
 # Autocomplete support for award summary objects
@@ -92,29 +83,13 @@ class AwardListSummary(APIView):
         try:
             body_unicode = request.body.decode('utf-8')
             body = json.loads(body_unicode)
-            dq = DataQueryHandler(Award, AwardSerializer, body)
-            response_data = dq.serialize_data()
+            metadata = AggregateItem('total_obligation', Sum)
+            dq = DataQueryHandler(Award, AwardSerializer, body, [metadata])
+            response_data = dq.build_response()
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        response_object = {
-            "unique_values_metadata": response_data.unique_values,
-            "total_metadata": {
-                "count": response_data.query.count(),
-                "total_obligation_sum": response_data.query.aggregate(
-                    Sum('total_obligation'))["total_obligation__sum"],
-            },
-            "page_metadata": {
-                "page_number": response_data.paged_data.number,
-                "num_pages": response_data.paged_data.paginator.num_pages,
-                "count": len(response_data.paged_data),
-                # todo: fix this...page.object_list is no longer a queryset after it's passed around
-                # "total_obligation_sum": response_data.paged_data.object_list.aggregate(
-                #     Sum('total_obligation'))["total_obligation__sum"],
-            },
-            "results": response_data.serialized_data
-        }
-        return Response(response_object)
+        return Response(response_data)
 
     def get(self, request, uri=None, piid=None, fain=None, format=None):
         filter_map = {

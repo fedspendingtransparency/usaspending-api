@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import OrderedDict
 from datetime import date, time, datetime
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -312,16 +312,14 @@ class AutoCompleteHandler():
 class DataQueryHandler:
     """Handles complex queries via POST requests data."""
 
-    ResponseData = namedtuple('ResponseData',
-                              ['query', 'serialized_data', 'paged_data', 'unique_values'])
-
-    def __init__(self, model, serializer, request_body):
+    def __init__(self, model, serializer, request_body, agg_list=[]):
         self.request_body = request_body
         self.serializer = serializer
         self.model = model
+        self.agg_list = agg_list
 
-    def serialize_data(self):
-        """Returns serialized data from a POST request."""
+    def build_response(self):
+        """Returns a dictionary from a POST request that can be used to create a response."""
         fg = FilterGenerator()
         filters = fg.create_from_post(self.request_body)
 
@@ -343,12 +341,32 @@ class DataQueryHandler:
         paged_data = ResponsePaginator.get_paged_data(
             records, request_parameters=self.request_body)
 
+        # serialize data
         fields = self.request_body.get('fields', None)
         exclude = self.request_body.get('exclude', None)
         serializer = self.serializer(paged_data, fields=fields, exclude=exclude, many=True)
         serialized_data = serializer.data
 
-        return DataQueryHandler.ResponseData(records, serialized_data, paged_data, unique_values)
+        # construct metadata
+        metadata = {"count": records.count()}
+        # for each aggregate field/function passed in, calculate value and add to metadata
+        aggregates = {
+            '{}_{}'.format(a.field, a.func.__name__.lower()):
+                next(iter(records.aggregate(a.func(a.field)).values())) for a in self.agg_list}
+        metadata.update(aggregates)
+
+        response_object = OrderedDict({
+            "unique_values_metadata": unique_values,
+            "total_metadata": metadata,
+            "page_metadata": {
+                "page_number": paged_data.number,
+                "num_pages": paged_data.paginator.num_pages,
+                "count": len(paged_data),
+            }
+        })
+        response_object.update({'results': serialized_data})
+
+        return response_object
 
 
 class ResponsePaginator():
