@@ -11,7 +11,7 @@ from model_mommy import mommy
 # Transaction test cases so threads can find the data
 class ContractsLoadTests(TransactionTestCase):
 
-    fixtures = ['agencies']
+    fixtures = ['endpoint_fixture_db']
 
     @pytest.mark.django_db
     def test_contract_load(self):
