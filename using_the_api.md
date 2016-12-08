@@ -79,7 +79,8 @@ The structure of the post request allows for a flexible and complex query with b
 {
     "page": 1,
     "limit": 1000,
-    "fields": ["fain", "total_obligation"]
+    "fields": ["fain", "total_obligation"],
+    "unique_values": ["recipient__location__location_state_code", "awarding_agency__name"],
     "exclude": ["recipient"]
     "filters": [
       {
@@ -99,6 +100,33 @@ The structure of the post request allows for a flexible and complex query with b
 
 * `page` - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
 * `limit` - The maximum length of a page in the response. Default: 100
+* `unique_values` - A list of fields for which you would like to know the unique values and how many items have that value. These are processed _after_ the filters. An example response with that value would be:
+  ```
+  {
+    "unique_values_metadata": {
+      "awarding_agency__name": {
+        "SMALL BUSINESS ADMINISTRATION": 5,
+        "DEPARTMENTAL OFFICES": 3,
+        "null": 4
+      },
+      "recipient__location__location_state_code": {
+        "SD": 1,
+        "FL": 2,
+        "MN": 1,
+        "UT": 1,
+        "TX": 2,
+        "VA": 1,
+        "CA": 1,
+        "NC": 1,
+        "LA": 1,
+        "GA": 1
+      }
+    },
+    "results": [ . . . ],
+    "total_metadata": { . . . }
+  }
+  ```
+In this case, two entires matching the specified filter have the state code of `FL`.
 * `fields` - What fields to return. Must be a list. Omitting this will return all fields.
 * `exclude` - What fields to exclude from the return. Must be a list.
 * `filters` - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
@@ -213,7 +241,7 @@ The structure of the post request allows for a flexible and complex query with b
       * `[4,4]` - As the entire range is contained within another
       * `[0,100]` - As the entire range is contained within another
       * `[5,10]` - As the 5 overlaps
-      
+
     Mathematically speaking, ranges will intersect as long as there exists some value `C` such that `r1 <= C <= r2` and `f1 <= C <= f2`
     ```
     {

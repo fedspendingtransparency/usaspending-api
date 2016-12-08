@@ -20,7 +20,8 @@ Assumptions:
 [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL) is an object-relational database management system (ORDBMS) with an emphasis on extensibility and standards-compliance.
 
 1. Download the correct PostgreSQL installer for your operating system from [EnterpriseDB](http://www.enterprisedb.com/products-services-training/pgdownload) (we recommend PostgreSQL 9.4.x).
-2. Run the installer. As you proceed through the installation wizard, note your choices for port number, username, and password. You will need those when creating the `settings.py` file.
+2. Run the installer. As you proceed through the installation wizard, note your choices for port number, username, and password.
+3. Once PostgreSQL is installed, create the database you will use for this project.
 
 More complete install documentation is available on the PostgreSQL [wiki](https://wiki.postgresql.org/wiki/Detailed_installation_guides).
 
@@ -28,15 +29,15 @@ More complete install documentation is available on the PostgreSQL [wiki](https:
 
 ### Install Python and Create Virtual Environment
 
-The API's backend components currently run on Python 3.x. These instructions will walk you through the process of installing Python and creating a Python-based virtual environment to house the API. A virtual environment will isolate the project and its libraries from those running on your local system and prevent potential conflicts.
+The API's backend components currently run on Python 3.5 or higher. These instructions will walk you through the process of installing Python and creating a Python-based virtual environment to house the API. A virtual environment will isolate the project and its libraries from those running on your local system and prevent potential conflicts.
 
 If you already have a Python development environment on your machine and a preferred way of managing it, feel free to skip to the next section. We wrote the directions below for folks who don't have a Python environment up and running yet and need the quickest way to get started.
 
-1. Install Python 3.x:
-    * Windows and OSX users can download a 3.x Python installer here: [https://www.python.org/downloads/](https://www.python.org/downloads/ "Python installer downloads")
-    * Linux users can install Python 3.x using their distribution's package manager.
+1. Install Python 3.5 or higher:
+    * Windows and OSX users can download a Python installer here: [https://www.python.org/downloads/](https://www.python.org/downloads/ "Python installer downloads")
+    * Linux users can install Python using their distribution's package manager.
 
-2. Use pip to install virtualenv (pip is Python's package manager and is automatically installed with Python 3.x):
+2. Use pip to install virtualenv (pip is Python's package manager and is automatically installed with Python):
 
         pip install virtualenv
 3. Use pip to install virtualenvwrapper:
@@ -52,15 +53,15 @@ If you already have a Python development environment on your machine and a prefe
 
     **Note:** If you're running multiple versions of Python on your machine, you can make sure your environment is running the correct Python version by pointing to a specific binary
 
-        mkvirtualenv --python=[path to installed Python 3.x executable] usaspending-api
+        mkvirtualenv --python=[path to installed Python executable] usaspending-api
 
 6. You should see some output that looks similar to the example below. Essentially, this command creates and activates a new virtualenv named `usaspending-api` with its own set of Python libraries.  Anything you pip install from this point forward will be installed into the *usaspending-api* environment rather than your machine's global Python environment. Your command line prompt indicates which (if any) virtualenv is active.
 
- **Note:** in the command below, replace `/usr/local/bin/python3.4` with the path to your local Python 3.x executable.
+ **Note:** in the command below, replace `/usr/local/bin/python3.5` with the path to your local Python executable.
 
-        $ mkvirtualenv --python=/usr/local/bin/python3.4 usaspending-api
-        Running virtualenv with interpreter /usr/local/bin/python3.4
-        New python executable in usaspending-api/bin/python3.4
+        $ mkvirtualenv --python=/usr/local/bin/python3.5 usaspending-api
+        Running virtualenv with interpreter /usr/local/bin/python3.5
+        New python executable in usaspending-api/bin/python3.5
         Also creating executable in usaspending-api/bin/python
         Installing setuptools, pip...done.
 
@@ -87,7 +88,7 @@ Next, configure your local settings. The `settings.py` file will check for an en
 
 Exporting your `DATABASE_URL` environment variable should look something like this:
 
-        $ export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/NAME'
+        $ export DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENAME'
 
 
 To test your database connection, try running the migrations that come with the project to set up your tables.
@@ -119,15 +120,19 @@ you should see something like this:
 
 Now, go to `http://localhost:8000/api/v1/awards/` to see the API! There aren't any other urls set up at the moment.
 
-## ETL Process
+## ETL Setup
 
-The Django server has an ETL process built in as a custom management command. Follow these steps to import data from a data broker database:
+The Django server has extract, transform, and load (ETL) processes built in as custom management commands. To use them, follow these setup steps:
 
   1. Configure the `DATA_BROKER_DATABASE_URL` environment variable. This is the same process as setting up the API backend. Exporting `DATA_BROKER_DATABASE_URL` should look like this:
 
   ```
-  $ export DATA_BROKER_DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/NAME'
+  $ export DATA_BROKER_DATABASE_URL='postgres://USER:PASSWORD@HOST:PORT/DATABASENAME'
   ```
+
+## Loading Data
+
+For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [fixtures.md](fixtures.md).
 
 ## Public Domain License
 

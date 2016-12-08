@@ -13,7 +13,7 @@ from model_mommy import mommy
 
 class LoadSubmissionTest(TestCase):
 
-    fixtures = ['2016_09_12_data.json']
+    fixtures = ['endpoint_fixture_db']
 
     def setUp(self):
         Procurement.objects.all().delete()

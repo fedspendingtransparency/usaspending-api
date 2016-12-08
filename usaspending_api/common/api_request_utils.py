@@ -1,14 +1,14 @@
+from collections import OrderedDict
+from datetime import date, time, datetime
+
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from django.utils import timezone
-from datetime import date, time, datetime
 
 
-# This class represents a fiscal year
-# Currently it functions only on the basis of federal fiscal years, more rules
-# may be added for other jurisdictions
 class FiscalYear():
+    """Represents a federal fiscal year."""
     def __init__(self, fy):
         self.fy = fy
         tz = time(0, 0, 1, tzinfo=timezone.utc)
@@ -17,9 +17,15 @@ class FiscalYear():
         # FY ends current FY year on Sept 30th i.e. FY 2017 ends 9-30-2017
         self.fy_end_date = datetime.combine(date(int(fy), 9, 30), tz)
 
-    # Creates a filter object using date field, will return a Q object such that
-    # Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
+    """
+    Creates a filter object using date field, will return a Q object such that
+    Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
+    """
     def get_filter_object(self, date_field, as_dict=False):
+        """
+        Create a filter object using date field, will return a Q object
+        such that Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
+        """
         date_start = {}
         date_end = {}
         date_start[date_field + '__gte'] = self.fy_start_date
@@ -30,8 +36,8 @@ class FiscalYear():
             return (Q(**date_start) & Q(**date_end))
 
 
-# This class supports multiple methods of dynamically creating filter queries
 class FilterGenerator():
+    """Support for multiple methods of dynamically creating filter queries."""
     operators = {
         # Django standard operations
         'equals': '',
@@ -50,12 +56,14 @@ class FilterGenerator():
         'range_intersect': 'range_intersect'
     }
 
-    # Creating the class requires a filter map - this maps one parameter filter
-    # key to another, for instance you could map "fpds_code" to "subtier_agency__fpds_code"
-    # This is useful for allowing users to filter on a fk relationship without
-    # having to specify the more complicated filter
-    # Additionally, ignored parameters specifies parameters to ignore. Always includes
-    # to ["page", "limit"]
+    """
+    Creating the class requires a filter map - this maps one parameter filter
+    key to another, for instance you could map "fpds_code" to "subtier_agency__fpds_code"
+    This is useful for allowing users to filter on a fk relationship without
+    having to specify the more complicated filter
+    Additionally, ignored parameters specifies parameters to ignore. Always includes
+    to ["page", "limit"]
+    """
     def __init__(self, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
         self.ignored_parameters = ['page', 'limit'] + ignored_parameters
@@ -72,10 +80,12 @@ class FilterGenerator():
             qs.annotate(search=vector_sum)
         return qs
 
-    # Pass in request.GET and you'll get back a **kwargs object suitable for use
-    # in .filter()
-    # NOTE: GET will really only support 'AND' of filters, to use OR we'll need
-    # a more complex request object via POST
+    """
+    Pass in request.GET and you'll get back a **kwargs object suitable for use
+    in .filter()
+    NOTE: GET will really only support 'AND' of filters, to use OR we'll need
+    a more complex request object via POST
+    """
     def create_from_get(self, parameters):
         return_arguments = {}
         for key in parameters:
@@ -87,27 +97,29 @@ class FilterGenerator():
                 return_arguments[key] = parameters[key]
         return return_arguments
 
-    # Creates a Q object from a POST query. Example of a post query:
-    # {
-    #     'page': 1,
-    #     'limit': 100,
-    #     'filters': [
-    #         {
-    #             'combine_method': 'OR',
-    #             'filters': [ . . . ]
-    #         },
-    #         {
-    #             'field': <FIELD_NAME>
-    #             'operation': <OPERATION>
-    #             'value': <VALUE>
-    #         },
-    #     ]
-    # }
-    # If the 'combine_method' is present in a filter, you MUST specify another
-    # 'filters' set in that object of filters to combine
-    # The combination method for filters at the root level is 'AND'
-    # Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range, fy
-    # Note that contains is always case insensitive
+    """
+    Creates a Q object from a POST query. Example of a post query:
+    {
+        'page': 1,
+        'limit': 100,
+        'filters': [
+            {
+                'combine_method': 'OR',
+                'filters': [ . . . ]
+            },
+            {
+                'field': <FIELD_NAME>
+                'operation': <OPERATION>
+                'value': <VALUE>
+            },
+        ]
+    }
+    If the 'combine_method' is present in a filter, you MUST specify another
+    'filters' set in that object of filters to combine
+    The combination method for filters at the root level is 'AND'
+    Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range, fy
+    Note that contains is always case insensitive
+    """
     def create_from_post(self, parameters):
         try:
             self.validate_post_request(parameters)
@@ -198,25 +210,55 @@ class FilterGenerator():
 
     # Special operation functions follow
 
-    # Range intersect function - evaluates if a range defined by two fields overlaps
-    # a range of values
-    # Here's a picture:
-    #                 f1 - - - f2
-    #                       r1 - - - r2     - Case 1
-    #             r1 - - - r2               - Case 2
-    #                 r1 - - - r2           - Case 3
-    # All of the ranges defined by [r1,r2] intersect [f1,f2]
-    # i.e. f1 <= r2 && r1 <= f2 we intersect!
-    # Returns: Q object to perform this operation
-    # Parameters - Make sure these are in order:
-    #           fields - A list defining the fields forming the first range (in order)
-    #           values - A list of the values which define the second range (in order)
+    """
+    Range intersect function - evaluates if a range defined by two fields overlaps
+    a range of values
+    Here's a picture:
+                    f1 - - - f2
+                          r1 - - - r2     - Case 1
+                r1 - - - r2               - Case 2
+                    r1 - - - r2           - Case 3
+    All of the ranges defined by [r1,r2] intersect [f1,f2]
+    i.e. f1 <= r2 && r1 <= f2 we intersect!
+    Returns: Q object to perform this operation
+    Parameters - Make sure these are in order:
+              fields - A list defining the fields forming the first range (in order)
+              values - A list of the values which define the second range (in order)
+    """
     def range_intersect(self, fields, values):
         # Create the Q filter case
         q_case = {}
         q_case[fields[0] + "__lte"] = values[1]  # f1 <= r2
         q_case[fields[1] + "__gte"] = values[0]  # f2 >= r1
         return Q(**q_case)
+
+
+# Handles unique value requests
+class UniqueValueHandler():
+    """
+    Data set to use (should be filtered already)
+    Fields to find unique values for
+    Returns a dictionary containing fields, values and their counts
+    {
+      "recipient__name": {
+          "Jon": 5,
+          "Joe": 2
+      }
+    }
+    """
+    @staticmethod
+    def get_values_and_counts(data_set, fields):
+        data_set = data_set.all()  # Do this because we don't want to get finnicky with annotations
+        response_object = {}
+        if fields:
+            for field in fields:
+                response_object[field] = {}
+                unique_values = data_set.values(field).distinct()
+                for value in unique_values:
+                    q_kwargs = {}
+                    q_kwargs[field] = value[field]
+                    response_object[field][value[field]] = data_set.filter(**q_kwargs).count()
+        return response_object
 
 
 # Handles autocomplete requests
@@ -265,6 +307,66 @@ class AutoCompleteHandler():
         if "mode" in body:
             if body["mode"] not in ["contains", "startswith"]:
                 raise Exception("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
+
+
+class DataQueryHandler:
+    """Handles complex queries via POST requests data."""
+
+    def __init__(self, model, serializer, request_body, agg_list=[]):
+        self.request_body = request_body
+        self.serializer = serializer
+        self.model = model
+        self.agg_list = agg_list
+
+    def build_response(self):
+        """Returns a dictionary from a POST request that can be used to create a response."""
+        fg = FilterGenerator()
+        filters = fg.create_from_post(self.request_body)
+
+        records = self.model.objects.all()
+
+        if len(fg.search_vectors) > 0:
+            vector_sum = fg.search_vectors[0]
+            for vector in fg.search_vectors[1:]:
+                vector_sum += vector
+            records = records.annotate(search=vector_sum)
+
+        # filter model records
+        records = records.filter(filters)
+
+        # if this request specifies unique values, get those
+        unique_values = UniqueValueHandler.get_values_and_counts(
+            records, self.request_body.get('unique_values', None))
+
+        paged_data = ResponsePaginator.get_paged_data(
+            records, request_parameters=self.request_body)
+
+        # serialize data
+        fields = self.request_body.get('fields', None)
+        exclude = self.request_body.get('exclude', None)
+        serializer = self.serializer(paged_data, fields=fields, exclude=exclude, many=True)
+        serialized_data = serializer.data
+
+        # construct metadata
+        metadata = {"count": records.count()}
+        # for each aggregate field/function passed in, calculate value and add to metadata
+        aggregates = {
+            '{}_{}'.format(a.field, a.func.__name__.lower()):
+                next(iter(records.aggregate(a.func(a.field)).values())) for a in self.agg_list}
+        metadata.update(aggregates)
+
+        response_object = OrderedDict({
+            "unique_values_metadata": unique_values,
+            "total_metadata": metadata,
+            "page_metadata": {
+                "page_number": paged_data.number,
+                "num_pages": paged_data.paginator.num_pages,
+                "count": len(paged_data),
+            }
+        })
+        response_object.update({'results': serialized_data})
+
+        return response_object
 
 
 class ResponsePaginator():
