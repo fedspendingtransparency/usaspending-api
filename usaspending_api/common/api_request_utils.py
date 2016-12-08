@@ -338,16 +338,7 @@ class DataQueryHandler:
         unique_values = UniqueValueHandler.get_values_and_counts(
             records, self.request_body.get('unique_values', None))
 
-        paged_data = ResponsePaginator.get_paged_data(
-            records, request_parameters=self.request_body)
-
-        # serialize data
-        fields = self.request_body.get('fields', None)
-        exclude = self.request_body.get('exclude', None)
-        serializer = self.serializer(paged_data, fields=fields, exclude=exclude, many=True)
-        serialized_data = serializer.data
-
-        # construct metadata
+        # construct metadata of entire set of data that matches the request specifications
         metadata = {"count": records.count()}
         # for each aggregate field/function passed in, calculate value and add to metadata
         aggregates = {
@@ -355,21 +346,39 @@ class DataQueryHandler:
                 next(iter(records.aggregate(a.func(a.field)).values())) for a in self.agg_list}
         metadata.update(aggregates)
 
+        # get paged data for this request
+        paged_data = ResponsePaginator.get_paged_data(
+            records, request_parameters=self.request_body)
+        paged_queryset = paged_data.object_list.all()
+
+        # construct page-specific metadata
+        page_metadata = {
+            "page_number": paged_data.number,
+            "num_pages": paged_data.paginator.num_pages,
+            "count": len(paged_data)
+        }
+        page_aggregates = {
+            '{}_{}'.format(a.field, a.func.__name__.lower()):
+                next(iter(paged_queryset.aggregate(a.func(a.field)).values())) for a in self.agg_list}
+        page_metadata.update(page_aggregates)
+
+        # serialize the paged data
+        fields = self.request_body.get('fields', None)
+        exclude = self.request_body.get('exclude', None)
+        serializer = self.serializer(paged_data, fields=fields, exclude=exclude, many=True)
+        serialized_data = serializer.data
+
         response_object = OrderedDict({
             "unique_values_metadata": unique_values,
             "total_metadata": metadata,
-            "page_metadata": {
-                "page_number": paged_data.number,
-                "num_pages": paged_data.paginator.num_pages,
-                "count": len(paged_data),
-            }
+            "page_metadata": page_metadata
         })
         response_object.update({'results': serialized_data})
 
         return response_object
 
 
-class ResponsePaginator():
+class ResponsePaginator:
     @staticmethod
     def get_paged_data(data_set, page=1, page_limit=100, request_parameters={}):
         if 'limit' in request_parameters:
