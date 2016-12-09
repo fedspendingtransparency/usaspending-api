@@ -234,29 +234,36 @@ class FilterGenerator():
 
 
 # Handles unique value requests
-class UniqueValueHandler():
-    """
-    Data set to use (should be filtered already)
-    Fields to find unique values for
-    Returns a dictionary containing fields, values and their counts
-    {
-      "recipient__name": {
-          "Jon": 5,
-          "Joe": 2
-      }
-    }
-    """
+class UniqueValueHandler:
+
     @staticmethod
     def get_values_and_counts(data_set, fields):
-        data_set = data_set.all()  # Do this because we don't want to get finnicky with annotations
+        """Get unique values for specified fields in a filtered queryset.
+
+        Keyword arguments:
+            data_set -- Django QuerySet
+            fields -- list of fields in data_set that we unique values for
+
+        Returns:
+            A dictionary keyed by fields. Each entry is another dictionary that
+            contains the field's unique values and corresponding counts.
+            For example:
+            {
+              "recipient__name": {
+                  "Jon": 5,
+                  "Joe": 2
+              }
+            }
+
+        """
+        data_set = data_set.all()  # Do this because we don't want to get finicky with annotations
         response_object = {}
         if fields:
             for field in fields:
                 response_object[field] = {}
                 unique_values = data_set.values(field).distinct()
                 for value in unique_values:
-                    q_kwargs = {}
-                    q_kwargs[field] = value[field]
+                    q_kwargs = {field: value[field]}
                     response_object[field][value[field]] = data_set.filter(**q_kwargs).count()
         return response_object
 
