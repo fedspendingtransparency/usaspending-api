@@ -1,14 +1,14 @@
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.contrib.postgres.search import SearchVector
-from django.db.models import Q, Count
-from django.utils import timezone
+from collections import OrderedDict
 from datetime import date, time, datetime
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.postgres.search import SearchVector
+from django.db.models import Q
+from django.utils import timezone
 
-# This class represents a fiscal year
-# Currently it functions only on the basis of federal fiscal years, more rules
-# may be added for other jurisdictions
+
 class FiscalYear():
+    """Represents a federal fiscal year."""
     def __init__(self, fy):
         self.fy = fy
         tz = time(0, 0, 1, tzinfo=timezone.utc)
@@ -22,6 +22,10 @@ class FiscalYear():
     Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
     """
     def get_filter_object(self, date_field, as_dict=False):
+        """
+        Create a filter object using date field, will return a Q object
+        such that Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
+        """
         date_start = {}
         date_end = {}
         date_start[date_field + '__gte'] = self.fy_start_date
@@ -32,8 +36,8 @@ class FiscalYear():
             return (Q(**date_start) & Q(**date_end))
 
 
-# This class supports multiple methods of dynamically creating filter queries
 class FilterGenerator():
+    """Support for multiple methods of dynamically creating filter queries."""
     operators = {
         # Django standard operations
         'equals': '',
@@ -305,7 +309,76 @@ class AutoCompleteHandler():
                 raise Exception("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
 
 
-class ResponsePaginator():
+class DataQueryHandler:
+    """Handles complex queries via POST requests data."""
+
+    def __init__(self, model, serializer, request_body, agg_list=[]):
+        self.request_body = request_body
+        self.serializer = serializer
+        self.model = model
+        self.agg_list = agg_list
+
+    def build_response(self):
+        """Returns a dictionary from a POST request that can be used to create a response."""
+        fg = FilterGenerator()
+        filters = fg.create_from_post(self.request_body)
+
+        records = self.model.objects.all()
+
+        if len(fg.search_vectors) > 0:
+            vector_sum = fg.search_vectors[0]
+            for vector in fg.search_vectors[1:]:
+                vector_sum += vector
+            records = records.annotate(search=vector_sum)
+
+        # filter model records
+        records = records.filter(filters)
+
+        # if this request specifies unique values, get those
+        unique_values = UniqueValueHandler.get_values_and_counts(
+            records, self.request_body.get('unique_values', None))
+
+        # construct metadata of entire set of data that matches the request specifications
+        metadata = {"count": records.count()}
+        # for each aggregate field/function passed in, calculate value and add to metadata
+        aggregates = {
+            '{}_{}'.format(a.field, a.func.__name__.lower()):
+                next(iter(records.aggregate(a.func(a.field)).values())) for a in self.agg_list}
+        metadata.update(aggregates)
+
+        # get paged data for this request
+        paged_data = ResponsePaginator.get_paged_data(
+            records, request_parameters=self.request_body)
+        paged_queryset = paged_data.object_list.all()
+
+        # construct page-specific metadata
+        page_metadata = {
+            "page_number": paged_data.number,
+            "num_pages": paged_data.paginator.num_pages,
+            "count": len(paged_data)
+        }
+        page_aggregates = {
+            '{}_{}'.format(a.field, a.func.__name__.lower()):
+                next(iter(paged_queryset.aggregate(a.func(a.field)).values())) for a in self.agg_list}
+        page_metadata.update(page_aggregates)
+
+        # serialize the paged data
+        fields = self.request_body.get('fields', None)
+        exclude = self.request_body.get('exclude', None)
+        serializer = self.serializer(paged_data, fields=fields, exclude=exclude, many=True)
+        serialized_data = serializer.data
+
+        response_object = OrderedDict({
+            "unique_values_metadata": unique_values,
+            "total_metadata": metadata,
+            "page_metadata": page_metadata
+        })
+        response_object.update({'results': serialized_data})
+
+        return response_object
+
+
+class ResponsePaginator:
     @staticmethod
     def get_paged_data(data_set, page=1, page_limit=100, request_parameters={}):
         if 'limit' in request_parameters:
