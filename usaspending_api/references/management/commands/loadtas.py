@@ -26,20 +26,20 @@ class Command(BaseCommand):
             "availability_type_code": "A",
             "main_account_code": "MAIN",
             "sub_account_code": "SUB",
-            "gwa_tas": "GWA_TAS",
-            "gwa_tas_name": "GWA_TAS NAME",
-            "agency_aid": "Agency AID",
-            "agency_name": "Agency Name",
-            "admin_org": "ADMIN_ORG",
-            "admin_org_name": "Admin Org Name",
-            "fr_entity_type_code": "FR Entity Type Code",
+            #"gwa_tas": "GWA_TAS",
+            "account_title": "GWA_TAS NAME",
+            "reporting_agency_id": "Agency AID",
+            "reporting_agency_name": "Agency Name",
+            "budget_bureau_code": "ADMIN_ORG",
+            "budget_bureau_name": "Admin Org Name",
+            "fr_entity_code": "FR Entity Type Code",
             "fr_entity_description": "FR Entity Description",
-            "fin_type_2": "Financial Indicator Type 2",
-            "fin_type_2_description": "FIN IND Type 2 Description",
-            "function_code": "Function Code",
-            "function_description": "Function Description",
-            "sub_function_code": "Sub Function Code",
-            "sub_function_description": "Sub Function Description"
+            #"fin_type_2": "Financial Indicator Type 2",
+            #"fin_type_2_description": "FIN IND Type 2 Description",
+            "budget_function_code": "Function Code",
+            "budget_function_title": "Function Description",
+            "budget_subfunction_code": "Sub Function Code",
+            "budget_subfunction_title": "Sub Function Description"
         }
 
         value_map = {

@@ -11,6 +11,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    award = models.ForeignKey('Award', models.CASCADE)
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, null=True, db_column='object_class')
@@ -96,10 +97,6 @@ class Award(DataSourceTrackedModel):
         ('9', 'Insurance'),
         ('10', 'Direct Payment unrestricted'),
         ('11', 'Other'),
-        ('C', 'Contract'),
-        ('G', 'Grant'),
-        ('DP', 'Direct Payment'),
-        ('L', 'Loan'),
     )
 
     type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type")
@@ -107,6 +104,7 @@ class Award(DataSourceTrackedModel):
     parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
+
     # dollarsobligated
     # This is a sum that should get updated when a transaction is entered
     total_obligation = models.DecimalField(max_digits=15, decimal_places=2, null=True, verbose_name="Total Obligated")
@@ -165,7 +163,7 @@ class AwardAction(DataSourceTrackedModel):
     action_date = models.CharField(max_length=10, verbose_name="Transaction Date")
     action_type = models.CharField(max_length=1, blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    modification_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modification Number")
+    modification_number = models.CharField(max_length=25, blank=True, null=True, verbose_name="Modification Number")
     awarding_agency = models.ForeignKey(Agency, null=True)
     recipient = models.ForeignKey(LegalEntity, null=True)
     # Changed by KPJ to 4000 from 255, on 20161013
@@ -291,6 +289,7 @@ class FinancialAssistanceAward(AwardAction):
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
+    submitted_type = models.CharField(max_length=1, blank=True, null=True, verbose_name="Submitted Type")
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
