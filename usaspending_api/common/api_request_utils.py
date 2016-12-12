@@ -6,6 +6,8 @@ from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from django.utils import timezone
 
+from usaspending_api.references.models import Location, RefCountryCode
+
 
 class FiscalYear():
     """Represents a federal fiscal year."""
@@ -307,6 +309,79 @@ class AutoCompleteHandler():
         if "mode" in body:
             if body["mode"] not in ["contains", "startswith"]:
                 raise Exception("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
+
+
+class GeoCompleteHandler:
+    """ Handles geographical hierarchy searches """
+
+    def __init__(self, request_body):
+        self.request_body = request_body
+        self.search_fields = {
+          "location_country_code__country_name": {
+            "type": "COUNTRY",
+            "parent": "location_country_code"
+          },
+          "location_state_code": {
+            "type": "STATE",
+            "parent": "location_country_code__country_name"
+          },
+          "location_state_name": {
+            "type": "STATE",
+            "parent": "location_country_code__country_name"
+          },
+          "location_city_name": {
+            "type": "CITY",
+            "parent": "location_county_name"
+          },
+          "location_county_name": {
+            "type": "COUNTY",
+            "parent": "location_state_name"
+          },
+          "location_zip5": {
+            "type": "ZIP",
+            "parent": "location_state_name"
+          },
+          "location_foreign_postal_code": {
+            "type": "POSTAL CODE",
+            "parent": "location_country_code__country_name"
+          },
+          "location_foreign_province": {
+            "type": "PROVINCE",
+            "parent": "location_country_code__country_name"
+          },
+          "location_foreign_city_name": {
+            "type": "CITY",
+            "parent": "location_country_code__country_name"
+          }
+        }
+
+    def build_response(self):
+        # Array of search fields, and their 'parent' fields and types
+        search_fields = self.search_fields
+        value = self.request_body.get("value", None)
+        mode = self.request_body.get("mode", "contains")
+
+        if mode == "contains":
+            mode = "__icontains"
+        elif mode == "startswith":
+            mode = "__istartswith"
+
+        response_object = []
+
+        if value:
+            for searchable_field in search_fields.keys():
+                results = Location.objects.filter(Q(**{searchable_field + mode: value})).values_list(searchable_field, search_fields[searchable_field]["parent"])
+                results = list(set(results))  # Do this to eliminate duplicates
+                for row in results:
+                    response_row = {
+                        "place": row[0],
+                        "place_type": search_fields[searchable_field]["type"],
+                        "parent": row[1],
+                        "matched_ids": Location.objects.filter(Q(**{searchable_field: row[0], search_fields[searchable_field]["parent"]: row[1]})).values_list("location_id", flat=True)
+                    }
+                    response_object.append(response_row)
+
+        return response_object
 
 
 class DataQueryHandler:
