@@ -127,5 +127,17 @@
         {"financial_accounts_by_program_activity_object_class_id":17},
         {"financial_accounts_by_program_activity_object_class_id":3},
         {"financial_accounts_by_program_activity_object_class_id":1}]}
+  },
+  {
+    "url": "/api/v1/submissions/",
+    "name": "Test submission endpoint POST request",
+    "method": "POST",
+    "request_object":{
+    "page": 1, "limit": 1, "fields": ["cgac_code"],
+    "filters": [{"field": "submission_id", "operation": "equals", "value": 977}]},
+    "status_code": 200,
+    "response_object": {"page_metadata": {"page_number": 1, "num_pages": 1, "count": 1},
+      "unique_values_metadata": {}, "total_metadata": {"count": 1},
+      "results": [{"cgac_code": "073"}]}
   }
 ]
