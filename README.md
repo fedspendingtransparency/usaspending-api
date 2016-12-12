@@ -120,6 +120,14 @@ you should see something like this:
 
 Now, go to `http://localhost:8000/api/v1/awards/` to see the API! There aren't any other urls set up at the moment.
 
+## Running the Test Suite
+
+To run the test suite and confirm that everything is working as expected, make sure you're in the top-level project directory and run the following from the command line:
+
+
+        python manage.py test
+
+
 ## ETL Setup
 
 The Django server has extract, transform, and load (ETL) processes built in as custom management commands. To use them, follow these setup steps:
