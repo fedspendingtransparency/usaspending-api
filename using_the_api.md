@@ -15,6 +15,7 @@ For more information about the DATA Act Broker codebase, please visit this repos
   * [GET Requests](#get-requests)
   * [POST Requests](#post-requests)
   * [Autocomplete Queries](#autocomplete-queries)
+  * [Geographical Hierarchy Queries](#geographical-hierarchy-queries)
 
 
 ## DATA Act Data Store Route Documentation
@@ -41,6 +42,14 @@ The currently available routes are:
 
   * **/v1/awards/summary/autocomplete/**
     - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards/summary endpoint
+    - _Methods_: POST
+
+  * **/v1/references/locations/**
+    - _Description_: Returns all `Location` data.
+    - _Methods_: POST
+
+  * **/v1/references/locations/geocomplete**
+    - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information
     - _Methods_: POST
 
   * **/v1/awards/**
@@ -473,3 +482,78 @@ Autocomplete queries currently require the endpoint to have additional handling,
 #### Response Description
   * `results` - The actual results. For each field search, will contain a list of all unique values matching the requested value and mode
   * `counts` - Contains the length of each array in the results object
+
+### Geographical Hierarchy Queries
+This is a special type of autocomplete query which allows users to search for geographical locations in a hierarchy.
+
+#### Body
+```
+{
+  "value": "u",
+  "mode": "startswith"
+}
+```
+
+#### Body Description
+  * `value` - The value to use as the autocomplete pattern. The search will currently _always_ be case insensitive
+  * `mode` - The search mode. Options available are:
+    * `contains` - Matches if the field's value contains the specified value. This is the default behavior
+    * `startswith` - Matches if the field's value starts with the specified value
+
+#### Response
+```
+[
+  {
+    "place_type": "STATE",
+    "parent": "UNITED STATES",
+    "matched_ids": [
+      9,
+      10
+    ],
+    "place": "Utah"
+  },
+  {
+    "place_type": "COUNTRY",
+    "parent": "USA",
+    "matched_ids": [
+      7,
+      5,
+      3,
+      9,
+      1,
+      8,
+      6,
+      4,
+      10,
+      2
+    ],
+    "place": "UNITED STATES"
+  },
+  {
+    "place_type": "STATE",
+    "parent": "UNITED STATES",
+    "matched_ids": [
+      9
+    ],
+    "place": "UT"
+  }
+  ```
+#### Response Description
+  * `place` - The value of the place. e.g. A country's name, or a county name, etc.
+  * `matched_ids` - An array of `location_id`s that match the given data. This can be used to look up awards, recipients, or other data by requesting these ids
+  * `place_type` - The type of place. Options are:
+    * `COUNTRY`
+    * `CITY`
+    * `COUNTY`
+    * `STATE`
+    * `ZIP`
+    * `POSTAL CODE` - Used for foreign postal codes
+    * `PROVINCE`
+  * `parent` - The parent of the object, in a logical hierarchy. The parents for each type are listed below:
+    * `COUNTRY` - Will specify the parent as the country code for reference purposes
+    * `CITY` - Will specify the county the city is in for domestic cities, or the country for foreign cities
+    * `COUNTY` - Will specify the state the the city is in for domestic cities
+    * `STATE` - Will specify the country the state is in
+    * `ZIP` - Will specify the state the zip code falls in. If a zip code falls in multiple states, two results will be generated
+    * `POSTAL CODE` - Will specify the country the postal code falls in
+    * `PROVINCE` - Will specify the country the province is in

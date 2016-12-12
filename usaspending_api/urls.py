@@ -24,6 +24,7 @@ urlpatterns = [
     url(r'^api/v1/submissions/', include('usaspending_api.submissions.urls')),
     url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
     url(r'^api/v1/financial_activities/', include('usaspending_api.financial_activities.urls')),
+    url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 

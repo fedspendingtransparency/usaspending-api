@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from usaspending_api.references.models import *
+from usaspending_api.common.serializers import LimitableSerializer
 
 
 class AgencySerializer(serializers.ModelSerializer):
@@ -9,7 +10,7 @@ class AgencySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class LocationSerializer(serializers.ModelSerializer):
+class LocationSerializer(LimitableSerializer):
 
     class Meta:
 
