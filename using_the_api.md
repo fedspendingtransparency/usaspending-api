@@ -88,6 +88,7 @@ The structure of the post request allows for a flexible and complex query with b
 {
     "page": 1,
     "limit": 1000,
+    "order": ["recipient__location__location_state_code", "-recipient__name"],
     "fields": ["fain", "total_obligation"],
     "unique_values": ["recipient__location__location_state_code", "awarding_agency__name"],
     "exclude": ["recipient"]
@@ -109,6 +110,7 @@ The structure of the post request allows for a flexible and complex query with b
 
 * `page` - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
 * `limit` - The maximum length of a page in the response. Default: 100
+* `order` - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name, e.g. to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
 * `unique_values` - A list of fields for which you would like to know the unique values and how many items have that value. These are processed _after_ the filters. An example response with that value would be:
   ```
   {
