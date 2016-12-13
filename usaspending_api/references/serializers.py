@@ -3,7 +3,7 @@ from usaspending_api.references.models import *
 from usaspending_api.common.serializers import LimitableSerializer
 
 
-class AgencySerializer(serializers.ModelSerializer):
+class AgencySerializer(LimitableSerializer):
 
     class Meta:
         model = Agency
@@ -18,9 +18,12 @@ class LocationSerializer(LimitableSerializer):
         fields = '__all__'
 
 
-class LegalEntitySerializer(serializers.ModelSerializer):
+class LegalEntitySerializer(LimitableSerializer):
 
-    location = LocationSerializer(read_only=True)
+    location = serializers.SerializerMethodField()
+
+    def get_location(self, obj):
+        return self.get_subserializer_data(LocationSerializer, obj.location, 'location', read_only=True)
 
     class Meta:
         model = LegalEntity
