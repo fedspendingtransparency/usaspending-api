@@ -108,10 +108,10 @@ The structure of the post request allows for a flexible and complex query with b
 
 #### Body Description
 
-* `page` - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
-* `limit` - The maximum length of a page in the response. Default: 100
-* `order` - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name, e.g. to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
-* `unique_values` - A list of fields for which you would like to know the unique values and how many items have that value. These are processed _after_ the filters. An example response with that value would be:
+* `page` - _Optional_ - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
+* `limit` - _Optional_ - The maximum length of a page in the response. Default: 100
+* `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name, e.g. to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
+* `unique_values` - _Optional_ - A list of fields for which you would like to know the unique values and how many items have that value. These are processed _after_ the filters. An example response with that value would be:
   ```
   {
     "unique_values_metadata": {
@@ -138,9 +138,9 @@ The structure of the post request allows for a flexible and complex query with b
   }
   ```
 In this case, two entires matching the specified filter have the state code of `FL`.
-* `fields` - What fields to return. Must be a list. Omitting this will return all fields.
-* `exclude` - What fields to exclude from the return. Must be a list.
-* `filters` - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
+* `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
+* `exclude` - _Optional_ - What fields to exclude from the return. Must be a list.
+* `filters` - _Optional_ - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
   * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__fpds_code` will filter on the field `fpds_code` for the referenced object stored in `funding_agency`.
   * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. The options for this field are:
     * `equals` - Evaluates the equality of the value with that stored in the field
@@ -457,7 +457,7 @@ Autocomplete queries currently require the endpoint to have additional handling,
 #### Body Description
   * `fields` - A list of fields to be searched for autocomplete. This allows for foreign key traversal using the usual Django patterns. This should _always_ be a list, even if the length is only one
   * `value` - The value to use as the autocomplete pattern. Typically a string, but could be a number in uncommon circumstances. The search will currently _always_ be case insensitive
-  * `mode` - The search mode. Options available are:
+  * `mode` - _Optional_ - The search mode. Options available are:
     * `contains` - Matches if the field's value contains the specified value
     * `startswith` - Matches if the field's value starts with the specified value
 
@@ -492,15 +492,20 @@ This is a special type of autocomplete query which allows users to search for ge
 ```
 {
   "value": "u",
-  "mode": "startswith"
+  "mode": "startswith",
+  "scope": "domestic"
 }
 ```
 
 #### Body Description
   * `value` - The value to use as the autocomplete pattern. The search will currently _always_ be case insensitive
-  * `mode` - The search mode. Options available are:
+  * `mode` - _Optional_ -The search mode. Options available are:
     * `contains` - Matches if the field's value contains the specified value. This is the default behavior
     * `startswith` - Matches if the field's value starts with the specified value
+  * `scope` - _Optional_ - The scope of the search. Options available are:
+    * `domestic` - Matches only entries with the United States as the `location_country_code`
+    * `foreign` - Matches only entries where the `location_country_code` is _not_ the United States
+    * `all` - Matches any location entry. This is the default behavior
 
 #### Response
 ```

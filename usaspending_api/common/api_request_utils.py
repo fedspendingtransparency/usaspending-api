@@ -367,17 +367,25 @@ class GeoCompleteHandler:
         search_fields = self.search_fields
         value = self.request_body.get("value", None)
         mode = self.request_body.get("mode", "contains")
+        scope = self.request_body.get("scope", "all")
 
         if mode == "contains":
             mode = "__icontains"
         elif mode == "startswith":
             mode = "__istartswith"
 
+        scope_q = Q()
+        if scope == "foreign":
+            scope_q = ~Q(**{"location_country_code": "USA"})
+        elif scope == "domestic":
+            scope_q = Q(**{"location_country_code": "USA"})
+
         response_object = []
 
         if value:
             for searchable_field in search_fields.keys():
-                results = Location.objects.filter(Q(**{searchable_field + mode: value})).values_list(searchable_field, search_fields[searchable_field]["parent"])
+                search_q = Q(**{searchable_field + mode: value})
+                results = Location.objects.filter(search_q & scope_q).values_list(searchable_field, search_fields[searchable_field]["parent"])
                 results = list(set(results))  # Do this to eliminate duplicates
                 for row in results:
                     response_row = {
