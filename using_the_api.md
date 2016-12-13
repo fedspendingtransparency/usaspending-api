@@ -140,7 +140,7 @@ In this case, two entires matching the specified filter have the state code of `
 * `exclude` - What fields to exclude from the return. Must be a list.
 * `filters` - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
   * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__fpds_code` will filter on the field `fpds_code` for the referenced object stored in `funding_agency`.
-  * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. The options for this field are:
+  * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. To negate an operation, use `not_`. For example, `not_equals` or `not_in`. The options for this field are:
     * `equals` - Evaluates the equality of the value with that stored in the field
       ```
       {
