@@ -402,16 +402,19 @@ class GeoCompleteHandler:
 class DataQueryHandler:
     """Handles complex queries via POST requests data."""
 
-    def __init__(self, model, serializer, request_body, agg_list=[]):
+    def __init__(self, model, serializer, request_body, agg_list=[], ordering=None):
         self.request_body = request_body
         self.serializer = serializer
         self.model = model
         self.agg_list = agg_list
+        self.ordering = ordering
 
     def build_response(self):
         """Returns a dictionary from a POST request that can be used to create a response."""
         fg = FilterGenerator()
         filters = fg.create_from_post(self.request_body)
+        # Grab the ordering
+        self.ordering = self.request_body.get("order", self.ordering)
 
         records = self.model.objects.all()
 
@@ -423,6 +426,10 @@ class DataQueryHandler:
 
         # filter model records
         records = records.filter(filters)
+
+        # Order the response
+        if self.ordering:
+            records = records.order_by(*self.ordering)
 
         # if this request specifies unique values, get those
         unique_values = UniqueValueHandler.get_values_and_counts(
