@@ -380,17 +380,25 @@ class GeoCompleteHandler:
         search_fields = self.search_fields
         value = self.request_body.get("value", None)
         mode = self.request_body.get("mode", "contains")
+        scope = self.request_body.get("scope", "all")
 
         if mode == "contains":
             mode = "__icontains"
         elif mode == "startswith":
             mode = "__istartswith"
 
+        scope_q = Q()
+        if scope == "foreign":
+            scope_q = ~Q(**{"location_country_code": "USA"})
+        elif scope == "domestic":
+            scope_q = Q(**{"location_country_code": "USA"})
+
         response_object = []
 
         if value:
             for searchable_field in search_fields.keys():
-                results = Location.objects.filter(Q(**{searchable_field + mode: value})).values_list(searchable_field, search_fields[searchable_field]["parent"])
+                search_q = Q(**{searchable_field + mode: value})
+                results = Location.objects.filter(search_q & scope_q).values_list(searchable_field, search_fields[searchable_field]["parent"])
                 results = list(set(results))  # Do this to eliminate duplicates
                 for row in results:
                     response_row = {
@@ -407,16 +415,19 @@ class GeoCompleteHandler:
 class DataQueryHandler:
     """Handles complex queries via POST requests data."""
 
-    def __init__(self, model, serializer, request_body, agg_list=[]):
+    def __init__(self, model, serializer, request_body, agg_list=[], ordering=None):
         self.request_body = request_body
         self.serializer = serializer
         self.model = model
         self.agg_list = agg_list
+        self.ordering = ordering
 
     def build_response(self):
         """Returns a dictionary from a POST request that can be used to create a response."""
         fg = FilterGenerator()
         filters = fg.create_from_post(self.request_body)
+        # Grab the ordering
+        self.ordering = self.request_body.get("order", self.ordering)
 
         records = self.model.objects.all()
 
@@ -428,6 +439,10 @@ class DataQueryHandler:
 
         # filter model records
         records = records.filter(filters)
+
+        # Order the response
+        if self.ordering:
+            records = records.order_by(*self.ordering)
 
         # if this request specifies unique values, get those
         unique_values = UniqueValueHandler.get_values_and_counts(

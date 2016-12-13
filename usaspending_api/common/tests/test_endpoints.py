@@ -53,6 +53,40 @@ class EndpointTests(TransactionTestCase):
             # Check if the status code is correct
             self.assertEqual(response.status_code, status_code)
             # Check if the response object is correct
-            # because the native assertDictEqual cares about order (and we don't)
-            # we will convert our data to sets
-            self.assertEqual(set(response.data), set(response_object))
+            # We use a special equivalence check because the response object can
+            # be a multi-tiered nest of lists and objects, and can also be OrderedDicts
+            # and ResultLists, which don't play nice with the native equality checks
+            self.assertTrue(self.evaluateEquivalence(response_object, response.data))
+
+    def evaluateEquivalence(self, item1, item2):
+        logger = logging.getLogger('console')
+        equality = True
+        # We don't check directly type() to type() here because the serialized return
+        # from client uses helper classes that don't match 1:1 (i.e. ReturnList vs list)
+        if not isinstance(item2, type(item1)):
+            return False  # Type mismatch on the items means they can't be equal
+        if isinstance(item1, list):
+            if len(item1) is not len(item2):
+                return False  # Length mismatch on lists mean they can't be equal
+            else:
+                for i in range(len(item1)):
+                    matched = False
+                    for item in item2:
+                        if self.evaluateEquivalence(item1[i], item):
+                            item2.remove(item)  # Remove this item from the list if we hit a match
+                            matched = True
+                            break
+                    if matched:
+                        continue
+                    return False  # No match in the list for this item
+        elif isinstance(item1, dict):
+            item2 = dict(item2)  # Make sure this isn't an ordered dict
+            for key in item1.keys():
+                if key not in item2:  # If the other dict doesn't have this key, we don't have a match
+                    return False
+                if 'date' in key:  # Date fields don't play nicely with the database, so skip them
+                    continue
+                equality = equality and self.evaluateEquivalence(item1[key], item2[key])
+        else:
+            equality = equality and (item1 == item2)
+        return equality
