@@ -144,7 +144,12 @@ class FilterGenerator():
         else:
             q_kwargs = {}
             field = filt['field']
-            operation = FilterGenerator.operators[filt['operation']]
+            negate = False
+            if "not_" == filt['operation'][:4]:
+                negate = True
+                operation = FilterGenerator.operators[filt['operation'][4:]]
+            else:
+                operation = FilterGenerator.operators[filt['operation']]
             value = filt['value']
 
             value_format = None
@@ -159,11 +164,15 @@ class FilterGenerator():
                 # Our Q object is simpler now
                 q_kwargs['search'] = value
                 # Return our Q and skip the rest
+                if negate:
+                    return ~Q(**q_kwargs)
                 return Q(**q_kwargs)
 
             # Handle special operations
             if operation is 'fy':
                 fy = FiscalYear(value)
+                if negate:
+                    return ~fy.get_filter_object(field)
                 return fy.get_filter_object(field)
             if operation is 'range_intersect':
                 # If we have a value_format and it is fy, convert it to the
@@ -171,6 +180,8 @@ class FilterGenerator():
                 if value_format and value_format == 'fy':
                     fy = FiscalYear(value)
                     value = [fy.fy_start_date, fy.fy_end_date]
+                if negate:
+                    return ~self.range_intersect(field, value)
                 return self.range_intersect(field, value)
 
             # We don't have a special operation, so handle the remaining cases
@@ -182,6 +193,8 @@ class FilterGenerator():
 
             q_kwargs[field + operation] = value
 
+            if negate:
+                return ~Q(**q_kwargs)
             return Q(**q_kwargs)
 
     def validate_post_request(self, request):
@@ -194,7 +207,7 @@ class FilterGenerator():
                         raise
                 else:
                     if 'field' in filt and 'operation' in filt and 'value' in filt:
-                        if filt['operation'] not in FilterGenerator.operators:
+                        if filt['operation'] not in FilterGenerator.operators and filt['operation'][:4] is not 'not_' and filt['operation'][4:] not in FilterGenerator.operators:
                             raise Exception("Invalid operation: " + filt['operation'])
                         if filt['operation'] == 'in':
                             if not isinstance(filt['value'], list):
