@@ -220,8 +220,6 @@ class Command(BaseCommand):
             "location_city_code": "legal_entity_city_code",
             "location_city_name": "legal_entity_city_name",
             "location_congressional_code": "legal_entity_congressional",
-            # Since the country code is actually the id, we add _id to set up FK
-            "location_country_code_id": "legal_entity_country_code",
             "location_county_code": "legal_entity_county_code",
             "location_county_name": "legal_entity_county_name",
             "location_foreign_city_name": "legal_entity_foreign_city",
@@ -238,8 +236,6 @@ class Command(BaseCommand):
             "location_city_name": "place_of_performance_city",
             "location_performance_code": "place_of_performance_code",
             "location_congressional_code": "place_of_performance_congr",
-            # Tagging ID on the following to set the FK
-            "location_country_code_id": "place_of_perform_country_c",
             "location_county_name": "place_of_perform_county_na",
             "location_foreign_location_description": "place_of_performance_forei",
             "location_state_name": "place_of_perform_state_nam",
@@ -247,7 +243,10 @@ class Command(BaseCommand):
         }
 
         for row in award_financial_assistance_data:
-            location = load_data_into_model(Location(), row, field_map=legal_entity_location_field_map, as_dict=True)
+            location_value_map = {
+                "location_country_code": RefCountryCode.objects.filter(country_code=row["legal_entity_country_code"]).first()
+            }
+            location = load_data_into_model(Location(), row, field_map=legal_entity_location_field_map, value_map=location_value_map, as_dict=True)
             legal_entity_location, created = Location.objects.get_or_create(**location)
 
             # Create the legal entity if it doesn't exist
@@ -264,7 +263,11 @@ class Command(BaseCommand):
 
                 load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
-            location = load_data_into_model(Location(), row, field_map=place_of_performance_field_map, as_dict=True)
+            pop_value_map = {
+                "location_country_code": RefCountryCode.objects.filter(country_code=row["place_of_perform_country_c"]).first()
+            }
+
+            location = load_data_into_model(Location(), row, field_map=place_of_performance_field_map, value_map=pop_value_map, as_dict=True)
             pop_location, created = Location.objects.get_or_create(**location)
 
             # Create the base award, create actions, then tally the totals for the award

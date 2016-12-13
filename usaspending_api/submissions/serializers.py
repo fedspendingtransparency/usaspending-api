@@ -1,9 +1,9 @@
-from rest_framework import serializers
+from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.submissions.models import SubmissionProcess
 
 
-class SubmissionAttributesSerializer(serializers.ModelSerializer):
+class SubmissionAttributesSerializer(LimitableSerializer):
 
     class Meta:
 
@@ -11,7 +11,7 @@ class SubmissionAttributesSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class SubmissionProcessSerializer(serializers.ModelSerializer):
+class SubmissionProcessSerializer(LimitableSerializer):
 
     class Meta:
 
