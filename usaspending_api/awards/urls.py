@@ -13,7 +13,8 @@ award_summary_id_patterns = [
     url(r'^uri/(?P<uri>.+)', views.AwardListSummary.as_view()),
     url(r'^fain/(?P<fain>.+)', views.AwardListSummary.as_view()),
     url(r'^piid/(?P<piid>.+)', views.AwardListSummary.as_view()),
-    url(r'^autocomplete/', views.AwardListSummaryAutocomplete.as_view())
+    url(r'^autocomplete/', views.AwardListSummaryAutocomplete.as_view()),
+    url(r'^total/', views.AwardAggregate.as_view())
 ]
 
 urlpatterns = [

@@ -76,6 +76,15 @@ class AwardListSummaryAutocomplete(APIView):
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+class AwardAggregate(APIView):
+    """Return aggregate-level awards."""
+    def post(self, request, format=None):
+        fg = FilterGenerator()
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+        filters = fg.create_from_post(body)
+        records = Award.objects.all()
+        records = records.filter(filters)
 
 class AwardListSummary(APIView):
     """Return summary-level awards."""
