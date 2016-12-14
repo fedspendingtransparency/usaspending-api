@@ -5,7 +5,8 @@ award_id_patterns = [
     url(r'^$', views.AwardList.as_view()),
     url(r'^uri/(?P<uri>\w+)', views.AwardList.as_view()),
     url(r'^fain/(?P<fain>\w+)', views.AwardList.as_view()),
-    url(r'^piid/(?P<piid>\w+)', views.AwardList.as_view())
+    url(r'^piid/(?P<piid>\w+)', views.AwardList.as_view()),
+    url(r'^total/', views.AwardAggregate.as_view())
 ]
 
 award_summary_id_patterns = [
@@ -13,8 +14,8 @@ award_summary_id_patterns = [
     url(r'^uri/(?P<uri>.+)', views.AwardListSummary.as_view()),
     url(r'^fain/(?P<fain>.+)', views.AwardListSummary.as_view()),
     url(r'^piid/(?P<piid>.+)', views.AwardListSummary.as_view()),
-    url(r'^autocomplete/', views.AwardListSummaryAutocomplete.as_view()),
-    url(r'^total/', views.AwardAggregate.as_view())
+    url(r'^autocomplete/', views.AwardListSummaryAutocomplete.as_view())
+
 ]
 
 urlpatterns = [

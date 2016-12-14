@@ -83,8 +83,22 @@ class AwardAggregate(APIView):
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
         filters = fg.create_from_post(body)
-        records = Award.objects.all()
-        records = records.filter(filters)
+        awards = Award.objects.all()
+        awards = awards.filter(filters)
+        paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=body)
+        serializer = FinancialAccountsByAwardsTransactionObligationsSerializer(paged_data, many=True)
+        response_object = {
+            "total_metadata": {
+                "count": awards.count(),
+            },
+            "page_metadata": {
+                "page_number": paged_data.number,
+                "num_pages": paged_data.paginator.num_pages,
+                "count": len(paged_data),
+            },
+            "results": serializer.data
+        }
+        return Response(response_object)
 
 class AwardListSummary(APIView):
     """Return summary-level awards."""
