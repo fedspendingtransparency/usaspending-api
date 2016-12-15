@@ -76,6 +76,7 @@ class AwardListSummaryAutocomplete(APIView):
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class AwardAggregate(APIView):
     """Return aggregate-level awards."""
     def post(self, request, format=None):
@@ -83,7 +84,7 @@ class AwardAggregate(APIView):
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
         filters = fg.create_from_post(body)
-        awards = Award.objects.all()
+        awards = FinancialAccountsByAwardsTransactionObligations.objects.all()
         awards = awards.filter(filters)
         paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=body)
         serializer = FinancialAccountsByAwardsTransactionObligationsSerializer(paged_data, many=True)
@@ -99,6 +100,7 @@ class AwardAggregate(APIView):
             "results": serializer.data
         }
         return Response(response_object)
+
 
 class AwardListSummary(APIView):
     """Return summary-level awards."""
