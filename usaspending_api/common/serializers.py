@@ -18,3 +18,10 @@ class LimitableSerializer(serializers.ModelSerializer):
             existing = set(self.fields.keys())
             for field_name in existing - allowed:
                 self.fields.pop(field_name)
+
+
+class AggregateSerializer(serializers.Serializer):
+
+    # todo: probably don't return a datetime object as a string
+    item = serializers.CharField()
+    aggregate = serializers.DecimalField(20, 2)

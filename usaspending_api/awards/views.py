@@ -12,6 +12,8 @@ from usaspending_api.awards.serializers import (
 from usaspending_api.common.api_request_utils import (
     AutoCompleteHandler, FilterGenerator, FiscalYear, DataQueryHandler,
     ResponsePaginator)
+from usaspending_api.common.aggregate_handler import AggregateHandler
+from usaspending_api.common.serializers import AggregateSerializer
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
@@ -77,20 +79,27 @@ class AwardListSummaryAutocomplete(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AwardAggregate(APIView):
+class AwardListAggregate(APIView):
     """Return aggregate-level awards."""
-    def post(self, request, format=None):
+    def post(self, request):
         fg = FilterGenerator()
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
+
+        # filter records before we perform aggregations
         filters = fg.create_from_post(body)
         awards = FinancialAccountsByAwardsTransactionObligations.objects.all()
         awards = awards.filter(filters)
-        paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=body)
-        serializer = FinancialAccountsByAwardsTransactionObligationsSerializer(paged_data, many=True)
+
+        # instantiate an aggregate handler
+        agg_handler = AggregateHandler(body, awards)
+        aggregated_query = agg_handler.aggregate_query()
+
+        paged_data = ResponsePaginator.get_paged_data(aggregated_query, request_parameters=body)
+        serializer = AggregateSerializer(paged_data, many=True)
         response_object = {
             "total_metadata": {
-                "count": awards.count(),
+                "count": aggregated_query.count(),
             },
             "page_metadata": {
                 "page_number": paged_data.number,

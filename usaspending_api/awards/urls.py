@@ -6,7 +6,7 @@ award_id_patterns = [
     url(r'^uri/(?P<uri>\w+)', views.AwardList.as_view()),
     url(r'^fain/(?P<fain>\w+)', views.AwardList.as_view()),
     url(r'^piid/(?P<piid>\w+)', views.AwardList.as_view()),
-    url(r'^total/', views.AwardAggregate.as_view())
+    url(r'^total/', views.AwardListAggregate.as_view())
 ]
 
 award_summary_id_patterns = [
