@@ -58,7 +58,7 @@ class ThreadedDataLoader():
 
     # Loads data from a file using parameters set during creation of the loader
     # The filepath parameter should be the string location of the file for use with open()
-    def load_from_file(self, filepath):
+    def load_from_file(self, filepath, encoding='utf-8'):
         self.logger.info('Started processing file ' + filepath)
         # Create the Queue object - this will hold all the rows in the CSV
         row_queue = JoinableQueue()
@@ -84,7 +84,7 @@ class ThreadedDataLoader():
         for process in pool:
             process.start()
 
-        with open(filepath) as csvfile:
+        with open(filepath, encoding=encoding) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 row_queue.put(row)
