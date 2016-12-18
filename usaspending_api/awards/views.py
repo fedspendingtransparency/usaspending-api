@@ -2,7 +2,7 @@ from collections import namedtuple
 import json
 
 from django.db.models import Sum
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -12,8 +12,8 @@ from usaspending_api.awards.serializers import (
 from usaspending_api.common.api_request_utils import (
     AutoCompleteHandler, FilterGenerator, FiscalYear, DataQueryHandler,
     ResponsePaginator)
-from usaspending_api.common.aggregate_handler import AggregateHandler
-from usaspending_api.common.serializers import AggregateSerializer
+from usaspending_api.common.mixins import FilterQuerysetMixin
+from usaspending_api.common.views import AggregateView
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
@@ -79,36 +79,13 @@ class AwardListSummaryAutocomplete(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AwardListAggregate(APIView):
+class AwardListAggregate(FilterQuerysetMixin,
+                         AggregateView):
     """Return aggregate-level awards."""
-    def post(self, request):
-        fg = FilterGenerator()
-        body_unicode = request.body.decode('utf-8')
-        body = json.loads(body_unicode)
-
-        # filter records before we perform aggregations
-        filters = fg.create_from_post(body)
-        awards = FinancialAccountsByAwardsTransactionObligations.objects.all()
-        awards = awards.filter(filters)
-
-        # instantiate an aggregate handler
-        agg_handler = AggregateHandler(body, awards)
-        aggregated_query = agg_handler.aggregate_query()
-
-        paged_data = ResponsePaginator.get_paged_data(aggregated_query, request_parameters=body)
-        serializer = AggregateSerializer(paged_data, many=True)
-        response_object = {
-            "total_metadata": {
-                "count": aggregated_query.count(),
-            },
-            "page_metadata": {
-                "page_number": paged_data.number,
-                "num_pages": paged_data.paginator.num_pages,
-                "count": len(paged_data),
-            },
-            "results": serializer.data
-        }
-        return Response(response_object)
+    def get_queryset(self):
+        queryset = FinancialAccountsByAwardsTransactionObligations.objects.all()
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        return filtered_queryset
 
 
 class AwardListSummary(APIView):

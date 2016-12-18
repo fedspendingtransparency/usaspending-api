@@ -22,6 +22,5 @@ class LimitableSerializer(serializers.ModelSerializer):
 
 class AggregateSerializer(serializers.Serializer):
 
-    # todo: probably don't return a datetime object as a string
-    item = serializers.CharField()
+    item = serializers.CharField(required=False)
     aggregate = serializers.DecimalField(20, 2)
