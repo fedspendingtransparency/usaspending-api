@@ -18,6 +18,12 @@ class Command(BaseCommand):
         parser.add_argument('file', nargs=1, help='the file to load')
 
     def handle(self, *args, **options):
+        # Create a new submission attributes object for this timestamp
+        subattr = SubmissionAttributes()
+        subattr.usaspending_update = datetime.now()
+        subattr.user_id = -1  # We don't actually have users so we may want to just get rid of this field
+        subattr.save()
+
         field_map = {
             "federal_action_obligation": "dollarsobligated",
             "description": "descriptionofcontractrequirement",
@@ -32,7 +38,7 @@ class Command(BaseCommand):
             "action_date": lambda row: self.convert_date(row['signeddate']),
             "last_modified_date": lambda row: self.convert_date(row['last_modified_date']),
             "gfe_gfp": lambda row: row['gfe_gfp'].split(":")[0],
-            "submission": SubmissionAttributes.objects.all().first()  # Probably want to change this?
+            "submission": subattr
         }
 
         loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map, post_row_function=self.post_row_process_function)

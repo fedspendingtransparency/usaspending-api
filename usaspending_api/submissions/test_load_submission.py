@@ -18,7 +18,6 @@ class LoadSubmissionTest(TestCase):
     def setUp(self):
         Procurement.objects.all().delete()
         SubmissionAttributes.objects.all().delete()
-        SubmissionProcess.objects.all().delete()
         TreasuryAppropriationAccount.objects.all().delete()
         AppropriationAccountBalances.objects.all().delete()
         FinancialAccountsByProgramActivityObjectClass.objects.all().delete()
@@ -37,7 +36,6 @@ class LoadSubmissionTest(TestCase):
         # Load the RefObjClass and ProgramActivityCode data
         call_command('load_submission', '-1', '--delete', '--test')
         self.assertEqual(SubmissionAttributes.objects.all().count(), 1)
-        self.assertEqual(SubmissionProcess.objects.all().count(), 1)
         self.assertEqual(TreasuryAppropriationAccount.objects.all().count(), 1)
         self.assertEqual(AppropriationAccountBalances.objects.all().count(), 1)
         self.assertEqual(FinancialAccountsByProgramActivityObjectClass.objects.all().count(), 10)

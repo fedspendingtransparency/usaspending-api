@@ -18,7 +18,6 @@ class ContractsLoadTests(TransactionTestCase):
         """
         Ensure contract awards can be loaded from usaspending
         """
-        self.award = mommy.make('submissions.SubmissionProcess', _quantity=2)
         call_command('loadcontracts', os.path.join(settings.BASE_DIR, 'usaspending_api/data/usaspending_treasury_contracts.csv'))
 
     def teardown():

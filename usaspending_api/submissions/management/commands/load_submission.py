@@ -82,7 +82,7 @@ class Command(BaseCommand):
         submission_attributes = None
         update = False
         try:
-            submission_attributes = SubmissionAttributes.objects.get(pk=submission_id)
+            submission_attributes = SubmissionAttributes.objects.get(broker_submission_id=submission_id)
             if options['delete']:
                 self.logger.info('Submission id ' + str(submission_id) + ' already exists. It will be deleted.')
                 submission_attributes.delete()
@@ -97,20 +97,12 @@ class Command(BaseCommand):
         # Create our value map - specific data to load
         value_map = {
             'user_id': 1,
+            'broker_submission_id': submission_id
         }
+
+        del submission_data["submission_id"]  # To avoid collisions with the newer PK system
 
         load_data_into_model(submission_attributes, submission_data, value_map=value_map, save=True)
-
-        # Update and save submission process
-        value_map = {
-            'submission': submission_attributes
-        }
-
-        submission_process = SubmissionProcess()
-        if update:
-            submission_process = SubmissionProcess.objects.get(submission=submission_attributes)
-
-        load_data_into_model(submission_process, [], value_map=value_map, save=True)
 
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
@@ -142,7 +134,6 @@ class Command(BaseCommand):
 
             value_map = {
                 'treasury_account_identifier': treasury_account,
-                'submission_process': submission_process,
                 'submission': submission_attributes
             }
 

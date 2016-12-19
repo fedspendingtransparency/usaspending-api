@@ -21,4 +21,4 @@ class TreasuryAppropriationAccountLoadTests(TransactionTestCase):
         Make sure an instance of a tas is properly created
         """
         call_command('loadtas', os.path.join(settings.BASE_DIR, 'usaspending_api/data/tas_list.csv'))
-        gwa_tas = TreasuryAppropriationAccount.objects.get(gwa_tas='00110100', beginning_period_of_availability='2011', ending_period_of_availability='2011')
+        gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier='7')

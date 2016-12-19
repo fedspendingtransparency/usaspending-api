@@ -11,6 +11,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    award = models.ForeignKey('awards.Award', models.CASCADE, null=True)
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, null=True, db_column='object_class')
@@ -103,8 +104,9 @@ class Award(DataSourceTrackedModel):
     )
 
     type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type")
+    type_description = models.CharField(max_length=50, verbose_name="Award Type Description", null=True)
     piid = models.CharField(max_length=50, blank=True, null=True)
-    parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
+    parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True)
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
     # dollarsobligated
@@ -130,11 +132,6 @@ class Award(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
-    # this is a pointer to the latest mod, which should include most up
-    # to date info on the location, etc.
-
-    # Can use award.actions to get reverse reference to all actions
-
     latest_submission = models.ForeignKey(SubmissionAttributes, null=True)
     # recipient_name = models.CharField(max_length=250, null=True)
     # recipient_address_line1 = models.CharField(max_length=100, null=True)
@@ -147,11 +144,11 @@ class Award(DataSourceTrackedModel):
         return self.actions.all().order_by('-action_date').first()
 
     def update_from_mod(self, mod):
-        if self.type == 'C':
-            self.date_signed = mod.action_date
-            # only contract loading/summing supported right now
-            self.total_obligation = Procurement.objects.filter(piid=self.piid).aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
-            self.save()
+        self.date_signed = mod.action_date
+        # self.period_of_performance_start_date = first among transactions
+        # self.period_of_perfoormance_current_end_date = latest among transactions
+        # self.total_obligation = Procurement.objects.filter(piid=self.piid).aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
+        self.save()
 
     latest_award_transaction = property(__get_latest_submission)  # models.ForeignKey('AwardAction')
 
@@ -291,6 +288,7 @@ class FinancialAssistanceAward(AwardAction):
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
+    submitted_type = models.CharField(max_length=1, blank=True, null=True, verbose_name="Submitted Type")
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)

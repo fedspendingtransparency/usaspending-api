@@ -26,26 +26,52 @@ class Command(BaseCommand):
             "availability_type_code": "A",
             "main_account_code": "MAIN",
             "sub_account_code": "SUB",
-            "gwa_tas": "GWA_TAS",
-            "gwa_tas_name": "GWA_TAS NAME",
-            "agency_aid": "Agency AID",
-            "agency_name": "Agency Name",
-            "admin_org": "ADMIN_ORG",
-            "admin_org_name": "Admin Org Name",
-            "fr_entity_type_code": "FR Entity Type Code",
+            "account_title": "GWA_TAS NAME",
+            "reporting_agency_id": "Agency AID",
+            "reporting_agency_name": "Agency Name",
+            "budget_bureau_code": "ADMIN_ORG",
+            "budget_bureau_name": "Admin Org Name",
+            "fr_entity_code": "FR Entity Type Code",
             "fr_entity_description": "FR Entity Description",
-            "fin_type_2": "Financial Indicator Type 2",
-            "fin_type_2_description": "FIN IND Type 2 Description",
-            "function_code": "Function Code",
-            "function_description": "Function Description",
-            "sub_function_code": "Sub Function Code",
-            "sub_function_description": "Sub Function Description"
+            "budget_function_code": "Function Code",
+            "budget_function_title": "Function Description",
+            "budget_subfunction_code": "Sub Function Code",
+            "budget_subfunction_title": "Sub Function Description"
         }
 
         value_map = {
-            "data_source": "USA"
+            "data_source": "USA",
+            "tas_rendering_label": self.generate_tas_rendering_label
         }
 
         loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map, collision_field='treasury_account_identifier', collision_behavior='update')
         loader.load_from_file(options['file'][0])
-# self.logger.log(20, "loaded account number %s %s %s ", treasury_appropriation_account.treasury_account_identifier, treasury_appropriation_account, treasury_appropriation_account.gwa_tas_name)
+
+    def generate_tas_rendering_label(self, row):
+        ATA = row["ATA"].strip()
+        AID = row["Agency AID"].strip()
+        TYPECODE = row["A"].strip()
+        BPOA = row["BPOA"].strip()
+        EPOA = row["EPOA"].strip()
+        MAC = row["MAIN"].strip()
+        SUB = row["SUB"].strip().lstrip("0")
+
+        # print("ATA: " + ATA + "\nAID: " + AID + "\nTYPECODE: " + TYPECODE + "\nBPOA: " + BPOA + "\nEPOA: " + EPOA + "\nMAC: " + MAC + "\nSUB: " + SUB)
+
+        # Attach hyphen to ATA if it exists
+        if ATA:
+            ATA = ATA + "-"
+
+        POAPHRASE = BPOA
+        # If we have BOTH BPOA and EPOA
+        if BPOA and EPOA:
+            # And they're equal
+            if not BPOA == EPOA:
+                POAPHRASE = BPOA + "/" + EPOA
+
+        ACCTPHRASE = MAC
+        if SUB:
+            ACCTPHRASE = ACCTPHRASE + "." + SUB
+
+        concatenated_tas = ATA + AID + TYPECODE + POAPHRASE + ACCTPHRASE
+        return concatenated_tas
