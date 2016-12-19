@@ -1,19 +1,25 @@
-from django.shortcuts import render
-from django.db.models import Q, Sum
-from rest_framework import status
+from collections import namedtuple
+import json
+
+from django.db.models import Sum
+from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+
 from usaspending_api.awards.models import FinancialAccountsByAwardsTransactionObligations, Award
-from usaspending_api.awards.serializers import FinancialAccountsByAwardsTransactionObligationsSerializer, AwardSerializer
-from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator, AutoCompleteHandler
-import json
+from usaspending_api.awards.serializers import (
+    FinancialAccountsByAwardsTransactionObligationsSerializer, AwardSerializer)
+from usaspending_api.common.api_request_utils import (
+    AutoCompleteHandler, FilterGenerator, FiscalYear, DataQueryHandler,
+    ResponsePaginator)
+from usaspending_api.common.mixins import FilterQuerysetMixin
+from usaspending_api.common.views import AggregateView
+
+AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
 class AwardList(APIView):
-
-    """
-    List all awards (financials)
-    """
+    """Return award-level data (financials)"""
     def get(self, request, uri=None, piid=None, fain=None, format=None):
         awards = None
         if uri:
@@ -46,6 +52,20 @@ class AwardList(APIView):
         }
         return Response(response_object)
 
+    def post(self, request, format=None):
+        try:
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            dq = DataQueryHandler(
+                FinancialAccountsByAwardsTransactionObligations,
+                FinancialAccountsByAwardsTransactionObligationsSerializer,
+                body)
+            response_data = dq.build_response()
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(response_data)
+
 
 # Autocomplete support for award summary objects
 class AwardListSummaryAutocomplete(APIView):
@@ -59,50 +79,29 @@ class AwardListSummaryAutocomplete(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class AwardListAggregate(FilterQuerysetMixin,
+                         AggregateView):
+    """Return aggregate-level awards."""
+    def get_queryset(self):
+        queryset = FinancialAccountsByAwardsTransactionObligations.objects.all()
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        return filtered_queryset
+
+
 class AwardListSummary(APIView):
+    """Return summary-level awards."""
     def post(self, request, format=None):
-        fg = FilterGenerator()
         try:
             body_unicode = request.body.decode('utf-8')
             body = json.loads(body_unicode)
-            filters = fg.create_from_post(body)
+            metadata = AggregateItem('total_obligation', Sum)
+            dq = DataQueryHandler(Award, AwardSerializer, body, [metadata])
+            response_data = dq.build_response()
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        awards = Award.objects.all()
+        return Response(response_data)
 
-        if len(fg.search_vectors) > 0:
-            vector_sum = fg.search_vectors[0]
-            for vector in fg.search_vectors[1:]:
-                vector_sum += vector
-            awards = awards.annotate(search=vector_sum)
-
-        awards = awards.filter(filters)
-
-        paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=body)
-
-        fields = body.get('fields', None)
-        exclude = body.get('exclude', None)
-
-        serializer = AwardSerializer(paged_data, fields=fields, exclude=exclude, many=True)
-        response_object = {
-            "total_metadata": {
-                "count": awards.count(),
-                "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
-            },
-            "page_metadata": {
-                "page_number": paged_data.number,
-                "num_pages": paged_data.paginator.num_pages,
-                "count": len(paged_data),
-                "total_obligation_sum": paged_data.object_list.aggregate(Sum('total_obligation'))["total_obligation__sum"],
-            },
-            "results": serializer.data
-        }
-        return Response(response_object)
-
-    """
-    List all awards (summary level)
-    """
     def get(self, request, uri=None, piid=None, fain=None, format=None):
         filter_map = {
             'awarding_fpds': 'awarding_agency__fpds_code',

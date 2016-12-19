@@ -13,8 +13,8 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.conf.urls import url, include
-from django.contrib import admin
 from usaspending_api import views as views
 
 
@@ -24,5 +24,12 @@ urlpatterns = [
     url(r'^api/v1/submissions/', include('usaspending_api.submissions.urls')),
     url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
     url(r'^api/v1/financial_activities/', include('usaspending_api.financial_activities.urls')),
+    url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
+
+# if settings.DEBUG:
+#     import debug_toolbar
+#     urlpatterns += [
+#         url(r'^__debug__/', include(debug_toolbar.urls)),
+#     ]

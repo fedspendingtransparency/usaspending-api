@@ -1,18 +1,18 @@
-from django.shortcuts import render
+import json
+
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.financial_activities.serializers import FinancialAccountsByProgramActivityObjectClassSerializer
-from usaspending_api.common.api_request_utils import FilterGenerator, ResponsePaginator
+from usaspending_api.common.api_request_utils import FilterGenerator, ResponsePaginator, DataQueryHandler
 
 
 class FinancialAccountsByProgramActivityObjectClassList(APIView):
 
-    """
-    List all financial activites
-    """
-    def get(self, request, format=None):
+    def get(self, request):
+        """Return a response for a financial activity GET request."""
         subs = FinancialAccountsByProgramActivityObjectClass.objects.all()
 
         fg = FilterGenerator()
@@ -36,3 +36,18 @@ class FinancialAccountsByProgramActivityObjectClassList(APIView):
         }
 
         return Response(response_object)
+
+    def post(self, request):
+        """Return a response for a financial activity POST request."""
+        try:
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            dq = DataQueryHandler(
+                FinancialAccountsByProgramActivityObjectClass,
+                FinancialAccountsByProgramActivityObjectClassSerializer,
+                body)
+            response_data = dq.build_response()
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(response_data)

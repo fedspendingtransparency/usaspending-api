@@ -41,8 +41,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.postgres',
 
+#    'debug_toolbar',
     'rest_framework',
     'corsheaders',
+    'usaspending_api.common',
     'usaspending_api.references',
     'usaspending_api.awards',
     'usaspending_api.accounts',
@@ -50,8 +52,12 @@ INSTALLED_APPS = [
     'usaspending_api.financial_activities'
 ]
 
+# IPs allowed to see django-debug-toolbar output.
+INTERNAL_IPS = ('127.0.0.1',)
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+#    'debug_toolbar.middleware.DebugToolbarMiddleware',
 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
