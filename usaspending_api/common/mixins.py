@@ -1,6 +1,5 @@
 from django.db.models import Avg, Count, F, Max, Min, Sum
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
-from rest_framework.response import Response
 
 from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear
 
@@ -50,19 +49,13 @@ class AggregateQuerysetMixin(object):
             aggregate = (
                 queryset.annotate(item=group_func(group_field)).values('item').annotate(
                     aggregate=agg_function(agg_field)))
-            serializer = self.get_serializer(aggregate, many=True)
-        elif group_field:
+        else:
             # group queryset by a non-date field and aggregate
             aggregate = (
                 queryset.annotate(item=F(group_field)).values('item').annotate(
                     aggregate=agg_function(agg_field)))
-            serializer = self.get_serializer(aggregate, many=True)
-        else:
-            # aggregate the entire queryset (i.e., no group by)
-            aggregate = queryset.aggregate(aggregate=agg_function(agg_field))
-            serializer = self.get_serializer(aggregate)
 
-        return Response(serializer.data)
+        return aggregate
 
     def validate_request(self, params):
         """Validate request parameters."""
@@ -94,15 +87,21 @@ class AggregateQuerysetMixin(object):
                 'Aggregate field {} is not a numeric type (e.g., integer, decimal)'.format(agg_field)
             )
 
+        # field to group by is required
+        if group_field is None:
+            raise ValueError(
+                'Request is missing the field to group by'
+            )
+
         # if a group by field is specified, make sure it exists in the model
-        if group_field is not None and hasattr(model, group_field) is False:
+        if hasattr(model, group_field) is False:
             raise ValueError(
                 'Group field {} not found in model {}. '
                 'Please specify a valid group field in the request'.format(group_field, model))
 
         # if a groupby date part is specified, make sure the groupby field is
         # a date and the groupby value is year, quarter, or month
-        if date_part is not None and group_field is not None:
+        if date_part is not None:
             # if the request is asking to group by a date component, the field
             # we're grouping by must be a date-related field
             # (there is probably a better way to do this?)
