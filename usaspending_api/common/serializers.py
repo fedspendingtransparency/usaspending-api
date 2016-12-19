@@ -18,3 +18,9 @@ class LimitableSerializer(serializers.ModelSerializer):
             existing = set(self.fields.keys())
             for field_name in existing - allowed:
                 self.fields.pop(field_name)
+
+
+class AggregateSerializer(serializers.Serializer):
+
+    item = serializers.CharField(required=False)
+    aggregate = serializers.DecimalField(20, 2)

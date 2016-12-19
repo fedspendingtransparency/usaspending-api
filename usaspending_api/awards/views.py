@@ -2,7 +2,7 @@ from collections import namedtuple
 import json
 
 from django.db.models import Sum
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -12,6 +12,8 @@ from usaspending_api.awards.serializers import (
 from usaspending_api.common.api_request_utils import (
     AutoCompleteHandler, FilterGenerator, FiscalYear, DataQueryHandler,
     ResponsePaginator)
+from usaspending_api.common.mixins import FilterQuerysetMixin
+from usaspending_api.common.views import AggregateView
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
@@ -75,6 +77,15 @@ class AwardListSummaryAutocomplete(APIView):
             return Response(AutoCompleteHandler.handle(Award.objects.all(), body))
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AwardListAggregate(FilterQuerysetMixin,
+                         AggregateView):
+    """Return aggregate-level awards."""
+    def get_queryset(self):
+        queryset = FinancialAccountsByAwardsTransactionObligations.objects.all()
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        return filtered_queryset
 
 
 class AwardListSummary(APIView):
