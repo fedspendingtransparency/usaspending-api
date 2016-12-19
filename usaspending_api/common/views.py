@@ -51,4 +51,3 @@ class AggregateView(mixins.ListModelMixin,
         }
         response_object.update({'results': serialized_data})
         return Response(response_object)
-
