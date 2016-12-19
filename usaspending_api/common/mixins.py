@@ -146,3 +146,19 @@ class FilterQuerysetMixin(object):
         else:
             filters = fg.create_from_post(request.data)
             return queryset.filter(filters)
+
+    def order_records(self, request, *args, **kwargs):
+        queryset = kwargs.get('queryset')
+
+        # create a single dict that contains the requested aggregate parameters,
+        # regardless of request type (e.g., GET, POST)
+        # (not sure if this is a good practice, or we should be more
+        # prescriptive that aggregate requests can only be of one type)
+        params = dict(request.query_params)
+        params.update(dict(request.data))
+        ordering = params.get('order')
+        if ordering is not None:
+            return queryset.order_by(*ordering)
+        else:
+            return queryset
+
