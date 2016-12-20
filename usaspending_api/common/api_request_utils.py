@@ -6,6 +6,7 @@ from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from django.utils import timezone
 
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Location, RefCountryCode
 
 
@@ -208,20 +209,20 @@ class FilterGenerator():
                 else:
                     if 'field' in filt and 'operation' in filt and 'value' in filt:
                         if filt['operation'] not in FilterGenerator.operators and filt['operation'][:4] is not 'not_' and filt['operation'][4:] not in FilterGenerator.operators:
-                            raise Exception("Invalid operation: " + filt['operation'])
+                            raise InvalidParameterException("Invalid operation: " + filt['operation'])
                         if filt['operation'] == 'in':
                             if not isinstance(filt['value'], list):
-                                raise Exception("Invalid value, operation 'in' requires an array value")
+                                raise InvalidParameterException("Invalid value, operation 'in' requires an array value")
                         if filt['operation'] == 'range':
                             if not isinstance(filt['value'], list) or len(filt['value']) != 2:
-                                raise Exception("Invalid value, operation 'range' requires an array value of length 2")
+                                raise InvalidParameterException("Invalid value, operation 'range' requires an array value of length 2")
                         if filt['operation'] == 'range_intersect':
                             if not isinstance(filt['field'], list) or len(filt['field']) != 2:
-                                raise Exception("Invalid field, operation 'range_intersect' requires an array of length 2 for field")
+                                raise InvalidParameterException("Invalid field, operation 'range_intersect' requires an array of length 2 for field")
                             if (not isinstance(filt['value'], list) or len(filt['value']) != 2) and 'value_format' not in filt:
-                                raise Exception("Invalid value, operation 'range_intersect' requires an array value of length 2, or a single value with value_format set to a ranged format (such as fy)")
+                                raise InvalidParameterException("Invalid value, operation 'range_intersect' requires an array value of length 2, or a single value with value_format set to a ranged format (such as fy)")
                     else:
-                        raise Exception("Malformed filter - missing field, operation, or value")
+                        raise InvalidParameterException("Malformed filter - missing field, operation, or value")
 
     # Special operation functions follow
 

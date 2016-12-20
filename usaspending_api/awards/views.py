@@ -1,8 +1,7 @@
 from collections import namedtuple
 import json
 
-from django.db.models import Sum
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -10,9 +9,9 @@ from usaspending_api.awards.models import FinancialAccountsByAwardsTransactionOb
 from usaspending_api.awards.serializers import (
     FinancialAccountsByAwardsTransactionObligationsSerializer, AwardSerializer)
 from usaspending_api.common.api_request_utils import (
-    AutoCompleteHandler, FilterGenerator, FiscalYear, DataQueryHandler,
+    AutoCompleteHandler, FilterGenerator, DataQueryHandler,
     ResponsePaginator)
-from usaspending_api.common.mixins import FilterQuerysetMixin
+from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
 from usaspending_api.common.views import AggregateView
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
@@ -85,59 +84,35 @@ class AwardListAggregate(FilterQuerysetMixin,
     def get_queryset(self):
         queryset = FinancialAccountsByAwardsTransactionObligations.objects.all()
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        return filtered_queryset
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
 
 
-class AwardListSummary(APIView):
-    """Return summary-level awards."""
-    def post(self, request, format=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
-            metadata = AggregateItem('total_obligation', Sum)
-            dq = DataQueryHandler(Award, AwardSerializer, body, [metadata])
-            response_data = dq.build_response()
-        except Exception as e:
-            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+class AwardListSummaryViewSet(FilterQuerysetMixin,
+                              ResponseMetadatasetMixin,
+                              viewsets.ReadOnlyModelViewSet):
+    """Return aggregate-level awards."""
 
-        return Response(response_data)
+    filter_map = {
+        'awarding_fpds': 'awarding_agency__fpds_code',
+        'funding_fpds': 'funding_agency__fpds_code',
+    }
 
-    def get(self, request, uri=None, piid=None, fain=None, format=None):
-        filter_map = {
-            'awarding_fpds': 'awarding_agency__fpds_code',
-            'funding_fpds': 'funding_agency__fpds_code',
-        }
-        fg = FilterGenerator(filter_map=filter_map, ignored_parameters=['fy'])
-        filter_arguments = fg.create_from_get(request.GET)
-        # We need to parse the FY to be the appropriate value
-        if 'fy' in request.GET:
-            fy = FiscalYear(request.GET.get('fy'))
-            fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
-            filter_arguments = {**filter_arguments, **fy_arguments}
+    serializer_class = AwardSerializer
 
-        if uri:
-            filter_arguments['uri'] = uri
-        elif piid:
-            filter_arguments['piid'] = piid
-        elif fain:
-            filter_arguments['fain'] = fain
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = Award.objects.all()
+        filtered_queryset = self.filter_records(self.request, queryset=queryset, filter_map=self.filter_map)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
 
-        awards = Award.objects.all().filter(**filter_arguments)
+    def list(self, request, *args, **kwargs):
+        """
+        Override the parent list method so we can add metadata to response.
+        Once we're able to customize metadata via DRF pagination, we won't need this.
+        """
+        response = self.build_response(
+            self.request, queryset=self.get_queryset(), serializer=self.get_serializer_class())
+        return Response(response)
 
-        paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=request.GET)
-
-        serializer = AwardSerializer(paged_data, many=True)
-        response_object = {
-            "total_metadata": {
-                "count": awards.count(),
-                "total_obligation_sum": awards.aggregate(Sum('total_obligation'))["total_obligation__sum"],
-            },
-            "page_metadata": {
-                "page_number": paged_data.number,
-                "num_pages": paged_data.paginator.num_pages,
-                "count": len(paged_data),
-                "total_obligation_sum": paged_data.object_list.aggregate(Sum('total_obligation'))["total_obligation__sum"],
-            },
-            "results": serializer.data
-        }
-        return Response(response_object)

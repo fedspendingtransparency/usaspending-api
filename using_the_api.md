@@ -38,7 +38,6 @@ The currently available routes are:
   * **/v1/awards/summary/**
     - _Description_: Provides award level summary data
     - _Methods_: GET, POST
-    - _Metadata_: Provides `total_obligation_sum`, a sum of the `total_obligation` for all data in the dataset
 
   * **/v1/awards/summary/autocomplete/**
     - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards/summary endpoint
@@ -90,7 +89,6 @@ The structure of the post request allows for a flexible and complex query with b
     "limit": 1000,
     "order": ["recipient__location__location_state_code", "-recipient__name"],
     "fields": ["fain", "total_obligation"],
-    "unique_values": ["recipient__location__location_state_code", "awarding_agency__name"],
     "exclude": ["recipient"]
     "filters": [
       {
@@ -111,16 +109,9 @@ The structure of the post request allows for a flexible and complex query with b
 * `page` - _Optional_ - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
 * `limit` - _Optional_ - The maximum length of a page in the response. Default: 100
 * `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name, e.g. to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
-* `unique_values` - _Optional_ - A list of fields for which you would like to know the unique values and how many items have that value. These are processed _after_ the filters. An example response with that value would be:
 
   ```
   {
-    "unique_values_metadata": {
-      "awarding_agency__name": {
-        "SMALL BUSINESS ADMINISTRATION": 5,
-        "DEPARTMENTAL OFFICES": 3,
-        "null": 4
-      },
       "recipient__location__location_state_code": {
         "SD": 1,
         "FL": 2,
@@ -303,13 +294,11 @@ The response object structure is the same whether you are making a GET or a POST
 ```
 {
   "page_metadata": {
-    "total_obligation_sum": -6000, // This is a meta-data field specific to the endpoint
     "num_pages": 499,
     "page_number": 1,
     "count": 1
   },
   "total_metadata": {
-    "total_obligation_sum": 13459752.5, // Again, this is a meta-data field specific to the endpoint but applied to the entire dataset
     "count": 499
   },
   "results": [
