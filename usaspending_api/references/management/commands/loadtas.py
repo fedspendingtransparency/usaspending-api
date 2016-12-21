@@ -19,13 +19,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         field_map = {
             "treasury_account_identifier": "ACCT_NUM",
-            "allocation_transfer_agency_id": "ATA",
-            "agency_id": "AID",
-            "beginning_period_of_availability": "BPOA",
-            "ending_period_of_availability": "EPOA",
-            "availability_type_code": "A",
-            "main_account_code": "MAIN",
-            "sub_account_code": "SUB",
             "account_title": "GWA_TAS NAME",
             "reporting_agency_id": "Agency AID",
             "reporting_agency_name": "Agency Name",
@@ -41,37 +34,24 @@ class Command(BaseCommand):
 
         value_map = {
             "data_source": "USA",
-            "tas_rendering_label": self.generate_tas_rendering_label
+            "tas_rendering_label": self.generate_tas_rendering_label,
+            "allocation_transfer_agency_id": lambda row: row["ATA"].strip(),
+            "agency_id": lambda row: row["AID"].strip(),
+            "beginning_period_of_availability": lambda row: row["BPOA"].strip(),
+            "ending_period_of_availability": lambda row: row["EPOA"].strip(),
+            "availability_type_code": lambda row: row["A"].strip(),
+            "main_account_code": lambda row: row["MAIN"].strip(),
+            "sub_account_code": lambda row: row["SUB"].strip()
         }
 
         loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map, collision_field='treasury_account_identifier', collision_behavior='update')
         loader.load_from_file(options['file'][0])
 
     def generate_tas_rendering_label(self, row):
-        ATA = row["ATA"].strip()
-        AID = row["Agency AID"].strip()
-        TYPECODE = row["A"].strip()
-        BPOA = row["BPOA"].strip()
-        EPOA = row["EPOA"].strip()
-        MAC = row["MAIN"].strip()
-        SUB = row["SUB"].strip().lstrip("0")
-
-        # print("ATA: " + ATA + "\nAID: " + AID + "\nTYPECODE: " + TYPECODE + "\nBPOA: " + BPOA + "\nEPOA: " + EPOA + "\nMAC: " + MAC + "\nSUB: " + SUB)
-
-        # Attach hyphen to ATA if it exists
-        if ATA:
-            ATA = ATA + "-"
-
-        POAPHRASE = BPOA
-        # If we have BOTH BPOA and EPOA
-        if BPOA and EPOA:
-            # And they're equal
-            if not BPOA == EPOA:
-                POAPHRASE = BPOA + "/" + EPOA
-
-        ACCTPHRASE = MAC
-        if SUB:
-            ACCTPHRASE = ACCTPHRASE + "." + SUB
-
-        concatenated_tas = ATA + AID + TYPECODE + POAPHRASE + ACCTPHRASE
-        return concatenated_tas
+        return TreasuryAppropriationAccount.generate_tas_rendering_label(row["ATA"],
+                                                                         row["Agency AID"],
+                                                                         row["A"],
+                                                                         row["BPOA"],
+                                                                         row["EPOA"],
+                                                                         row["MAIN"],
+                                                                         row["SUB"])

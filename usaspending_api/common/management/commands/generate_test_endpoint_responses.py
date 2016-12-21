@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.test import Client
 import os
-import json
+from django.core.serializers.json import json, DjangoJSONEncoder
 import logging
 import django
 
@@ -45,4 +45,4 @@ class Command(BaseCommand):
 
             endpoint["response_object"] = response.data
 
-        print(json.dumps(endpoints, indent=4))
+        print(json.dumps(endpoints, indent=4, cls=DjangoJSONEncoder))

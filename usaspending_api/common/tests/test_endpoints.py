@@ -61,10 +61,6 @@ class EndpointTests(TransactionTestCase):
     def evaluateEquivalence(self, item1, item2):
         logger = logging.getLogger('console')
         equality = True
-        # We don't check directly type() to type() here because the serialized return
-        # from client uses helper classes that don't match 1:1 (i.e. ReturnList vs list)
-        if not isinstance(item2, type(item1)):
-            return False  # Type mismatch on the items means they can't be equal
         if isinstance(item1, list):
             if len(item1) is not len(item2):
                 return False  # Length mismatch on lists mean they can't be equal
@@ -88,5 +84,6 @@ class EndpointTests(TransactionTestCase):
                     continue
                 equality = equality and self.evaluateEquivalence(item1[key], item2[key])
         else:
-            equality = equality and (item1 == item2)
+            # Converting to string represenations to clear up some issues with Decimal casting
+            equality = equality and (str(item1) == str(item2))
         return equality

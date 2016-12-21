@@ -34,6 +34,36 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    @staticmethod
+    def generate_tas_rendering_label(ATA, AID, TYPECODE, BPOA, EPOA, MAC, SUB):
+        ATA = ATA.strip()
+        AID = AID.strip()
+        TYPECODE = TYPECODE.strip()
+        BPOA = BPOA.strip()
+        EPOA = EPOA.strip()
+        MAC = MAC.strip()
+        SUB = SUB.strip().lstrip("0")
+
+        # print("ATA: " + ATA + "\nAID: " + AID + "\nTYPECODE: " + TYPECODE + "\nBPOA: " + BPOA + "\nEPOA: " + EPOA + "\nMAC: " + MAC + "\nSUB: " + SUB)
+
+        # Attach hyphen to ATA if it exists
+        if ATA:
+            ATA = ATA + "-"
+
+        POAPHRASE = BPOA
+        # If we have BOTH BPOA and EPOA
+        if BPOA and EPOA:
+            # And they're equal
+            if not BPOA == EPOA:
+                POAPHRASE = BPOA + "/" + EPOA
+
+        ACCTPHRASE = MAC
+        if SUB:
+            ACCTPHRASE = ACCTPHRASE + "." + SUB
+
+        concatenated_tas = ATA + AID + TYPECODE + POAPHRASE + ACCTPHRASE
+        return concatenated_tas
+
     class Meta:
         managed = True
         db_table = 'treasury_appropriation_account'

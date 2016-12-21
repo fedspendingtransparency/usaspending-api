@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import json, DjangoJSONEncoder
 from django.db import connections
+from django.db.models import Q
 from django.utils import timezone
 from django.conf import settings
 from datetime import datetime
@@ -112,18 +113,9 @@ class Command(BaseCommand):
         # Create account objects
         for row in appropriation_data:
             # Check and see if there is an entry for this TAS
-            treasury_account = TreasuryAppropriationAccount.objects.filter(tas_rendering_label=row['tas']).first()
+            treasury_account = get_treasury_appropriation_account_tas_lookup(row['tas_id'], db_cursor)
             if treasury_account is None:
-                treasury_account = TreasuryAppropriationAccount()
-
-                field_map = {
-                    'tas_rendering_label': 'tas',
-                    'submission_id': submission_attributes.submission_id,
-                    'allocation_transfer_agency__cgac_code': 'allocation_transfer_agency',
-                    'responsible_agency__cgac_code': 'agency_identifier'
-                }
-
-                load_data_into_model(treasury_account, row, field_map=field_map, save=True)
+                raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
 
             # Now that we have the account, we can load the appropriation balances
             # TODO: Figure out how we want to determine what row is overriden by what row
@@ -175,12 +167,16 @@ class Command(BaseCommand):
             account_balances = None
             try:
                 account_balances = AppropriationAccountBalances.objects.get(tas_rendering_label=row['tas'])
+                award = find_or_create_summary_award(piid=row.get('piid'), fain=row.get('fain'), uri=row.get('uri'), parent_award_id=row.get('parent_award_id'))
+                award.latest_submission = submission_attributes
+                award.save()
             except:
                 continue
 
             award_financial_data = FinancialAccountsByAwards()
 
             value_map = {
+                'award': award,
                 'submission': submission_attributes,
                 'appropriation_account_balances': account_balances,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
@@ -261,30 +257,35 @@ class Command(BaseCommand):
             location = load_data_into_model(Location(), row, field_map=place_of_performance_field_map, value_map=pop_value_map, as_dict=True)
             pop_location, created = Location.objects.get_or_create(**location)
 
-            # Create the base award, create actions, then tally the totals for the award
+            # Try and find the parent award
+            award = None
+            try:
+                award = find_or_create_summary_award(piid=row.get('piid'), fain=row.get('fain'), uri=row.get('uri'), parent_award_id=row.get('parent_award_id'))
+            except:
+                self.logger.info("Could not find parent award with piid " + row.get('piid', '') + " fain " + row.get('fain', '') + " uri " + row.get('uri', '') + " parent " + row.get('parent_award_id', ''))
+
             award_field_map = {
                 "description": "award_description",
                 "type": "assistance_type"
             }
 
             award_value_map = {
-                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'], subtier_code=row["awarding_sub_tier_agency_c"]).first(),
                 "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'], subtier_code=row["funding_sub_tier_agency_co"]).first(),
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "place_of_performance": pop_location,
-                "date_signed": format_date(row['action_date']),
                 "latest_submission": submission_attributes,
                 "recipient": legal_entity,
             }
 
-            award = load_data_into_model(Award(), row, field_map=award_field_map, value_map=award_value_map, as_dict=True)
-            award, created = Award.objects.get_or_create(**award)
+            # Update the award with new data
+            load_data_into_model(award, row, field_map=award_field_map, value_map=award_value_map, save=True)
 
             fad_value_map = {
                 "award": award,
-                "submission": submission_attributes
-
+                "submission": submission_attributes,
+                "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
             }
 
             financial_assistance_data = load_data_into_model(FinancialAssistanceAward(), row, value_map=fad_value_map, as_dict=True)
@@ -300,22 +301,67 @@ class Command(BaseCommand):
         self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
         for row in procurement_data:
-            # Yes, I could use Q objects here but for maintainability I broke it out
-            award = Award.objects.filter(piid=row['parent_award_id']).first()
-            if award is None:
-                award = Award.objects.filter(fain=row['parent_award_id']).first()
-            if award is None:
-                award = Award.objects.filter(uri=row['parent_award_id']).first()
-            if award is None:
-                self.logger.error('Could not find an award object with a matching identifier: ' + row['parent_award_id'])
-                continue
+            # Try and find the parent award
+            award = None
+            try:
+                award = find_or_create_summary_award(piid=row.get('piid'), fain=row.get('fain'), uri=row.get('uri'), parent_award_id=row.get('parent_award_id'))
+            except:
+                self.logger.info("Could not find parent award with piid " + row.get('piid', '') + " fain " + row.get('fain', '') + " uri " + row.get('uri', '') + " parent " + row.get('parent_award_id', ''))
 
             procurement_value_map = {
                 "award": award,
-                'submission': submission_attributes
+                'submission': submission_attributes,
+                "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
             }
 
-            procurement = load_data_into_model(Procurement(), row, value_map=procurement_value_map, save=True)
+            load_data_into_model(Procurement(), row, value_map=procurement_value_map, save=True)
+
+
+def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
+    # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
+    db_cursor.execute('SELECT * FROM tas_lookup WHERE tas_id = %s', [tas_lookup_id])
+    tas_data = dictfetchall(db_cursor)
+
+    # These or "" convert from none to a blank string, which is how the TAS table stores nulls
+    q_kwargs = {
+        "allocation_transfer_agency_id": tas_data[0]["allocation_transfer_agency"] or "",
+        "agency_id": tas_data[0]["agency_identifier"] or "",
+        "beginning_period_of_availability": tas_data[0]["beginning_period_of_availability"] or "",
+        "ending_period_of_availability": tas_data[0]["ending_period_of_availability"] or "",
+        "availability_type_code": tas_data[0]["availability_type_code"] or "",
+        "main_account_code": tas_data[0]["main_account_code"] or "",
+        "sub_account_code": tas_data[0]["sub_account_code"] or ""
+    }
+
+    return TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
+
+
+def find_or_create_summary_award(piid=None, fain=None, uri=None, parent_award_id=None):
+    # If an award's ID is a piid, it's parent is a PIID; likewise for URI
+    # Awards with FAINs don't have parents
+    summary_award = None
+    q_kwargs = {}
+    for i in [(piid, "piid"), (uri, "uri"), (fain, "fain")]:
+        if i[0]:
+            q_kwargs[i[1]] = i[0]
+            if parent_award_id:
+                q_kwargs["parent_award__" + i[1]] = parent_award_id
+            else:
+                q_kwargs["parent_award"] = None
+
+            # Now search for it
+            summary_award = Award.objects.all().filter(Q(**q_kwargs)).first()
+            if summary_award:
+                return summary_award
+            else:
+                # If we can't find it, we need to make it. Recursively get the parent
+                parent_award = None
+                if parent_award_id:
+                    parent_award = find_or_create_summary_award(**{i[1]: parent_award_id})
+                # Create the actual summary award
+                summary_award = Award(**{i[1]: i[0], "parent_award": parent_award})
+                summary_award.save()
+                return summary_award
 
 
 # Loads data into a model instance

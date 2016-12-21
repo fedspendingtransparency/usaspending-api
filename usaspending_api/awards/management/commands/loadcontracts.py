@@ -41,7 +41,7 @@ class Command(BaseCommand):
             "submission": subattr
         }
 
-        loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map, post_row_function=self.post_row_process_function)
+        loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map)
         loader.load_from_file(options['file'][0])
 
     def convert_date(self, date):
@@ -49,6 +49,3 @@ class Command(BaseCommand):
 
     def get_agency_code(self, maj_agency_cat):
         return maj_agency_cat.split(':')[0]
-
-    def post_row_process_function(self, row, instance):
-        instance.award.update_from_mod(instance)
