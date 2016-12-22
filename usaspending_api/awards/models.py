@@ -162,6 +162,11 @@ class Award(DataSourceTrackedModel):
         self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
         self.save()
 
+    @staticmethod
+    def get_default_fields():
+        default_fields = ['type', 'piid', 'fain', 'procurement_set']
+        return default_fields
+
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
     type_description = property(__get_type_description)
 
@@ -281,6 +286,11 @@ class Procurement(AwardAction):
     certified_date = models.DateField(blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
+
+    @staticmethod
+    def get_default_fields():
+        default_fields = ['procurement_id']
+        return default_fields
 
 
 class FinancialAssistanceAward(AwardAction):

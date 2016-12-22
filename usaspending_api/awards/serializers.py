@@ -1,4 +1,3 @@
-from rest_framework import serializers
 from usaspending_api.awards.models import *
 from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer
 from usaspending_api.references.serializers import *
@@ -23,7 +22,7 @@ class FinancialAccountsByAwardsTransactionObligationsSerializer(LimitableSeriali
         fields = '__all__'
 
 
-class ProcurementSerializer(serializers.ModelSerializer):
+class ProcurementSerializer(LimitableSerializer): #everything should be a LimitableSerializer
 
     class Meta:
         model = Procurement

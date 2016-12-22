@@ -1,4 +1,5 @@
 from rest_framework import serializers
+import pdb
 
 
 class LimitableSerializer(serializers.ModelSerializer):
@@ -30,6 +31,15 @@ class LimitableSerializer(serializers.ModelSerializer):
             existing = set(self.fields.keys())
             for field_name in existing - allowed:
                 self.fields.pop(field_name)
+        else:
+            try:
+                include_fields = self.Meta.model.get_default_fields()
+                allowed = set(include_fields)
+                existing = set(self.fields.keys())
+                for field_name in existing - allowed:
+                    self.fields.pop(field_name)
+            except:
+                pass
 
 
 class AggregateSerializer(serializers.Serializer):
