@@ -18,6 +18,11 @@ class Command(BaseCommand):
         parser.add_argument('file', nargs=1, help='the file to load')
 
     def handle(self, *args, **options):
+        # Create a new submission attributes object for this timestamp
+        subattr = SubmissionAttributes()
+        subattr.usaspending_update = datetime.now()
+        subattr.save()
+
         field_map = {
             "federal_action_obligation": "dollarsobligated",
             "description": "descriptionofcontractrequirement",
@@ -32,10 +37,10 @@ class Command(BaseCommand):
             "action_date": lambda row: self.convert_date(row['signeddate']),
             "last_modified_date": lambda row: self.convert_date(row['last_modified_date']),
             "gfe_gfp": lambda row: row['gfe_gfp'].split(":")[0],
-            "submission": SubmissionAttributes.objects.all().first()  # Probably want to change this?
+            "submission": subattr
         }
 
-        loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map, post_row_function=self.post_row_process_function)
+        loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map)
         loader.load_from_file(options['file'][0])
 
     def convert_date(self, date):
@@ -43,6 +48,3 @@ class Command(BaseCommand):
 
     def get_agency_code(self, maj_agency_cat):
         return maj_agency_cat.split(':')[0]
-
-    def post_row_process_function(self, row, instance):
-        instance.award.update_from_mod(instance)
