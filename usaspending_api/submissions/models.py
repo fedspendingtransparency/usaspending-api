@@ -5,7 +5,6 @@ class SubmissionAttributes(models.Model):
     submission_id = models.AutoField(primary_key=True)
     broker_submission_id = models.IntegerField(null=True)
     usaspending_update = models.DateField(blank=True, null=True)
-    user_id = models.IntegerField()
     cgac_code = models.CharField(max_length=3, blank=True, null=True)
     submitting_agency = models.CharField(max_length=150, blank=True, null=True)
     submitter_name = models.CharField(max_length=200, blank=True, null=True)

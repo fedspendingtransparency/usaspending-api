@@ -87,6 +87,7 @@ class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
 class Award(DataSourceTrackedModel):
 
     AWARD_TYPES = (
+        ('U', 'Unknown Type'),
         ('2', 'Block Grant'),
         ('3', 'Formula Grant'),
         ('4', 'Project Grant'),
@@ -103,7 +104,7 @@ class Award(DataSourceTrackedModel):
         ('L', 'Loan'),
     )
 
-    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type", null=True)
+    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True)
     piid = models.CharField(max_length=50, blank=True, null=True)
     parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True)
     fain = models.CharField(max_length=30, blank=True, null=True)
@@ -139,7 +140,7 @@ class Award(DataSourceTrackedModel):
         # define a string representation of an award object
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
 
-    def __get_latest_submission(self):
+    def __get_latest_transaction(self):
         return self.__get_transaction_set().latest("action_date")
 
     # We should only have either procurements or financial assistance awards
@@ -161,7 +162,7 @@ class Award(DataSourceTrackedModel):
         self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
         self.save()
 
-    latest_award_transaction = property(__get_latest_submission)  # models.ForeignKey('AwardAction')
+    latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
     type_description = property(__get_type_description)
 
     class Meta:

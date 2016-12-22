@@ -21,7 +21,6 @@ class Command(BaseCommand):
         # Create a new submission attributes object for this timestamp
         subattr = SubmissionAttributes()
         subattr.usaspending_update = datetime.now()
-        subattr.user_id = -1  # We don't actually have users so we may want to just get rid of this field
         subattr.save()
 
         field_map = {

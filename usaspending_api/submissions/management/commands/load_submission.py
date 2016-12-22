@@ -16,6 +16,10 @@ from usaspending_api.financial_activities.models import *
 from usaspending_api.awards.models import *
 from usaspending_api.references.models import *
 
+# This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
+# keep hitting the databroker DB for account data
+TAS_ID_TO_ACCOUNT = {}
+
 
 # This command will load a single submission from the data broker database into
 # the data store using SQL commands to pull the raw data from the broker and
@@ -97,7 +101,6 @@ class Command(BaseCommand):
         # Update and save submission attributes
         # Create our value map - specific data to load
         value_map = {
-            'user_id': 1,
             'broker_submission_id': submission_id
         }
 
@@ -113,7 +116,7 @@ class Command(BaseCommand):
         # Create account objects
         for row in appropriation_data:
             # Check and see if there is an entry for this TAS
-            treasury_account = get_treasury_appropriation_account_tas_lookup(row['tas_id'], db_cursor)
+            treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
                 raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
 
@@ -126,12 +129,11 @@ class Command(BaseCommand):
 
             value_map = {
                 'treasury_account_identifier': treasury_account,
-                'submission': submission_attributes
+                'submission': submission_attributes,
+                'tas_rendering_label': treasury_account.tas_rendering_label
             }
 
-            field_map = {
-                'tas_rendering_label': 'tas'
-            }
+            field_map = {}
 
             load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True)
 
@@ -143,7 +145,11 @@ class Command(BaseCommand):
         for row in prg_act_obj_cls_data:
             account_balances = None
             try:
-                account_balances = AppropriationAccountBalances.objects.get(tas_rendering_label=row['tas'])
+                # Check and see if there is an entry for this TAS
+                treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
+                if treasury_account is None:
+                    raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+                account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
             except:
                 continue
 
@@ -166,7 +172,11 @@ class Command(BaseCommand):
         for row in award_financial_data:
             account_balances = None
             try:
-                account_balances = AppropriationAccountBalances.objects.get(tas_rendering_label=row['tas'])
+                # Check and see if there is an entry for this TAS
+                treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
+                if treasury_account is None:
+                    raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+                account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
                 award = find_or_create_summary_award(piid=row.get('piid'), fain=row.get('fain'), uri=row.get('uri'), parent_award_id=row.get('parent_award_id'))
                 award.latest_submission = submission_attributes
                 award.save()
@@ -318,6 +328,8 @@ class Command(BaseCommand):
 
 
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
+    if tas_lookup_id in TAS_ID_TO_ACCOUNT:
+        return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
     db_cursor.execute('SELECT * FROM tas_lookup WHERE tas_id = %s', [tas_lookup_id])
     tas_data = dictfetchall(db_cursor)
@@ -333,7 +345,8 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
         "sub_account_code": tas_data[0]["sub_account_code"] or ""
     }
 
-    return TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
+    TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
+    return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
 def find_or_create_summary_award(piid=None, fain=None, uri=None, parent_award_id=None):
