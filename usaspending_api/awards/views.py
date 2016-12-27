@@ -18,7 +18,7 @@ AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
 class AwardList(APIView):
-    """Return award-level data (financials)"""
+    """Return award level data (financials)"""
     def get(self, request, uri=None, piid=None, fain=None, format=None):
         awards = None
         if uri:
