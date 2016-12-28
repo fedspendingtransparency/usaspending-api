@@ -1,53 +1,23 @@
-import json
-
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.financial_activities.serializers import FinancialAccountsByProgramActivityObjectClassSerializer
-from usaspending_api.common.api_request_utils import FilterGenerator, ResponsePaginator, DataQueryHandler
+from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
+from usaspending_api.common.views import DetailViewSet
 
 
-class FinancialAccountsByProgramActivityObjectClassList(APIView):
+class FinancialAccountsByProgramActivityObjectClassListViewSet(
+        FilterQuerysetMixin,
+        ResponseMetadatasetMixin,
+        DetailViewSet):
+    """
+    Handles requests for financial account data grouped by program
+    activity and object class.
+    """
 
-    def get(self, request):
-        """Return a response for a financial activity GET request."""
-        subs = FinancialAccountsByProgramActivityObjectClass.objects.all()
+    serializer_class = FinancialAccountsByProgramActivityObjectClassSerializer
 
-        fg = FilterGenerator()
-        filter_arguments = fg.create_from_get(request.GET)
-
-        subs = subs.filter(**filter_arguments)
-
-        paged_data = ResponsePaginator.get_paged_data(subs, request_parameters=request.GET)
-
-        serializer = FinancialAccountsByProgramActivityObjectClassSerializer(paged_data, many=True)
-        response_object = {
-            "total_metadata": {
-                "count": subs.count(),
-            },
-            "page_metadata": {
-                "page_number": paged_data.number,
-                "num_pages": paged_data.paginator.num_pages,
-                "count": len(paged_data),
-            },
-            "results": serializer.data
-        }
-
-        return Response(response_object)
-
-    def post(self, request):
-        """Return a response for a financial activity POST request."""
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
-            dq = DataQueryHandler(
-                FinancialAccountsByProgramActivityObjectClass,
-                FinancialAccountsByProgramActivityObjectClassSerializer,
-                body)
-            response_data = dq.build_response()
-        except Exception as e:
-            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(response_data)
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
