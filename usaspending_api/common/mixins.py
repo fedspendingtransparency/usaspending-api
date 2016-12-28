@@ -137,7 +137,7 @@ class FilterQuerysetMixin(object):
         # GET and POST requests? can we get to a place where we
         # don't need to know?
         if len(request.query_params):
-            filter_map = kwargs.get('filter_map')
+            filter_map = kwargs.get('filter_map', {})
             fg = FilterGenerator(filter_map=filter_map)
             filters = fg.create_from_get(request.query_params)
             # add fiscal year to filters if requested
