@@ -1,73 +1,37 @@
 from collections import namedtuple
 import json
 
-from rest_framework import generics, status, viewsets
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwardsTransactionObligations, Award
 from usaspending_api.awards.serializers import (
     FinancialAccountsByAwardsTransactionObligationsSerializer, AwardSerializer)
-from usaspending_api.common.api_request_utils import (
-    AutoCompleteHandler, FilterGenerator, DataQueryHandler,
-    ResponsePaginator)
+from usaspending_api.common.api_request_utils import AutoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
-from usaspending_api.common.views import AggregateView
+from usaspending_api.common.views import AggregateView, DetailViewSet
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
-class AwardList(APIView):
-    """Return award-level data (financials)"""
-    def get(self, request, uri=None, piid=None, fain=None, format=None):
-        awards = None
-        if uri:
-            awards = FinancialAccountsByAwardsTransactionObligations.objects.filter(financial_accounts_by_awards__uri=uri)
-        elif piid:
-            awards = FinancialAccountsByAwardsTransactionObligations.objects.filter(financial_accounts_by_awards__piid=piid)
-        elif fain:
-            awards = FinancialAccountsByAwardsTransactionObligations.objects.filter(financial_accounts_by_awards__fain=fain)
-        else:
-            awards = FinancialAccountsByAwardsTransactionObligations.objects.all()
+class AwardListViewSet(FilterQuerysetMixin,
+                       ResponseMetadatasetMixin,
+                       DetailViewSet):
+    """Handles requests for award-level financial data."""
 
-        fg = FilterGenerator()
-        filter_arguments = fg.create_from_get(request.GET)
+    serializer_class = FinancialAccountsByAwardsTransactionObligationsSerializer
 
-        awards = awards.filter(**filter_arguments)
-
-        paged_data = ResponsePaginator.get_paged_data(awards, request_parameters=request.GET)
-
-        serializer = FinancialAccountsByAwardsTransactionObligationsSerializer(paged_data, many=True)
-        response_object = {
-            "total_metadata": {
-                "count": awards.count(),
-            },
-            "page_metadata": {
-                "page_number": paged_data.number,
-                "num_pages": paged_data.paginator.num_pages,
-                "count": len(paged_data),
-            },
-            "results": serializer.data
-        }
-        return Response(response_object)
-
-    def post(self, request, format=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
-            dq = DataQueryHandler(
-                FinancialAccountsByAwardsTransactionObligations,
-                FinancialAccountsByAwardsTransactionObligationsSerializer,
-                body)
-            response_data = dq.build_response()
-        except Exception as e:
-            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(response_data)
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = FinancialAccountsByAwardsTransactionObligations.objects.all()
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
 
 
-# Autocomplete support for award summary objects
 class AwardListSummaryAutocomplete(APIView):
+    """Autocomplete support for award summary objects."""
     # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
     def post(self, request, format=None):
         try:
@@ -90,8 +54,8 @@ class AwardListAggregate(FilterQuerysetMixin,
 
 class AwardListSummaryViewSet(FilterQuerysetMixin,
                               ResponseMetadatasetMixin,
-                              viewsets.ReadOnlyModelViewSet):
-    """Return aggregate-level awards."""
+                              DetailViewSet):
+    """Handles requests for summarized award data."""
 
     filter_map = {
         'awarding_fpds': 'awarding_agency__fpds_code',
@@ -106,13 +70,3 @@ class AwardListSummaryViewSet(FilterQuerysetMixin,
         filtered_queryset = self.filter_records(self.request, queryset=queryset, filter_map=self.filter_map)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
-
-    def list(self, request, *args, **kwargs):
-        """
-        Override the parent list method so we can add metadata to response.
-        Once we're able to customize metadata via DRF pagination, we won't need this.
-        """
-        response = self.build_response(
-            self.request, queryset=self.get_queryset(), serializer=self.get_serializer_class())
-        return Response(response)
-
