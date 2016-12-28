@@ -185,8 +185,8 @@ class ResponseMetadatasetMixin(object):
         queryset = kwargs.get('queryset')
 
         # workaround to handle both GET and POST requests
-        params = dict(self.request.query_params)
-        params.update(dict(self.request.data))
+        params = self.request.query_params.copy()  # copy() creates mutable copy of a QueryDict
+        params.update(self.request.data.copy())
 
         # construct metadata of entire set of data that matches the request specifications
         total_metadata = {"count": queryset.count()}
