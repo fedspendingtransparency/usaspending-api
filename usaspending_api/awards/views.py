@@ -42,7 +42,7 @@ class AwardListSummaryAutocomplete(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AwardListAggregate(FilterQuerysetMixin,
+class AwardListAggregateViewSet(FilterQuerysetMixin,
                          AggregateView):
     """Return aggregate-level awards."""
     def get_queryset(self):

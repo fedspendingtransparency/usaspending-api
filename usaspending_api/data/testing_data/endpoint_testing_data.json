@@ -862,5 +862,30 @@
             },
             "results": []
         }
+    },
+    {
+        "method": "POST",
+        "request_object": {
+            "page": 1,
+            "limit": 1,
+            "field": "transaction_obligated_amount",
+            "group": "create_date",
+            "date_part": "year",
+            "aggregate": "sum"
+        },
+        "url": "/api/v1/awards/total/",
+        "name": "Test award totals endpoint",
+        "status_code": 200,
+        "response_object": {
+              "page_metadata": {
+                "page_number": 1,
+                "count": 0,
+                "num_pages": 1
+              },
+              "total_metadata": {
+                "count": 0
+              },
+              "results": []
+        }
     }
 ]

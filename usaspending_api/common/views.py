@@ -1,4 +1,4 @@
-from rest_framework import generics, mixins, viewsets
+from rest_framework import viewsets
 from rest_framework.response import Response
 
 from usaspending_api.common.api_request_utils import ResponsePaginator
@@ -6,9 +6,8 @@ from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.mixins import AggregateQuerysetMixin
 
 
-class AggregateView(mixins.ListModelMixin,
-                    AggregateQuerysetMixin,
-                    generics.GenericAPIView):
+class AggregateView(AggregateQuerysetMixin,
+                    viewsets.ReadOnlyModelViewSet):
     """
     Handles the view for endpoints that request aggregated data.
     The endpoint views inherit from this custom view instead of
@@ -18,11 +17,11 @@ class AggregateView(mixins.ListModelMixin,
     """
     serializer_class = AggregateSerializer
 
-    def get(self, request, *args, **kwargs):
-        queryset = self.aggregate(request, *args, **kwargs)
-        return Response(serializer.data)
-
-    def post(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs):
+        """
+        Override the parent list method so we can aggregate the data
+        before constructing a respones.
+        """
         queryset = self.aggregate(request, *args, **kwargs)
 
         # construct metadata of entire queryset
