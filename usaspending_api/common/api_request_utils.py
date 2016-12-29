@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import Location, RefCountryCode
+from usaspending_api.references.models import Location
 
 
 class FiscalYear():
@@ -16,7 +16,7 @@ class FiscalYear():
         self.fy = fy
         tz = time(0, 0, 1, tzinfo=timezone.utc)
         # FY start previous year on Oct 1st. i.e. FY 2017 starts 10-1-2016
-        self.fy_start_date = datetime.combine(date(int(fy)-1, 10, 1), tz)
+        self.fy_start_date = datetime.combine(date(int(fy) - 1, 10, 1), tz)
         # FY ends current FY year on Sept 30th i.e. FY 2017 ends 9-30-2017
         self.fy_end_date = datetime.combine(date(int(fy), 9, 30), tz)
 
@@ -338,42 +338,42 @@ class GeoCompleteHandler:
     def __init__(self, request_body):
         self.request_body = request_body
         self.search_fields = {
-          "location_country_code__country_name": {
-            "type": "COUNTRY",
-            "parent": "location_country_code"
-          },
-          "location_state_code": {
-            "type": "STATE",
-            "parent": "location_country_code__country_name"
-          },
-          "location_state_name": {
-            "type": "STATE",
-            "parent": "location_country_code__country_name"
-          },
-          "location_city_name": {
-            "type": "CITY",
-            "parent": "location_county_name"
-          },
-          "location_county_name": {
-            "type": "COUNTY",
-            "parent": "location_state_name"
-          },
-          "location_zip5": {
-            "type": "ZIP",
-            "parent": "location_state_name"
-          },
-          "location_foreign_postal_code": {
-            "type": "POSTAL CODE",
-            "parent": "location_country_code__country_name"
-          },
-          "location_foreign_province": {
-            "type": "PROVINCE",
-            "parent": "location_country_code__country_name"
-          },
-          "location_foreign_city_name": {
-            "type": "CITY",
-            "parent": "location_country_code__country_name"
-          }
+            "location_country_code__country_name": {
+                "type": "COUNTRY",
+                "parent": "location_country_code"
+            },
+            "location_state_code": {
+                "type": "STATE",
+                "parent": "location_country_code__country_name"
+            },
+            "location_state_name": {
+                "type": "STATE",
+                "parent": "location_country_code__country_name"
+            },
+            "location_city_name": {
+                "type": "CITY",
+                "parent": "location_county_name"
+            },
+            "location_county_name": {
+                "type": "COUNTY",
+                "parent": "location_state_name"
+            },
+            "location_zip5": {
+                "type": "ZIP",
+                "parent": "location_state_name"
+            },
+            "location_foreign_postal_code": {
+                "type": "POSTAL CODE",
+                "parent": "location_country_code__country_name"
+            },
+            "location_foreign_province": {
+                "type": "PROVINCE",
+                "parent": "location_country_code__country_name"
+            },
+            "location_foreign_city_name": {
+                "type": "CITY",
+                "parent": "location_country_code__country_name"
+            }
         }
 
     def build_response(self):
