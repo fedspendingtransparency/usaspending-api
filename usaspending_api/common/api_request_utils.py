@@ -492,9 +492,9 @@ class DataQueryHandler:
 class ResponsePaginator:
     @staticmethod
     def get_paged_data(data_set, page=1, page_limit=100, request_parameters={}):
-        if request_parameters.get('limit') is not None:
+        if 'limit' in request_parameters:
             page_limit = int(request_parameters['limit'])
-        if request_parameters.get('page') is not None:
+        if 'page' in request_parameters:
             page = request_parameters['page']
 
         paginator = Paginator(data_set, page_limit)

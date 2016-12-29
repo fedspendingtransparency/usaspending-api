@@ -25,7 +25,6 @@ class TreasuryAppropriationAccountBalancesViewSet(FilterQuerysetMixin,
                                                   DetailViewSet):
     """Handle requests for appropriation account balance information."""
     serializer_class = AppropriationAccountBalancesSerializer
-    queryset = AppropriationAccountBalances.objects.all()
 
     def get_queryset(self):
         queryset = AppropriationAccountBalances.objects.all()
