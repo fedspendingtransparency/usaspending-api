@@ -28,11 +28,21 @@ class ProcurementSerializer(LimitableSerializer): #everything should be a Limita
         model = Procurement
         fields = '__all__'
 
-
-class FinancialAssistanceAwardSerializer(serializers.ModelSerializer):
+## AJ Replaced with LimitableSerializer
+##class FinancialAssistanceAwardSerializer(serializers.ModelSerializer):
+class FinancialAssistanceAwardSerializer(LimitableSerializer):
 
     class Meta:
         model = FinancialAssistanceAward
+        fields = '__all__'
+
+
+## AJ Added AwardAction with LimitableSerializer
+##class FinancialAssistanceAwardSerializer(serializers.ModelSerializer):
+class AwardActionSerializer(LimitableSerializer):
+
+    class Meta:
+        model = AwardAction
         fields = '__all__'
 
 
@@ -45,6 +55,5 @@ class AwardSerializer(LimitableSerializer):
     financialassistanceaward_set = FinancialAssistanceAwardSerializer(many=True, read_only=True)
 
     class Meta:
-
         model = Award
         fields = '__all__'

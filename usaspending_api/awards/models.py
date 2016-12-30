@@ -162,9 +162,10 @@ class Award(DataSourceTrackedModel):
         self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
         self.save()
 
+    ##AJ ADDED
     @staticmethod
     def get_default_fields():
-        default_fields = ['type', 'piid', 'fain', 'procurement_set']
+        default_fields = ['piid', 'fain', 'uri', 'procurement_set']
         return default_fields
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
@@ -197,6 +198,12 @@ class AwardAction(DataSourceTrackedModel):
     def save(self, *args, **kwargs):
         super(AwardAction, self).save(*args, **kwargs)
         self.award.update_from_mod(self)
+
+    ##AJ ADDED..need to combine financial_assistance_award_id & procurement_id or use AwardAction pk. Add 'permalink'
+    @staticmethod
+    def get_default_fields():
+        default_fields = ['financial_assistance_award_id','procurement_id', 'modification_number', 'federal_action_obligation', 'action_date', 'award_description', 'update_date']
+        return default_fields
 
     class Meta:
         abstract = True
@@ -287,9 +294,10 @@ class Procurement(AwardAction):
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
 
+    ##AJ ADDED
     @staticmethod
     def get_default_fields():
-        default_fields = ['procurement_id']
+        default_fields = ['extent_competed', 'idv_type', 'cost_or_pricing_data', 'naics', 'naics_description', 'product_or_service_code']
         return default_fields
 
 
@@ -320,6 +328,12 @@ class FinancialAssistanceAward(AwardAction):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    ##AJ ADDED
+    @staticmethod
+    def get_default_fields():
+        default_fields = ['cfda_number', 'cfda_title', 'face_value_loan_guarantee', 'original_loan_subsidy_cost', 'assistance_type']
+        return default_fields
 
     class Meta:
         managed = True
