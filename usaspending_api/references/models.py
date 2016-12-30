@@ -259,7 +259,7 @@ class LegalEntity(DataSourceTrackedModel):
     ##AJ ADDED
     @staticmethod
     def get_default_fields():
-        default_fields = ['legal_entity_id', 'ultimate_parent_legal_entity_id', 'recipient_name', 'business_types']
+        default_fields = ['legal_entity_id', 'ultimate_parent_legal_entity_id', 'recipient_name', 'business_types', 'location']
         return default_fields
 
     class Meta:
