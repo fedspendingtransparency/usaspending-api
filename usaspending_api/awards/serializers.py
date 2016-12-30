@@ -1,10 +1,12 @@
+from rest_framework.serializers import Serializer
+
 from usaspending_api.awards.models import *
 from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer
 from usaspending_api.references.serializers import *
 from usaspending_api.common.serializers import LimitableSerializer
 
 
-class FinancialAccountsByAwardsSerializer(serializers.ModelSerializer):
+class FinancialAccountsByAwardsSerializer(LimitableSerializer):
 
     appropriation_account_balances = AppropriationAccountBalancesSerializer(read_only=True)
 
@@ -22,14 +24,13 @@ class FinancialAccountsByAwardsTransactionObligationsSerializer(LimitableSeriali
         fields = '__all__'
 
 
-class ProcurementSerializer(LimitableSerializer): #everything should be a LimitableSerializer
+class ProcurementSerializer(LimitableSerializer):
 
     class Meta:
         model = Procurement
         fields = '__all__'
 
-## AJ Replaced with LimitableSerializer
-##class FinancialAssistanceAwardSerializer(serializers.ModelSerializer):
+
 class FinancialAssistanceAwardSerializer(LimitableSerializer):
 
     class Meta:
@@ -37,8 +38,6 @@ class FinancialAssistanceAwardSerializer(LimitableSerializer):
         fields = '__all__'
 
 
-## AJ Added AwardAction with LimitableSerializer
-##class FinancialAssistanceAwardSerializer(serializers.ModelSerializer):
 class AwardActionSerializer(LimitableSerializer):
 
     class Meta:
@@ -46,8 +45,14 @@ class AwardActionSerializer(LimitableSerializer):
         fields = '__all__'
 
 
-class AwardSerializer(LimitableSerializer):
+class AwardIdObjectSerializer(Serializer):
+    piid = serializers.CharField()
+    fain = serializers.CharField()
+    uri = serializers.CharField()
 
+
+class AwardSerializer(LimitableSerializer):
+    award_id_object = AwardIdObjectSerializer()
     recipient = LegalEntitySerializer(read_only=True)
     awarding_agency = AgencySerializer(read_only=True)
     funding_agency = AgencySerializer(read_only=True)
