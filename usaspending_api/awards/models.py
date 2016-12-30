@@ -154,9 +154,15 @@ class Award(DataSourceTrackedModel):
     def __get_type_description(self):
         return [item for item in self.AWARD_TYPES if item == self.type][0][1]
 
-    def __get_award_id_objet(self):
+    def __get_award_id_object(self):
         award_id_object = {'piid': self.piid, 'fain': self.fain, 'uri': self.uri}
         return award_id_object
+
+    def __get_toplevel_object(self):
+        toplevel_object = {'type': self.type, 'total_obligation': self.total_obligation, 'total_outlay': self.total_outlay, 'date_signed': self.date_signed,
+                            'description': self.description, 'period_of_performance_start_date': self.period_of_performance_start_date,
+                            'period_of_performance_current_end_date': self.period_of_performance_current_end_date, 'update_date': self.update_date}
+        return toplevel_object
 
     def update_from_mod(self, mod):
         transaction_set = self.__get_transaction_set()
@@ -166,17 +172,17 @@ class Award(DataSourceTrackedModel):
         self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
         self.save()
 
-    ##AJ ADDED
+    ##AJ Added toplevel_object, Need to Add Location & AwardAction
     @staticmethod
     def get_default_fields():
         default_fields = [
-            'procurement_set', 'financialassistanceaward_set', 'award_id_object',
-            'recipient', 'location', 'awarding_agency', 'funding_agency']
+            'toplevel_object', 'procurement_set', 'financialassistanceaward_set', 'award_id_object', 'recipient', 'awarding_agency', 'funding_agency'] #Location & AwardAction
         return default_fields
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
     type_description = property(__get_type_description)
-    award_id_object = property(__get_award_id_objet)
+    award_id_object = property(__get_award_id_object)
+    toplevel_object = property(__get_toplevel_object)
 
     class Meta:
         db_table = 'awards'
