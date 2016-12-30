@@ -12,7 +12,11 @@ class TreasuryAppropriationAccountSerializer(LimitableSerializer):
 
 
 class AppropriationAccountBalancesSerializer(LimitableSerializer):
-    treasury_account_identifier = TreasuryAppropriationAccountSerializer(read_only=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.map_nested_serializer(
+            'treasury_account_identifier', TreasuryAppropriationAccountSerializer)
 
     class Meta:
 
