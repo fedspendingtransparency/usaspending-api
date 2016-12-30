@@ -154,6 +154,10 @@ class Award(DataSourceTrackedModel):
     def __get_type_description(self):
         return [item for item in self.AWARD_TYPES if item == self.type][0][1]
 
+    def __get_award_id_objet(self):
+        award_id_object = {'piid': self.piid, 'fain': self.fain, 'uri': self.uri}
+        return award_id_object
+
     def update_from_mod(self, mod):
         transaction_set = self.__get_transaction_set()
         self.date_signed = transaction_set.earliest("action_date").action_date
@@ -165,11 +169,14 @@ class Award(DataSourceTrackedModel):
     ##AJ ADDED
     @staticmethod
     def get_default_fields():
-        ddefault_fields = ['procurement_set', 'financialassistanceaward_set', 'piid', 'fain', 'uri', 'recipient', 'location', 'awarding_agency', 'funding_agency']
+        default_fields = [
+            'procurement_set', 'financialassistanceaward_set', 'award_id_object',
+            'recipient', 'location', 'awarding_agency', 'funding_agency']
         return default_fields
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
     type_description = property(__get_type_description)
+    award_id_object = property(__get_award_id_objet)
 
     class Meta:
         db_table = 'awards'
@@ -202,7 +209,7 @@ class AwardAction(DataSourceTrackedModel):
     ##AJ ADDED..need to combine financial_assistance_award_id & procurement_id or use AwardAction pk. Add 'permalink'
     @staticmethod
     def get_default_fields():
-        default_fields = ['financial_assistance_award_id','procurement_id', 'modification_number', 'federal_action_obligation', 'action_date', 'award_description', 'update_date']
+        default_fields = ['financial_assistance_award_id', 'procurement_id', 'modification_number', 'federal_action_obligation', 'action_date', 'award_description', 'update_date']
         return default_fields
 
     class Meta:
