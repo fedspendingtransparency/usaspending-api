@@ -165,7 +165,7 @@ class Award(DataSourceTrackedModel):
     ##AJ ADDED
     @staticmethod
     def get_default_fields():
-        default_fields = ['piid', 'fain', 'uri', 'procurement_set']
+        default_fields = ['procurement_set', 'financialassistanceaward_set', 'piid', 'fain', 'uri', 'recipient', 'location', 'awarding_agency', 'funding_agency']
         return default_fields
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
