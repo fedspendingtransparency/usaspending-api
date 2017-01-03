@@ -4,11 +4,7 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 
 
 class FinancialAccountsByProgramActivityObjectClassSerializer(LimitableSerializer):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.map_nested_serializer(
-            'appropriation_account_balances', AppropriationAccountBalancesSerializer)
+    appropriation_account_balances = AppropriationAccountBalancesSerializer(read_only=True)
 
     class Meta:
 

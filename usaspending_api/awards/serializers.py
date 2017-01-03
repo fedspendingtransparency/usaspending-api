@@ -5,12 +5,9 @@ from usaspending_api.references.serializers import *
 from usaspending_api.common.serializers import LimitableSerializer
 
 
-class FinancialAccountsByAwardsSerializer(LimitableSerializer):
+class FinancialAccountsByAwardsSerializer(serializers.ModelSerializer):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.map_nested_serializer(
-            'appropriation_account_balances', AppropriationAccountBalancesSerializer)
+    appropriation_account_balances = AppropriationAccountBalancesSerializer(read_only=True)
 
     class Meta:
         model = FinancialAccountsByAwards
@@ -19,24 +16,21 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
 
 class FinancialAccountsByAwardsTransactionObligationsSerializer(LimitableSerializer):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.map_nested_serializer(
-            'financial_accounts_by_awards', FinancialAccountsByAwardsSerializer)
+    financial_accounts_by_awards = FinancialAccountsByAwardsSerializer(read_only=True)
 
     class Meta:
         model = FinancialAccountsByAwardsTransactionObligations
         fields = '__all__'
 
 
-class ProcurementSerializer(LimitableSerializer):
+class ProcurementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Procurement
         fields = '__all__'
 
 
-class FinancialAssistanceAwardSerializer(LimitableSerializer):
+class FinancialAssistanceAwardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FinancialAssistanceAward
@@ -45,25 +39,11 @@ class FinancialAssistanceAwardSerializer(LimitableSerializer):
 
 class AwardSerializer(LimitableSerializer):
 
-    # recipient = LegalEntitySerializer(read_only=True)
-    # awarding_agency = AgencySerializer(read_only=True)
-    # funding_agency = AgencySerializer(read_only=True)
-    # procurement_set = ProcurementSerializer(many=True, read_only=True)
-    # financialassistanceaward_set = FinancialAssistanceAwardSerializer(many=True, read_only=True)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.map_nested_serializer(
-            'recipient', LegalEntitySerializer)
-        self.map_nested_serializer(
-            'awarding_agency', AgencySerializer)
-        self.map_nested_serializer(
-            'funding_agency', AgencySerializer)
-        self.map_nested_serializer(
-            'procurement_set', ProcurementSerializer)
-        self.map_nested_serializer(
-            'financialassistanceaward_set', FinancialAssistanceAwardSerializer(
-                read_only=True, many=True, context=self.context))
+    recipient = LegalEntitySerializer(read_only=True)
+    awarding_agency = AgencySerializer(read_only=True)
+    funding_agency = AgencySerializer(read_only=True)
+    procurement_set = ProcurementSerializer(many=True, read_only=True)
+    financialassistanceaward_set = FinancialAssistanceAwardSerializer(many=True, read_only=True)
 
     class Meta:
 
