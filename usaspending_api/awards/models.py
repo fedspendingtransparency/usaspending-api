@@ -144,10 +144,25 @@ class Award(DataSourceTrackedModel):
 
     def update_from_mod(self, mod):
         transaction_set = self.__get_transaction_set()
-        self.date_signed = transaction_set.earliest("action_date").action_date
-        self.period_of_performance_start_date = transaction_set.earliest("action_date").action_date
-        self.period_of_perfoormance_current_end_date = transaction_set.latest("action_date").action_date
+        transaction_latest = transaction_set.latest("action_date")
+        transaction_earliest = transaction_set.earliest("action_date")
+        self.awarding_agency = transaction_earliest.awarding_agency
+        self.certified_Date = transaction_latest.certified_date
+        self.date_signed = transaction_earliest.action_date
+        self.description = transaction_latest.award_description
+        # txn models don't have funding agency
+        # self.funding_agency = transaction_latest.??
+        self.last_modified_date = transaction_latest.last_modified_date
+        self.period_of_performance_start_date = transaction_earliest.action_date
+        self.period_of_performance_current_end_date = transaction_latest.action_date
+        # txn models don't have place of performance
+        # self.place_of_performance = transaction_latest.??
+        self.recipient = transaction_latest.recipient
         self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
+        # what txn-level fields do we sum to get the award's total outlay?
+        # self.total_outlay = ??
+        # type is a different field depending on whether this is a contract or financial assistance??
+        # self.type = transaction_latest.??
         self.save()
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
