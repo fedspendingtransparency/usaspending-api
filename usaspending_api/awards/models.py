@@ -1,9 +1,10 @@
 from django.db import models
+from django.db.models import F, Q, Sum
+
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity
 from usaspending_api.common.models import DataSourceTrackedModel
-from django.db.models import F, Sum
 
 
 # Model Objects added white spaces
@@ -164,6 +165,40 @@ class Award(DataSourceTrackedModel):
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
     type_description = property(__get_type_description)
+
+    @staticmethod
+    def get_or_create_summary_award(piid=None, fain=None, uri=None, parent_award_id=None):
+        # If an award transaction's ID is a piid, it's contract data
+        # If the ID is fain or a uri, it's financial assistance. If the award transaction
+        # has both a fain and a uri, fain takes precedence.
+        q_kwargs = {}
+        for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+            if i[0]:
+                q_kwargs[i[1]] = i[0]
+                if parent_award_id:
+                    q_kwargs["parent_award__" + i[1]] = parent_award_id
+                else:
+                    q_kwargs["parent_award"] = None
+
+                # Now search for it
+                # Do we want to log something if the the query below turns up
+                # more than one award record?
+                summary_award = Award.objects.all().filter(Q(**q_kwargs)).first()
+                if summary_award:
+                    return summary_award
+                else:
+                    parent_award = None
+                    if parent_award_id:
+                        # If we have a parent award id, recursively get/create the award for it
+                        parent_award = Award.get_or_create_summary_award(**{i[1]: parent_award_id})
+                    # Now create the award record for this award transaction
+                    summary_award = Award(**{i[1]: i[0], "parent_award": parent_award})
+                    summary_award.save()
+                    return summary_award
+
+        raise ValueError(
+            'Unable to find or create an award with the provided information: piid={}, fain={}, uri={}, parent_id={}'.format(
+            piid, fain, uri, parent_award_id))
 
     class Meta:
         db_table = 'awards'

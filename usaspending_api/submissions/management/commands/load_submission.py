@@ -1,14 +1,14 @@
+import logging
+import os
+
 from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import json, DjangoJSONEncoder
 from django.db import connections
-from django.db.models import Q
 from django.utils import timezone
 from django.conf import settings
 from datetime import datetime
-import logging
 import django
-import os
 
 from usaspending_api.submissions.models import *
 from usaspending_api.accounts.models import *
@@ -177,7 +177,12 @@ class Command(BaseCommand):
                 if treasury_account is None:
                     raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
                 account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
-                award = find_or_create_summary_award(piid=row.get('piid'), fain=row.get('fain'), uri=row.get('uri'), parent_award_id=row.get('parent_award_id'))
+                # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+                award = Award.get_or_create_summary_award(
+                    piid=row.get('piid'),
+                    fain=row.get('fain'),
+                    uri=row.get('uri'),
+                    parent_award_id=row.get('parent_award_id'))
                 award.latest_submission = submission_attributes
                 award.save()
             except:
@@ -267,12 +272,12 @@ class Command(BaseCommand):
             location = load_data_into_model(Location(), row, field_map=place_of_performance_field_map, value_map=pop_value_map, as_dict=True)
             pop_location, created = Location.objects.get_or_create(**location)
 
-            # Try and find the parent award
-            award = None
-            try:
-                award = find_or_create_summary_award(piid=row.get('piid'), fain=row.get('fain'), uri=row.get('uri'), parent_award_id=row.get('parent_award_id'))
-            except:
-                self.logger.info("Could not find parent award with piid " + row.get('piid', '') + " fain " + row.get('fain', '') + " uri " + row.get('uri', '') + " parent " + row.get('parent_award_id', ''))
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            award = Award.get_or_create_summary_award(
+                piid=row.get('piid'),
+                fain=row.get('fain'),
+                uri=row.get('uri'),
+                parent_award_id=row.get('parent_award_id'))
 
             award_field_map = {
                 "description": "award_description",
@@ -311,12 +316,12 @@ class Command(BaseCommand):
         self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
         for row in procurement_data:
-            # Try and find the parent award
-            award = None
-            try:
-                award = find_or_create_summary_award(piid=row.get('piid'), fain=row.get('fain'), uri=row.get('uri'), parent_award_id=row.get('parent_award_id'))
-            except:
-                self.logger.info("Could not find parent award with piid " + row.get('piid', '') + " fain " + row.get('fain', '') + " uri " + row.get('uri', '') + " parent " + row.get('parent_award_id', ''))
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            award = Award.get_or_create_summary_award(
+                piid=row.get('piid'),
+                fain=row.get('fain'),
+                uri=row.get('uri'),
+                parent_award_id=row.get('parent_award_id'))
 
             procurement_value_map = {
                 "award": award,
@@ -347,34 +352,6 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
 
     TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
-
-
-def find_or_create_summary_award(piid=None, fain=None, uri=None, parent_award_id=None):
-    # If an award's ID is a piid, it's parent is a PIID; likewise for URI
-    # Awards with FAINs don't have parents
-    summary_award = None
-    q_kwargs = {}
-    for i in [(piid, "piid"), (uri, "uri"), (fain, "fain")]:
-        if i[0]:
-            q_kwargs[i[1]] = i[0]
-            if parent_award_id:
-                q_kwargs["parent_award__" + i[1]] = parent_award_id
-            else:
-                q_kwargs["parent_award"] = None
-
-            # Now search for it
-            summary_award = Award.objects.all().filter(Q(**q_kwargs)).first()
-            if summary_award:
-                return summary_award
-            else:
-                # If we can't find it, we need to make it. Recursively get the parent
-                parent_award = None
-                if parent_award_id:
-                    parent_award = find_or_create_summary_award(**{i[1]: parent_award_id})
-                # Create the actual summary award
-                summary_award = Award(**{i[1]: i[0], "parent_award": parent_award})
-                summary_award.save()
-                return summary_award
 
 
 # Loads data into a model instance
