@@ -50,7 +50,7 @@ class RefCountryCode(models.Model):
 class Agency(models.Model):
     # id = models.AutoField(primary_key=True)
     id = models.AutoField(primary_key=True)  # meaningless id
-    cgac_code = models.CharField(max_length=3, blank=True, null=True, verbose_name="Agency Code")
+    cgac_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Agency Code")
     # agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
     # will equal fpds_code if a top level department
@@ -81,7 +81,7 @@ class Location(DataSourceTrackedModel):
     location_country_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Country Name")
     location_state_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="State Code")
     location_state_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="State Name")
-    location_state_text = models.CharField(max_length=100, blank=True, null=True)
+    location_state_description = models.CharField(max_length=100, blank=True, null=True, verbose_name="State Description")
     # Changed by KPJ to 100 from 40, on 20161013
     location_city_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="City Name")
     location_city_code = models.CharField(max_length=5, blank=True, null=True)
@@ -114,7 +114,7 @@ class Location(DataSourceTrackedModel):
                            "location_country_name",
                            "location_state_code",
                            "location_state_name",
-                           "location_state_text",
+                           "location_state_description",
                            "location_city_name",
                            "location_city_code",
                            "location_county_name",

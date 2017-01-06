@@ -15,6 +15,7 @@ For more information about the DATA Act Broker codebase, please visit this repos
   * [GET Requests](#get-requests)
   * [POST Requests](#post-requests)
   * [Autocomplete Queries](#autocomplete-queries)
+  * [Geographical Hierarchy Queries](#geographical-hierarchy-queries)
 
 
 ## DATA Act Data Store Route Documentation
@@ -37,10 +38,17 @@ The currently available routes are:
   * **/v1/awards/summary/**
     - _Description_: Provides award level summary data
     - _Methods_: GET, POST
-    - _Metadata_: Provides `total_obligation_sum`, a sum of the `total_obligation` for all data in the dataset
 
   * **/v1/awards/summary/autocomplete/**
     - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards/summary endpoint
+    - _Methods_: POST
+
+  * **/v1/references/locations/**
+    - _Description_: Returns all `Location` data.
+    - _Methods_: POST
+
+  * **/v1/references/locations/geocomplete**
+    - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information
     - _Methods_: POST
 
   * **/v1/awards/**
@@ -79,7 +87,8 @@ The structure of the post request allows for a flexible and complex query with b
 {
     "page": 1,
     "limit": 1000,
-    "fields": ["fain", "total_obligation"]
+    "order": ["recipient__location__location_state_code", "-recipient__name"],
+    "fields": ["fain", "total_obligation"],
     "exclude": ["recipient"]
     "filters": [
       {
@@ -97,13 +106,36 @@ The structure of the post request allows for a flexible and complex query with b
 
 #### Body Description
 
-* `page` - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
-* `limit` - The maximum length of a page in the response. Default: 100
-* `fields` - What fields to return. Must be a list. Omitting this will return all fields.
-* `exclude` - What fields to exclude from the return. Must be a list.
-* `filters` - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
+* `page` - _Optional_ - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
+* `limit` - _Optional_ - The maximum length of a page in the response. Default: 100
+* `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name, e.g. to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
+
+  ```
+  {
+      "recipient__location__location_state_code": {
+        "SD": 1,
+        "FL": 2,
+        "MN": 1,
+        "UT": 1,
+        "TX": 2,
+        "VA": 1,
+        "CA": 1,
+        "NC": 1,
+        "LA": 1,
+        "GA": 1
+      }
+    },
+    "results": [ . . . ],
+    "total_metadata": { . . . }
+  }
+  ```
+  
+In this case, two entires matching the specified filter have the state code of `FL`.
+* `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
+* `exclude` - _Optional_ - What fields to exclude from the return. Must be a list.
+* `filters` - _Optional_ - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
   * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__fpds_code` will filter on the field `fpds_code` for the referenced object stored in `funding_agency`.
-  * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. The options for this field are:
+  * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. To negate an operation, use `not_`. For example, `not_equals` or `not_in`. The options for this field are:
     * `equals` - Evaluates the equality of the value with that stored in the field
       ```
       {
@@ -213,7 +245,7 @@ The structure of the post request allows for a flexible and complex query with b
       * `[4,4]` - As the entire range is contained within another
       * `[0,100]` - As the entire range is contained within another
       * `[5,10]` - As the 5 overlaps
-      
+
     Mathematically speaking, ranges will intersect as long as there exists some value `C` such that `r1 <= C <= r2` and `f1 <= C <= f2`
     ```
     {
@@ -262,13 +294,11 @@ The response object structure is the same whether you are making a GET or a POST
 ```
 {
   "page_metadata": {
-    "total_obligation_sum": -6000, // This is a meta-data field specific to the endpoint
     "num_pages": 499,
     "page_number": 1,
     "count": 1
   },
   "total_metadata": {
-    "total_obligation_sum": 13459752.5, // Again, this is a meta-data field specific to the endpoint but applied to the entire dataset
     "count": 499
   },
   "results": [
@@ -418,7 +448,7 @@ Autocomplete queries currently require the endpoint to have additional handling,
 #### Body Description
   * `fields` - A list of fields to be searched for autocomplete. This allows for foreign key traversal using the usual Django patterns. This should _always_ be a list, even if the length is only one
   * `value` - The value to use as the autocomplete pattern. Typically a string, but could be a number in uncommon circumstances. The search will currently _always_ be case insensitive
-  * `mode` - The search mode. Options available are:
+  * `mode` - _Optional_ - The search mode. Options available are:
     * `contains` - Matches if the field's value contains the specified value
     * `startswith` - Matches if the field's value starts with the specified value
 
@@ -445,3 +475,83 @@ Autocomplete queries currently require the endpoint to have additional handling,
 #### Response Description
   * `results` - The actual results. For each field search, will contain a list of all unique values matching the requested value and mode
   * `counts` - Contains the length of each array in the results object
+
+### Geographical Hierarchy Queries
+This is a special type of autocomplete query which allows users to search for geographical locations in a hierarchy.
+
+#### Body
+```
+{
+  "value": "u",
+  "mode": "startswith",
+  "scope": "domestic"
+}
+```
+
+#### Body Description
+  * `value` - The value to use as the autocomplete pattern. The search will currently _always_ be case insensitive
+  * `mode` - _Optional_ -The search mode. Options available are:
+    * `contains` - Matches if the field's value contains the specified value. This is the default behavior
+    * `startswith` - Matches if the field's value starts with the specified value
+  * `scope` - _Optional_ - The scope of the search. Options available are:
+    * `domestic` - Matches only entries with the United States as the `location_country_code`
+    * `foreign` - Matches only entries where the `location_country_code` is _not_ the United States
+    * `all` - Matches any location entry. This is the default behavior
+
+#### Response
+```
+[
+  {
+    "place_type": "STATE",
+    "parent": "UNITED STATES",
+    "matched_ids": [
+      9,
+      10
+    ],
+    "place": "Utah"
+  },
+  {
+    "place_type": "COUNTRY",
+    "parent": "USA",
+    "matched_ids": [
+      7,
+      5,
+      3,
+      9,
+      1,
+      8,
+      6,
+      4,
+      10,
+      2
+    ],
+    "place": "UNITED STATES"
+  },
+  {
+    "place_type": "STATE",
+    "parent": "UNITED STATES",
+    "matched_ids": [
+      9
+    ],
+    "place": "UT"
+  }
+  ```
+#### Response Description
+  * `place` - The value of the place. e.g. A country's name, or a county name, etc.
+  * `matched_ids` - An array of `location_id`s that match the given data. This can be used to look up awards, recipients, or other data by requesting these ids
+  * `place_type` - The type of place. Options are:
+    * `COUNTRY`
+    * `CITY`
+    * `COUNTY`
+    * `STATE`
+    * `ZIP`
+    * `POSTAL CODE` - Used for foreign postal codes
+    * `PROVINCE`
+  * `parent` - The parent of the object, in a logical hierarchy. The parents for each type are listed below:
+    * `COUNTRY` - Will specify the parent as the country code for reference purposes
+    * `CITY` - Will specify the county the city is in for domestic cities, or the country for foreign cities
+    * `COUNTY` - Will specify the state the the city is in for domestic cities
+    * `STATE` - Will specify the country the state is in
+    * `ZIP` - Will specify the state the zip code falls in. If a zip code falls in multiple states, two results will be generated
+    * `POSTAL CODE` - Will specify the country the postal code falls in
+    * `PROVINCE` - Will specify the country the province is in

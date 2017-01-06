@@ -11,6 +11,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    award = models.ForeignKey('awards.Award', models.CASCADE, null=True, related_name="financial_set")
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, null=True, db_column='object_class')
@@ -86,6 +87,7 @@ class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
 class Award(DataSourceTrackedModel):
 
     AWARD_TYPES = (
+        ('U', 'Unknown Type'),
         ('2', 'Block Grant'),
         ('3', 'Formula Grant'),
         ('4', 'Project Grant'),
@@ -102,9 +104,9 @@ class Award(DataSourceTrackedModel):
         ('L', 'Loan'),
     )
 
-    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type")
+    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True)
     piid = models.CharField(max_length=50, blank=True, null=True)
-    parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
+    parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True)
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
     # dollarsobligated
@@ -130,11 +132,6 @@ class Award(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
-    # this is a pointer to the latest mod, which should include most up
-    # to date info on the location, etc.
-
-    # Can use award.actions to get reverse reference to all actions
-
     latest_submission = models.ForeignKey(SubmissionAttributes, null=True)
     # recipient_name = models.CharField(max_length=250, null=True)
     # recipient_address_line1 = models.CharField(max_length=100, null=True)
@@ -143,17 +140,30 @@ class Award(DataSourceTrackedModel):
         # define a string representation of an award object
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
 
-    def __get_latest_submission(self):
-        return self.actions.all().order_by('-action_date').first()
+    def __get_latest_transaction(self):
+        return self.__get_transaction_set().latest("action_date")
+
+    # We should only have either procurements or financial assistance awards
+    def __get_transaction_set(self):
+        # Do we have procurements or financial assistance awards?
+        transaction_set = self.procurement_set
+        if transaction_set.count() == 0:
+            transaction_set = self.financialassistanceaward_set
+        return transaction_set
+
+    def __get_type_description(self):
+        return [item for item in self.AWARD_TYPES if item == self.type][0][1]
 
     def update_from_mod(self, mod):
-        if self.type == 'C':
-            self.date_signed = mod.action_date
-            # only contract loading/summing supported right now
-            self.total_obligation = Procurement.objects.filter(piid=self.piid).aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
-            self.save()
+        transaction_set = self.__get_transaction_set()
+        self.date_signed = transaction_set.earliest("action_date").action_date
+        self.period_of_performance_start_date = transaction_set.earliest("action_date").action_date
+        self.period_of_perfoormance_current_end_date = transaction_set.latest("action_date").action_date
+        self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
+        self.save()
 
-    latest_award_transaction = property(__get_latest_submission)  # models.ForeignKey('AwardAction')
+    latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
+    type_description = property(__get_type_description)
 
     class Meta:
         db_table = 'awards'
@@ -162,7 +172,7 @@ class Award(DataSourceTrackedModel):
 class AwardAction(DataSourceTrackedModel):
     award = models.ForeignKey(Award, models.CASCADE, related_name="actions")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    action_date = models.CharField(max_length=10, verbose_name="Transaction Date")
+    action_date = models.DateField(max_length=10, verbose_name="Transaction Date")
     action_type = models.CharField(max_length=1, blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     modification_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modification Number")
@@ -177,6 +187,11 @@ class AwardAction(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    # Override the save method so that after saving we always call update_from_mod on our Award
+    def save(self, *args, **kwargs):
+        super(AwardAction, self).save(*args, **kwargs)
+        self.award.update_from_mod(self)
 
     class Meta:
         abstract = True
@@ -291,6 +306,7 @@ class FinancialAssistanceAward(AwardAction):
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
+    submitted_type = models.CharField(max_length=1, blank=True, null=True, verbose_name="Submitted Type")
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)

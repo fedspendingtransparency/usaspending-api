@@ -11,14 +11,13 @@ from model_mommy import mommy
 # Transaction test cases so threads can find the data
 class ContractsLoadTests(TransactionTestCase):
 
-    fixtures = ['agencies']
+    fixtures = ['endpoint_fixture_db']
 
     @pytest.mark.django_db
     def test_contract_load(self):
         """
         Ensure contract awards can be loaded from usaspending
         """
-        self.award = mommy.make('submissions.SubmissionProcess', _quantity=2)
         call_command('loadcontracts', os.path.join(settings.BASE_DIR, 'usaspending_api/data/usaspending_treasury_contracts.csv'))
 
     def teardown():

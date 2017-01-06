@@ -13,13 +13,11 @@ from model_mommy import mommy
 
 class LoadSubmissionTest(TestCase):
 
-    fixtures = ['2016_09_12_data.json']
+    fixtures = ['endpoint_fixture_db']
 
     def setUp(self):
         Procurement.objects.all().delete()
         SubmissionAttributes.objects.all().delete()
-        SubmissionProcess.objects.all().delete()
-        TreasuryAppropriationAccount.objects.all().delete()
         AppropriationAccountBalances.objects.all().delete()
         FinancialAccountsByProgramActivityObjectClass.objects.all().delete()
         FinancialAccountsByAwards.objects.all().delete()
@@ -37,14 +35,12 @@ class LoadSubmissionTest(TestCase):
         # Load the RefObjClass and ProgramActivityCode data
         call_command('load_submission', '-1', '--delete', '--test')
         self.assertEqual(SubmissionAttributes.objects.all().count(), 1)
-        self.assertEqual(SubmissionProcess.objects.all().count(), 1)
-        self.assertEqual(TreasuryAppropriationAccount.objects.all().count(), 1)
         self.assertEqual(AppropriationAccountBalances.objects.all().count(), 1)
         self.assertEqual(FinancialAccountsByProgramActivityObjectClass.objects.all().count(), 10)
         self.assertEqual(FinancialAccountsByAwards.objects.all().count(), 11)
         self.assertEqual(FinancialAccountsByAwardsTransactionObligations.objects.all().count(), 11)
         self.assertEqual(Location.objects.all().count(), 2)
         self.assertEqual(LegalEntity.objects.all().count(), 1)
-        self.assertEqual(Award.objects.all().count(), 1)
+        self.assertEqual(Award.objects.all().count(), 3)
         self.assertEqual(Procurement.objects.all().count(), 1)
         self.assertEqual(FinancialAssistanceAward.objects.all().count(), 1)

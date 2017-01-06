@@ -14,7 +14,7 @@ class FinancialAccountsByAwardsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class FinancialAccountsByAwardsTransactionObligationsSerializer(serializers.ModelSerializer):
+class FinancialAccountsByAwardsTransactionObligationsSerializer(LimitableSerializer):
 
     financial_accounts_by_awards = FinancialAccountsByAwardsSerializer(read_only=True)
 

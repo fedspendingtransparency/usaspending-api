@@ -15,7 +15,7 @@ class AccountsTest(TestCase):
         """
         resp = self.client.get('/api/v1/accounts/')
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(len(resp.data), 2)
+        self.assertEqual(len(resp.data['results']), 2)
 
     @pytest.mark.django_db
     def test_tas_list(self):
