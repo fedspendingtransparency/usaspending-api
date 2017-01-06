@@ -7,7 +7,6 @@ from usaspending_api.references.models import RefProgramActivity, RefObjectClass
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
-# Model Objects added white spaces
 class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
@@ -110,20 +109,12 @@ class Award(DataSourceTrackedModel):
     parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True)
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
-    # dollarsobligated
-    # This is a sum that should get updated when a transaction is entered
     total_obligation = models.DecimalField(max_digits=15, decimal_places=2, null=True, verbose_name="Total Obligated")
     total_outlay = models.DecimalField(max_digits=15, decimal_places=2, null=True)
-
-    # maj_agency_cat
     awarding_agency = models.ForeignKey(Agency, related_name='+', null=True)
     funding_agency = models.ForeignKey(Agency, related_name='+', null=True)
-
-    # signeddate
     date_signed = models.DateField(null=True, verbose_name="Award Date")
-    # vendorname
     recipient = models.ForeignKey(LegalEntity, null=True)
-    # Changed by KPJ to 4000 from 255, on 20161013
     description = models.CharField(max_length=4000, null=True, verbose_name="Award Description")
     period_of_performance_start_date = models.DateField(null=True, verbose_name="Start Date")
     period_of_performance_current_end_date = models.DateField(null=True, verbose_name="End Date")
@@ -132,13 +123,9 @@ class Award(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
-
     latest_submission = models.ForeignKey(SubmissionAttributes, null=True)
-    # recipient_name = models.CharField(max_length=250, null=True)
-    # recipient_address_line1 = models.CharField(max_length=100, null=True)
 
     def __str__(self):
-        # define a string representation of an award object
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
 
     def __get_latest_transaction(self):
@@ -213,7 +200,6 @@ class AwardAction(DataSourceTrackedModel):
     modification_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modification Number")
     awarding_agency = models.ForeignKey(Agency, null=True)
     recipient = models.ForeignKey(LegalEntity, null=True)
-    # Changed by KPJ to 4000 from 255, on 20161013
     award_description = models.CharField(max_length=4000, null=True)
     drv_award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -232,7 +218,6 @@ class AwardAction(DataSourceTrackedModel):
         abstract = True
 
 
-# BD 09/26/2016 Added rec_flag data, parent_award_awarding_agency_code, current_aggregated_total_v, current_total_value_adjust,potential_idv_total_est, potential_aggregated_idv_t, potential_aggregated_total, and potential_total_value_adju data elements to the procurement table
 class Procurement(AwardAction):
     procurement_id = models.AutoField(primary_key=True)
     award = models.ForeignKey(Award, models.CASCADE)
@@ -300,7 +285,6 @@ class Procurement(AwardAction):
     epa_designated_product = models.CharField(max_length=1, blank=True, null=True)
     walsh_healey_act = models.CharField(max_length=1, blank=True, null=True)
     transaction_number = models.CharField(max_length=6, blank=True, null=True)
-    # Changed by KPJ to 25 from 1, on 20161013
     referenced_idv_modification_number = models.CharField(max_length=25, blank=True, null=True)
     rec_flag = models.CharField(max_length=1, blank=True, null=True)
     drv_parent_award_awarding_agency_code = models.CharField(max_length=4, blank=True, null=True)

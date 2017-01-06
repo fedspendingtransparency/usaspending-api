@@ -1,30 +1,30 @@
+from datetime import datetime
 import logging
 import os
 
-from django.core.management.base import BaseCommand, CommandError
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.serializers.json import json, DjangoJSONEncoder
-from django.db import connections
-from django.utils import timezone
 from django.conf import settings
-from datetime import datetime
-import django
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.management.base import BaseCommand
+from django.core.serializers.json import json
+from django.db import connections
 
-from usaspending_api.submissions.models import *
 from usaspending_api.accounts.models import *
-from usaspending_api.financial_activities.models import *
 from usaspending_api.awards.models import *
+from usaspending_api.financial_activities.models import *
 from usaspending_api.references.models import *
+from usaspending_api.submissions.models import *
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
 TAS_ID_TO_ACCOUNT = {}
 
 
-# This command will load a single submission from the data broker database into
-# the data store using SQL commands to pull the raw data from the broker and
-# by creating new django model instances for each object
 class Command(BaseCommand):
+    """
+    This command will load a single submission from the data broker database into
+    the data store using SQL commands to pull the raw data from the broker and
+    by creating new django model instances for each object
+    """
     help = "Loads a single submission from the configured data broker database"
     logger = logging.getLogger('console')
 
@@ -333,6 +333,7 @@ class Command(BaseCommand):
 
 
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
+    """Get the matching TAS object from the broker database and save it to our running list."""
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
@@ -354,25 +355,27 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
-# Loads data into a model instance
-# Data should be a row, a dict of field -> value pairs
-# Keyword args are:
-#  field_map - A map of field columns to data columns. This is so you can map
-#               a field in the data to a different field in the model. For instance,
-#               model.tas_rendering_label = data['tas'] could be set up like this:
-#               field_map = {'tas_rendering_label': 'tas'}
-#               The algorithm checks for a value map before a field map, so if the
-#               column is present in both value_map and field_map, value map takes
-#               precedence over the other
-#  value_map - Want to force or override a value? Specify the field name for the
-#               instance and the data you want to load. Example:
-#               {'update_date': timezone.now()}
-#               The algorithm checks for a value map before a field map, so if the
-#               column is present in both value_map and field_map, value map takes
-#               precedence over the other
-#  save - Defaults to False, but when set to true will save the model at the end
-#  as_dict - If true, returns the model as a dict instead of saving or altering
 def load_data_into_model(model_instance, data, **kwargs):
+    """
+    Loads data into a model instance
+    Data should be a row, a dict of field -> value pairs
+    Keyword args:
+        field_map - A map of field columns to data columns. This is so you can map
+                    a field in the data to a different field in the model. For instance,
+                    model.tas_rendering_label = data['tas'] could be set up like this:
+                    field_map = {'tas_rendering_label': 'tas'}
+                    The algorithm checks for a value map before a field map, so if the
+                    column is present in both value_map and field_map, value map takes
+                    precedence over the other
+        value_map - Want to force or override a value? Specify the field name for the
+                    instance and the data you want to load. Example:
+                    {'update_date': timezone.now()}
+                    The algorithm checks for a value map before a field map, so if the
+                    column is present in both value_map and field_map, value map takes
+                    precedence over the other
+        save - Defaults to False, but when set to true will save the model at the end
+        as_dict - If true, returns the model as a dict instead of saving or altering
+    """
     field_map = None
     value_map = None
     save = False
@@ -455,8 +458,8 @@ def dictfetchall(cursor):
         ]
 
 
-# Spoofs the db cursor responses
 class PhonyCursor:
+    """Spoofs the db cursor responses."""
 
     def __init__(self):
         json_data = open(os.path.join(os.path.dirname(__file__), '../../test_data/etl_test_data.json'))
