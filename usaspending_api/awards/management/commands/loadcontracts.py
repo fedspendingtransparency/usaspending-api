@@ -246,6 +246,8 @@ class Command(BaseCommand):
     def create_or_get_award(self, row):
         piid = row.get("piid", None)
         award = Award.objects.filter(piid=piid, parent_award=None).first()
+        if not award:
+            award = Award.objects.create(piid=piid, parent_award=None)
         award.recipient = self.create_or_get_recipient(row)
         award.save()
         return award
