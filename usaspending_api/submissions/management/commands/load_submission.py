@@ -284,21 +284,25 @@ class Command(BaseCommand):
                 "type": "assistance_type"
             }
 
-            award_value_map = {
-                "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'], subtier_code=row["awarding_sub_tier_agency_c"]).first(),
-                "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'], subtier_code=row["funding_sub_tier_agency_co"]).first(),
-                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                "place_of_performance": pop_location,
-                "latest_submission": submission_attributes,
-                "recipient": legal_entity,
-            }
-
-            # Update the award with new data
-            load_data_into_model(award, row, field_map=award_field_map, value_map=award_value_map, save=True)
+            # award_value_map = {
+            #     "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'], subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+            #     "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'], subtier_code=row["funding_sub_tier_agency_co"]).first(),
+            #     "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+            #     "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+            #     "place_of_performance": pop_location,
+            #     "latest_submission": submission_attributes,
+            #     "recipient": legal_entity,
+            # }
+            #
+            # # Update the award with new data
+            # load_data_into_model(award, row, field_map=award_field_map, value_map=award_value_map, save=True)
 
             fad_value_map = {
                 "award": award,
+                "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'],
+                                                         subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'],
+                                                        subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "submission": submission_attributes,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
             }
@@ -326,6 +330,10 @@ class Command(BaseCommand):
             procurement_value_map = {
                 "award": award,
                 'submission': submission_attributes,
+                "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'],
+                                                         subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'],
+                                                        subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
             }
 

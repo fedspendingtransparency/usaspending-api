@@ -150,8 +150,7 @@ class Award(DataSourceTrackedModel):
         self.certified_Date = transaction_latest.certified_date
         self.date_signed = transaction_earliest.action_date
         self.description = transaction_latest.award_description
-        # txn models don't have funding agency
-        # self.funding_agency = transaction_latest.??
+        self.funding_agency = transaction_latest.funding_agency
         self.last_modified_date = transaction_latest.last_modified_date
         self.period_of_performance_start_date = transaction_earliest.action_date
         self.period_of_performance_current_end_date = transaction_latest.action_date
@@ -217,6 +216,7 @@ class AwardAction(DataSourceTrackedModel):
     funding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_funding_agency', null=True)
     recipient = models.ForeignKey(LegalEntity, null=True)
     award_description = models.CharField(max_length=4000, null=True)
+    place_of_performance = models.ForeignKey(Location, null=True)
     drv_award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_potential_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
