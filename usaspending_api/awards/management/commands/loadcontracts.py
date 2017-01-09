@@ -27,14 +27,14 @@ class Command(BaseCommand):
         field_map = {
             "federal_action_obligation": "dollarsobligated",
             "description": "descriptionofcontractrequirement",
+            "other_statutory_authority": "otherstatutoryauthority",
             "modification_number": "modnumber"
         }
 
         value_map = {
             "data_source": "USA",
             "award": lambda row: self.create_or_get_award(row),
-            "recipient": lambda row: self.create_or_get_recipient(row),
-            "awarding_agency": lambda row: Agency.objects.filter(subtier_code=self.get_agency_code(row['maj_agency_cat'])).first(),
+            "awarding_agency": lambda row: self.get_agency(row),
             "action_date": lambda row: self.convert_date(row['signeddate']),
             "last_modified_date": lambda row: self.convert_date(row['last_modified_date']),
             "gfe_gfp": lambda row: row['gfe_gfp'].split(":")[0],
@@ -64,7 +64,6 @@ class Command(BaseCommand):
             "national_interest_action": lambda row: row['nationalinterestactioncode'].split(' ')[0].split(':')[0],
             "number_of_actions": lambda row: row['numberofactions'].split(' ')[0].split(':')[0],
             "number_of_offers_received": lambda row: row['numberofoffersreceived'].split(' ')[0].split(':')[0],
-            "other_statutory_authority": lambda row: row['otherstatutoryauthority'].split(' ')[0].split(':')[0],
             "performance_based_service_acquisition": lambda row: row['performancebasedservicecontract'].split(' ')[0].split(':')[0],
             "place_of_manufacture": lambda row: row['placeofmanufacture'].split(' ')[0].split(':')[0],
             "product_or_service_code": lambda row: row['productorservicecode'].split(' ')[0].split(':')[0],
@@ -72,23 +71,23 @@ class Command(BaseCommand):
             "research": lambda row: row['research'].split(' ')[0].split(':')[0],
             "sea_transportation": lambda row: row['seatransportation'].split(' ')[0].split(':')[0],
             "service_contract_act": lambda row: row['servicecontractact'].split(' ')[0].split(':')[0],
-            "small_business_competitiveness_demonstration_program": lambda row: row['smallbusinesscompetitivenessdemonstrationprogram'].split(' ')[0].split(':')[0],
+            "small_business_competitiveness_demonstration_program": lambda row: self.parse_first_character(row['smallbusinesscompetitivenessdemonstrationprogram']),
             "solicitation_procedures": lambda row: row['solicitationprocedures'].split(' ')[0].split(':')[0],
             "subcontracting_plan": lambda row: row['subcontractplan'].split(' ')[0].split(':')[0],
             "type_set_aside": lambda row: row['typeofsetaside'].split(' ')[0].split(':')[0],
             "walsh_healey_act": lambda row: row['walshhealyact'].split(' ')[0].split(':')[0],
-            "rec_flag": lambda row:  self.parse_true_false_flag(row['rec_flag'].split(' ')[0].split(':')[0]),
-            "type_of_idc": lambda row: self.parse_true_false_flag(row['typeofidc']),
-            "a76_fair_act_action": lambda row: self.parse_true_false_flag(row['a76action']),
-            "clinger_cohen_act_planning": lambda row: self.parse_true_false_flag(row['clingercohenact']),
-            "cost_accounting_standards": lambda row: self.parse_true_false_flag(row['costaccountingstandardsclause']),
-            "fed_biz_opps": lambda row: self.parse_true_false_flag(row['fedbizopps']),
-            "foreign_funding": lambda row: self.parse_true_false_flag(row['fundedbyforeignentity']),
-            "major_program": lambda row: self.parse_true_false_flag(row['majorprogramcode']),
-            "program_acronym": lambda row: self.parse_true_false_flag(row['programacronym']),
-            "referenced_idv_modification_number": lambda row: self.parse_true_false_flag(row['idvmodificationnumber']),
-            "transaction_number": lambda row: self.parse_true_false_flag(row['transactionnumber']),
-            "solicitation_identifier": lambda row: self.parse_true_false_flag(row['solicitationid']),
+            "rec_flag": lambda row:  self.parse_first_character(row['rec_flag'].split(' ')[0].split(':')[0]),
+            "type_of_idc": lambda row: self.parse_first_character(row['typeofidc']),
+            "a76_fair_act_action": lambda row: self.parse_first_character(row['a76action']),
+            "clinger_cohen_act_planning": lambda row: self.parse_first_character(row['clingercohenact']),
+            "cost_accounting_standards": lambda row: self.parse_first_character(row['costaccountingstandardsclause']),
+            "fed_biz_opps": lambda row: self.parse_first_character(row['fedbizopps']),
+            "foreign_funding": lambda row: self.parse_first_character(row['fundedbyforeignentity']),
+            "major_program": lambda row: self.parse_first_character(row['majorprogramcode']),
+            "program_acronym": lambda row: self.parse_first_character(row['programacronym']),
+            "referenced_idv_modification_number": lambda row: self.parse_first_character(row['idvmodificationnumber']),
+            "transaction_number": lambda row: self.parse_first_character(row['transactionnumber']),
+            "solicitation_identifier": lambda row: self.parse_first_character(row['solicitationid']),
             "submission": subattr
         }
 
@@ -113,43 +112,41 @@ class Command(BaseCommand):
             else:
                 return None
 
+    def get_agency(self, row):
+        agency = Agency.objects.filter(subtier_code=self.get_agency_code(row['maj_agency_cat'])).first()
+        if not agency:
+            print("Missing agency: " + row['maj_agency_cat'])
+        return agency
+
     def create_or_get_recipient(self, row):
         # First, create the locations
         location_dict = {}
         pop_dict = {}
 
-        loc_country_code = row["countryoforigin"].split(":")[0]
-        pop_country_code = row["placeofperformancecountrycode"].split(":")[0]
-        if loc_country_code == "USA":
+        loc_country_code = row["vendorcountrycode"].split(":")[0]
+
+        loc_country_code = RefCountryCode.objects.filter(Q(**{"country_code": loc_country_code}) | Q(**{"country_name__iexact": loc_country_code})).first()
+        if not loc_country_code:
+            # We don't have an exact match on the name or the code, so we need to chain filter on the name
+            query_set = RefCountryCode.objects
+            for word in row["vendorcountrycode"].split(":")[0].split(" "):
+                query_set = query_set.filter(country_name__icontains=word)
+            loc_country_code = query_set.first()
+
+        if loc_country_code.country_code == "USA":
             location_dict = {
-                "location_country_code": RefCountryCode.objects.filter(country_code=loc_country_code).first(),
+                "location_country_code": loc_country_code,
                 "location_zip5": row["zipcode"][:5],
-                "location_zip_last4": row["zipcode"][5:],
+                "location_zip_last4": row["zipcode"].replace("-", "")[5:],
                 "location_address_line1": row["streetaddress"],
                 "location_address_line2": row["streetaddress2"],
                 "location_address_line3": row["streetaddress3"],
                 "location_state_code": row["state"],
                 "location_city_name": row["city"],
             }
-
-            pop_state_data = row["pop_state_code"].split(":")
-            pop_state_code = pop_state_data[0]
-            pop_state_name = ""
-            if len(pop_state_data) > 1:
-                pop_state_name = pop_state_data[1]
-
-            pop_dict = {
-                "location_country_code": RefCountryCode.objects.filter(country_code=pop_country_code).first(),
-                "location_zip5": row["placeofperformancezipcode"][:5],
-                "location_zip_last4": row["placeofperformancezipcode"][5:],
-                "location_state_code": pop_state_code,
-                "location_state_name": pop_state_name,
-                "location_city_name": row["placeofperformancecity"],
-                "location_congressional_code": row["placeofperformancecongressionaldistrict"][2:]
-            }
         else:
             location_dict = {
-                "location_country_code": RefCountryCode.objects.filter(country_code=loc_country_code).first(),
+                "location_country_code": loc_country_code,
                 "location_address_line1": row["streetaddress"],
                 "location_address_line2": row["streetaddress2"],
                 "location_address_line3": row["streetaddress3"],
@@ -158,21 +155,9 @@ class Command(BaseCommand):
                 "location_foreign_city_name": row["city"],
             }
 
-            pop_dict = {
-                "location_country_code": RefCountryCode.objects.filter(country_code=pop_country_code).first(),
-                "location_city_name": row["placeofperformancecity"],
-                "location_congressional_code": row["placeofperformancecongressionaldistrict"][2:]
-            }
-
-        # print(location_dict)
-        # print(pop_dict)
         recipient_location = Location.objects.filter(Q(**location_dict)).first()
         if not recipient_location:
             recipient_location = Location.objects.create(**location_dict)
-
-        pop_location = Location.objects.filter(Q(**pop_dict)).first()
-        if not pop_location:
-            pop_location = Location.objects.create(**pop_dict)
 
         recipient_dict = {
             "location_id": recipient_location.location_id,
@@ -180,66 +165,66 @@ class Command(BaseCommand):
             "vendor_phone_number": row['phoneno'],
             "vendor_fax_number": row['faxno'],
             "recipient_unique_id": row['dunsnumber'],
-            "city_local_government": self.parse_true_false_flag(row['iscitylocalgovernment']),
-            "county_local_government": self.parse_true_false_flag(row['iscountylocalgovernment']),
-            "inter_municipal_local_government": self.parse_true_false_flag(row['isintermunicipallocalgovernment']),
-            "local_government_owned": self.parse_true_false_flag(row['islocalgovernmentowned']),
-            "municipality_local_government": self.parse_true_false_flag(row['ismunicipalitylocalgovernment']),
-            "school_district_local_government": self.parse_true_false_flag(row['isschooldistrictlocalgovernment']),
-            "township_local_government": self.parse_true_false_flag(row['istownshiplocalgovernment']),
-            "federal_agency": self.parse_true_false_flag(row['isfederalgovernmentagency']),
-            "federally_funded_research_and_development_corp": self.parse_true_false_flag(row['isfederallyfundedresearchanddevelopmentcorp']),
-            "us_tribal_government": self.parse_true_false_flag(row['istriballyownedfirm']),
-            "foreign_government": self.parse_true_false_flag(row['isforeigngovernment']),
-            "community_developed_corporation_owned_firm": self.parse_true_false_flag(row['iscommunitydevelopedcorporationownedfirm']),
-            "labor_surplus_area_firm": self.parse_true_false_flag(row['islaborsurplusareafirm']),
-            "small_agricultural_cooperative": self.parse_true_false_flag(row['issmallagriculturalcooperative']),
-            "international_organization": self.parse_true_false_flag(row['isinternationalorganization']),
-            "c1862_land_grant_college": self.parse_true_false_flag(row['is1862landgrantcollege']),
-            "c1890_land_grant_college": self.parse_true_false_flag(row['is1890landgrantcollege']),
-            "c1994_land_grant_college": self.parse_true_false_flag(row['is1994landgrantcollege']),
-            "minority_institution": self.parse_true_false_flag(row['minorityinstitutionflag']),
-            "private_university_or_college": self.parse_true_false_flag(row['isprivateuniversityorcollege']),
-            "school_of_forestry": self.parse_true_false_flag(row['isschoolofforestry']),
-            "state_controlled_institution_of_higher_learning": self.parse_true_false_flag(row['isstatecontrolledinstitutionofhigherlearning']),
-            "tribal_college": self.parse_true_false_flag(row['istribalcollege']),
-            "veterinary_college": self.parse_true_false_flag(row['isveterinarycollege']),
-            "educational_institution": self.parse_true_false_flag(row['educationalinstitutionflag']),
-            "alaskan_native_servicing_institution": self.parse_true_false_flag(row['isalaskannativeownedcorporationorfirm']),
-            "community_development_corporation": self.parse_true_false_flag(row['iscommunitydevelopmentcorporation']),
-            "native_hawaiian_servicing_institution": self.parse_true_false_flag(row['isnativehawaiianownedorganizationorfirm']),
-            "domestic_shelter": self.parse_true_false_flag(row['isdomesticshelter']),
-            "manufacturer_of_goods": self.parse_true_false_flag(row['ismanufacturerofgoods']),
-            "hospital_flag": self.parse_true_false_flag(row['hospitalflag']),
-            "veterinary_hospital": self.parse_true_false_flag(row['isveterinaryhospital']),
-            "hispanic_servicing_institution": self.parse_true_false_flag(row['ishispanicservicinginstitution']),
-            "woman_owned_business": self.parse_true_false_flag(row['womenownedflag']),
-            "minority_owned_business": self.parse_true_false_flag(row['minorityownedbusinessflag']),
-            "women_owned_small_business": self.parse_true_false_flag(row['iswomenownedsmallbusiness']),
-            "economically_disadvantaged_women_owned_small_business": self.parse_true_false_flag(row['isecondisadvwomenownedsmallbusiness']),
-            "joint_venture_women_owned_small_business": self.parse_true_false_flag(row['isjointventureecondisadvwomenownedsmallbusiness']),
-            "joint_venture_economic_disadvantaged_women_owned_small_bus": self.parse_true_false_flag(row['isjointventureecondisadvwomenownedsmallbusiness']),
-            "veteran_owned_business": self.parse_true_false_flag(row['veteranownedflag']),
-            "airport_authority": self.parse_true_false_flag(row['isairportauthority']),
-            "housing_authorities_public_tribal": self.parse_true_false_flag(row['ishousingauthoritiespublicortribal']),
-            "interstate_entity": self.parse_true_false_flag(row['isinterstateentity']),
-            "planning_commission": self.parse_true_false_flag(row['isplanningcommission']),
-            "port_authority": self.parse_true_false_flag(row['isportauthority']),
-            "transit_authority": self.parse_true_false_flag(row['istransitauthority']),
-            "foreign_owned_and_located": self.parse_true_false_flag(row['isforeignownedandlocated']),
-            "american_indian_owned_business": self.parse_true_false_flag(row['aiobflag']),
-            "alaskan_native_owned_corporation_or_firm": self.parse_true_false_flag(row['isalaskannativeownedcorporationorfirm']),
-            "indian_tribe_federally_recognized": self.parse_true_false_flag(row['isindiantribe']),
-            "native_hawaiian_owned_business": self.parse_true_false_flag(row['isnativehawaiianownedorganizationorfirm']),
-            "tribally_owned_business": self.parse_true_false_flag(row['istriballyownedfirm']),
-            "asian_pacific_american_owned_business": self.parse_true_false_flag(row['apaobflag']),
-            "black_american_owned_business": self.parse_true_false_flag(row['baobflag']),
-            "hispanic_american_owned_business": self.parse_true_false_flag(row['baobflag']),
-            "native_american_owned_business": self.parse_true_false_flag(row['naobflag']),
-            "subcontinent_asian_asian_indian_american_owned_business": self.parse_true_false_flag(row['saaobflag']),
-            "us_local_government": self.parse_true_false_flag(row['islocalgovernmentowned']),
-            "division_name": self.parse_true_false_flag(row['divisionname']),
-            "division_number": self.parse_true_false_flag(row['divisionnumberorofficecode'])
+            "city_local_government": self.parse_first_character(row['iscitylocalgovernment']),
+            "county_local_government": self.parse_first_character(row['iscountylocalgovernment']),
+            "inter_municipal_local_government": self.parse_first_character(row['isintermunicipallocalgovernment']),
+            "local_government_owned": self.parse_first_character(row['islocalgovernmentowned']),
+            "municipality_local_government": self.parse_first_character(row['ismunicipalitylocalgovernment']),
+            "school_district_local_government": self.parse_first_character(row['isschooldistrictlocalgovernment']),
+            "township_local_government": self.parse_first_character(row['istownshiplocalgovernment']),
+            "federal_agency": self.parse_first_character(row['isfederalgovernmentagency']),
+            "federally_funded_research_and_development_corp": self.parse_first_character(row['isfederallyfundedresearchanddevelopmentcorp']),
+            "us_tribal_government": self.parse_first_character(row['istriballyownedfirm']),
+            "foreign_government": self.parse_first_character(row['isforeigngovernment']),
+            "community_developed_corporation_owned_firm": self.parse_first_character(row['iscommunitydevelopedcorporationownedfirm']),
+            "labor_surplus_area_firm": self.parse_first_character(row['islaborsurplusareafirm']),
+            "small_agricultural_cooperative": self.parse_first_character(row['issmallagriculturalcooperative']),
+            "international_organization": self.parse_first_character(row['isinternationalorganization']),
+            "c1862_land_grant_college": self.parse_first_character(row['is1862landgrantcollege']),
+            "c1890_land_grant_college": self.parse_first_character(row['is1890landgrantcollege']),
+            "c1994_land_grant_college": self.parse_first_character(row['is1994landgrantcollege']),
+            "minority_institution": self.parse_first_character(row['minorityinstitutionflag']),
+            "private_university_or_college": self.parse_first_character(row['isprivateuniversityorcollege']),
+            "school_of_forestry": self.parse_first_character(row['isschoolofforestry']),
+            "state_controlled_institution_of_higher_learning": self.parse_first_character(row['isstatecontrolledinstitutionofhigherlearning']),
+            "tribal_college": self.parse_first_character(row['istribalcollege']),
+            "veterinary_college": self.parse_first_character(row['isveterinarycollege']),
+            "educational_institution": self.parse_first_character(row['educationalinstitutionflag']),
+            "alaskan_native_servicing_institution": self.parse_first_character(row['isalaskannativeownedcorporationorfirm']),
+            "community_development_corporation": self.parse_first_character(row['iscommunitydevelopmentcorporation']),
+            "native_hawaiian_servicing_institution": self.parse_first_character(row['isnativehawaiianownedorganizationorfirm']),
+            "domestic_shelter": self.parse_first_character(row['isdomesticshelter']),
+            "manufacturer_of_goods": self.parse_first_character(row['ismanufacturerofgoods']),
+            "hospital_flag": self.parse_first_character(row['hospitalflag']),
+            "veterinary_hospital": self.parse_first_character(row['isveterinaryhospital']),
+            "hispanic_servicing_institution": self.parse_first_character(row['ishispanicservicinginstitution']),
+            "woman_owned_business": self.parse_first_character(row['womenownedflag']),
+            "minority_owned_business": self.parse_first_character(row['minorityownedbusinessflag']),
+            "women_owned_small_business": self.parse_first_character(row['iswomenownedsmallbusiness']),
+            "economically_disadvantaged_women_owned_small_business": self.parse_first_character(row['isecondisadvwomenownedsmallbusiness']),
+            "joint_venture_women_owned_small_business": self.parse_first_character(row['isjointventureecondisadvwomenownedsmallbusiness']),
+            "joint_venture_economic_disadvantaged_women_owned_small_bus": self.parse_first_character(row['isjointventureecondisadvwomenownedsmallbusiness']),
+            "veteran_owned_business": self.parse_first_character(row['veteranownedflag']),
+            "airport_authority": self.parse_first_character(row['isairportauthority']),
+            "housing_authorities_public_tribal": self.parse_first_character(row['ishousingauthoritiespublicortribal']),
+            "interstate_entity": self.parse_first_character(row['isinterstateentity']),
+            "planning_commission": self.parse_first_character(row['isplanningcommission']),
+            "port_authority": self.parse_first_character(row['isportauthority']),
+            "transit_authority": self.parse_first_character(row['istransitauthority']),
+            "foreign_owned_and_located": self.parse_first_character(row['isforeignownedandlocated']),
+            "american_indian_owned_business": self.parse_first_character(row['aiobflag']),
+            "alaskan_native_owned_corporation_or_firm": self.parse_first_character(row['isalaskannativeownedcorporationorfirm']),
+            "indian_tribe_federally_recognized": self.parse_first_character(row['isindiantribe']),
+            "native_hawaiian_owned_business": self.parse_first_character(row['isnativehawaiianownedorganizationorfirm']),
+            "tribally_owned_business": self.parse_first_character(row['istriballyownedfirm']),
+            "asian_pacific_american_owned_business": self.parse_first_character(row['apaobflag']),
+            "black_american_owned_business": self.parse_first_character(row['baobflag']),
+            "hispanic_american_owned_business": self.parse_first_character(row['baobflag']),
+            "native_american_owned_business": self.parse_first_character(row['naobflag']),
+            "subcontinent_asian_asian_indian_american_owned_business": self.parse_first_character(row['saaobflag']),
+            "us_local_government": self.parse_first_character(row['islocalgovernmentowned']),
+            "division_name": self.parse_first_character(row['divisionname']),
+            "division_number": self.parse_first_character(row['divisionnumberorofficecode'])
         }
 
         le = LegalEntity.objects.filter(recipient_unique_id=row['dunsnumber']).first()
@@ -248,7 +233,7 @@ class Command(BaseCommand):
 
         return le
 
-    def parse_true_false_flag(self, flag):
+    def parse_first_character(self, flag):
         if len(flag) > 0:
             return flag[0]
 
@@ -260,5 +245,7 @@ class Command(BaseCommand):
 
     def create_or_get_award(self, row):
         piid = row.get("piid", None)
-        award, created = Award.objects.get_or_create(piid=piid, parent_award=None)
+        award = Award.objects.filter(piid=piid, parent_award=None).first()
+        award.recipient = self.create_or_get_recipient(row)
+        award.save()
         return award
