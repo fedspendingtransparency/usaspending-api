@@ -137,7 +137,7 @@ class FilterQuerysetMixin(object):
         # GET and POST requests? can we get to a place where we
         # don't need to know?
         if len(request.query_params):
-            filter_map = kwargs.get('filter_map')
+            filter_map = kwargs.get('filter_map', {})
             fg = FilterGenerator(filter_map=filter_map)
             filters = fg.create_from_get(request.query_params)
             # add fiscal year to filters if requested
@@ -185,8 +185,8 @@ class ResponseMetadatasetMixin(object):
         queryset = kwargs.get('queryset')
 
         # workaround to handle both GET and POST requests
-        params = dict(self.request.query_params)
-        params.update(dict(self.request.data))
+        params = self.request.query_params.copy()  # copy() creates mutable copy of a QueryDict
+        params.update(self.request.data.copy())
 
         # construct metadata of entire set of data that matches the request specifications
         total_metadata = {"count": queryset.count()}
