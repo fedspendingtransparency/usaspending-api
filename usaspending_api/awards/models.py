@@ -146,22 +146,27 @@ class Award(DataSourceTrackedModel):
         transaction_set = self.__get_transaction_set()
         transaction_latest = transaction_set.latest("action_date")
         transaction_earliest = transaction_set.earliest("action_date")
-        self.awarding_agency = transaction_earliest.awarding_agency
-        self.certified_Date = transaction_latest.certified_date
+        self.awarding_agency = transaction_latest.awarding_agency
+        self.certified_date = transaction_latest.certified_date
+        self.data_source = transaction_latest.data_source
         self.date_signed = transaction_earliest.action_date
         self.description = transaction_latest.award_description
         self.funding_agency = transaction_latest.funding_agency
         self.last_modified_date = transaction_latest.last_modified_date
+        self.latest_submission = transaction_latest.submission
         self.period_of_performance_start_date = transaction_earliest.action_date
         self.period_of_performance_current_end_date = transaction_latest.action_date
-        # txn models don't have place of performance
-        # self.place_of_performance = transaction_latest.??
+        self.place_of_performance = transaction_latest.place_of_performance
         self.recipient = transaction_latest.recipient
         self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
         # what txn-level fields do we sum to get the award's total outlay?
         # self.total_outlay = ??
-        # type is a different field depending on whether this is a contract or financial assistance??
-        # self.type = transaction_latest.??
+        if hasattr(transaction_latest, 'assistance_type'):
+            # this is a financial assistance award, so use assistance_type field
+            self.type = transaction_latest.assistance_type
+        else:
+            # this is a contract
+            self.type = 'C'
         self.save()
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
