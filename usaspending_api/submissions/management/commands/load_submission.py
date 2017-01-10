@@ -214,7 +214,6 @@ class Command(BaseCommand):
         award_financial_assistance_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
 
-        # Create LegalEntity
         legal_entity_location_field_map = {
             "location_address_line1": "legal_entity_address_line1",
             "location_address_line2": "legal_entity_address_line2",
@@ -231,9 +230,9 @@ class Command(BaseCommand):
             "location_state_name": "legal_entity_state_name",
             "location_zip5": "legal_entity_zip5",
             "location_zip_last4": "legal_entity_zip_last4",
+            "location_country_code": "legal_entity_country_code"
         }
 
-        # Create the place of performance location
         place_of_performance_field_map = {
             "location_city_name": "place_of_performance_city",
             "location_performance_code": "place_of_performance_code",
@@ -242,35 +241,25 @@ class Command(BaseCommand):
             "location_foreign_location_description": "place_of_performance_forei",
             "location_state_name": "place_of_perform_state_nam",
             "location_zip4": "place_of_performance_zip4a",
+            "location_country_code": "place_of_perform_country_c"
+
         }
 
         for row in award_financial_assistance_data:
-            location_value_map = {
-                "location_country_code": RefCountryCode.objects.filter(country_code=row["legal_entity_country_code"]).first()
-            }
-            location = load_data_into_model(Location(), row, field_map=legal_entity_location_field_map, value_map=location_value_map, as_dict=True)
-            legal_entity_location, created = Location.objects.get_or_create(**location)
+            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row)
 
             # Create the legal entity if it doesn't exist
-            legal_entity = None
             try:
-                legal_entity = LegalEntity.objects.get(row['awardee_or_recipient_uniqu'])
-            except:
-                legal_entity = LegalEntity()
-
+                legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
+            except ObjectDoesNotExist:
                 legal_entity_value_map = {
                     "location": legal_entity_location,
                     "legal_entity_id": row['awardee_or_recipient_uniqu']
                 }
+                legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
 
-                load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
-
-            pop_value_map = {
-                "location_country_code": RefCountryCode.objects.filter(country_code=row["place_of_perform_country_c"]).first()
-            }
-
-            location = load_data_into_model(Location(), row, field_map=place_of_performance_field_map, value_map=pop_value_map, as_dict=True)
-            pop_location, created = Location.objects.get_or_create(**location)
+            # Create the place of performance location
+            pop_location, created = get_or_create_location(place_of_performance_field_map, row)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
             award = Award.get_or_create_summary_award(
@@ -279,30 +268,14 @@ class Command(BaseCommand):
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
 
-            award_field_map = {
-                "description": "award_description",
-                "type": "assistance_type"
-            }
-
-            # award_value_map = {
-            #     "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'], subtier_code=row["awarding_sub_tier_agency_c"]).first(),
-            #     "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'], subtier_code=row["funding_sub_tier_agency_co"]).first(),
-            #     "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-            #     "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-            #     "place_of_performance": pop_location,
-            #     "latest_submission": submission_attributes,
-            #     "recipient": legal_entity,
-            # }
-            #
-            # # Update the award with new data
-            # load_data_into_model(award, row, field_map=award_field_map, value_map=award_value_map, save=True)
-
             fad_value_map = {
                 "award": award,
                 "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'],
                                                          subtier_code=row["awarding_sub_tier_agency_c"]).first(),
                 "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'],
                                                         subtier_code=row["funding_sub_tier_agency_co"]).first(),
+                "recipient": legal_entity,
+                "place_of_performance": pop_location,
                 "submission": submission_attributes,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
             }
@@ -310,7 +283,7 @@ class Command(BaseCommand):
             financial_assistance_data = load_data_into_model(FinancialAssistanceAward(), row, value_map=fad_value_map, as_dict=True)
             fad = FinancialAssistanceAward.objects.filter(award=award, modification_number=row['award_modification_amendme']).first()
             if not fad:
-                fad, created = FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
+                FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
             else:
                 FinancialAssistanceAward.objects.filter(pk=fad.pk).update(**financial_assistance_data)
 
@@ -436,12 +409,39 @@ def load_data_into_model(model_instance, data, **kwargs):
 
     if save:
         model_instance.save()
+        return model_instance
     if as_dict:
         return mod
 
 
 def format_date(date):
     return datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
+
+
+def get_or_create_location(location_map, row):
+    """
+    Retrieve or create a location object
+
+    Input parameters:
+        - location_map: a dictionary with key = field name on the location model
+            and value = corresponding field name on the current row of data
+        - row: the row of data currently being loaded
+    """
+    location_country = RefCountryCode.objects.filter(
+        country_code=row[location_map.get('location_country_code')]).first()
+
+    location_value_map = {
+        'location_country_code': location_country,
+        'location_country_name': location_country.country_name
+    }
+
+    location_data = load_data_into_model(Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
+    # note that this logic would cause an additional location object to be created if the same
+    # note that this logic would cause an additional location object to be created if the same
+    # location exists but has a data source other than `DBR'
+    location_object, created = Location.objects.get_or_create(**location_data)
+
+    return location_object, created
 
 
 def store_value(model_instance_or_dict, field, value):
