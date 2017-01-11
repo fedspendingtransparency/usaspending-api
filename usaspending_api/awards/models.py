@@ -142,6 +142,16 @@ class Award(DataSourceTrackedModel):
     def __get_type_description(self):
         return [item for item in self.AWARD_TYPES if item == self.type][0][1]
 
+    def __get_award_id_object(self):
+        award_id_object = {'piid': self.piid, 'fain': self.fain, 'uri': self.uri}
+        return award_id_object
+
+    def __get_toplevel_object(self):
+        toplevel_object = {'type': self.type, 'total_obligation': self.total_obligation, 'total_outlay': self.total_outlay, 'date_signed': self.date_signed,
+                            'description': self.description, 'period_of_performance_start_date': self.period_of_performance_start_date,
+                            'period_of_performance_current_end_date': self.period_of_performance_current_end_date, 'update_date': self.update_date}
+        return toplevel_object
+
     def update_from_mod(self, mod):
         transaction_set = self.__get_transaction_set()
         transaction_latest = transaction_set.latest("action_date")
@@ -169,8 +179,17 @@ class Award(DataSourceTrackedModel):
             self.type = transaction_latest.contract_award_type
         self.save()
 
+    ##AJ Added toplevel_object, Need to Add Location & AwardAction
+    @staticmethod
+    def get_default_fields():
+        default_fields = [
+            'toplevel_object', 'procurement_set', 'financialassistanceaward_set', 'award_id_object', 'recipient', 'awarding_agency', 'funding_agency'] #Location & AwardAction
+        return default_fields
+
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
     type_description = property(__get_type_description)
+    award_id_object = property(__get_award_id_object)
+    toplevel_object = property(__get_toplevel_object)
 
     @staticmethod
     def get_or_create_summary_award(piid=None, fain=None, uri=None, parent_award_id=None):
@@ -234,6 +253,12 @@ class AwardAction(DataSourceTrackedModel):
     def save(self, *args, **kwargs):
         super(AwardAction, self).save(*args, **kwargs)
         self.award.update_from_mod(self)
+
+    ##AJ ADDED..need to combine financial_assistance_award_id & procurement_id or use AwardAction pk. Add 'permalink'
+    @staticmethod
+    def get_default_fields():
+        default_fields = ['financial_assistance_award_id', 'procurement_id', 'modification_number', 'federal_action_obligation', 'action_date', 'award_description', 'update_date']
+        return default_fields
 
     class Meta:
         abstract = True
@@ -322,6 +347,12 @@ class Procurement(AwardAction):
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
 
+    ##AJ ADDED
+    @staticmethod
+    def get_default_fields():
+        default_fields = ['extent_competed', 'idv_type', 'cost_or_pricing_data', 'naics', 'naics_description', 'product_or_service_code']
+        return default_fields
+
 
 class FinancialAssistanceAward(AwardAction):
     financial_assistance_award_id = models.AutoField(primary_key=True)
@@ -350,6 +381,12 @@ class FinancialAssistanceAward(AwardAction):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    ##AJ ADDED
+    @staticmethod
+    def get_default_fields():
+        default_fields = ['cfda_number', 'cfda_title', 'face_value_loan_guarantee', 'original_loan_subsidy_cost', 'assistance_type']
+        return default_fields
 
     class Meta:
         managed = True

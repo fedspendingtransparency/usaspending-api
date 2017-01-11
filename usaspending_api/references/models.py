@@ -67,6 +67,12 @@ class Agency(models.Model):
     update_date = models.DateTimeField(auto_now=True, null=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
 
+    ##AJ ADDED..need to add 'subtier_name'
+    @staticmethod
+    def get_default_fields():
+        default_fields = ['name', 'cgac_code', 'fpds_code', 'subtier_code']
+        return default_fields
+
     class Meta:
         managed = True
         db_table = 'agency'
@@ -109,6 +115,12 @@ class Location(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    ##AJ ADDED
+    @staticmethod
+    def get_default_fields():
+        default_fields = ['location_address_line1', 'location_address_line2', 'location_address_line3', 'location_city_name', 'location_state_name', 'location_zip5', 'location_country_name']
+        return default_fields
 
     class Meta:
         # Let's make almost every column unique together so we don't have to
@@ -246,6 +258,12 @@ class LegalEntity(DataSourceTrackedModel):
     reporting_period_end = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    ##AJ ADDED
+    @staticmethod
+    def get_default_fields():
+        default_fields = ['legal_entity_id', 'ultimate_parent_legal_entity_id', 'recipient_name', 'business_types']
+        return default_fields
 
     class Meta:
         managed = True
