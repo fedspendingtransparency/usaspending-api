@@ -3,7 +3,7 @@ import logging
 import os
 
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.management.base import BaseCommand
 from django.core.serializers.json import json
 from django.db import connections
@@ -467,17 +467,44 @@ def get_or_create_location(location_map, row):
     location_country = RefCountryCode.objects.filter(
         country_code=row[location_map.get('location_country_code')]).first()
 
-    location_value_map = {
-        'location_country_code': location_country,
-        'location_country_name': location_country.country_name
-    }
+    location_value_map = {}
 
-    location_data = load_data_into_model(Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
-    # note that this logic would cause an additional location object to be created if the same
-    # location exists but has a data source other than `DBR'
-    location_object, created = Location.objects.get_or_create(**location_data)
+    # temporary fix until broker is patched: remove later
+    state_code = row.get(location_map.get('location_state_code'))
+    if state_code is not None:
+        location_value_map.update({'location_state_code': state_code.replace('.', '')})
+    # end of temporary fix
 
-    return location_object, created
+    if location_country:
+        location_value_map.update({
+            'location_country_code': location_country,
+            'location_country_name': location_country.country_name
+        })
+    else:
+        # no country found for this code
+        location_value_map.update({
+            'location_country_code': None,
+            'location_country_name': None
+        })
+
+    location_data = load_data_into_model(
+        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
+
+    del location_data['data_source'] # hacky way to ensure we don't create a series of empty location records
+    if len(location_data):
+        try:
+            location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})
+        except MultipleObjectsReturned:
+            # incoming location data is so sparse that comparing it to existing locations
+            # yielded multiple records. create a new location with this limited info.
+            # note: this will need fixed up to prevent duplicate location records with the
+            # same sparse data
+            location_object = Location.objects.create(**location_data)
+            created = True
+        return location_object, created
+    else:
+        # record had no location information at all
+        return None, None
 
 
 def store_value(model_instance_or_dict, field, value):
