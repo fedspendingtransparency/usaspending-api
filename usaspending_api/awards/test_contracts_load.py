@@ -2,29 +2,23 @@ import os
 
 from django.conf import settings
 from django.core.management import call_command
-from django.test import TransactionTestCase, Client
 from model_mommy import mommy
 import pytest
 
-from usaspending_api.awards.models import Award
 from usaspending_api.awards.management.commands import loadcontracts
 from usaspending_api.references.models import Location
 
 
 # Transaction test cases so threads can find the data
-class ContractsLoadTests(TransactionTestCase):
-
-    fixtures = ['endpoint_fixture_db']
-
-    @pytest.mark.django_db
-    def test_contract_load(self):
-        """
-        Ensure contract awards can be loaded from usaspending
-        """
-        call_command('loadcontracts', os.path.join(settings.BASE_DIR, 'usaspending_api/data/usaspending_treasury_contracts.csv'))
-
-    def teardown():
-        Award.objects.all().delete()
+@pytest.mark.django_db(transaction=True)
+def test_contract_load():
+    """Ensure contract awards can be loaded from usaspending"""
+    call_command('loaddata', 'endpoint_fixture_db')
+    call_command('loadcontracts', os.path.join(
+        settings.BASE_DIR, 'usaspending_api', 'data',
+        'usaspending_treasury_contracts.csv'
+    ))
+    # @todo - should there be an assert here?
 
 
 @pytest.mark.parametrize('contract_type,expected', [
