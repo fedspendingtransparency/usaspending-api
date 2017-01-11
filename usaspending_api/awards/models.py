@@ -98,10 +98,10 @@ class Award(DataSourceTrackedModel):
         ('9', 'Insurance'),
         ('10', 'Direct Payment unrestricted'),
         ('11', 'Other'),
-        ('C', 'Contract'),
-        ('G', 'Grant'),
-        ('DP', 'Direct Payment'),
-        ('L', 'Loan'),
+        ('A', 'BPA Call'),
+        ('B', 'Purchase Order'),
+        ('C', 'Delivery Order'),
+        ('D', 'Definitive Contract')
     )
 
     type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True)
@@ -166,7 +166,7 @@ class Award(DataSourceTrackedModel):
             self.type = transaction_latest.assistance_type
         else:
             # this is a contract
-            self.type = 'C'
+            self.type = transaction_latest.contract_award_type
         self.save()
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
