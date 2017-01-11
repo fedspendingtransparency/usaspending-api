@@ -88,14 +88,14 @@ class Award(DataSourceTrackedModel):
 
     AWARD_TYPES = (
         ('U', 'Unknown Type'),
-        ('2', 'Block Grant'),
-        ('3', 'Formula Grant'),
-        ('4', 'Project Grant'),
-        ('5', 'Cooperative Agreement'),
-        ('6', 'Direct Payment for Specified Use'),
-        ('7', 'Direct Loan'),
-        ('8', 'Guaranteed/Insured Loan'),
-        ('9', 'Insurance'),
+        ('02', 'Block Grant'),
+        ('03', 'Formula Grant'),
+        ('04', 'Project Grant'),
+        ('05', 'Cooperative Agreement'),
+        ('06', 'Direct Payment for Specified Use'),
+        ('07', 'Direct Loan'),
+        ('08', 'Guaranteed/Insured Loan'),
+        ('09', 'Insurance'),
         ('10', 'Direct Payment unrestricted'),
         ('11', 'Other'),
         ('A', 'BPA Call'),
@@ -105,6 +105,7 @@ class Award(DataSourceTrackedModel):
     )
 
     type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True)
+    type_description = models.CharField(max_length=50, verbose_name="Award Type Description", default="Unknown Type", null=True)
     piid = models.CharField(max_length=50, blank=True, null=True)
     parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True)
     fain = models.CharField(max_length=30, blank=True, null=True)
@@ -139,8 +140,16 @@ class Award(DataSourceTrackedModel):
             transaction_set = self.financialassistanceaward_set
         return transaction_set
 
-    def __get_type_description(self):
-        return [item for item in self.AWARD_TYPES if item == self.type][0][1]
+    def get_type_description(self):
+        description = [item for item in Award.AWARD_TYPES if item[0] == self.type]
+        if len(description) == 0:
+            return "Unknown Type"
+        else:
+            return description[0][1]
+
+    def save(self, *args, **kwargs):
+        self.type_description = self.get_type_description()
+        super(Award, self).save(*args, **kwargs)
 
     def update_from_mod(self, mod):
         transaction_set = self.__get_transaction_set()
@@ -170,7 +179,6 @@ class Award(DataSourceTrackedModel):
         self.save()
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
-    type_description = property(__get_type_description)
 
     @staticmethod
     def get_or_create_summary_award(piid=None, fain=None, uri=None, parent_award_id=None):
