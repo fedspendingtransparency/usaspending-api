@@ -255,7 +255,7 @@ def get_or_create_location(row):
             location_foreign_city_name=row["city"],
         )
 
-    recipient_location = Location.objects.filter(Q(**location_dict)).first()
+    recipient_location = Location.objects.filter(**location_dict).first()
     if not recipient_location:
         recipient_location = Location.objects.create(**location_dict)
     return recipient_location

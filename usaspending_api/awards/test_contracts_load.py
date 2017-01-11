@@ -44,75 +44,25 @@ def test_evaluate_contract_award_type(contract_type, expected):
 
 
 @pytest.mark.django_db
-def test_get_or_create_location_ref_country_code():
+def test_fetch_country_code():
     """Grab the location with this reference country code"""
     # dummy data
     mommy.make('references.RefCountryCode', _quantity=3, _fill_optional=True)
-    mommy.make('references.Location', _quantity=3, _fill_optional=True)
-    ref = mommy.make('references.RefCountryCode', country_code='USA',
-                     _fill_optional=True)
-    expected = mommy.make(
-        'references.Location', location_country_code=ref,
-        location_zip5='12345', location_zip_last4='6789',
+    code_match = mommy.make('references.RefCountryCode', country_code='USA',
+                            _fill_optional=True)
+    name_match = mommy.make('references.RefCountryCode', country_name='AmErIcA',
+                            _fill_optional=True)
+    complex_name = mommy.make(
+        'references.RefCountryCode',
+        country_name='aMerIca United States of (U.S.A.)',
         _fill_optional=True
     )
-
-    row = dict(vendorcountrycode='USA', zipcode='12345-6789',
-               streetaddress=expected.location_address_line1,
-               streetaddress2=expected.location_address_line2,
-               streetaddress3=expected.location_address_line3,
-               state=expected.location_state_code,
-               city=expected.location_city_name)
-    assert loadcontracts.get_or_create_location(row) == expected
-
-
-@pytest.mark.django_db
-def test_get_or_create_location_ref_country_name():
-    """Grab the location with this reference country name, accounting for
-    capitialization differences"""
-    # dummy data
-    mommy.make('references.RefCountryCode', _quantity=3, _fill_optional=True)
-    mommy.make('references.Location', _quantity=3, _fill_optional=True)
-    ref = mommy.make('references.RefCountryCode', country_code='USA',
-                     country_name='AmErIcA', _fill_optional=True)
-    expected = mommy.make(
-        'references.Location', location_country_code=ref,
-        location_zip5='12345', location_zip_last4='6789',
-        _fill_optional=True
-    )
-
-    row = dict(vendorcountrycode='america', zipcode='12345-6789',
-               streetaddress=expected.location_address_line1,
-               streetaddress2=expected.location_address_line2,
-               streetaddress3=expected.location_address_line3,
-               state=expected.location_state_code,
-               city=expected.location_city_name)
-    assert loadcontracts.get_or_create_location(row) == expected
-
-
-@pytest.mark.django_db
-def test_get_or_create_location_ref_country_name_complicated():
-    """If we can't find a suitable reference country name, we try to re-order
-    the words"""
-    # dummy data
-    mommy.make('references.RefCountryCode', _quantity=3, _fill_optional=True)
-    mommy.make('references.Location', _quantity=3, _fill_optional=True)
-    ref = mommy.make('references.RefCountryCode', country_code='USA',
-                     country_name='aMerIca United States of (U.S.A.)',
-                     _fill_optional=True)
-    expected = mommy.make(
-        'references.Location', location_country_code=ref,
-        location_zip5='12345', location_zip_last4='6789',
-        _fill_optional=True
-    )
-
-    row = dict(vendorcountrycode='america (u.s.a.)', zipcode='12345-6789',
-               streetaddress=expected.location_address_line1,
-               streetaddress2=expected.location_address_line2,
-               streetaddress3=expected.location_address_line3,
-               state=expected.location_state_code,
-               city=expected.location_city_name)
-    assert loadcontracts.get_or_create_location(row) == expected
+    assert loadcontracts.fetch_country_code('USA') == code_match
+    assert loadcontracts.fetch_country_code('USA:more:stuff') == code_match
+    assert loadcontracts.fetch_country_code('america') == name_match
+    assert loadcontracts.fetch_country_code('aMEriCA: : : :') == name_match
+    assert loadcontracts.fetch_country_code(
+        'america (u.s.a.):stuff') == complex_name
 
 
 @pytest.mark.django_db
