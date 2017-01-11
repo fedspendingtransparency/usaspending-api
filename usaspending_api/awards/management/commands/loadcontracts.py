@@ -102,47 +102,9 @@ class Command(BaseCommand):
 
     def create_or_get_recipient(self, row):
         # First, create the locations
-        location_dict = {}
-        pop_dict = {}
-
-        loc_country_code = row["vendorcountrycode"].split(":")[0]
-
-        loc_country_code = RefCountryCode.objects.filter(Q(**{"country_code": loc_country_code}) | Q(**{"country_name__iexact": loc_country_code})).first()
-        if not loc_country_code:
-            # We don't have an exact match on the name or the code, so we need to chain filter on the name
-            query_set = RefCountryCode.objects
-            for word in row["vendorcountrycode"].split(":")[0].split(" "):
-                query_set = query_set.filter(country_name__icontains=word)
-            loc_country_code = query_set.first()
-
-        if loc_country_code.country_code == "USA":
-            location_dict = {
-                "location_country_code": loc_country_code,
-                "location_zip5": row["zipcode"][:5],
-                "location_zip_last4": row["zipcode"].replace("-", "")[5:],
-                "location_address_line1": row["streetaddress"],
-                "location_address_line2": row["streetaddress2"],
-                "location_address_line3": row["streetaddress3"],
-                "location_state_code": row["state"],
-                "location_city_name": row["city"],
-            }
-        else:
-            location_dict = {
-                "location_country_code": loc_country_code,
-                "location_address_line1": row["streetaddress"],
-                "location_address_line2": row["streetaddress2"],
-                "location_address_line3": row["streetaddress3"],
-                "location_foreign_postal_code": row["zipcode"],
-                "location_foreign_province": row["state"],
-                "location_foreign_city_name": row["city"],
-            }
-
-        recipient_location = Location.objects.filter(Q(**location_dict)).first()
-        if not recipient_location:
-            recipient_location = Location.objects.create(**location_dict)
 
         recipient_dict = {
-            "location_id": recipient_location.location_id,
+            "location_id": get_or_create_location(row).location_id,
             "recipient_name": row['vendorname'],
             "vendor_phone_number": row['phoneno'],
             "vendor_fax_number": row['faxno'],
@@ -244,7 +206,7 @@ def evaluate_contract_award_type(row):
         # Not using DAIMS enumeration . . .
         if 'bpa' in cat:
             return 'A'
-        if 'purchase' in cat:
+        elif 'purchase' in cat:
             return 'B'
         elif 'delivery' in cat:
             return 'C'
@@ -252,3 +214,45 @@ def evaluate_contract_award_type(row):
             return 'D'
         else:
             return None
+
+
+def get_or_create_location(row):
+    location_dict = {}
+    pop_dict = {}
+
+    loc_country_code = row["vendorcountrycode"].split(":")[0]
+
+    loc_country_code = RefCountryCode.objects.filter(Q(**{"country_code": loc_country_code}) | Q(**{"country_name__iexact": loc_country_code})).first()
+    if not loc_country_code:
+        # We don't have an exact match on the name or the code, so we need to chain filter on the name
+        query_set = RefCountryCode.objects
+        for word in row["vendorcountrycode"].split(":")[0].split(" "):
+            query_set = query_set.filter(country_name__icontains=word)
+        loc_country_code = query_set.first()
+
+    if loc_country_code.country_code == "USA":
+        location_dict = {
+            "location_country_code": loc_country_code,
+            "location_zip5": row["zipcode"][:5],
+            "location_zip_last4": row["zipcode"].replace("-", "")[5:],
+            "location_address_line1": row["streetaddress"],
+            "location_address_line2": row["streetaddress2"],
+            "location_address_line3": row["streetaddress3"],
+            "location_state_code": row["state"],
+            "location_city_name": row["city"],
+        }
+    else:
+        location_dict = {
+            "location_country_code": loc_country_code,
+            "location_address_line1": row["streetaddress"],
+            "location_address_line2": row["streetaddress2"],
+            "location_address_line3": row["streetaddress3"],
+            "location_foreign_postal_code": row["zipcode"],
+            "location_foreign_province": row["state"],
+            "location_foreign_city_name": row["city"],
+        }
+
+    recipient_location = Location.objects.filter(Q(**location_dict)).first()
+    if not recipient_location:
+        recipient_location = Location.objects.create(**location_dict)
+    return recipient_location
