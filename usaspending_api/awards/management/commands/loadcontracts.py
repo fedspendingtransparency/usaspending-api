@@ -28,13 +28,17 @@ class Command(BaseCommand):
             "federal_action_obligation": "dollarsobligated",
             "description": "descriptionofcontractrequirement",
             "other_statutory_authority": "otherstatutoryauthority",
-            "modification_number": "modnumber"
+            "modification_number": "modnumber",
+            "parent_award_id": "idvpiid"
         }
 
         value_map = {
             "data_source": "USA",
+            "recipient": lambda row: self.create_or_get_recipient(row),
             "award": lambda row: self.create_or_get_award(row),
-            "awarding_agency": lambda row: self.get_agency(row),
+            "place_of_performance": lambda row: get_or_create_location(row, "place_of_performance"),
+            "awarding_agency": lambda row: self.get_agency(row["maj_agency_cat"]),
+            "funding_agency": lambda row: self.get_agency(row["maj_fund_agency_cat"]),
             "action_date": lambda row: self.convert_date(row['signeddate']),
             "last_modified_date": lambda row: self.convert_date(row['last_modified_date']),
             "gfe_gfp": lambda row: row['gfe_gfp'].split(":")[0],
@@ -94,15 +98,13 @@ class Command(BaseCommand):
         loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map)
         loader.load_from_file(options['file'][0])
 
-    def get_agency(self, row):
-        agency = Agency.objects.filter(subtier_code=self.get_agency_code(row['maj_agency_cat'])).first()
+    def get_agency(self, agency_string):
+        agency = Agency.objects.filter(subtier_code=self.get_agency_code(agency_string)).first()
         if not agency:
-            print("Missing agency: " + row['maj_agency_cat'])
+            print("Missing agency: " + agency_string)
         return agency
 
     def create_or_get_recipient(self, row):
-        # First, create the locations
-
         recipient_dict = {
             "location_id": get_or_create_location(row).location_id,
             "recipient_name": row['vendorname'],
@@ -189,11 +191,8 @@ class Command(BaseCommand):
 
     def create_or_get_award(self, row):
         piid = row.get("piid", None)
-        award = Award.objects.filter(piid=piid, parent_award=None).first()
-        if not award:
-            award = Award.objects.create(piid=piid, parent_award=None)
-        award.recipient = self.create_or_get_recipient(row)
-        award.save()
+        parent_award_id = row.get("idvpiid", None)
+        award = Award.get_or_create_summary_award(piid=piid, fain=None, uri=None, parent_award_id=parent_award_id)
         return award
 
 
@@ -228,34 +227,92 @@ def fetch_country_code(vendor_country_code):
         for word in code_str.split():
             query_set = query_set.filter(country_name__icontains=word)
         country_code = query_set.first()
-    
+
     return country_code
 
 
-def get_or_create_location(row):
-    country_code = fetch_country_code(row['vendorcountrycode'])
+'''
+PLACE OF PERFORMANCE
+
+CITY: placeofperformancecity
+CD: placeofperformancecongressionaldistrict
+CD: pop_cd
+COUNTRY: placeofperformancecountrycode
+ZIPCODE: placeofperformancezipcode
+STATE: pop_state_code
+STATE: statecode
+
+VENDOR
+
+CITY: city
+CD: congressionaldistrict
+CD: vendor_cd
+COUNTRY: vendorcountrycode
+ZIPCODE: zipcode
+STATE: vendor_state_code
+STATE: state
+VENDORSTREET1: streetaddress
+VENDORSTREET2: streetaddress2
+VENDORSTREET3: streetaddress3
+
+countryoforigin ????? blank in most cases anyway
+locationcode ????? blank in most cases
+'''
+
+
+def get_or_create_location(row, mode="vendor"):
+    place_of_performance_mapping = {
+        "city": row["placeofperformancecity"],
+        "congressionaldistrict": row["placeofperformancecongressionaldistrict"][2:],  # Need to strip the state off the front
+        "country": row["placeofperformancecountrycode"],
+        "zipcode": row["placeofperformancezipcode"].replace("-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
+        "state_code": row["pop_state_code"].split(":")[0]  # Format is VA: VIRGINIA, so we need to grab the first bit
+    }
+
+    vendor_mapping = {
+        "city": row["city"],
+        "congressionaldistrict": row["vendor_cd"].zfill(2),  # Need to add leading zeroes here
+        "country": row["vendorcountrycode"],  # Never actually a country code, just the string name
+        "zipcode": row["zipcode"].replace("-", ""),
+        "state_code": row["vendor_state_code"].split(":")[0],
+        "street1": row["streetaddress"],
+        "street2": row["streetaddress2"],
+        "street3": row["streetaddress3"]
+    }
+
+    mapping = vendor_mapping
+
+    if mode == "place_of_performance":
+        mapping = place_of_performance_mapping
+
+    country_code = fetch_country_code(mapping["country"])
     location_dict = {
         "location_country_code": country_code,
-        "location_address_line1": row["streetaddress"],
-        "location_address_line2": row["streetaddress2"],
-        "location_address_line3": row["streetaddress3"],
     }
 
     if country_code.country_code == "USA":
         location_dict.update(
-            location_zip5=row["zipcode"][:5],
-            location_zip_last4=row["zipcode"].replace("-", "")[5:],
-            location_state_code=row["state"],
-            location_city_name=row["city"],
+            location_zip5=mapping["zipcode"][:5],
+            location_zip_last4=mapping["zipcode"][5:],
+            location_state_code=mapping["state_code"],
+            location_city_name=mapping["city"],
+            location_congressional_code=mapping["congressionaldistrict"]
         )
     else:
         location_dict.update(
-            location_foreign_postal_code=row["zipcode"],
-            location_foreign_province=row["state"],
+            location_foreign_postal_code=mapping["zipcode"],
+            location_foreign_province=mapping["state_code"],
             location_foreign_city_name=row["city"],
         )
 
-    recipient_location = Location.objects.filter(**location_dict).first()
-    if not recipient_location:
-        recipient_location = Location.objects.create(**location_dict)
-    return recipient_location
+    if mode == "vendor":
+        location_dict.update(
+            location_address_line1=mapping["street1"],
+            location_address_line2=mapping["street3"],
+            location_address_line3=mapping["street2"],
+        )
+
+    location = Location.objects.filter(**location_dict).first()
+    if not location:
+        location = Location.objects.create(**location_dict)
+    return location
