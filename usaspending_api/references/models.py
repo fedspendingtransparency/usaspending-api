@@ -30,6 +30,9 @@ class RefCountryCode(models.Model):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    def __str__(self):
+        return '%s: %s' % (self.country_code, self.country_name)
+
     class Meta:
         managed = True
         db_table = 'ref_country_code'
@@ -247,7 +250,7 @@ class LegalEntity(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'legal_entity'
-        unique_together = (('recipient_name'),)
+        unique_together = (('recipient_unique_id'),)
 
 
 # Reference tables
