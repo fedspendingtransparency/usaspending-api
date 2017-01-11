@@ -292,7 +292,42 @@ class Command(BaseCommand):
         procurement_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
+        legal_entity_location_field_map = {
+            "location_address_line1": "legal_entity_address_line1",
+            "location_address_line2": "legal_entity_address_line2",
+            "location_address_line3": "legal_entity_address_line3",
+            "location_country_code": "legal_entity_country_code",
+            "location_city_name": "legal_entity_city_name",
+            "location_congressional_code": "legal_entity_congressional",
+            "location_state_code": "legal_entity_state_code",
+            "location_zip4": "legal_entity_zip4"
+        }
+
+        place_of_performance_field_map = {
+            # not sure place_of_performance_locat maps exactly to city name
+            "location_city_name": "place_of_performance_locat",
+            "location_congressional_code": "place_of_performance_congr",
+            "location_state_code": "place_of_performance_state",
+            "location_zip4": "place_of_performance_zip4a",
+            "location_country_code": "place_of_perform_country_c"
+        }
+
         for row in procurement_data:
+            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row)
+
+            # Create the legal entity if it doesn't exist
+            try:
+                legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
+            except ObjectDoesNotExist:
+                legal_entity_value_map = {
+                    "location": legal_entity_location,
+                    "legal_entity_id": row['awardee_or_recipient_uniqu']
+                }
+                legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
+
+            # Create the place of performance location
+            pop_location, created = get_or_create_location(place_of_performance_field_map, row)
+
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
             award = Award.get_or_create_summary_award(
                 piid=row.get('piid'),
@@ -302,11 +337,13 @@ class Command(BaseCommand):
 
             procurement_value_map = {
                 "award": award,
-                'submission': submission_attributes,
                 "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'],
                                                          subtier_code=row["awarding_sub_tier_agency_c"]).first(),
                 "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'],
                                                         subtier_code=row["funding_sub_tier_agency_co"]).first(),
+                "recipient": legal_entity,
+                "place_of_performance": pop_location,
+                'submission': submission_attributes,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
             }
 
@@ -436,7 +473,6 @@ def get_or_create_location(location_map, row):
     }
 
     location_data = load_data_into_model(Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
-    # note that this logic would cause an additional location object to be created if the same
     # note that this logic would cause an additional location object to be created if the same
     # location exists but has a data source other than `DBR'
     location_object, created = Location.objects.get_or_create(**location_data)
