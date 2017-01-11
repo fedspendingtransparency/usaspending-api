@@ -27,10 +27,10 @@ def get_type_description(atype):
         ('09', 'Insurance'),
         ('10', 'Direct Payment unrestricted'),
         ('11', 'Other'),
-        ('C', 'Contract'),
-        ('G', 'Grant'),
-        ('DP', 'Direct Payment'),
-        ('L', 'Loan'),
+        ('A', 'BPA Call'),
+        ('B', 'Purchase Order'),
+        ('C', 'Delivery Order'),
+        ('D', 'Definitive Contract')
     )
     description = [item for item in AWARD_TYPES if item[0] == atype]
     if len(description) == 0:
@@ -42,7 +42,7 @@ def get_type_description(atype):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0050_award_type_description'),
+        ('awards', '0051_award_type_description'),
     ]
 
     operations = [
