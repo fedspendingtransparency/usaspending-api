@@ -41,7 +41,7 @@ class Command(BaseCommand):
             "multiple_or_single_award_idv": lambda row: row['multipleorsingleawardidc'].split(' ')[0].split(':')[0],
             "cost_or_pricing_data": lambda row: row['costorpricingdata'].split(' ')[0].split(':')[0],
             "type_of_contract_pricing": lambda row: row['typeofcontractpricing'].split(' ')[0].split(':')[0],
-            "contract_award_type": self.evaluate_contract_award_type,
+            "contract_award_type": evaluate_contract_award_type,
             "naics": lambda row: row['nationalinterestactioncode'].split(' ')[0].split(':')[0],
             "multiple_or_single_award_idv": lambda row: row['multipleorsingleawardidc'].split(' ')[0].split(':')[0],
             "dod_claimant_program_code": lambda row: row['claimantprogramcode'].split(' ')[0].split(':')[0],
@@ -93,24 +93,6 @@ class Command(BaseCommand):
 
         loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map)
         loader.load_from_file(options['file'][0])
-
-    def evaluate_contract_award_type(self, row):
-        first_element = row['contractactiontype'].split(' ')[0].split(':')[0]
-        if len(first_element) == 1:
-            return first_element
-        else:
-            cat = row['contractactiontype'].lower()
-            # Not using DAIMS enumeration . . .
-            if 'bpa' in cat:
-                return 'A'
-            if 'purchase' in cat:
-                return 'B'
-            elif 'delivery' in cat:
-                return 'C'
-            elif 'definitive' in cat:
-                return 'D'
-            else:
-                return None
 
     def get_agency(self, row):
         agency = Agency.objects.filter(subtier_code=self.get_agency_code(row['maj_agency_cat'])).first()
@@ -251,3 +233,22 @@ class Command(BaseCommand):
         award.recipient = self.create_or_get_recipient(row)
         award.save()
         return award
+
+
+def evaluate_contract_award_type(row):
+    first_element = row['contractactiontype'].split(' ')[0].split(':')[0]
+    if len(first_element) == 1:
+        return first_element
+    else:
+        cat = row['contractactiontype'].lower()
+        # Not using DAIMS enumeration . . .
+        if 'bpa' in cat:
+            return 'A'
+        if 'purchase' in cat:
+            return 'B'
+        elif 'delivery' in cat:
+            return 'C'
+        elif 'definitive' in cat:
+            return 'D'
+        else:
+            return None

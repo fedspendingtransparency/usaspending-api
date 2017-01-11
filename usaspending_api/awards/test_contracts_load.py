@@ -37,7 +37,6 @@ class ContractsLoadTests(TransactionTestCase):
 ])
 def test_evaluate_contract_award_type(contract_type, expected):
     """Verify that contract types are converted correctly"""
-    command = loadcontracts.Command()
     row = dict(contractactiontype=contract_type)
-    result = command.evaluate_contract_award_type(row)
+    result = loadcontracts.evaluate_contract_award_type(row)
     assert result == expected
