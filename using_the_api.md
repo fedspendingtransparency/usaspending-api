@@ -129,7 +129,7 @@ The structure of the post request allows for a flexible and complex query with b
     "total_metadata": { . . . }
   }
   ```
-  
+
 In this case, two entires matching the specified filter have the state code of `FL`.
 * `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
 * `exclude` - _Optional_ - What fields to exclude from the return. Must be a list.
@@ -540,6 +540,7 @@ This is a special type of autocomplete query which allows users to search for ge
   * `place` - The value of the place. e.g. A country's name, or a county name, etc.
   * `matched_ids` - An array of `location_id`s that match the given data. This can be used to look up awards, recipients, or other data by requesting these ids
   * `place_type` - The type of place. Options are:
+    * `CONGRESSIONAL DISTRICT` - These are searched using the pattern `XX-##` where `XX` designates a state code, and `##` designates the district number. For example, `VA-06` is district `06` in Virginia
     * `COUNTRY`
     * `CITY`
     * `COUNTY`
@@ -548,8 +549,9 @@ This is a special type of autocomplete query which allows users to search for ge
     * `POSTAL CODE` - Used for foreign postal codes
     * `PROVINCE`
   * `parent` - The parent of the object, in a logical hierarchy. The parents for each type are listed below:
+    * `CONGRESSIONAL DISTRICT` - Will specify the parent as the state containing the district
     * `COUNTRY` - Will specify the parent as the country code for reference purposes
-    * `CITY` - Will specify the county the city is in for domestic cities, or the country for foreign cities
+    * `CITY` - Will specify the state the city is in for domestic cities, or the country for foreign cities
     * `COUNTY` - Will specify the state the the city is in for domestic cities
     * `STATE` - Will specify the country the state is in
     * `ZIP` - Will specify the state the zip code falls in. If a zip code falls in multiple states, two results will be generated
