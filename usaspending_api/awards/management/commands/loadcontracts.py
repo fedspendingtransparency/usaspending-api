@@ -99,7 +99,7 @@ class Command(BaseCommand):
         loader.load_from_file(options['file'][0])
 
     def get_agency(self, agency_string):
-        agency = Agency.objects.filter(subtier_code=self.get_agency_code(agency_string)).first()
+        agency = Agency.objects.filter(subtier_agency__subtier_code=self.get_agency_code(agency_string)).first()
         if not agency:
             self.logger.error("Missing agency: " + agency_string)
         return agency

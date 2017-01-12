@@ -30,12 +30,12 @@ class RefCountryCode(models.Model):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
-    def __str__(self):
-        return '%s: %s' % (self.country_code, self.country_name)
-
     class Meta:
         managed = True
         db_table = 'ref_country_code'
+
+    def __str__(self):
+        return '%s: %s' % (self.country_code, self.country_name)
 
 
 """{
@@ -51,31 +51,59 @@ class RefCountryCode(models.Model):
 
 
 class Agency(models.Model):
-    # id = models.AutoField(primary_key=True)
+
     id = models.AutoField(primary_key=True)  # meaningless id
-    cgac_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Agency Code")
-    # agency_code_aac = models.CharField(max_length=6, blank=True, null=True)
-    fpds_code = models.CharField(max_length=4, blank=True, null=True)
-    # will equal fpds_code if a top level department
-    subtier_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Sub-Tier Agency Code")
-    name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Agency Name")
-    department = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sub_departments')
-    parent_agency = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sub_agencies')
-    aac_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Office Code")
-    fourcc_code = models.CharField(max_length=4, blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
-    location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
+
+    toptier_agency = models.ForeignKey('ToptierAgency', models.DO_NOTHING, null=True)
+    subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True)
+    office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
 
     class Meta:
         managed = True
         db_table = 'agency'
+        unique_together = ("toptier_agency",
+                           "subtier_agency",
+                           "office_agency")
 
     def __str__(self):
-        if self.department:
-            return "%s - %s" % (self.department.name or '', self.name)
-        else:
-            return "%s" % (self.name)
+        stringrep = ""
+        for agency in [self.toptier_agency, self.subtier_agency, self.office_agency]:
+            if agency:
+                stringrep = stringrep + agency.name + " :: "
+        return stringrep
+
+
+class ToptierAgency(models.Model):
+    toptier_agency_id = models.AutoField(primary_key=True)
+    cgac_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Top-Tier Agency Code")
+    fpds_code = models.CharField(max_length=4, blank=True, null=True)
+    name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Top-Tier Agency Name")
+
+    class Meta:
+        managed = True
+        db_table = 'toptier_agency'
+
+
+class SubtierAgency(models.Model):
+    subtier_agency_id = models.AutoField(primary_key=True)
+    subtier_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Sub-Tier Agency Code")
+    name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Sub-Tier Agency Name")
+
+    class Meta:
+        managed = True
+        db_table = 'subtier_agency'
+
+
+class OfficeAgency(models.Model):
+    office_agency_id = models.AutoField(primary_key=True)
+    aac_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Office Code")
+    name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Office Name")
+
+    class Meta:
+        managed = True
+        db_table = 'office_agency'
 
 
 class Location(DataSourceTrackedModel):

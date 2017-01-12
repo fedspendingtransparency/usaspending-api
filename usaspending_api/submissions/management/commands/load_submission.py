@@ -270,10 +270,10 @@ class Command(BaseCommand):
 
             fad_value_map = {
                 "award": award,
-                "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'],
-                                                         subtier_code=row["awarding_sub_tier_agency_c"]).first(),
-                "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'],
-                                                        subtier_code=row["funding_sub_tier_agency_co"]).first(),
+                "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
+                                                         subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
+                                                        subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 "submission": submission_attributes,
@@ -337,10 +337,10 @@ class Command(BaseCommand):
 
             procurement_value_map = {
                 "award": award,
-                "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'],
-                                                         subtier_code=row["awarding_sub_tier_agency_c"]).first(),
-                "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'],
-                                                        subtier_code=row["funding_sub_tier_agency_co"]).first(),
+                "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
+                                                         subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
+                                                        subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 'submission': submission_attributes,
