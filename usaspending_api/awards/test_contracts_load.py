@@ -80,13 +80,8 @@ def test_get_or_create_location_non_usa():
                state=expected.location_state_code,
                city=expected.location_city_name)
 
-    # can't find it because we're looking at the US fields
-    assert loadcontracts.get_or_create_location(row) != expected
-
-    row['zipcode'] = expected.location_foreign_postal_code
-    row['state'] = expected.location_foreign_province
-    row['city'] = expected.location_foreign_city_name
-    assert loadcontracts.get_or_create_location(row) == expected
+    # can't find it because we're looking at the POP fields
+    assert loadcontracts.get_or_create_location(row, "place_of_performance") != expected
 
 
 @pytest.mark.django_db
@@ -96,11 +91,11 @@ def test_get_or_create_location_creates_new_locations():
                      _fill_optional=True)
     row = dict(vendorcountrycode='USA', zipcode='12345-6789',
                streetaddress='Addy1', streetaddress2='Addy2',
-               streetaddress3=None, state='ST', city='My Town')
+               streetaddress3=None, vendor_state_code='ST', city='My Town')
 
     # can't find it because we're looking at the US fields
     assert Location.objects.count() == 0
-    
+
     loadcontracts.get_or_create_location(row)
     assert Location.objects.count() == 1
 

@@ -12,6 +12,7 @@ For more information about the DATA Act Broker codebase, please visit this repos
   * [Status Codes](#status-codes)
   * [Data Routes](#data-routes)
     * [Routes and Methods](#routes-and-methods)
+    * [Summary Routes and Methods](#summary-routes-and-methods)
   * [GET Requests](#get-requests)
   * [POST Requests](#post-requests)
   * [Autocomplete Queries](#autocomplete-queries)
@@ -31,7 +32,7 @@ In general, status codes returned are as follows:
 
 ### Data Routes
 
-Data routes are split by payload into POST and GET methods. In general, the format of a request and response will remain the same with the route only changing the data provided in the response. Some routes support aggregate metadata (such as the sum of a certain column for all entries in a dataset) and will be noted in the route listing.
+Data routes are split by payload into POST and GET methods. In general, the format of a request and response will remain the same with the route only changing the data provided in the response.
 
 #### Routes and Methods
 The currently available routes are:
@@ -70,6 +71,69 @@ The currently available routes are:
   * **/v1/submissions/**
     - _Description_: Returns all `SubmissionAttributes` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
+
+#### Summary Routes and Methods
+Summarized data is available for some of the routes listed above:
+
+* **/v1/awards/total/**
+* more coming soon
+
+You can get summarized data via a `POST` request that specifies:
+
+* `field`: the field to be summarized
+* `aggregate`: the aggregate function to use when summarizing the data (defaults to `sum`; `avg`, `count`, `min`, and `max` are also supported)
+* `group`: the field to group by (optional; if not specified, data will be summarized across all objects)
+* `date_part`: applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
+
+Requests to the summary routes can also contain the `page`, `limit`, and `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
+
+The `results` portion of the response will contain:
+
+* `item`: the value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
+* `aggregate`: the summarized data
+
+For example, to request award total transaction obligated amount by year for awards with a budget function code of 800:
+
+```json
+{
+    "field": "transaction_obligated_amount",
+    "group": "create_date",
+    "date_part": "year",
+    "aggregate": "sum",
+    "filters": [
+        {
+            "field": "financial_accounts_by_awards__appropriation_account_balances__treasury_account_identifier__budget_function_code",
+            "operation": "equals",
+            "value": "800"
+        }
+    ]
+}
+```
+
+Response:
+
+```json
+{
+  "total_metadata": {
+    "count": 2
+  },
+  "results": [
+    {
+      "item": "2016",
+      "aggregate": "59735118.04"
+    },
+    {
+      "item": "2015",
+      "aggregate": "6612250.70"
+    }
+  ],
+  "page_metadata": {
+    "page_number": 1,
+    "num_pages": 1,
+    "count": 2
+  }
+}
+```
 
 #### GET Requests
 GET requests can be specified by attaching any field value pair to the route. This method supports any fields present in the data object and only the `equals` operation. It also supports pagination variables. Additionally, you may specifcy complex fields that use Django's foreign key traversal; for more details on this see `field` from the POST request. Examples below:

@@ -1,4 +1,5 @@
 from django.test import TransactionTestCase, Client
+from django.core.management import call_command
 from django.core.serializers.json import json
 import logging
 import os
@@ -6,8 +7,9 @@ import pytest
 
 
 class EndpointTests(TransactionTestCase):
-    # Add any fixtures in here so the data is loaded into the database
-    fixtures = ["endpoint_fixture_db"]
+    def setUp(self):
+        call_command('flush', '--noinput')
+        call_command('loaddata', 'endpoint_fixture_db')
 
     """
     Checks data/testing_data/endpoint_testing_data.json for endpoints, requests,
