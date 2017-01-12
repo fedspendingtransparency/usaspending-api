@@ -34,6 +34,9 @@ class RefCountryCode(models.Model):
         managed = True
         db_table = 'ref_country_code'
 
+    def __str__(self):
+        return '%s: %s' % (self.country_code, self.country_name)
+
 
 """{
     'agency_name': 'name',
@@ -85,7 +88,6 @@ class ToptierAgency(models.Model):
 
 class SubtierAgency(models.Model):
     subtier_agency_id = models.AutoField(primary_key=True)
-    # will equal fpds_code if a top level department
     subtier_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Sub-Tier Agency Code")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Sub-Tier Agency Name")
 
