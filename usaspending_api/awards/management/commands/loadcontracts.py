@@ -101,7 +101,7 @@ class Command(BaseCommand):
     def get_agency(self, agency_string):
         agency = Agency.objects.filter(subtier_code=self.get_agency_code(agency_string)).first()
         if not agency:
-            print("Missing agency: " + agency_string)
+            self.logger.error("Missing agency: " + agency_string)
         return agency
 
     def create_or_get_recipient(self, row):
@@ -229,35 +229,6 @@ def fetch_country_code(vendor_country_code):
         country_code = query_set.first()
 
     return country_code
-
-
-'''
-PLACE OF PERFORMANCE
-
-CITY: placeofperformancecity
-CD: placeofperformancecongressionaldistrict
-CD: pop_cd
-COUNTRY: placeofperformancecountrycode
-ZIPCODE: placeofperformancezipcode
-STATE: pop_state_code
-STATE: statecode
-
-VENDOR
-
-CITY: city
-CD: congressionaldistrict
-CD: vendor_cd
-COUNTRY: vendorcountrycode
-ZIPCODE: zipcode
-STATE: vendor_state_code
-STATE: state
-VENDORSTREET1: streetaddress
-VENDORSTREET2: streetaddress2
-VENDORSTREET3: streetaddress3
-
-countryoforigin ????? blank in most cases anyway
-locationcode ????? blank in most cases
-'''
 
 
 def get_or_create_location(row, mode="vendor"):
