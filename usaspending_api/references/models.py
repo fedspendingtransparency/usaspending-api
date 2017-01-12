@@ -276,7 +276,7 @@ class LegalEntity(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'legal_entity'
-        unique_together = (('recipient_name'),)
+        unique_together = (('recipient_unique_id'),)
 
 
 # Reference tables
