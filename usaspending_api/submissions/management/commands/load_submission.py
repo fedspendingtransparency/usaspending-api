@@ -490,7 +490,7 @@ def get_or_create_location(location_map, row):
     location_data = load_data_into_model(
         Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
 
-    del location_data['data_source'] # hacky way to ensure we don't create a series of empty location records
+    del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
     if len(location_data):
         try:
             location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})

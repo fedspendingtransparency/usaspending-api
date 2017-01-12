@@ -96,6 +96,9 @@ class ThreadedDataLoader():
 
         row_queue.join()
 
+        for process in pool:
+            process.terminate()
+
         if self.post_process_function is not None:
             self.post_process_function()
 

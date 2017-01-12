@@ -212,7 +212,7 @@ class Award(DataSourceTrackedModel):
 
         raise ValueError(
             'Unable to find or create an award with the provided information: piid={}, fain={}, uri={}, parent_id={}'.format(
-            piid, fain, uri, parent_award_id))
+             piid, fain, uri, parent_award_id))
 
     class Meta:
         db_table = 'awards'
@@ -220,6 +220,7 @@ class Award(DataSourceTrackedModel):
 
 class AwardAction(DataSourceTrackedModel):
     award = models.ForeignKey(Award, models.CASCADE, related_name="actions")
+    usaspending_unique_transaction_id = models.CharField(max_length=256, blank=True, null=True)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     action_date = models.DateField(max_length=10, verbose_name="Transaction Date")
     action_type = models.CharField(max_length=1, blank=True, null=True)
