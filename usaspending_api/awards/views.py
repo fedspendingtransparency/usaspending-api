@@ -43,7 +43,7 @@ class AwardListSummaryAutocomplete(APIView):
 
 
 class AwardListAggregateViewSet(FilterQuerysetMixin,
-                         AggregateView):
+                                AggregateView):
     """Return aggregate-level awards."""
     def get_queryset(self):
         queryset = FinancialAccountsByAwardsTransactionObligations.objects.all()

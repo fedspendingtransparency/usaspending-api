@@ -100,7 +100,7 @@ def test_get_or_create_location_creates_new_locations():
 
     # can't find it because we're looking at the US fields
     assert Location.objects.count() == 0
-    
+
     loadcontracts.get_or_create_location(row)
     assert Location.objects.count() == 1
 
