@@ -232,29 +232,27 @@ def fetch_country_code(vendor_country_code):
 
 
 def get_or_create_location(row, mode="vendor"):
-    place_of_performance_mapping = {
-        "city": row["placeofperformancecity"],
-        "congressionaldistrict": row["placeofperformancecongressionaldistrict"][2:],  # Need to strip the state off the front
-        "country": row["placeofperformancecountrycode"],
-        "zipcode": row["placeofperformancezipcode"].replace("-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
-        "state_code": row["pop_state_code"].split(":")[0]  # Format is VA: VIRGINIA, so we need to grab the first bit
-    }
-
-    vendor_mapping = {
-        "city": row["city"],
-        "congressionaldistrict": row["vendor_cd"].zfill(2),  # Need to add leading zeroes here
-        "country": row["vendorcountrycode"],  # Never actually a country code, just the string name
-        "zipcode": row["zipcode"].replace("-", ""),
-        "state_code": row["vendor_state_code"].split(":")[0],
-        "street1": row["streetaddress"],
-        "street2": row["streetaddress2"],
-        "street3": row["streetaddress3"]
-    }
-
-    mapping = vendor_mapping
+    mapping = {}
 
     if mode == "place_of_performance":
-        mapping = place_of_performance_mapping
+        mapping = {
+            "city": row.get("placeofperformancecity", ""),
+            "congressionaldistrict": row.get("placeofperformancecongressionaldistrict", "")[2:],  # Need to strip the state off the front
+            "country": row.get("placeofperformancecountrycode", ""),
+            "zipcode": row.get("placeofperformancezipcode", "").replace("-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
+            "state_code": row.get("pop_state_code", "").split(":")[0]  # Format is VA: VIRGINIA, so we need to grab the first bit
+        }
+    else:
+        mapping = {
+            "city": row.get("city", ""),
+            "congressionaldistrict": row.get("vendor_cd", "").zfill(2),  # Need to add leading zeroes here
+            "country": row.get("vendorcountrycode", ""),  # Never actually a country code, just the string name
+            "zipcode": row.get("zipcode", "").replace("-", ""),
+            "state_code": row.get("vendor_state_code", "").split(":")[0],
+            "street1": row.get("streetaddress", ""),
+            "street2": row.get("streetaddress2", ""),
+            "street3": row.get("streetaddress3", "")
+        }
 
     country_code = fetch_country_code(mapping["country"])
     location_dict = {
@@ -279,8 +277,8 @@ def get_or_create_location(row, mode="vendor"):
     if mode == "vendor":
         location_dict.update(
             location_address_line1=mapping["street1"],
-            location_address_line2=mapping["street3"],
-            location_address_line3=mapping["street2"],
+            location_address_line2=mapping["street2"],
+            location_address_line3=mapping["street3"],
         )
 
     location = Location.objects.filter(**location_dict).first()
