@@ -34,9 +34,9 @@ class Command(BaseCommand):
                     toptier_agency, created = ToptierAgency.objects.get_or_create(cgac_code=cgac_code,
                                                                                   fpds_code=fpds_code,
                                                                                   name=department_name)
-                    if fpds_code != subtier_code:
-                        subtier_agency, created = SubtierAgency.objects.get_or_create(subtier_code=subtier_code,
-                                                                                      name=subtier_name)
+
+                    subtier_agency, created = SubtierAgency.objects.get_or_create(subtier_code=subtier_code,
+                                                                                  name=subtier_name)
 
                     # Create new summary agency object
                     agency, created = Agency.objects.get_or_create(toptier_agency=toptier_agency,
