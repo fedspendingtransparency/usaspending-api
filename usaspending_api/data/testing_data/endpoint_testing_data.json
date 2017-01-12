@@ -659,68 +659,6 @@
     },
     {
         "method": "POST",
-        "name": "Test financial activities endpoint POST request",
-        "url": "/api/v1/financial_activities/",
-        "status_code": 200,
-        "request_object": {
-            "filters": [
-                {
-                    "field": "appropriation_account_balances__treasury_account_identifier__beginning_period_of_availability",
-                    "operation": "equals",
-                    "value": 2016
-                }
-            ],
-            "fields": [
-                "financial_accounts_by_program_activity_object_class_id"
-            ],
-            "limit": 10,
-            "page": 20
-        },
-        "response_object": {
-            "total_metadata": {
-                "count": 242
-            },
-            "page_metadata": {
-                "page_number": 20,
-                "num_pages": 25,
-                "count": 10
-            },
-            "results": [
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12338
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12339
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12340
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12351
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12353
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12358
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12361
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12362
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12363
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12364
-                }
-            ]
-        }
-    },
-    {
-        "method": "POST",
         "name": "Test submission endpoint POST request",
         "url": "/api/v1/submissions/",
         "status_code": 200,
