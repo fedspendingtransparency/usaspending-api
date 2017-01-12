@@ -7,7 +7,7 @@ class ToptierAgencySerializer(LimitableSerializer):
 
     class Meta:
         model = ToptierAgency
-        fields = ('cgac_code', 'name')
+        fields = ('cgac_code', 'fpds_code', 'name')
 
 class SubtierAgencySerializer(LimitableSerializer):
 
