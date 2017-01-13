@@ -84,6 +84,17 @@ class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
         db_table = 'financial_accounts_by_awards_transaction_obligations'
 
 
+class AwardManager(models.Manager):
+    def get_queryset(self):
+        q_kwargs = {
+            "type": "U",
+            "total_obligation__isnull": True,
+            "date_signed__isnull": True,
+            "recipient__isnull": True
+        }
+        return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
+
+
 class Award(DataSourceTrackedModel):
 
     AWARD_TYPES = (
@@ -125,6 +136,9 @@ class Award(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     latest_submission = models.ForeignKey(SubmissionAttributes, null=True)
+
+    objects = models.Manager()
+    nonempty = AwardManager()
 
     def __str__(self):
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
