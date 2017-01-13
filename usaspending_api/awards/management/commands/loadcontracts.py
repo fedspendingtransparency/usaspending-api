@@ -35,15 +35,13 @@ class Command(BaseCommand):
 
         value_map = {
             "data_source": "USA",
-            "recipient": lambda row: self.create_or_get_recipient(row),
-            "award": lambda row: self.create_or_get_award(row),
-            "place_of_performance": lambda row: get_or_create_location(row, "place_of_performance"),
+            "recipient": lambda row: self.get_or_create_recipient(row),
+            "award": lambda row: h.get_or_create_award(row),
+            "place_of_performance": lambda row: h.get_or_create_location(row, "place_of_performance"),
             "awarding_agency": lambda row: self.get_agency(row["contractingofficeagencyid"]),
             "funding_agency": lambda row: self.get_agency(row["fundingrequestingagencyid"]),
-            "action_date": lambda row: self.convert_date(row['signeddate']),
-            "period_of_performance_start_date": lambda row: self.convert_date(row['effectivedate']),
-            "period_of_performance_current_end_date": lambda row: self.convert_date(row['currentcompletiondate']),
-            "last_modified_date": lambda row: self.convert_date(row['last_modified_date']),
+            "action_date": lambda row: h.convert_date(row['signeddate']),
+            "last_modified_date": lambda row: h.convert_date(row['last_modified_date']),
             "gfe_gfp": lambda row: h.up2colon(row['gfe_gfp']),
             "cost_or_pricing_data": lambda row: h.up2colon(row['costorpricingdata']),
             "type_of_contract_pricing": lambda row: h.up2colon(row['typeofcontractpricing']),
@@ -99,6 +97,13 @@ class Command(BaseCommand):
 
         loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map)
         loader.load_from_file(options['file'][0])
+
+    def get_agency(self, agency_string):
+        agency_code = h.up2colon(agency_string)
+        agency = Agency.objects.filter(subtier_agency__subtier_code=agency_code).first()
+        if not agency:
+            self.logger.error("Missing agency: " + agency_string)
+        return agency
 
     def get_or_create_recipient(self, row):
         recipient_dict = {
