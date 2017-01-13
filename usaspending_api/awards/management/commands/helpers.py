@@ -1,4 +1,5 @@
 from datetime import datetime
+import logging
 
 from django.db.models import Q
 
@@ -9,16 +10,9 @@ from usaspending_api.references.models import Agency, Location, RefCountryCode
 def up2colon(input_string):
     'Takes the part of a string before `:`, if any.'
 
-    return input_string.split(':')[0].strip()
-
-
-def get_agency(self, agency_string):
-    agency_code = up2colon(agency_string)
-    agency = Agency.objects.filter(
-        subtier_agency__subtier_code=agency_code).first()
-    if not agency:
-        self.logger.error("Missing agency: " + agency_string)
-    return agency
+    if input_string:
+        return input_string.split(':')[0].strip()
+    return ''
 
 
 def convert_date(date):
