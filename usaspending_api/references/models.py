@@ -138,6 +138,23 @@ class Location(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    @staticmethod
+    def get_default_fields():
+        return [
+            "location_address_line1",
+            "location_address_line2",
+            "location_address_line3",
+            "location_city_name",
+            "location_state_name",
+            "location_country_name",
+            "location_state_code",
+            "location_country_code",
+            "location_zip5",
+            "location_foreign_province",
+            "location_foreign_city_name",
+            "location_foreign_postal_code"
+        ]
+
     class Meta:
         # Let's make almost every column unique together so we don't have to
         # perform heavy lifting on checking if a location already exists or not
@@ -274,6 +291,16 @@ class LegalEntity(DataSourceTrackedModel):
     reporting_period_end = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "legal_entity_id",
+            "ultimate_parent_legal_entity_id",
+            "recipient_name",
+            "business_types",
+            "location"
+        ]
 
     class Meta:
         managed = True

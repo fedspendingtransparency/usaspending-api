@@ -126,6 +126,29 @@ class Award(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
     latest_submission = models.ForeignKey(SubmissionAttributes, null=True)
 
+    @staticmethod
+    def get_default_fields():
+        return [
+            "id",
+            "type",
+            "type_description",
+            "total_obligation",
+            "total_outlay",
+            "date_signed",
+            "description",
+            "piid",
+            "fain",
+            "uri",
+            "period_of_performance_start_date",
+            "period_of_performance_current_end_date",
+            "place_of_performance",
+            "awarding_agency",
+            "funding_agency",
+            "procurement_set",
+            "financialassistanceaward_set",
+            "recipient"
+        ]
+
     def __str__(self):
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
 
@@ -239,6 +262,16 @@ class AwardAction(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    @staticmethod
+    def get_default_fields():
+        return [
+            "modification_number",
+            "federal_action_obligation",
+            "action_date",
+            "award_description",
+            "update_date"
+        ]
+
     # Override the save method so that after saving we always call update_from_mod on our Award
     def save(self, *args, **kwargs):
         super(AwardAction, self).save(*args, **kwargs)
@@ -331,6 +364,17 @@ class Procurement(AwardAction):
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
 
+    @staticmethod
+    def get_default_fields():
+        default_fields = AwardAction.get_default_fields()
+        return default_fields + [
+            "idv_type",
+            "cost_or_pricing_data",
+            "naics",
+            "naics_description",
+            "product_or_service_code"
+        ]
+
 
 class FinancialAssistanceAward(AwardAction):
     financial_assistance_award_id = models.AutoField(primary_key=True)
@@ -359,6 +403,17 @@ class FinancialAssistanceAward(AwardAction):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    @staticmethod
+    def get_default_fields():
+        default_fields = AwardAction.get_default_fields()
+        return default_fields + [
+            "cfda_number",
+            "cfda_title",
+            "face_value_loan_guarantee",
+            "original_loan_subsidy_cost",
+            "assistance_type"
+        ]
 
     class Meta:
         managed = True

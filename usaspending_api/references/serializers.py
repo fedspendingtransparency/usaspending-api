@@ -9,11 +9,13 @@ class ToptierAgencySerializer(LimitableSerializer):
         model = ToptierAgency
         fields = ('cgac_code', 'fpds_code', 'name')
 
+
 class SubtierAgencySerializer(LimitableSerializer):
 
     class Meta:
         model = SubtierAgency
         fields = ('subtier_code', 'name')
+
 
 class OfficeAgencySerializer(LimitableSerializer):
 
@@ -21,7 +23,8 @@ class OfficeAgencySerializer(LimitableSerializer):
         model = OfficeAgency
         fields = ('aac_code', 'name')
 
-class AgencySerializer(serializers.ModelSerializer):
+
+class AgencySerializer(LimitableSerializer):
 
     create_date = serializers.DateTimeField()
     update_date = serializers.DateTimeField()
@@ -42,10 +45,14 @@ class LocationSerializer(LimitableSerializer):
         fields = '__all__'
 
 
-class LegalEntitySerializer(serializers.ModelSerializer):
-
-    location = LocationSerializer(read_only=True)
+class LegalEntitySerializer(LimitableSerializer):
 
     class Meta:
         model = LegalEntity
         fields = '__all__'
+        nested_serializers = {
+            "location": {
+                "class": LocationSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
