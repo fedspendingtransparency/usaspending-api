@@ -37,8 +37,8 @@ class Command(BaseCommand):
             "recipient": lambda row: self.get_or_create_recipient(row),
             "award": lambda row: h.get_or_create_award(row),
             "place_of_performance": lambda row: h.get_or_create_location(row, "place_of_performance"),
-            "awarding_agency": lambda row: h.get_agency(row["contractingofficeagencyid"]),
-            "funding_agency": lambda row: h.get_agency(row["fundingrequestingagencyid"]),
+            "awarding_agency": lambda row: self.get_agency(row["contractingofficeagencyid"]),
+            "funding_agency": lambda row: self.get_agency(row["fundingrequestingagencyid"]),
             "action_date": lambda row: h.convert_date(row['signeddate']),
             "last_modified_date": lambda row: h.convert_date(row['last_modified_date']),
             "gfe_gfp": lambda row: h.up2colon(row['gfe_gfp']),
@@ -97,6 +97,13 @@ class Command(BaseCommand):
 
         loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map)
         loader.load_from_file(options['file'][0])
+
+    def get_agency(self, agency_string):
+        agency_code = h.up2colon(agency_string)
+        agency = Agency.objects.filter(subtier_agency__subtier_code=agency_code).first()
+        if not agency:
+            self.logger.error("Missing agency: " + agency_string)
+        return agency
 
     def get_or_create_recipient(self, row):
         recipient_dict = {
