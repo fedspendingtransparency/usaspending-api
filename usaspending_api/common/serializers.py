@@ -19,7 +19,7 @@ class LimitableSerializer(serializers.ModelSerializer):
             for field in children.keys():
                 child_args = {
                     **children[field].get("kwargs", {}),
-                    "context": self.context
+                    "context": {**self.context, "child": True},  # The child tag should be removed when child field limiting is implemented
                 }
                 self.fields[field] = children[field]["class"](**child_args)
         except AttributeError:
@@ -27,7 +27,7 @@ class LimitableSerializer(serializers.ModelSerializer):
             pass
 
         request = self.context.get('request')
-        if request:
+        if request and not self.context.get("child", False):  # The child check should be removed when child field limiting is implemented
             # workaround to use this serializer with both GET and POST
             params = dict(request.query_params)
             params.update(dict(request.data))
@@ -58,7 +58,7 @@ class LimitableSerializer(serializers.ModelSerializer):
                 except KeyError:
                     # Because we're not currently handling nested serializer field
                     # limiting pass-down, this can happen due to the context pass down
-                    pass 
+                    pass
         else:
             try:
                 include_fields = self.Meta.model.get_default_fields()
