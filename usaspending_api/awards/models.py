@@ -86,6 +86,13 @@ class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
 
 class AwardManager(models.Manager):
     def get_queryset(self):
+        '''
+        A generated award will have these set to null, but will also receive no
+        transactions. Thus, these will remain null. This finds those awards and
+        throws them out. As soon as one of those awards gets a transaction
+        (i.e. it is no longer empty), these will be updated via update_from_mod
+        and the award will no longer match these criteria
+        '''
         q_kwargs = {
             "type": "U",
             "total_obligation__isnull": True,
