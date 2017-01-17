@@ -84,6 +84,24 @@ class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
         db_table = 'financial_accounts_by_awards_transaction_obligations'
 
 
+class AwardManager(models.Manager):
+    def get_queryset(self):
+        '''
+        A generated award will have these set to null, but will also receive no
+        transactions. Thus, these will remain null. This finds those awards and
+        throws them out. As soon as one of those awards gets a transaction
+        (i.e. it is no longer empty), these will be updated via update_from_mod
+        and the award will no longer match these criteria
+        '''
+        q_kwargs = {
+            "type": "U",
+            "total_obligation__isnull": True,
+            "date_signed__isnull": True,
+            "recipient__isnull": True
+        }
+        return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
+
+
 class Award(DataSourceTrackedModel):
 
     AWARD_TYPES = (
@@ -125,6 +143,9 @@ class Award(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     latest_submission = models.ForeignKey(SubmissionAttributes, null=True)
+
+    objects = models.Manager()
+    nonempty = AwardManager()
 
     @staticmethod
     def get_default_fields():
