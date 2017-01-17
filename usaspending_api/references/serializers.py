@@ -26,15 +26,13 @@ class OfficeAgencySerializer(LimitableSerializer):
 
 class AgencySerializer(LimitableSerializer):
 
-    create_date = serializers.DateTimeField()
-    update_date = serializers.DateTimeField()
     toptier_agency = ToptierAgencySerializer(read_only=True)
     subtier_agency = SubtierAgencySerializer(read_only=True)
     office_agency = OfficeAgencySerializer(read_only=True)
 
     class Meta:
         model = Agency
-        fields = '__all__'
+        fields = ('toptier_agency', 'subtier_agency', 'office_agency')
 
 
 class LocationSerializer(LimitableSerializer):

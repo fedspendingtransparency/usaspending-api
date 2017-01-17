@@ -22,7 +22,7 @@ class LimitableSerializer(serializers.ModelSerializer):
                     "context": self.context
                 }
                 self.fields[field] = children[field]["class"](**child_args)
-        except:
+        except AttributeError:
             # We don't have any nested serializers
             pass
 
@@ -42,13 +42,23 @@ class LimitableSerializer(serializers.ModelSerializer):
         # We must exclude before include to avoid conflicts from user error
         if exclude_fields is not None:
             for field_name in exclude_fields:
-                self.fields.pop(field_name)
+                try:
+                    self.fields.pop(field_name)
+                except KeyError:
+                    # Because we're not currently handling nested serializer field
+                    # limiting pass-down, this can happen due to the context pass down
+                    pass
 
         if include_fields is not None:
             allowed = set(include_fields)
             existing = set(self.fields.keys())
             for field_name in existing - allowed:
-                self.fields.pop(field_name)
+                try:
+                    self.fields.pop(field_name)
+                except KeyError:
+                    # Because we're not currently handling nested serializer field
+                    # limiting pass-down, this can happen due to the context pass down
+                    pass 
         else:
             try:
                 include_fields = self.Meta.model.get_default_fields()
@@ -56,7 +66,8 @@ class LimitableSerializer(serializers.ModelSerializer):
                 existing = set(self.fields.keys())
                 for field_name in existing - allowed:
                     self.fields.pop(field_name)
-            except Exception as e:
+            except AttributeError:
+                # We don't have get default fields available
                 pass
 
 
