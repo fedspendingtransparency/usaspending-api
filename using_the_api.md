@@ -151,6 +151,7 @@ The structure of the post request allows for a flexible and complex query with b
 {
     "page": 1,
     "limit": 1000,
+    "verbose": true,
     "order": ["recipient__location__location_state_code", "-recipient__name"],
     "fields": ["fain", "total_obligation"],
     "exclude": ["recipient"]
@@ -172,6 +173,8 @@ The structure of the post request allows for a flexible and complex query with b
 
 * `page` - _Optional_ - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
 * `limit` - _Optional_ - The maximum length of a page in the response. Default: 100
+* `verbose` - _Optional_ - Most data is self-limiting the amount of data returned. To return all fields without
+having to specify them directly in `fields`, you can set this to `true`. Default: `false`
 * `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name, e.g. to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
 
   ```
