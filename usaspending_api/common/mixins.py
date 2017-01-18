@@ -150,7 +150,7 @@ class FilterQuerysetMixin(object):
         else:
             fg = FilterGenerator()
             filters = fg.create_from_post(request.data)
-            return queryset.filter(filters)
+            return queryset.filter(filters).distinct()
 
     def order_records(self, request, *args, **kwargs):
         """Order a queryset based on request parameters."""
