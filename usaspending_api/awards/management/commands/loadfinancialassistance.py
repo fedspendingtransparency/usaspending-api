@@ -100,20 +100,20 @@ class Command(BaseCommand):
         mappings = {
             'State government': 'us_state_government',
             'County government': 'county_local_government',
-            'City or township government':
-            'city_township_government',  # or city_local_government, county_local_government, municipality_local_government ?
+            'City or township government': 'city_township_government',
+            # or city_local_government, county_local_government, municipality_local_government ?
             'Special district government': 'special_district_government',
             'Independent school district': 'school_district_local_government',
             'State controlled institution of higher education':
             'educational_institution',
-            'Indian tribe':
-            'us_tribal_government',  # or indian_tribe_federally_recognized ?
+            'Indian tribe': 'us_tribal_government',
+            # or indian_tribe_federally_recognized ?
             'Other nonprofit': 'nonprofit_organization',
             'Private higher education': 'educational_institution',
             'Individual': 'individual',
             'Profit organization': 'for_profit_organization',
-            'Small business':
-            'small_business',  # should the more specific contract flags for small businesses also set this to Y?
+            'Small business': 'small_business',
+            # should the more specific contract flags for small businesses also set this to Y?
             'All other': '',
         }
         flag = mappings.get(type_name, "")
