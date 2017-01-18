@@ -4,10 +4,11 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 
 import usaspending_api.awards.management.commands.helpers as h
-from usaspending_api.awards.models import Procurement
+from usaspending_api.awards.models import Award, Procurement
 from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
 from usaspending_api.references.models import LegalEntity
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.references.models import Agency
 
 
 class Command(BaseCommand):
@@ -35,8 +36,8 @@ class Command(BaseCommand):
         value_map = {
             "data_source": "USA",
             "recipient": lambda row: self.get_or_create_recipient(row),
-            "award": lambda row: h.get_or_create_award(row),
-            "place_of_performance": lambda row: h.get_or_create_location(row, "place_of_performance"),
+            "award": lambda row: self.get_or_create_award(row),
+            "place_of_performance": lambda row: h.get_or_create_location(row, mapper=location_mapper_place_of_performance),
             "awarding_agency": lambda row: self.get_agency(row["contractingofficeagencyid"]),
             "funding_agency": lambda row: self.get_agency(row["fundingrequestingagencyid"]),
             "action_date": lambda row: h.convert_date(row['signeddate']),
@@ -107,7 +108,7 @@ class Command(BaseCommand):
 
     def get_or_create_recipient(self, row):
         recipient_dict = {
-            "location_id": h.get_or_create_location(row).location_id,
+            "location_id": h.get_or_create_location(row, mapper=location_mapper_vendor).location_id,
             "recipient_name": row['vendorname'],
             "vendor_phone_number": row['phoneno'],
             "vendor_fax_number": row['faxno'],
@@ -180,6 +181,14 @@ class Command(BaseCommand):
 
         return le
 
+
+    def get_or_create_award(self, row):
+        piid = row.get("piid", None)
+        parent_award_id = row.get("idvpiid", None)
+        award = Award.get_or_create_summary_award(
+            piid=piid, fain=None, uri=None, parent_award_id=parent_award_id)
+        return award
+
     def parse_first_character(self, flag):
         if len(flag) > 0:
             return flag[0]
@@ -202,3 +211,36 @@ def evaluate_contract_award_type(row):
             return 'D'
         else:
             return None
+
+
+def location_mapper_place_of_performance(row):
+
+    loc = {
+        "location_city_name": row.get("placeofperformancecity", ""),
+        "location_congressional_code":
+        row.get("placeofperformancecongressionaldistrict",
+                "")[2:],  # Need to strip the state off the front
+        "location_country_code": row.get("placeofperformancecountrycode", ""),
+        "location_zip": row.get("placeofperformancezipcode", "").replace(
+            "-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
+        "location_state_code": h.up2colon(
+            row.get("pop_state_code", "")
+        )  # Format is VA: VIRGINIA, so we need to grab the first bit
+    }
+    return loc
+
+def location_mapper_vendor(row):
+    loc = {
+        "location_city_name": row.get("city", ""),
+        "location_congressional_code": row.get(
+            "vendor_cd", "").zfill(2),  # Need to add leading zeroes here
+        "location_country_code":
+            row.get("vendorcountrycode",
+                    ""),  # Never actually a country code, just the string name
+        "location_zip": row.get("zipcode", "").replace("-", ""),
+        "location_state_code": h.up2colon(row.get("vendor_state_code", "")),
+        "location_address_line1": row.get("streetaddress", ""),
+        "location_address_line2": row.get("streetaddress2", ""),
+        "location_address_line3": row.get("streetaddress3", "")
+    }
+    return loc
