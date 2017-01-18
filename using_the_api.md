@@ -1,6 +1,6 @@
 # The USAspending Application Programming Interface (API)
 
-The USAspending API allows the public to accesss data published via the Broker or USAspending.
+The USAspending API allows the public to access data published via the Broker or USAspending.
 
 ## Background
 
@@ -10,18 +10,18 @@ For more information about the DATA Act Broker codebase, please visit this repos
 
 ## Table of Contents
   * [Status Codes](#status-codes)
-  * [Data Routes](#data-routes)
-    * [Routes and Methods](#routes-and-methods)
-    * [Summary Routes and Methods](#summary-routes-and-methods)
+  * [Data Endpoints](#data-endpoints)
+    * [Endpoints and Methods](#endpoints-and-methods)
+    * [Summary Endpoints and Methods](#summary-endpoints-and-methods)
   * [GET Requests](#get-requests)
   * [POST Requests](#post-requests)
   * [Autocomplete Queries](#autocomplete-queries)
   * [Geographical Hierarchy Queries](#geographical-hierarchy-queries)
 
 
-## DATA Act Data Store Route Documentation
+## DATA Act Data Store Endpoint Documentation
 
-Routes do not currently require any authorization
+Endpoints do not currently require any authorization
 
 ### Status Codes
 In general, status codes returned are as follows:
@@ -30,12 +30,12 @@ In general, status codes returned are as follows:
 * 400 if the request is malformed
 * 500 for server-side errors
 
-### Data Routes
+### Data Endpoints
 
-Data routes are split by payload into POST and GET methods. In general, the format of a request and response will remain the same with the route only changing the data provided in the response.
+Data endpoints are split by payload into POST and GET methods. In general, the format of a request and response will remain the same with the endpoint only changing the data provided in the response.
 
-#### Routes and Methods
-The currently available routes are:
+#### Endpoints and Methods
+The currently available endpoints are:
   * **/v1/awards/summary/**
     - _Description_: Provides award level summary data
     - _Methods_: GET, POST
@@ -72,8 +72,8 @@ The currently available routes are:
     - _Description_: Returns all `SubmissionAttributes` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
-#### Summary Routes and Methods
-Summarized data is available for some of the routes listed above:
+#### Summary Endpoints and Methods
+Summarized data is available for some of the endpoints listed above:
 
 * **/v1/awards/total/**
 * more coming soon
@@ -85,7 +85,7 @@ You can get summarized data via a `POST` request that specifies:
 * `group`: the field to group by (optional; if not specified, data will be summarized across all objects)
 * `date_part`: applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
 
-Requests to the summary routes can also contain the `page`, `limit`, and `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
+Requests to the summary endpoints can also contain the `page`, `limit`, and `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
 
 The `results` portion of the response will contain:
 
@@ -136,7 +136,7 @@ Response:
 ```
 
 #### GET Requests
-GET requests can be specified by attaching any field value pair to the route. This method supports any fields present in the data object and only the `equals` operation. It also supports pagination variables. Additionally, you may specifcy complex fields that use Django's foreign key traversal; for more details on this see `field` from the POST request. Examples below:
+GET requests can be specified by attaching any field value pair to the endpoint. This method supports any fields present in the data object and only the `equals` operation. It also supports pagination variables. Additionally, you may specifcy complex fields that use Django's foreign key traversal; for more details on this see `field` from the POST request. Examples below:
 
 `/v1/awards/summary/?page=5&limit=1000`
 
@@ -500,7 +500,7 @@ The response has three functional parts:
     * `count` - The length of the `results` array for this page
   * `total_metadata` - Includes data about the total dataset and any dataset-level metadata specific to the endpoint
     * `count` - The total number of items in this dataset, spanning all pages
-  * `results` - An array of objects corresponding to the data returned by the specified route. Will _always_ be an array, even if the number of results is only one.
+  * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
 ### Autocomplete Queries
 Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably awards/summary).
