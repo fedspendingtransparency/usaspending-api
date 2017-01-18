@@ -1,22 +1,26 @@
-from django.core.management.base import BaseCommand, CommandError
-from usaspending_api.awards.models import Award, FinancialAssistanceAward
-from usaspending_api.references.models import LegalEntity, Agency, Location
-from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
-from datetime import datetime
 import csv
 import logging
-import django
+from datetime import datetime
 
+import django
+from django.core.management.base import BaseCommand, CommandError
+
+import usaspending_api.awards.management.commands.helpers as h
+from usaspending_api.awards.models import Award, FinancialAssistanceAward
+from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
+from usaspending_api.references.models import Agency, LegalEntity, Location
+from usaspending_api.submissions.models import SubmissionAttributes
 """
 
 No PIID in the download from https://www.usaspending.gov/DownloadCenter/Pages/dataarchives.aspx ?
 
 """
 
+
 class Command(BaseCommand):
-    help = "Loads contracts from a usaspending financial assistance download. \
+    help = "Loads awards from a usaspending financial assistance download. \
             Usage: `python manage.py loadcontracts source_file_path`"
+
     logger = logging.getLogger('console')
 
     def add_arguments(self, parser):
@@ -29,8 +33,8 @@ class Command(BaseCommand):
         subattr.usaspending_update = datetime.now()
         subattr.save()
 
-        # in input source : in our schema  WRONG
-        # name in our schema: name in input source
+        # field_map is used to simply translate a column name in our schema
+        # to the field name in the input source
         field_map = {
             "award_id": "federal_award_id",
             "federal_action_obligation": "fed_funding_amount",
@@ -39,67 +43,147 @@ class Command(BaseCommand):
             "cfda_title": "cfda_program_title",
             "uri": "unique_transaction_id",
             "face_value_loan_guarantee": "face_loan_guran",
-            "original_loan_subsidy_cost": "orig_sub_guran", # ??
-            "award_description": "project_description", # ??
+            "original_loan_subsidy_cost": "orig_sub_guran",  # ??
+            "award_description": "project_description",  # ??
         }
-
-        # TODO: input file tracks recipient's location only as far as country & state,
-        # but legal_entity joins to Location, much more precise
-
-        # TODO: these are all going to need to be normalized/cleansed,
-        # or else multiple values will appear in all the parent tables
 
         # TODO: csv contains `exec1_amount`... `exec5_amount` and
         # `exec1_fullname`... `exec5_fullname`.  We seem to be ignoring those.
 
         # TODO: What are all the drv_ fields in financial_assistance_award?
 
+        # progsrc - program source?
+        # I’ve also got a “progsrc_acnt_code”, “progsrc_agen_code”, “progsrc_subacnt_code”, which I’m guessing stands for Program Source, and corresponds to… Funding Agency as opposed to Awarding Agency?
+        # none of those really look like enough to identify an agency
+        # how to identify the funding agency?
+
         value_map = {
             "data_source": "USA",
-            "submitted_type": "C", # ?? For CSV?
-            "award": lambda row: Award.objects.get_or_create(fain=row['federal_award_id'], type='F')[0], # this is a guess!
-            "recipient": lambda row: LegalEntity.objects.get_or_create(
-                recipient_name=row['recipient_name'],
-                location=self.get_recipient_location(row),
-                # TODO: row['recip_cat_type'],
-                )[0],
-                # TODO: get recipient.for_profit_organization, etc. from recipient_type
-            "location": self.get_location,
-            "awarding_agency": lambda row: Agency.objects.get(subtier_code=self.get_agency_code(self.pre_colon(row['maj_agency_cat']))),
-            "action_date": lambda row: self.convert_date(row['obligation_action_date']),  # FIXED
-            "last_modified_date": lambda row: self.convert_date(row['last_modified_date']),
-            "gfe_gfp": lambda row: self.pre_colon(row['gfe_gfp']),
-            "action_type": lambda row: self.pre_colon(row['action_type']),
-            "assistance_type": lambda row: self.pre_colon(row['assistance_type']),
-            "record_type": lambda row: int(self.pre_colon(row['record_type'])),
+            "submitted_type": "C",  # ?? For CSV?
+            "recipient": self.get_or_create_recipient,
+            "award": self.get_or_create_award,
+            "place_of_performance":
+            lambda row: h.get_or_create_location(row, location_mapper_fin_assistance_principal_place),
+            "awarding_agency": self.get_awarding_agency,
+            "assistance_type": lambda row: h.up2colon(row['assistance_type']),
+            "record_type": lambda row: int(h.up2colon(row['record_type'])),
+            "action_type": lambda row: h.up2colon(row['action_type']),
+            "action_date":
+            lambda row: h.convert_date(row['obligation_action_date']),
+            "last_modified_date":
+            lambda row: h.convert_date(row['last_modified_date']),
+            "transaction_number":
+            lambda row: self.parse_first_character(row['transactionnumber']),
+            "solicitation_identifier":
+            lambda row: self.parse_first_character(row['solicitationid']),
             "submission": subattr
         }
 
-        loader = ThreadedDataLoader(FinancialAssistanceAward, field_map=field_map, value_map=value_map)
+        loader = ThreadedDataLoader(
+            FinancialAssistanceAward, field_map=field_map, value_map=value_map)
         loader.load_from_file(options['file'][0])
 
-    def convert_date(self, date):
-        return datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
+    def get_or_create_award(self, row):
+        fain = row.get("federal_award_id", None)
+        award = Award.get_or_create_summary_award(fain=fain)
+        return award
+        # TODO: really don't know how to detect parent awards
 
-    def get_agency_code(self, maj_agency_cat):
-        return maj_agency_cat.split(':')[0]
+    def recipient_flags_by_type(self, type_name):
+        """Translates `type_name` to a T in the appropriate flag value.
 
-    def pre_colon(self, val):
-        return val.split(':')[0]
+        Assumes that all other flags are null.
+        """
 
-    def get_recipient_location(self, row):
-        result = Location.objects.get_or_create(
-          location_country_name=row['recipient_country_code'],
-          location_state_code=row['recipient_state_code'],
-          )
-        return result[0]
+        flags = {}
 
-    def get_location(self, row):
-        result = Location.objects.get_or_create(
-          location_country_name=row['principle_place_country_code'],
-          location_state_name=row['principle_place_state'],
-          location_state_code=row['principle_place_state_code'],
-          location_county_name=row['principle_place_cc'],
-          location_zip4=row['principal_place_zip'],
-        )
-        return result[0]
+        mappings = {
+            'State government': 'us_state_government',
+            'County government': 'county_local_government',
+            'City or township government':
+            'city_township_government',  # or city_local_government, county_local_government, municipality_local_government ?
+            'Special district government': 'special_district_government',
+            'Independent school district': 'school_district_local_government',
+            'State controlled institution of higher education':
+            'educational_institution',
+            'Indian tribe':
+            'us_tribal_government',  # or indian_tribe_federally_recognized ?
+            'Other nonprofit': 'nonprofit_organization',
+            'Private higher education': 'educational_institution',
+            'Individual': 'individual',
+            'Profit organization': 'for_profit_organization',
+            'Small business':
+            'small_business',  # should the more specific contract flags for small businesses also set this to Y?
+            'All other': '',
+        }
+        flag = mappings.get(type_name, "")
+        if flag:
+            flags[flag] = 'T'
+        else:
+            self.logger.error('No known column for recipient_type {}'.format(
+                type_name))
+        return flags
+
+    def get_or_create_recipient(self, row):
+        recipient_dict = {
+            "location_id": h.get_or_create_location(
+                row,
+                mapper=location_mapper_fin_assistance_recipient).location_id,
+            "recipient_name": row['recipient_name'],
+            "recipient_unique_id": row['duns_no'],
+        }
+
+        recipient_type = row.get("recipient_type", ":").split(":")[1].strip()
+        recipient_dict.update(self.recipient_flags_by_type(recipient_type))
+
+        le = LegalEntity.objects.filter(
+            recipient_unique_id=row['duns_no']).first()
+        if not le:
+            le = LegalEntity.objects.create(**recipient_dict)
+
+        return le
+
+    def get_awarding_agency(self, row):
+        toptier_code = h.up2colon(row['maj_agency_cat'])
+        subtier_code = h.up2colon(row['agency_code'])
+        return self.get_agency(toptier_code, subtier_code)
+
+    def get_agency(self, toptier_code, subtier_code):
+        agency = Agency.objects.filter(
+            subtier_agency__subtier_code=subtier_code).filter(
+                toptier_agency__fpds_code=toptier_code).first()
+        if not agency:
+            self.logger.error("Missing agency: {} {}".format(toptier_code,
+                                                             subtier_code))
+        return agency
+
+
+def location_mapper_fin_assistance_principal_place(row):
+    loc = {
+        "location_county_name": row.get("principal_place_cc", ""),
+        "location_country_code": row.get("principal_place_country_code", ""),
+        "location_zip": row.get("principal_place_zip", "").replace(
+            "-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
+        "location_state_code": row.get("principal_place_state_code", ""),
+        "location_state_name": row.get("principal_place_state", ""),
+    }
+    return loc
+
+
+def location_mapper_fin_assistance_recipient(row):
+    loc = {
+        "location_county_code": row.get("recipient_county_code", ""),
+        "location_county_name": row.get("recipient_county_name", ""),
+        "location_country_code": row.get("recipient_country_code", ""),
+        "location_city_code": row.get("recipient_city_code"
+                                      ""),
+        "location_city_name": row.get("recipient_city_name"
+                                      ""),
+        "location_zip": row.get("recipient_zip", "").replace(
+            "-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
+        "location_state_code": row.get("recipient_state_code"),
+        "location_address_line1": row.get("receip_addr1"),
+        "location_address_line2": row.get("receip_addr2"),
+        "location_address_line3": row.get("receip_addr3"),
+    }
+    return loc
