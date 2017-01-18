@@ -1,7 +1,7 @@
 import pytest
 from model_mommy import mommy
 
-from usaspending_api.awards.management.commands import helpers, loadcontracts
+from usaspending_api.awards.management.commands import helpers, loadcontracts, loadfinancialassistance
 from usaspending_api.references.models import Location
 
 
@@ -85,3 +85,61 @@ def test_get_or_create_location_creates_new_locations():
     assert loc.location_address_line3 is None
     assert loc.location_state_code == 'ST'
     assert loc.location_city_name == 'My Town'
+
+
+@pytest.mark.django_db
+def test_get_or_create_fa_place_of_performance_location_creates_new_locations(
+):
+    """If no location is found, we create a new one
+
+    For financial assistance place of performance locations."""
+    ref = mommy.make(
+        'references.RefCountryCode', country_code='USA', _fill_optional=True)
+    row = dict(
+        principal_place_country_code='USA',
+        principal_place_zip='12345-6789',
+        principal_place_state_code='OH',
+        principal_place_cc='MONTGOMERY', )
+
+    # can't find it because we're looking at the US fields
+    assert Location.objects.count() == 0
+
+    helpers.get_or_create_location(
+        row,
+        loadfinancialassistance.location_mapper_fin_assistance_principal_place)
+    assert Location.objects.count() == 1
+
+    loc = Location.objects.all().first()
+    assert loc.location_country_code == ref
+    assert loc.location_zip5 == '12345'
+    assert loc.location_zip_last4 == '6789'
+    assert loc.location_state_code == 'OH'
+    assert loc.location_county_name == 'MONTGOMERY'
+
+
+@pytest.mark.django_db
+def test_get_or_create_fa_recipient_location_creates_new_locations():
+    """If no location is found, we create a new one
+
+    For financial assistance recipient locations."""
+    ref = mommy.make(
+        'references.RefCountryCode', country_code='USA', _fill_optional=True)
+    row = dict(
+        recipient_country_code='USA',
+        recipient_zip='12345-6789',
+        recipient_state_code='OH',
+        recipient_county_name='MONTGOMERY', )
+
+    # can't find it because we're looking at the US fields
+    assert Location.objects.count() == 0
+
+    helpers.get_or_create_location(
+        row, loadfinancialassistance.location_mapper_fin_assistance_recipient)
+    assert Location.objects.count() == 1
+
+    loc = Location.objects.all().first()
+    assert loc.location_country_code == ref
+    assert loc.location_zip5 == '12345'
+    assert loc.location_zip_last4 == '6789'
+    assert loc.location_state_code == 'OH'
+    assert loc.location_county_name == 'MONTGOMERY'
