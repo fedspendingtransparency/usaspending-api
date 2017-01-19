@@ -146,11 +146,11 @@ class FilterQuerysetMixin(object):
                 fy = FiscalYear(request.query_params.get('fy'))
                 fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
                 filters = {**filters, **fy_arguments}
-            return queryset.filter(**filters)
+            return queryset.filter(**filters).distinct()
         else:
             fg = FilterGenerator()
             filters = fg.create_from_post(request.data)
-            return queryset.filter(filters)
+            return queryset.filter(filters).distinct()
 
     def order_records(self, request, *args, **kwargs):
         """Order a queryset based on request parameters."""
