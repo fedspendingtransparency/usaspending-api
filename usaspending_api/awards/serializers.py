@@ -64,4 +64,8 @@ class AwardSerializer(LimitableSerializer):
                 "class": FinancialAssistanceAwardSerializer,
                 "kwargs": {"read_only": True, "many": True}
             },
+            "place_of_performance": {
+                "class": LocationSerializer,
+                "kwargs": {"read_only": True}
+            },
         }
