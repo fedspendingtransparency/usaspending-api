@@ -86,10 +86,14 @@ class ThreadedDataLoader():
         for process in pool:
             process.start()
 
+        count = 0
         with open(filepath, encoding=encoding) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
+                count = count + 1
                 row_queue.put(row)
+                if count % 1000 == 0:
+                    self.logger.info("Queued row " + str(count))
 
         for i in range(self.processes):
             row_queue.put(None)
