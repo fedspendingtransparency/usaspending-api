@@ -1,30 +1,30 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.serializers.json import json, DjangoJSONEncoder
-from django.db import connections
-from django.db.models import Q
-from django.utils import timezone
-from django.conf import settings
 from datetime import datetime
 import logging
-import django
 import os
 
-from usaspending_api.submissions.models import *
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.core.management.base import BaseCommand
+from django.core.serializers.json import json
+from django.db import connections
+
 from usaspending_api.accounts.models import *
-from usaspending_api.financial_activities.models import *
 from usaspending_api.awards.models import *
+from usaspending_api.financial_activities.models import *
 from usaspending_api.references.models import *
+from usaspending_api.submissions.models import *
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
 TAS_ID_TO_ACCOUNT = {}
 
 
-# This command will load a single submission from the data broker database into
-# the data store using SQL commands to pull the raw data from the broker and
-# by creating new django model instances for each object
 class Command(BaseCommand):
+    """
+    This command will load a single submission from the data broker database into
+    the data store using SQL commands to pull the raw data from the broker and
+    by creating new django model instances for each object
+    """
     help = "Loads a single submission from the configured data broker database"
     logger = logging.getLogger('console')
 
@@ -177,7 +177,12 @@ class Command(BaseCommand):
                 if treasury_account is None:
                     raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
                 account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
-                award = find_or_create_summary_award(piid=row.get('piid'), fain=row.get('fain'), uri=row.get('uri'), parent_award_id=row.get('parent_award_id'))
+                # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+                award = Award.get_or_create_summary_award(
+                    piid=row.get('piid'),
+                    fain=row.get('fain'),
+                    uri=row.get('uri'),
+                    parent_award_id=row.get('parent_award_id'))
                 award.latest_submission = submission_attributes
                 award.save()
             except:
@@ -209,7 +214,6 @@ class Command(BaseCommand):
         award_financial_assistance_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
 
-        # Create LegalEntity
         legal_entity_location_field_map = {
             "location_address_line1": "legal_entity_address_line1",
             "location_address_line2": "legal_entity_address_line2",
@@ -226,9 +230,9 @@ class Command(BaseCommand):
             "location_state_name": "legal_entity_state_name",
             "location_zip5": "legal_entity_zip5",
             "location_zip_last4": "legal_entity_zip_last4",
+            "location_country_code": "legal_entity_country_code"
         }
 
-        # Create the place of performance location
         place_of_performance_field_map = {
             "location_city_name": "place_of_performance_city",
             "location_performance_code": "place_of_performance_code",
@@ -237,63 +241,41 @@ class Command(BaseCommand):
             "location_foreign_location_description": "place_of_performance_forei",
             "location_state_name": "place_of_perform_state_nam",
             "location_zip4": "place_of_performance_zip4a",
+            "location_country_code": "place_of_perform_country_c"
+
         }
 
         for row in award_financial_assistance_data:
-            location_value_map = {
-                "location_country_code": RefCountryCode.objects.filter(country_code=row["legal_entity_country_code"]).first()
-            }
-            location = load_data_into_model(Location(), row, field_map=legal_entity_location_field_map, value_map=location_value_map, as_dict=True)
-            legal_entity_location, created = Location.objects.get_or_create(**location)
+            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row)
 
             # Create the legal entity if it doesn't exist
-            legal_entity = None
             try:
-                legal_entity = LegalEntity.objects.get(row['awardee_or_recipient_uniqu'])
-            except:
-                legal_entity = LegalEntity()
-
+                legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
+            except ObjectDoesNotExist:
                 legal_entity_value_map = {
                     "location": legal_entity_location,
                     "legal_entity_id": row['awardee_or_recipient_uniqu']
                 }
+                legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
 
-                load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
+            # Create the place of performance location
+            pop_location, created = get_or_create_location(place_of_performance_field_map, row)
 
-            pop_value_map = {
-                "location_country_code": RefCountryCode.objects.filter(country_code=row["place_of_perform_country_c"]).first()
-            }
-
-            location = load_data_into_model(Location(), row, field_map=place_of_performance_field_map, value_map=pop_value_map, as_dict=True)
-            pop_location, created = Location.objects.get_or_create(**location)
-
-            # Try and find the parent award
-            award = None
-            try:
-                award = find_or_create_summary_award(piid=row.get('piid'), fain=row.get('fain'), uri=row.get('uri'), parent_award_id=row.get('parent_award_id'))
-            except:
-                self.logger.info("Could not find parent award with piid " + row.get('piid', '') + " fain " + row.get('fain', '') + " uri " + row.get('uri', '') + " parent " + row.get('parent_award_id', ''))
-
-            award_field_map = {
-                "description": "award_description",
-                "type": "assistance_type"
-            }
-
-            award_value_map = {
-                "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'], subtier_code=row["awarding_sub_tier_agency_c"]).first(),
-                "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'], subtier_code=row["funding_sub_tier_agency_co"]).first(),
-                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                "place_of_performance": pop_location,
-                "latest_submission": submission_attributes,
-                "recipient": legal_entity,
-            }
-
-            # Update the award with new data
-            load_data_into_model(award, row, field_map=award_field_map, value_map=award_value_map, save=True)
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            award = Award.get_or_create_summary_award(
+                piid=row.get('piid'),
+                fain=row.get('fain'),
+                uri=row.get('uri'),
+                parent_award_id=row.get('parent_award_id'))
 
             fad_value_map = {
                 "award": award,
+                "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
+                                                         subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
+                                                        subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
+                "recipient": legal_entity,
+                "place_of_performance": pop_location,
                 "submission": submission_attributes,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
             }
@@ -301,7 +283,7 @@ class Command(BaseCommand):
             financial_assistance_data = load_data_into_model(FinancialAssistanceAward(), row, value_map=fad_value_map, as_dict=True)
             fad = FinancialAssistanceAward.objects.filter(award=award, modification_number=row['award_modification_amendme']).first()
             if not fad:
-                fad, created = FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
+                FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
             else:
                 FinancialAssistanceAward.objects.filter(pk=fad.pk).update(**financial_assistance_data)
 
@@ -310,16 +292,57 @@ class Command(BaseCommand):
         procurement_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
+        legal_entity_location_field_map = {
+            "location_address_line1": "legal_entity_address_line1",
+            "location_address_line2": "legal_entity_address_line2",
+            "location_address_line3": "legal_entity_address_line3",
+            "location_country_code": "legal_entity_country_code",
+            "location_city_name": "legal_entity_city_name",
+            "location_congressional_code": "legal_entity_congressional",
+            "location_state_code": "legal_entity_state_code",
+            "location_zip4": "legal_entity_zip4"
+        }
+
+        place_of_performance_field_map = {
+            # not sure place_of_performance_locat maps exactly to city name
+            "location_city_name": "place_of_performance_locat",
+            "location_congressional_code": "place_of_performance_congr",
+            "location_state_code": "place_of_performance_state",
+            "location_zip4": "place_of_performance_zip4a",
+            "location_country_code": "place_of_perform_country_c"
+        }
+
         for row in procurement_data:
-            # Try and find the parent award
-            award = None
+            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row)
+
+            # Create the legal entity if it doesn't exist
             try:
-                award = find_or_create_summary_award(piid=row.get('piid'), fain=row.get('fain'), uri=row.get('uri'), parent_award_id=row.get('parent_award_id'))
-            except:
-                self.logger.info("Could not find parent award with piid " + row.get('piid', '') + " fain " + row.get('fain', '') + " uri " + row.get('uri', '') + " parent " + row.get('parent_award_id', ''))
+                legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
+            except ObjectDoesNotExist:
+                legal_entity_value_map = {
+                    "location": legal_entity_location,
+                    "legal_entity_id": row['awardee_or_recipient_uniqu']
+                }
+                legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
+
+            # Create the place of performance location
+            pop_location, created = get_or_create_location(place_of_performance_field_map, row)
+
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            award = Award.get_or_create_summary_award(
+                piid=row.get('piid'),
+                fain=row.get('fain'),
+                uri=row.get('uri'),
+                parent_award_id=row.get('parent_award_id'))
 
             procurement_value_map = {
                 "award": award,
+                "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
+                                                         subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
+                                                        subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
+                "recipient": legal_entity,
+                "place_of_performance": pop_location,
                 'submission': submission_attributes,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
             }
@@ -328,6 +351,7 @@ class Command(BaseCommand):
 
 
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
+    """Get the matching TAS object from the broker database and save it to our running list."""
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
@@ -349,53 +373,27 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
-def find_or_create_summary_award(piid=None, fain=None, uri=None, parent_award_id=None):
-    # If an award's ID is a piid, it's parent is a PIID; likewise for URI
-    # Awards with FAINs don't have parents
-    summary_award = None
-    q_kwargs = {}
-    for i in [(piid, "piid"), (uri, "uri"), (fain, "fain")]:
-        if i[0]:
-            q_kwargs[i[1]] = i[0]
-            if parent_award_id:
-                q_kwargs["parent_award__" + i[1]] = parent_award_id
-            else:
-                q_kwargs["parent_award"] = None
-
-            # Now search for it
-            summary_award = Award.objects.all().filter(Q(**q_kwargs)).first()
-            if summary_award:
-                return summary_award
-            else:
-                # If we can't find it, we need to make it. Recursively get the parent
-                parent_award = None
-                if parent_award_id:
-                    parent_award = find_or_create_summary_award(**{i[1]: parent_award_id})
-                # Create the actual summary award
-                summary_award = Award(**{i[1]: i[0], "parent_award": parent_award})
-                summary_award.save()
-                return summary_award
-
-
-# Loads data into a model instance
-# Data should be a row, a dict of field -> value pairs
-# Keyword args are:
-#  field_map - A map of field columns to data columns. This is so you can map
-#               a field in the data to a different field in the model. For instance,
-#               model.tas_rendering_label = data['tas'] could be set up like this:
-#               field_map = {'tas_rendering_label': 'tas'}
-#               The algorithm checks for a value map before a field map, so if the
-#               column is present in both value_map and field_map, value map takes
-#               precedence over the other
-#  value_map - Want to force or override a value? Specify the field name for the
-#               instance and the data you want to load. Example:
-#               {'update_date': timezone.now()}
-#               The algorithm checks for a value map before a field map, so if the
-#               column is present in both value_map and field_map, value map takes
-#               precedence over the other
-#  save - Defaults to False, but when set to true will save the model at the end
-#  as_dict - If true, returns the model as a dict instead of saving or altering
 def load_data_into_model(model_instance, data, **kwargs):
+    """
+    Loads data into a model instance
+    Data should be a row, a dict of field -> value pairs
+    Keyword args:
+        field_map - A map of field columns to data columns. This is so you can map
+                    a field in the data to a different field in the model. For instance,
+                    model.tas_rendering_label = data['tas'] could be set up like this:
+                    field_map = {'tas_rendering_label': 'tas'}
+                    The algorithm checks for a value map before a field map, so if the
+                    column is present in both value_map and field_map, value map takes
+                    precedence over the other
+        value_map - Want to force or override a value? Specify the field name for the
+                    instance and the data you want to load. Example:
+                    {'update_date': timezone.now()}
+                    The algorithm checks for a value map before a field map, so if the
+                    column is present in both value_map and field_map, value map takes
+                    precedence over the other
+        save - Defaults to False, but when set to true will save the model at the end
+        as_dict - If true, returns the model as a dict instead of saving or altering
+    """
     field_map = None
     value_map = None
     save = False
@@ -448,12 +446,65 @@ def load_data_into_model(model_instance, data, **kwargs):
 
     if save:
         model_instance.save()
+        return model_instance
     if as_dict:
         return mod
 
 
 def format_date(date):
     return datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
+
+
+def get_or_create_location(location_map, row):
+    """
+    Retrieve or create a location object
+
+    Input parameters:
+        - location_map: a dictionary with key = field name on the location model
+            and value = corresponding field name on the current row of data
+        - row: the row of data currently being loaded
+    """
+    location_country = RefCountryCode.objects.filter(
+        country_code=row[location_map.get('location_country_code')]).first()
+
+    location_value_map = {}
+
+    # temporary fix until broker is patched: remove later
+    state_code = row.get(location_map.get('location_state_code'))
+    if state_code is not None:
+        location_value_map.update({'location_state_code': state_code.replace('.', '')})
+    # end of temporary fix
+
+    if location_country:
+        location_value_map.update({
+            'location_country_code': location_country,
+            'location_country_name': location_country.country_name
+        })
+    else:
+        # no country found for this code
+        location_value_map.update({
+            'location_country_code': None,
+            'location_country_name': None
+        })
+
+    location_data = load_data_into_model(
+        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
+
+    del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
+    if len(location_data):
+        try:
+            location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})
+        except MultipleObjectsReturned:
+            # incoming location data is so sparse that comparing it to existing locations
+            # yielded multiple records. create a new location with this limited info.
+            # note: this will need fixed up to prevent duplicate location records with the
+            # same sparse data
+            location_object = Location.objects.create(**location_data)
+            created = True
+        return location_object, created
+    else:
+        # record had no location information at all
+        return None, None
 
 
 def store_value(model_instance_or_dict, field, value):
@@ -478,8 +529,8 @@ def dictfetchall(cursor):
         ]
 
 
-# Spoofs the db cursor responses
 class PhonyCursor:
+    """Spoofs the db cursor responses."""
 
     def __init__(self):
         json_data = open(os.path.join(os.path.dirname(__file__), '../../test_data/etl_test_data.json'))

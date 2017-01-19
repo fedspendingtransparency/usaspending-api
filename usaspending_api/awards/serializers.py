@@ -5,7 +5,7 @@ from usaspending_api.references.serializers import *
 from usaspending_api.common.serializers import LimitableSerializer
 
 
-class FinancialAccountsByAwardsSerializer(serializers.ModelSerializer):
+class FinancialAccountsByAwardsSerializer(LimitableSerializer):
 
     appropriation_account_balances = AppropriationAccountBalancesSerializer(read_only=True)
 
@@ -23,14 +23,14 @@ class FinancialAccountsByAwardsTransactionObligationsSerializer(LimitableSeriali
         fields = '__all__'
 
 
-class ProcurementSerializer(serializers.ModelSerializer):
+class ProcurementSerializer(LimitableSerializer):
 
     class Meta:
         model = Procurement
         fields = '__all__'
 
 
-class FinancialAssistanceAwardSerializer(serializers.ModelSerializer):
+class FinancialAssistanceAwardSerializer(LimitableSerializer):
 
     class Meta:
         model = FinancialAssistanceAward
@@ -39,13 +39,29 @@ class FinancialAssistanceAwardSerializer(serializers.ModelSerializer):
 
 class AwardSerializer(LimitableSerializer):
 
-    recipient = LegalEntitySerializer(read_only=True)
-    awarding_agency = AgencySerializer(read_only=True)
-    funding_agency = AgencySerializer(read_only=True)
-    procurement_set = ProcurementSerializer(many=True, read_only=True)
-    financialassistanceaward_set = FinancialAssistanceAwardSerializer(many=True, read_only=True)
-
     class Meta:
 
         model = Award
         fields = '__all__'
+        nested_serializers = {
+            "recipient": {
+                "class": LegalEntitySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "awarding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "funding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "procurement_set": {
+                "class": ProcurementSerializer,
+                "kwargs": {"read_only": True, "many": True}
+            },
+            "financialassistanceaward_set": {
+                "class": FinancialAssistanceAwardSerializer,
+                "kwargs": {"read_only": True, "many": True}
+            },
+        }

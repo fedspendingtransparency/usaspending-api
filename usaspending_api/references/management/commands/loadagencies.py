@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from usaspending_api.references.models import Agency
+from usaspending_api.references.models import ToptierAgency, SubtierAgency, OfficeAgency, Agency
 import os
 import csv
 import logging
@@ -21,24 +21,26 @@ class Command(BaseCommand):
 
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    agency, created = Agency.objects.get_or_create(
-                                    cgac_code=row['CGAC AGENCY CODE'],
-                                    fpds_code=row['FPDS DEPARTMENT ID'],
-                                    subtier_code=row['SUB TIER CODE'])
+                    fpds_code = row.get('FPDS DEPARTMENT ID', '')
+                    cgac_code = row.get('CGAC AGENCY CODE', '')
+                    department_name = row.get('AGENCY NAME', '')
+                    subtier_name = row.get('SUB TIER NAME', '')
+                    subtier_code = row.get('SUB TIER CODE', '')
 
-                    agency.name = row['AGENCY NAME']
+                    toptier_agency = None
+                    subtier_agency = None
 
-                    if agency.subtier_code != agency.fpds_code:
-                        # it's not department level
-                        department = Agency.objects.get(
-                                    cgac_code=agency.cgac_code,
-                                    fpds_code=agency.fpds_code,
-                                    subtier_code=agency.fpds_code)
+                    # Toptier agency
+                    toptier_agency, created = ToptierAgency.objects.get_or_create(cgac_code=cgac_code,
+                                                                                  fpds_code=fpds_code,
+                                                                                  name=department_name)
 
-                        agency.department = department
-                        agency.name = row['SUB TIER NAME']
+                    subtier_agency, created = SubtierAgency.objects.get_or_create(subtier_code=subtier_code,
+                                                                                  name=subtier_name)
 
-                    agency.save()
+                    # Create new summary agency object
+                    agency, created = Agency.objects.get_or_create(toptier_agency=toptier_agency,
+                                                                   subtier_agency=subtier_agency)
 
                     # self.logger.log(20, "loaded %s" % agency)
 

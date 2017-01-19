@@ -352,7 +352,7 @@ class GeoCompleteHandler:
             },
             "location_city_name": {
                 "type": "CITY",
-                "parent": "location_county_name"
+                "parent": "location_state_name"
             },
             "location_county_name": {
                 "type": "COUNTY",
@@ -395,6 +395,33 @@ class GeoCompleteHandler:
             scope_q = Q(**{"location_country_code": "USA"})
 
         response_object = []
+
+        """
+        The front end will send congressional codes as XX-## format, where XX
+        the state code (location_state_code) and ## is the two digit district
+        code. (location_congressional_code). If we find a '-' in the value,
+        attempt to parse it as a congressional code search before the others
+        """
+        if value and '-' in value:
+            temp_val = value.split('-')
+
+            q_kwargs = {}
+            q_kwargs["location_state_code"] = temp_val[0]
+
+            if len(temp_val) >= 2:
+                q_kwargs["location_congressional_code__istartswith"] = temp_val[1]
+
+            search_q = Q(**q_kwargs)
+            results = Location.objects.filter(search_q & scope_q).values_list("location_congressional_code", "location_state_code", "location_state_name")
+            results = list(set(results))  # Eliminate duplicates
+            for row in results:
+                response_row = {
+                    "place": row[1] + "-" + str(row[0]),
+                    "place_type": "CONGRESSIONAL DISTRICT",
+                    "parent": row[2],
+                    "matched_ids": Location.objects.filter(Q(**{"location_congressional_code": row[0], "location_state_code": row[1], "location_state_name": row[2]})).values_list("location_id", flat=True)
+                }
+                response_object.append(response_row)
 
         if value:
             for searchable_field in search_fields.keys():

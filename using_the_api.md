@@ -1,6 +1,6 @@
 # The USAspending Application Programming Interface (API)
 
-The USAspending API allows the public to accesss data published via the Broker or USAspending.
+The USAspending API allows the public to access data published via the Broker or USAspending.
 
 ## Background
 
@@ -10,17 +10,18 @@ For more information about the DATA Act Broker codebase, please visit this repos
 
 ## Table of Contents
   * [Status Codes](#status-codes)
-  * [Data Routes](#data-routes)
-    * [Routes and Methods](#routes-and-methods)
+  * [Data Endpoints](#data-endpoints)
+    * [Endpoints and Methods](#endpoints-and-methods)
+    * [Summary Endpoints and Methods](#summary-endpoints-and-methods)
   * [GET Requests](#get-requests)
   * [POST Requests](#post-requests)
   * [Autocomplete Queries](#autocomplete-queries)
   * [Geographical Hierarchy Queries](#geographical-hierarchy-queries)
 
 
-## DATA Act Data Store Route Documentation
+## DATA Act Data Store Endpoint Documentation
 
-Routes do not currently require any authorization
+Endpoints do not currently require any authorization
 
 ### Status Codes
 In general, status codes returned are as follows:
@@ -29,50 +30,113 @@ In general, status codes returned are as follows:
 * 400 if the request is malformed
 * 500 for server-side errors
 
-### Data Routes
+### Data Endpoints
 
-Data routes are split by payload into POST and GET methods. In general, the format of a request and response will remain the same with the route only changing the data provided in the response. Some routes support aggregate metadata (such as the sum of a certain column for all entries in a dataset) and will be noted in the route listing.
+Data endpoints are split by payload into POST and GET methods. In general, the format of a request and response will remain the same with the endpoint only changing the data provided in the response.
 
-#### Routes and Methods
-The currently available routes are:
-  * **/v1/awards/summary/**
+#### Endpoints and Methods
+The currently available endpoints are:
+  * **[/v1/awards/summary/](https://api.usaspending.gov/api/v1/awards/summary/)**
     - _Description_: Provides award level summary data
     - _Methods_: GET, POST
 
-  * **/v1/awards/summary/autocomplete/**
+  * **[/v1/awards/summary/autocomplete/](https://api.usaspending.gov/api/v1/awards/summary/autocomplete/)**
     - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards/summary endpoint
     - _Methods_: POST
 
-  * **/v1/references/locations/**
+  * **[/v1/references/locations/](https://api.usaspending.gov/api/v1/references/locations/)**
     - _Description_: Returns all `Location` data.
     - _Methods_: POST
 
-  * **/v1/references/locations/geocomplete**
+  * **[/v1/references/locations/geocomplete](https://api.usaspending.gov/api/v1/references/locations/geocomplete/)**
     - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information
     - _Methods_: POST
 
-  * **/v1/awards/**
+  * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
     - _Description_: Returns all `FinancialAccountsByAwardsTransactionObligations` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
-  * **/v1/accounts/**
+  * **[/v1/accounts/](https://api.usaspending.gov/api/v1/accounts/)**
     - _Description_: Returns all `AppropriationAccountBalances` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
-  * **/v1/accounts/tas/**
+  * **[/v1/accounts/tas/](https://api.usaspending.gov/api/v1/accounts/tas/)**
     - _Description_: Returns all `TreasuryAppropriationAccount` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
-  * **/v1/financial_activities/**
+  * **[/v1/financial_activities/](https://api.usaspending.gov/api/v1/financial_activities/)**
     - _Description_: Returns all `FinancialAccountsByProgramActivityObjectClass` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
-  * **/v1/submissions/**
+  * **[/v1/submissions/](https://api.usaspending.gov/api/v1/submissions/)**
     - _Description_: Returns all `SubmissionAttributes` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
+#### Summary Endpoints and Methods
+Summarized data is available for some of the endpoints listed above:
+
+* **[/v1/awards/total/](https://api.usaspending.gov/api/v1/awards/total/)**
+* more coming soon
+
+You can get summarized data via a `POST` request that specifies:
+
+* `field`: the field to be summarized
+* `aggregate`: the aggregate function to use when summarizing the data (defaults to `sum`; `avg`, `count`, `min`, and `max` are also supported)
+* `group`: the field to group by (optional; if not specified, data will be summarized across all objects)
+* `date_part`: applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
+
+Requests to the summary endpoints can also contain the `page`, `limit`, and `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
+
+The `results` portion of the response will contain:
+
+* `item`: the value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
+* `aggregate`: the summarized data
+
+For example, to request award total transaction obligated amount by year for awards with a budget function code of 800:
+
+```json
+{
+    "field": "transaction_obligated_amount",
+    "group": "create_date",
+    "date_part": "year",
+    "aggregate": "sum",
+    "filters": [
+        {
+            "field": "financial_accounts_by_awards__appropriation_account_balances__treasury_account_identifier__budget_function_code",
+            "operation": "equals",
+            "value": "800"
+        }
+    ]
+}
+```
+
+Response:
+
+```json
+{
+  "total_metadata": {
+    "count": 2
+  },
+  "results": [
+    {
+      "item": "2016",
+      "aggregate": "59735118.04"
+    },
+    {
+      "item": "2015",
+      "aggregate": "6612250.70"
+    }
+  ],
+  "page_metadata": {
+    "page_number": 1,
+    "num_pages": 1,
+    "count": 2
+  }
+}
+```
+
 #### GET Requests
-GET requests can be specified by attaching any field value pair to the route. This method supports any fields present in the data object and only the `equals` operation. It also supports pagination variables. Additionally, you may specifcy complex fields that use Django's foreign key traversal; for more details on this see `field` from the POST request. Examples below:
+GET requests can be specified by attaching any field value pair to the endpoint. This method supports any fields present in the data object and only the `equals` operation. It also supports pagination variables. Additionally, you may specifcy complex fields that use Django's foreign key traversal; for more details on this see `field` from the POST request. Examples below:
 
 `/v1/awards/summary/?page=5&limit=1000`
 
@@ -87,6 +151,7 @@ The structure of the post request allows for a flexible and complex query with b
 {
     "page": 1,
     "limit": 1000,
+    "verbose": true,
     "order": ["recipient__location__location_state_code", "-recipient__name"],
     "fields": ["fain", "total_obligation"],
     "exclude": ["recipient"]
@@ -108,6 +173,8 @@ The structure of the post request allows for a flexible and complex query with b
 
 * `page` - _Optional_ - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
 * `limit` - _Optional_ - The maximum length of a page in the response. Default: 100
+* `verbose` - _Optional_ - Most data is self-limiting the amount of data returned. To return all fields without
+having to specify them directly in `fields`, you can set this to `true`. Default: `false`
 * `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name, e.g. to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
 
   ```
@@ -129,7 +196,7 @@ The structure of the post request allows for a flexible and complex query with b
     "total_metadata": { . . . }
   }
   ```
-  
+
 In this case, two entires matching the specified filter have the state code of `FL`.
 * `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
 * `exclude` - _Optional_ - What fields to exclude from the return. Must be a list.
@@ -433,7 +500,7 @@ The response has three functional parts:
     * `count` - The length of the `results` array for this page
   * `total_metadata` - Includes data about the total dataset and any dataset-level metadata specific to the endpoint
     * `count` - The total number of items in this dataset, spanning all pages
-  * `results` - An array of objects corresponding to the data returned by the specified route. Will _always_ be an array, even if the number of results is only one.
+  * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
 ### Autocomplete Queries
 Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably awards/summary).
@@ -540,6 +607,7 @@ This is a special type of autocomplete query which allows users to search for ge
   * `place` - The value of the place. e.g. A country's name, or a county name, etc.
   * `matched_ids` - An array of `location_id`s that match the given data. This can be used to look up awards, recipients, or other data by requesting these ids
   * `place_type` - The type of place. Options are:
+    * `CONGRESSIONAL DISTRICT` - These are searched using the pattern `XX-##` where `XX` designates a state code, and `##` designates the district number. For example, `VA-06` is district `06` in Virginia
     * `COUNTRY`
     * `CITY`
     * `COUNTY`
@@ -548,8 +616,9 @@ This is a special type of autocomplete query which allows users to search for ge
     * `POSTAL CODE` - Used for foreign postal codes
     * `PROVINCE`
   * `parent` - The parent of the object, in a logical hierarchy. The parents for each type are listed below:
+    * `CONGRESSIONAL DISTRICT` - Will specify the parent as the state containing the district
     * `COUNTRY` - Will specify the parent as the country code for reference purposes
-    * `CITY` - Will specify the county the city is in for domestic cities, or the country for foreign cities
+    * `CITY` - Will specify the state the city is in for domestic cities, or the country for foreign cities
     * `COUNTY` - Will specify the state the the city is in for domestic cities
     * `STATE` - Will specify the country the state is in
     * `ZIP` - Will specify the state the zip code falls in. If a zip code falls in multiple states, two results will be generated

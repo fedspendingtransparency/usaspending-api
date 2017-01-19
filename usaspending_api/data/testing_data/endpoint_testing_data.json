@@ -1,23 +1,10 @@
 [
     {
-        "method": "POST",
-        "request_object": {
-            "fields": [
-                "fain",
-                "uri",
-                "piid"
-            ],
-            "limit": 1,
-            "page": 1
-        },
-        "url": "/api/v1/awards/summary/",
-        "name": "Test field limiting on awards/summary",
-        "status_code": 200,
         "response_object": {
             "page_metadata": {
                 "count": 1,
-                "page_number": 1,
-                "num_pages": 26
+                "num_pages": 26,
+                "page_number": 1
             },
             "total_metadata": {
                 "count": 26
@@ -29,27 +16,27 @@
                     "uri": null
                 }
             ]
-        }
-    },
-    {
-        "method": "POST",
+        },
         "request_object": {
-            "limit": 1,
             "page": 1,
-            "exclude": [
+            "limit": 1,
+            "fields": [
                 "fain",
                 "uri",
                 "piid"
             ]
         },
-        "url": "/api/v1/awards/summary/",
-        "name": "Testing field exclusion on awards/summary",
+        "name": "Test field limiting on awards/summary",
         "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/awards/summary/"
+    },
+    {
         "response_object": {
             "page_metadata": {
                 "count": 1,
-                "page_number": 1,
-                "num_pages": 26
+                "num_pages": 26,
+                "page_number": 1
             },
             "total_metadata": {
                 "count": 26
@@ -57,596 +44,255 @@
             "results": [
                 {
                     "id": 47587,
-                    "recipient": {
-                        "legal_entity_id": 799999094,
-                        "location": {
-                            "location_id": 3,
-                            "data_source": "DBR",
-                            "location_country_name": null,
-                            "location_state_code": "SD",
-                            "location_state_name": "South Dakota",
-                            "location_state_description": null,
-                            "location_city_name": "Rapid City",
-                            "location_city_code": null,
-                            "location_county_name": "Pennington",
-                            "location_county_code": "103",
-                            "location_address_line1": "3022 W Saint Louis St",
-                            "location_address_line2": null,
-                            "location_address_line3": null,
-                            "location_foreign_location_description": null,
-                            "location_zip4": null,
-                            "location_zip_4a": null,
-                            "location_congressional_code": "00",
-                            "location_performance_code": null,
-                            "location_zip_last4": "8168",
-                            "location_zip5": "57702",
-                            "location_foreign_postal_code": null,
-                            "location_foreign_province": null,
-                            "location_foreign_city_name": null,
-                            "reporting_period_start": null,
-                            "reporting_period_end": null,
-                            "last_modified_date": null,
-                            "certified_date": null,
-                            "create_date": "2016-12-20T22:50:56.789000Z",
-                            "update_date": "2016-12-20T22:50:56.789000Z",
-                            "location_country_code": "USA"
-                        },
-                        "data_source": "DBR",
-                        "ultimate_parent_legal_entity_id": null,
-                        "recipient_name": "PROJECT SOLUTIONS, INC.",
-                        "vendor_doing_as_business_name": null,
-                        "vendor_phone_number": null,
-                        "vendor_fax_number": null,
-                        "business_types": "Q",
-                        "recipient_unique_id": "799999094",
-                        "limited_liability_corporation": null,
-                        "sole_proprietorship": null,
-                        "partnership_or_limited_liability_partnership": null,
-                        "subchapter_scorporation": null,
-                        "foundation": null,
-                        "for_profit_organization": null,
-                        "nonprofit_organization": null,
-                        "corporate_entity_tax_exempt": null,
-                        "corporate_entity_not_tax_exempt": null,
-                        "other_not_for_profit_organization": null,
-                        "sam_exception": null,
-                        "city_local_government": null,
-                        "county_local_government": null,
-                        "inter_municipal_local_government": null,
-                        "local_government_owned": null,
-                        "municipality_local_government": null,
-                        "school_district_local_government": null,
-                        "township_local_government": null,
-                        "us_state_government": null,
-                        "us_federal_government": null,
-                        "federal_agency": null,
-                        "federally_funded_research_and_development_corp": null,
-                        "us_tribal_government": null,
-                        "foreign_government": null,
-                        "community_developed_corporation_owned_firm": null,
-                        "labor_surplus_area_firm": null,
-                        "small_agricultural_cooperative": null,
-                        "international_organization": null,
-                        "us_government_entity": null,
-                        "emerging_small_business": null,
-                        "c8a_program_participant": null,
-                        "sba_certified_8a_joint_venture": null,
-                        "dot_certified_disadvantage": null,
-                        "self_certified_small_disadvantaged_business": null,
-                        "historically_underutilized_business_zone": null,
-                        "small_disadvantaged_business": null,
-                        "the_ability_one_program": null,
-                        "historically_black_college": null,
-                        "c1862_land_grant_college": null,
-                        "c1890_land_grant_college": null,
-                        "c1994_land_grant_college": null,
-                        "minority_institution": null,
-                        "private_university_or_college": null,
-                        "school_of_forestry": null,
-                        "state_controlled_institution_of_higher_learning": null,
-                        "tribal_college": null,
-                        "veterinary_college": null,
-                        "educational_institution": null,
-                        "alaskan_native_servicing_institution": null,
-                        "community_development_corporation": null,
-                        "native_hawaiian_servicing_institution": null,
-                        "domestic_shelter": null,
-                        "manufacturer_of_goods": null,
-                        "hospital_flag": null,
-                        "veterinary_hospital": null,
-                        "hispanic_servicing_institution": null,
-                        "woman_owned_business": null,
-                        "minority_owned_business": null,
-                        "women_owned_small_business": null,
-                        "economically_disadvantaged_women_owned_small_business": null,
-                        "joint_venture_women_owned_small_business": null,
-                        "joint_venture_economic_disadvantaged_women_owned_small_bus": null,
-                        "veteran_owned_business": null,
-                        "service_disabled_veteran_owned_business": null,
-                        "contracts": null,
-                        "grants": null,
-                        "receives_contracts_and_grants": null,
-                        "airport_authority": null,
-                        "council_of_governments": null,
-                        "housing_authorities_public_tribal": null,
-                        "interstate_entity": null,
-                        "planning_commission": null,
-                        "port_authority": null,
-                        "transit_authority": null,
-                        "foreign_owned_and_located": null,
-                        "american_indian_owned_business": null,
-                        "alaskan_native_owned_corporation_or_firm": null,
-                        "indian_tribe_federally_recognized": null,
-                        "native_hawaiian_owned_business": null,
-                        "tribally_owned_business": null,
-                        "asian_pacific_american_owned_business": null,
-                        "black_american_owned_business": null,
-                        "hispanic_american_owned_business": null,
-                        "native_american_owned_business": null,
-                        "subcontinent_asian_asian_indian_american_owned_business": null,
-                        "other_minority_owned_business": null,
-                        "us_local_government": null,
-                        "undefinitized_action": null,
-                        "domestic_or_foreign_entity": null,
-                        "division_name": null,
-                        "division_number": null,
-                        "last_modified_date": null,
-                        "certified_date": null,
-                        "reporting_period_start": null,
-                        "reporting_period_end": null,
-                        "create_date": null,
-                        "update_date": "2016-12-20T22:50:56.832000Z"
-                    },
-                    "awarding_agency": {
-                        "id": 567,
-                        "cgac_code": "073",
-                        "fpds_code": "7300",
-                        "subtier_code": "7300",
-                        "name": "SMALL BUSINESS ADMINISTRATION",
-                        "aac_code": null,
-                        "fourcc_code": null,
-                        "create_date": "2016-10-06T18:50:56.891000Z",
-                        "update_date": "2016-10-06T18:56:51.907000Z",
-                        "department": null,
-                        "parent_agency": null,
-                        "location": null
-                    },
-                    "funding_agency": {
-                        "id": 567,
-                        "cgac_code": "073",
-                        "fpds_code": "7300",
-                        "subtier_code": "7300",
-                        "name": "SMALL BUSINESS ADMINISTRATION",
-                        "aac_code": null,
-                        "fourcc_code": null,
-                        "create_date": "2016-10-06T18:50:56.891000Z",
-                        "update_date": "2016-10-06T18:56:51.907000Z",
-                        "department": null,
-                        "parent_agency": null,
-                        "location": null
-                    },
-                    "procurement_set": [],
-                    "financialassistanceaward_set": [
-                        {
-                            "financial_assistance_award_id": 7,
-                            "data_source": "DBR",
-                            "action_date": "2016-09-20",
-                            "action_type": "A",
-                            "federal_action_obligation": "8901.33",
-                            "modification_number": "0003:560400DB",
-                            "award_description": "FY 15 7J",
-                            "drv_award_transaction_usaspend": null,
-                            "drv_current_total_award_value_amount_adjustment": null,
-                            "drv_potential_total_award_value_amount_adjustment": null,
-                            "fain": "SBAHQ15J0005",
-                            "uri": null,
-                            "cfda_number": "59.007",
-                            "cfda_title": "7(j) Technical Assistance",
-                            "business_funds_indicator": "NON",
-                            "non_federal_funding_amount": "0.00",
-                            "total_funding_amount": "8901.33",
-                            "face_value_loan_guarantee": null,
-                            "original_loan_subsidy_cost": null,
-                            "assistance_type": "05",
-                            "record_type": 2,
-                            "correction_late_delete_indicator": null,
-                            "fiscal_year_and_quarter_correction": null,
-                            "sai_number": "0000000000000",
-                            "drv_federal_funding_amount": null,
-                            "drv_award_finance_assistance_type_label": null,
-                            "reporting_period_start": null,
-                            "reporting_period_end": null,
-                            "last_modified_date": null,
-                            "submitted_type": null,
-                            "certified_date": null,
-                            "create_date": "2016-12-20T22:50:56.818000Z",
-                            "update_date": "2016-12-20T22:50:56.818000Z",
-                            "awarding_agency": null,
-                            "recipient": null,
-                            "award": 47587,
-                            "submission": 12
-                        },
-                        {
-                            "financial_assistance_award_id": 8,
-                            "data_source": "DBR",
-                            "action_date": "2016-09-20",
-                            "action_type": "A",
-                            "federal_action_obligation": "6098.67",
-                            "modification_number": "0003:670400DB",
-                            "award_description": "FY 15 7J",
-                            "drv_award_transaction_usaspend": null,
-                            "drv_current_total_award_value_amount_adjustment": null,
-                            "drv_potential_total_award_value_amount_adjustment": null,
-                            "fain": "SBAHQ15J0005",
-                            "uri": null,
-                            "cfda_number": "59.007",
-                            "cfda_title": "7(j) Technical Assistance",
-                            "business_funds_indicator": "NON",
-                            "non_federal_funding_amount": "0.00",
-                            "total_funding_amount": "6098.67",
-                            "face_value_loan_guarantee": null,
-                            "original_loan_subsidy_cost": null,
-                            "assistance_type": "05",
-                            "record_type": 2,
-                            "correction_late_delete_indicator": null,
-                            "fiscal_year_and_quarter_correction": null,
-                            "sai_number": "0000000000000",
-                            "drv_federal_funding_amount": null,
-                            "drv_award_finance_assistance_type_label": null,
-                            "reporting_period_start": null,
-                            "reporting_period_end": null,
-                            "last_modified_date": null,
-                            "submitted_type": null,
-                            "certified_date": null,
-                            "create_date": "2016-12-20T22:50:56.849000Z",
-                            "update_date": "2016-12-20T22:50:56.849000Z",
-                            "awarding_agency": null,
-                            "recipient": null,
-                            "award": 47587,
-                            "submission": 12
-                        }
-                    ],
-                    "data_source": "DBR",
                     "type": "05",
+                    "type_description": "Unknown Type",
                     "total_obligation": "15000.00",
                     "total_outlay": null,
                     "date_signed": "2016-09-20",
                     "description": "FY 15 7J",
                     "period_of_performance_start_date": "2016-09-20",
                     "period_of_performance_current_end_date": "2016-12-28",
-                    "last_modified_date": null,
-                    "certified_date": null,
-                    "create_date": "2016-12-20T22:50:52.650000Z",
-                    "update_date": "2016-12-20T22:50:56.860000Z",
-                    "parent_award": null,
-                    "place_of_performance": 4,
-                    "latest_submission": 12
-                }
-            ]
-        }
-    },
-    {
-        "method": "POST",
-        "request_object": {
-            "fields": [
-                "funding_agency"
-            ],
-            "limit": 1,
-            "page": 1,
-            "filters": [
-                {
-                    "operation": "equals",
-                    "value": "SMALL BUSINESS ADMINISTRATION",
-                    "field": "funding_agency__name"
-                }
-            ]
-        },
-        "url": "/api/v1/awards/summary/",
-        "name": "Testing filter operation 'equals' on awards/summary",
-        "status_code": 200,
-        "response_object": {
-            "page_metadata": {
-                "count": 1,
-                "page_number": 1,
-                "num_pages": 5
-            },
-            "total_metadata": {
-                "count": 5
-            },
-            "results": [
-                {
+                    "awarding_agency": {
+                        "toptier_agency": null,
+                        "subtier_agency": null,
+                        "office_agency": null
+                    },
                     "funding_agency": {
-                        "id": 567,
-                        "cgac_code": "073",
-                        "fpds_code": "7300",
-                        "subtier_code": "7300",
-                        "name": "SMALL BUSINESS ADMINISTRATION",
-                        "aac_code": null,
-                        "fourcc_code": null,
-                        "create_date": "2016-10-06T18:50:56.891000Z",
-                        "update_date": "2016-10-06T18:56:51.907000Z",
-                        "department": null,
-                        "parent_agency": null,
-                        "location": null
-                    }
-                }
-            ]
-        }
-    },
-    {
-        "method": "POST",
-        "request_object": {
-            "fields": [
-                "create_date",
-                "update_date"
-            ],
-            "limit": 1,
-            "page": 1,
-            "filters": [
-                {
-                    "operation": "range_intersect",
-                    "value": [
-                        "2015-10-05",
-                        "2016-12-10"
-                    ],
-                    "field": [
-                        "create_date",
-                        "update_date"
+                        "toptier_agency": null,
+                        "subtier_agency": null,
+                        "office_agency": null
+                    },
+                    "recipient": {
+                        "legal_entity_id": 799999094,
+                        "ultimate_parent_legal_entity_id": null,
+                        "recipient_name": "PROJECT SOLUTIONS, INC.",
+                        "business_types": "Q",
+                        "location": {
+                            "location_country_name": null,
+                            "location_state_code": "SD",
+                            "location_state_name": "South Dakota",
+                            "location_city_name": "Rapid City",
+                            "location_address_line1": "3022 W Saint Louis St",
+                            "location_address_line2": null,
+                            "location_address_line3": null,
+                            "location_zip5": "57702",
+                            "location_foreign_postal_code": null,
+                            "location_foreign_province": null,
+                            "location_foreign_city_name": null,
+                            "location_country_code": "USA"
+                        }
+                    },
+                    "place_of_performance": 4,
+                    "procurement_set": [],
+                    "financialassistanceaward_set": [
+                        {
+                            "action_date": "2016-09-20",
+                            "federal_action_obligation": "8901.33",
+                            "modification_number": "0003:560400DB",
+                            "award_description": "FY 15 7J",
+                            "cfda_number": "59.007",
+                            "cfda_title": "7(j) Technical Assistance",
+                            "face_value_loan_guarantee": null,
+                            "original_loan_subsidy_cost": null,
+                            "assistance_type": "05",
+                            "update_date": "2016-12-20T22:50:56.818000Z"
+                        },
+                        {
+                            "action_date": "2016-09-20",
+                            "federal_action_obligation": "6098.67",
+                            "modification_number": "0003:670400DB",
+                            "award_description": "FY 15 7J",
+                            "cfda_number": "59.007",
+                            "cfda_title": "7(j) Technical Assistance",
+                            "face_value_loan_guarantee": null,
+                            "original_loan_subsidy_cost": null,
+                            "assistance_type": "05",
+                            "update_date": "2016-12-20T22:50:56.849000Z"
+                        }
                     ]
                 }
             ]
         },
-        "url": "/api/v1/awards/summary/",
-        "name": "Testing filter operation 'range_intersect' on awards/summary",
+        "request_object": {
+            "page": 1,
+            "limit": 1,
+            "exclude": [
+                "fain",
+                "uri",
+                "piid"
+            ]
+        },
+        "name": "Testing field exclusion on awards/summary",
         "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/awards/summary/"
+    },
+    {
         "response_object": {
             "page_metadata": {
                 "count": 0,
-                "page_number": 1,
-                "num_pages": 1
+                "num_pages": 1,
+                "page_number": 1
             },
             "total_metadata": {
                 "count": 0
             },
             "results": []
-        }
-    },
-    {
-        "method": "POST",
+        },
         "request_object": {
-            "fields": [
-                "fain",
-                "create_date"
-            ],
-            "limit": 1,
             "page": 1,
+            "limit": 1,
             "filters": [
                 {
-                    "operation": "fy",
-                    "value": 2017,
-                    "field": "create_date"
+                    "operation": "equals",
+                    "field": "funding_agency__toptier_agency__name",
+                    "value": "SMALL BUSINESS ADMINISTRATION"
                 }
+            ],
+            "fields": [
+                "funding_agency"
             ]
         },
-        "url": "/api/v1/awards/summary/",
-        "name": "Testing filter operation 'fy' on awards/summary",
+        "name": "Testing filter operation 'equals' on awards/summary",
         "status_code": 200,
-        "response_object": {
-            "page_metadata": {
-                "count": 1,
-                "page_number": 1,
-                "num_pages": 26
-            },
-            "total_metadata": {
-                "count": 26
-            },
-            "results": [
-                {
-                    "fain": "SBAHQ15J0005",
-                    "create_date": "2016-12-20T22:50:52.650000Z"
-                }
-            ]
-        }
+        "method": "POST",
+        "url": "/api/v1/awards/summary/"
     },
     {
-        "method": "POST",
+        "response_object": {
+            "page_metadata": {
+                "count": 0,
+                "num_pages": 1,
+                "page_number": 1
+            },
+            "total_metadata": {
+                "count": 0
+            },
+            "results": []
+        },
         "request_object": {
+            "page": 1,
+            "limit": 1,
+            "filters": [
+                {
+                    "operation": "range_intersect",
+                    "field": [
+                        "create_date",
+                        "update_date"
+                    ],
+                    "value": [
+                        "2015-10-05",
+                        "2016-12-10"
+                    ]
+                }
+            ],
+            "fields": [
+                "create_date",
+                "update_date"
+            ]
+        },
+        "name": "Testing filter operation 'range_intersect' on awards/summary",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/awards/summary/"
+    },
+    {
+        "response_object": {
+            "page_metadata": {
+                "count": 0,
+                "num_pages": 1,
+                "page_number": 1
+            },
+            "total_metadata": {
+                "count": 0
+            },
+            "results": []
+        },
+        "request_object": {
+            "page": 1,
+            "limit": 5,
+            "filters": [
+                {
+                    "operation": "search",
+                    "field": "funding_agency__toptier_agency__name",
+                    "value": "small"
+                }
+            ],
             "fields": [
                 "fain",
                 "create_date",
                 "funding_agency"
-            ],
-            "limit": 5,
-            "page": 1,
-            "filters": [
-                {
-                    "operation": "search",
-                    "value": "small",
-                    "field": "funding_agency__name"
-                }
             ]
         },
-        "url": "/api/v1/awards/summary/",
         "name": "Testing filter operation 'search' on awards/summary",
         "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/awards/summary/"
+    },
+    {
         "response_object": {
             "page_metadata": {
                 "count": 5,
-                "page_number": 1,
-                "num_pages": 1
+                "num_pages": 1,
+                "page_number": 1
             },
             "total_metadata": {
                 "count": 5
             },
             "results": [
                 {
-                    "funding_agency": {
-                        "id": 567,
-                        "cgac_code": "073",
-                        "fpds_code": "7300",
-                        "subtier_code": "7300",
-                        "name": "SMALL BUSINESS ADMINISTRATION",
-                        "aac_code": null,
-                        "fourcc_code": null,
-                        "create_date": "2016-10-06T18:50:56.891000Z",
-                        "update_date": "2016-10-06T18:56:51.907000Z",
-                        "department": null,
-                        "parent_agency": null,
-                        "location": null
-                    },
                     "fain": "SBAHQ15J0005",
-                    "create_date": "2016-12-20T22:50:52.650000Z"
+                    "uri": null
                 },
                 {
-                    "funding_agency": {
-                        "id": 567,
-                        "cgac_code": "073",
-                        "fpds_code": "7300",
-                        "subtier_code": "7300",
-                        "name": "SMALL BUSINESS ADMINISTRATION",
-                        "aac_code": null,
-                        "fourcc_code": null,
-                        "create_date": "2016-10-06T18:50:56.891000Z",
-                        "update_date": "2016-10-06T18:56:51.907000Z",
-                        "department": null,
-                        "parent_agency": null,
-                        "location": null
-                    },
                     "fain": "SBAHQ16B0070",
-                    "create_date": "2016-12-20T22:50:52.907000Z"
+                    "uri": null
                 },
                 {
-                    "funding_agency": {
-                        "id": 567,
-                        "cgac_code": "073",
-                        "fpds_code": "7300",
-                        "subtier_code": "7300",
-                        "name": "SMALL BUSINESS ADMINISTRATION",
-                        "aac_code": null,
-                        "fourcc_code": null,
-                        "create_date": "2016-10-06T18:50:56.891000Z",
-                        "update_date": "2016-10-06T18:56:51.907000Z",
-                        "department": null,
-                        "parent_agency": null,
-                        "location": null
-                    },
                     "fain": "SBAHQ16B0069",
-                    "create_date": "2016-12-20T22:50:53.071000Z"
+                    "uri": null
                 },
                 {
-                    "funding_agency": {
-                        "id": 567,
-                        "cgac_code": "073",
-                        "fpds_code": "7300",
-                        "subtier_code": "7300",
-                        "name": "SMALL BUSINESS ADMINISTRATION",
-                        "aac_code": null,
-                        "fourcc_code": null,
-                        "create_date": "2016-10-06T18:50:56.891000Z",
-                        "update_date": "2016-10-06T18:56:51.907000Z",
-                        "department": null,
-                        "parent_agency": null,
-                        "location": null
-                    },
                     "fain": "SBAHQ16V0028",
-                    "create_date": "2016-12-20T22:50:55.986000Z"
+                    "uri": null
                 },
                 {
-                    "funding_agency": {
-                        "id": 567,
-                        "cgac_code": "073",
-                        "fpds_code": "7300",
-                        "subtier_code": "7300",
-                        "name": "SMALL BUSINESS ADMINISTRATION",
-                        "aac_code": null,
-                        "fourcc_code": null,
-                        "create_date": "2016-10-06T18:50:56.891000Z",
-                        "update_date": "2016-10-06T18:56:51.907000Z",
-                        "department": null,
-                        "parent_agency": null,
-                        "location": null
-                    },
                     "fain": "SBAHQ16B0017",
-                    "create_date": "2016-12-20T22:50:56.135000Z"
+                    "uri": null
                 }
             ]
-        }
-    },
-    {
-        "method": "POST",
+        },
         "request_object": {
-            "fields": [
-                "fain",
-                "uri"
-            ],
-            "limit": 100,
             "page": 1,
+            "limit": 100,
             "filters": [
                 {
                     "filters": [
                         {
                             "operation": "is_null",
-                            "value": false,
-                            "field": "fain"
+                            "field": "fain",
+                            "value": false
                         },
                         {
                             "operation": "equals",
-                            "value": "SMALL BUSINESS ADMNISTRATION",
-                            "field": "funding_agency__name"
+                            "field": "funding_agency__toptier_agency__name",
+                            "value": "SMALL BUSINESS ADMNISTRATION"
                         }
                     ],
                     "combine_method": "OR"
                 }
+            ],
+            "fields": [
+                "fain",
+                "uri"
             ]
         },
-        "url": "/api/v1/awards/summary/",
         "name": "Testing filter combinations via OR on awards/summary",
         "status_code": 200,
-        "response_object": {
-            "page_metadata": {
-                "count": 5,
-                "page_number": 1,
-                "num_pages": 1
-            },
-            "total_metadata": {
-                "count": 5
-            },
-            "results": [
-                {
-                    "fain": "SBAHQ15J0005",
-                    "uri": null
-                },
-                {
-                    "fain": "SBAHQ16B0070",
-                    "uri": null
-                },
-                {
-                    "fain": "SBAHQ16B0069",
-                    "uri": null
-                },
-                {
-                    "fain": "SBAHQ16V0028",
-                    "uri": null
-                },
-                {
-                    "fain": "SBAHQ16B0017",
-                    "uri": null
-                }
-            ]
-        }
+        "method": "POST",
+        "url": "/api/v1/awards/summary/"
     },
     {
-        "method": "POST",
-        "request_object": {
-            "fields": [
-                "recipient__location__location_state_code",
-                "recipient__location__location_state_name"
-            ],
-            "value": "a"
-        },
-        "url": "/api/v1/awards/summary/autocomplete/",
-        "name": "Testing mode 'contains' awards/summary/autocomplete",
-        "status_code": 200,
         "response_object": {
             "results": {
                 "recipient__location__location_state_code": [
@@ -654,10 +300,10 @@
                     "VA"
                 ],
                 "recipient__location__location_state_name": [
-                    "Minnesota",
                     "South Dakota",
-                    "Virginia",
                     "Utah",
+                    "Virginia",
+                    "Minnesota",
                     "Louisiana"
                 ]
             },
@@ -665,21 +311,20 @@
                 "recipient__location__location_state_code": 2,
                 "recipient__location__location_state_name": 5
             }
-        }
-    },
-    {
-        "method": "POST",
+        },
         "request_object": {
+            "value": "a",
             "fields": [
                 "recipient__location__location_state_code",
                 "recipient__location__location_state_name"
-            ],
-            "value": "l",
-            "mode": "startswith"
+            ]
         },
-        "url": "/api/v1/awards/summary/autocomplete/",
-        "name": "Testing mode 'startswith' awards/summary/autocomplete",
+        "name": "Testing mode 'contains' awards/summary/autocomplete",
         "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/awards/summary/autocomplete/"
+    },
+    {
         "response_object": {
             "results": {
                 "recipient__location__location_state_code": [
@@ -693,199 +338,149 @@
                 "recipient__location__location_state_code": 1,
                 "recipient__location__location_state_name": 1
             }
-        }
+        },
+        "request_object": {
+            "mode": "startswith",
+            "value": "l",
+            "fields": [
+                "recipient__location__location_state_code",
+                "recipient__location__location_state_name"
+            ]
+        },
+        "name": "Testing mode 'startswith' awards/summary/autocomplete",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/awards/summary/autocomplete/"
     },
     {
-        "status_code": 200,
-        "method": "GET",
         "response_object": {
             "page_metadata": {
                 "count": 0,
-                "page_number": 1,
-                "num_pages": 1
+                "num_pages": 1,
+                "page_number": 1
             },
-            "results": [],
             "total_metadata": {
                 "count": 0
-            }
+            },
+            "results": []
         },
+        "method": "GET",
+        "name": "Testing /awards/ response",
         "url": "/api/v1/awards/?page=1&limit=1&financial_accounts_by_awards_id=1",
-        "name": "Testing /awards/ response"
+        "status_code": 200
     },
     {
-        "method": "POST",
+        "response_object": {
+            "page_metadata": {
+                "count": 0,
+                "num_pages": 1,
+                "page_number": 1
+            },
+            "total_metadata": {
+                "count": 0
+            },
+            "results": []
+        },
         "request_object": {
             "filters": [
                 {
                     "operation": "equals",
-                    "value": 1,
-                    "field": "appropriation_account_balances_id"
+                    "field": "appropriation_account_balances_id",
+                    "value": 1
                 }
             ],
             "fields": [
                 "budget_authority_unobligated_balance_brought_forward_fyb"
             ]
         },
-        "url": "/api/v1/accounts/",
         "name": "Test accounts endpoint POST request",
         "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/accounts/"
+    },
+    {
         "response_object": {
             "page_metadata": {
                 "count": 0,
-                "page_number": 1,
-                "num_pages": 1
+                "num_pages": 1,
+                "page_number": 1
             },
             "total_metadata": {
                 "count": 0
             },
             "results": []
-        }
-    },
-    {
-        "method": "POST",
+        },
         "request_object": {
             "filters": [
                 {
                     "operation": "equals",
-                    "value": 1,
-                    "field": "treasury_account_identifier"
+                    "field": "treasury_account_identifier",
+                    "value": 1
                 }
             ],
             "fields": [
                 "main_account_code"
             ]
         },
-        "url": "/api/v1/accounts/tas/",
         "name": "Test TAS endpoint POST request",
         "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/accounts/tas/"
+    },
+    {
         "response_object": {
             "page_metadata": {
                 "count": 0,
-                "page_number": 1,
-                "num_pages": 1
+                "num_pages": 1,
+                "page_number": 1
             },
             "total_metadata": {
                 "count": 0
             },
             "results": []
-        }
-    },
-    {
-        "method": "POST",
+        },
         "request_object": {
-            "fields": [
-                "financial_accounts_by_program_activity_object_class_id"
-            ],
-            "limit": 10,
-            "page": 20,
+            "page": 1,
+            "limit": 1,
             "filters": [
                 {
                     "operation": "equals",
-                    "value": 2016,
-                    "field": "appropriation_account_balances__treasury_account_identifier__beginning_period_of_availability"
+                    "field": "submission_id",
+                    "value": 977
                 }
-            ]
-        },
-        "url": "/api/v1/financial_activities/",
-        "name": "Test financial activities endpoint POST request",
-        "status_code": 200,
-        "response_object": {
-            "page_metadata": {
-                "count": 10,
-                "page_number": 20,
-                "num_pages": 25
-            },
-            "total_metadata": {
-                "count": 242
-            },
-            "results": [
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12267
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12232
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12227
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12223
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12171
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12126
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12116
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12113
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12088
-                },
-                {
-                    "financial_accounts_by_program_activity_object_class_id": 12069
-                }
-            ]
-        }
-    },
-    {
-        "method": "POST",
-        "request_object": {
+            ],
             "fields": [
                 "cgac_code"
-            ],
-            "limit": 1,
-            "page": 1,
-            "filters": [
-                {
-                    "operation": "equals",
-                    "value": 977,
-                    "field": "submission_id"
-                }
             ]
         },
-        "url": "/api/v1/submissions/",
         "name": "Test submission endpoint POST request",
         "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/submissions/"
+    },
+    {
         "response_object": {
             "page_metadata": {
                 "count": 0,
-                "page_number": 1,
-                "num_pages": 1
+                "num_pages": 1,
+                "page_number": 1
             },
             "total_metadata": {
                 "count": 0
             },
             "results": []
-        }
-    },
-    {
-        "method": "POST",
+        },
         "request_object": {
+            "date_part": "year",
             "page": 1,
             "limit": 1,
             "field": "transaction_obligated_amount",
             "group": "create_date",
-            "date_part": "year",
             "aggregate": "sum"
         },
-        "url": "/api/v1/awards/total/",
         "name": "Test award totals endpoint",
         "status_code": 200,
-        "response_object": {
-              "page_metadata": {
-                "page_number": 1,
-                "count": 0,
-                "num_pages": 1
-              },
-              "total_metadata": {
-                "count": 0
-              },
-              "results": []
-        }
+        "method": "POST",
+        "url": "/api/v1/awards/total/"
     }
 ]
