@@ -362,8 +362,8 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     q_kwargs = {
         "allocation_transfer_agency_id": tas_data[0]["allocation_transfer_agency"] or "",
         "agency_id": tas_data[0]["agency_identifier"] or "",
-        "beginning_period_of_availability": tas_data[0]["beginning_period_of_availability"] or "",
-        "ending_period_of_availability": tas_data[0]["ending_period_of_availability"] or "",
+        "beginning_period_of_availability": tas_data[0]["beginning_period_of_availa"] or "",
+        "ending_period_of_availability": tas_data[0]["ending_period_of_availabil"] or "",
         "availability_type_code": tas_data[0]["availability_type_code"] or "",
         "main_account_code": tas_data[0]["main_account_code"] or "",
         "sub_account_code": tas_data[0]["sub_account_code"] or ""
