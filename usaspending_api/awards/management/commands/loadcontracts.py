@@ -29,7 +29,8 @@ class Command(BaseCommand):
             "description": "descriptionofcontractrequirement",
             "other_statutory_authority": "otherstatutoryauthority",
             "modification_number": "modnumber",
-            "parent_award_id": "idvpiid"
+            "parent_award_id": "idvpiid",
+            "usaspending_unique_transaction_id": "unique_transaction_id"
         }
 
         value_map = {
