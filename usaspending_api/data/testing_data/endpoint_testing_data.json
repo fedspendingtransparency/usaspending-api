@@ -45,7 +45,7 @@
                 {
                     "id": 47587,
                     "type": "05",
-                    "type_description": "Unknown Type",
+                    "type_description": "Cooperative Agreement",
                     "total_obligation": "15000.00",
                     "total_outlay": null,
                     "date_signed": "2016-09-20",
@@ -89,24 +89,24 @@
                             "action_date": "2016-09-20",
                             "federal_action_obligation": "8901.33",
                             "modification_number": "0003:560400DB",
-                            "award_description": "FY 15 7J",
+                            "description": "FY 15 7J",
                             "cfda_number": "59.007",
                             "cfda_title": "7(j) Technical Assistance",
                             "face_value_loan_guarantee": null,
                             "original_loan_subsidy_cost": null,
-                            "assistance_type": "05",
+                            "type": "05",
                             "update_date": "2016-12-20T22:50:56.818000Z"
                         },
                         {
                             "action_date": "2016-09-20",
                             "federal_action_obligation": "6098.67",
                             "modification_number": "0003:670400DB",
-                            "award_description": "FY 15 7J",
+                            "description": "FY 15 7J",
                             "cfda_number": "59.007",
                             "cfda_title": "7(j) Technical Assistance",
                             "face_value_loan_guarantee": null,
                             "original_loan_subsidy_cost": null,
-                            "assistance_type": "05",
+                            "type": "05",
                             "update_date": "2016-12-20T22:50:56.849000Z"
                         }
                     ]
