@@ -1,20 +1,13 @@
-import csv
 import logging
 from datetime import datetime
 
-import django
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 import usaspending_api.awards.management.commands.helpers as h
 from usaspending_api.awards.models import Award, FinancialAssistanceAward
 from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
-from usaspending_api.references.models import Agency, LegalEntity, Location
+from usaspending_api.references.models import Agency, LegalEntity
 from usaspending_api.submissions.models import SubmissionAttributes
-"""
-
-No PIID in the download from https://www.usaspending.gov/DownloadCenter/Pages/dataarchives.aspx ?
-
-"""
 
 
 class Command(BaseCommand):
@@ -36,15 +29,17 @@ class Command(BaseCommand):
         # field_map is used to simply translate a column name in our schema
         # to the field name in the input source
         field_map = {
-            "award_id": "federal_award_id",
+            "fain": "federal_award_id",
             "federal_action_obligation": "fed_funding_amount",
             "non_federal_funding_amount": "non_fed_funding_amount",
             "cfda_number": "cfda_program_num",
             "cfda_title": "cfda_program_title",
-            "uri": "unique_transaction_id",
             "face_value_loan_guarantee": "face_loan_guran",
             "original_loan_subsidy_cost": "orig_sub_guran",  # ??
             "award_description": "project_description",  # ??
+            "fiscal_year_and_quarter_correction": "fyq_correction",
+            "uri": "unique_transaction_id",
+            # uri in the CSV is empty, so not useful
         }
 
         # TODO: csv contains `exec1_amount`... `exec5_amount` and
@@ -60,6 +55,8 @@ class Command(BaseCommand):
         value_map = {
             "data_source": "USA",
             "submitted_type": "C",  # ?? For CSV?
+            "correction_late_delete_indicator":
+            lambda row: h.up2colon(row['correction_late_ind']),
             "recipient": self.get_or_create_recipient,
             "award": self.get_or_create_award,
             "place_of_performance":
@@ -76,7 +73,11 @@ class Command(BaseCommand):
             lambda row: self.parse_first_character(row['transactionnumber']),
             "solicitation_identifier":
             lambda row: self.parse_first_character(row['solicitationid']),
-            "submission": subattr
+            "submission": subattr,
+            "period_of_performance_start_date":
+            lambda row: h.convert_date(row['starting_date']),
+            "period_of_performance_end":
+            lambda row: h.convert_date(row['ending_date']),
         }
 
         loader = ThreadedDataLoader(
@@ -87,7 +88,6 @@ class Command(BaseCommand):
         fain = row.get("federal_award_id", None)
         award = Award.get_or_create_summary_award(fain=fain)
         return award
-        # TODO: really don't know how to detect parent awards
 
     def recipient_flags_by_type(self, type_name):
         """Translates `type_name` to a T in the appropriate flag value.
@@ -118,7 +118,7 @@ class Command(BaseCommand):
         }
         flag = mappings.get(type_name, "")
         if flag:
-            flags[flag] = 'T'
+            flags[flag] = 'Y'
         else:
             self.logger.error('No known column for recipient_type {}'.format(
                 type_name))

@@ -417,6 +417,8 @@ class FinancialAssistanceAward(AwardAction):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    period_of_performance_start_date = models.DateField(blank=True, null=True)
+    period_of_performance_end_date = models.DateField(blank=True, null=True)
 
     @staticmethod
     def get_default_fields():
