@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Location
+from usaspending_api.awards.models import Award
 
 
 class FiscalYear():
@@ -289,35 +290,71 @@ class AutoCompleteHandler():
     @staticmethod
     # Data set to be searched for the value, and which fields to look in
     # Mode is either "contains" or "startswith"
-    def get_values_and_counts(data_set, fields, value, mode="contains"):
+    def get_values_and_counts(data_set, filter_matched_ids, pk_name):
         value_dict = {}
         count_dict = {}
 
+        for field in filter_matched_ids.keys():
+            q_args = {}
+            q_args[pk_name + "__in"] = filter_matched_ids[field]
+            value_dict[field] = list(set(data_set.all().filter(Q(**q_args)).values_list(field, flat=True)))  # Why this weirdness? To ensure we eliminate duplicates
+            count_dict[field] = len(value_dict[field])
+
+        return value_dict, count_dict
+
+    '''
+    Returns an array of ids that match the filters for the given fields
+    '''
+    @staticmethod
+    def get_filter_matched_ids(data_set, fields, value, mode="contains", limit=10):
         if mode == "contains":
             mode = "__icontains"
         elif mode == "startswith":
             mode = "__istartswith"
 
+        filter_matched_ids = {}
+        pk_name = data_set.model._meta.pk.name
         for field in fields:
             q_args = {}
             q_args[field + mode] = value
-            value_dict[field] = list(set(data_set.filter(Q(**q_args)).values_list(field, flat=True)))  # Why this weirdness? To ensure we eliminate duplicates
-            count_dict[field] = len(value_dict[field])
+            filter_matched_ids[field] = data_set.all().filter(Q(**q_args)).select_related(field)[:limit].values_list(pk_name, flat=True)
 
-        return value_dict, count_dict
+        return filter_matched_ids, pk_name
 
     @staticmethod
-    def handle(data_set, body):
+    def get_objects(data_set, filter_matched_ids, pk_name, serializer):
+        matched_objects = {}
+
+        for field in filter_matched_ids.keys():
+            q_args = {}
+            q_args[pk_name + "__in"] = filter_matched_ids[field]
+            matched_object_qs = data_set.all().filter(Q(**q_args))
+            matched_objects[field] = serializer(matched_object_qs, many=True).data
+
+        return matched_objects
+
+    @staticmethod
+    def handle(data_set, body, serializer=None):
         try:
             AutoCompleteHandler.validate(body)
         except:
             raise
-        if "mode" not in body:
-            body["mode"] = "contains"
-        value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set, body["fields"], body["value"], body["mode"])
+
+        return_object = {}
+
+        filter_matched_ids, pk_name = AutoCompleteHandler.get_filter_matched_ids(data_set.all(), body["fields"], body["value"], body.get("mode", "contains"), body.get("limit", 10))
+
+        # Get matching string values, and their counts
+        value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set.all(), filter_matched_ids, pk_name)
+
+        # Get the matching objects, if requested
+        if body.get("matched_objects", False) and serializer:
+            return_object["matched_objects"] = AutoCompleteHandler.get_objects(data_set.all(), filter_matched_ids, pk_name, serializer)
+
         return {
+            **return_object,
             "counts": count_dict,
-            "results": value_dict
+            "results": value_dict,
         }
 
     @staticmethod

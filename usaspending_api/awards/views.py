@@ -37,7 +37,7 @@ class AwardListSummaryAutocomplete(APIView):
         try:
             body_unicode = request.body.decode('utf-8')
             body = json.loads(body_unicode)
-            return Response(AutoCompleteHandler.handle(Award.objects.all(), body))
+            return Response(AutoCompleteHandler.handle(Award.objects.all(), body, AwardSerializer))
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -52,6 +52,14 @@ The currently available endpoints are:
     - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information
     - _Methods_: POST
 
+  * **[/v1/references/agency/](https://api.usaspending.gov/api/v1/references/agency/)**
+    - _Description_: Provides agency data
+    - _Methods_: POST
+
+  * **[/v1/references/agency/autocomplete/](https://api.usaspending.gov/api/v1/references/agency/autocomplete/)**
+    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the agency endpoint
+    - _Methods_: POST
+
   * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
     - _Description_: Returns all `FinancialAccountsByAwardsTransactionObligations` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
@@ -507,9 +515,11 @@ Autocomplete queries currently require the endpoint to have additional handling,
 #### Body
 ```
 {
-	"fields": ["recipient__location__location_state_code", "recipient__location__location_state_name"],
-	"value": "a",
-	"mode": "contains"
+	fields": ["toptier_agency__name", "subtier_agency__name"],
+	"value": "DEFENSE",
+	"mode": "contains",
+  "limit": 100,
+  "matched_objects": true
 }
 ```
 #### Body Description
@@ -518,30 +528,95 @@ Autocomplete queries currently require the endpoint to have additional handling,
   * `mode` - _Optional_ - The search mode. Options available are:
     * `contains` - Matches if the field's value contains the specified value
     * `startswith` - Matches if the field's value starts with the specified value
+  * `matched_objects` - _Optional_ - Boolean value specifying whether or not to return matching data objects. Default: false
+  * `limit` - _Optional_ - Limits the number of query matches. Defaults to 10.
 
 #### Response
 ```
 {
   "results": {
-    "recipient__location__location_state_name": [
-      "Texas",
-      "California",
-      "Georgia"
+    "toptier_agency__name": [
+      "DEFENSE NUCLEAR FACILITIES SAFETY BOARD",
+      "DEPT OF DEFENSE"
     ],
-    "recipient__location__location_state_code": [
-      "CA",
-      "GA"
+    "subtier_agency__name": [
+      "DEFENSE NUCLEAR FACILITIES SAFETY BOARD",
+      "DEFENSE HUMAN RESOURCES ACTIVITY",
+      "DEPT OF DEFENSE",
+      "DEFENSE THREAT REDUCTION AGENCY (DTRA)",
+      "ASSISTANT SECRETARY FOR DEFENSE PROGRAMS"
     ]
   },
   "counts": {
-    "recipient__location__location_state_name": 3,
-    "recipient__location__location_state_code": 2
+    "toptier_agency__name": 2,
+    "subtier_agency__name": 5
+  },
+  "matched_objects": {
+    "toptier_agency__name": [
+      {
+        "toptier_agency": {
+          "cgac_code": "097",
+          "fpds_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "subtier_agency": {
+          "subtier_code": "97JC",
+          "name": "MISSILE DEFENSE AGENCY (MDA)"
+        },
+        "office_agency": null
+      },
+
+       . . .
+
+      {
+        "toptier_agency": {
+          "cgac_code": "097",
+          "fpds_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "subtier_agency": {
+          "subtier_code": "97F7",
+          "name": "JOINT IMPROVISED EXPLOSIVE DEVICE DEFEAT ORGANIZATION (JIEDDO)"
+        },
+        "office_agency": null
+      }
+    ],
+    "subtier_agency__name": [
+      {
+        "toptier_agency": {
+          "cgac_code": "089",
+          "fpds_code": "8900",
+          "name": "ENERGY, DEPARTMENT OF"
+        },
+        "subtier_agency": {
+          "subtier_code": "8925",
+          "name": "ASSISTANT SECRETARY FOR DEFENSE PROGRAMS"
+        },
+        "office_agency": null
+      },
+
+      . . .
+
+      {
+        "toptier_agency": {
+          "cgac_code": "097",
+          "fpds_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "subtier_agency": {
+          "subtier_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "office_agency": null
+      }
+    ]
   }
 }
 ```
 #### Response Description
   * `results` - The actual results. For each field search, will contain a list of all unique values matching the requested value and mode
   * `counts` - Contains the length of each array in the results object
+  * `matched_objects` - Only exists if `matched_objects` was specified in the request. An object broken up by specified `fields` with matching objects from the autocomplete query stored in arrays.
 
 ### Geographical Hierarchy Queries
 This is a special type of autocomplete query which allows users to search for geographical locations in a hierarchy.
