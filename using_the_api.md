@@ -52,6 +52,14 @@ The currently available endpoints are:
     - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information
     - _Methods_: POST
 
+  * **[/v1/references/agency/](https://api.usaspending.gov/api/v1/references/agency/)**
+    - _Description_: Provides agency data
+    - _Methods_: POST
+
+  * **[/v1/references/agency/autocomplete/](https://api.usaspending.gov/api/v1/references/agency/autocomplete/)**
+    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the agency endpoint
+    - _Methods_: POST
+
   * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
     - _Description_: Returns all `FinancialAccountsByAwardsTransactionObligations` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
@@ -361,99 +369,132 @@ The response object structure is the same whether you are making a GET or a POST
 ```
 {
   "page_metadata": {
+    "num_pages": 499,
     "page_number": 1,
-    "num_pages": 26,
     "count": 1
   },
   "total_metadata": {
-    "count": 26
+    "count": 499
   },
   "results": [
     {
-      "id": 47950,
-      "type": "05",
-      "type_description": "Cooperative Agreement",
-      "piid": null,
-      "fain": "SBAHQ15J0005",
+      "id": 4,
+      "recipient": null,
+      "awarding_agency": null,
+      "funding_agency": null,
+      "procurement_set": [
+        {
+          "procurement_id": 4,
+          "action_date": "2016-09-08",
+          "action_type": null,
+          "federal_action_obligation": "-6000.00",
+          "modification_number": "M0001",
+          "award_description": null,
+          "drv_award_transaction_usaspend": null,
+          "drv_current_total_award_value_amount_adjustment": null,
+          "drv_potential_total_award_value_amount_adjustment": null,
+          "piid": "TEPS111408",
+          "parent_award_id": null,
+          "cost_or_pricing_data": null,
+          "type_of_contract_pricing": null,
+          "contract_award_type": null,
+          "naics": null,
+          "naics_description": null,
+          "period_of_performance_potential_end_date": null,
+          "ordering_period_end_date": null,
+          "current_total_value_award": null,
+          "potential_total_value_of_award": null,
+          "referenced_idv_agency_identifier": null,
+          "idv_type": null,
+          "multiple_or_single_award_idv": null,
+          "type_of_idc": null,
+          "a76_fair_act_action": null,
+          "dod_claimant_program_code": null,
+          "clinger_cohen_act_planning": null,
+          "commercial_item_acquisition_procedures": null,
+          "commercial_item_test_program": null,
+          "consolidated_contract": null,
+          "contingency_humanitarian_or_peacekeeping_operation": null,
+          "contract_bundling": null,
+          "contract_financing": null,
+          "contracting_officers_determination_of_business_size": null,
+          "cost_accounting_standards": null,
+          "country_of_product_or_service_origin": null,
+          "davis_bacon_act": null,
+          "evaluated_preference": null,
+          "extent_competed": null,
+          "fed_biz_opps": null,
+          "foreign_funding": null,
+          "gfe_gfp": null,
+          "information_technology_commercial_item_category": null,
+          "interagency_contracting_authority": null,
+          "local_area_set_aside": null,
+          "major_program": null,
+          "purchase_card_as_payment_method": null,
+          "multi_year_contract": null,
+          "national_interest_action": null,
+          "number_of_actions": null,
+          "number_of_offers_received": null,
+          "other_statutory_authority": null,
+          "performance_based_service_acquisition": null,
+          "place_of_manufacture": null,
+          "price_evaluation_adjustment_preference_percent_difference": null,
+          "product_or_service_code": null,
+          "program_acronym": null,
+          "other_than_full_and_open_competition": null,
+          "recovered_materials_sustainability": null,
+          "research": null,
+          "sea_transportation": null,
+          "service_contract_act": null,
+          "small_business_competitiveness_demonstration_program": null,
+          "solicitation_identifier": null,
+          "solicitation_procedures": null,
+          "fair_opportunity_limited_sources": null,
+          "subcontracting_plan": null,
+          "program_system_or_equipment_code": null,
+          "type_set_aside": null,
+          "epa_designated_product": null,
+          "walsh_healey_act": null,
+          "transaction_number": null,
+          "referenced_idv_modification_number": null,
+          "rec_flag": null,
+          "drv_parent_award_awarding_agency_code": null,
+          "drv_current_aggregated_total_value_of_award": null,
+          "drv_current_total_value_of_award": null,
+          "drv_potential_award_idv_amount_total_estimate": null,
+          "drv_potential_aggregated_award_idv_amount_total_estimate": null,
+          "drv_potential_aggregated_total_value_of_award": null,
+          "drv_potential_total_value_of_award": null,
+          "create_date": "2016-10-13T17:57:54.834457Z",
+          "update_date": "2016-10-13T18:04:04.433041Z",
+          "last_modified_date": null,
+          "certified_date": null,
+          "reporting_period_start": null,
+          "reporting_period_end": null,
+          "awarding_agency": 284,
+          "recipient": 4,
+          "award": 4,
+          "submission": 1
+        }
+      ],
+      "financialassistanceaward_set": [],
+      "type": "C",
+      "piid": "TEPS111408",
+      "parent_award_id": null,
+      "fain": null,
       "uri": null,
-      "total_obligation": "15000.00",
+      "total_obligation": "-6000.00",
       "total_outlay": null,
-      "date_signed": "2016-09-20",
-      "description": "FY 15 7J",
-      "period_of_performance_start_date": "2015-09-30",
-      "period_of_performance_current_end_date": "2016-12-28",
-      "awarding_agency": {
-        "toptier_agency": {
-          "cgac_code": "073",
-          "fpds_code": "7300",
-          "name": "SMALL BUSINESS ADMINISTRATION"
-        },
-        "subtier_agency": {
-          "subtier_code": "7300",
-          "name": "SMALL BUSINESS ADMINISTRATION"
-        },
-        "office_agency": null
-      },
-      "funding_agency": {
-        "toptier_agency": {
-          "cgac_code": "073",
-          "fpds_code": "7300",
-          "name": "SMALL BUSINESS ADMINISTRATION"
-        },
-        "subtier_agency": {
-          "subtier_code": "7300",
-          "name": "SMALL BUSINESS ADMINISTRATION"
-        },
-        "office_agency": null
-      },
-      "recipient": {
-        "legal_entity_id": 799999094,
-        "ultimate_parent_legal_entity_id": null,
-        "recipient_name": "PROJECT SOLUTIONS, INC.",
-        "business_types": "Q",
-        "location": {
-          "location_country_name": "UNITED STATES",
-          "location_state_code": "SD",
-          "location_state_name": "South Dakota",
-          "location_city_name": "Rapid City",
-          "location_address_line1": "3022 W Saint Louis St",
-          "location_address_line2": null,
-          "location_address_line3": null,
-          "location_zip5": "57702",
-          "location_foreign_postal_code": null,
-          "location_foreign_province": null,
-          "location_foreign_city_name": null,
-          "location_country_code": "USA"
-        }
-      },
-      "place_of_performance": 18,
-      "procurement_set": [],
-      "financialassistanceaward_set": [
-        {
-          "type": "05",
-          "action_date": "2016-09-20",
-          "federal_action_obligation": "8901.33",
-          "modification_number": "0003:560400DB",
-          "description": "FY 15 7J",
-          "cfda_number": "59.007",
-          "cfda_title": "7(j) Technical Assistance",
-          "face_value_loan_guarantee": null,
-          "original_loan_subsidy_cost": null,
-          "update_date": "2017-01-20T21:27:59.580606Z"
-        },
-        {
-          "type": "05",
-          "action_date": "2016-09-20",
-          "federal_action_obligation": "6098.67",
-          "modification_number": "0003:670400DB",
-          "description": "FY 15 7J",
-          "cfda_number": "59.007",
-          "cfda_title": "7(j) Technical Assistance",
-          "face_value_loan_guarantee": null,
-          "original_loan_subsidy_cost": null,
-          "update_date": "2017-01-20T21:27:59.531692Z"
-        }
-      ]
+      "date_signed": "2016-09-08",
+      "description": null,
+      "period_of_performance_start_date": null,
+      "period_of_performance_current_end_date": null,
+      "last_modified_date": null,
+      "certified_date": null,
+      "create_date": "2016-10-13T17:57:54.829889Z",
+      "update_date": "2016-10-13T18:04:04.435900Z",
+      "place_of_performance": null,
+      "latest_submission": null
     }
   ]
 }
@@ -474,9 +515,11 @@ Autocomplete queries currently require the endpoint to have additional handling,
 #### Body
 ```
 {
-	"fields": ["recipient__location__location_state_code", "recipient__location__location_state_name"],
-	"value": "a",
-	"mode": "contains"
+	fields": ["toptier_agency__name", "subtier_agency__name"],
+	"value": "DEFENSE",
+	"mode": "contains",
+  "limit": 100,
+  "matched_objects": true
 }
 ```
 #### Body Description
@@ -485,30 +528,95 @@ Autocomplete queries currently require the endpoint to have additional handling,
   * `mode` - _Optional_ - The search mode. Options available are:
     * `contains` - Matches if the field's value contains the specified value
     * `startswith` - Matches if the field's value starts with the specified value
+  * `matched_objects` - _Optional_ - Boolean value specifying whether or not to return matching data objects. Default: false
+  * `limit` - _Optional_ - Limits the number of query matches. Defaults to 10.
 
 #### Response
 ```
 {
   "results": {
-    "recipient__location__location_state_name": [
-      "Texas",
-      "California",
-      "Georgia"
+    "toptier_agency__name": [
+      "DEFENSE NUCLEAR FACILITIES SAFETY BOARD",
+      "DEPT OF DEFENSE"
     ],
-    "recipient__location__location_state_code": [
-      "CA",
-      "GA"
+    "subtier_agency__name": [
+      "DEFENSE NUCLEAR FACILITIES SAFETY BOARD",
+      "DEFENSE HUMAN RESOURCES ACTIVITY",
+      "DEPT OF DEFENSE",
+      "DEFENSE THREAT REDUCTION AGENCY (DTRA)",
+      "ASSISTANT SECRETARY FOR DEFENSE PROGRAMS"
     ]
   },
   "counts": {
-    "recipient__location__location_state_name": 3,
-    "recipient__location__location_state_code": 2
+    "toptier_agency__name": 2,
+    "subtier_agency__name": 5
+  },
+  "matched_objects": {
+    "toptier_agency__name": [
+      {
+        "toptier_agency": {
+          "cgac_code": "097",
+          "fpds_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "subtier_agency": {
+          "subtier_code": "97JC",
+          "name": "MISSILE DEFENSE AGENCY (MDA)"
+        },
+        "office_agency": null
+      },
+
+       . . .
+
+      {
+        "toptier_agency": {
+          "cgac_code": "097",
+          "fpds_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "subtier_agency": {
+          "subtier_code": "97F7",
+          "name": "JOINT IMPROVISED EXPLOSIVE DEVICE DEFEAT ORGANIZATION (JIEDDO)"
+        },
+        "office_agency": null
+      }
+    ],
+    "subtier_agency__name": [
+      {
+        "toptier_agency": {
+          "cgac_code": "089",
+          "fpds_code": "8900",
+          "name": "ENERGY, DEPARTMENT OF"
+        },
+        "subtier_agency": {
+          "subtier_code": "8925",
+          "name": "ASSISTANT SECRETARY FOR DEFENSE PROGRAMS"
+        },
+        "office_agency": null
+      },
+
+      . . .
+
+      {
+        "toptier_agency": {
+          "cgac_code": "097",
+          "fpds_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "subtier_agency": {
+          "subtier_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "office_agency": null
+      }
+    ]
   }
 }
 ```
 #### Response Description
   * `results` - The actual results. For each field search, will contain a list of all unique values matching the requested value and mode
   * `counts` - Contains the length of each array in the results object
+  * `matched_objects` - Only exists if `matched_objects` was specified in the request. An object broken up by specified `fields` with matching objects from the autocomplete query stored in arrays.
 
 ### Geographical Hierarchy Queries
 This is a special type of autocomplete query which allows users to search for geographical locations in a hierarchy.

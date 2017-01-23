@@ -2,9 +2,11 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from usaspending_api.common.api_request_utils import DataQueryHandler, GeoCompleteHandler
-from usaspending_api.references.models import Location
-from usaspending_api.references.serializers import LocationSerializer
+from usaspending_api.common.api_request_utils import DataQueryHandler, GeoCompleteHandler, AutoCompleteHandler
+from usaspending_api.references.models import Location, Agency
+from usaspending_api.references.serializers import LocationSerializer, AgencySerializer
+from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
+from usaspending_api.common.views import AggregateView, DetailViewSet
 import json
 
 
@@ -25,3 +27,28 @@ class LocationEndpoint(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(response_data)
+
+
+class AgencyAutocomplete(APIView):
+    """Autocomplete support for agency objects."""
+    def post(self, request, format=None):
+        try:
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            return Response(AutoCompleteHandler.handle(Agency.objects.all(), body, serializer=AgencySerializer))
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AgencyEndpoint(FilterQuerysetMixin,
+                     ResponseMetadatasetMixin,
+                     DetailViewSet):
+    """Return an agency"""
+    serializer_class = AgencySerializer
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = Agency.objects.all()
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
