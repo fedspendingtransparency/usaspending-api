@@ -1,14 +1,15 @@
-from django.test import TestCase, Client
+from django.test import TestCase
 from django.core.management import call_command
-from usaspending_api.accounts.models import *
-from usaspending_api.awards.models import *
-from usaspending_api.financial_activities.models import *
-from usaspending_api.submissions.models import *
+from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.awards.models import (
+    Award, FinancialAccountsByAwards,
+    FinancialAccountsByAwardsTransactionObligations,
+    FinancialAssistanceAward, Procurement)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models import LegalEntity, Location
+from usaspending_api.submissions.models import SubmissionAttributes
 
 import pytest
-import os
-
-from model_mommy import mommy
 
 
 class LoadSubmissionTest(TestCase):
