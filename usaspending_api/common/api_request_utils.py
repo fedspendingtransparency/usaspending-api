@@ -288,15 +288,13 @@ class UniqueValueHandler:
 # Handles autocomplete requests
 class AutoCompleteHandler():
     @staticmethod
-    # Data set to be searched for the value, and which fields to look in
-    # Mode is either "contains" or "startswith"
+    # Data set to be searched for the value, and which ids to match
     def get_values_and_counts(data_set, filter_matched_ids, pk_name):
         value_dict = {}
         count_dict = {}
 
         for field in filter_matched_ids.keys():
-            q_args = {}
-            q_args[pk_name + "__in"] = filter_matched_ids[field]
+            q_args = {pk_name + "__in": filter_matched_ids[field]}
             value_dict[field] = list(set(data_set.all().filter(Q(**q_args)).values_list(field, flat=True)))  # Why this weirdness? To ensure we eliminate duplicates
             count_dict[field] = len(value_dict[field])
 
