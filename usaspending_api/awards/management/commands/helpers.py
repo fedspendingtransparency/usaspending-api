@@ -47,8 +47,10 @@ def get_or_create_location(row, mapper):
         location_dict.pop("location_zip")
     else:
         location_dict.update(
-            location_foreign_postal_code=location_dict.pop("location_zip"),
-            location_foreign_province=location_dict.pop("location_state_code"))
+            location_foreign_postal_code=location_dict.pop("location_zip",
+                                                           None),
+            location_foreign_province=location_dict.pop("location_state_code",
+                                                        None))
         if "location_city_name" in location_dict:
             location_dict['location_foreign_city_name'] = location_dict.pop(
                 "location_city_name")

@@ -11,15 +11,5 @@ class Migration(migrations.Migration):
         ('awards', '0053_auto_20170111_2100'),
     ]
 
-    operations = [
-        migrations.AddField(
-            model_name='financialassistanceaward',
-            name='period_of_performance_end_date',
-            field=models.DateField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='financialassistanceaward',
-            name='period_of_performance_start_date',
-            field=models.DateField(blank=True, null=True),
-        ),
-    ]
+    """Sorry, it's an empty migration.  It contains only fields
+    that were in conflict with fields from other migrations."""

@@ -29,7 +29,6 @@ class Command(BaseCommand):
         # field_map is used to simply translate a column name in our schema
         # to the field name in the input source
         field_map = {
-            "fain": "federal_award_id",
             "federal_action_obligation": "fed_funding_amount",
             "non_federal_funding_amount": "non_fed_funding_amount",
             "cfda_number": "cfda_program_num",
@@ -38,8 +37,8 @@ class Command(BaseCommand):
             "original_loan_subsidy_cost": "orig_sub_guran",  # ??
             "award_description": "project_description",  # ??
             "fiscal_year_and_quarter_correction": "fyq_correction",
-            "uri": "unique_transaction_id",
-            # uri in the CSV is empty, so not useful
+            "usaspending_unique_transaction_id": "unique_transaction_id",
+            # uri in the CSV is often empty, so not useful
         }
 
         # TODO: csv contains `exec1_amount`... `exec5_amount` and
@@ -76,17 +75,20 @@ class Command(BaseCommand):
             "submission": subattr,
             "period_of_performance_start_date":
             lambda row: h.convert_date(row['starting_date']),
-            "period_of_performance_end":
+            "period_of_performance_current_end_date":
             lambda row: h.convert_date(row['ending_date']),
         }
 
         loader = ThreadedDataLoader(
-            FinancialAssistanceAward, field_map=field_map, value_map=value_map)
+            FinancialAssistanceAward, field_map=field_map, value_map=value_map,
+            collision_field='usaspending_unique_transaction_id',
+            collision_behavior='skip', )
         loader.load_from_file(options['file'][0])
 
     def get_or_create_award(self, row):
-        fain = row.get("federal_award_id", None)
-        award = Award.get_or_create_summary_award(fain=fain)
+        fain = row.get("fain", None)
+        uri = row.get("unique_transaction_id", None)
+        award = Award.get_or_create_summary_award(fain=fain, uri=uri)
         return award
 
     def recipient_flags_by_type(self, type_name):
@@ -98,25 +100,25 @@ class Command(BaseCommand):
         flags = {}
 
         mappings = {
-            'State government': 'us_state_government',
-            'County government': 'county_local_government',
-            'City or township government': 'city_township_government',
+            'state government': 'us_state_government',
+            'county government': 'county_local_government',
+            'city or township government': 'city_township_government',
             # or city_local_government, county_local_government, municipality_local_government ?
-            'Special district government': 'special_district_government',
-            'Independent school district': 'school_district_local_government',
-            'State controlled institution of higher education':
+            'special district government': 'special_district_government',
+            'independent school district': 'school_district_local_government',
+            'state controlled institution of higher education':
             'educational_institution',
-            'Indian tribe': 'us_tribal_government',
+            'indian tribe': 'us_tribal_government',
             # or indian_tribe_federally_recognized ?
-            'Other nonprofit': 'nonprofit_organization',
-            'Private higher education': 'educational_institution',
-            'Individual': 'individual',
-            'Profit organization': 'for_profit_organization',
-            'Small business': 'small_business',
-            # should the more specific contract flags for small businesses also set this to Y?
-            'All other': '',
+            'other nonprofit': 'nonprofit_organization',
+            'private higher education': 'educational_institution',
+            'individual': 'individual',
+            'profit organization': 'for_profit_organization',
+            'small business': 'small_business',
+            # should the more specific contract flags for small businesses also set this to y?
+            'all other': '',
         }
-        flag = mappings.get(type_name, "")
+        flag = mappings.get(type_name.lower(), "")
         if flag:
             flags[flag] = 'Y'
         else:

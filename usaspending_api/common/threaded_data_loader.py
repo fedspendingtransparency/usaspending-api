@@ -134,6 +134,7 @@ class DataLoaderThread(Process):
                 self.data_queue.task_done()
                 connection.close()
                 return
+            row = cleanse_values(row)
             # Grab the collision field
             update = False
             collision_instance = None
@@ -238,3 +239,11 @@ class DataLoaderThread(Process):
             model_instance_or_dict[field] = value
         else:
             setattr(model_instance_or_dict, field, value)
+
+def cleanse_values(row):
+    """
+    Remove textual quirks from CSV values.
+    """
+    row = {k: v.strip() for (k, v) in row.items()}
+    row = {k: (None if v.lower() == 'null' else v) for (k, v) in row.items()}
+    return row

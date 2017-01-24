@@ -1,6 +1,6 @@
 from django.test import TransactionTestCase, Client
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
+from usaspending_api.common.threaded_data_loader import ThreadedDataLoader, cleanse_values
 from django.core.management import call_command
 from django.conf import settings
 import os
@@ -72,3 +72,21 @@ class ThreadedDataLoaderTests(TransactionTestCase):
 
         gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier='45736')
         self.assertEqual(gwa_tas.account_title, file_1_account_title)
+
+    def test_cleanse_values(self):
+        """Test that sloppy values in CSV are cleaned before use"""
+
+        row = {"a": "  15",
+            "b": "abcde",
+            "c": "null",
+            "d": "Null",
+            "e": "   ",
+            "f": " abc def "}
+        result = cleanse_values(row)
+        expected = {"a": "15",
+            "b": "abcde",
+            "c": None,
+            "d": None,
+            "e": "",
+            "f": "abc def"}
+        self.assertEqual(result, expected)
