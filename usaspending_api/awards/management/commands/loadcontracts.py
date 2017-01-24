@@ -44,6 +44,9 @@ class Command(BaseCommand):
             "action_date": lambda row: h.convert_date(row['signeddate']),
             "last_modified_date": lambda row: h.convert_date(row['last_modified_date']),
             "gfe_gfp": lambda row: h.up2colon(row['gfe_gfp']),
+            "cost_or_pricing_data": lambda row: h.up2colon(row['costorpricingdata']),
+            "type_of_contract_pricing": lambda row: h.up2colon(row['typeofcontractpricing']),
+            "type": evaluate_contract_award_type,
             "multiple_or_single_award_idv": lambda row: h.up2colon(row['multipleorsingleawardidc']),
             "cost_or_pricing_data": lambda row: h.up2colon(row['costorpricingdata']),
             "type_of_contract_pricing": lambda row: h.up2colon(row['typeofcontractpricing']),
@@ -82,7 +85,7 @@ class Command(BaseCommand):
             "subcontracting_plan": lambda row: h.up2colon(row['subcontractplan']),
             "type_set_aside": lambda row: h.up2colon(row['typeofsetaside']),
             "walsh_healey_act": lambda row: h.up2colon(row['walshhealyact']),
-            "rec_flag": lambda row:  h.up2colon(self.parse_first_character(row['rec_flag'])),
+            "rec_flag": lambda row: self.parse_first_character(h.up2colon(row['rec_flag'])),
             "type_of_idc": lambda row: self.parse_first_character(row['typeofidc']),
             "a76_fair_act_action": lambda row: self.parse_first_character(row['a76action']),
             "clinger_cohen_act_planning": lambda row: self.parse_first_character(row['clingercohenact']),
@@ -173,7 +176,7 @@ class Command(BaseCommand):
             "subcontinent_asian_asian_indian_american_owned_business": self.parse_first_character(row['saaobflag']),
             "us_local_government": self.parse_first_character(row['islocalgovernmentowned']),
             "division_name": self.parse_first_character(row['divisionname']),
-            "division_number": self.parse_first_character(row['divisionnumberorofficecode'])
+            "division_number": self.parse_first_character(row['divisionnumberorofficecode']),
         }
 
         le = LegalEntity.objects.filter(recipient_unique_id=row['dunsnumber']).first()
@@ -196,7 +199,7 @@ class Command(BaseCommand):
 
 
 def evaluate_contract_award_type(row):
-    first_element = row['contractactiontype'].split(' ')[0].split(':')[0]
+    first_element = h.up2colon(row['contractactiontype'])
     if len(first_element) == 1:
         return first_element
     else:
