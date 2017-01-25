@@ -610,7 +610,6 @@ This is a special type of autocomplete query which allows users to search for ge
   * `usage` - _Optional_ - The usage of the search. Options available are:
     * `recipient` - Matches only entries where the location is used as a recipient location
     * `place_of_performance` - Matches only entries where the location is used as a place of performance
-    * `both` - Matches only entries that serve as both recipient location and place of performance
     * `all` - Matches all locations. This is the default behavior
 
 #### Response

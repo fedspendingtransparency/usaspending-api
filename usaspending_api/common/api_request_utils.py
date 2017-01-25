@@ -435,8 +435,6 @@ class GeoCompleteHandler:
             usage_q = Q(recipient_flag=True)
         elif usage == "place_of_performance":
             usage_q = Q(place_of_performance_flag=True)
-        elif usage == "both":
-            usage_q = Q(recipient_flag=True, place_of_performance_flag=True)
 
         response_object = []
 
