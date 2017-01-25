@@ -92,3 +92,13 @@ class TransactionViewset(FilterQuerysetMixin,
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
+
+
+class TransactionAggregateViewSet(FilterQuerysetMixin,
+                                  AggregateView):
+    """Return aggregate-level transaction information."""
+    def get_queryset(self):
+        queryset = Procurement.objects.all()
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset

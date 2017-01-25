@@ -513,5 +513,33 @@
         "status_code": 200,
         "method": "POST",
         "url": "/api/v1/transactions/"
+    },
+    {
+        "response_object": {
+            "total_metadata": {
+              "count": 1
+            },
+            "page_metadata": {
+              "page_number": 1,
+              "num_pages": 1,
+              "count": 1
+            },
+            "results": [
+              {
+                "item": "2016",
+                "aggregate": "1666711.83"
+              }
+            ]
+        },
+        "request_object": {
+            "field": "federal_action_obligation",
+            "group": "action_date",
+            "date_part": "year",
+            "aggregate": "sum"
+        },
+        "name": "Test transaction total POST request",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/transactions/total/"
     }
 ]
