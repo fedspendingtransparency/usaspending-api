@@ -593,7 +593,8 @@ This is a special type of autocomplete query which allows users to search for ge
 {
   "value": "u",
   "mode": "startswith",
-  "scope": "domestic"
+  "scope": "domestic",
+  "usage": "recipient"
 }
 ```
 
@@ -606,6 +607,11 @@ This is a special type of autocomplete query which allows users to search for ge
     * `domestic` - Matches only entries with the United States as the `location_country_code`
     * `foreign` - Matches only entries where the `location_country_code` is _not_ the United States
     * `all` - Matches any location entry. This is the default behavior
+  * `usage` - _Optional_ - The usage of the search. Options available are:
+    * `recipient` - Matches only entries where the location is used as a recipient location
+    * `place_of_performance` - Matches only entries where the location is used as a place of performance
+    * `both` - Matches only entries that serve as both recipient location and place of performance
+    * `all` - Matches all locations. This is the default behavior
 
 #### Response
 ```
