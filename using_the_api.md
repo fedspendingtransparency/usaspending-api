@@ -116,7 +116,9 @@ The `results` portion of the response will contain:
 * `item`: the value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
 * `aggregate`: the summarized data
 
-For example, to request the yearly sum of obligated dollars across transactions for award types "B" and "C" (_i.e._, purchase orders and delivery orders):
+To order the response by the items being returned via the `group` parameter, you can specify an `order` in the request: `"order": ["item"]`.
+
+For example, to request the yearly sum of obligated dollars across transactions for award types "B" and "C" (_i.e._, purchase orders and delivery orders) and to ensure that the response is ordered by year:
 
 ```json
 {
@@ -124,6 +126,7 @@ For example, to request the yearly sum of obligated dollars across transactions 
     "group": "action_date",
     "date_part": "year",
     "aggregate": "sum",
+    "order": ["item"],
     "filters": [
         {
             "field": "type",
