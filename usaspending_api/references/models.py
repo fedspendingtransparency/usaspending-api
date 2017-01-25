@@ -138,6 +138,11 @@ class Location(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    # Tags whether this location is used as a place of performance or a recipient
+    # location, or both
+    place_of_performance_flag = models.BooleanField(default=False, verbose_name="Location used as place of performance")
+    recipient_flag = models.BooleanField(default=False, verbose_name="Location used as recipient location")
+
     @staticmethod
     def get_default_fields():
         return [
