@@ -417,6 +417,7 @@ class GeoCompleteHandler:
         value = self.request_body.get("value", None)
         mode = self.request_body.get("mode", "contains")
         scope = self.request_body.get("scope", "all")
+        usage = self.request_body.get("usage", "all")
 
         if mode == "contains":
             mode = "__icontains"
@@ -428,6 +429,12 @@ class GeoCompleteHandler:
             scope_q = ~Q(**{"location_country_code": "USA"})
         elif scope == "domestic":
             scope_q = Q(**{"location_country_code": "USA"})
+
+        usage_q = Q()
+        if usage == "recipient":
+            usage_q = Q(recipient_flag=True)
+        elif usage == "place_of_performance":
+            usage_q = Q(place_of_performance_flag=True)
 
         response_object = []
 
@@ -447,7 +454,7 @@ class GeoCompleteHandler:
                 q_kwargs["location_congressional_code__istartswith"] = temp_val[1]
 
             search_q = Q(**q_kwargs)
-            results = Location.objects.filter(search_q & scope_q).values_list("location_congressional_code", "location_state_code", "location_state_name")
+            results = Location.objects.filter(search_q & scope_q & usage_q).values_list("location_congressional_code", "location_state_code", "location_state_name")
             results = list(set(results))  # Eliminate duplicates
             for row in results:
                 response_row = {
@@ -461,7 +468,7 @@ class GeoCompleteHandler:
         if value:
             for searchable_field in search_fields.keys():
                 search_q = Q(**{searchable_field + mode: value})
-                results = Location.objects.filter(search_q & scope_q).values_list(searchable_field, search_fields[searchable_field]["parent"])
+                results = Location.objects.filter(search_q & scope_q & usage_q).values_list(searchable_field, search_fields[searchable_field]["parent"])
                 results = list(set(results))  # Do this to eliminate duplicates
                 for row in results:
                     response_row = {

@@ -142,6 +142,18 @@ The Django server has extract, transform, and load (ETL) processes built in as c
 
 For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [fixtures.md](fixtures.md).
 
+## Management Commands
+
+Below is a list of available management commands a brief description of their uses. For more help, check the command's help text.
+
+* `update_location_usage_flags` - Updates the `place_of_performance_flag` and `recipient_flag` on Location objects based upon their foreign key usages
+* `load_submission` - Loads a submission from the broker for the currently set environment
+* `loadtas` - Loads tas account information from a file
+* `loadagencies` - Loads agency information from a file
+* `loadcfda` - Loads CFDA information from a file
+* `loadcontracts` - Loads USASpending contract information from a file
+* `generate_test_endpoint_responses` - Generates endpoint test responses for testing
+
 ## Public Domain License
 
 This project is in the public domain within the United States, and copyright and related rights in the work worldwide are waived through the CC0 1.0 Universal public domain dedication.
