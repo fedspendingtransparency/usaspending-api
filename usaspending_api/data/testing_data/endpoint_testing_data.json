@@ -364,23 +364,6 @@
             },
             "results": []
         },
-        "method": "GET",
-        "name": "Testing /awards/ response",
-        "url": "/api/v1/awards/?page=1&limit=1&financial_accounts_by_awards_id=1",
-        "status_code": 200
-    },
-    {
-        "response_object": {
-            "page_metadata": {
-                "count": 0,
-                "num_pages": 1,
-                "page_number": 1
-            },
-            "total_metadata": {
-                "count": 0
-            },
-            "results": []
-        },
         "request_object": {
             "filters": [
                 {
@@ -457,31 +440,6 @@
         "status_code": 200,
         "method": "POST",
         "url": "/api/v1/submissions/"
-    },
-    {
-        "response_object": {
-            "page_metadata": {
-                "count": 0,
-                "num_pages": 1,
-                "page_number": 1
-            },
-            "total_metadata": {
-                "count": 0
-            },
-            "results": []
-        },
-        "request_object": {
-            "date_part": "year",
-            "page": 1,
-            "limit": 1,
-            "field": "transaction_obligated_amount",
-            "group": "create_date",
-            "aggregate": "sum"
-        },
-        "name": "Test award totals endpoint",
-        "status_code": 200,
-        "method": "POST",
-        "url": "/api/v1/awards/total/"
     },
     {
         "response_object": {

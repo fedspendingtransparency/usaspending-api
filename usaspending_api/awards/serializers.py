@@ -6,24 +6,6 @@ from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer
 
 
-class FinancialAccountsByAwardsSerializer(LimitableSerializer):
-
-    appropriation_account_balances = AppropriationAccountBalancesSerializer(read_only=True)
-
-    class Meta:
-        model = FinancialAccountsByAwards
-        fields = '__all__'
-
-
-class FinancialAccountsByAwardsTransactionObligationsSerializer(LimitableSerializer):
-
-    financial_accounts_by_awards = FinancialAccountsByAwardsSerializer(read_only=True)
-
-    class Meta:
-        model = FinancialAccountsByAwardsTransactionObligations
-        fields = '__all__'
-
-
 class ProcurementSerializer(LimitableSerializer):
 
     class Meta:

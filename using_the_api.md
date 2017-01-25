@@ -46,11 +46,6 @@ The currently available endpoints are:
     - _Methods_: GET
 
 
-  * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
-    - _Description_: Returns all `FinancialAccountsByAwardsTransactionObligations` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
-
-
   * **[/v1/awards/summary/](https://api.usaspending.gov/api/v1/awards/summary/)**
     - _Description_: Provides award level summary data
     - _Methods_: GET, POST
@@ -86,10 +81,6 @@ The currently available endpoints are:
     - _Methods_: POST
 
 
-  * **[/v1/financial_activities/](https://api.usaspending.gov/api/v1/financial_activities/)**
-    - _Description_: Returns all `FinancialAccountsByProgramActivityObjectClass` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
-
 
   * **[/v1/submissions/](https://api.usaspending.gov/api/v1/submissions/)**
     - _Description_: Returns all `SubmissionAttributes` data. _NB_: This endpoint is due for a rework in the near future
@@ -98,7 +89,6 @@ The currently available endpoints are:
 #### Summary Endpoints and Methods
 Summarized data is available for some of the endpoints listed above:
 
-* **[/v1/awards/total/](https://api.usaspending.gov/api/v1/awards/total/)**
 * **[/v1/transactions/total/](https://api.usaspending.gov/api/v1/transactions/total/)**
 * more coming soon
 
