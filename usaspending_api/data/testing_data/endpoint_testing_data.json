@@ -482,5 +482,36 @@
         "status_code": 200,
         "method": "POST",
         "url": "/api/v1/awards/total/"
+    },
+    {
+        "response_object": {
+          "page_metadata": {
+            "num_pages": 22,
+            "page_number": 1,
+            "count": 1
+          },
+          "total_metadata": {
+            "count": 22
+          },
+          "results": [
+            {
+              "type": "B",
+              "modification_number": "0",
+              "federal_action_obligation": "54400.00",
+              "action_date": "2016-09-01",
+              "description": "IGF::OT::IGF AGENCY IT SECURITY PENETRATION TEST - INTERNAL AND EXTERNAL",
+              "update_date": "2016-12-20T22:50:57.790000Z"
+            }
+          ]
+        },
+        "request_object": {
+            "page": 1,
+	        "limit": 1,
+            "order": ["award"]
+        },
+        "name": "Test transaction endpoint POST request",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/transactions/"
     }
 ]
