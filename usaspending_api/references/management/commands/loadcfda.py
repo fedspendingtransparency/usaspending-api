@@ -69,7 +69,7 @@ class Command(BaseCommand):
 
                     cfda_program.save()
 
-                    self.logger.log(20, "loaded %s %s ", cfda_program.program_number, cfda_program)
+                    # self.logger.log(20, "loaded %s %s ", cfda_program.program_number, cfda_program)
 
         except IOError:
             self.logger.log("Could not open file to load from")

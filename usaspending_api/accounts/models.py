@@ -6,7 +6,7 @@ from usaspending_api.common.models import DataSourceTrackedModel
 # Table #3 - Treasury Appropriation Accounts.
 class TreasuryAppropriationAccount(DataSourceTrackedModel):
     treasury_account_identifier = models.AutoField(primary_key=True)
-    tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
+    tas_rendering_label = models.CharField(max_length=50, blank=True, null=True)
     allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
     agency_id = models.CharField(max_length=3)
     beginning_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
@@ -14,32 +14,59 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     availability_type_code = models.CharField(max_length=1, blank=True, null=True)
     main_account_code = models.CharField(max_length=4)
     sub_account_code = models.CharField(max_length=3)
-    gwa_tas = models.CharField(max_length=21, blank=True, null=True)
-    gwa_tas_name = models.CharField(max_length=300, blank=True, null=True)
-    agency_aid = models.CharField(max_length=3, blank=True, null=True)
-    agency_name = models.CharField(max_length=100, blank=True, null=True)
-    admin_org = models.CharField(max_length=6, blank=True, null=True)
-    admin_org_name = models.CharField(max_length=100, blank=True, null=True)
-    fr_entity_type_code = models.CharField(max_length=4, blank=True, null=True)
+    account_title = models.CharField(max_length=300, blank=True, null=True)
+    reporting_agency_id = models.CharField(max_length=3, blank=True, null=True)
+    reporting_agency_name = models.CharField(max_length=100, blank=True, null=True)
+    budget_bureau_code = models.CharField(max_length=6, blank=True, null=True)
+    budget_bureau_name = models.CharField(max_length=100, blank=True, null=True)
+    fr_entity_code = models.CharField(max_length=4, blank=True, null=True)
     fr_entity_description = models.CharField(max_length=100, blank=True, null=True)
-    fin_type_2 = models.CharField(max_length=6, blank=True, null=True)
-    fin_type_2_description = models.CharField(max_length=100, blank=True, null=True)
-    function_code = models.CharField(max_length=3, blank=True, null=True)
-    function_description = models.CharField(max_length=100, blank=True, null=True)
-    sub_function_code = models.CharField(max_length=3, blank=True, null=True)
-    sub_function_description = models.CharField(max_length=100, blank=True, null=True)
+    budget_function_code = models.CharField(max_length=3, blank=True, null=True)
+    budget_function_title = models.CharField(max_length=100, blank=True, null=True)
+    budget_subfunction_code = models.CharField(max_length=3, blank=True, null=True)
+    budget_subfunction_title = models.CharField(max_length=100, blank=True, null=True)
     drv_appropriation_availability_period_start_date = models.DateField(blank=True, null=True)
     drv_appropriation_availability_period_end_date = models.DateField(blank=True, null=True)
     drv_appropriation_account_expired_status = models.CharField(max_length=10, blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    @staticmethod
+    def generate_tas_rendering_label(ATA, AID, TYPECODE, BPOA, EPOA, MAC, SUB):
+        ATA = ATA.strip()
+        AID = AID.strip()
+        TYPECODE = TYPECODE.strip()
+        BPOA = BPOA.strip()
+        EPOA = EPOA.strip()
+        MAC = MAC.strip()
+        SUB = SUB.strip().lstrip("0")
+
+        # print("ATA: " + ATA + "\nAID: " + AID + "\nTYPECODE: " + TYPECODE + "\nBPOA: " + BPOA + "\nEPOA: " + EPOA + "\nMAC: " + MAC + "\nSUB: " + SUB)
+
+        # Attach hyphen to ATA if it exists
+        if ATA:
+            ATA = ATA + "-"
+
+        POAPHRASE = BPOA
+        # If we have BOTH BPOA and EPOA
+        if BPOA and EPOA:
+            # And they're equal
+            if not BPOA == EPOA:
+                POAPHRASE = BPOA + "/" + EPOA
+
+        ACCTPHRASE = MAC
+        if SUB:
+            ACCTPHRASE = ACCTPHRASE + "." + SUB
+
+        concatenated_tas = ATA + AID + TYPECODE + POAPHRASE + ACCTPHRASE
+        return concatenated_tas
+
     class Meta:
         managed = True
         db_table = 'treasury_appropriation_account'
 
     def __str__(self):
-        return "%s" % (self.gwa_tas)
+        return "%s" % (self.tas_rendering_label)
 
 
 # Table #4 - Appropriation Account Balances

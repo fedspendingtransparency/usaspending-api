@@ -1,16 +1,17 @@
 from django.db import models
+from django.db.models import F, Q, Sum
+
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity
 from usaspending_api.common.models import DataSourceTrackedModel
-from django.db.models import F, Sum
 
 
-# Model Objects added white spaces
 class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    award = models.ForeignKey('awards.Award', models.CASCADE, null=True, related_name="financial_set")
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, null=True, db_column='object_class')
@@ -83,44 +84,56 @@ class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
         db_table = 'financial_accounts_by_awards_transaction_obligations'
 
 
+class AwardManager(models.Manager):
+    def get_queryset(self):
+        '''
+        A generated award will have these set to null, but will also receive no
+        transactions. Thus, these will remain null. This finds those awards and
+        throws them out. As soon as one of those awards gets a transaction
+        (i.e. it is no longer empty), these will be updated via update_from_mod
+        and the award will no longer match these criteria
+        '''
+        q_kwargs = {
+            "type": "U",
+            "total_obligation__isnull": True,
+            "date_signed__isnull": True,
+            "recipient__isnull": True
+        }
+        return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
+
+
 class Award(DataSourceTrackedModel):
 
     AWARD_TYPES = (
-        ('2', 'Block Grant'),
-        ('3', 'Formula Grant'),
-        ('4', 'Project Grant'),
-        ('5', 'Cooperative Agreement'),
-        ('6', 'Direct Payment for Specified Use'),
-        ('7', 'Direct Loan'),
-        ('8', 'Guaranteed/Insured Loan'),
-        ('9', 'Insurance'),
+        ('U', 'Unknown Type'),
+        ('02', 'Block Grant'),
+        ('03', 'Formula Grant'),
+        ('04', 'Project Grant'),
+        ('05', 'Cooperative Agreement'),
+        ('06', 'Direct Payment for Specified Use'),
+        ('07', 'Direct Loan'),
+        ('08', 'Guaranteed/Insured Loan'),
+        ('09', 'Insurance'),
         ('10', 'Direct Payment unrestricted'),
         ('11', 'Other'),
-        ('C', 'Contract'),
-        ('G', 'Grant'),
-        ('DP', 'Direct Payment'),
-        ('L', 'Loan'),
+        ('A', 'BPA Call'),
+        ('B', 'Purchase Order'),
+        ('C', 'Delivery Order'),
+        ('D', 'Definitive Contract')
     )
 
-    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type")
+    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True)
+    type_description = models.CharField(max_length=50, verbose_name="Award Type Description", default="Unknown Type", null=True)
     piid = models.CharField(max_length=50, blank=True, null=True)
-    parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
+    parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True)
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
-    # dollarsobligated
-    # This is a sum that should get updated when a transaction is entered
     total_obligation = models.DecimalField(max_digits=15, decimal_places=2, null=True, verbose_name="Total Obligated")
     total_outlay = models.DecimalField(max_digits=15, decimal_places=2, null=True)
-
-    # maj_agency_cat
     awarding_agency = models.ForeignKey(Agency, related_name='+', null=True)
     funding_agency = models.ForeignKey(Agency, related_name='+', null=True)
-
-    # signeddate
     date_signed = models.DateField(null=True, verbose_name="Award Date")
-    # vendorname
     recipient = models.ForeignKey(LegalEntity, null=True)
-    # Changed by KPJ to 4000 from 255, on 20161013
     description = models.CharField(max_length=4000, null=True, verbose_name="Award Description")
     period_of_performance_start_date = models.DateField(null=True, verbose_name="Start Date")
     period_of_performance_current_end_date = models.DateField(null=True, verbose_name="End Date")
@@ -129,31 +142,121 @@ class Award(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
-
-    # this is a pointer to the latest mod, which should include most up
-    # to date info on the location, etc.
-
-    # Can use award.actions to get reverse reference to all actions
-
     latest_submission = models.ForeignKey(SubmissionAttributes, null=True)
-    # recipient_name = models.CharField(max_length=250, null=True)
-    # recipient_address_line1 = models.CharField(max_length=100, null=True)
+
+    objects = models.Manager()
+    nonempty = AwardManager()
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "id",
+            "type",
+            "type_description",
+            "total_obligation",
+            "total_outlay",
+            "date_signed",
+            "description",
+            "piid",
+            "fain",
+            "uri",
+            "period_of_performance_start_date",
+            "period_of_performance_current_end_date",
+            "place_of_performance",
+            "awarding_agency",
+            "funding_agency",
+            "procurement_set",
+            "financialassistanceaward_set",
+            "recipient"
+        ]
 
     def __str__(self):
-        # define a string representation of an award object
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
 
-    def __get_latest_submission(self):
-        return self.actions.all().order_by('-action_date').first()
+    def __get_latest_transaction(self):
+        return self.__get_transaction_set().latest("action_date")
+
+    # We should only have either procurements or financial assistance awards
+    def __get_transaction_set(self):
+        # Do we have procurements or financial assistance awards?
+        transaction_set = self.procurement_set
+        if transaction_set.count() == 0:
+            transaction_set = self.financialassistanceaward_set
+        return transaction_set
+
+    def get_type_description(self):
+        description = [item for item in Award.AWARD_TYPES if item[0] == self.type]
+        if len(description) == 0:
+            return "Unknown Type"
+        else:
+            return description[0][1]
+
+    def save(self, *args, **kwargs):
+        self.type_description = self.get_type_description()
+        super(Award, self).save(*args, **kwargs)
 
     def update_from_mod(self, mod):
-        if self.type == 'C':
-            self.date_signed = mod.action_date
-            # only contract loading/summing supported right now
-            self.total_obligation = Procurement.objects.filter(piid=self.piid).aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
-            self.save()
+        transaction_set = self.__get_transaction_set()
+        transaction_latest = transaction_set.latest("action_date")
+        transaction_earliest = transaction_set.earliest("action_date")
+        self.awarding_agency = transaction_latest.awarding_agency
+        self.certified_date = transaction_latest.certified_date
+        self.data_source = transaction_latest.data_source
+        self.date_signed = transaction_earliest.action_date
+        self.description = transaction_latest.award_description
+        self.funding_agency = transaction_latest.funding_agency
+        self.last_modified_date = transaction_latest.last_modified_date
+        self.latest_submission = transaction_latest.submission
+        self.period_of_performance_start_date = transaction_earliest.action_date
+        self.period_of_performance_current_end_date = transaction_latest.action_date
+        self.place_of_performance = transaction_latest.place_of_performance
+        self.recipient = transaction_latest.recipient
+        self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
+        # what txn-level fields do we sum to get the award's total outlay?
+        # self.total_outlay = ??
+        if hasattr(transaction_latest, 'assistance_type'):
+            # this is a financial assistance award, so use assistance_type field
+            self.type = transaction_latest.assistance_type
+        else:
+            # this is a contract
+            self.type = transaction_latest.contract_award_type
+        self.save()
 
-    latest_award_transaction = property(__get_latest_submission)  # models.ForeignKey('AwardAction')
+    latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
+
+    @staticmethod
+    def get_or_create_summary_award(piid=None, fain=None, uri=None, parent_award_id=None):
+        # If an award transaction's ID is a piid, it's contract data
+        # If the ID is fain or a uri, it's financial assistance. If the award transaction
+        # has both a fain and a uri, fain takes precedence.
+        q_kwargs = {}
+        for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+            if i[0]:
+                q_kwargs[i[1]] = i[0]
+                if parent_award_id:
+                    q_kwargs["parent_award__" + i[1]] = parent_award_id
+                else:
+                    q_kwargs["parent_award"] = None
+
+                # Now search for it
+                # Do we want to log something if the the query below turns up
+                # more than one award record?
+                summary_award = Award.objects.all().filter(Q(**q_kwargs)).first()
+                if summary_award:
+                    return summary_award
+                else:
+                    parent_award = None
+                    if parent_award_id:
+                        # If we have a parent award id, recursively get/create the award for it
+                        parent_award = Award.get_or_create_summary_award(**{i[1]: parent_award_id})
+                    # Now create the award record for this award transaction
+                    summary_award = Award(**{i[1]: i[0], "parent_award": parent_award})
+                    summary_award.save()
+                    return summary_award
+
+        raise ValueError(
+            'Unable to find or create an award with the provided information: piid={}, fain={}, uri={}, parent_id={}'.format(
+             piid, fain, uri, parent_award_id))
 
     class Meta:
         db_table = 'awards'
@@ -161,15 +264,17 @@ class Award(DataSourceTrackedModel):
 
 class AwardAction(DataSourceTrackedModel):
     award = models.ForeignKey(Award, models.CASCADE, related_name="actions")
+    usaspending_unique_transaction_id = models.CharField(max_length=256, blank=True, null=True)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    action_date = models.CharField(max_length=10, verbose_name="Transaction Date")
+    action_date = models.DateField(max_length=10, verbose_name="Transaction Date")
     action_type = models.CharField(max_length=1, blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     modification_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modification Number")
-    awarding_agency = models.ForeignKey(Agency, null=True)
+    awarding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_awarding_agency', null=True)
+    funding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_funding_agency', null=True)
     recipient = models.ForeignKey(LegalEntity, null=True)
-    # Changed by KPJ to 4000 from 255, on 20161013
     award_description = models.CharField(max_length=4000, null=True)
+    place_of_performance = models.ForeignKey(Location, null=True)
     drv_award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_potential_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -178,11 +283,25 @@ class AwardAction(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    @staticmethod
+    def get_default_fields():
+        return [
+            "modification_number",
+            "federal_action_obligation",
+            "action_date",
+            "award_description",
+            "update_date"
+        ]
+
+    # Override the save method so that after saving we always call update_from_mod on our Award
+    def save(self, *args, **kwargs):
+        super(AwardAction, self).save(*args, **kwargs)
+        self.award.update_from_mod(self)
+
     class Meta:
         abstract = True
 
 
-# BD 09/26/2016 Added rec_flag data, parent_award_awarding_agency_code, current_aggregated_total_v, current_total_value_adjust,potential_idv_total_est, potential_aggregated_idv_t, potential_aggregated_total, and potential_total_value_adju data elements to the procurement table
 class Procurement(AwardAction):
     procurement_id = models.AutoField(primary_key=True)
     award = models.ForeignKey(Award, models.CASCADE)
@@ -227,9 +346,9 @@ class Procurement(AwardAction):
     purchase_card_as_payment_method = models.CharField(max_length=1, blank=True, null=True)
     multi_year_contract = models.CharField(max_length=1, blank=True, null=True)
     national_interest_action = models.CharField(max_length=4, blank=True, null=True)
-    number_of_actions = models.CharField(max_length=3, blank=True, null=True)
+    number_of_actions = models.CharField(max_length=6, blank=True, null=True)
     number_of_offers_received = models.CharField(max_length=3, blank=True, null=True)
-    other_statutory_authority = models.CharField(max_length=1, blank=True, null=True)
+    other_statutory_authority = models.CharField(max_length=1000, blank=True, null=True)
     performance_based_service_acquisition = models.CharField(max_length=1, blank=True, null=True)
     place_of_manufacture = models.CharField(max_length=1, blank=True, null=True)
     price_evaluation_adjustment_preference_percent_difference = models.DecimalField(max_digits=2, decimal_places=2, blank=True, null=True)
@@ -250,7 +369,6 @@ class Procurement(AwardAction):
     epa_designated_product = models.CharField(max_length=1, blank=True, null=True)
     walsh_healey_act = models.CharField(max_length=1, blank=True, null=True)
     transaction_number = models.CharField(max_length=6, blank=True, null=True)
-    # Changed by KPJ to 25 from 1, on 20161013
     referenced_idv_modification_number = models.CharField(max_length=25, blank=True, null=True)
     rec_flag = models.CharField(max_length=1, blank=True, null=True)
     drv_parent_award_awarding_agency_code = models.CharField(max_length=4, blank=True, null=True)
@@ -266,6 +384,17 @@ class Procurement(AwardAction):
     certified_date = models.DateField(blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
+
+    @staticmethod
+    def get_default_fields():
+        default_fields = AwardAction.get_default_fields()
+        return default_fields + [
+            "idv_type",
+            "cost_or_pricing_data",
+            "naics",
+            "naics_description",
+            "product_or_service_code"
+        ]
 
 
 class FinancialAssistanceAward(AwardAction):
@@ -291,9 +420,21 @@ class FinancialAssistanceAward(AwardAction):
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
+    submitted_type = models.CharField(max_length=1, blank=True, null=True, verbose_name="Submitted Type")
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    @staticmethod
+    def get_default_fields():
+        default_fields = AwardAction.get_default_fields()
+        return default_fields + [
+            "cfda_number",
+            "cfda_title",
+            "face_value_loan_guarantee",
+            "original_loan_subsidy_cost",
+            "assistance_type"
+        ]
 
     class Meta:
         managed = True

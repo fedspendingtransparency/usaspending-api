@@ -6,7 +6,7 @@ from model_mommy import mommy
 
 class SubmissionsTest(TestCase):
     def setUp(self):
-        self.award = mommy.make('submissions.SubmissionProcess', _quantity=2)
+        self.award = mommy.make('submissions.SubmissionAttributes', _quantity=2)
 
     @pytest.mark.django_db
     def test_submissions_list(self):

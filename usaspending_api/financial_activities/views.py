@@ -1,38 +1,23 @@
-from django.shortcuts import render
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.financial_activities.serializers import FinancialAccountsByProgramActivityObjectClassSerializer
-from usaspending_api.common.api_request_utils import FilterGenerator, ResponsePaginator
+from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
+from usaspending_api.common.views import DetailViewSet
 
 
-class FinancialAccountsByProgramActivityObjectClassList(APIView):
-
+class FinancialAccountsByProgramActivityObjectClassListViewSet(
+        FilterQuerysetMixin,
+        ResponseMetadatasetMixin,
+        DetailViewSet):
     """
-    List all financial activites
+    Handles requests for financial account data grouped by program
+    activity and object class.
     """
-    def get(self, request, format=None):
-        subs = FinancialAccountsByProgramActivityObjectClass.objects.all()
 
-        fg = FilterGenerator()
-        filter_arguments = fg.create_from_get(request.GET)
+    serializer_class = FinancialAccountsByProgramActivityObjectClassSerializer
 
-        subs = subs.filter(**filter_arguments)
-
-        paged_data = ResponsePaginator.get_paged_data(subs, request_parameters=request.GET)
-
-        serializer = FinancialAccountsByProgramActivityObjectClassSerializer(paged_data, many=True)
-        response_object = {
-            "total_metadata": {
-                "count": subs.count(),
-            },
-            "page_metadata": {
-                "page_number": paged_data.number,
-                "num_pages": paged_data.paginator.num_pages,
-                "count": len(paged_data),
-            },
-            "results": serializer.data
-        }
-
-        return Response(response_object)
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset

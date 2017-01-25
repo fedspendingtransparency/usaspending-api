@@ -41,14 +41,18 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.postgres',
 
+    'django_extensions',
     'rest_framework',
     'corsheaders',
+    'usaspending_api.common',
     'usaspending_api.references',
     'usaspending_api.awards',
     'usaspending_api.accounts',
     'usaspending_api.submissions',
     'usaspending_api.financial_activities'
 ]
+
+INTERNAL_IPS = ('127.0.0.1',)
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

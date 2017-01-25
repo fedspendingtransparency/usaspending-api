@@ -4,7 +4,8 @@ coverage==4.2
 dj-database-url==0.4.1
 Django==1.10.1
 django-cors-headers==1.2.2
-django-debug-toolbar==1.5
+-e git://github.com/jazzband/django-debug-toolbar.git#egg=django-debug-toolbar
+django-extensions==1.7.5
 django-filter==0.14.0
 djangorestframework==3.4.6
 Markdown==2.6.6

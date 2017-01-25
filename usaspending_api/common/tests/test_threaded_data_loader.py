@@ -20,25 +20,24 @@ class ThreadedDataLoaderTests(TransactionTestCase):
         # actually getting loaded
         field_map = {
             "treasury_account_identifier": "ACCT_NUM",
-            "gwa_tas": "GWA_TAS",
-            "gwa_tas_name": "GWA_TAS NAME"
+            "account_title": "GWA_TAS NAME"
         }
 
         loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, collision_field='treasury_account_identifier', collision_behavior='update')
 
         # We'll be using the tas_list.csv, modified to have fewer lines
         file_path_1 = os.path.join(settings.BASE_DIR, 'usaspending_api/data/testing_data/tas_list_1.csv')
-        file_1_gwa_tas_name = "Compensation of Members and Related Administrative Expenses, Senat"
+        file_1_account_title = "Compensation of Members and Related Administrative Expenses, Senat"
 
         file_path_2 = os.path.join(settings.BASE_DIR, 'usaspending_api/data/testing_data/tas_list_2.csv')
-        file_2_gwa_tas_name = "Update Test Name"
+        file_2_account_title = "Update Test Name"
 
         # Load it once
         loader.load_from_file(file_path_1)
-        gwa_tas = TreasuryAppropriationAccount.objects.get(gwa_tas='110100')
+        gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier='45736')
 
         # Check that we loaded successfully
-        self.assertEqual(gwa_tas.gwa_tas_name, file_1_gwa_tas_name)
+        self.assertEqual(gwa_tas.account_title, file_1_account_title)
 
         # Now load again, but file 2. Collision behavior of "update" should update the name
         # without deleting the record
@@ -46,9 +45,9 @@ class ThreadedDataLoaderTests(TransactionTestCase):
         gwa_tas.save()
 
         loader.load_from_file(file_path_2)
-        gwa_tas = TreasuryAppropriationAccount.objects.get(gwa_tas='110100')
+        gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier='45736')
 
-        self.assertEqual(gwa_tas.gwa_tas_name, file_2_gwa_tas_name)
+        self.assertEqual(gwa_tas.account_title, file_2_account_title)
         self.assertEqual(gwa_tas.beginning_period_of_availability, '2004')
         # If this passes, the update collision works
 
@@ -56,20 +55,20 @@ class ThreadedDataLoaderTests(TransactionTestCase):
         loader.collision_behavior = 'delete'
         loader.load_from_file(file_path_1)
 
-        gwa_tas = TreasuryAppropriationAccount.objects.get(gwa_tas='110100')
+        gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier='45736')
         self.assertEqual(gwa_tas.beginning_period_of_availability, None)
-        self.assertEqual(gwa_tas.gwa_tas_name, file_1_gwa_tas_name)
+        self.assertEqual(gwa_tas.account_title, file_1_account_title)
 
         # Now to test skip
         loader.collision_behavior = 'skip'
         loader.load_from_file(file_path_2)
 
-        gwa_tas = TreasuryAppropriationAccount.objects.get(gwa_tas='110100')
-        self.assertEqual(gwa_tas.gwa_tas_name, file_1_gwa_tas_name)
+        gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier='45736')
+        self.assertEqual(gwa_tas.account_title, file_1_account_title)
 
         # Now test skip and complain
         loader.collision_behavior = 'skip_and_complain'
         loader.load_from_file(file_path_2)
 
-        gwa_tas = TreasuryAppropriationAccount.objects.get(gwa_tas='110100')
-        self.assertEqual(gwa_tas.gwa_tas_name, file_1_gwa_tas_name)
+        gwa_tas = TreasuryAppropriationAccount.objects.get(treasury_account_identifier='45736')
+        self.assertEqual(gwa_tas.account_title, file_1_account_title)

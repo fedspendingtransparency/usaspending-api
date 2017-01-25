@@ -1,25 +1,30 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.serializers.json import json, DjangoJSONEncoder
-from django.db import connections
-from django.utils import timezone
-from django.conf import settings
 from datetime import datetime
 import logging
-import django
 import os
 
-from usaspending_api.submissions.models import *
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.core.management.base import BaseCommand
+from django.core.serializers.json import json
+from django.db import connections
+
 from usaspending_api.accounts.models import *
-from usaspending_api.financial_activities.models import *
 from usaspending_api.awards.models import *
+from usaspending_api.financial_activities.models import *
 from usaspending_api.references.models import *
+from usaspending_api.submissions.models import *
+
+# This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
+# keep hitting the databroker DB for account data
+TAS_ID_TO_ACCOUNT = {}
 
 
-# This command will load a single submission from the data broker database into
-# the data store using SQL commands to pull the raw data from the broker and
-# by creating new django model instances for each object
 class Command(BaseCommand):
+    """
+    This command will load a single submission from the data broker database into
+    the data store using SQL commands to pull the raw data from the broker and
+    by creating new django model instances for each object
+    """
     help = "Loads a single submission from the configured data broker database"
     logger = logging.getLogger('console')
 
@@ -82,7 +87,7 @@ class Command(BaseCommand):
         submission_attributes = None
         update = False
         try:
-            submission_attributes = SubmissionAttributes.objects.get(pk=submission_id)
+            submission_attributes = SubmissionAttributes.objects.get(broker_submission_id=submission_id)
             if options['delete']:
                 self.logger.info('Submission id ' + str(submission_id) + ' already exists. It will be deleted.')
                 submission_attributes.delete()
@@ -96,21 +101,12 @@ class Command(BaseCommand):
         # Update and save submission attributes
         # Create our value map - specific data to load
         value_map = {
-            'user_id': 1,
+            'broker_submission_id': submission_id
         }
+
+        del submission_data["submission_id"]  # To avoid collisions with the newer PK system
 
         load_data_into_model(submission_attributes, submission_data, value_map=value_map, save=True)
-
-        # Update and save submission process
-        value_map = {
-            'submission': submission_attributes
-        }
-
-        submission_process = SubmissionProcess()
-        if update:
-            submission_process = SubmissionProcess.objects.get(submission=submission_attributes)
-
-        load_data_into_model(submission_process, [], value_map=value_map, save=True)
 
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
@@ -120,18 +116,9 @@ class Command(BaseCommand):
         # Create account objects
         for row in appropriation_data:
             # Check and see if there is an entry for this TAS
-            treasury_account = TreasuryAppropriationAccount.objects.filter(tas_rendering_label=row['tas']).first()
+            treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
-                treasury_account = TreasuryAppropriationAccount()
-
-                field_map = {
-                    'tas_rendering_label': 'tas',
-                    'submission_id': submission_attributes.submission_id,
-                    'allocation_transfer_agency__cgac_code': 'allocation_transfer_agency',
-                    'responsible_agency__cgac_code': 'agency_identifier'
-                }
-
-                load_data_into_model(treasury_account, row, field_map=field_map, save=True)
+                raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
 
             # Now that we have the account, we can load the appropriation balances
             # TODO: Figure out how we want to determine what row is overriden by what row
@@ -142,13 +129,11 @@ class Command(BaseCommand):
 
             value_map = {
                 'treasury_account_identifier': treasury_account,
-                'submission_process': submission_process,
-                'submission': submission_attributes
+                'submission': submission_attributes,
+                'tas_rendering_label': treasury_account.tas_rendering_label
             }
 
-            field_map = {
-                'tas_rendering_label': 'tas'
-            }
+            field_map = {}
 
             load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True)
 
@@ -160,7 +145,11 @@ class Command(BaseCommand):
         for row in prg_act_obj_cls_data:
             account_balances = None
             try:
-                account_balances = AppropriationAccountBalances.objects.get(tas_rendering_label=row['tas'])
+                # Check and see if there is an entry for this TAS
+                treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
+                if treasury_account is None:
+                    raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+                account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
             except:
                 continue
 
@@ -183,13 +172,26 @@ class Command(BaseCommand):
         for row in award_financial_data:
             account_balances = None
             try:
-                account_balances = AppropriationAccountBalances.objects.get(tas_rendering_label=row['tas'])
+                # Check and see if there is an entry for this TAS
+                treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
+                if treasury_account is None:
+                    raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+                account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
+                # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+                award = Award.get_or_create_summary_award(
+                    piid=row.get('piid'),
+                    fain=row.get('fain'),
+                    uri=row.get('uri'),
+                    parent_award_id=row.get('parent_award_id'))
+                award.latest_submission = submission_attributes
+                award.save()
             except:
                 continue
 
             award_financial_data = FinancialAccountsByAwards()
 
             value_map = {
+                'award': award,
                 'submission': submission_attributes,
                 'appropriation_account_balances': account_balances,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
@@ -212,7 +214,6 @@ class Command(BaseCommand):
         award_financial_assistance_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
 
-        # Create LegalEntity
         legal_entity_location_field_map = {
             "location_address_line1": "legal_entity_address_line1",
             "location_address_line2": "legal_entity_address_line2",
@@ -220,8 +221,6 @@ class Command(BaseCommand):
             "location_city_code": "legal_entity_city_code",
             "location_city_name": "legal_entity_city_name",
             "location_congressional_code": "legal_entity_congressional",
-            # Since the country code is actually the id, we add _id to set up FK
-            "location_country_code_id": "legal_entity_country_code",
             "location_county_code": "legal_entity_county_code",
             "location_county_name": "legal_entity_county_name",
             "location_foreign_city_name": "legal_entity_foreign_city",
@@ -231,72 +230,60 @@ class Command(BaseCommand):
             "location_state_name": "legal_entity_state_name",
             "location_zip5": "legal_entity_zip5",
             "location_zip_last4": "legal_entity_zip_last4",
+            "location_country_code": "legal_entity_country_code"
         }
 
-        # Create the place of performance location
         place_of_performance_field_map = {
             "location_city_name": "place_of_performance_city",
             "location_performance_code": "place_of_performance_code",
             "location_congressional_code": "place_of_performance_congr",
-            # Tagging ID on the following to set the FK
-            "location_country_code_id": "place_of_perform_country_c",
             "location_county_name": "place_of_perform_county_na",
             "location_foreign_location_description": "place_of_performance_forei",
             "location_state_name": "place_of_perform_state_nam",
             "location_zip4": "place_of_performance_zip4a",
+            "location_country_code": "place_of_perform_country_c"
+
         }
 
         for row in award_financial_assistance_data:
-            location = load_data_into_model(Location(), row, field_map=legal_entity_location_field_map, as_dict=True)
-            legal_entity_location, created = Location.objects.get_or_create(**location)
+            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row)
 
             # Create the legal entity if it doesn't exist
-            legal_entity = None
             try:
-                legal_entity = LegalEntity.objects.get(row['awardee_or_recipient_uniqu'])
-            except:
-                legal_entity = LegalEntity()
-
+                legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
+            except ObjectDoesNotExist:
                 legal_entity_value_map = {
                     "location": legal_entity_location,
                     "legal_entity_id": row['awardee_or_recipient_uniqu']
                 }
+                legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
 
-                load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
+            # Create the place of performance location
+            pop_location, created = get_or_create_location(place_of_performance_field_map, row)
 
-            location = load_data_into_model(Location(), row, field_map=place_of_performance_field_map, as_dict=True)
-            pop_location, created = Location.objects.get_or_create(**location)
-
-            # Create the base award, create actions, then tally the totals for the award
-            award_field_map = {
-                "description": "award_description",
-                "type": "assistance_type"
-            }
-
-            award_value_map = {
-                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                "awarding_agency": Agency.objects.filter(cgac_code=row['awarding_agency_code'], subtier_code=row["awarding_sub_tier_agency_c"]).first(),
-                "funding_agency": Agency.objects.filter(cgac_code=row['funding_agency_code'], subtier_code=row["funding_sub_tier_agency_co"]).first(),
-                "place_of_performance": pop_location,
-                "date_signed": format_date(row['action_date']),
-                "latest_submission": submission_attributes,
-                "recipient": legal_entity,
-            }
-
-            award = load_data_into_model(Award(), row, field_map=award_field_map, value_map=award_value_map, as_dict=True)
-            award, created = Award.objects.get_or_create(**award)
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            award = Award.get_or_create_summary_award(
+                piid=row.get('piid'),
+                fain=row.get('fain'),
+                uri=row.get('uri'),
+                parent_award_id=row.get('parent_award_id'))
 
             fad_value_map = {
                 "award": award,
-                "submission": submission_attributes
-
+                "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
+                                                         subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
+                                                        subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
+                "recipient": legal_entity,
+                "place_of_performance": pop_location,
+                "submission": submission_attributes,
+                "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
             }
 
             financial_assistance_data = load_data_into_model(FinancialAssistanceAward(), row, value_map=fad_value_map, as_dict=True)
             fad = FinancialAssistanceAward.objects.filter(award=award, modification_number=row['award_modification_amendme']).first()
             if not fad:
-                fad, created = FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
+                FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
             else:
                 FinancialAssistanceAward.objects.filter(pk=fad.pk).update(**financial_assistance_data)
 
@@ -305,44 +292,108 @@ class Command(BaseCommand):
         procurement_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
+        legal_entity_location_field_map = {
+            "location_address_line1": "legal_entity_address_line1",
+            "location_address_line2": "legal_entity_address_line2",
+            "location_address_line3": "legal_entity_address_line3",
+            "location_country_code": "legal_entity_country_code",
+            "location_city_name": "legal_entity_city_name",
+            "location_congressional_code": "legal_entity_congressional",
+            "location_state_code": "legal_entity_state_code",
+            "location_zip4": "legal_entity_zip4"
+        }
+
+        place_of_performance_field_map = {
+            # not sure place_of_performance_locat maps exactly to city name
+            "location_city_name": "place_of_performance_locat",
+            "location_congressional_code": "place_of_performance_congr",
+            "location_state_code": "place_of_performance_state",
+            "location_zip4": "place_of_performance_zip4a",
+            "location_country_code": "place_of_perform_country_c"
+        }
+
         for row in procurement_data:
-            # Yes, I could use Q objects here but for maintainability I broke it out
-            award = Award.objects.filter(piid=row['parent_award_id']).first()
-            if award is None:
-                award = Award.objects.filter(fain=row['parent_award_id']).first()
-            if award is None:
-                award = Award.objects.filter(uri=row['parent_award_id']).first()
-            if award is None:
-                self.logger.error('Could not find an award object with a matching identifier: ' + row['parent_award_id'])
-                continue
+            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row)
+
+            # Create the legal entity if it doesn't exist
+            try:
+                legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
+            except ObjectDoesNotExist:
+                legal_entity_value_map = {
+                    "location": legal_entity_location,
+                    "legal_entity_id": row['awardee_or_recipient_uniqu']
+                }
+                legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
+
+            # Create the place of performance location
+            pop_location, created = get_or_create_location(place_of_performance_field_map, row)
+
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            award = Award.get_or_create_summary_award(
+                piid=row.get('piid'),
+                fain=row.get('fain'),
+                uri=row.get('uri'),
+                parent_award_id=row.get('parent_award_id'))
 
             procurement_value_map = {
                 "award": award,
-                'submission': submission_attributes
+                "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
+                                                         subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
+                                                        subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
+                "recipient": legal_entity,
+                "place_of_performance": pop_location,
+                'submission': submission_attributes,
+                "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
             }
 
-            procurement = load_data_into_model(Procurement(), row, value_map=procurement_value_map, save=True)
+            load_data_into_model(Procurement(), row, value_map=procurement_value_map, save=True)
 
 
-# Loads data into a model instance
-# Data should be a row, a dict of field -> value pairs
-# Keyword args are:
-#  field_map - A map of field columns to data columns. This is so you can map
-#               a field in the data to a different field in the model. For instance,
-#               model.tas_rendering_label = data['tas'] could be set up like this:
-#               field_map = {'tas_rendering_label': 'tas'}
-#               The algorithm checks for a value map before a field map, so if the
-#               column is present in both value_map and field_map, value map takes
-#               precedence over the other
-#  value_map - Want to force or override a value? Specify the field name for the
-#               instance and the data you want to load. Example:
-#               {'update_date': timezone.now()}
-#               The algorithm checks for a value map before a field map, so if the
-#               column is present in both value_map and field_map, value map takes
-#               precedence over the other
-#  save - Defaults to False, but when set to true will save the model at the end
-#  as_dict - If true, returns the model as a dict instead of saving or altering
+def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
+    """Get the matching TAS object from the broker database and save it to our running list."""
+    if tas_lookup_id in TAS_ID_TO_ACCOUNT:
+        return TAS_ID_TO_ACCOUNT[tas_lookup_id]
+    # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
+    db_cursor.execute('SELECT * FROM tas_lookup WHERE tas_id = %s', [tas_lookup_id])
+    tas_data = dictfetchall(db_cursor)
+
+    # These or "" convert from none to a blank string, which is how the TAS table stores nulls
+    q_kwargs = {
+        "allocation_transfer_agency_id": tas_data[0]["allocation_transfer_agency"] or "",
+        "agency_id": tas_data[0]["agency_identifier"] or "",
+        "beginning_period_of_availability": tas_data[0]["beginning_period_of_availa"] or "",
+        "ending_period_of_availability": tas_data[0]["ending_period_of_availabil"] or "",
+        "availability_type_code": tas_data[0]["availability_type_code"] or "",
+        "main_account_code": tas_data[0]["main_account_code"] or "",
+        "sub_account_code": tas_data[0]["sub_account_code"] or ""
+    }
+
+    TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
+    return TAS_ID_TO_ACCOUNT[tas_lookup_id]
+
+
 def load_data_into_model(model_instance, data, **kwargs):
+    """
+    Loads data into a model instance
+    Data should be a row, a dict of field -> value pairs
+    Keyword args:
+        field_map - A map of field columns to data columns. This is so you can map
+                    a field in the data to a different field in the model. For instance,
+                    model.tas_rendering_label = data['tas'] could be set up like this:
+                    field_map = {'tas_rendering_label': 'tas'}
+                    The algorithm checks for a value map before a field map, so if the
+                    column is present in both value_map and field_map, value map takes
+                    precedence over the other
+        value_map - Want to force or override a value? Specify the field name for the
+                    instance and the data you want to load. Example:
+                    {'update_date': timezone.now()}
+                    The algorithm checks for a value map before a field map, so if the
+                    column is present in both value_map and field_map, value map takes
+                    precedence over the other
+        save - Defaults to False, but when set to true will save the model at the end
+        as_dict - If true, returns the model as a dict instead of saving or altering
+    """
     field_map = None
     value_map = None
     save = False
@@ -395,12 +446,65 @@ def load_data_into_model(model_instance, data, **kwargs):
 
     if save:
         model_instance.save()
+        return model_instance
     if as_dict:
         return mod
 
 
 def format_date(date):
     return datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
+
+
+def get_or_create_location(location_map, row):
+    """
+    Retrieve or create a location object
+
+    Input parameters:
+        - location_map: a dictionary with key = field name on the location model
+            and value = corresponding field name on the current row of data
+        - row: the row of data currently being loaded
+    """
+    location_country = RefCountryCode.objects.filter(
+        country_code=row[location_map.get('location_country_code')]).first()
+
+    location_value_map = {}
+
+    # temporary fix until broker is patched: remove later
+    state_code = row.get(location_map.get('location_state_code'))
+    if state_code is not None:
+        location_value_map.update({'location_state_code': state_code.replace('.', '')})
+    # end of temporary fix
+
+    if location_country:
+        location_value_map.update({
+            'location_country_code': location_country,
+            'location_country_name': location_country.country_name
+        })
+    else:
+        # no country found for this code
+        location_value_map.update({
+            'location_country_code': None,
+            'location_country_name': None
+        })
+
+    location_data = load_data_into_model(
+        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
+
+    del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
+    if len(location_data):
+        try:
+            location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})
+        except MultipleObjectsReturned:
+            # incoming location data is so sparse that comparing it to existing locations
+            # yielded multiple records. create a new location with this limited info.
+            # note: this will need fixed up to prevent duplicate location records with the
+            # same sparse data
+            location_object = Location.objects.create(**location_data)
+            created = True
+        return location_object, created
+    else:
+        # record had no location information at all
+        return None, None
 
 
 def store_value(model_instance_or_dict, field, value):
@@ -425,8 +529,8 @@ def dictfetchall(cursor):
         ]
 
 
-# Spoofs the db cursor responses
 class PhonyCursor:
+    """Spoofs the db cursor responses."""
 
     def __init__(self):
         json_data = open(os.path.join(os.path.dirname(__file__), '../../test_data/etl_test_data.json'))

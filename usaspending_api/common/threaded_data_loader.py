@@ -9,6 +9,8 @@ import time
 import logging
 import csv
 import queue
+import sys
+import json
 
 
 # This class is a threaded data loader
@@ -40,8 +42,8 @@ class ThreadedDataLoader():
     #   pre_row_function - Like post_row_function, but before the model class is updated
     #   post_process_function - A function to call when all rows have been processed, uses the same
     #                           function parameters as post_row_function
-    def __init__(self, model_class, processes=None, field_map={}, value_map={}, collision_field=None, collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None):
-        self.logger = logging.getLogger('console')
+    def __init__(self, model_class, processes=None, field_map={}, value_map={}, collision_field=None, collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None, loghandler='console'):
+        self.logger = logging.getLogger(loghandler)
         self.model_class = model_class
         self.processes = processes
         if self.processes is None:
@@ -58,10 +60,10 @@ class ThreadedDataLoader():
 
     # Loads data from a file using parameters set during creation of the loader
     # The filepath parameter should be the string location of the file for use with open()
-    def load_from_file(self, filepath):
+    def load_from_file(self, filepath, encoding='utf-8'):
         self.logger.info('Started processing file ' + filepath)
         # Create the Queue object - this will hold all the rows in the CSV
-        row_queue = JoinableQueue()
+        row_queue = JoinableQueue(500)
 
         references = {
             "collision_field": self.collision_field,
@@ -84,15 +86,22 @@ class ThreadedDataLoader():
         for process in pool:
             process.start()
 
-        with open(filepath) as csvfile:
+        count = 0
+        with open(filepath, encoding=encoding) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
+                count = count + 1
                 row_queue.put(row)
+                if count % 1000 == 0:
+                    self.logger.info("Queued row " + str(count))
 
         for i in range(self.processes):
             row_queue.put(None)
 
         row_queue.join()
+
+        for process in pool:
+            process.terminate()
 
         if self.post_process_function is not None:
             self.post_process_function()
@@ -169,13 +178,16 @@ class DataLoaderThread(Process):
                                                           self.value_map,
                                                           row,
                                                           self.references["logger"])
+
+                # If we have a post row function, run it before saving
+                if self.references["post_row_function"] is not None:
+                    self.references["post_row_function"](row=row, instance=model_instance)
+
+                model_instance.save()
             except Exception as e:
                 self.references["logger"].error(e)
-            # If we have a post row function, run it before saving
-            if self.references["post_row_function"] is not None:
-                self.references["post_row_function"](row=row, instance=model_instance)
+                self.references["logger"].error(json.dumps(row))
 
-            model_instance.save()
             self.data_queue.task_done()
 
     # Retry decorator to help resolve race conditions when constructing auxilliary objects
