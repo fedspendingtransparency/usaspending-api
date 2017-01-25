@@ -14,7 +14,7 @@ from usaspending_api.common.views import AggregateView, DetailViewSet
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
-class AwardListSummaryAutocomplete(APIView):
+class AwardAutocomplete(APIView):
     """Autocomplete support for award summary objects."""
     # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
     def post(self, request, format=None):
@@ -26,7 +26,7 @@ class AwardListSummaryAutocomplete(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AwardListSummaryViewSet(FilterQuerysetMixin,
+class AwardViewSet(FilterQuerysetMixin,
                               ResponseMetadatasetMixin,
                               DetailViewSet):
     """Handles requests for summarized award data."""

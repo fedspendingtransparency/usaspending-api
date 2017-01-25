@@ -26,10 +26,10 @@
                 "piid"
             ]
         },
-        "name": "Test field limiting on awards/summary",
+        "name": "Test field limiting on awards/",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -122,10 +122,10 @@
                 "piid"
             ]
         },
-        "name": "Testing field exclusion on awards/summary",
+        "name": "Testing field exclusion on awards/",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -153,10 +153,10 @@
                 "funding_agency"
             ]
         },
-        "name": "Testing filter operation 'equals' on awards/summary",
+        "name": "Testing filter operation 'equals' on awards",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -191,10 +191,10 @@
                 "update_date"
             ]
         },
-        "name": "Testing filter operation 'range_intersect' on awards/summary",
+        "name": "Testing filter operation 'range_intersect' on awards",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -224,10 +224,10 @@
                 "funding_agency"
             ]
         },
-        "name": "Testing filter operation 'search' on awards/summary",
+        "name": "Testing filter operation 'search' on awards",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -287,10 +287,10 @@
                 "uri"
             ]
         },
-        "name": "Testing filter combinations via OR on awards/summary",
+        "name": "Testing filter combinations via OR on awards",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -319,10 +319,10 @@
                 "recipient__location__location_state_name"
             ]
         },
-        "name": "Testing mode 'contains' awards/summary/autocomplete",
+        "name": "Testing mode 'contains' awards/autocomplete",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/autocomplete/"
+        "url": "/api/v1/awards/autocomplete/"
     },
     {
         "response_object": {
@@ -347,10 +347,10 @@
                 "recipient__location__location_state_name"
             ]
         },
-        "name": "Testing mode 'startswith' awards/summary/autocomplete",
+        "name": "Testing mode 'startswith' awards/autocomplete",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/autocomplete/"
+        "url": "/api/v1/awards/autocomplete/"
     },
     {
         "response_object": {

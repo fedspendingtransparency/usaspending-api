@@ -46,17 +46,17 @@ The currently available endpoints are:
     - _Methods_: GET
 
 
-  * **[/v1/awards/summary/](https://api.usaspending.gov/api/v1/awards/summary/)**
-    - _Description_: Provides award level summary data
+  * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
+    - _Description_: Provides award data, including a list of associated transactions
     - _Methods_: GET, POST
 
 
-  * **[/v1/awards/summary/autocomplete/](https://api.usaspending.gov/api/v1/awards/summary/autocomplete/)**
-      - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards/summary endpoint
+  * **[/v1/awards/autocomplete/](https://api.usaspending.gov/api/v1/awards/autocomplete/)**
+      - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards endpoint
     - _Methods_: POST
 
 
-  * **[/v1/transactions/](https://api.usaspending.gov/api/v1/awards/transactions/)**
+  * **[/v1/transactions/](https://api.usaspending.gov/api/v1/transactions/)**
     - _Description_: Provides award transactions data **Note:** This endpoint is under active development and currently serves contract data only
     - _Methods_: POST
 
@@ -155,9 +155,9 @@ Response:
 #### GET Requests
 GET requests can be specified by attaching any field value pair to the endpoint. This method supports any fields present in the data object and only the `equals` operation. It also supports pagination variables. Additionally, you may specifcy complex fields that use Django's foreign key traversal; for more details on this see `field` from the POST request. Examples below:
 
-`/v1/awards/summary/?page=5&limit=1000`
+`/v1/awards/?page=5&limit=1000`
 
-`/v1/awards/summary/?funding_agency__fpds_code=0300`
+`/v1/awards/?funding_agency__fpds_code=0300`
 
 #### POST Requests
 The structure of the post request allows for a flexible and complex query with built-in pagination support.
@@ -373,7 +373,7 @@ In this case, two entires matching the specified filter have the state code of `
   ```
 
 #### Response (JSON)
-The response object structure is the same whether you are making a GET or a POST request. The only difference is the data objects contained within the results parameter. An example of a response from `/v1/awards/summary/` can be found below
+The response object structure is the same whether you are making a GET or a POST request. The only difference is the data objects contained within the results parameter. An example of a response from `/v1/awards/` can be found below
 
 ```
 {
@@ -487,7 +487,7 @@ The response has three functional parts:
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
 ### Autocomplete Queries
-Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably awards/summary).
+Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably `/awards/``).
 #### Body
 ```
 {
