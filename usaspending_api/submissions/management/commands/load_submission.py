@@ -247,13 +247,21 @@ class Command(BaseCommand):
 
         }
 
+        legal_entity_location_value_map = {
+            "recipient_flag": True
+        }
+
+        place_of_performance_value_map = {
+            "place_of_performance_flag": True
+        }
+
         fad_field_map = {
             "type": "assistance_type",
             "description": "award_description"
         }
 
         for row in award_financial_assistance_data:
-            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row)
+            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
             # Create the legal entity if it doesn't exist
             try:
@@ -266,7 +274,7 @@ class Command(BaseCommand):
                 legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
-            pop_location, created = get_or_create_location(place_of_performance_field_map, row)
+            pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
             award = Award.get_or_create_summary_award(
@@ -332,7 +340,7 @@ class Command(BaseCommand):
         }
 
         for row in procurement_data:
-            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row)
+            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
             # Create the legal entity if it doesn't exist
             try:
@@ -345,7 +353,7 @@ class Command(BaseCommand):
                 legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
-            pop_location, created = get_or_create_location(place_of_performance_field_map, row)
+            pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
             award = Award.get_or_create_summary_award(
@@ -480,7 +488,7 @@ def format_date(date):
     return datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
 
 
-def get_or_create_location(location_map, row):
+def get_or_create_location(location_map, row, location_value_map={}):
     """
     Retrieve or create a location object
 
@@ -491,8 +499,6 @@ def get_or_create_location(location_map, row):
     """
     location_country = RefCountryCode.objects.filter(
         country_code=row[location_map.get('location_country_code')]).first()
-
-    location_value_map = {}
 
     # temporary fix until broker is patched: remove later
     state_code = row.get(location_map.get('location_state_code'))

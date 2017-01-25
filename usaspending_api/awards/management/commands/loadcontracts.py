@@ -199,7 +199,7 @@ class Command(BaseCommand):
 
 
 def evaluate_contract_award_type(row):
-    first_element = h.up2colon(row['contractactiontype'].split()[0]) 
+    first_element = h.up2colon(row['contractactiontype'].split()[0])
 
     if len(first_element) == 1:
         return first_element
