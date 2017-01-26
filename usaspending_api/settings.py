@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'usaspending_api.awards',
     'usaspending_api.accounts',
     'usaspending_api.submissions',
-    'usaspending_api.financial_activities'
+    'usaspending_api.financial_activities',
+    'rest_framework_docs'
 ]
 
 INTERNAL_IPS = ('127.0.0.1',)
@@ -73,7 +74,7 @@ ROOT_URLCONF = 'usaspending_api.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['usaspending_api/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
