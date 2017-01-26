@@ -1,10 +1,9 @@
-from django.test import TestCase
 from django.core.management import call_command
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
-    FinancialAccountsByAwardsTransactionObligations,
-    FinancialAssistanceAward, Procurement)
+    FinancialAccountsByAwardsTransactionObligations, FinancialAssistanceAward,
+    Procurement)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import LegalEntity, Location
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -12,36 +11,42 @@ from usaspending_api.submissions.models import SubmissionAttributes
 import pytest
 
 
-class LoadSubmissionTest(TestCase):
+@pytest.fixture(scope="module")
+def endpoint_data():
+    call_command('flush', '--noinput')
+    call_command('loaddata', 'endpoint_fixture_db')
 
-    fixtures = ['endpoint_fixture_db']
 
-    def setUp(self):
-        Procurement.objects.all().delete()
-        SubmissionAttributes.objects.all().delete()
-        AppropriationAccountBalances.objects.all().delete()
-        FinancialAccountsByProgramActivityObjectClass.objects.all().delete()
-        FinancialAccountsByAwards.objects.all().delete()
-        FinancialAccountsByAwardsTransactionObligations.objects.all().delete()
-        FinancialAssistanceAward.objects.all().delete()
-        Location.objects.all().delete()
-        LegalEntity.objects.all().delete()
-        Award.objects.all().delete()
+@pytest.fixture()
+@pytest.mark.django_db
+def partially_flushed():
+    Procurement.objects.all().delete()
+    SubmissionAttributes.objects.all().delete()
+    AppropriationAccountBalances.objects.all().delete()
+    FinancialAccountsByProgramActivityObjectClass.objects.all().delete()
+    FinancialAccountsByAwards.objects.all().delete()
+    FinancialAccountsByAwardsTransactionObligations.objects.all().delete()
+    FinancialAssistanceAward.objects.all().delete()
+    Location.objects.all().delete()
+    LegalEntity.objects.all().delete()
+    Award.objects.all().delete()
 
-    @pytest.mark.django_db
-    def test_load_submission_command(self):
-        """
-        Test the submission loader to validate the ETL process
-        """
-        # Load the RefObjClass and ProgramActivityCode data
-        call_command('load_submission', '-1', '--delete', '--test')
-        self.assertEqual(SubmissionAttributes.objects.all().count(), 1)
-        self.assertEqual(AppropriationAccountBalances.objects.all().count(), 1)
-        self.assertEqual(FinancialAccountsByProgramActivityObjectClass.objects.all().count(), 10)
-        self.assertEqual(FinancialAccountsByAwards.objects.all().count(), 11)
-        self.assertEqual(FinancialAccountsByAwardsTransactionObligations.objects.all().count(), 11)
-        self.assertEqual(Location.objects.all().count(), 4)
-        self.assertEqual(LegalEntity.objects.all().count(), 2)
-        self.assertEqual(Award.objects.all().count(), 7)
-        self.assertEqual(Procurement.objects.all().count(), 1)
-        self.assertEqual(FinancialAssistanceAward.objects.all().count(), 1)
+
+@pytest.mark.django_db
+def test_load_submission_command(endpoint_data, partially_flushed):
+    """
+    Test the submission loader to validate the ETL process
+    """
+    # Load the RefObjClass and ProgramActivityCode data
+    call_command('load_submission', '-1', '--delete', '--test')
+    assert SubmissionAttributes.objects.count() == 1
+    assert AppropriationAccountBalances.objects.count() == 1
+    assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 10
+    assert FinancialAccountsByAwards.objects.count() == 11
+    assert FinancialAccountsByAwardsTransactionObligations.objects.count(
+    ) == 11
+    assert Location.objects.count() == 4
+    assert LegalEntity.objects.count() == 2
+    assert Award.objects.count() == 7
+    assert Procurement.objects.count() == 1
+    assert FinancialAssistanceAward.objects.count() == 1
