@@ -242,7 +242,8 @@ def get_or_create_location(row, mode="vendor"):
             "congressionaldistrict": row.get("placeofperformancecongressionaldistrict", "")[2:],  # Need to strip the state off the front
             "country": row.get("placeofperformancecountrycode", ""),
             "zipcode": row.get("placeofperformancezipcode", "").replace("-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
-            "state_code": row.get("pop_state_code", "").split(":")[0]  # Format is VA: VIRGINIA, so we need to grab the first bit
+            "state_code": row.get("pop_state_code", "").split(":")[0],  # Format is VA: VIRGINIA, so we need to grab the first bit
+            "recipient_flag": True
         }
     else:
         mapping = {
@@ -253,7 +254,8 @@ def get_or_create_location(row, mode="vendor"):
             "state_code": row.get("vendor_state_code", "").split(":")[0],
             "street1": row.get("streetaddress", ""),
             "street2": row.get("streetaddress2", ""),
-            "street3": row.get("streetaddress3", "")
+            "street3": row.get("streetaddress3", ""),
+            "place_of_performance_flag": True
         }
 
     country_code = fetch_country_code(mapping["country"])

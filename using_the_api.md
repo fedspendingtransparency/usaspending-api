@@ -36,45 +36,51 @@ Data endpoints are split by payload into POST and GET methods. In general, the f
 
 #### Endpoints and Methods
 The currently available endpoints are:
-  * **[/v1/awards/summary/](https://api.usaspending.gov/api/v1/awards/summary/)**
-    - _Description_: Provides award level summary data
-    - _Methods_: GET, POST
-
-  * **[/v1/awards/summary/autocomplete/](https://api.usaspending.gov/api/v1/awards/summary/autocomplete/)**
-    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards/summary endpoint
-    - _Methods_: POST
-
-  * **[/v1/references/locations/](https://api.usaspending.gov/api/v1/references/locations/)**
-    - _Description_: Returns all `Location` data.
-    - _Methods_: POST
-
-  * **[/v1/references/locations/geocomplete](https://api.usaspending.gov/api/v1/references/locations/geocomplete/)**
-    - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information
-    - _Methods_: POST
-
-  * **[/v1/references/agency/](https://api.usaspending.gov/api/v1/references/agency/)**
-    - _Description_: Provides agency data
-    - _Methods_: POST
-
-  * **[/v1/references/agency/autocomplete/](https://api.usaspending.gov/api/v1/references/agency/autocomplete/)**
-    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the agency endpoint
-    - _Methods_: POST
-
-  * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
-    - _Description_: Returns all `FinancialAccountsByAwardsTransactionObligations` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
-
   * **[/v1/accounts/](https://api.usaspending.gov/api/v1/accounts/)**
     - _Description_: Returns all `AppropriationAccountBalances` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
+
 
   * **[/v1/accounts/tas/](https://api.usaspending.gov/api/v1/accounts/tas/)**
     - _Description_: Returns all `TreasuryAppropriationAccount` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
-  * **[/v1/financial_activities/](https://api.usaspending.gov/api/v1/financial_activities/)**
-    - _Description_: Returns all `FinancialAccountsByProgramActivityObjectClass` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
+
+  * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
+    - _Description_: Provides award data, including a list of associated transactions
+    - _Methods_: GET, POST
+
+
+  * **[/v1/awards/autocomplete/](https://api.usaspending.gov/api/v1/awards/autocomplete/)**
+      - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards endpoint
+    - _Methods_: POST
+
+
+  * **[/v1/transactions/](https://api.usaspending.gov/api/v1/transactions/)**
+    - _Description_: Provides award transactions data **Note:** This endpoint is under active development and currently serves contract data only
+    - _Methods_: POST
+
+
+  * **[/v1/references/locations/](https://api.usaspending.gov/api/v1/references/locations/)**
+    - _Description_: Returns all `Location` data.
+    - _Methods_: POST
+
+
+  * **[/v1/references/locations/geocomplete](https://api.usaspending.gov/api/v1/references/locations/geocomplete/)**
+    - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information
+    - _Methods_: POST
+
+
+  * **[/v1/references/agency/](https://api.usaspending.gov/api/v1/references/agency/)**
+    - _Description_: Provides agency data
+    - _Methods_: POST
+
+
+  * **[/v1/references/agency/autocomplete/](https://api.usaspending.gov/api/v1/references/agency/autocomplete/)**
+    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the agency endpoint
+    - _Methods_: POST
+
+
 
   * **[/v1/submissions/](https://api.usaspending.gov/api/v1/submissions/)**
     - _Description_: Returns all `SubmissionAttributes` data. _NB_: This endpoint is due for a rework in the near future
@@ -84,6 +90,7 @@ The currently available endpoints are:
 Summarized data is available for some of the endpoints listed above:
 
 * **[/v1/awards/total/](https://api.usaspending.gov/api/v1/awards/total/)**
+* **[/v1/transactions/total/](https://api.usaspending.gov/api/v1/transactions/total/)**
 * more coming soon
 
 You can get summarized data via a `POST` request that specifies:
@@ -100,21 +107,24 @@ The `results` portion of the response will contain:
 * `item`: the value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
 * `aggregate`: the summarized data
 
-For example, to request award total transaction obligated amount by year for awards with a budget function code of 800:
+To order the response by the items being returned via the `group` parameter, you can specify an `order` in the request: `"order": ["item"]`.
+
+For example, to request the yearly sum of obligated dollars across transactions for award types "B" and "C" (_i.e._, purchase orders and delivery orders) and to ensure that the response is ordered by year:
 
 ```json
 {
-    "field": "transaction_obligated_amount",
-    "group": "create_date",
+    "field": "federal_action_obligation",
+    "group": "action_date",
     "date_part": "year",
     "aggregate": "sum",
+    "order": ["item"],
     "filters": [
         {
-            "field": "financial_accounts_by_awards__appropriation_account_balances__treasury_account_identifier__budget_function_code",
-            "operation": "equals",
-            "value": "800"
+            "field": "type",
+            "operation": "in",
+            "value": ["A", "B", "C", "D"]
         }
-    ]
+     ]
 }
 ```
 
@@ -125,30 +135,30 @@ Response:
   "total_metadata": {
     "count": 2
   },
-  "results": [
-    {
-      "item": "2016",
-      "aggregate": "59735118.04"
-    },
-    {
-      "item": "2015",
-      "aggregate": "6612250.70"
-    }
-  ],
   "page_metadata": {
     "page_number": 1,
     "num_pages": 1,
     "count": 2
-  }
+  },
+  "results": [
+    {
+      "item": "2015",
+      "aggregate": "44948.00"
+    },
+    {
+      "item": "2016",
+      "aggregate": "1621763.83"
+    }
+  ]
 }
 ```
 
 #### GET Requests
 GET requests can be specified by attaching any field value pair to the endpoint. This method supports any fields present in the data object and only the `equals` operation. It also supports pagination variables. Additionally, you may specifcy complex fields that use Django's foreign key traversal; for more details on this see `field` from the POST request. Examples below:
 
-`/v1/awards/summary/?page=5&limit=1000`
+`/v1/awards/?page=5&limit=1000`
 
-`/v1/awards/summary/?funding_agency__fpds_code=0300`
+`/v1/awards/?funding_agency__fpds_code=0300`
 
 #### POST Requests
 The structure of the post request allows for a flexible and complex query with built-in pagination support.
@@ -364,7 +374,7 @@ In this case, two entires matching the specified filter have the state code of `
   ```
 
 #### Response (JSON)
-The response object structure is the same whether you are making a GET or a POST request. The only difference is the data objects contained within the results parameter. An example of a response from `/v1/awards/summary/` can be found below
+The response object structure is the same whether you are making a GET or a POST request. The only difference is the data objects contained within the results parameter. An example of a response from `/v1/awards/` can be found below
 
 ```
 {
@@ -478,7 +488,7 @@ The response has three functional parts:
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
 ### Autocomplete Queries
-Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably awards/summary).
+Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably `/awards/``).
 #### Body
 ```
 {
@@ -593,7 +603,8 @@ This is a special type of autocomplete query which allows users to search for ge
 {
   "value": "u",
   "mode": "startswith",
-  "scope": "domestic"
+  "scope": "domestic",
+  "usage": "recipient"
 }
 ```
 
@@ -606,6 +617,10 @@ This is a special type of autocomplete query which allows users to search for ge
     * `domestic` - Matches only entries with the United States as the `location_country_code`
     * `foreign` - Matches only entries where the `location_country_code` is _not_ the United States
     * `all` - Matches any location entry. This is the default behavior
+  * `usage` - _Optional_ - The usage of the search. Options available are:
+    * `recipient` - Matches only entries where the location is used as a recipient location
+    * `place_of_performance` - Matches only entries where the location is used as a place of performance
+    * `all` - Matches all locations. This is the default behavior
 
 #### Response
 ```

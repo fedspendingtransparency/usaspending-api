@@ -26,10 +26,10 @@
                 "piid"
             ]
         },
-        "name": "Test field limiting on awards/summary",
+        "name": "Test field limiting on awards/",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -122,10 +122,10 @@
                 "piid"
             ]
         },
-        "name": "Testing field exclusion on awards/summary",
+        "name": "Testing field exclusion on awards/",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -153,10 +153,10 @@
                 "funding_agency"
             ]
         },
-        "name": "Testing filter operation 'equals' on awards/summary",
+        "name": "Testing filter operation 'equals' on awards",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -191,10 +191,10 @@
                 "update_date"
             ]
         },
-        "name": "Testing filter operation 'range_intersect' on awards/summary",
+        "name": "Testing filter operation 'range_intersect' on awards",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -224,10 +224,10 @@
                 "funding_agency"
             ]
         },
-        "name": "Testing filter operation 'search' on awards/summary",
+        "name": "Testing filter operation 'search' on awards",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -287,10 +287,10 @@
                 "uri"
             ]
         },
-        "name": "Testing filter combinations via OR on awards/summary",
+        "name": "Testing filter combinations via OR on awards",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/"
+        "url": "/api/v1/awards/"
     },
     {
         "response_object": {
@@ -319,10 +319,10 @@
                 "recipient__location__location_state_name"
             ]
         },
-        "name": "Testing mode 'contains' awards/summary/autocomplete",
+        "name": "Testing mode 'contains' awards/autocomplete",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/autocomplete/"
+        "url": "/api/v1/awards/autocomplete/"
     },
     {
         "response_object": {
@@ -347,27 +347,41 @@
                 "recipient__location__location_state_name"
             ]
         },
-        "name": "Testing mode 'startswith' awards/summary/autocomplete",
+        "name": "Testing mode 'startswith' awards/autocomplete",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/summary/autocomplete/"
+        "url": "/api/v1/awards/autocomplete/"
     },
     {
         "response_object": {
-            "page_metadata": {
-                "count": 0,
-                "num_pages": 1,
-                "page_number": 1
-            },
             "total_metadata": {
-                "count": 0
+            "count": 2
+          },
+          "results": [
+            {
+              "item": "Cooperative Agreement",
+              "aggregate": "954392.01"
             },
-            "results": []
+            {
+              "item": "Unknown Type",
+              "aggregate": "1612311.83"
+            }
+          ],
+          "page_metadata": {
+            "num_pages": 1,
+            "count": 2,
+            "page_number": 1
+          }
         },
-        "method": "GET",
-        "name": "Testing /awards/ response",
-        "url": "/api/v1/awards/?page=1&limit=1&financial_accounts_by_awards_id=1",
-        "status_code": 200
+        "request_object": {
+            "field": "total_obligation",
+            "group": "type_description",
+            "aggregate": "sum"
+        },
+        "name": "Testing awards/total",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/awards/total/"
     },
     {
         "response_object": {
@@ -460,27 +474,128 @@
     },
     {
         "response_object": {
-            "page_metadata": {
-                "count": 0,
-                "num_pages": 1,
-                "page_number": 1
-            },
-            "total_metadata": {
-                "count": 0
-            },
-            "results": []
+          "page_metadata": {
+            "num_pages": 22,
+            "page_number": 1,
+            "count": 1
+          },
+          "total_metadata": {
+            "count": 22
+          },
+          "results": [
+            {
+              "type": "B",
+              "modification_number": "0",
+              "federal_action_obligation": "54400.00",
+              "action_date": "2016-09-01",
+              "description": "IGF::OT::IGF AGENCY IT SECURITY PENETRATION TEST - INTERNAL AND EXTERNAL",
+              "update_date": "2016-12-20T22:50:57.790000Z"
+            }
+          ]
         },
         "request_object": {
-            "date_part": "year",
             "page": 1,
-            "limit": 1,
-            "field": "transaction_obligated_amount",
-            "group": "create_date",
-            "aggregate": "sum"
+	        "limit": 1,
+            "order": ["award"]
         },
-        "name": "Test award totals endpoint",
+        "name": "Test transaction endpoint POST request",
         "status_code": 200,
         "method": "POST",
-        "url": "/api/v1/awards/total/"
+        "url": "/api/v1/transactions/"
+    },
+    {
+        "response_object": {
+            "total_metadata": {
+              "count": 1
+            },
+            "page_metadata": {
+              "page_number": 1,
+              "num_pages": 1,
+              "count": 1
+            },
+            "results": [
+              {
+                "item": "2016",
+                "aggregate": "1666711.83"
+              }
+            ]
+        },
+        "request_object": {
+            "field": "federal_action_obligation",
+            "group": "action_date",
+            "date_part": "year",
+            "aggregate": "sum"
+        },
+        "name": "Test transaction total POST request",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/transactions/total/"
+    },
+    {
+        "response_object": {
+            "id": 47691,
+            "type": "U",
+            "type_description": "Cooperative Agreement",
+            "piid": "SBAHQ16M0163",
+            "fain": null,
+            "uri": null,
+            "total_obligation": "54400.00",
+            "total_outlay": null,
+            "date_signed": "2016-09-01",
+            "description": null,
+            "period_of_performance_start_date": "2016-09-01",
+            "period_of_performance_current_end_date": null,
+            "awarding_agency": null,
+            "funding_agency": null,
+            "recipient": null,
+            "place_of_performance": null,
+            "procurement_set": [
+            {
+              "type": "B",
+              "action_date": "2016-09-01",
+              "federal_action_obligation": "54400.00",
+              "modification_number": "0",
+              "description": "IGF::OT::IGF AGENCY IT SECURITY PENETRATION TEST - INTERNAL AND EXTERNAL",
+              "cost_or_pricing_data": "J",
+              "naics": "541511",
+              "naics_description": "541511: CUSTOM COMPUTER PROGRAMMING SERVICES",
+              "product_or_service_code": "D318",
+              "update_date": "2016-12-20T22:50:57.790000Z"
+            }
+            ],
+            "financialassistanceaward_set": []
+        },
+        "request_object": {},
+        "name": "Test single award endpoint",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/awards/47691/"
+    },
+    {
+        "response_object": {
+            "award": 47722,
+            "type": "D",
+            "type_description": "Definitive Contract",
+            "modification_number": "4",
+            "federal_action_obligation": "425000.00",
+            "action_date": "2016-09-01",
+            "description": "IGF::OT::IGF REGIONAL INNOVATION CLUSTER INITIATIVE SERVICES",
+            "update_date": "2016-12-20T22:50:57.773000Z",
+            "contract_data": {
+            "naics_description": "541690: OTHER SCIENTIFIC AND TECHNICAL CONSULTING SERVICES",
+            "product_or_service_code": "R499",
+            "naics": "541690",
+            "cost_or_pricing_data": "J"
+            },
+            "assistance_data": {},
+            "funding_agency": null,
+            "awarding_agency": null,
+            "recipient": null
+        },
+        "request_object": {"verbose": true},
+        "name": "Test single transaction endpoint",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/transactions/21/"
     }
 ]
