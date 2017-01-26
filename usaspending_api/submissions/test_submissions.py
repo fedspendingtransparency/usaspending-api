@@ -2,9 +2,11 @@ import pytest
 
 from model_mommy import mommy
 
+
 @pytest.fixture()
 def submissions_data():
     mommy.make('submissions.SubmissionAttributes', _quantity=2)
+
 
 @pytest.mark.django_db
 def test_submissions_list(submissions_data, client):
