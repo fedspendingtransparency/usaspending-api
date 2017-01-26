@@ -46,6 +46,16 @@ class AwardViewSet(FilterQuerysetMixin,
         return ordered_queryset
 
 
+class AwardAggregateViewSet(FilterQuerysetMixin,
+                            AggregateView):
+    """Return aggregated award information."""
+    def get_queryset(self):
+        queryset = Award.objects.all()
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
+
+
 class TransactionViewset(FilterQuerysetMixin,
                          ResponseMetadatasetMixin,
                          DetailViewSet):
@@ -68,7 +78,7 @@ class TransactionViewset(FilterQuerysetMixin,
 
 class TransactionAggregateViewSet(FilterQuerysetMixin,
                                   AggregateView):
-    """Return aggregate-level transaction information."""
+    """Return aggregated transaction information."""
     def get_queryset(self):
         queryset = Procurement.objects.all()
         filtered_queryset = self.filter_records(self.request, queryset=queryset)

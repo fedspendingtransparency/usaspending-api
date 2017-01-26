@@ -354,6 +354,37 @@
     },
     {
         "response_object": {
+            "total_metadata": {
+            "count": 2
+          },
+          "results": [
+            {
+              "item": "Cooperative Agreement",
+              "aggregate": "954392.01"
+            },
+            {
+              "item": "Unknown Type",
+              "aggregate": "1612311.83"
+            }
+          ],
+          "page_metadata": {
+            "num_pages": 1,
+            "count": 2,
+            "page_number": 1
+          }
+        },
+        "request_object": {
+            "field": "total_obligation",
+            "group": "type_description",
+            "aggregate": "sum"
+        },
+        "name": "Testing awards/total",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/awards/total/"
+    },
+    {
+        "response_object": {
             "page_metadata": {
                 "count": 0,
                 "num_pages": 1,

@@ -89,6 +89,7 @@ The currently available endpoints are:
 #### Summary Endpoints and Methods
 Summarized data is available for some of the endpoints listed above:
 
+* **[/v1/awards/total/](https://api.usaspending.gov/api/v1/awards/total/)**
 * **[/v1/transactions/total/](https://api.usaspending.gov/api/v1/transactions/total/)**
 * more coming soon
 
