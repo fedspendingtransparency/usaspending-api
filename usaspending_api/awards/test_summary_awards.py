@@ -7,11 +7,12 @@ from usaspending_api.awards.models import Award
 @pytest.fixture(scope="session")
 def award_models():
     mommy.make('awards.Award', total_obligation="2000", _quantity=2)
-    mommy.make('awards.Award',
-               type="U",
-               total_obligation=None,
-               date_signed=None,
-               recipient=None)
+    mommy.make(
+        'awards.Award',
+        type="U",
+        total_obligation=None,
+        date_signed=None,
+        recipient=None)
 
 
 @pytest.mark.django_db
