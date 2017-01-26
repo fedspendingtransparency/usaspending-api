@@ -51,8 +51,8 @@ def test_endpoints(endpoint_data, client):
         request_object = endpoint.get('request_object', None)
         response_object = endpoint.get('response_object', None)
         status_code = endpoint.get('status_code', None)
-        logger.info("Running endpoint test: \n\t" + method + " " + url + "\n\t"
-                    + endpoint.get('name', "Unnamed"))
+        logger.info("Running endpoint test: \n\t" + method + " " + url +
+                    "\n\t" + endpoint.get('name', "Unnamed"))
 
         response = None
         if method == "POST":
