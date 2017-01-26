@@ -29,7 +29,8 @@ class Command(BaseCommand):
             "description": "descriptionofcontractrequirement",
             "other_statutory_authority": "otherstatutoryauthority",
             "modification_number": "modnumber",
-            "parent_award_id": "idvpiid"
+            "parent_award_id": "idvpiid",
+            "usaspending_unique_transaction_id": "unique_transaction_id"
         }
 
         value_map = {
@@ -40,12 +41,13 @@ class Command(BaseCommand):
             "awarding_agency": lambda row: self.get_agency(row["contractingofficeagencyid"]),
             "funding_agency": lambda row: self.get_agency(row["fundingrequestingagencyid"]),
             "action_date": lambda row: self.convert_date(row['signeddate']),
+            "period_of_performance_start_date": lambda row: self.convert_date(row['effectivedate']),
+            "period_of_performance_current_end_date": lambda row: self.convert_date(row['currentcompletiondate']),
             "last_modified_date": lambda row: self.convert_date(row['last_modified_date']),
             "gfe_gfp": lambda row: row['gfe_gfp'].split(":")[0],
-            "multiple_or_single_award_idv": lambda row: row['multipleorsingleawardidc'].split(' ')[0].split(':')[0],
             "cost_or_pricing_data": lambda row: row['costorpricingdata'].split(' ')[0].split(':')[0],
             "type_of_contract_pricing": lambda row: row['typeofcontractpricing'].split(' ')[0].split(':')[0],
-            "contract_award_type": evaluate_contract_award_type,
+            "type": evaluate_contract_award_type,
             "naics": lambda row: row['nationalinterestactioncode'].split(' ')[0].split(':')[0],
             "multiple_or_single_award_idv": lambda row: row['multipleorsingleawardidc'].split(' ')[0].split(':')[0],
             "dod_claimant_program_code": lambda row: row['claimantprogramcode'].split(' ')[0].split(':')[0],
@@ -80,7 +82,7 @@ class Command(BaseCommand):
             "subcontracting_plan": lambda row: row['subcontractplan'].split(' ')[0].split(':')[0],
             "type_set_aside": lambda row: row['typeofsetaside'].split(' ')[0].split(':')[0],
             "walsh_healey_act": lambda row: row['walshhealyact'].split(' ')[0].split(':')[0],
-            "rec_flag": lambda row:  self.parse_first_character(row['rec_flag'].split(' ')[0].split(':')[0]),
+            "rec_flag": lambda row: self.parse_first_character(row['rec_flag'].split(' ')[0].split(':')[0]),
             "type_of_idc": lambda row: self.parse_first_character(row['typeofidc']),
             "a76_fair_act_action": lambda row: self.parse_first_character(row['a76action']),
             "clinger_cohen_act_planning": lambda row: self.parse_first_character(row['clingercohenact']),
@@ -240,7 +242,8 @@ def get_or_create_location(row, mode="vendor"):
             "congressionaldistrict": row.get("placeofperformancecongressionaldistrict", "")[2:],  # Need to strip the state off the front
             "country": row.get("placeofperformancecountrycode", ""),
             "zipcode": row.get("placeofperformancezipcode", "").replace("-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
-            "state_code": row.get("pop_state_code", "").split(":")[0]  # Format is VA: VIRGINIA, so we need to grab the first bit
+            "state_code": row.get("pop_state_code", "").split(":")[0],  # Format is VA: VIRGINIA, so we need to grab the first bit
+            "recipient_flag": True
         }
     else:
         mapping = {
@@ -251,7 +254,8 @@ def get_or_create_location(row, mode="vendor"):
             "state_code": row.get("vendor_state_code", "").split(":")[0],
             "street1": row.get("streetaddress", ""),
             "street2": row.get("streetaddress2", ""),
-            "street3": row.get("streetaddress3", "")
+            "street3": row.get("streetaddress3", ""),
+            "place_of_performance_flag": True
         }
 
     country_code = fetch_country_code(mapping["country"])

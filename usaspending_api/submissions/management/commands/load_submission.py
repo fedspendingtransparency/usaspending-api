@@ -7,12 +7,16 @@ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.management.base import BaseCommand
 from django.core.serializers.json import json
 from django.db import connections
+from django.db.models import Q
 
-from usaspending_api.accounts.models import *
-from usaspending_api.awards.models import *
-from usaspending_api.financial_activities.models import *
-from usaspending_api.references.models import *
-from usaspending_api.submissions.models import *
+from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
+from usaspending_api.awards.models import (
+    Award, FinancialAccountsByAwards, FinancialAccountsByAwardsTransactionObligations,
+    FinancialAssistanceAward, Procurement)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models import (
+    Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity)
+from usaspending_api.submissions.models import SubmissionAttributes
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
@@ -85,7 +89,6 @@ class Command(BaseCommand):
 
         # First, check if we already have entries for this submission id
         submission_attributes = None
-        update = False
         try:
             submission_attributes = SubmissionAttributes.objects.get(broker_submission_id=submission_id)
             if options['delete']:
@@ -94,7 +97,6 @@ class Command(BaseCommand):
                 submission_attributes = SubmissionAttributes()
             else:
                 self.logger.info('Submission id ' + str(submission_id) + ' already exists. Records will be updated.')
-                update = True
         except ObjectDoesNotExist:
             submission_attributes = SubmissionAttributes()
 
@@ -245,8 +247,21 @@ class Command(BaseCommand):
 
         }
 
+        legal_entity_location_value_map = {
+            "recipient_flag": True
+        }
+
+        place_of_performance_value_map = {
+            "place_of_performance_flag": True
+        }
+
+        fad_field_map = {
+            "type": "assistance_type",
+            "description": "award_description"
+        }
+
         for row in award_financial_assistance_data:
-            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row)
+            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
             # Create the legal entity if it doesn't exist
             try:
@@ -259,7 +274,7 @@ class Command(BaseCommand):
                 legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
-            pop_location, created = get_or_create_location(place_of_performance_field_map, row)
+            pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
             award = Award.get_or_create_summary_award(
@@ -277,10 +292,17 @@ class Command(BaseCommand):
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 "submission": submission_attributes,
-                "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
+                "action_date": datetime.strptime(row['action_date'], '%Y%m%d'),
+                "period_of_performance_start_date": datetime.strptime(row['period_of_performance_star'], '%Y%m%d'),
+                "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d')
             }
 
-            financial_assistance_data = load_data_into_model(FinancialAssistanceAward(), row, value_map=fad_value_map, as_dict=True)
+            financial_assistance_data = load_data_into_model(
+                FinancialAssistanceAward(), row,
+                field_map=fad_field_map,
+                value_map=fad_value_map,
+                as_dict=True)
+
             fad = FinancialAssistanceAward.objects.filter(award=award, modification_number=row['award_modification_amendme']).first()
             if not fad:
                 FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
@@ -312,8 +334,13 @@ class Command(BaseCommand):
             "location_country_code": "place_of_perform_country_c"
         }
 
+        procurement_field_map = {
+            "type": "contract_award_type",
+            "description": "award_description"
+        }
+
         for row in procurement_data:
-            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row)
+            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
             # Create the legal entity if it doesn't exist
             try:
@@ -326,7 +353,7 @@ class Command(BaseCommand):
                 legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
-            pop_location, created = get_or_create_location(place_of_performance_field_map, row)
+            pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
             award = Award.get_or_create_summary_award(
@@ -344,10 +371,16 @@ class Command(BaseCommand):
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 'submission': submission_attributes,
-                "action_date": datetime.strptime(row['action_date'], '%Y%m%d')
+                "action_date": datetime.strptime(row['action_date'], '%Y%m%d'),
+                "period_of_performance_start_date": datetime.strptime(row['period_of_performance_star'], '%Y%m%d'),
+                "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d')
             }
 
-            load_data_into_model(Procurement(), row, value_map=procurement_value_map, save=True)
+            load_data_into_model(
+                Procurement(), row,
+                field_map=procurement_field_map,
+                value_map=procurement_value_map,
+                save=True)
 
 
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
@@ -455,7 +488,7 @@ def format_date(date):
     return datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
 
 
-def get_or_create_location(location_map, row):
+def get_or_create_location(location_map, row, location_value_map={}):
     """
     Retrieve or create a location object
 
@@ -466,8 +499,6 @@ def get_or_create_location(location_map, row):
     """
     location_country = RefCountryCode.objects.filter(
         country_code=row[location_map.get('location_country_code')]).first()
-
-    location_value_map = {}
 
     # temporary fix until broker is patched: remove later
     state_code = row.get(location_map.get('location_state_code'))
