@@ -1,7 +1,54 @@
-
-
 {% load docs %}
+{% load static %}
 
-{% autoescape off %}
-{% display_docs %}
-{% endautoescape %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>USAspending Prototype API</title>
+    <link rel="stylesheet" href="/static/css/google-fonts.css">
+    <link rel="stylesheet" href="/static/css/monokai-sublime.css">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+      .logo {width:350px;background-color:white;padding:15px;margin-right:20px;}
+      .row-fluid outter-wrap {padding-top: 30px;}
+      .outter-wrap {padding-top: 104px;}
+      p { max-width: 80rem;}
+      h1{ font-size: 5rem;}
+      h2 {font-size: 4rem;}
+    </style>
+  </head>
+  <body>
+    <div class="container-fluid usa-da-header">
+        <div class="row">
+            <nav class="navbar">
+                <div class="container usa-da-header-container">
+                    <h1><a href="/"><img class="logo" src="/static/img/logo.png" />Prototype API</a></h1>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <div class="usa-da-outter-wrap">
+      <div class="container homepage">
+        <div class="row-fluid outter-wrap">
+          <div class="container">
+            <div class="row">
+              <div class="col-md-3" id="leftCol">
+              </div>
+              <div class="col-md-9">
+                <section class="wrap">
+                {% autoescape off %}
+                {% display_docs %}
+                {% endautoescape %}
+                </section>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+
+
+  </body>
+</html>

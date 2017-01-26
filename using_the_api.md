@@ -1,14 +1,9 @@
-# The USAspending Application Programming Interface (API)
+# The USAspending API
 
 The USAspending API allows the public to access data published via the Broker or USAspending.
 
-## Background
-
-The U.S. Department of the Treasury is building a suite of open-source tools to help federal agencies comply with the [DATA Act](http://fedspendingtransparency.github.io/about/ "Federal Spending Transparency Background") and to deliver the resulting standardized federal spending information back to agencies and to the public.
-
-For more information about the DATA Act Broker codebase, please visit this repository's [main README](../README.md "DATA Act Broker Backend README").
-
 ## Table of Contents
+  * [Background](#background)
   * [Status Codes](#status-codes)
   * [Data Endpoints](#data-endpoints)
     * [Endpoints and Methods](#endpoints-and-methods)
@@ -17,6 +12,14 @@ For more information about the DATA Act Broker codebase, please visit this repos
   * [POST Requests](#post-requests)
   * [Autocomplete Queries](#autocomplete-queries)
   * [Geographical Hierarchy Queries](#geographical-hierarchy-queries)
+
+
+## Background <a name="background"></a>
+
+The U.S. Department of the Treasury is building a suite of open-source tools to help federal agencies comply with the [DATA Act](http://fedspendingtransparency.github.io/about/ "Federal Spending Transparency Background") and to deliver the resulting standardized federal spending information back to agencies and to the public.
+
+For more information about the DATA Act Broker codebase, please visit this repository's [main README](../README.md "DATA Act Broker Backend README").
+
 
 
 ## DATA Act Data Store Endpoint Documentation
@@ -195,27 +198,28 @@ The structure of the post request allows for a flexible and complex query with b
 having to specify them directly in `fields`, you can set this to `true`. Default: `false`
 * `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name, e.g. to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
 
-  ```
-  {
-      "recipient__location__location_state_code": {
-        "SD": 1,
-        "FL": 2,
-        "MN": 1,
-        "UT": 1,
-        "TX": 2,
-        "VA": 1,
-        "CA": 1,
-        "NC": 1,
-        "LA": 1,
-        "GA": 1
-      }
-    },
-    "results": [ . . . ],
-    "total_metadata": { . . . }
-  }
-  ```
+```
+{
+    "recipient__location__location_state_code": {
+      "SD": 1,
+      "FL": 2,
+      "MN": 1,
+      "UT": 1,
+      "TX": 2,
+      "VA": 1,
+      "CA": 1,
+      "NC": 1,
+      "LA": 1,
+      "GA": 1
+    }
+  },
+  "results": [ . . . ],
+  "total_metadata": { . . . }
+}
+```
 
 In this case, two entires matching the specified filter have the state code of `FL`.
+
 * `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
 * `exclude` - _Optional_ - What fields to exclude from the return. Must be a list.
 * `filters` - _Optional_ - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
@@ -352,26 +356,27 @@ In this case, two entires matching the specified filter have the state code of `
   * `value_format` - Specifies the format for the value. Only used in some operations where noted. Valid choices are enumerated below
     * `fy` - Treats a single value as a fiscal year range
   * `combine_method` - This is a special field which modifies how the filter behaves. When `combine_method` is specified, the only other allowed parameter on the filter is `filters` which should contain an array of filter objects. The `combine_method` will be used to logically join the filters in this list. Options are `AND` or `OR`.
-  ```
-  {
-			"combine_method": "OR",
-			"filters": [
-				{
-					"field": "funding_agency__fpds_code",
-					"operation": "equals",
-					"value": "0300"
 
-				},
-				{
-					"field": "awarding_agency__fpds_code",
-					"operation": "in",
-					"value": ["0300", "0500"]
+```
+{
+		"combine_method": "OR",
+		"filters": [
+			{
+				"field": "funding_agency__fpds_code",
+				"operation": "equals",
+				"value": "0300"
 
-				}
-				]
+			},
+			{
+				"field": "awarding_agency__fpds_code",
+				"operation": "in",
+				"value": ["0300", "0500"]
 
-	}
-  ```
+			}
+			]
+
+}
+```
 
 #### Response (JSON)
 The response object structure is the same whether you are making a GET or a POST request. The only difference is the data objects contained within the results parameter. An example of a response from `/v1/awards/` can be found below
