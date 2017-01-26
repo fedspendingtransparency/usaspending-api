@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'usaspending_api.accounts',
     'usaspending_api.submissions',
     'usaspending_api.financial_activities',
-    'rest_framework_docs'
+    'usaspending_api.api_docs'
 ]
 
 INTERNAL_IPS = ('127.0.0.1',)
