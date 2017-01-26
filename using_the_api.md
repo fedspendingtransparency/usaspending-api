@@ -1,18 +1,19 @@
+<ul class="nav nav-stacked" id="sidebar">
+  <li><a href="#background">Background</a></li>
+  <li><a href="#status-codes">Status Codes</a></li>
+  <li><a href="#data-endpoints">Data Endpoints</a></li>
+  <li><a href="#endpoints-and-methods">Endpoints and Methods</a></li>
+  <li><a href="#summary-endpoints-and-methods">Summary Endpoints & Methods</a></li>
+  <li><a href="#get-requests">GET Requests</a></li>
+  <li><a href="#post-requests">POST Requests</a></li>
+  <li><a href="#autocomplete-queries">Autocomplete Queries</a></li>
+  <li><a href="#geographical-hierarchy-queries">Geographical Hierarchy Queries</a></li>
+</ul>
+[//]: # (Begin Content)
+
 # The USAspending API
 
 The USAspending API allows the public to access data published via the Broker or USAspending.
-
-## Table of Contents
-  * [Background](#background)
-  * [Status Codes](#status-codes)
-  * [Data Endpoints](#data-endpoints)
-    * [Endpoints and Methods](#endpoints-and-methods)
-    * [Summary Endpoints and Methods](#summary-endpoints-and-methods)
-  * [GET Requests](#get-requests)
-  * [POST Requests](#post-requests)
-  * [Autocomplete Queries](#autocomplete-queries)
-  * [Geographical Hierarchy Queries](#geographical-hierarchy-queries)
-
 
 ## Background <a name="background"></a>
 
@@ -20,24 +21,22 @@ The U.S. Department of the Treasury is building a suite of open-source tools to 
 
 For more information about the DATA Act Broker codebase, please visit this repository's [main README](../README.md "DATA Act Broker Backend README").
 
-
-
 ## DATA Act Data Store Endpoint Documentation
 
 Endpoints do not currently require any authorization
 
-### Status Codes
+### Status Codes <a name="status-codes"></a>
 In general, status codes returned are as follows:
 
 * 200 if successful
 * 400 if the request is malformed
 * 500 for server-side errors
 
-### Data Endpoints
+### Data Endpoints <a name="data-endpoints"></a>
 
 Data endpoints are split by payload into POST and GET methods. In general, the format of a request and response will remain the same with the endpoint only changing the data provided in the response.
 
-#### Endpoints and Methods
+#### Endpoints and Methods <a name="endpoints-and-methods"></a>
 The currently available endpoints are:
   * **[/v1/accounts/](https://api.usaspending.gov/api/v1/accounts/)**
     - _Description_: Returns all `AppropriationAccountBalances` data. _NB_: This endpoint is due for a rework in the near future
@@ -89,7 +88,7 @@ The currently available endpoints are:
     - _Description_: Returns all `SubmissionAttributes` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
-#### Summary Endpoints and Methods
+#### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
 Summarized data is available for some of the endpoints listed above:
 
 * **[/v1/awards/total/](https://api.usaspending.gov/api/v1/awards/total/)**
@@ -156,14 +155,14 @@ Response:
 }
 ```
 
-#### GET Requests
+#### GET Requests <a name="get-requests"></a>
 GET requests can be specified by attaching any field value pair to the endpoint. This method supports any fields present in the data object and only the `equals` operation. It also supports pagination variables. Additionally, you may specifcy complex fields that use Django's foreign key traversal; for more details on this see `field` from the POST request. Examples below:
 
 `/v1/awards/?page=5&limit=1000`
 
 `/v1/awards/?funding_agency__fpds_code=0300`
 
-#### POST Requests
+#### POST Requests <a name="post-requests"></a>
 The structure of the post request allows for a flexible and complex query with built-in pagination support.
 
 #### Body (JSON)
@@ -492,7 +491,7 @@ The response has three functional parts:
     * `count` - The total number of items in this dataset, spanning all pages
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
-### Autocomplete Queries
+### Autocomplete Queries <a name="autocomplete-queries"></a>
 Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably `/awards/``).
 #### Body
 ```
@@ -595,6 +594,7 @@ Autocomplete queries currently require the endpoint to have additional handling,
   }
 }
 ```
+
 #### Response Description
   * `results` - The actual results. For each field search, will contain a list of all unique values matching the requested value and mode
   * `counts` - Contains the length of each array in the results object
@@ -604,6 +604,7 @@ Autocomplete queries currently require the endpoint to have additional handling,
 This is a special type of autocomplete query which allows users to search for geographical locations in a hierarchy.
 
 #### Body
+
 ```
 {
   "value": "u",
@@ -664,7 +665,8 @@ This is a special type of autocomplete query which allows users to search for ge
     ],
     "place": "UT"
   }
-  ```
+```
+
 #### Response Description
   * `place` - The value of the place. e.g. A country's name, or a county name, etc.
   * `matched_ids` - An array of `location_id`s that match the given data. This can be used to look up awards, recipients, or other data by requesting these ids

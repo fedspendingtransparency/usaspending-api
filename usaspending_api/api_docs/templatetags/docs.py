@@ -10,4 +10,13 @@ register = template.Library()
 
 @register.simple_tag
 def display_docs():
-    return markdown.markdown(open(os.path.join(settings.BASE_DIR, "using_the_api.md")).read(), extensions=[GithubFlavoredMarkdownExtension()])
+    full_text = open(os.path.join(settings.BASE_DIR, "using_the_api.md")).read()
+    body = full_text.split("[//]: # (Begin Content)")[1]
+    return markdown.markdown(body, extensions=[GithubFlavoredMarkdownExtension()])
+
+
+@register.simple_tag
+def display_contents():
+    full_text = open(os.path.join(settings.BASE_DIR, "using_the_api.md")).read()
+    contents = full_text.split("[//]: # (Begin Content)")[0]
+    return markdown.markdown(contents, extensions=[GithubFlavoredMarkdownExtension()])
