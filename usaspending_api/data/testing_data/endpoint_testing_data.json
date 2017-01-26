@@ -530,5 +530,45 @@
         "status_code": 200,
         "method": "POST",
         "url": "/api/v1/transactions/total/"
+    },
+    {
+        "response_object": {
+            "id": 47691,
+            "type": "U",
+            "type_description": "Cooperative Agreement",
+            "piid": "SBAHQ16M0163",
+            "fain": null,
+            "uri": null,
+            "total_obligation": "54400.00",
+            "total_outlay": null,
+            "date_signed": "2016-09-01",
+            "description": null,
+            "period_of_performance_start_date": "2016-09-01",
+            "period_of_performance_current_end_date": null,
+            "awarding_agency": null,
+            "funding_agency": null,
+            "recipient": null,
+            "place_of_performance": null,
+            "procurement_set": [
+            {
+              "type": "B",
+              "action_date": "2016-09-01",
+              "federal_action_obligation": "54400.00",
+              "modification_number": "0",
+              "description": "IGF::OT::IGF AGENCY IT SECURITY PENETRATION TEST - INTERNAL AND EXTERNAL",
+              "cost_or_pricing_data": "J",
+              "naics": "541511",
+              "naics_description": "541511: CUSTOM COMPUTER PROGRAMMING SERVICES",
+              "product_or_service_code": "D318",
+              "update_date": "2016-12-20T22:50:57.790000Z"
+            }
+            ],
+            "financialassistanceaward_set": []
+        },
+        "request_object": {},
+        "name": "Test single award endpoint",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/awards/47691/"
     }
 ]

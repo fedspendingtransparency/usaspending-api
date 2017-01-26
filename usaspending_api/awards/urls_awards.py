@@ -3,13 +3,16 @@ from django.conf.urls import url
 from usaspending_api.awards import views
 
 # map reqest types to viewset method; replace this with a router
-award = views.AwardViewSet.as_view({
+award_list = views.AwardViewSet.as_view({
     'get': 'list', 'post': 'list'})
+award_detail = views.AwardViewSet.as_view({
+    'get': 'retrieve', 'post': 'retrieve'})
 award_total = views.AwardAggregateViewSet.as_view({
     'get': 'list', 'post': 'list'})
 
 urlpatterns = [
-    url(r'^$', award),
+    url(r'^$', award_list, name='award-list'),
+    url(r'(?P<pk>[0-9]+)/$', award_detail, name='award-detail'),
     url(r'^autocomplete/', views.AwardAutocomplete.as_view()),
     url(r'^total/', award_total)
 ]

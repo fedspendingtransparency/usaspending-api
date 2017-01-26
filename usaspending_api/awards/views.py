@@ -14,21 +14,9 @@ from usaspending_api.common.views import AggregateView, DetailViewSet
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
-class AwardAutocomplete(APIView):
-    """Autocomplete support for award summary objects."""
-    # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
-    def post(self, request, format=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
-            return Response(AutoCompleteHandler.handle(Award.objects.all(), body, AwardSerializer))
-        except Exception as e:
-            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
 class AwardViewSet(FilterQuerysetMixin,
-                              ResponseMetadatasetMixin,
-                              DetailViewSet):
+                   ResponseMetadatasetMixin,
+                   DetailViewSet):
     """Handles requests for summarized award data."""
 
     filter_map = {
@@ -44,6 +32,18 @@ class AwardViewSet(FilterQuerysetMixin,
         filtered_queryset = self.filter_records(self.request, queryset=queryset, filter_map=self.filter_map)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
+
+
+class AwardAutocomplete(APIView):
+    """Autocomplete support for award summary objects."""
+    # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
+    def post(self, request, format=None):
+        try:
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            return Response(AutoCompleteHandler.handle(Award.objects.all(), body, AwardSerializer))
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AwardAggregateViewSet(FilterQuerysetMixin,
