@@ -16,10 +16,9 @@ def tas_data():
     call_command('loadtas',
                  os.path.join(settings.BASE_DIR,
                               'usaspending_api/data/tas_list.csv'))
-    mommy.make('submissions.SubmissionAttributes', _quantity=2)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_gwa_tas(tas_data):
     """
     Make sure an instance of a tas is properly created
