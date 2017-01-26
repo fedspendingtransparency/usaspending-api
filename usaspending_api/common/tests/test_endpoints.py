@@ -10,6 +10,7 @@ def endpoint_data():
     call_command('flush', '--noinput')
     call_command('loaddata', 'endpoint_fixture_db')
 
+
 """
 Checks data/testing_data/endpoint_testing_data.json for endpoints, requests,
 and responses
@@ -31,9 +32,13 @@ The format for entries in this json file are as follows (NB: if you use method "
 ]
 """
 
+
 @pytest.mark.django_db
 def test_endpoints(endpoint_data, client):
-    json_data = open(os.path.join(os.path.dirname(__file__), '../../data/testing_data/endpoint_testing_data.json'))
+    json_data = open(
+        os.path.join(
+            os.path.dirname(__file__),
+            '../../data/testing_data/endpoint_testing_data.json'))
     endpoints = json.load(json_data)
     json_data.close()
     logger = logging.getLogger('console')
@@ -46,11 +51,16 @@ def test_endpoints(endpoint_data, client):
         request_object = endpoint.get('request_object', None)
         response_object = endpoint.get('response_object', None)
         status_code = endpoint.get('status_code', None)
-        logger.info("Running endpoint test: \n\t" + method + " " + url + "\n\t" + endpoint.get('name', "Unnamed"))
+        logger.info("Running endpoint test: \n\t" + method + " " + url + "\n\t"
+                    + endpoint.get('name', "Unnamed"))
 
         response = None
         if method == "POST":
-            response = client.post(url, content_type='application/json', data=json.dumps(request_object), format='json')
+            response = client.post(
+                url,
+                content_type='application/json',
+                data=json.dumps(request_object),
+                format='json')
         elif method == "GET":
             response = client.get(url, format='json')
 
@@ -63,6 +73,7 @@ def test_endpoints(endpoint_data, client):
         # TESTING TODO: I bet I can beat this
         assert evaluateEquivalence(response_object, response.data)
 
+
 def evaluateEquivalence(item1, item2):
     logger = logging.getLogger('console')
     equality = True
@@ -74,7 +85,9 @@ def evaluateEquivalence(item1, item2):
                 matched = False
                 for item in item2:
                     if evaluateEquivalence(item1[i], item):
-                        item2.remove(item)  # Remove this item from the list if we hit a match
+                        item2.remove(
+                            item
+                        )  # Remove this item from the list if we hit a match
                         matched = True
                         break
                 if matched:

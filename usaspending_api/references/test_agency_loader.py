@@ -18,7 +18,9 @@ def test_department(agency_data):
     Make sure an instance of a department is properly created
     """
 
-    department = Agency.objects.get(toptier_agency__cgac_code='002', toptier_agency__fpds_code='0000', subtier_agency__subtier_code='0000')
+    department = Agency.objects.get(toptier_agency__cgac_code='002',
+                                    toptier_agency__fpds_code='0000',
+                                    subtier_agency__subtier_code='0000')
 
 
 @pytest.mark.django_db
@@ -27,6 +29,10 @@ def test_subtier(agency_data):
     Make sure a subtier is properly mapped to its parent department
     """
 
-    subtier = Agency.objects.get(toptier_agency__cgac_code='002', toptier_agency__fpds_code='0000', subtier_agency__subtier_code='0001')
-    department = Agency.objects.get(toptier_agency__cgac_code='002', toptier_agency__fpds_code='0000', subtier_agency__subtier_code='0000')
+    subtier = Agency.objects.get(toptier_agency__cgac_code='002',
+                                 toptier_agency__fpds_code='0000',
+                                 subtier_agency__subtier_code='0001')
+    department = Agency.objects.get(toptier_agency__cgac_code='002',
+                                    toptier_agency__fpds_code='0000',
+                                    subtier_agency__subtier_code='0000')
     assert subtier.toptier_agency == department.toptier_agency
