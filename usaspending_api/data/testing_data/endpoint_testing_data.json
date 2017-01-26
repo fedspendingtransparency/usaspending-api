@@ -570,5 +570,32 @@
         "status_code": 200,
         "method": "POST",
         "url": "/api/v1/awards/47691/"
+    },
+    {
+        "response_object": {
+            "award": 47722,
+            "type": "D",
+            "type_description": "Definitive Contract",
+            "modification_number": "4",
+            "federal_action_obligation": "425000.00",
+            "action_date": "2016-09-01",
+            "description": "IGF::OT::IGF REGIONAL INNOVATION CLUSTER INITIATIVE SERVICES",
+            "update_date": "2016-12-20T22:50:57.773000Z",
+            "contract_data": {
+            "naics_description": "541690: OTHER SCIENTIFIC AND TECHNICAL CONSULTING SERVICES",
+            "product_or_service_code": "R499",
+            "naics": "541690",
+            "cost_or_pricing_data": "J"
+            },
+            "assistance_data": {},
+            "funding_agency": null,
+            "awarding_agency": null,
+            "recipient": null
+        },
+        "request_object": {"verbose": true},
+        "name": "Test single transaction endpoint",
+        "status_code": 200,
+        "method": "POST",
+        "url": "/api/v1/transactions/21/"
     }
 ]
