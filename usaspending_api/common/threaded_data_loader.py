@@ -15,8 +15,8 @@ import json
 
 # This class is a threaded data loader
 # IMPLEMENTATION NOTE!!
-# If you make a test case with a class what will use this loader, ensure you use
-# TransactionTestCase rather than the normal TestCase as the base for your test,
+# If you write a test that will use this loader, mark it with
+# @pytest.mark.django_db(transaction=True)
 # otherwise you may run into some concurrency issues!
 class ThreadedDataLoader():
     # The threaded data loader requires a bit of set up, and explanation of the
@@ -134,6 +134,7 @@ class DataLoaderThread(Process):
                 self.data_queue.task_done()
                 connection.close()
                 return
+            row = cleanse_values(row)
             # Grab the collision field
             update = False
             collision_instance = None
@@ -238,3 +239,11 @@ class DataLoaderThread(Process):
             model_instance_or_dict[field] = value
         else:
             setattr(model_instance_or_dict, field, value)
+
+def cleanse_values(row):
+    """
+    Remove textual quirks from CSV values.
+    """
+    row = {k: v.strip() for (k, v) in row.items()}
+    row = {k: (None if v.lower() == 'null' else v) for (k, v) in row.items()}
+    return row
