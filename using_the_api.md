@@ -19,7 +19,7 @@ The USAspending API allows the public to access data published via the Broker or
 
 The U.S. Department of the Treasury is building a suite of open-source tools to help federal agencies comply with the [DATA Act](http://fedspendingtransparency.github.io/about/ "Federal Spending Transparency Background") and to deliver the resulting standardized federal spending information back to agencies and to the public.
 
-For more information about the DATA Act Broker codebase, please visit this repository's [main README](../README.md "DATA Act Broker Backend README").
+For more information about the DATA Act Broker codebase, please visit this repository's [main README](https://github.com/fedspendingtransparency/data-act-broker-backend/README.md "DATA Act Broker Backend README").
 
 ## DATA Act Data Store Endpoint Documentation
 
@@ -38,61 +38,61 @@ Data endpoints are split by payload into POST and GET methods. In general, the f
 
 #### Endpoints and Methods <a name="endpoints-and-methods"></a>
 The currently available endpoints are:
-  * **[/v1/accounts/](https://api.usaspending.gov/api/v1/accounts/)**
+  * **[/v1/accounts/](https://spending-api.us/api/v1/accounts/)**
     - _Description_: Returns all `AppropriationAccountBalances` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
 
-  * **[/v1/accounts/tas/](https://api.usaspending.gov/api/v1/accounts/tas/)**
+  * **[/v1/accounts/tas/](https://spending-api.us/api/v1/accounts/tas/)**
     - _Description_: Returns all `TreasuryAppropriationAccount` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
 
-  * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
+  * **[/v1/awards/](https://spending-api.us/api/v1/awards/)**
     - _Description_: Provides award data, including a list of associated transactions
     - _Methods_: GET, POST
 
 
-  * **[/v1/awards/autocomplete/](https://api.usaspending.gov/api/v1/awards/autocomplete/)**
+  * **[/v1/awards/autocomplete/](https://spending-api.us/api/v1/awards/autocomplete/)**
       - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards endpoint
     - _Methods_: POST
 
 
-  * **[/v1/transactions/](https://api.usaspending.gov/api/v1/transactions/)**
+  * **[/v1/transactions/](https://spending-api.us/api/v1/transactions/)**
     - _Description_: Provides award transactions data **Note:** This endpoint is under active development and currently serves contract data only
     - _Methods_: POST
 
 
-  * **[/v1/references/locations/](https://api.usaspending.gov/api/v1/references/locations/)**
+  * **[/v1/references/locations/](https://spending-api.us/api/v1/references/locations/)**
     - _Description_: Returns all `Location` data.
     - _Methods_: POST
 
 
-  * **[/v1/references/locations/geocomplete](https://api.usaspending.gov/api/v1/references/locations/geocomplete/)**
+  * **[/v1/references/locations/geocomplete](https://spending-api.us/api/v1/references/locations/geocomplete/)**
     - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information
     - _Methods_: POST
 
 
-  * **[/v1/references/agency/](https://api.usaspending.gov/api/v1/references/agency/)**
+  * **[/v1/references/agency/](https://spending-api.us/api/v1/references/agency/)**
     - _Description_: Provides agency data
     - _Methods_: POST
 
 
-  * **[/v1/references/agency/autocomplete/](https://api.usaspending.gov/api/v1/references/agency/autocomplete/)**
+  * **[/v1/references/agency/autocomplete/](https://spending-api.us/api/v1/references/agency/autocomplete/)**
     - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the agency endpoint
     - _Methods_: POST
 
 
 
-  * **[/v1/submissions/](https://api.usaspending.gov/api/v1/submissions/)**
+  * **[/v1/submissions/](https://spending-api.us/api/v1/submissions/)**
     - _Description_: Returns all `SubmissionAttributes` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
 #### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
 Summarized data is available for some of the endpoints listed above:
 
-* **[/v1/awards/total/](https://api.usaspending.gov/api/v1/awards/total/)**
-* **[/v1/transactions/total/](https://api.usaspending.gov/api/v1/transactions/total/)**
+* **[/v1/awards/total/](https://spending-api.us/api/v1/awards/total/)**
+* **[/v1/transactions/total/](https://spending-api.us/api/v1/transactions/total/)**
 * more coming soon
 
 You can get summarized data via a `POST` request that specifies:
