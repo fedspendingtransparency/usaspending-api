@@ -297,6 +297,12 @@ class LegalEntity(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    # Fields added to accomodate recipient_type of financial assistance records
+    city_township_government = models.CharField(max_length=1, blank=True, null=True)
+    special_district_government = models.CharField(max_length=1, blank=True, null=True)
+    small_business = models.CharField(max_length=1, blank=True, null=True)
+    individual = models.CharField(max_length=1, blank=True, null=True)
+
     @staticmethod
     def get_default_fields():
         return [
