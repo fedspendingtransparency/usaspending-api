@@ -3,7 +3,7 @@ from rest_framework import serializers
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, FinancialAccountsByAwardsTransactionObligations, FinancialAssistanceAward, Procurement
 from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer
 from usaspending_api.common.serializers import LimitableSerializer
-from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer
+from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer
 
 
 class ProcurementSerializer(LimitableSerializer):
@@ -46,6 +46,10 @@ class AwardSerializer(LimitableSerializer):
             "financialassistanceaward_set": {
                 "class": FinancialAssistanceAwardSerializer,
                 "kwargs": {"read_only": True, "many": True}
+            },
+            "place_of_performance": {
+                "class": LocationSerializer,
+                "kwargs": {"read_only": True}
             },
         }
 
