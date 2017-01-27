@@ -122,11 +122,14 @@ Now, go to `http://localhost:8000/api/v1/awards/` to see the API! There aren't a
 
 ## Running the Test Suite
 
-To run the test suite and confirm that everything is working as expected, make sure you're in the top-level project directory and run the following from the command line:
+To run the test suite and confirm that everything is working as expected, make sure you're in the top-level project directory and that your `DATABASE_URL` environment variable is set, and
+run the following from the command line:
 
 
-        python manage.py test
+        py.test
 
+The tests will not run against your database in `$DATABASE_URL`, but against a
+temporary database named `test_(your db name)`, which they will create.
 
 ## ETL Setup
 
