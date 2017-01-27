@@ -600,7 +600,7 @@ Autocomplete queries currently require the endpoint to have additional handling,
   * `counts` - Contains the length of each array in the results object
   * `matched_objects` - Only exists if `matched_objects` was specified in the request. An object broken up by specified `fields` with matching objects from the autocomplete query stored in arrays.
 
-### Geographical Hierarchy Queries
+### Geographical Hierarchy Queries <a name="geographical-hierarchy-queries"></a>
 This is a special type of autocomplete query which allows users to search for geographical locations in a hierarchy.
 
 #### Body
