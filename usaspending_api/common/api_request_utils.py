@@ -84,13 +84,21 @@ class FilterGenerator():
             qs.annotate(search=vector_sum)
         return qs
 
-    """
-    Pass in request.GET and you'll get back a **kwargs object suitable for use
-    in .filter()
-    NOTE: GET will really only support 'AND' of filters, to use OR we'll need
-    a more complex request object via POST
-    """
-    def create_from_get(self, parameters):
+    # We should refactor create_from_query_params
+    # and create_from_request_body into a single
+    # method that can create filters based on passed-in
+    # paramaters without needing to know about the structure
+    # of the request itself (e.g., GET vs POST)
+    def create_from_query_params(self, parameters):
+        """
+        Create filters using a request's query parameters.
+
+        NOTE: GET only supports 'AND' filters. Anything more complex
+        will need to be specified in the body of a POST request.
+
+        Returns:
+            A **kwargs object suitable for use in .filter()
+        """
         return_arguments = {}
         for key in parameters:
             if key in self.ignored_parameters:
@@ -101,30 +109,33 @@ class FilterGenerator():
                 return_arguments[key] = parameters[key]
         return return_arguments
 
-    """
-    Creates a Q object from a POST query. Example of a post query:
-    {
-        'page': 1,
-        'limit': 100,
-        'filters': [
-            {
-                'combine_method': 'OR',
-                'filters': [ . . . ]
-            },
-            {
-                'field': <FIELD_NAME>
-                'operation': <OPERATION>
-                'value': <VALUE>
-            },
-        ]
-    }
-    If the 'combine_method' is present in a filter, you MUST specify another
-    'filters' set in that object of filters to combine
-    The combination method for filters at the root level is 'AND'
-    Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range, fy
-    Note that contains is always case insensitive
-    """
-    def create_from_post(self, parameters):
+    def create_from_request_body(self, parameters):
+        """
+        Creates a Q object from a POST query.
+
+        Example of a post query:
+        {
+            'page': 1,
+            'limit': 100,
+            'filters': [
+                {
+                    'combine_method': 'OR',
+                    'filters': [ . . . ]
+                },
+                {
+                    'field': <FIELD_NAME>
+                    'operation': <OPERATION>
+                    'value': <VALUE>
+                },
+            ]
+        }
+
+        If the 'combine_method' is present in a filter, you MUST specify another
+        'filters' set in that object of filters to combine
+        The combination method for filters at the root level is 'AND'
+        Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range, fy
+        Note that contains is always case insensitive
+        """
         try:
             self.validate_post_request(parameters)
         except Exception:
@@ -495,7 +506,7 @@ class DataQueryHandler:
     def build_response(self):
         """Returns a dictionary from a POST request that can be used to create a response."""
         fg = FilterGenerator()
-        filters = fg.create_from_post(self.request_body)
+        filters = fg.create_from_request_body(self.request_body)
         # Grab the ordering
         self.ordering = self.request_body.get("order", self.ordering)
 
