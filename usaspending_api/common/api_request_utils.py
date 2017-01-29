@@ -66,11 +66,11 @@ class FilterGenerator():
     This is useful for allowing users to filter on a fk relationship without
     having to specify the more complicated filter
     Additionally, ignored parameters specifies parameters to ignore. Always includes
-    to ["page", "limit"]
+    to ["page", "limit", "last"]
     """
     def __init__(self, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
-        self.ignored_parameters = ['page', 'limit'] + ignored_parameters
+        self.ignored_parameters = ['page', 'limit', 'last'] + ignored_parameters
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
 
