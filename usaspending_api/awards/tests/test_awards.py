@@ -12,19 +12,13 @@ def test_award_endpoint(client):
     assert len(resp.data) > 2
 
     assert client.post(
-        '/api/v1/awards/',
-        content_type='application/json',
-        data=json.dumps({
-            "page": 1,
-            "limit": 10
-        })).status_code == 200
+        '/api/v1/awards/?page=1&limit=10',
+        content_type='application/json').status_code == 200
 
     assert client.post(
-        '/api/v1/awards/',
+        '/api/v1/awards/?page=1&limit=10',
         content_type='application/json',
         data=json.dumps({
-            "page": 1,
-            "limit": 10,
             "filters": [{
                 "field": "funding_agency__toptier_agency__fpds_code",
                 "operation": "equals",
@@ -33,11 +27,9 @@ def test_award_endpoint(client):
         })).status_code == 200
 
     assert client.post(
-        '/api/v1/awards/',
+        '/api/v1/awards/?page=1&limit=10',
         content_type='application/json',
         data=json.dumps({
-            "page": 1,
-            "limit": 10,
             "filters": [{
                 "combine_method": "OR",
                 "filters": [{
@@ -53,11 +45,9 @@ def test_award_endpoint(client):
         })).status_code == 200
 
     assert client.post(
-        '/api/v1/awards/',
+        '/api/v1/awards/?page=1&limit=10',
         content_type='application/json',
         data=json.dumps({
-            "page": 1,
-            "limit": 10,
             "filters": [{
                 "field": "funding_agency__toptier_agency__fpds_code",
                 "operation": "ff",

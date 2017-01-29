@@ -564,7 +564,7 @@ class PhonyCursor:
     """Spoofs the db cursor responses."""
 
     def __init__(self):
-        json_data = open(os.path.join(os.path.dirname(__file__), '../../test_data/etl_test_data.json'))
+        json_data = open(os.path.join(os.path.dirname(__file__), '../../tests/etl_test_data.json'))
         self.db_responses = json.load(json_data)
         json_data.close()
 
