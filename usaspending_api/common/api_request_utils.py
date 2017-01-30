@@ -372,43 +372,42 @@ class GeoCompleteHandler:
 
     def __init__(self, request_body):
         self.request_body = request_body
-        self.search_fields = {
-            "location_country_code__country_name": {
-                "type": "COUNTRY",
-                "parent": "location_country_code"
-            },
-            "location_state_code": {
-                "type": "STATE",
-                "parent": "location_country_code__country_name"
-            },
-            "location_state_name": {
-                "type": "STATE",
-                "parent": "location_country_code__country_name"
-            },
-            "location_city_name": {
-                "type": "CITY",
-                "parent": "location_state_name"
-            },
-            "location_county_name": {
-                "type": "COUNTY",
-                "parent": "location_state_name"
-            },
-            "location_zip5": {
-                "type": "ZIP",
-                "parent": "location_state_name"
-            },
-            "location_foreign_postal_code": {
-                "type": "POSTAL CODE",
-                "parent": "location_country_code__country_name"
-            },
-            "location_foreign_province": {
-                "type": "PROVINCE",
-                "parent": "location_country_code__country_name"
-            },
-            "location_foreign_city_name": {
-                "type": "CITY",
-                "parent": "location_country_code__country_name"
-            }
+        self.search_fields = OrderedDict()
+        self.search_fields["location_country_code__country_name"] = {
+            "type": "COUNTRY",
+            "parent": "location_country_code"
+        }
+        self.search_fields["location_state_code"] = {
+            "type": "STATE",
+            "parent": "location_country_code__country_name"
+        }
+        self.search_fields["location_state_name"] = {
+            "type": "STATE",
+            "parent": "location_country_code__country_name"
+        }
+        self.search_fields["location_city_name"] = {
+            "type": "CITY",
+            "parent": "location_state_name"
+        }
+        self.search_fields["location_county_name"] = {
+            "type": "COUNTY",
+            "parent": "location_state_name"
+        }
+        self.search_fields["location_zip5"] = {
+            "type": "ZIP",
+            "parent": "location_state_name"
+        }
+        self.search_fields["location_foreign_postal_code"] = {
+            "type": "POSTAL CODE",
+            "parent": "location_country_code__country_name"
+        }
+        self.search_fields["location_foreign_province"] = {
+            "type": "PROVINCE",
+            "parent": "location_country_code__country_name"
+        }
+        self.search_fields["location_foreign_city_name"] = {
+            "type": "CITY",
+            "parent": "location_country_code__country_name"
         }
 
     def build_response(self):
@@ -418,6 +417,7 @@ class GeoCompleteHandler:
         mode = self.request_body.get("mode", "contains")
         scope = self.request_body.get("scope", "all")
         usage = self.request_body.get("usage", "all")
+        limit = self.request_body.get("limit", 10)
 
         if mode == "contains":
             mode = "__icontains"
@@ -454,8 +454,7 @@ class GeoCompleteHandler:
                 q_kwargs["location_congressional_code__istartswith"] = temp_val[1]
 
             search_q = Q(**q_kwargs)
-            results = Location.objects.filter(search_q & scope_q & usage_q).values_list("location_congressional_code", "location_state_code", "location_state_name")
-            results = list(set(results))  # Eliminate duplicates
+            results = Location.objects.filter(search_q & scope_q & usage_q).order_by("location_state_code", "location_congressional_code").values_list("location_congressional_code", "location_state_code", "location_state_name").distinct()[:limit]
             for row in results:
                 response_row = {
                     "place": row[1] + "-" + str(row[0]),
@@ -464,12 +463,13 @@ class GeoCompleteHandler:
                     "matched_ids": Location.objects.filter(Q(**{"location_congressional_code": row[0], "location_state_code": row[1], "location_state_name": row[2]})).values_list("location_id", flat=True)
                 }
                 response_object.append(response_row)
+                if len(response_object) >= limit:
+                    return response_object
 
         if value:
             for searchable_field in search_fields.keys():
                 search_q = Q(**{searchable_field + mode: value})
-                results = Location.objects.filter(search_q & scope_q & usage_q).values_list(searchable_field, search_fields[searchable_field]["parent"])
-                results = list(set(results))  # Do this to eliminate duplicates
+                results = Location.objects.filter(search_q & scope_q & usage_q).order_by(searchable_field).values_list(searchable_field, search_fields[searchable_field]["parent"]).distinct()[:limit]
                 for row in results:
                     response_row = {
                         "place": row[0],
@@ -478,6 +478,8 @@ class GeoCompleteHandler:
                         "matched_ids": Location.objects.filter(Q(**{searchable_field: row[0], search_fields[searchable_field]["parent"]: row[1]})).values_list("location_id", flat=True)
                     }
                     response_object.append(response_row)
+                    if len(response_object) >= limit:
+                        return response_object
 
         return response_object
 
