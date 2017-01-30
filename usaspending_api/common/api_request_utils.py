@@ -470,7 +470,6 @@ class GeoCompleteHandler:
             for searchable_field in search_fields.keys():
                 search_q = Q(**{searchable_field + mode: value})
                 results = Location.objects.filter(search_q & scope_q & usage_q).order_by(searchable_field).values_list(searchable_field, search_fields[searchable_field]["parent"]).distinct()[:limit]
-                print(results)
                 for row in results:
                     response_row = {
                         "place": row[0],
