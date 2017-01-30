@@ -17,7 +17,12 @@ AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 class AwardViewSet(FilterQuerysetMixin,
                    ResponseMetadatasetMixin,
                    DetailViewSet):
-    """Handles requests for summarized award data."""
+    """
+    ## Spending data by Award (i.e. a grant, contract, loan, etc)
+
+    This endpoint allows you to search and filter by almost any attribute of an award object.
+
+    """
 
     filter_map = {
         'awarding_fpds': 'awarding_agency__fpds_code',
