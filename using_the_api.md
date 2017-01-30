@@ -20,7 +20,7 @@ The USAspending API allows the public to access data published via the DATA Act 
 
 The U.S. Department of the Treasury is building a suite of open-source tools to help federal agencies comply with the [DATA Act](http://fedspendingtransparency.github.io/about/ "Federal Spending Transparency Background") and to deliver the resulting standardized federal spending information back to agencies and to the public.
 
-For more information about the DATA Act Broker codebase, please visit this repository's [main README](../README.md "DATA Act Broker Backend README").
+For more information about the DATA Act Broker codebase, please visit this repository's [main README](https://github.com/fedspendingtransparency/data-act-broker-backend/README.md "DATA Act Broker Backend README").
 
 ## DATA Act Data Store Endpoint Documentation
 
@@ -40,17 +40,17 @@ Data endpoints are split by payload into POST and GET methods. In general, the f
 #### Endpoints and Methods <a name="endpoints-and-methods"></a>
 The currently available endpoints are listed below. To reduce unnecessary data transfer, most return a default set of information about the items being requested. To override the default field list, use the `fields`, `exclude`, and `verbose` options (see [POST Requests](#post-requests) for more information).
 
-  * **[/v1/accounts/](https://api.usaspending.gov/api/v1/accounts/)**
+  * **[/v1/accounts/](https://spending-api.us/api/v1/accounts/)**
     - _Description_: Provides financial information by appropriations account. Financial information is data such as total budget authority, outlays, obligations, and unobligated balance. _Note_: This endpoint is due for a rework in the near future.
     - _Methods_: GET, POST
 
 
-  * **[/v1/accounts/tas/](https://api.usaspending.gov/api/v1/accounts/tas/)**
+  * **[/v1/accounts/tas/](https://spending-api.us/api/v1/accounts/tas/)**
     - _Description_: Returns a list of appropriations accounts, including the account name, Treasury Account Symbol (TAS) components, the associated budget function, and the corresponding agency information. _Note_: This endpoint is due for a rework in the near future.
     - _Methods_: GET, POST
 
 
-  * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
+  * **[/v1/awards/](https://spending-api.us/api/v1/awards/)**
     - _Description_: Provides a list of awards, including a list of associated transactions. Award data pertains to grants, loans, direct payments to individuals, and contracts.
     - _Methods_: GET, POST
 
@@ -65,7 +65,7 @@ The currently available endpoints are listed below. To reduce unnecessary data t
     - _Methods_: POST
 
 
-  * **[/v1/transactions/](https://api.usaspending.gov/api/v1/transactions/)**
+  * **[/v1/transactions/](https://spending-api.us/api/v1/transactions/)**
     - _Description_: Provides award transactions data. Awards transaction represent specific actions that apply to an award, such as a purchase order. _Note:_ This endpoint is under active development and currently serves contract data only.
     - _Methods_: GET, POST
 
@@ -85,19 +85,20 @@ The currently available endpoints are listed below. To reduce unnecessary data t
     - _Methods_: POST
 
 
-  * **[/v1/references/agency/](https://api.usaspending.gov/api/v1/references/agency/)**
+  * **[/v1/references/agency/](https://spending-api.us/api/v1/references/agency/)**
     - _Description_: Returns a list of agencies.
     - _Methods_: GET, POST
 
 
-  * **[/v1/references/agency/autocomplete/](https://api.usaspending.gov/api/v1/references/agency/autocomplete/)**
+  * **[/v1/references/agency/autocomplete/](https://spending-api.us/api/v1/references/agency/autocomplete/)**
     - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the agency endpoint.
     - _Methods_: POST
 
 
-  * **[/v1/submissions/](https://api.usaspending.gov/api/v1/submissions/)**
+  * **[/v1/submissions/](https://spending-api.us/api/v1/submissions/)**
     - _Description_: Returns metadata about submissions loaded from the DATA Act broker. _Note_: This endpoint is due for a rework in the near future.
     - _Methods_: GET, POST
+
 
 #### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
 Summarized data is available for some of the endpoints listed above:

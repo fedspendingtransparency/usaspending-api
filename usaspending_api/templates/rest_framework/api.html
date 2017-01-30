@@ -1,0 +1,41 @@
+{% extends "rest_framework/base.html" %}
+
+{% load static %}
+{% block title %}USAspending Prototype API {% endblock %}
+
+{% block bootstrap_theme %}
+    <link rel="stylesheet" href='{% static "/css/google-fonts.css" %}'>
+    <link rel="stylesheet" href='{% static "/css/monokai-sublime.css" %}'>
+    <link rel="stylesheet" href='{% static "/css/main.css" %}'>
+    <style>
+      .logo {width:350px;background-color:white;padding:15px;margin-right:20px;}
+      .row-fluid outter-wrap {padding-top: 30px;}
+      p { max-width: 80rem;}
+      h1{ font-size: 5rem; margin-bottom: 0px;}
+      h2 {font-size: 4rem;}
+      .container { padding-top: 100px; }
+      #get-form, .button-form {display: none;}
+    </style>
+{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+{% block navbar %}
+<div class="container-fluid usa-da-header">
+<div class="navbar">
+<div class="container usa-da-header-container">
+  <h1><a href="/"><img class="logo" src='{% static "/img/logo.png" %}' />Prototype API</a></h1>
+  <ul id="usa-da-header-link-holder" class="nav nav-row">
+
+      <li class="element first ">
+          <a href="/">Docs</a>
+      </li>
+
+      <li class="element   last">
+          <a href="https://github.com/fedspendingtransparency/usaspending-api">Github</a>
+      </li>
+
+  </ul>
+</div>
+</div>
+</div>
+
+{% endblock %}
