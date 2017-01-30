@@ -454,10 +454,7 @@ class GeoCompleteHandler:
                 q_kwargs["location_congressional_code__istartswith"] = temp_val[1]
 
             search_q = Q(**q_kwargs)
-            results = Location.objects.filter(search_q & scope_q & usage_q).values_list("location_congressional_code", "location_state_code", "location_state_name")
-            results = list(set(results))  # Eliminate duplicates
-            if results:
-                results.sort(key=lambda district: district[1] + "-" + district[0])  # Sort the new list
+            results = Location.objects.filter(search_q & scope_q & usage_q).order_by("location_state_code", "location_congressional_code").values_list("location_congressional_code", "location_state_code", "location_state_name").distinct()[:limit]
             for row in results:
                 response_row = {
                     "place": row[1] + "-" + str(row[0]),
@@ -472,10 +469,8 @@ class GeoCompleteHandler:
         if value:
             for searchable_field in search_fields.keys():
                 search_q = Q(**{searchable_field + mode: value})
-                results = Location.objects.filter(search_q & scope_q & usage_q).values_list(searchable_field, search_fields[searchable_field]["parent"])
-                results = list(set(results))  # Do this to eliminate duplicates
-                if results:
-                    results.sort()  # Sort the new list
+                results = Location.objects.filter(search_q & scope_q & usage_q).order_by(searchable_field).values_list(searchable_field, search_fields[searchable_field]["parent"]).distinct()[:limit]
+                print(results)
                 for row in results:
                     response_row = {
                         "place": row[0],
