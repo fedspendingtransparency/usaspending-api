@@ -83,6 +83,14 @@ class ToptierAgency(models.Model):
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Top-Tier Agency Name")
 
+    @staticmethod
+    def get_default_fields():
+        return [
+            "cgac_code",
+            "fpds_code",
+            "name"
+        ]
+
     class Meta:
         managed = True
         db_table = 'toptier_agency'
@@ -94,6 +102,13 @@ class SubtierAgency(models.Model):
     update_date = models.DateTimeField(auto_now=True, null=True)
     subtier_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Sub-Tier Agency Code")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Sub-Tier Agency Name")
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "subtier_code",
+            "name"
+        ]
 
     class Meta:
         managed = True

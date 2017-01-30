@@ -27,7 +27,7 @@ class LimitableSerializer(serializers.ModelSerializer):
             pass
 
         request = self.context.get('request')
-        if request and not self.context.get("child", False):   # The child check should be removed when child field limiting is implemented
+        if request:
 
             params = dict(request.query_params)
             params.update(dict(request.data))
@@ -41,7 +41,7 @@ class LimitableSerializer(serializers.ModelSerializer):
                 return
 
             # We must exclude before include to avoid conflicts from user error
-            if exclude_fields is not None:
+            if exclude_fields is not None and not self.context.get("child", False):  # the child check should be removed when child field limiting is implemented
                 for field_name in exclude_fields:
                     try:
                         self.fields.pop(field_name)
@@ -50,7 +50,7 @@ class LimitableSerializer(serializers.ModelSerializer):
                         # limiting pass-down, this can happen due to the context pass down
                         pass
 
-            if include_fields is not None:
+            if include_fields is not None and not self.context.get("child", False):  # the child check should be removed when child field limiting is implemented
                 allowed = set(include_fields)
                 existing = set(self.fields.keys())
                 for field_name in existing - allowed:

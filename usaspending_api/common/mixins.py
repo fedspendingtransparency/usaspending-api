@@ -205,8 +205,15 @@ class ResponseMetadatasetMixin(object):
             "count": len(paged_data)
         }
 
+        # note that generics/viewsets pass request and view info to the
+        # serializer context automatically. however, we explicitly add it here
+        # because our common DetailViewSet overrides the 'list' method, which
+        # somehow prevents the extra info from being added to the serializer
+        # context. because we can get rid of DetailViewSet and use
+        # ReadOnlyModelViewSet directly as soon as the pagination changes
+        # are in, not going spend a lot of time researching this.
+        context = {'request': request, 'view': self}
         # serialize the paged data
-        context = {'request': request}
         serializer = kwargs.get('serializer')(paged_data, many=True, context=context)
         serialized_data = serializer.data
 

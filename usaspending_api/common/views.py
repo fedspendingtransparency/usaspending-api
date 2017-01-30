@@ -57,3 +57,13 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     view of model objects (either in the form of a single
     object or a list of objects).
     """
+    # Note: once the front-end has switched to using query parameter
+    # pagination for endpoints that use DetailViewSet, we can remove
+    # this class and inherit from ReadOnlyModelViewSet directly in
+    # the application views.py files.
+
+    def list(self, request, *args, **kwargs):
+
+        response = self.build_response(
+            self.request, queryset=self.get_queryset(), serializer=self.get_serializer_class())
+        return Response(response)

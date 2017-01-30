@@ -30,10 +30,12 @@
         "status_code": 200
     },
     {
-        "url": "/api/v1/awards/?page=1&limit=1",
+        "url": "/api/v1/awards/",
         "name": "Testing field exclusion on awards/",
         "method": "POST",
         "request_object": {
+            "page": 1,
+            "limit": 1,
             "exclude": [
                 "fain",
                 "uri",
