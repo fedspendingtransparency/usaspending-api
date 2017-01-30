@@ -35,7 +35,7 @@ In general, status codes returned are as follows:
 
 ### Data Endpoints <a name="data-endpoints"></a>
 
-Data endpoints are split by payload into POST and GET methods. In general, the format of a request and response will remain the same between endpoints.
+Data endpoints are split by payload into POST and GET methods. In general, the format of a request and response will remain the same among endpoints.
 
 #### Endpoints and Methods <a name="endpoints-and-methods"></a>
 The currently available endpoints are listed below. To reduce unnecessary data transfer, most return a default set of information about the items being requested. To override the default field list, use the `fields`, `exclude`, and `verbose` options (see [POST Requests](#post-requests) for more information).
