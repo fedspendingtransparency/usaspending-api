@@ -606,7 +606,8 @@ This is a special type of autocomplete query which allows users to search for ge
   "value": "u",
   "mode": "startswith",
   "scope": "domestic",
-  "usage": "recipient"
+  "usage": "recipient",
+  "limit": 50
 }
 ```
 
@@ -623,6 +624,7 @@ This is a special type of autocomplete query which allows users to search for ge
     * `recipient` - Matches only entries where the location is used as a recipient location
     * `place_of_performance` - Matches only entries where the location is used as a place of performance
     * `all` - Matches all locations. This is the default behavior
+  * `limit` - _Optional_ - The maximum number of responses in the autocomplete response. Defaults to 10
 
 #### Response
 ```
