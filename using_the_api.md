@@ -1,40 +1,42 @@
-# The USAspending Application Programming Interface (API)
+<ul class="nav nav-stacked" id="sidebar">
+  <li><a href="#background">Background</a></li>
+  <li><a href="#status-codes">Status Codes</a></li>
+  <li><a href="#data-endpoints">Data Endpoints</a></li>
+  <li><a href="#endpoints-and-methods">Endpoints and Methods</a></li>
+  <li><a href="#summary-endpoints-and-methods">Summary Endpoints & Methods</a></li>
+  <li><a href="#get-requests">GET Requests</a></li>
+  <li><a href="#post-requests">POST Requests</a></li>
+  <li><a href="#autocomplete-queries">Autocomplete Queries</a></li>
+  <li><a href="#geographical-hierarchy-queries">Geographical Hierarchy Queries</a></li>
+</ul>
+[//]: # (Begin Content)
+
+# The USAspending API
 
 The USAspending API allows the public to access data published via the Broker or USAspending.
 
-## Background
+## Background <a name="background"></a>
 
 The U.S. Department of the Treasury is building a suite of open-source tools to help federal agencies comply with the [DATA Act](http://fedspendingtransparency.github.io/about/ "Federal Spending Transparency Background") and to deliver the resulting standardized federal spending information back to agencies and to the public.
 
 For more information about the DATA Act Broker codebase, please visit this repository's [main README](../README.md "DATA Act Broker Backend README").
 
-## Table of Contents
-  * [Status Codes](#status-codes)
-  * [Data Endpoints](#data-endpoints)
-    * [Endpoints and Methods](#endpoints-and-methods)
-    * [Summary Endpoints and Methods](#summary-endpoints-and-methods)
-  * [GET Requests](#get-requests)
-  * [POST Requests](#post-requests)
-  * [Autocomplete Queries](#autocomplete-queries)
-  * [Geographical Hierarchy Queries](#geographical-hierarchy-queries)
-
-
 ## DATA Act Data Store Endpoint Documentation
 
 Endpoints do not currently require any authorization
 
-### Status Codes
+### Status Codes <a name="status-codes"></a>
 In general, status codes returned are as follows:
 
 * 200 if successful
 * 400 if the request is malformed
 * 500 for server-side errors
 
-### Data Endpoints
+### Data Endpoints <a name="data-endpoints"></a>
 
 Data endpoints are split by payload into POST and GET methods. In general, the format of a request and response will remain the same with the endpoint only changing the data provided in the response.
 
-#### Endpoints and Methods
+#### Endpoints and Methods <a name="endpoints-and-methods"></a>
 The currently available endpoints are:
   * **[/v1/accounts/](https://api.usaspending.gov/api/v1/accounts/)**
     - _Description_: Returns all `AppropriationAccountBalances` data. _NB_: This endpoint is due for a rework in the near future
@@ -47,21 +49,16 @@ The currently available endpoints are:
 
 
   * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
-    - _Description_: Returns all `FinancialAccountsByAwardsTransactionObligations` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
-
-
-  * **[/v1/awards/summary/](https://api.usaspending.gov/api/v1/awards/summary/)**
-    - _Description_: Provides award level summary data
+    - _Description_: Provides award data, including a list of associated transactions
     - _Methods_: GET, POST
 
 
-  * **[/v1/awards/summary/autocomplete/](https://api.usaspending.gov/api/v1/awards/summary/autocomplete/)**
-      - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards/summary endpoint
+  * **[/v1/awards/autocomplete/](https://api.usaspending.gov/api/v1/awards/autocomplete/)**
+      - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards endpoint
     - _Methods_: POST
 
 
-  * **[/v1/transactions/](https://api.usaspending.gov/api/v1/awards/transactions/)**
+  * **[/v1/transactions/](https://api.usaspending.gov/api/v1/transactions/)**
     - _Description_: Provides award transactions data **Note:** This endpoint is under active development and currently serves contract data only
     - _Methods_: POST
 
@@ -86,16 +83,12 @@ The currently available endpoints are:
     - _Methods_: POST
 
 
-  * **[/v1/financial_activities/](https://api.usaspending.gov/api/v1/financial_activities/)**
-    - _Description_: Returns all `FinancialAccountsByProgramActivityObjectClass` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
-
 
   * **[/v1/submissions/](https://api.usaspending.gov/api/v1/submissions/)**
     - _Description_: Returns all `SubmissionAttributes` data. _NB_: This endpoint is due for a rework in the near future
     - _Methods_: GET
 
-#### Summary Endpoints and Methods
+#### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
 Summarized data is available for some of the endpoints listed above:
 
 * **[/v1/awards/total/](https://api.usaspending.gov/api/v1/awards/total/)**
@@ -162,14 +155,14 @@ Response:
 }
 ```
 
-#### GET Requests
+#### GET Requests <a name="get-requests"></a>
 GET requests can be specified by attaching any field value pair to the endpoint. This method supports any fields present in the data object and only the `equals` operation. It also supports pagination variables. Additionally, you may specifcy complex fields that use Django's foreign key traversal; for more details on this see `field` from the POST request. Examples below:
 
-`/v1/awards/summary/?page=5&limit=1000`
+`/v1/awards/?page=5&limit=1000`
 
-`/v1/awards/summary/?funding_agency__fpds_code=0300`
+`/v1/awards/?funding_agency__fpds_code=0300`
 
-#### POST Requests
+#### POST Requests <a name="post-requests"></a>
 The structure of the post request allows for a flexible and complex query with built-in pagination support.
 
 #### Body (JSON)
@@ -204,27 +197,28 @@ The structure of the post request allows for a flexible and complex query with b
 having to specify them directly in `fields`, you can set this to `true`. Default: `false`
 * `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name, e.g. to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
 
-  ```
-  {
-      "recipient__location__location_state_code": {
-        "SD": 1,
-        "FL": 2,
-        "MN": 1,
-        "UT": 1,
-        "TX": 2,
-        "VA": 1,
-        "CA": 1,
-        "NC": 1,
-        "LA": 1,
-        "GA": 1
-      }
-    },
-    "results": [ . . . ],
-    "total_metadata": { . . . }
-  }
-  ```
+```
+{
+    "recipient__location__location_state_code": {
+      "SD": 1,
+      "FL": 2,
+      "MN": 1,
+      "UT": 1,
+      "TX": 2,
+      "VA": 1,
+      "CA": 1,
+      "NC": 1,
+      "LA": 1,
+      "GA": 1
+    }
+  },
+  "results": [ . . . ],
+  "total_metadata": { . . . }
+}
+```
 
 In this case, two entires matching the specified filter have the state code of `FL`.
+
 * `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
 * `exclude` - _Optional_ - What fields to exclude from the return. Must be a list.
 * `filters` - _Optional_ - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
@@ -361,29 +355,30 @@ In this case, two entires matching the specified filter have the state code of `
   * `value_format` - Specifies the format for the value. Only used in some operations where noted. Valid choices are enumerated below
     * `fy` - Treats a single value as a fiscal year range
   * `combine_method` - This is a special field which modifies how the filter behaves. When `combine_method` is specified, the only other allowed parameter on the filter is `filters` which should contain an array of filter objects. The `combine_method` will be used to logically join the filters in this list. Options are `AND` or `OR`.
-  ```
-  {
-			"combine_method": "OR",
-			"filters": [
-				{
-					"field": "funding_agency__fpds_code",
-					"operation": "equals",
-					"value": "0300"
 
-				},
-				{
-					"field": "awarding_agency__fpds_code",
-					"operation": "in",
-					"value": ["0300", "0500"]
+```
+{
+		"combine_method": "OR",
+		"filters": [
+			{
+				"field": "funding_agency__fpds_code",
+				"operation": "equals",
+				"value": "0300"
 
-				}
-				]
+			},
+			{
+				"field": "awarding_agency__fpds_code",
+				"operation": "in",
+				"value": ["0300", "0500"]
 
-	}
-  ```
+			}
+			]
+
+}
+```
 
 #### Response (JSON)
-The response object structure is the same whether you are making a GET or a POST request. The only difference is the data objects contained within the results parameter. An example of a response from `/v1/awards/summary/` can be found below
+The response object structure is the same whether you are making a GET or a POST request. The only difference is the data objects contained within the results parameter. An example of a response from `/v1/awards/` can be found below
 
 ```
 {
@@ -496,8 +491,8 @@ The response has three functional parts:
     * `count` - The total number of items in this dataset, spanning all pages
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
-### Autocomplete Queries
-Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably awards/summary).
+### Autocomplete Queries <a name="autocomplete-queries"></a>
+Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably `/awards/``).
 #### Body
 ```
 {
@@ -599,15 +594,17 @@ Autocomplete queries currently require the endpoint to have additional handling,
   }
 }
 ```
+
 #### Response Description
   * `results` - The actual results. For each field search, will contain a list of all unique values matching the requested value and mode
   * `counts` - Contains the length of each array in the results object
   * `matched_objects` - Only exists if `matched_objects` was specified in the request. An object broken up by specified `fields` with matching objects from the autocomplete query stored in arrays.
 
-### Geographical Hierarchy Queries
+### Geographical Hierarchy Queries <a name="geographical-hierarchy-queries"></a>
 This is a special type of autocomplete query which allows users to search for geographical locations in a hierarchy.
 
 #### Body
+
 ```
 {
   "value": "u",
@@ -670,7 +667,8 @@ This is a special type of autocomplete query which allows users to search for ge
     ],
     "place": "UT"
   }
-  ```
+```
+
 #### Response Description
   * `place` - The value of the place. e.g. A country's name, or a county name, etc.
   * `matched_ids` - An array of `location_id`s that match the given data. This can be used to look up awards, recipients, or other data by requesting these ids
