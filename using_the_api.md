@@ -56,7 +56,7 @@ The currently available endpoints are listed below. To reduce unnecessary data t
 
 
   * **/v1/awards/{pk}**
-    - _Description_: Provides information about a single award. Unlike the awards list endpoint (`/awards`), this one returns all available fields instead of the default set.
+    - _Description_: Provides information about a single award. Unlike the awards list endpoint (`/awards`), this one returns all available fields instead of the default set. The value for `{pk}` is the `id` field returned in the `/awards/` response.
     - _Methods_: GET, POST
 
 
