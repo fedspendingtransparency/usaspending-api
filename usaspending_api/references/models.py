@@ -77,9 +77,19 @@ class Agency(models.Model):
 
 class ToptierAgency(models.Model):
     toptier_agency_id = models.AutoField(primary_key=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
     cgac_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Top-Tier Agency Code")
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Top-Tier Agency Name")
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "cgac_code",
+            "fpds_code",
+            "name"
+        ]
 
     class Meta:
         managed = True
@@ -88,8 +98,17 @@ class ToptierAgency(models.Model):
 
 class SubtierAgency(models.Model):
     subtier_agency_id = models.AutoField(primary_key=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
     subtier_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Sub-Tier Agency Code")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Sub-Tier Agency Name")
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "subtier_code",
+            "name"
+        ]
 
     class Meta:
         managed = True
@@ -98,6 +117,8 @@ class SubtierAgency(models.Model):
 
 class OfficeAgency(models.Model):
     office_agency_id = models.AutoField(primary_key=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
     aac_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Office Code")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Office Name")
 
