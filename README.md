@@ -122,11 +122,14 @@ Now, go to `http://localhost:8000/api/v1/awards/` to see the API! There aren't a
 
 ## Running the Test Suite
 
-To run the test suite and confirm that everything is working as expected, make sure you're in the top-level project directory and run the following from the command line:
+To run the test suite and confirm that everything is working as expected, make sure you're in the top-level project directory and that your `DATABASE_URL` environment variable is set, and
+run the following from the command line:
 
 
-        python manage.py test
+        py.test
 
+The tests will not run against your database in `$DATABASE_URL`, but against a
+temporary database named `test_(your db name)`, which they will create.
 
 ## ETL Setup
 
@@ -141,6 +144,18 @@ The Django server has extract, transform, and load (ETL) processes built in as c
 ## Loading Data
 
 For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [fixtures.md](fixtures.md).
+
+## Management Commands
+
+Below is a list of available management commands a brief description of their uses. For more help, check the command's help text.
+
+* `update_location_usage_flags` - Updates the `place_of_performance_flag` and `recipient_flag` on Location objects based upon their foreign key usages
+* `load_submission` - Loads a submission from the broker for the currently set environment
+* `loadtas` - Loads tas account information from a file
+* `loadagencies` - Loads agency information from a file
+* `loadcfda` - Loads CFDA information from a file
+* `loadcontracts` - Loads USASpending contract information from a file
+* `generate_test_endpoint_responses` - Generates endpoint test responses for testing
 
 ## Public Domain License
 

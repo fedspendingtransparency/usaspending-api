@@ -1,81 +1,110 @@
+<ul class="nav nav-stacked" id="sidebar">
+  <li><a href="#background">Background</a></li>
+  <li><a href="#status-codes">Status Codes</a></li>
+  <li><a href="#data-endpoints">Data Endpoints</a></li>
+  <li><a href="#endpoints-and-methods">Endpoints and Methods</a></li>
+  <li><a href="#summary-endpoints-and-methods">Summary Endpoints & Methods</a></li>
+  <li><a href="#pagination">Pagination</a></li>
+  <li><a href="#get-requests">GET Requests</a></li>
+  <li><a href="#post-requests">POST Requests</a></li>
+  <li><a href="#autocomplete-queries">Autocomplete Queries</a></li>
+  <li><a href="#geographical-hierarchy-queries">Geographical Hierarchy Queries</a></li>
+</ul>
+[//]: # (Begin Content)
+
 # The USAspending Application Programming Interface (API)
 
-The USAspending API allows the public to access data published via the Broker or USAspending.
+The USAspending API allows the public to access data published via the DATA Act Data Broker or via USAspending. While the API is under development, we are gradually increasing the amount of available data, which is currently limited to a few Data Broker submissions and small slices of USAspending history.
 
-## Background
+## Background <a name="background"></a>
 
 The U.S. Department of the Treasury is building a suite of open-source tools to help federal agencies comply with the [DATA Act](http://fedspendingtransparency.github.io/about/ "Federal Spending Transparency Background") and to deliver the resulting standardized federal spending information back to agencies and to the public.
 
-For more information about the DATA Act Broker codebase, please visit this repository's [main README](../README.md "DATA Act Broker Backend README").
-
-## Table of Contents
-  * [Status Codes](#status-codes)
-  * [Data Endpoints](#data-endpoints)
-    * [Endpoints and Methods](#endpoints-and-methods)
-    * [Summary Endpoints and Methods](#summary-endpoints-and-methods)
-  * [GET Requests](#get-requests)
-  * [POST Requests](#post-requests)
-  * [Autocomplete Queries](#autocomplete-queries)
-  * [Geographical Hierarchy Queries](#geographical-hierarchy-queries)
-
+For more information about the DATA Act Broker codebase, please visit this repository's [main README](https://github.com/fedspendingtransparency/data-act-broker-backend/README.md "DATA Act Broker Backend README").
 
 ## DATA Act Data Store Endpoint Documentation
 
-Endpoints do not currently require any authorization
+Endpoints do not currently require any authorization.
 
-### Status Codes
+### Status Codes <a name="status-codes"></a>
 In general, status codes returned are as follows:
 
 * 200 if successful
 * 400 if the request is malformed
 * 500 for server-side errors
 
-### Data Endpoints
+### Data Endpoints <a name="data-endpoints"></a>
 
-Data endpoints are split by payload into POST and GET methods. In general, the format of a request and response will remain the same with the endpoint only changing the data provided in the response.
+Data endpoints are split by payload into POST and GET methods. In general, the format of a request and response will remain the same among endpoints.
 
-#### Endpoints and Methods
-The currently available endpoints are:
-  * **[/v1/awards/summary/](https://api.usaspending.gov/api/v1/awards/summary/)**
-    - _Description_: Provides award level summary data
+#### Endpoints and Methods <a name="endpoints-and-methods"></a>
+The currently available endpoints are listed below. To reduce unnecessary data transfer, most return a default set of information about the items being requested. To override the default field list, use the `fields`, `exclude`, and `verbose` options (see [POST Requests](#post-requests) for more information).
+
+  * **[/v1/accounts/](https://spending-api.us/api/v1/accounts/)**
+    - _Description_: Provides financial information by appropriations account. Financial information is data such as total budget authority, outlays, obligations, and unobligated balance. _Note_: This endpoint is due for a rework in the near future.
     - _Methods_: GET, POST
 
-  * **[/v1/awards/summary/autocomplete/](https://api.usaspending.gov/api/v1/awards/summary/autocomplete/)**
-    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards/summary endpoint
+
+  * **[/v1/accounts/tas/](https://spending-api.us/api/v1/accounts/tas/)**
+    - _Description_: Returns a list of appropriations accounts, including the account name, Treasury Account Symbol (TAS) components, the associated budget function, and the corresponding agency information. _Note_: This endpoint is due for a rework in the near future.
+    - _Methods_: GET, POST
+
+
+  * **[/v1/awards/](https://spending-api.us/api/v1/awards/)**
+    - _Description_: Provides a list of awards, including a list of associated transactions. Award data pertains to grants, loans, direct payments to individuals, and contracts.
+    - _Methods_: GET, POST
+
+
+  * **/v1/awards/{pk}**
+    - _Description_: Provides information about a single award. Unlike the awards list endpoint (`/awards`), this one returns all available fields instead of the default set. The value for `{pk}` is the `id` field returned in the `/awards/` response.
+    - _Methods_: GET, POST
+
+
+  * **/v1/awards/autocomplete/**
+      - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards endpoint.
     - _Methods_: POST
 
-  * **[/v1/references/locations/](https://api.usaspending.gov/api/v1/references/locations/)**
-    - _Description_: Returns all `Location` data.
+
+  * **[/v1/transactions/](https://spending-api.us/api/v1/transactions/)**
+    - _Description_: Provides award transactions data. Awards transaction represent specific actions that apply to an award, such as a purchase order. _Note:_ This endpoint is under active development and currently serves contract data only.
+    - _Methods_: GET, POST
+
+
+  * **/v1/transactions/{pk}**
+    - _Description_: Provides information about a single transaction. Unlike the transaction list endpoint (`/transactions`), this one returns all available fields instead of the default set.
+    - _Methods_: GET, POST
+
+
+  * **/v1/references/locations/**
+    - _Description_: Returns a list of locations. If a location's `recipient_flag` is set to true, it represents the location of award recipients like grantees and contractors. If its `place_of_performance_flag` is true, the location represents the place an award was executed. A single location can represent both a recipient and a place of performance.
     - _Methods_: POST
 
-  * **[/v1/references/locations/geocomplete](https://api.usaspending.gov/api/v1/references/locations/geocomplete/)**
-    - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information
+
+  * **/v1/references/locations/geocomplete/**
+    - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information.
     - _Methods_: POST
 
-  * **[/v1/awards/](https://api.usaspending.gov/api/v1/awards/)**
-    - _Description_: Returns all `FinancialAccountsByAwardsTransactionObligations` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
 
-  * **[/v1/accounts/](https://api.usaspending.gov/api/v1/accounts/)**
-    - _Description_: Returns all `AppropriationAccountBalances` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
+  * **[/v1/references/agency/](https://spending-api.us/api/v1/references/agency/)**
+    - _Description_: Returns a list of agencies.
+    - _Methods_: GET, POST
 
-  * **[/v1/accounts/tas/](https://api.usaspending.gov/api/v1/accounts/tas/)**
-    - _Description_: Returns all `TreasuryAppropriationAccount` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
 
-  * **[/v1/financial_activities/](https://api.usaspending.gov/api/v1/financial_activities/)**
-    - _Description_: Returns all `FinancialAccountsByProgramActivityObjectClass` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
+  * **[/v1/references/agency/autocomplete/](https://spending-api.us/api/v1/references/agency/autocomplete/)**
+    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the agency endpoint.
+    - _Methods_: POST
 
-  * **[/v1/submissions/](https://api.usaspending.gov/api/v1/submissions/)**
-    - _Description_: Returns all `SubmissionAttributes` data. _NB_: This endpoint is due for a rework in the near future
-    - _Methods_: GET
 
-#### Summary Endpoints and Methods
+  * **[/v1/submissions/](https://spending-api.us/api/v1/submissions/)**
+    - _Description_: Returns metadata about submissions loaded from the DATA Act broker. _Note_: This endpoint is due for a rework in the near future.
+    - _Methods_: GET, POST
+
+
+#### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
 Summarized data is available for some of the endpoints listed above:
 
-* **[/v1/awards/total/](https://api.usaspending.gov/api/v1/awards/total/)**
+* **/v1/awards/total/**
+* **/v1/transactions/total/**
 * more coming soon
 
 You can get summarized data via a `POST` request that specifies:
@@ -85,28 +114,31 @@ You can get summarized data via a `POST` request that specifies:
 * `group`: the field to group by (optional; if not specified, data will be summarized across all objects)
 * `date_part`: applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
 
-Requests to the summary endpoints can also contain the `page`, `limit`, and `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
+Requests to the summary endpoints can also contain the `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
 
 The `results` portion of the response will contain:
 
 * `item`: the value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
 * `aggregate`: the summarized data
 
-For example, to request award total transaction obligated amount by year for awards with a budget function code of 800:
+To order the response by the items being returned via the `group` parameter, you can specify an `order` in the request: `"order": ["item"]`.
+
+For example, to request the yearly sum of obligated dollars across transactions for award types "B" and "C" (_i.e._, purchase orders and delivery orders) and to ensure that the response is ordered by year:
 
 ```json
 {
-    "field": "transaction_obligated_amount",
-    "group": "create_date",
+    "field": "federal_action_obligation",
+    "group": "action_date",
     "date_part": "year",
     "aggregate": "sum",
+    "order": ["item"],
     "filters": [
         {
-            "field": "financial_accounts_by_awards__appropriation_account_balances__treasury_account_identifier__budget_function_code",
-            "operation": "equals",
-            "value": "800"
+            "field": "type",
+            "operation": "in",
+            "value": ["A", "B", "C", "D"]
         }
-    ]
+     ]
 }
 ```
 
@@ -117,49 +149,60 @@ Response:
   "total_metadata": {
     "count": 2
   },
-  "results": [
-    {
-      "item": "2016",
-      "aggregate": "59735118.04"
-    },
-    {
-      "item": "2015",
-      "aggregate": "6612250.70"
-    }
-  ],
   "page_metadata": {
     "page_number": 1,
     "num_pages": 1,
     "count": 2
-  }
+  },
+  "results": [
+    {
+      "item": "2015",
+      "aggregate": "44948.00"
+    },
+    {
+      "item": "2016",
+      "aggregate": "1621763.83"
+    }
+  ]
 }
 ```
 
-#### GET Requests
-GET requests can be specified by attaching any field value pair to the endpoint. This method supports any fields present in the data object and only the `equals` operation. It also supports pagination variables. Additionally, you may specifcy complex fields that use Django's foreign key traversal; for more details on this see `field` from the POST request. Examples below:
+#### Pagination <a name="pagination"></a>
+To control the number of items returned on a single "page" of a request or to request a specific page number, use the following URL parameters:
 
-`/v1/awards/summary/?page=5&limit=1000`
+* `page` - specifies the page of results to return. The default is 1.
+* `limit` - specifies the maximum number of items to return in a response page. The default is 100.
 
-`/v1/awards/summary/?funding_agency__fpds_code=0300`
+For example, the following request will limit the awards on a single page to 20 and will return page 5 of the results:
 
-#### POST Requests
-The structure of the post request allows for a flexible and complex query with built-in pagination support.
+`/v1/awards/?page=5&limit=20`
+
+#### GET Requests <a name="get-requests"></a>
+GET requests support simple equality filters for fields in the underlying data model. These can be specified by attaching field value pairs to the endpoint as URL parameters:
+
+`/v1/awards?type=B`
+
+Field names support Django's foreign key traversal; for more details on this see `field` in [POST Requests](#post-requests). For example:
+
+`/v1/awards/?type=B&awarding_agency__toptier_agency__cgac_code=073`
+
+#### POST Requests <a name="post-requests"></a>
+The structure of the post request allows for a flexible and complex query.
 
 #### Body (JSON)
+Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. The API expects the content in JSON format, so the requests's content-type header should be set to `application/json`.
 
 ```
 {
-    "page": 1,
-    "limit": 1000,
     "verbose": true,
-    "order": ["recipient__location__location_state_code", "-recipient__name"],
+    "order": ["recipient__location__location_state_code", "-recipient__recipient_name"],
     "fields": ["fain", "total_obligation"],
-    "exclude": ["recipient"]
+    "exclude": ["recipient"],
     "filters": [
       {
-        "field": "fain",
+        "field": "piid",
         "operation": "equals",
-        "value": "12-34-56"
+        "value": "SBAHQ16M0163"
       },
       {
         "combine_method": "OR",
@@ -169,37 +212,12 @@ The structure of the post request allows for a flexible and complex query with b
 }
 ```
 
-#### Body Description
+#### Options
 
-* `page` - _Optional_ - If your request requires pagination, this parameter specifies the page of results to return. Default: 1
-* `limit` - _Optional_ - The maximum length of a page in the response. Default: 100
-* `verbose` - _Optional_ - Most data is self-limiting the amount of data returned. To return all fields without
-having to specify them directly in `fields`, you can set this to `true`. Default: `false`
-* `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name, e.g. to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
-
-  ```
-  {
-      "recipient__location__location_state_code": {
-        "SD": 1,
-        "FL": 2,
-        "MN": 1,
-        "UT": 1,
-        "TX": 2,
-        "VA": 1,
-        "CA": 1,
-        "NC": 1,
-        "LA": 1,
-        "GA": 1
-      }
-    },
-    "results": [ . . . ],
-    "total_metadata": { . . . }
-  }
-  ```
-
-In this case, two entires matching the specified filter have the state code of `FL`.
-* `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
 * `exclude` - _Optional_ - What fields to exclude from the return. Must be a list.
+* `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
+* `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name. For example, to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
+* `verbose` - _Optional_ - Endpoints that return lists of items (`/awards/` and `/accounts/`, for example) return a default list of fields. To instead return all fields, set this value to `true`. Note that you can also use the `fields` and `exclude` options to override the default field list. Default: false.
 * `filters` - _Optional_ - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
   * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__fpds_code` will filter on the field `fpds_code` for the referenced object stored in `funding_agency`.
   * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. To negate an operation, use `not_`. For example, `not_equals` or `not_in`. The options for this field are:
@@ -356,137 +374,104 @@ In this case, two entires matching the specified filter have the state code of `
   ```
 
 #### Response (JSON)
-The response object structure is the same whether you are making a GET or a POST request. The only difference is the data objects contained within the results parameter. An example of a response from `/v1/awards/summary/` can be found below
+The response object structure is the same whether you are making a GET or a POST request. The only difference is the data objects contained within the results parameter. An example of a response from `/v1/awards/` can be found below
 
 ```
 {
   "page_metadata": {
-    "num_pages": 499,
     "page_number": 1,
+    "num_pages": 26,
     "count": 1
   },
   "total_metadata": {
-    "count": 499
+    "count": 26
   },
   "results": [
     {
-      "id": 4,
-      "recipient": null,
-      "awarding_agency": null,
-      "funding_agency": null,
-      "procurement_set": [
-        {
-          "procurement_id": 4,
-          "action_date": "2016-09-08",
-          "action_type": null,
-          "federal_action_obligation": "-6000.00",
-          "modification_number": "M0001",
-          "award_description": null,
-          "drv_award_transaction_usaspend": null,
-          "drv_current_total_award_value_amount_adjustment": null,
-          "drv_potential_total_award_value_amount_adjustment": null,
-          "piid": "TEPS111408",
-          "parent_award_id": null,
-          "cost_or_pricing_data": null,
-          "type_of_contract_pricing": null,
-          "contract_award_type": null,
-          "naics": null,
-          "naics_description": null,
-          "period_of_performance_potential_end_date": null,
-          "ordering_period_end_date": null,
-          "current_total_value_award": null,
-          "potential_total_value_of_award": null,
-          "referenced_idv_agency_identifier": null,
-          "idv_type": null,
-          "multiple_or_single_award_idv": null,
-          "type_of_idc": null,
-          "a76_fair_act_action": null,
-          "dod_claimant_program_code": null,
-          "clinger_cohen_act_planning": null,
-          "commercial_item_acquisition_procedures": null,
-          "commercial_item_test_program": null,
-          "consolidated_contract": null,
-          "contingency_humanitarian_or_peacekeeping_operation": null,
-          "contract_bundling": null,
-          "contract_financing": null,
-          "contracting_officers_determination_of_business_size": null,
-          "cost_accounting_standards": null,
-          "country_of_product_or_service_origin": null,
-          "davis_bacon_act": null,
-          "evaluated_preference": null,
-          "extent_competed": null,
-          "fed_biz_opps": null,
-          "foreign_funding": null,
-          "gfe_gfp": null,
-          "information_technology_commercial_item_category": null,
-          "interagency_contracting_authority": null,
-          "local_area_set_aside": null,
-          "major_program": null,
-          "purchase_card_as_payment_method": null,
-          "multi_year_contract": null,
-          "national_interest_action": null,
-          "number_of_actions": null,
-          "number_of_offers_received": null,
-          "other_statutory_authority": null,
-          "performance_based_service_acquisition": null,
-          "place_of_manufacture": null,
-          "price_evaluation_adjustment_preference_percent_difference": null,
-          "product_or_service_code": null,
-          "program_acronym": null,
-          "other_than_full_and_open_competition": null,
-          "recovered_materials_sustainability": null,
-          "research": null,
-          "sea_transportation": null,
-          "service_contract_act": null,
-          "small_business_competitiveness_demonstration_program": null,
-          "solicitation_identifier": null,
-          "solicitation_procedures": null,
-          "fair_opportunity_limited_sources": null,
-          "subcontracting_plan": null,
-          "program_system_or_equipment_code": null,
-          "type_set_aside": null,
-          "epa_designated_product": null,
-          "walsh_healey_act": null,
-          "transaction_number": null,
-          "referenced_idv_modification_number": null,
-          "rec_flag": null,
-          "drv_parent_award_awarding_agency_code": null,
-          "drv_current_aggregated_total_value_of_award": null,
-          "drv_current_total_value_of_award": null,
-          "drv_potential_award_idv_amount_total_estimate": null,
-          "drv_potential_aggregated_award_idv_amount_total_estimate": null,
-          "drv_potential_aggregated_total_value_of_award": null,
-          "drv_potential_total_value_of_award": null,
-          "create_date": "2016-10-13T17:57:54.834457Z",
-          "update_date": "2016-10-13T18:04:04.433041Z",
-          "last_modified_date": null,
-          "certified_date": null,
-          "reporting_period_start": null,
-          "reporting_period_end": null,
-          "awarding_agency": 284,
-          "recipient": 4,
-          "award": 4,
-          "submission": 1
-        }
-      ],
-      "financialassistanceaward_set": [],
-      "type": "C",
-      "piid": "TEPS111408",
-      "parent_award_id": null,
-      "fain": null,
+      "id": 47950,
+      "type": "05",
+      "type_description": "Cooperative Agreement",
+      "piid": null,
+      "fain": "SBAHQ15J0005",
       "uri": null,
-      "total_obligation": "-6000.00",
+      "total_obligation": "15000.00",
       "total_outlay": null,
-      "date_signed": "2016-09-08",
-      "description": null,
-      "period_of_performance_start_date": null,
-      "period_of_performance_current_end_date": null,
-      "last_modified_date": null,
-      "certified_date": null,
-      "create_date": "2016-10-13T17:57:54.829889Z",
-      "update_date": "2016-10-13T18:04:04.435900Z",
-      "place_of_performance": null,
-      "latest_submission": null
+      "date_signed": "2016-09-20",
+      "description": "FY 15 7J",
+      "period_of_performance_start_date": "2015-09-30",
+      "period_of_performance_current_end_date": "2016-12-28",
+      "awarding_agency": {
+        "toptier_agency": {
+          "cgac_code": "073",
+          "fpds_code": "7300",
+          "name": "SMALL BUSINESS ADMINISTRATION"
+        },
+        "subtier_agency": {
+          "subtier_code": "7300",
+          "name": "SMALL BUSINESS ADMINISTRATION"
+        },
+        "office_agency": null
+      },
+      "funding_agency": {
+        "toptier_agency": {
+          "cgac_code": "073",
+          "fpds_code": "7300",
+          "name": "SMALL BUSINESS ADMINISTRATION"
+        },
+        "subtier_agency": {
+          "subtier_code": "7300",
+          "name": "SMALL BUSINESS ADMINISTRATION"
+        },
+        "office_agency": null
+      },
+      "recipient": {
+        "legal_entity_id": 799999094,
+        "ultimate_parent_legal_entity_id": null,
+        "recipient_name": "PROJECT SOLUTIONS, INC.",
+        "business_types": "Q",
+        "location": {
+          "location_country_name": "UNITED STATES",
+          "location_state_code": "SD",
+          "location_state_name": "South Dakota",
+          "location_city_name": "Rapid City",
+          "location_address_line1": "3022 W Saint Louis St",
+          "location_address_line2": null,
+          "location_address_line3": null,
+          "location_zip5": "57702",
+          "location_foreign_postal_code": null,
+          "location_foreign_province": null,
+          "location_foreign_city_name": null,
+          "location_country_code": "USA"
+        }
+      },
+      "place_of_performance": 18,
+      "procurement_set": [],
+      "financialassistanceaward_set": [
+        {
+          "type": "05",
+          "action_date": "2016-09-20",
+          "federal_action_obligation": "8901.33",
+          "modification_number": "0003:560400DB",
+          "description": "FY 15 7J",
+          "cfda_number": "59.007",
+          "cfda_title": "7(j) Technical Assistance",
+          "face_value_loan_guarantee": null,
+          "original_loan_subsidy_cost": null,
+          "update_date": "2017-01-20T21:27:59.580606Z"
+        },
+        {
+          "type": "05",
+          "action_date": "2016-09-20",
+          "federal_action_obligation": "6098.67",
+          "modification_number": "0003:670400DB",
+          "description": "FY 15 7J",
+          "cfda_number": "59.007",
+          "cfda_title": "7(j) Technical Assistance",
+          "face_value_loan_guarantee": null,
+          "original_loan_subsidy_cost": null,
+          "update_date": "2017-01-20T21:27:59.531692Z"
+        }
+      ]
     }
   ]
 }
@@ -502,48 +487,117 @@ The response has three functional parts:
     * `count` - The total number of items in this dataset, spanning all pages
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
-### Autocomplete Queries
-Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably awards/summary).
+
+### Autocomplete Queries <a name="autocomplete-queries"></a>
+Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably `/awards/`).
+
 #### Body
 ```
 {
-	"fields": ["recipient__location__location_state_code", "recipient__location__location_state_name"],
-	"value": "a",
-	"mode": "contains"
+	fields": ["toptier_agency__name", "subtier_agency__name"],
+	"value": "DEFENSE",
+	"mode": "contains",
+    "limit": 100,
+    "matched_objects": true
 }
 ```
-#### Body Description
+#### Options
   * `fields` - A list of fields to be searched for autocomplete. This allows for foreign key traversal using the usual Django patterns. This should _always_ be a list, even if the length is only one
   * `value` - The value to use as the autocomplete pattern. Typically a string, but could be a number in uncommon circumstances. The search will currently _always_ be case insensitive
   * `mode` - _Optional_ - The search mode. Options available are:
     * `contains` - Matches if the field's value contains the specified value
     * `startswith` - Matches if the field's value starts with the specified value
+  * `matched_objects` - _Optional_ - Boolean value specifying whether or not to return matching data objects. Default: false
+  * `limit` - _Optional_ - Limits the number of query matches. Defaults to 10.
 
 #### Response
 ```
 {
   "results": {
-    "recipient__location__location_state_name": [
-      "Texas",
-      "California",
-      "Georgia"
+    "toptier_agency__name": [
+      "DEFENSE NUCLEAR FACILITIES SAFETY BOARD",
+      "DEPT OF DEFENSE"
     ],
-    "recipient__location__location_state_code": [
-      "CA",
-      "GA"
+    "subtier_agency__name": [
+      "DEFENSE NUCLEAR FACILITIES SAFETY BOARD",
+      "DEFENSE HUMAN RESOURCES ACTIVITY",
+      "DEPT OF DEFENSE",
+      "DEFENSE THREAT REDUCTION AGENCY (DTRA)",
+      "ASSISTANT SECRETARY FOR DEFENSE PROGRAMS"
     ]
   },
   "counts": {
-    "recipient__location__location_state_name": 3,
-    "recipient__location__location_state_code": 2
+    "toptier_agency__name": 2,
+    "subtier_agency__name": 5
+  },
+  "matched_objects": {
+    "toptier_agency__name": [
+      {
+        "toptier_agency": {
+          "cgac_code": "097",
+          "fpds_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "subtier_agency": {
+          "subtier_code": "97JC",
+          "name": "MISSILE DEFENSE AGENCY (MDA)"
+        },
+        "office_agency": null
+      },
+
+       . . .
+
+      {
+        "toptier_agency": {
+          "cgac_code": "097",
+          "fpds_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "subtier_agency": {
+          "subtier_code": "97F7",
+          "name": "JOINT IMPROVISED EXPLOSIVE DEVICE DEFEAT ORGANIZATION (JIEDDO)"
+        },
+        "office_agency": null
+      }
+    ],
+    "subtier_agency__name": [
+      {
+        "toptier_agency": {
+          "cgac_code": "089",
+          "fpds_code": "8900",
+          "name": "ENERGY, DEPARTMENT OF"
+        },
+        "subtier_agency": {
+          "subtier_code": "8925",
+          "name": "ASSISTANT SECRETARY FOR DEFENSE PROGRAMS"
+        },
+        "office_agency": null
+      },
+
+      . . .
+
+      {
+        "toptier_agency": {
+          "cgac_code": "097",
+          "fpds_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "subtier_agency": {
+          "subtier_code": "9700",
+          "name": "DEPT OF DEFENSE"
+        },
+        "office_agency": null
+      }
+    ]
   }
 }
 ```
 #### Response Description
   * `results` - The actual results. For each field search, will contain a list of all unique values matching the requested value and mode
   * `counts` - Contains the length of each array in the results object
+  * `matched_objects` - Only exists if `matched_objects` was specified in the request. An object broken up by specified `fields` with matching objects from the autocomplete query stored in arrays.
 
-### Geographical Hierarchy Queries
+### Geographical Hierarchy Queries <a name="geographical-hierarchy-queries"></a>
 This is a special type of autocomplete query which allows users to search for geographical locations in a hierarchy.
 
 #### Body
@@ -551,7 +605,9 @@ This is a special type of autocomplete query which allows users to search for ge
 {
   "value": "u",
   "mode": "startswith",
-  "scope": "domestic"
+  "scope": "domestic",
+  "usage": "recipient",
+  "limit": 50
 }
 ```
 
@@ -564,6 +620,11 @@ This is a special type of autocomplete query which allows users to search for ge
     * `domestic` - Matches only entries with the United States as the `location_country_code`
     * `foreign` - Matches only entries where the `location_country_code` is _not_ the United States
     * `all` - Matches any location entry. This is the default behavior
+  * `usage` - _Optional_ - The usage of the search. Options available are:
+    * `recipient` - Matches only entries where the location is used as a recipient location
+    * `place_of_performance` - Matches only entries where the location is used as a place of performance
+    * `all` - Matches all locations. This is the default behavior
+  * `limit` - _Optional_ - The maximum number of responses in the autocomplete response. Defaults to 10
 
 #### Response
 ```

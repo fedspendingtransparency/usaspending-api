@@ -77,9 +77,19 @@ class Agency(models.Model):
 
 class ToptierAgency(models.Model):
     toptier_agency_id = models.AutoField(primary_key=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
     cgac_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Top-Tier Agency Code")
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Top-Tier Agency Name")
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "cgac_code",
+            "fpds_code",
+            "name"
+        ]
 
     class Meta:
         managed = True
@@ -88,8 +98,17 @@ class ToptierAgency(models.Model):
 
 class SubtierAgency(models.Model):
     subtier_agency_id = models.AutoField(primary_key=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
     subtier_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Sub-Tier Agency Code")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Sub-Tier Agency Name")
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "subtier_code",
+            "name"
+        ]
 
     class Meta:
         managed = True
@@ -98,6 +117,8 @@ class SubtierAgency(models.Model):
 
 class OfficeAgency(models.Model):
     office_agency_id = models.AutoField(primary_key=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
     aac_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Office Code")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Office Name")
 
@@ -137,6 +158,11 @@ class Location(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    # Tags whether this location is used as a place of performance or a recipient
+    # location, or both
+    place_of_performance_flag = models.BooleanField(default=False, verbose_name="Location used as place of performance")
+    recipient_flag = models.BooleanField(default=False, verbose_name="Location used as recipient location")
 
     @staticmethod
     def get_default_fields():
@@ -291,6 +317,12 @@ class LegalEntity(DataSourceTrackedModel):
     reporting_period_end = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    # Fields added to accomodate recipient_type of financial assistance records
+    city_township_government = models.CharField(max_length=1, blank=True, null=True)
+    special_district_government = models.CharField(max_length=1, blank=True, null=True)
+    small_business = models.CharField(max_length=1, blank=True, null=True)
+    individual = models.CharField(max_length=1, blank=True, null=True)
 
     @staticmethod
     def get_default_fields():
