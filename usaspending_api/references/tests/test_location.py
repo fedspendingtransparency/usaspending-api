@@ -87,5 +87,5 @@ def test_geocomplete_usage_flag():
     assert Location.objects.count() == 5
     assert Location.objects.filter(place_of_performance_flag=True).count() == 2
     assert Location.objects.filter(recipient_flag=True).count() == 3
-    assert len(response_recipient) == 3
-    assert len(response_pop) == 2
+    assert len(response_recipient) == 4
+    assert len(response_pop) == 3
