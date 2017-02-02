@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Location
+from usaspending_api.awards.models import Award
 
 
 class FiscalYear():
@@ -65,11 +66,11 @@ class FilterGenerator():
     This is useful for allowing users to filter on a fk relationship without
     having to specify the more complicated filter
     Additionally, ignored parameters specifies parameters to ignore. Always includes
-    to ["page", "limit"]
+    to ["page", "limit", "last"]
     """
     def __init__(self, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
-        self.ignored_parameters = ['page', 'limit'] + ignored_parameters
+        self.ignored_parameters = ['page', 'limit', 'last'] + ignored_parameters
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
 
@@ -83,13 +84,21 @@ class FilterGenerator():
             qs.annotate(search=vector_sum)
         return qs
 
-    """
-    Pass in request.GET and you'll get back a **kwargs object suitable for use
-    in .filter()
-    NOTE: GET will really only support 'AND' of filters, to use OR we'll need
-    a more complex request object via POST
-    """
-    def create_from_get(self, parameters):
+    # We should refactor create_from_query_params
+    # and create_from_request_body into a single
+    # method that can create filters based on passed-in
+    # paramaters without needing to know about the structure
+    # of the request itself (e.g., GET vs POST)
+    def create_from_query_params(self, parameters):
+        """
+        Create filters using a request's query parameters.
+
+        NOTE: GET only supports 'AND' filters. Anything more complex
+        will need to be specified in the body of a POST request.
+
+        Returns:
+            A **kwargs object suitable for use in .filter()
+        """
         return_arguments = {}
         for key in parameters:
             if key in self.ignored_parameters:
@@ -100,30 +109,33 @@ class FilterGenerator():
                 return_arguments[key] = parameters[key]
         return return_arguments
 
-    """
-    Creates a Q object from a POST query. Example of a post query:
-    {
-        'page': 1,
-        'limit': 100,
-        'filters': [
-            {
-                'combine_method': 'OR',
-                'filters': [ . . . ]
-            },
-            {
-                'field': <FIELD_NAME>
-                'operation': <OPERATION>
-                'value': <VALUE>
-            },
-        ]
-    }
-    If the 'combine_method' is present in a filter, you MUST specify another
-    'filters' set in that object of filters to combine
-    The combination method for filters at the root level is 'AND'
-    Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range, fy
-    Note that contains is always case insensitive
-    """
-    def create_from_post(self, parameters):
+    def create_from_request_body(self, parameters):
+        """
+        Creates a Q object from a POST query.
+
+        Example of a post query:
+        {
+            'page': 1,
+            'limit': 100,
+            'filters': [
+                {
+                    'combine_method': 'OR',
+                    'filters': [ . . . ]
+                },
+                {
+                    'field': <FIELD_NAME>
+                    'operation': <OPERATION>
+                    'value': <VALUE>
+                },
+            ]
+        }
+
+        If the 'combine_method' is present in a filter, you MUST specify another
+        'filters' set in that object of filters to combine
+        The combination method for filters at the root level is 'AND'
+        Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range, fy
+        Note that contains is always case insensitive
+        """
         try:
             self.validate_post_request(parameters)
         except Exception:
@@ -287,37 +299,71 @@ class UniqueValueHandler:
 # Handles autocomplete requests
 class AutoCompleteHandler():
     @staticmethod
-    # Data set to be searched for the value, and which fields to look in
-    # Mode is either "contains" or "startswith"
-    def get_values_and_counts(data_set, fields, value, mode="contains"):
+    # Data set to be searched for the value, and which ids to match
+    def get_values_and_counts(data_set, filter_matched_ids, pk_name):
         value_dict = {}
         count_dict = {}
 
+        for field in filter_matched_ids.keys():
+            q_args = {pk_name + "__in": filter_matched_ids[field]}
+            value_dict[field] = list(set(data_set.all().filter(Q(**q_args)).values_list(field, flat=True)))  # Why this weirdness? To ensure we eliminate duplicates
+            count_dict[field] = len(value_dict[field])
+
+        return value_dict, count_dict
+
+    '''
+    Returns an array of ids that match the filters for the given fields
+    '''
+    @staticmethod
+    def get_filter_matched_ids(data_set, fields, value, mode="contains", limit=10):
         if mode == "contains":
             mode = "__icontains"
         elif mode == "startswith":
             mode = "__istartswith"
 
+        filter_matched_ids = {}
+        pk_name = data_set.model._meta.pk.name
         for field in fields:
             q_args = {}
             q_args[field + mode] = value
-            value_dict[field] = list(set(data_set.filter(Q(**q_args)).values_list(field, flat=True)))  # Why this weirdness? To ensure we eliminate duplicates
-            count_dict[field] = len(value_dict[field])
+            filter_matched_ids[field] = data_set.all().filter(Q(**q_args)).select_related(field)[:limit].values_list(pk_name, flat=True)
 
-        return value_dict, count_dict
+        return filter_matched_ids, pk_name
 
     @staticmethod
-    def handle(data_set, body):
+    def get_objects(data_set, filter_matched_ids, pk_name, serializer):
+        matched_objects = {}
+
+        for field in filter_matched_ids.keys():
+            q_args = {}
+            q_args[pk_name + "__in"] = filter_matched_ids[field]
+            matched_object_qs = data_set.all().filter(Q(**q_args))
+            matched_objects[field] = serializer(matched_object_qs, many=True).data
+
+        return matched_objects
+
+    @staticmethod
+    def handle(data_set, body, serializer=None):
         try:
             AutoCompleteHandler.validate(body)
         except:
             raise
-        if "mode" not in body:
-            body["mode"] = "contains"
-        value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set, body["fields"], body["value"], body["mode"])
+
+        return_object = {}
+
+        filter_matched_ids, pk_name = AutoCompleteHandler.get_filter_matched_ids(data_set.all(), body["fields"], body["value"], body.get("mode", "contains"), body.get("limit", 10))
+
+        # Get matching string values, and their counts
+        value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set.all(), filter_matched_ids, pk_name)
+
+        # Get the matching objects, if requested
+        if body.get("matched_objects", False) and serializer:
+            return_object["matched_objects"] = AutoCompleteHandler.get_objects(data_set.all(), filter_matched_ids, pk_name, serializer)
+
         return {
+            **return_object,
             "counts": count_dict,
-            "results": value_dict
+            "results": value_dict,
         }
 
     @staticmethod
@@ -337,43 +383,42 @@ class GeoCompleteHandler:
 
     def __init__(self, request_body):
         self.request_body = request_body
-        self.search_fields = {
-            "location_country_code__country_name": {
-                "type": "COUNTRY",
-                "parent": "location_country_code"
-            },
-            "location_state_code": {
-                "type": "STATE",
-                "parent": "location_country_code__country_name"
-            },
-            "location_state_name": {
-                "type": "STATE",
-                "parent": "location_country_code__country_name"
-            },
-            "location_city_name": {
-                "type": "CITY",
-                "parent": "location_state_name"
-            },
-            "location_county_name": {
-                "type": "COUNTY",
-                "parent": "location_state_name"
-            },
-            "location_zip5": {
-                "type": "ZIP",
-                "parent": "location_state_name"
-            },
-            "location_foreign_postal_code": {
-                "type": "POSTAL CODE",
-                "parent": "location_country_code__country_name"
-            },
-            "location_foreign_province": {
-                "type": "PROVINCE",
-                "parent": "location_country_code__country_name"
-            },
-            "location_foreign_city_name": {
-                "type": "CITY",
-                "parent": "location_country_code__country_name"
-            }
+        self.search_fields = OrderedDict()
+        self.search_fields["location_country_code__country_name"] = {
+            "type": "COUNTRY",
+            "parent": "location_country_code"
+        }
+        self.search_fields["location_state_code"] = {
+            "type": "STATE",
+            "parent": "location_country_code__country_name"
+        }
+        self.search_fields["location_state_name"] = {
+            "type": "STATE",
+            "parent": "location_country_code__country_name"
+        }
+        self.search_fields["location_city_name"] = {
+            "type": "CITY",
+            "parent": "location_state_name"
+        }
+        self.search_fields["location_county_name"] = {
+            "type": "COUNTY",
+            "parent": "location_state_name"
+        }
+        self.search_fields["location_zip5"] = {
+            "type": "ZIP",
+            "parent": "location_state_name"
+        }
+        self.search_fields["location_foreign_postal_code"] = {
+            "type": "POSTAL CODE",
+            "parent": "location_country_code__country_name"
+        }
+        self.search_fields["location_foreign_province"] = {
+            "type": "PROVINCE",
+            "parent": "location_country_code__country_name"
+        }
+        self.search_fields["location_foreign_city_name"] = {
+            "type": "CITY",
+            "parent": "location_country_code__country_name"
         }
 
     def build_response(self):
@@ -382,6 +427,8 @@ class GeoCompleteHandler:
         value = self.request_body.get("value", None)
         mode = self.request_body.get("mode", "contains")
         scope = self.request_body.get("scope", "all")
+        usage = self.request_body.get("usage", "all")
+        limit = self.request_body.get("limit", 10)
 
         if mode == "contains":
             mode = "__icontains"
@@ -393,6 +440,12 @@ class GeoCompleteHandler:
             scope_q = ~Q(**{"location_country_code": "USA"})
         elif scope == "domestic":
             scope_q = Q(**{"location_country_code": "USA"})
+
+        usage_q = Q()
+        if usage == "recipient":
+            usage_q = Q(recipient_flag=True)
+        elif usage == "place_of_performance":
+            usage_q = Q(place_of_performance_flag=True)
 
         response_object = []
 
@@ -412,8 +465,7 @@ class GeoCompleteHandler:
                 q_kwargs["location_congressional_code__istartswith"] = temp_val[1]
 
             search_q = Q(**q_kwargs)
-            results = Location.objects.filter(search_q & scope_q).values_list("location_congressional_code", "location_state_code", "location_state_name")
-            results = list(set(results))  # Eliminate duplicates
+            results = Location.objects.filter(search_q & scope_q & usage_q).order_by("location_state_code", "location_congressional_code").values_list("location_congressional_code", "location_state_code", "location_state_name").distinct()[:limit]
             for row in results:
                 response_row = {
                     "place": row[1] + "-" + str(row[0]),
@@ -422,12 +474,13 @@ class GeoCompleteHandler:
                     "matched_ids": Location.objects.filter(Q(**{"location_congressional_code": row[0], "location_state_code": row[1], "location_state_name": row[2]})).values_list("location_id", flat=True)
                 }
                 response_object.append(response_row)
+                if len(response_object) >= limit:
+                    return response_object
 
         if value:
             for searchable_field in search_fields.keys():
                 search_q = Q(**{searchable_field + mode: value})
-                results = Location.objects.filter(search_q & scope_q).values_list(searchable_field, search_fields[searchable_field]["parent"])
-                results = list(set(results))  # Do this to eliminate duplicates
+                results = Location.objects.filter(search_q & scope_q & usage_q).order_by(searchable_field).values_list(searchable_field, search_fields[searchable_field]["parent"]).distinct()[:limit]
                 for row in results:
                     response_row = {
                         "place": row[0],
@@ -436,6 +489,8 @@ class GeoCompleteHandler:
                         "matched_ids": Location.objects.filter(Q(**{searchable_field: row[0], search_fields[searchable_field]["parent"]: row[1]})).values_list("location_id", flat=True)
                     }
                     response_object.append(response_row)
+                    if len(response_object) >= limit:
+                        return response_object
 
         return response_object
 
@@ -453,7 +508,7 @@ class DataQueryHandler:
     def build_response(self):
         """Returns a dictionary from a POST request that can be used to create a response."""
         fg = FilterGenerator()
-        filters = fg.create_from_post(self.request_body)
+        filters = fg.create_from_request_body(self.request_body)
         # Grab the ordering
         self.ordering = self.request_body.get("order", self.ordering)
 

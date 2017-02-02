@@ -16,14 +16,25 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls import url, include
 from usaspending_api import views as views
+from django.views.generic import TemplateView
+from django.conf.urls.static import static
 
 
 urlpatterns = [
     url(r'^status/', views.StatusView.as_view()),
-    url(r'^api/v1/awards/', include('usaspending_api.awards.urls')),
+    url(r'^api/v1/awards/', include('usaspending_api.awards.urls_awards')),
+    url(r'^api/v1/transactions/', include('usaspending_api.awards.urls_transactions')),
     url(r'^api/v1/submissions/', include('usaspending_api.submissions.urls')),
     url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
     url(r'^api/v1/financial_activities/', include('usaspending_api.financial_activities.urls')),
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-]
+    url(r'^$', TemplateView.as_view(template_name='index.html')),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ]

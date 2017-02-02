@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.postgres',
 
+    'debug_toolbar',
     'django_extensions',
     'rest_framework',
     'corsheaders',
@@ -49,13 +50,15 @@ INSTALLED_APPS = [
     'usaspending_api.awards',
     'usaspending_api.accounts',
     'usaspending_api.submissions',
-    'usaspending_api.financial_activities'
+    'usaspending_api.financial_activities',
+    'usaspending_api.api_docs'
 ]
 
 INTERNAL_IPS = ('127.0.0.1',)
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -71,7 +74,7 @@ ROOT_URLCONF = 'usaspending_api.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['usaspending_api/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,7 +128,8 @@ REST_FRAMEWORK = {
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
-    ]
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'usaspending_api.common.pagination.UsaspendingPagination',
 }
 
 # Internationalization
@@ -146,6 +150,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'usaspending_api/static/')
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'usaspending_api/static_doc_files'),
+)
 
 LOGGING = {
     'version': 1,
