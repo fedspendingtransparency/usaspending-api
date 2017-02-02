@@ -1,3 +1,5 @@
+import logging
+
 from django.db import models
 from django.db.models import Q
 from usaspending_api.common.models import DataSourceTrackedModel
@@ -135,7 +137,6 @@ class Location(DataSourceTrackedModel):
     location_state_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="State Code")
     location_state_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="State Name")
     location_state_description = models.CharField(max_length=100, blank=True, null=True, verbose_name="State Description")
-    # Changed by KPJ to 100 from 40, on 20161013
     location_city_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="City Name")
     location_city_code = models.CharField(max_length=5, blank=True, null=True)
     location_county_name = models.CharField(max_length=100, blank=True, null=True)
@@ -214,6 +215,8 @@ class Location(DataSourceTrackedModel):
                 self.location_state_code = matched_reference.state_code
                 self.location_city_name = matched_reference.city_name
                 self.location_county_name = matched_reference.county_name
+            else:
+                logging.getLogger('console').info("Could not find single matching city/county for following arguments:" + str(q_kwargs))
 
     class Meta:
         # Let's make almost every column unique together so we don't have to

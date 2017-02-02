@@ -14,7 +14,7 @@ class Command(BaseCommand):
     logger = logging.getLogger('console')
 
     def handle(self, *args, **options):
-        self.logger.info("Beginning reference data loading. This may take some time.")
+        self.logger.info("Beginning reference data loading. This may take a few minutes.")
 
         self.logger.info("Loading reference_fixture.json")
         call_command('loaddata', 'reference_fixture')
