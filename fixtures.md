@@ -4,15 +4,16 @@ Data is loaded to the USASpending API via a series of Django management commands
 
 ## Loading Reference Data
 
-Use the following commands to load reference data into appropriate models (for example, the list of agencies, object classes, etc.). You'll need to load this information before running any DATA Act broker or USAspending loads (see below).
+The USASpending API requires a set of reference data. For convenience, the management command `load_reference_data` will perform all of the reference data loading operations. It must be run in the same directory as `manage.py`. To call this command, run:
 
-`python manage.py loaddata usaspending_api/references/fixtures/reference_fixture.json`
+`python manage.py load_reference_data`
 
-**Note:** If any of these load commands result in an error due to a missing field (_i.e._, `x has no field named y`), try running it again with the `--ignorenonexistent` parameter.
+This command will execute the following commands:
+* `python manage.py loaddata usaspending_api/references/fixtures/reference_fixture.json` - This contains the majority of referenced data and is loaded via Django fixture.
+* `python manage.py loadtas usaspending_api/data/tas_list.csv` - Loads appropriation account data
+* `python manage.py load_reference_csv RefCityCountyCode usaspending_api/data/ref_city_county_code.csv Latin-1` - Loads city and county reference data
 
-Additionally, to load the appropriation account data, execute
-
-`python manage.py loadtas usaspending_api/data/tas_list.csv`
+`python manage.py load_reference_csv RefCityCountyCode usaspending_api/data/ref_city_county_code.csv Latin-1`
 
 ## Loading DATA Act Broker Submissions
 
