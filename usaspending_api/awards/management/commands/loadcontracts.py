@@ -185,7 +185,6 @@ class Command(BaseCommand):
 
         return le
 
-
     def get_or_create_award(self, row):
         piid = row.get("piid", None)
         parent_award_id = row.get("idvpiid", None)
@@ -233,6 +232,7 @@ def location_mapper_place_of_performance(row):
         )  # Format is VA: VIRGINIA, so we need to grab the first bit
     }
     return loc
+
 
 def location_mapper_vendor(row):
     loc = {
