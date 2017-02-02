@@ -240,6 +240,7 @@ class DataLoaderThread(Process):
         else:
             setattr(model_instance_or_dict, field, value)
 
+
 def cleanse_values(row):
     """
     Remove textual quirks from CSV values.
