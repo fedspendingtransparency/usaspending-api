@@ -7,32 +7,42 @@ class ToptierAgencySerializer(LimitableSerializer):
 
     class Meta:
         model = ToptierAgency
-        fields = ('cgac_code', 'fpds_code', 'name')
+        fields = '__all__'
 
 
 class SubtierAgencySerializer(LimitableSerializer):
 
     class Meta:
         model = SubtierAgency
-        fields = ('subtier_code', 'name')
+        fields = '__all__'
 
 
 class OfficeAgencySerializer(LimitableSerializer):
 
     class Meta:
         model = OfficeAgency
-        fields = ('aac_code', 'name')
+        fields = '__all__'
 
 
 class AgencySerializer(LimitableSerializer):
 
-    toptier_agency = ToptierAgencySerializer(read_only=True)
-    subtier_agency = SubtierAgencySerializer(read_only=True)
-    office_agency = OfficeAgencySerializer(read_only=True)
-
     class Meta:
         model = Agency
-        fields = ('toptier_agency', 'subtier_agency', 'office_agency')
+        fields = '__all__'
+        nested_serializers = {
+            "toptier_agency": {
+                "class": ToptierAgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "subtier_agency": {
+                "class": SubtierAgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "office_agency": {
+                "class": OfficeAgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
 
 
 class LocationSerializer(LimitableSerializer):

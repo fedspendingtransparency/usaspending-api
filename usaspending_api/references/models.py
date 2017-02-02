@@ -60,6 +60,15 @@ class Agency(models.Model):
     subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True)
     office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
 
+    @staticmethod
+    def get_default_fields():
+        return [
+            "id",
+            "toptier_agency",
+            "subtier_agency",
+            "office_agency"
+        ]
+
     class Meta:
         managed = True
         db_table = 'agency'
@@ -121,6 +130,13 @@ class OfficeAgency(models.Model):
     update_date = models.DateTimeField(auto_now=True, null=True)
     aac_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Office Code")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Office Name")
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "aac_code",
+            "name"
+        ]
 
     class Meta:
         managed = True
