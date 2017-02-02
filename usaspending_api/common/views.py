@@ -56,21 +56,14 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     Handles the views for endpoints that request a detailed
     view of model objects (either in the form of a single
     object or a list of objects).
-
-    Note that the only reason our views don't use Django
-    Rest Frameworks ReadOnlyModelViewSet directly is that
-    we're overriding the list method to tack metadata
-    on to our responses. Once we're able to customize
-    our metadata via DRF pagination, we probably won't
-    need this class at all and can just hook views directly
-    to viewsets.ReadOnlyModelViewSet.
     """
+    # Note: once the front-end has switched to using query parameter
+    # pagination for endpoints that use DetailViewSet, we can remove
+    # this class and inherit from ReadOnlyModelViewSet directly in
+    # the application views.py files.
 
     def list(self, request, *args, **kwargs):
-        """
-        Override the parent list method so we can add metadata to response.
-        Once we're able to customize metadata via DRF pagination, we won't need this.
-        """
+
         response = self.build_response(
             self.request, queryset=self.get_queryset(), serializer=self.get_serializer_class())
         return Response(response)

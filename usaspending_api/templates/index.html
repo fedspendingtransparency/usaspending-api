@@ -1,0 +1,86 @@
+{% load docs %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>USAspending Prototype API</title>
+    <link rel="stylesheet" href='{% static "/css/google-fonts.css" %}'>
+    <link rel="stylesheet" href='{% static "/css/monokai-sublime.css" %}'>
+    <link rel="stylesheet" href='{% static "/css/main.css" %}'>
+    <script src='{% static "/js/modernizr.js" %}'></script>
+    <style>
+      .logo {width:350px;background-color:white;padding:15px;margin-right:20px;}
+      .row-fluid outter-wrap {padding-top: 30px;}
+      p { max-width: 80rem;}
+      h1{ font-size: 5rem;}
+      h2 {font-size: 4rem;}
+      .outter-wrap { margin-top:154px; }
+      #sidebar{margin-top: 30px;}
+    </style>
+  </head>
+  <body>
+    <div class="container-fluid usa-da-header">
+        <div class="row">
+            <nav class="navbar">
+                <div class="container usa-da-header-container">
+                    <h1><a href="/"><img class="logo" src='{% static "/img/logo.png" %}'/>Prototype API</a></h1>
+                    <ul id="usa-da-header-link-holder" class="nav nav-row">
+
+                        <li class="element first active ">
+                            <a href="/">Docs</a>
+                        </li>
+
+                        <li class="element   last">
+                            <a href="https://github.com/fedspendingtransparency/usaspending-api">Github</a>
+                        </li>
+
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <div class="usa-da-outter-wrap">
+      <div class="container homepage">
+        <div class="row-fluid outter-wrap">
+          <div class="container">
+            <div class="row">
+              <div class="col-md-3" id="leftCol">
+                <div class="row">
+                {% autoescape off %}
+                {% display_contents %}
+                {% endautoescape %}
+                </div>
+              </div>
+              <div class="col-md-9">
+                <section class="wrap">
+                {% autoescape off %}
+                {% display_docs %}
+                {% endautoescape %}
+                </section>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <script src='{% static "/js/jquery-2.2.0.min.js" %}'></script>
+      <script src='{% static "/js/bootstrap.min.js" %}'></script>
+      <script src='{% static "/js/mobile-head.js" %}'></script>
+      <script src='{% static "/js/Chart.js" %}'></script>
+      <script src='{% static "/js/fedSpend_base.js" %}'></script>
+      <script src='{% static "/js/highlight.pack.js" %}'></script>
+      <script src='{% static "/js/flyLabel.js" %}'></script>
+      <script>
+            if (Modernizr.input.placeholder) {
+              $('body').flyLabels();
+            }
+      </script>
+
+
+      <script>hljs.initHighlightingOnLoad();</script>
+
+  </body>
+</html>

@@ -132,14 +132,21 @@ class FilterQuerysetMixin(object):
         """Filter a queryset based on request parameters"""
         queryset = kwargs.get('queryset')
 
-        # use request parameters to filter the passed queryset
-        # note: is there a better way to differentiate between
-        # GET and POST requests? can we get to a place where we
-        # don't need to know?
-        if len(request.query_params):
+        # If there is data in the request body, use that
+        # to create filters. Otherwise, use information
+        # in the request's query params to create filters.
+        # Eventually, we should refactor the filter creation
+        # process to accept a list of paramaters
+        # and create filters without needing to know about the structure
+        # of the request itself.
+        if len(request.data):
+            fg = FilterGenerator()
+            filters = fg.create_from_request_body(request.data)
+            return queryset.filter(filters).distinct()
+        else:
             filter_map = kwargs.get('filter_map', {})
             fg = FilterGenerator(filter_map=filter_map)
-            filters = fg.create_from_get(request.query_params)
+            filters = fg.create_from_query_params(request.query_params)
             # add fiscal year to filters if requested
             # deprecated: we plan to start storing fiscal years in the database
             if request.query_params.get('fy'):
@@ -147,10 +154,6 @@ class FilterQuerysetMixin(object):
                 fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
                 filters = {**filters, **fy_arguments}
             return queryset.filter(**filters).distinct()
-        else:
-            fg = FilterGenerator()
-            filters = fg.create_from_post(request.data)
-            return queryset.filter(filters).distinct()
 
     def order_records(self, request, *args, **kwargs):
         """Order a queryset based on request parameters."""
@@ -202,8 +205,15 @@ class ResponseMetadatasetMixin(object):
             "count": len(paged_data)
         }
 
+        # note that generics/viewsets pass request and view info to the
+        # serializer context automatically. however, we explicitly add it here
+        # because our common DetailViewSet overrides the 'list' method, which
+        # somehow prevents the extra info from being added to the serializer
+        # context. because we can get rid of DetailViewSet and use
+        # ReadOnlyModelViewSet directly as soon as the pagination changes
+        # are in, not going spend a lot of time researching this.
+        context = {'request': request, 'view': self}
         # serialize the paged data
-        context = {'request': request}
         serializer = kwargs.get('serializer')(paged_data, many=True, context=context)
         serialized_data = serializer.data
 
