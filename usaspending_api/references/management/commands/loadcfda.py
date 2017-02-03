@@ -17,10 +17,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
             parser.add_argument(
-            '-f', '--file',
-            default=self.DEFAULT_FILEPATH,
-            help='path to CSV file to load',
-        )
+                '-f', '--file',
+                default=self.DEFAULT_FILEPATH,
+                help='path to CSV file to load',
+            )
 
     def handle(self, *args, **options):
 
@@ -29,12 +29,13 @@ class Command(BaseCommand):
 
         load_cfda(fullpath)
 
+
 def load_cfda(fullpath):
     """
     Create CFDAProgram records from a CSV of historical data.
     """
     try:
-        with open(fullpath, errors='backslashreplace')  as csvfile:
+        with open(fullpath, errors='backslashreplace') as csvfile:
 
             reader = csv.DictReader(csvfile, delimiter=',', quotechar='"', skipinitialspace='true')
             for row in reader:

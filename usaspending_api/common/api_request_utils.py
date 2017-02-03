@@ -349,6 +349,11 @@ class AutoCompleteHandler():
         except:
             raise
 
+        # If the serializer supports eager loading, set it up
+        if serializer:
+            if hasattr(serializer, "setup_eager_loading") and callable(serializer.setup_eager_loading):
+                data_set = serializer.setup_eager_loading(data_set)
+
         return_object = {}
 
         filter_matched_ids, pk_name = AutoCompleteHandler.get_filter_matched_ids(data_set.all(), body["fields"], body["value"], body.get("mode", "contains"), body.get("limit", 10))

@@ -12,9 +12,14 @@ class TreasuryAppropriationAccountSerializer(LimitableSerializer):
 
 
 class AppropriationAccountBalancesSerializer(LimitableSerializer):
-    treasury_account_identifier = TreasuryAppropriationAccountSerializer(read_only=True)
 
     class Meta:
 
         model = AppropriationAccountBalances
+        nested_serializers = {
+            "treasury_account_identifier": {
+                "class": TreasuryAppropriationAccountSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
         fields = '__all__'
