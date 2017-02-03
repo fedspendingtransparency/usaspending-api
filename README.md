@@ -149,6 +149,7 @@ For details on loading reference data, DATA Act Broker submissions, and current 
 
 Below is a list of available management commands a brief description of their uses. For more help, check the command's help text.
 
+* `load_reference_data` - Loads all reference data (used on a fresh or flushed db)
 * `update_location_usage_flags` - Updates the `place_of_performance_flag` and `recipient_flag` on Location objects based upon their foreign key usages
 * `load_submission` - Loads a submission from the broker for the currently set environment
 * `loadtas` - Loads tas account information from a file

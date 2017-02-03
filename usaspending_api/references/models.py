@@ -1,4 +1,7 @@
+import logging
+
 from django.db import models
+from django.db.models import Q
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
@@ -59,6 +62,15 @@ class Agency(models.Model):
     toptier_agency = models.ForeignKey('ToptierAgency', models.DO_NOTHING, null=True)
     subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True)
     office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "id",
+            "toptier_agency",
+            "subtier_agency",
+            "office_agency"
+        ]
 
     class Meta:
         managed = True
@@ -122,6 +134,13 @@ class OfficeAgency(models.Model):
     aac_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Office Code")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Office Name")
 
+    @staticmethod
+    def get_default_fields():
+        return [
+            "aac_code",
+            "name"
+        ]
+
     class Meta:
         managed = True
         db_table = 'office_agency'
@@ -134,10 +153,9 @@ class Location(DataSourceTrackedModel):
     location_state_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="State Code")
     location_state_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="State Name")
     location_state_description = models.CharField(max_length=100, blank=True, null=True, verbose_name="State Description")
-    # Changed by KPJ to 100 from 40, on 20161013
     location_city_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="City Name")
     location_city_code = models.CharField(max_length=5, blank=True, null=True)
-    location_county_name = models.CharField(max_length=40, blank=True, null=True)
+    location_county_name = models.CharField(max_length=100, blank=True, null=True)
     location_county_code = models.CharField(max_length=3, blank=True, null=True)
     location_address_line1 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 1")
     location_address_line2 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 2")
@@ -180,6 +198,41 @@ class Location(DataSourceTrackedModel):
             "location_foreign_city_name",
             "location_foreign_postal_code"
         ]
+
+    def save(self, *args, **kwargs):
+        self.load_country_data()
+        self.load_city_county_data()
+        super(Location, self).save(*args, **kwargs)
+
+    def load_country_data(self):
+        if self.location_country_code:
+            self.location_country_name = self.location_country_code.country_name
+
+    def load_city_county_data(self):
+        # Here we fill in missing information from the ref city county code data
+        if self.location_country_code_id == "USA":
+            q_kwargs = {
+                "city_code": self.location_city_code,
+                "county_code": self.location_county_code,
+                "state_code": self.location_state_code,
+                "city_name": self.location_city_name,
+                "county_name": self.location_county_name
+            }
+            # Clear out any blank or None values in our filter, so we can find the best match
+            q_kwargs = dict((k, v) for k, v in q_kwargs.items() if v)
+            matched_reference = RefCityCountyCode.objects.filter(Q(**q_kwargs))
+            # We only load the data if our matched reference count is one; otherwise,
+            # we don't have data (count=0) or the match is ambiguous (count>1)
+            if matched_reference.count() == 1:
+                # Load this data
+                matched_reference = matched_reference.first()
+                self.location_city_code = matched_reference.city_code
+                self.location_county_code = matched_reference.county_code
+                self.location_state_code = matched_reference.state_code
+                self.location_city_name = matched_reference.city_name
+                self.location_county_name = matched_reference.county_name
+            else:
+                logging.getLogger('console').info("Could not find single matching city/county for following arguments:" + str(q_kwargs))
 
     class Meta:
         # Let's make almost every column unique together so we don't have to
