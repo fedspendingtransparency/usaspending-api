@@ -14,7 +14,7 @@ class LimitableSerializer(serializers.ModelSerializer):
 
         # Create and initialize the child serializers
         try:
-            # Initialize the child serializers, and set up eager loading
+            # Initialize the child serializers
             children = self.Meta.nested_serializers
             for field in children.keys():
                 child_args = {
