@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import F, Q, Sum
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.common.helpers import fy
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity
 from usaspending_api.common.models import DataSourceTrackedModel
@@ -79,6 +80,15 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    reporting_period_start_fy = models.IntegerField(blank=True, null=True)
+    reporting_period_end_fy = models.IntegerField(blank=True, null=True)
+    certified_date_fy = models.IntegerField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        self.reporting_period_start_fy = fy(self.reporting_period_start)
+        self.reporting_period_end_fy = fy(self.reporting_period_end)
+        self.certified_date_fy = fy(self.certified_date)
+        return super(FinancialAccountsByAwards, self).save(*args, **kwargs)
 
     class Meta:
         managed = True

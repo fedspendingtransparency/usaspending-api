@@ -95,12 +95,6 @@ class AggregateQuerysetMixin(object):
                 'Request is missing the field to group by'
             )
 
-        # if a group by field is specified, make sure it exists in the model
-        if hasattr(model, group_field) is False:
-            raise InvalidParameterException(
-                'Group field {} not found in model {}. '
-                'Please specify a valid group field in the request'.format(group_field, model))
-
         # if a groupby date part is specified, make sure the groupby field is
         # a date and the groupby value is year, quarter, or month
         if date_part is not None:

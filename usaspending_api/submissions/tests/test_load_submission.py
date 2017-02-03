@@ -1,17 +1,19 @@
+import pytest
 from django.core.management import call_command
+
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
     FinancialAccountsByAwardsTransactionObligations, FinancialAssistanceAward,
     Procurement)
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.common.helpers import fy
+from usaspending_api.financial_activities.models import \
+    FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import LegalEntity, Location
 from usaspending_api.submissions.models import SubmissionAttributes
 
-import pytest
 
-
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def endpoint_data():
     call_command('flush', '--noinput')
     call_command('loaddata', 'endpoint_fixture_db')
@@ -50,3 +52,14 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     assert Award.objects.count() == 7
     assert Procurement.objects.count() == 1
     assert FinancialAssistanceAward.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_load_submission_correct_fiscal_years(endpoint_data,
+                                              partially_flushed):
+    call_command('load_submission', '-1', '--delete', '--test')
+    result = FinancialAccountsByAwards.objects.first()
+    assert fy(
+        result.reporting_period_start) == result.reporting_period_start_fy
+    assert fy(result.reporting_period_end) == result.reporting_period_end_fy
+    assert fy(result.certified_date) == result.certified_date_fy

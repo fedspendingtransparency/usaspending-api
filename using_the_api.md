@@ -109,7 +109,7 @@ Summarized data is available for some of the endpoints listed above:
 
 You can get summarized data via a `POST` request that specifies:
 
-* `field`: the field to be summarized
+* `field`: the field to be summarized (this supports Django's foreign key traversal; for more details on this see `field` in [POST Requests](#post-requests)).
 * `aggregate`: the aggregate function to use when summarizing the data (defaults to `sum`; `avg`, `count`, `min`, and `max` are also supported)
 * `group`: the field to group by (optional; if not specified, data will be summarized across all objects)
 * `date_part`: applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
@@ -121,9 +121,11 @@ The `results` portion of the response will contain:
 * `item`: the value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
 * `aggregate`: the summarized data
 
-To order the response by the items being returned via the `group` parameter, you can specify an `order` in the request: `"order": ["item"]`.
+To order the response by the items being returned via the `group` parameter, you can specify an `order` in the request: `"order": ["item"]`. To order the response by the aggregate values themselves, add `"order": ["aggregate]` to the request.
 
 For example, to request the yearly sum of obligated dollars across transactions for award types "B" and "C" (_i.e._, purchase orders and delivery orders) and to ensure that the response is ordered by year:
+
+POST request to `/transactions/total`:
 
 ```json
 {
@@ -164,6 +166,51 @@ Response:
       "aggregate": "1621763.83"
     }
   ]
+}
+```
+
+To summarize a field using a foreign key and to order the response by the summarized values from highest to lowest:
+
+POST request to `/awards/total`:
+
+```json
+{
+    "field": "total_obligation",
+    "group": "place_of_performance__location_state_code",
+    "aggregate": "sum",
+    "order": ["-aggregate"]
+}
+```
+Response:
+
+```json
+{
+  "page_metadata": {
+    "num_pages": 1,
+    "page_number": 1,
+    "count": 4
+  },
+  "results": [
+    {
+      "item": "MO",
+      "aggregate": "500000.00"
+    },
+    {
+      "item": "DC",
+      "aggregate": "485795.43"
+    },
+    {
+      "item": "UT",
+      "aggregate": "0.00"
+    },
+    {
+      "item": "HI",
+      "aggregate": "-2891.33"
+    }
+  ],
+  "total_metadata": {
+    "count": 4
+  }
 }
 ```
 
