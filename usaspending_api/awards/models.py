@@ -167,7 +167,8 @@ class Award(DataSourceTrackedModel):
             "funding_agency",
             "procurement_set",
             "financialassistanceaward_set",
-            "recipient"
+            "recipient",
+            "date_signed__fy",
         ]
 
     def __str__(self):
