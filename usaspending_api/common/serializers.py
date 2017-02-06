@@ -77,22 +77,21 @@ class LimitableSerializer(serializers.ModelSerializer):
                     # We don't have get default fields available
                     pass
 
-    '''
-    This method will set up prefetch and selected related statements appropriately
-    on a specified query set based upon the serializer's nested_serializer parameter
-    in the Meta class. It will return the modified queryset.
-    The prefix flag is for cascading down to children, that is, when we eager load
-    a child of this serializer, we must prefix that child's field name to their field name.
-    For example:
-    AwardSerializer has a nested serializer of funding_agency with a nested serializer for toptier agency
-    Thus, when we prefetch, we want to prefetch 'funding_agency' and 'funding_agency__toptier_agency'
-    This prefix flag allows us toa ccomplish this
-    '''
     @classmethod
     def setup_eager_loading(cls, queryset, prefix=""):
-        # We have a list of nested fields
-        # We want to use pre-fetch related for "many" fields
-        # while we want to use select related for all others
+        '''
+        This method will set up prefetch and selected related statements appropriately
+        on a specified query set based upon the serializer's nested_serializer parameter
+        in the Meta class. It will return the modified queryset.
+        The prefix flag is for cascading down to children, that is, when we eager load
+        a child of this serializer, we must prefix that child's field name to their field name.
+        For example:
+        AwardSerializer has a nested serializer of funding_agency with a nested serializer for toptier agency
+        Thus, when we prefetch, we want to prefetch 'funding_agency' and 'funding_agency__toptier_agency'
+        This prefix flag allows us to accomplish this.
+        N.B.: When doing a 1-1 fk relation, select_related() should be used (this join is performed in the SQL);
+              When doing a 1-m or m-m relation, prefetch_related() should be used (this join is performed via Python)
+        '''
         try:
             # Grab the nested serializers (aka children)
             children = cls.Meta.nested_serializers
