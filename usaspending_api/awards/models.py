@@ -154,6 +154,7 @@ class Award(DataSourceTrackedModel):
     period_of_performance_start_date = models.DateField(null=True, verbose_name="Start Date")
     period_of_performance_current_end_date = models.DateField(null=True, verbose_name="End Date")
     place_of_performance = models.ForeignKey(Location, null=True)
+    potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award")
     last_modified_date = models.DateField(blank=True, null=True)
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -178,6 +179,7 @@ class Award(DataSourceTrackedModel):
             "uri",
             "period_of_performance_start_date",
             "period_of_performance_current_end_date",
+            "potential_total_value_of_award",
             "place_of_performance",
             "awarding_agency",
             "funding_agency",
@@ -219,6 +221,8 @@ class Award(DataSourceTrackedModel):
         self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
         self.type = transaction_latest.type
         self.type_description = transaction_latest.type_description
+        if hasattr(transaction_latest, "potential_total_value_of_award"):
+            self.potential_total_value_of_award = transaction_latest.potential_total_value_of_award
         self.save()
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
