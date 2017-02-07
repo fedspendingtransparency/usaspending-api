@@ -74,17 +74,34 @@ def test_null_awards():
     assert Award.nonempty.count() == 2
 
 
-@pytest.mark.django_db
-def test_award_total_grouped(client):
+@pytest.fixture
+def awards_data(db):
+    mommy.make(
+        'awards.Award',
+        piid='zzz',
+        fain='abc123',
+        type='B',
+        total_obligation=1000)
+    mommy.make(
+        'awards.Award',
+        piid='###',
+        fain='ABC789',
+        type='B',
+        total_obligation=1000)
+    mommy.make('awards.Award', fain='XYZ789', type='C', total_obligation=1000)
+
+
+def test_award_total_grouped(client, awards_data):
     """Test award total endpoint with a group parameter."""
-    mommy.make('awards.Award', type='B', total_obligation=1000)
-    mommy.make('awards.Award', type='B', total_obligation=1000)
-    mommy.make('awards.Award', type='C', total_obligation=1000)
 
     resp = client.post(
         '/api/v1/awards/total/',
         content_type='application/json',
-        data=json.dumps({'field': 'total_obligation', 'group': 'type', 'aggregate': 'sum'}))
+        data=json.dumps({
+            'field': 'total_obligation',
+            'group': 'type',
+            'aggregate': 'sum'
+        }))
     assert resp.status_code == 200
     results = resp.data['results']
     # our data has two different type codes, we should get two summarized items back
@@ -95,3 +112,42 @@ def test_award_total_grouped(client):
             assert float(result['aggregate']) == 2000
         else:
             assert float(result['aggregate']) == 1000
+
+
+@pytest.mark.parametrize("fields,value,expected", [
+    (['fain', 'piid'], 'z', {
+        'fain': ['XYZ789'],
+        'piid': ['zzz']
+    }),
+    (['fain'], 'ab', {
+        'fain': ['abc123', 'ABC789']
+    }),
+    (['fain'], '12', {
+        'fain': ['abc123']
+    }),
+    (['fain'], '789', {
+        'fain': ['XYZ789', 'ABC789']
+    }),
+    (['piid'], '###', {
+        'piid': '###'
+    }),
+    (['piid'], 'ghi', {
+        'piid': []
+    }),
+])
+@pytest.mark.django_db
+def test_award_autocomplete(client, awards_data, fields, value, expected):
+    """Test partial-text search."""
+
+    resp = client.post(
+        '/api/v1/awards/autocomplete/',
+        content_type='application/json',
+        data=json.dumps({
+            'fields': fields,
+            'value': value,
+        }))
+    assert resp.status_code == 200
+
+    results = resp.data['results']
+    for key in results:
+        sorted(results[key]) == expected[key]
