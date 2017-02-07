@@ -38,6 +38,7 @@ CONTRACT_PRICING_TYPES = (
     ('V', 'Cost Plus Incentive Fee'),
     ('Y', 'Time and Materials'),
     ('Z', 'Labor Hours'),
+    ('UN', 'Unknown Type')
 )
 
 
@@ -324,7 +325,7 @@ class Procurement(AwardAction):
     piid = models.CharField(max_length=50, blank=True)
     parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
     cost_or_pricing_data = models.CharField(max_length=1, blank=True, null=True)
-    type_of_contract_pricing = models.CharField(max_length=2, blank=True, null=True, choices=CONTRACT_PRICING_TYPES, verbose_name="Type of Contract Pricing")
+    type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, choices=CONTRACT_PRICING_TYPES, verbose_name="Type of Contract Pricing")
     type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description")
     naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS")
     naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description")
