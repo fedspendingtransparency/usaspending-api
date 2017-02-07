@@ -102,6 +102,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
         return [
             "financial_accounts_by_awards_id",
             "treasury_account",
+            "transaction_obligations",
             "object_class",
             "program_activity_code",
             "program_activity_name",
@@ -128,6 +129,12 @@ class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "transaction_obligated_amount"
+        ]
 
     class Meta:
         managed = True
