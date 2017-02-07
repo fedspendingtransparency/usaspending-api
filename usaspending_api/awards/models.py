@@ -24,6 +24,23 @@ AWARD_TYPES = (
     ('D', 'Definitive Contract')
 )
 
+CONTRACT_PRICING_TYPES = (
+    ('A', 'Fixed Price Redetermination'),
+    ('B', 'Fixed Price Level of Effort'),
+    ('J', 'Firm Fixed Price'),
+    ('K', 'Fixed Price with Economic Price Adjustment'),
+    ('L', 'Fixed Price Incentive'),
+    ('M', 'Fixed Price Award Fee'),
+    ('R', 'Cost Plus Award Fee'),
+    ('S', 'Cost No Fee'),
+    ('T', 'Cost Sharing'),
+    ('U', 'Cost Plus Fixed Fee'),
+    ('V', 'Cost Plus Incentive Fee'),
+    ('Y', 'Time and Materials'),
+    ('Z', 'Labor Hours'),
+    ('UN', 'Unknown Type')
+)
+
 
 class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
@@ -153,6 +170,7 @@ class Award(DataSourceTrackedModel):
     period_of_performance_start_date = models.DateField(null=True, verbose_name="Start Date")
     period_of_performance_current_end_date = models.DateField(null=True, verbose_name="End Date")
     place_of_performance = models.ForeignKey(Location, null=True)
+    potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award")
     last_modified_date = models.DateField(blank=True, null=True)
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -177,6 +195,7 @@ class Award(DataSourceTrackedModel):
             "uri",
             "period_of_performance_start_date",
             "period_of_performance_current_end_date",
+            "potential_total_value_of_award",
             "place_of_performance",
             "awarding_agency",
             "funding_agency",
@@ -219,6 +238,8 @@ class Award(DataSourceTrackedModel):
         self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
         self.type = transaction_latest.type
         self.type_description = transaction_latest.type_description
+        if hasattr(transaction_latest, "potential_total_value_of_award"):
+            self.potential_total_value_of_award = transaction_latest.potential_total_value_of_award
         self.save()
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
@@ -320,7 +341,8 @@ class Procurement(AwardAction):
     piid = models.CharField(max_length=50, blank=True)
     parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
     cost_or_pricing_data = models.CharField(max_length=1, blank=True, null=True)
-    type_of_contract_pricing = models.CharField(max_length=2, blank=True, null=True, verbose_name="Type of Contract Pricing")
+    type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, choices=CONTRACT_PRICING_TYPES, verbose_name="Type of Contract Pricing")
+    type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description")
     naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS")
     naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description")
     period_of_performance_potential_end_date = models.CharField(max_length=8, blank=True, null=True, verbose_name="Period of Performance Potential End Date")
@@ -400,11 +422,26 @@ class Procurement(AwardAction):
         default_fields = AwardAction.get_default_fields()
         return default_fields + [
             "type",
+            "type_description",
             "cost_or_pricing_data",
+            "type_of_contract_pricing",
+            "type_of_contract_pricing_description",
             "naics",
             "naics_description",
             "product_or_service_code"
         ]
+
+    def get_pricing_type_description(self):
+        description = [item for item in CONTRACT_PRICING_TYPES if item[0] == self.type_of_contract_pricing]
+        if len(description) == 0:
+            return "Unknown Type"
+        else:
+            return description[0][1]
+
+    # Override the save method so that after saving we always update our type description
+    def save(self, *args, **kwargs):
+        self.type_of_contract_pricing_description = self.get_pricing_type_description()
+        super(Procurement, self).save(*args, **kwargs)
 
 
 class FinancialAssistanceAward(AwardAction):

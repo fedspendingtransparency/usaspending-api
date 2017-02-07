@@ -107,7 +107,8 @@ class TransactionSerializer(LimitableSerializer):
         fields = (
             'award', 'type', 'type_description', 'modification_number',
             'federal_action_obligation', 'action_date', 'description',
-            'update_date', 'contract_data', 'assistance_data')
+            'update_date', 'contract_data', 'assistance_data', 'type_of_contract_pricing',
+            'type_of_contract_pricing_description')
         nested_serializers = {
             "recipient": {
                 "class": LegalEntitySerializer,
