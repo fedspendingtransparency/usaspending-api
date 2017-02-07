@@ -4,9 +4,14 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 
 
 class FinancialAccountsByProgramActivityObjectClassSerializer(LimitableSerializer):
-    appropriation_account_balances = AppropriationAccountBalancesSerializer(read_only=True)
 
     class Meta:
 
         model = FinancialAccountsByProgramActivityObjectClass
+        nested_serializers = {
+            "appropriation_account_balances": {
+                "class": AppropriationAccountBalancesSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
         fields = '__all__'
