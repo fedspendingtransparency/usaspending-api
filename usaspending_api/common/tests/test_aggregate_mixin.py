@@ -1,9 +1,10 @@
 import datetime
 from decimal import Decimal
 from itertools import cycle
-import pytest
+from operator import itemgetter
 from unittest.mock import Mock
 
+import pytest
 from model_mommy.recipe import Recipe
 
 from usaspending_api.awards.models import Award, Procurement
@@ -13,7 +14,7 @@ from usaspending_api.common.mixins import AggregateQuerysetMixin
 @pytest.fixture()
 def aggregate_models():
     """Set up data for testing aggregate functions."""
-    award_uri = [None, None, 'haha']
+    award_uri = [None, None, 'yo']
     award_fain = [None, None, '123']
     award_piid = ['abc', 'def', None]
 
@@ -27,21 +28,24 @@ def aggregate_models():
         uri=cycle(award_uri),
     )
 
-    award_recipe.make(_quantity=3)
+    award_recipe.make(_quantity=4)
     award_list = [a for a in Award.objects.all()]
 
     # data to use for test transactions
-    txn_amounts = [1000, 1000.02, 1000]
-    award_types = ['U', 'B', '05']
+    txn_amounts = [1000, None, 1000, 1000.02]
+    award_types = ['U', 'B', '05', 'B']
     txn_action_dates = [
         datetime.date(2016, 7, 13),
         datetime.date(2017, 1, 1),
+        datetime.date(2018, 6, 1,),
         datetime.date(2018, 1, 1,),
     ]
     pop_start_dates = txn_action_dates
+    certified_dates = txn_action_dates
     pop_end_dates = [
         datetime.date(2018, 12, 31),
         datetime.date(2020, 1, 1),
+        datetime.date(2050, 7, 14),
         datetime.date(2050, 7, 14)
     ]
 
@@ -52,135 +56,64 @@ def aggregate_models():
         federal_action_obligation=cycle(txn_amounts),
         period_of_performance_start_date=cycle(pop_start_dates),
         period_of_performance_current_end_date=cycle(pop_end_dates),
+        # include a field that's not on the model's default field list
+        certified_date=cycle(certified_dates),
         award=cycle(award_list)
     )
 
     # create test awards and related transactions for each of them
     # for award in Award.objects.all():
-    txn_recipe.make(_quantity=6)
+    txn_recipe.make(_quantity=16)
 
 
 @pytest.mark.django_db
-def test_sum(monkeypatch, aggregate_models):
-    """Test aggregation by year (using the default aggreagtion of SUM)."""
+def test_agg_fields(monkeypatch, aggregate_models):
+    """Test length and field names of aggregate query result."""
     request = Mock()
     request.query_params = {}
-    request.data = {'field': 'federal_action_obligation', 'group': 'action_date'}
-    a = AggregateQuerysetMixin()
-    a.get_queryset = lambda: Procurement.objects.all()
-
-    agg = a.aggregate(request=request)
-
-    assert agg.count() == 3
-    single_result = agg.get(item=datetime.date(2016, 7, 13))
-    fields = single_result.keys()
-
-    # make sure aggregate query returns expected field names
-    assert len(fields) == 2
-    assert 'aggregate' in fields
-    assert 'item' in fields
-
-    # test returned aggregate values
-    assert single_result['aggregate'] == 2000
-    assert agg.get(item=datetime.date(2017, 1, 1))['aggregate'] == Decimal('2000.04')
-    assert agg.get(item=datetime.date(2018, 1, 1))['aggregate'] == 2000
-
-
-@pytest.mark.django_db
-def test_sum_by_year(monkeypatch, aggregate_models):
-    """Test SUMing by the year of a date field."""
-    request = Mock()
-    request.query_params = {}
-    request.data = {
-        'field': 'total_obligation',
-        'group': 'period_of_performance_start_date',
-        'date_part': 'year'}
+    request.data = {'field': 'total_obligation', 'group': 'type'}
     a = AggregateQuerysetMixin()
     a.get_queryset = lambda: Award.objects.all()
-
     agg = a.aggregate(request=request)
 
+    # Test number of returned recrods
     assert agg.count() == 3
-    single_result = agg.get(item=2016)
-    fields = single_result.keys()
 
-    # make sure aggregate query returns expected field names
+    # Query should return two field names: 'item' and 'aggregate'
+    fields = agg.first().keys()
     assert len(fields) == 2
     assert 'aggregate' in fields
     assert 'item' in fields
-    assert single_result['item'] == 2016
-
-    # test returned aggregate values
-    assert single_result['aggregate'] == 2000
-    assert agg.get(item=2017)['aggregate'] == Decimal('2000.04')
-    assert agg.get(item=2018)['aggregate'] == 2000
 
 
 @pytest.mark.django_db
-def test_sum_by_month(monkeypatch, aggregate_models):
-    pass
+@pytest.mark.parametrize('model, request_data, result', [
+    (Award, {'field': 'total_obligation', 'group': 'period_of_performance_start_date'}, [
+        {'item': datetime.date(2017, 1, 1), 'aggregate': None},
+        {'item': datetime.date(2018, 6, 1), 'aggregate': Decimal('4000.00')},
+        {'item': datetime.date(2018, 1, 1), 'aggregate': Decimal('4000.08')},
+        {'item': datetime.date(2016, 7, 13), 'aggregate': Decimal('4000.00')}
+    ]),
+    (Award, {'field': 'total_obligation', 'group': 'period_of_performance_start_date', 'date_part': 'year'}, [
+        {'item': 2016, 'aggregate': Decimal('4000.00')},
+        {'item': 2017, 'aggregate': None},
+        {'item': 2018, 'aggregate': Decimal('8000.08')}
+    ])
+])
+def test_aggregate(monkeypatch, aggregate_models, model, request_data, result):
+    request = Mock()
+    request.query_params = {}
+    request.data = request_data
+    a = AggregateQuerysetMixin()
+    a.get_queryset = lambda: model.objects.all()
+    agg = a.aggregate(request=request)
 
+    agg_list = [a for a in agg]
+    if 'order' not in request_data:
+        # this isn't an 'order by' request, (i.e., we're not testing
+        # the result order), so sort the actual and expected results
+        # to ensure a good comparison
+        agg_list.sort(key=itemgetter('item'))
+        result.sort(key=itemgetter('item'))
 
-@pytest.mark.django_db
-def test_sum_by_day(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_sum_by_fk(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_sum_by_year_fk(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_sum_no_grouping(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_sum_by_multiple_fk(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_sum_by_non_default_fields(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_sum_ordering(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_avg_fk(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_count_ordering(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_max_no_group(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_min_by_multiple_fk(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_min_with_null(monkeypatch, aggregate_models):
-    pass
-
-
-@pytest.mark.django_db
-def test_bad_agg_request(monkeypatch, aggregate_models):
-    pass
+    assert agg_list == result
