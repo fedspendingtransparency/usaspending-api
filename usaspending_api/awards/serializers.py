@@ -1,10 +1,17 @@
 from rest_framework import serializers
 
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, FinancialAccountsByAwardsTransactionObligations, FinancialAssistanceAward, Procurement
-from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer
+from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer, TreasuryAppropriationAccountSerializer
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer
 from usaspending_api.common.helpers import fy
+
+
+class FinancialAccountsByAwardsTransactionObligationsSerializer(LimitableSerializer):
+
+    class Meta:
+        model = FinancialAccountsByAwardsTransactionObligations
+        fields = '__all__'
 
 
 class ProcurementSerializer(LimitableSerializer):
@@ -19,6 +26,23 @@ class FinancialAssistanceAwardSerializer(LimitableSerializer):
     class Meta:
         model = FinancialAssistanceAward
         fields = '__all__'
+
+
+class FinancialAccountsByAwardsSerializer(LimitableSerializer):
+
+    class Meta:
+        model = FinancialAccountsByAwards
+        fields = '__all__'
+        nested_serializers = {
+            "treasury_account": {
+                "class": TreasuryAppropriationAccountSerializer,
+                "kwargs": {"read_only": True}
+            },
+            "transaction_obligations": {
+                "class": FinancialAccountsByAwardsTransactionObligationsSerializer,
+                "kwargs": {"read_only": True, "many": True}
+            },
+        }
 
 
 class AwardSerializer(LimitableSerializer):
@@ -46,6 +70,10 @@ class AwardSerializer(LimitableSerializer):
             },
             "financialassistanceaward_set": {
                 "class": FinancialAssistanceAwardSerializer,
+                "kwargs": {"read_only": True, "many": True}
+            },
+            "financial_set": {
+                "class": FinancialAccountsByAwardsSerializer,
                 "kwargs": {"read_only": True, "many": True}
             },
             "place_of_performance": {
