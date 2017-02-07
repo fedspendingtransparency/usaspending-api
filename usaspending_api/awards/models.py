@@ -110,7 +110,9 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
             "fain",
             "uri",
             "gross_outlay_amount_by_award_cpe",
-            "gross_outlay_amount_by_award_fyb"
+            "gross_outlay_amount_by_award_fyb",
+            "certified_date",
+            "last_modified_date"
         ]
 
     class Meta:
