@@ -2,6 +2,7 @@ import pytest
 import json
 
 from model_mommy import mommy
+from rest_framework import status
 
 from usaspending_api.awards.models import Award
 
@@ -11,12 +12,12 @@ def test_award_endpoint(client):
     """Test the awards endpoint."""
 
     resp = client.get('/api/v1/awards/')
-    assert resp.status_code == 200
+    assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data) > 2
 
     assert client.post(
         '/api/v1/awards/?page=1&limit=10',
-        content_type='application/json').status_code == 200
+        content_type='application/json').status_code == status.HTTP_200_OK
 
     assert client.post(
         '/api/v1/awards/?page=1&limit=10',
@@ -27,7 +28,7 @@ def test_award_endpoint(client):
                 "operation": "equals",
                 "value": "0300"
             }]
-        })).status_code == 200
+        })).status_code == status.HTTP_200_OK
 
     assert client.post(
         '/api/v1/awards/?page=1&limit=10',
@@ -45,7 +46,7 @@ def test_award_endpoint(client):
                     "value": "0300"
                 }]
             }]
-        })).status_code == 200
+        })).status_code == status.HTTP_200_OK
 
     assert client.post(
         '/api/v1/awards/?page=1&limit=10',
@@ -56,7 +57,7 @@ def test_award_endpoint(client):
                 "operation": "ff",
                 "value": "0300"
             }]
-        })).status_code == 400
+        })).status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
@@ -102,7 +103,7 @@ def test_award_total_grouped(client, awards_data):
             'group': 'type',
             'aggregate': 'sum'
         }))
-    assert resp.status_code == 200
+    assert resp.status_code == status.HTTP_200_OK
     results = resp.data['results']
     # our data has two different type codes, we should get two summarized items back
     assert len(results) == 2
@@ -146,8 +147,18 @@ def test_award_autocomplete(client, awards_data, fields, value, expected):
             'fields': fields,
             'value': value,
         }))
-    assert resp.status_code == 200
+    assert resp.status_code == status.HTTP_200_OK
 
     results = resp.data['results']
     for key in results:
         sorted(results[key]) == expected[key]
+
+
+def test_bad_autocomplete_request(client):
+    """Verify error on bad autocomplete request."""
+
+    resp = client.post(
+        '/api/v1/awards/autocomplete/',
+        content_type='application/json',
+        data=json.dumps({}))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
