@@ -167,6 +167,7 @@ class Award(DataSourceTrackedModel):
             "funding_agency",
             "procurement_set",
             "financialassistanceaward_set",
+            "financial_set",
             "recipient"
         ]
 

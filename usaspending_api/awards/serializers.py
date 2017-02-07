@@ -6,6 +6,13 @@ from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer
 
 
+class FinancialAccountsByAwardsSerializer(LimitableSerializer):
+
+    class Meta:
+        model = FinancialAccountsByAwards
+        fields = '__all__'
+
+
 class ProcurementSerializer(LimitableSerializer):
 
     class Meta:
@@ -45,6 +52,10 @@ class AwardSerializer(LimitableSerializer):
             },
             "financialassistanceaward_set": {
                 "class": FinancialAssistanceAwardSerializer,
+                "kwargs": {"read_only": True, "many": True}
+            },
+            "financial_set": {
+                "class": FinancialAccountsByAwardsSerializer,
                 "kwargs": {"read_only": True, "many": True}
             },
             "place_of_performance": {
