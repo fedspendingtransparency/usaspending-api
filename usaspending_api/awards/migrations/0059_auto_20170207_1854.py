@@ -6,11 +6,6 @@ import django.db.models.deletion
 from django.db import connection, migrations, models
 
 
-def attach_tas(apps, schema_editor):
-    with connection.cursor() as cursor:
-        cursor.execute("UPDATE financial_accounts_by_awards SET treasury_account_id = (SELECT treasury_account_identifier FROM appropriation_account_balances WHERE financial_accounts_by_awards.appropriation_account_balances_id=appropriation_account_balances.appropriation_account_balances_id)")
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -18,8 +13,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(
-            attach_tas, reverse_code=migrations.RunPython.noop),
+        migrations.RunSQL("UPDATE financial_accounts_by_awards SET treasury_account_id = (SELECT treasury_account_identifier FROM appropriation_account_balances WHERE financial_accounts_by_awards.appropriation_account_balances_id=appropriation_account_balances.appropriation_account_balances_id)"),
         migrations.RemoveField(
             model_name='financialaccountsbyawards',
             name='appropriation_account_balances',
