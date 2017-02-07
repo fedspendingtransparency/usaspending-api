@@ -178,7 +178,6 @@ class Command(BaseCommand):
                 treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
                 if treasury_account is None:
                     raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
-                account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
                 # Find the award that this award transaction belongs to. If it doesn't exist, create it.
                 award = Award.get_or_create_summary_award(
                     piid=row.get('piid'),
@@ -195,7 +194,7 @@ class Command(BaseCommand):
             value_map = {
                 'award': award,
                 'submission': submission_attributes,
-                'appropriation_account_balances': account_balances,
+                'treasury_account': treasury_account,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
                 'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
             }

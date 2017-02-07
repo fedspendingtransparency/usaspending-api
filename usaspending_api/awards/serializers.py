@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, FinancialAccountsByAwardsTransactionObligations, FinancialAssistanceAward, Procurement
-from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer
+from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer, TreasuryAppropriationAccountSerializer
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer
 
@@ -11,6 +11,12 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
     class Meta:
         model = FinancialAccountsByAwards
         fields = '__all__'
+        nested_serializers = {
+            "treasury_account": {
+                "class": TreasuryAppropriationAccountSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
 
 
 class ProcurementSerializer(LimitableSerializer):

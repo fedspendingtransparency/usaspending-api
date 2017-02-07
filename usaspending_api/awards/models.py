@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import F, Q, Sum
 
-from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity
 from usaspending_api.common.models import DataSourceTrackedModel
@@ -27,7 +27,7 @@ AWARD_TYPES = (
 
 class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
-    appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
+    treasury_account = models.ForeignKey(TreasuryAppropriationAccount, models.CASCADE, null=True)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     award = models.ForeignKey('awards.Award', models.CASCADE, null=True, related_name="financial_set")
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
@@ -80,6 +80,21 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    @staticmethod
+    def get_default_fields():
+        return [
+            "financial_accounts_by_awards_id",
+            "treasury_account",
+            "object_class",
+            "program_activity_code",
+            "program_activity_name",
+            "piid",
+            "fain",
+            "uri",
+            "gross_outlay_amount_by_award_cpe",
+            "gross_outlay_amount_by_award_fyb"
+        ]
+
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_awards'
@@ -87,7 +102,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
 
 class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
     financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)
-    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE)
+    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE, related_name="transaction_obligations")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
