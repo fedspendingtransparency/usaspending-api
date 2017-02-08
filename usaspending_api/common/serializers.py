@@ -28,7 +28,6 @@ class LimitableSerializer(serializers.ModelSerializer):
 
         request = self.context.get('request')
         if request:
-
             params = dict(request.query_params)
             params.update(dict(request.data))
             exclude_fields = params.get('exclude')
@@ -77,6 +76,38 @@ class LimitableSerializer(serializers.ModelSerializer):
                 except AttributeError:
                     # We don't have get default fields available
                     pass
+
+    @classmethod
+    def setup_eager_loading(cls, queryset, prefix="", parent_is_many=False):
+        '''
+        This method will set up prefetch and selected related statements appropriately
+        on a specified query set based upon the serializer's nested_serializer parameter
+        in the Meta class. It will return the modified queryset.
+        The prefix flag is for cascading down to children, that is, when we eager load
+        a child of this serializer, we must prefix that child's field name to their field name.
+        For example:
+        AwardSerializer has a nested serializer of funding_agency with a nested serializer for toptier agency
+        Thus, when we prefetch, we want to prefetch 'funding_agency' and 'funding_agency__toptier_agency'
+        This prefix flag allows us to accomplish this.
+        N.B.: When doing a 1-1 fk relation, select_related() should be used (this join is performed in the SQL);
+              When doing a 1-m or m-m relation, prefetch_related() should be used (this join is performed via Python)
+        '''
+        try:
+            # Grab the nested serializers (aka children)
+            children = cls.Meta.nested_serializers
+            for child in children:
+                is_many = children[child].get("kwargs", {}).get("many", False)
+                if is_many or parent_is_many:
+                    queryset = queryset.prefetch_related(prefix + child)
+                else:
+                    queryset = queryset.select_related(prefix + child)
+                # Since the child might have nested serializers, we set up on that too
+                queryset = children[child]["class"].setup_eager_loading(queryset, prefix=prefix + child + "__", parent_is_many=is_many)
+        except AttributeError:
+            # We don't have any nested serializers
+            pass
+
+        return queryset
 
 
 class AggregateSerializer(serializers.Serializer):

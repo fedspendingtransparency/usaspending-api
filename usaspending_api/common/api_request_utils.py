@@ -326,7 +326,7 @@ class AutoCompleteHandler():
         for field in fields:
             q_args = {}
             q_args[field + mode] = value
-            filter_matched_ids[field] = data_set.all().filter(Q(**q_args)).select_related(field)[:limit].values_list(pk_name, flat=True)
+            filter_matched_ids[field] = data_set.all().filter(Q(**q_args))[:limit].values_list(pk_name, flat=True)
 
         return filter_matched_ids, pk_name
 
@@ -348,6 +348,11 @@ class AutoCompleteHandler():
             AutoCompleteHandler.validate(body)
         except:
             raise
+
+        # If the serializer supports eager loading, set it up
+        if serializer:
+            if hasattr(serializer, "setup_eager_loading") and callable(serializer.setup_eager_loading):
+                data_set = serializer.setup_eager_loading(data_set)
 
         return_object = {}
 
