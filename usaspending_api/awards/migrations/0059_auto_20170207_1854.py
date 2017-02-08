@@ -9,11 +9,10 @@ from django.db import connection, migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0058_auto_20170207_1822'),
+        ('awards', '0058_auto_20170208_1843'),
     ]
 
     operations = [
-        migrations.RunSQL("UPDATE financial_accounts_by_awards SET treasury_account_id = (SELECT treasury_account_identifier FROM appropriation_account_balances WHERE financial_accounts_by_awards.appropriation_account_balances_id=appropriation_account_balances.appropriation_account_balances_id)"),
         migrations.RemoveField(
             model_name='financialaccountsbyawards',
             name='appropriation_account_balances',
