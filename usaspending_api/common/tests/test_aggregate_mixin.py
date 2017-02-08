@@ -98,7 +98,16 @@ def test_agg_fields(monkeypatch, aggregate_models):
         {'item': 2016, 'aggregate': Decimal('4000.00')},
         {'item': 2017, 'aggregate': None},
         {'item': 2018, 'aggregate': Decimal('8000.08')}
-    ])
+    ]),
+    (Award, {'field': 'total_obligation', 'group': 'period_of_performance_start_date', 'date_part': 'month'}, [
+        {'item': 1, 'aggregate': Decimal('4000.08')},
+        {'item': 6, 'aggregate': Decimal('4000.00')},
+        {'item': 7, 'aggregate': Decimal('4000.00')}
+    ]),
+    (Award, {'field': 'total_obligation', 'group': 'period_of_performance_start_date', 'date_part': 'day'}, [
+        {'item': 1, 'aggregate': Decimal('8000.08')},
+        {'item': 13, 'aggregate': Decimal('4000.00')}
+    ]),
 ])
 def test_aggregate(monkeypatch, aggregate_models, model, request_data, result):
     request = Mock()
