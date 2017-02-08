@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import F, Q, Sum
 
-from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity
 from usaspending_api.common.models import DataSourceTrackedModel
@@ -24,10 +24,27 @@ AWARD_TYPES = (
     ('D', 'Definitive Contract')
 )
 
+CONTRACT_PRICING_TYPES = (
+    ('A', 'Fixed Price Redetermination'),
+    ('B', 'Fixed Price Level of Effort'),
+    ('J', 'Firm Fixed Price'),
+    ('K', 'Fixed Price with Economic Price Adjustment'),
+    ('L', 'Fixed Price Incentive'),
+    ('M', 'Fixed Price Award Fee'),
+    ('R', 'Cost Plus Award Fee'),
+    ('S', 'Cost No Fee'),
+    ('T', 'Cost Sharing'),
+    ('U', 'Cost Plus Fixed Fee'),
+    ('V', 'Cost Plus Incentive Fee'),
+    ('Y', 'Time and Materials'),
+    ('Z', 'Labor Hours'),
+    ('UN', 'Unknown Type')
+)
+
 
 class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
-    appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
+    treasury_account = models.ForeignKey(TreasuryAppropriationAccount, models.CASCADE, null=True)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     award = models.ForeignKey('awards.Award', models.CASCADE, null=True, related_name="financial_set")
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
@@ -80,6 +97,24 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    @staticmethod
+    def get_default_fields():
+        return [
+            "financial_accounts_by_awards_id",
+            "treasury_account",
+            "transaction_obligations",
+            "object_class",
+            "program_activity_code",
+            "program_activity_name",
+            "piid",
+            "fain",
+            "uri",
+            "gross_outlay_amount_by_award_cpe",
+            "gross_outlay_amount_by_award_fyb",
+            "certified_date",
+            "last_modified_date"
+        ]
+
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_awards'
@@ -87,7 +122,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
 
 class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
     financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)
-    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE)
+    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE, related_name="transaction_obligations")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
@@ -96,6 +131,12 @@ class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    @staticmethod
+    def get_default_fields():
+        return [
+            "transaction_obligated_amount"
+        ]
 
     class Meta:
         managed = True
@@ -138,6 +179,7 @@ class Award(DataSourceTrackedModel):
     period_of_performance_start_date = models.DateField(null=True, verbose_name="Start Date")
     period_of_performance_current_end_date = models.DateField(null=True, verbose_name="End Date")
     place_of_performance = models.ForeignKey(Location, null=True)
+    potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award")
     last_modified_date = models.DateField(blank=True, null=True)
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -162,11 +204,13 @@ class Award(DataSourceTrackedModel):
             "uri",
             "period_of_performance_start_date",
             "period_of_performance_current_end_date",
+            "potential_total_value_of_award",
             "place_of_performance",
             "awarding_agency",
             "funding_agency",
             "procurement_set",
             "financialassistanceaward_set",
+            "financial_set",
             "recipient"
         ]
 
@@ -203,6 +247,8 @@ class Award(DataSourceTrackedModel):
         self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
         self.type = transaction_latest.type
         self.type_description = transaction_latest.type_description
+        if hasattr(transaction_latest, "potential_total_value_of_award"):
+            self.potential_total_value_of_award = transaction_latest.potential_total_value_of_award
         self.save()
 
     latest_award_transaction = property(__get_latest_transaction)  # models.ForeignKey('AwardAction')
@@ -304,7 +350,8 @@ class Procurement(AwardAction):
     piid = models.CharField(max_length=50, blank=True)
     parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
     cost_or_pricing_data = models.CharField(max_length=1, blank=True, null=True)
-    type_of_contract_pricing = models.CharField(max_length=2, blank=True, null=True, verbose_name="Type of Contract Pricing")
+    type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, choices=CONTRACT_PRICING_TYPES, verbose_name="Type of Contract Pricing")
+    type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description")
     naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS")
     naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description")
     period_of_performance_potential_end_date = models.CharField(max_length=8, blank=True, null=True, verbose_name="Period of Performance Potential End Date")
@@ -384,11 +431,26 @@ class Procurement(AwardAction):
         default_fields = AwardAction.get_default_fields()
         return default_fields + [
             "type",
+            "type_description",
             "cost_or_pricing_data",
+            "type_of_contract_pricing",
+            "type_of_contract_pricing_description",
             "naics",
             "naics_description",
             "product_or_service_code"
         ]
+
+    def get_pricing_type_description(self):
+        description = [item for item in CONTRACT_PRICING_TYPES if item[0] == self.type_of_contract_pricing]
+        if len(description) == 0:
+            return "Unknown Type"
+        else:
+            return description[0][1]
+
+    # Override the save method so that after saving we always update our type description
+    def save(self, *args, **kwargs):
+        self.type_of_contract_pricing_description = self.get_pricing_type_description()
+        super(Procurement, self).save(*args, **kwargs)
 
 
 class FinancialAssistanceAward(AwardAction):
