@@ -4,6 +4,7 @@ from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Fina
 from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer, TreasuryAppropriationAccountSerializer
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer
+from usaspending_api.common.helpers import fy
 
 
 class FinancialAccountsByAwardsTransactionObligationsSerializer(LimitableSerializer):
@@ -80,6 +81,11 @@ class AwardSerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             },
         }
+
+    date_signed__fy = serializers.SerializerMethodField()
+
+    def get_date_signed__fy(self, obj):
+        return fy(obj.date_signed)
 
 
 class TransactionSerializer(LimitableSerializer):
