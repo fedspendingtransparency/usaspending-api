@@ -3,8 +3,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.common.api_request_utils import DataQueryHandler, GeoCompleteHandler, AutoCompleteHandler
-from usaspending_api.references.models import Location, Agency
-from usaspending_api.references.serializers import LocationSerializer, AgencySerializer
+from usaspending_api.references.models import Location, Agency, LegalEntity
+from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
 from usaspending_api.common.views import AggregateView, DetailViewSet
 import json
@@ -53,3 +53,14 @@ class AgencyEndpoint(FilterQuerysetMixin,
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
+
+
+class RecipientAutocomplete(APIView):
+    """Autocomplete support for legal entity (recipient) objects."""
+    def post(self, request, format=None):
+        try:
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            return Response(AutoCompleteHandler.handle(LegalEntity.objects.all(), body, LegalEntitySerializer))
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
