@@ -1,5 +1,6 @@
 import pytest
 import json
+from datetime import date
 
 from model_mommy import mommy
 from rest_framework import status
@@ -113,6 +114,26 @@ def test_award_total_grouped(client, awards_data):
             assert float(result['aggregate']) == 2000
         else:
             assert float(result['aggregate']) == 1000
+
+
+@pytest.mark.django_db
+def test_award_date_signed_fy(client):
+    """Test date_signed__fy present and working properly"""
+
+    mommy.make('awards.Award', type='B', date_signed=date(2012, 3, 1))
+    mommy.make('awards.Award', type='B', date_signed=date(2012, 11, 1))
+    mommy.make('awards.Award', type='C', date_signed=date(2013, 3, 1))
+    mommy.make('awards.Award', type='C')
+
+    resp = client.post(
+        '/api/v1/awards/?date_signed__fy__gt=2012',
+        content_type='application/json')
+    results = resp.data['results']
+    assert len(results) == 2
+    # check total
+    for result in resp.data['results']:
+        assert 'date_signed__fy' in result
+        assert int(result['date_signed__fy']) > 2012
 
 
 @pytest.mark.parametrize("fields,value,expected", [
