@@ -1,5 +1,5 @@
 from django.db import models
-from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
 from usaspending_api.references.models import RefProgramActivity
 from usaspending_api.references.models import RefObjectClassCode
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -13,7 +13,7 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, db_column='object_class', null=True)
     by_direct_reimbursable_funding_source = models.CharField(max_length=1)
-    appropriation_account_balances = models.ForeignKey(AppropriationAccountBalances, models.CASCADE)
+    treasury_account = models.ForeignKey(TreasuryAppropriationAccount, models.CASCADE, related_name="program_balances", null=True)
     ussgl480100_undelivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=21, decimal_places=2)
     ussgl480100_undelivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2)

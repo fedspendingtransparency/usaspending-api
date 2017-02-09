@@ -93,7 +93,8 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             "budget_function_title",
             "budget_subfunction_code",
             "budget_subfunction_title",
-            "account_balances"
+            "account_balances",
+            "program_balances"
         ]
 
     class Meta:
