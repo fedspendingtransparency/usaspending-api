@@ -20,6 +20,8 @@ class Command(BaseCommand):
         Location.objects.filter(q1).update(recipient_flag=True)
         Location.objects.filter(~q1).update(recipient_flag=False)
 
+        print(Location.objects.filter(~q1).count())
+
         # Locations have a pop flag if the number of the following models referencing them
         # is greater than or equal to 1
         # Referencing models: award, procurement, financialassistanceaward

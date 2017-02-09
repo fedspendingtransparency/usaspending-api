@@ -149,27 +149,27 @@ class OfficeAgency(models.Model):
 class Location(DataSourceTrackedModel):
     location_id = models.AutoField(primary_key=True)
     location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
-    location_country_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Country Name")
-    location_state_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="State Code")
-    location_state_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="State Name")
-    location_state_description = models.CharField(max_length=100, blank=True, null=True, verbose_name="State Description")
-    location_city_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="City Name")
-    location_city_code = models.CharField(max_length=5, blank=True, null=True)
-    location_county_name = models.CharField(max_length=100, blank=True, null=True)
-    location_county_code = models.CharField(max_length=3, blank=True, null=True)
-    location_address_line1 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 1")
-    location_address_line2 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 2")
-    location_address_line3 = models.CharField(max_length=55, blank=True, null=True, verbose_name="Address Line 3")
-    location_foreign_location_description = models.CharField(max_length=100, blank=True, null=True)
-    location_zip4 = models.CharField(max_length=10, blank=True, null=True, verbose_name="ZIP+4")
-    location_zip_4a = models.CharField(max_length=10, blank=True, null=True)
-    location_congressional_code = models.CharField(max_length=2, blank=True, null=True,  verbose_name="Congressional District Code")
-    location_performance_code = models.CharField(max_length=9, blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
-    location_zip_last4 = models.CharField(max_length=4, blank=True, null=True)
-    location_zip5 = models.CharField(max_length=5, blank=True, null=True)
-    location_foreign_postal_code = models.CharField(max_length=50, blank=True, null=True)
-    location_foreign_province = models.CharField(max_length=25, blank=True, null=True)
-    location_foreign_city_name = models.CharField(max_length=40, blank=True, null=True)
+    country_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Country Name")
+    state_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="State Code")
+    state_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="State Name")
+    state_description = models.CharField(max_length=100, blank=True, null=True, verbose_name="State Description")
+    city_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="City Name")
+    city_code = models.CharField(max_length=5, blank=True, null=True)
+    county_name = models.CharField(max_length=100, blank=True, null=True)
+    county_code = models.CharField(max_length=3, blank=True, null=True)
+    address_line1 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 1")
+    address_line2 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 2")
+    address_line3 = models.CharField(max_length=55, blank=True, null=True, verbose_name="Address Line 3")
+    foreign_location_description = models.CharField(max_length=100, blank=True, null=True)
+    zip4 = models.CharField(max_length=10, blank=True, null=True, verbose_name="ZIP+4")
+    zip_4a = models.CharField(max_length=10, blank=True, null=True)
+    congressional_code = models.CharField(max_length=2, blank=True, null=True,  verbose_name="Congressional District Code")
+    performance_code = models.CharField(max_length=9, blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
+    zip_last4 = models.CharField(max_length=4, blank=True, null=True)
+    zip5 = models.CharField(max_length=5, blank=True, null=True)
+    foreign_postal_code = models.CharField(max_length=50, blank=True, null=True)
+    foreign_province = models.CharField(max_length=25, blank=True, null=True)
+    foreign_city_name = models.CharField(max_length=40, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
@@ -185,18 +185,18 @@ class Location(DataSourceTrackedModel):
     @staticmethod
     def get_default_fields():
         return [
-            "location_address_line1",
-            "location_address_line2",
-            "location_address_line3",
-            "location_city_name",
-            "location_state_name",
-            "location_country_name",
-            "location_state_code",
+            "address_line1",
+            "address_line2",
+            "address_line3",
+            "city_name",
+            "state_name",
+            "country_name",
+            "state_code",
             "location_country_code",
-            "location_zip5",
-            "location_foreign_province",
-            "location_foreign_city_name",
-            "location_foreign_postal_code"
+            "zip5",
+            "foreign_province",
+            "foreign_city_name",
+            "foreign_postal_code"
         ]
 
     def save(self, *args, **kwargs):
@@ -206,17 +206,17 @@ class Location(DataSourceTrackedModel):
 
     def load_country_data(self):
         if self.location_country_code:
-            self.location_country_name = self.location_country_code.country_name
+            self.country_name = self.location_country_code.country_name
 
     def load_city_county_data(self):
         # Here we fill in missing information from the ref city county code data
         if self.location_country_code_id == "USA":
             q_kwargs = {
-                "city_code": self.location_city_code,
-                "county_code": self.location_county_code,
-                "state_code": self.location_state_code,
-                "city_name": self.location_city_name,
-                "county_name": self.location_county_name
+                "city_code": self.city_code,
+                "county_code": self.county_code,
+                "state_code": self.state_code,
+                "city_name": self.city_name,
+                "county_name": self.county_name
             }
             # Clear out any blank or None values in our filter, so we can find the best match
             q_kwargs = dict((k, v) for k, v in q_kwargs.items() if v)
@@ -226,11 +226,11 @@ class Location(DataSourceTrackedModel):
             if matched_reference.count() == 1:
                 # Load this data
                 matched_reference = matched_reference.first()
-                self.location_city_code = matched_reference.city_code
-                self.location_county_code = matched_reference.county_code
-                self.location_state_code = matched_reference.state_code
-                self.location_city_name = matched_reference.city_name
-                self.location_county_name = matched_reference.county_name
+                self.city_code = matched_reference.city_code
+                self.county_code = matched_reference.county_code
+                self.state_code = matched_reference.state_code
+                self.city_name = matched_reference.city_name
+                self.county_name = matched_reference.county_name
             else:
                 logging.getLogger('console').info("Could not find single matching city/county for following arguments:" + str(q_kwargs))
 
@@ -238,26 +238,26 @@ class Location(DataSourceTrackedModel):
         # Let's make almost every column unique together so we don't have to
         # perform heavy lifting on checking if a location already exists or not
         unique_together = ("location_country_code",
-                           "location_country_name",
-                           "location_state_code",
-                           "location_state_name",
-                           "location_state_description",
-                           "location_city_name",
-                           "location_city_code",
-                           "location_county_name",
-                           "location_county_code",
-                           "location_address_line1",
-                           "location_address_line2",
-                           "location_address_line3",
-                           "location_foreign_location_description",
-                           "location_zip4",
-                           "location_congressional_code",
-                           "location_performance_code",
-                           "location_zip_last4",
-                           "location_zip5",
-                           "location_foreign_postal_code",
-                           "location_foreign_province",
-                           "location_foreign_city_name",
+                           "country_name",
+                           "state_code",
+                           "state_name",
+                           "state_description",
+                           "city_name",
+                           "city_code",
+                           "county_name",
+                           "county_code",
+                           "address_line1",
+                           "address_line2",
+                           "address_line3",
+                           "foreign_location_description",
+                           "zip4",
+                           "congressional_code",
+                           "performance_code",
+                           "zip_last4",
+                           "zip5",
+                           "foreign_postal_code",
+                           "foreign_province",
+                           "foreign_city_name",
                            "reporting_period_start",
                            "reporting_period_end")
 

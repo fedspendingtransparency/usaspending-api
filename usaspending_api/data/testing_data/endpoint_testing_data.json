@@ -92,32 +92,32 @@
                         "recipient_name": "PROJECT SOLUTIONS, INC.",
                         "business_types": "Q",
                         "location": {
-                            "location_country_name": null,
-                            "location_state_code": "SD",
-                            "location_state_name": "South Dakota",
-                            "location_city_name": "Rapid City",
-                            "location_address_line1": "3022 W Saint Louis St",
-                            "location_address_line2": null,
-                            "location_address_line3": null,
-                            "location_zip5": "57702",
-                            "location_foreign_postal_code": null,
-                            "location_foreign_province": null,
-                            "location_foreign_city_name": null,
+                            "country_name": null,
+                            "state_code": "SD",
+                            "state_name": "South Dakota",
+                            "city_name": "Rapid City",
+                            "address_line1": "3022 W Saint Louis St",
+                            "address_line2": null,
+                            "address_line3": null,
+                            "zip5": "57702",
+                            "foreign_postal_code": null,
+                            "foreign_province": null,
+                            "foreign_city_name": null,
                             "location_country_code": "USA"
                         }
                     },
                     "place_of_performance": {
-                        "location_country_name": null,
-                        "location_state_code": null,
-                        "location_state_name": "South Dakota",
-                        "location_city_name": "Rapid City",
-                        "location_address_line1": null,
-                        "location_address_line2": null,
-                        "location_address_line3": null,
-                        "location_zip5": null,
-                        "location_foreign_postal_code": null,
-                        "location_foreign_province": null,
-                        "location_foreign_city_name": null,
+                        "country_name": null,
+                        "state_code": null,
+                        "state_name": "South Dakota",
+                        "city_name": "Rapid City",
+                        "address_line1": null,
+                        "address_line2": null,
+                        "address_line3": null,
+                        "zip5": null,
+                        "foreign_postal_code": null,
+                        "foreign_province": null,
+                        "foreign_city_name": null,
                         "location_country_code": "USA"
                     },
                     "procurement_set": [],
@@ -411,25 +411,25 @@
         "method": "POST",
         "request_object": {
             "fields": [
-                "recipient__location__location_state_code",
-                "recipient__location__location_state_name"
+                "recipient__location__state_code",
+                "recipient__location__state_name"
             ],
             "value": "a"
         },
         "response_object": {
             "counts": {
-                "recipient__location__location_state_name": 5,
-                "recipient__location__location_state_code": 2
+                "recipient__location__state_name": 5,
+                "recipient__location__state_code": 2
             },
             "results": {
-                "recipient__location__location_state_name": [
+                "recipient__location__state_name": [
                     "Louisiana",
                     "Utah",
                     "Minnesota",
                     "South Dakota",
                     "Virginia"
                 ],
-                "recipient__location__location_state_code": [
+                "recipient__location__state_code": [
                     "LA",
                     "VA"
                 ]
@@ -443,22 +443,22 @@
         "method": "POST",
         "request_object": {
             "fields": [
-                "recipient__location__location_state_code",
-                "recipient__location__location_state_name"
+                "recipient__location__state_code",
+                "recipient__location__state_name"
             ],
             "value": "l",
             "mode": "startswith"
         },
         "response_object": {
             "counts": {
-                "recipient__location__location_state_name": 1,
-                "recipient__location__location_state_code": 1
+                "recipient__location__state_name": 1,
+                "recipient__location__state_code": 1
             },
             "results": {
-                "recipient__location__location_state_name": [
+                "recipient__location__state_name": [
                     "Louisiana"
                 ],
-                "recipient__location__location_state_code": [
+                "recipient__location__state_code": [
                     "LA"
                 ]
             }

@@ -217,18 +217,18 @@ class Command(BaseCommand):
 
         legal_entity_location_field_map = {
             "location_address_line1": "legal_entity_address_line1",
-            "location_address_line2": "legal_entity_address_line2",
-            "location_address_line3": "legal_entity_address_line3",
+            "address_line2": "legal_entity_address_line2",
+            "address_line3": "legal_entity_address_line3",
             "location_city_code": "legal_entity_city_code",
             "location_city_name": "legal_entity_city_name",
             "location_congressional_code": "legal_entity_congressional",
             "location_county_code": "legal_entity_county_code",
             "location_county_name": "legal_entity_county_name",
-            "location_foreign_city_name": "legal_entity_foreign_city",
-            "location_foreign_postal_code": "legal_entity_foreign_posta",
-            "location_foreign_province": "legal_entity_foreign_provi",
-            "location_state_code": "legal_entity_state_code",
-            "location_state_name": "legal_entity_state_name",
+            "foreign_city_name": "legal_entity_foreign_city",
+            "foreign_postal_code": "legal_entity_foreign_posta",
+            "foreign_province": "legal_entity_foreign_provi",
+            "state_code": "legal_entity_state_code",
+            "state_name": "legal_entity_state_name",
             "location_zip5": "legal_entity_zip5",
             "location_zip_last4": "legal_entity_zip_last4",
             "location_country_code": "legal_entity_country_code"
@@ -240,7 +240,7 @@ class Command(BaseCommand):
             "location_congressional_code": "place_of_performance_congr",
             "location_county_name": "place_of_perform_county_na",
             "location_foreign_location_description": "place_of_performance_forei",
-            "location_state_name": "place_of_perform_state_nam",
+            "state_name": "place_of_perform_state_nam",
             "location_zip4": "place_of_performance_zip4a",
             "location_country_code": "place_of_perform_country_c"
 
@@ -315,12 +315,12 @@ class Command(BaseCommand):
 
         legal_entity_location_field_map = {
             "location_address_line1": "legal_entity_address_line1",
-            "location_address_line2": "legal_entity_address_line2",
-            "location_address_line3": "legal_entity_address_line3",
+            "address_line2": "legal_entity_address_line2",
+            "address_line3": "legal_entity_address_line3",
             "location_country_code": "legal_entity_country_code",
             "location_city_name": "legal_entity_city_name",
             "location_congressional_code": "legal_entity_congressional",
-            "location_state_code": "legal_entity_state_code",
+            "state_code": "legal_entity_state_code",
             "location_zip4": "legal_entity_zip4"
         }
 
@@ -328,7 +328,7 @@ class Command(BaseCommand):
             # not sure place_of_performance_locat maps exactly to city name
             "location_city_name": "place_of_performance_locat",
             "location_congressional_code": "place_of_performance_congr",
-            "location_state_code": "place_of_performance_state",
+            "state_code": "place_of_performance_state",
             "location_zip4": "place_of_performance_zip4a",
             "location_country_code": "place_of_perform_country_c"
         }
@@ -500,21 +500,21 @@ def get_or_create_location(location_map, row, location_value_map={}):
         country_code=row[location_map.get('location_country_code')]).first()
 
     # temporary fix until broker is patched: remove later
-    state_code = row.get(location_map.get('location_state_code'))
+    state_code = row.get(location_map.get('state_code'))
     if state_code is not None:
-        location_value_map.update({'location_state_code': state_code.replace('.', '')})
+        location_value_map.update({'state_code': state_code.replace('.', '')})
     # end of temporary fix
 
     if location_country:
         location_value_map.update({
             'location_country_code': location_country,
-            'location_country_name': location_country.country_name
+            'country_name': location_country.country_name
         })
     else:
         # no country found for this code
         location_value_map.update({
             'location_country_code': None,
-            'location_country_name': None
+            'country_name': None
         })
 
     location_data = load_data_into_model(

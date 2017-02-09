@@ -42,18 +42,18 @@ def get_or_create_location(row, mapper):
     # Country-specific adjustments
     if country_code.country_code == "USA":
         location_dict.update(
-            location_zip5=location_dict["location_zip"][:5],
-            location_zip_last4=location_dict["location_zip"][5:])
+            zip5=location_dict["location_zip"][:5],
+            zip_last4=location_dict["location_zip"][5:])
         location_dict.pop("location_zip")
     else:
         location_dict.update(
-            location_foreign_postal_code=location_dict.pop("location_zip",
+            foreign_postal_code=location_dict.pop("location_zip",
                                                            None),
-            location_foreign_province=location_dict.pop("location_state_code",
+            foreign_province=location_dict.pop("state_code",
                                                         None))
-        if "location_city_name" in location_dict:
-            location_dict['location_foreign_city_name'] = location_dict.pop(
-                "location_city_name")
+        if "city_name" in location_dict:
+            location_dict['foreign_city_name'] = location_dict.pop(
+                "city_name")
 
     location = Location.objects.filter(**location_dict).first()
     if not location:
