@@ -5,10 +5,12 @@ from operator import itemgetter
 from unittest.mock import Mock
 
 import pytest
+from model_mommy import mommy
 from model_mommy.recipe import Recipe
 
 from usaspending_api.awards.models import Award, Procurement
 from usaspending_api.common.mixins import AggregateQuerysetMixin
+from usaspending_api.references.models import Agency, OfficeAgency, SubtierAgency, ToptierAgency
 
 
 @pytest.fixture()
@@ -17,6 +19,20 @@ def aggregate_models():
     award_uri = [None, None, 'yo']
     award_fain = [None, None, '123']
     award_piid = ['abc', 'def', None]
+
+    # todo: seems like this fake data could be
+    # useful in other tests...maybe move to
+    # to a common location?
+
+    # create agency hierarchy for tests
+    o = mommy.make(OfficeAgency, aac_code='aaa', name='The Office')
+    s = mommy.make(SubtierAgency, subtier_code='hi', name='Subtiers of a Clown')
+    t = mommy.make(ToptierAgency, cgac_code='abc', name='Department of Test Data Naming')
+    agency1 = mommy.make(Agency, toptier_agency=t, subtier_agency=s, office_agency=o)
+    o = mommy.make(OfficeAgency, aac_code='bbb', name='Office Space')
+    s = mommy.make(SubtierAgency, subtier_code='yo', name='Subtiers in my Beers')
+    t = mommy.make(ToptierAgency, cgac_code='def', name='Department of Bureacracy')
+    agency2 = mommy.make(Agency, toptier_agency=t, subtier_agency=s, office_agency=o)
 
     # create awards. note that many award fields (e.g., type,
     # period_of_performance dates) will be set automatically
@@ -34,6 +50,7 @@ def aggregate_models():
     # data to use for test transactions
     txn_amounts = [1000, None, 1000, 1000.02]
     award_types = ['U', 'B', '05', 'B']
+    agencies = [agency1, agency2, agency1, agency2]
     txn_action_dates = [
         datetime.date(2016, 7, 13),
         datetime.date(2017, 1, 1),
@@ -58,7 +75,8 @@ def aggregate_models():
         period_of_performance_current_end_date=cycle(pop_end_dates),
         # include a field that's not on the model's default field list
         certified_date=cycle(certified_dates),
-        award=cycle(award_list)
+        award=cycle(award_list),
+        awarding_agency=cycle(agencies)
     )
 
     # create test awards and related transactions for each of them
@@ -103,6 +121,10 @@ def test_agg_fields(monkeypatch, aggregate_models):
         {'item': 1, 'aggregate': Decimal('4000.08')},
         {'item': 6, 'aggregate': Decimal('4000.00')},
         {'item': 7, 'aggregate': Decimal('4000.00')}
+    ]),
+    (Award, {'field': 'total_obligation', 'group': 'period_of_performance_start_date', 'date_part': 'day'}, [
+        {'item': 1, 'aggregate': Decimal('8000.08')},
+        {'item': 13, 'aggregate': Decimal('4000.00')}
     ]),
     (Award, {'field': 'total_obligation', 'group': 'period_of_performance_start_date', 'date_part': 'day'}, [
         {'item': 1, 'aggregate': Decimal('8000.08')},
