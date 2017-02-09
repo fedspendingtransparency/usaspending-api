@@ -178,9 +178,9 @@ def location_mapper_fin_assistance_recipient(row):
         "county_name": row.get("recipient_county_name", ""),
         "location_country_code": row.get("recipient_country_code", ""),
         "city_code": row.get("recipient_city_code"
-                                      ""),
+                             ""),
         "city_name": row.get("recipient_city_name"
-                                      ""),
+                             ""),
         "location_zip": row.get("recipient_zip", "").replace(
             "-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
         "state_code": row.get("recipient_state_code"),
