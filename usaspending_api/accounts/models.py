@@ -93,6 +93,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             "budget_function_title",
             "budget_subfunction_code",
             "budget_subfunction_title",
+            "account_balances"
         ]
 
     class Meta:
@@ -106,7 +107,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
 # Table #4 - Appropriation Account Balances
 class AppropriationAccountBalances(DataSourceTrackedModel):
     appropriation_account_balances_id = models.AutoField(primary_key=True)
-    treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE, db_column='treasury_account_identifier')
+    treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE, db_column='treasury_account_identifier', related_name="account_balances")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     adjustments_to_unobligated_balance_brought_forward_cpe = models.DecimalField(max_digits=21, decimal_places=2)
