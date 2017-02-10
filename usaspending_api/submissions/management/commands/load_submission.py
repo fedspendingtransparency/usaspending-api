@@ -101,6 +101,11 @@ class Command(BaseCommand):
             submission_attributes = SubmissionAttributes()
 
         # Update and save submission attributes
+        field_map = {
+            'reporting_period_start': 'reporting_start_date',
+            'reporting_period_end': 'reporting_end_date'
+        }
+
         # Create our value map - specific data to load
         value_map = {
             'broker_submission_id': submission_id
@@ -108,7 +113,7 @@ class Command(BaseCommand):
 
         del submission_data["submission_id"]  # To avoid collisions with the newer PK system
 
-        load_data_into_model(submission_attributes, submission_data, value_map=value_map, save=True)
+        load_data_into_model(submission_attributes, submission_data, field_map=field_map, value_map=value_map, save=True)
 
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
@@ -132,7 +137,9 @@ class Command(BaseCommand):
             value_map = {
                 'treasury_account_identifier': treasury_account,
                 'submission': submission_attributes,
-                'tas_rendering_label': treasury_account.tas_rendering_label
+                'tas_rendering_label': treasury_account.tas_rendering_label,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end
             }
 
             field_map = {}
@@ -159,6 +166,8 @@ class Command(BaseCommand):
 
             value_map = {
                 'submission': submission_attributes,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end,
                 'appropriation_account_balances': account_balances,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
                 'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
@@ -194,6 +203,8 @@ class Command(BaseCommand):
             value_map = {
                 'award': award,
                 'submission': submission_attributes,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
                 'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
@@ -291,6 +302,8 @@ class Command(BaseCommand):
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 "submission": submission_attributes,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d'),
                 "period_of_performance_start_date": datetime.strptime(row['period_of_performance_star'], '%Y%m%d'),
                 "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d')
@@ -370,6 +383,8 @@ class Command(BaseCommand):
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 'submission': submission_attributes,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d'),
                 "period_of_performance_start_date": datetime.strptime(row['period_of_performance_star'], '%Y%m%d'),
                 "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d')

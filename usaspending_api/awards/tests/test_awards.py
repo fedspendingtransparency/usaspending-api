@@ -1,5 +1,6 @@
 import pytest
 import json
+from datetime import date
 
 from model_mommy import mommy
 from rest_framework import status
@@ -115,61 +116,21 @@ def test_award_total_grouped(client, awards_data):
             assert float(result['aggregate']) == 1000
 
 
-@pytest.mark.parametrize("fields,value,expected", [
-    (['fain', 'piid'], 'z', {
-        'fain': ['XYZ789'],
-        'piid': ['zzz']
-    }),
-    (['fain'], 'ab', {
-        'fain': ['abc123', 'ABC789']
-    }),
-    (['fain'], '12', {
-        'fain': ['abc123']
-    }),
-    (['fain'], '789', {
-        'fain': ['XYZ789', 'ABC789']
-    }),
-    (['piid'], '###', {
-        'piid': '###'
-    }),
-    (['piid'], 'ghi', {
-        'piid': []
-    }),
-])
 @pytest.mark.django_db
-def test_award_autocomplete(client, awards_data, fields, value, expected):
-    """Test partial-text search."""
+def test_award_date_signed_fy(client):
+    """Test date_signed__fy present and working properly"""
 
-    for match_objs in (0, 1):
-        resp = client.post(
-            '/api/v1/awards/autocomplete/',
-            content_type='application/json',
-            data=json.dumps({
-                'fields': fields,
-                'value': value,
-                'matched_objects': match_objs
-            }))
-        assert resp.status_code == status.HTTP_200_OK
-
-        results = resp.data['results']
-        for key in results:
-            sorted(results[key]) == expected[key]
-
-        # If matched_objects requested, verify they are present
-        assert ('matched_objects' in resp.data) == match_objs
-        if match_objs:
-            objs = resp.data['matched_objects']
-            for field in fields:
-                assert field in objs
-                # and return correct number of objects
-                assert len(objs[field]) == len(results[field])
-
-
-def test_bad_autocomplete_request(client):
-    """Verify error on bad autocomplete request."""
+    mommy.make('awards.Award', type='B', date_signed=date(2012, 3, 1))
+    mommy.make('awards.Award', type='B', date_signed=date(2012, 11, 1))
+    mommy.make('awards.Award', type='C', date_signed=date(2013, 3, 1))
+    mommy.make('awards.Award', type='C')
 
     resp = client.post(
-        '/api/v1/awards/autocomplete/',
-        content_type='application/json',
-        data=json.dumps({}))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        '/api/v1/awards/?date_signed__fy__gt=2012',
+        content_type='application/json')
+    results = resp.data['results']
+    assert len(results) == 2
+    # check total
+    for result in resp.data['results']:
+        assert 'date_signed__fy' in result
+        assert int(result['date_signed__fy']) > 2012

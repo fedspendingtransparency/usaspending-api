@@ -5,6 +5,35 @@ from django.db.models import Q
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
+LEGAL_ENTITY_BUSINESS_TYPES = (
+    ("A", "State government"),
+    ("B", "County Government"),
+    ("C", "City or township Government"),
+    ("D", "Special District Government"),
+    ("E", "Regional Organization"),
+    ("F", "U.S. Territory or Possession"),
+    ("G", "Independent School District"),
+    ("H", "Public/State Controlled Institution of Higher Education"),
+    ("I", "Indian/Native American Tribal Government (Federally Recognized)"),
+    ("J", "Indian/Native American Tribal Government (Other than Federally Recognized)"),
+    ("K", "Indian/Native American Tribal Designated Organization"),
+    ("L", "Public/Indian Housing Authority"),
+    ("M", "Nonprofit with 501C3 IRS Status (Other then Institution of Higher Education)"),
+    ("N", "Nonprofit without 501C3 IRS Status (Other then Institution of Higher Education)"),
+    ("O", "Private Institution of Higher Education"),
+    ("P", "Individual"),
+    ("Q", "For-Profit Organization (Other than Small Business)"),
+    ("R", "Small Business"),
+    ("S", "Hispanic-serving Institution"),
+    ("T", "Historically Black Colleges and Universities (HBCUs)"),
+    ("U", "Tribally Controlled Colleges and Universities (TCCUs)"),
+    ("V", "Alaska Native and Native Hawaiian Serving Institutions"),
+    ("W", "Non-domestic (non-US) Entity"),
+    ("X", "Other"),
+    ("UN", "Unknown Business Type")
+)
+
+
 class RefCityCountyCode(models.Model):
     city_county_code_id = models.AutoField(primary_key=True)
     state_code = models.CharField(max_length=2, blank=True, null=True)
@@ -64,7 +93,7 @@ class Agency(models.Model):
     office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "id",
             "toptier_agency",
@@ -96,7 +125,7 @@ class ToptierAgency(models.Model):
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Top-Tier Agency Name")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "cgac_code",
             "fpds_code",
@@ -116,7 +145,7 @@ class SubtierAgency(models.Model):
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Sub-Tier Agency Name")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "subtier_code",
             "name"
@@ -135,7 +164,7 @@ class OfficeAgency(models.Model):
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Office Name")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "aac_code",
             "name"
@@ -183,7 +212,7 @@ class Location(DataSourceTrackedModel):
     recipient_flag = models.BooleanField(default=False, verbose_name="Location used as recipient location")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "address_line1",
             "address_line2",
@@ -271,7 +300,8 @@ class LegalEntity(DataSourceTrackedModel):
     vendor_doing_as_business_name = models.CharField(max_length=400, blank=True, null=True)
     vendor_phone_number = models.CharField(max_length=30, blank=True, null=True)
     vendor_fax_number = models.CharField(max_length=30, blank=True, null=True)
-    business_types = models.CharField(max_length=3, blank=True, null=True)
+    business_types = models.CharField(max_length=3, blank=True, null=True, choices=LEGAL_ENTITY_BUSINESS_TYPES, default="UN")
+    business_types_description = models.CharField(max_length=150, blank=True, null=True, default="Unknown Business Type")
     recipient_unique_id = models.CharField(max_length=9, blank=True, null=True, verbose_name="DUNS Number")
     limited_liability_corporation = models.CharField(max_length=1, blank=True, null=True)
     sole_proprietorship = models.CharField(max_length=1, blank=True, null=True)
@@ -377,13 +407,25 @@ class LegalEntity(DataSourceTrackedModel):
     small_business = models.CharField(max_length=1, blank=True, null=True)
     individual = models.CharField(max_length=1, blank=True, null=True)
 
+    def get_type_description(self):
+        description = [item for item in LEGAL_ENTITY_BUSINESS_TYPES if item[0] == self.business_types]
+        if len(description) == 0:
+            return "Unknown Business Type"
+        else:
+            return description[0][1]
+
+    def save(self, *args, **kwargs):
+        self.business_types_description = self.get_type_description()
+        super(LegalEntity, self).save(*args, **kwargs)
+
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "legal_entity_id",
             "ultimate_parent_legal_entity_id",
             "recipient_name",
             "business_types",
+            "business_types_description",
             "location"
         ]
 
