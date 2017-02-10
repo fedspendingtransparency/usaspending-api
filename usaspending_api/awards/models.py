@@ -460,7 +460,7 @@ class TransactionContract(DataSourceTrackedModel):
     reporting_period_end = models.DateField(blank=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "type",
             "type_description",
@@ -523,7 +523,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     period_of_performance_current_end_date = models.DateField(blank=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "cfda_number",
             "cfda_title",
@@ -593,7 +593,7 @@ class AwardAction(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "modification_number",
             "federal_action_obligation",
@@ -703,7 +703,7 @@ class Procurement(AwardAction):
     reporting_period_end = models.DateField(blank=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         default_fields = AwardAction.get_default_fields()
         return default_fields + [
             "type",
@@ -759,7 +759,7 @@ class FinancialAssistanceAward(AwardAction):
     period_of_performance_current_end_date = models.DateField(blank=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         default_fields = AwardAction.get_default_fields()
         return default_fields + [
             "cfda_number",
