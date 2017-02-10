@@ -28,12 +28,12 @@ def test_financialassistance_load():
     ({
         'principal_place_state_code': 'OH'
     }, {
-        'location_state_code': 'OH'
+        'state_code': 'OH'
     }),
     ({
         'principal_place_cc': 'MONTGOMERY'
     }, {
-        'location_county_name': 'MONTGOMERY'
+        'county_name': 'MONTGOMERY'
     }),
 ])
 def test_location_mapper_fin_assistance_principal_place(row, expected):
@@ -54,17 +54,17 @@ def test_location_mapper_fin_assistance_principal_place(row, expected):
     ({
         'recipient_state_code': 'OH'
     }, {
-        'location_state_code': 'OH'
+        'state_code': 'OH'
     }),
     ({
         'recipient_county_name': 'MONTGOMERY'
     }, {
-        'location_county_name': 'MONTGOMERY'
+        'county_name': 'MONTGOMERY'
     }),
     ({
         'receip_addr1': '123 E Main'
     }, {
-        'location_address_line1': '123 E Main'
+        'address_line1': '123 E Main'
     }),
 ])
 def test_location_mapper_fin_assistance_recipient(row, expected):
