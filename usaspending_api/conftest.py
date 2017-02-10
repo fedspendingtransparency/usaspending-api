@@ -1,6 +1,7 @@
 from django.conf import settings
 import pytest
 
+
 def pytest_configure():
     # To make sure the test setup process doesn't try
     # to set up a data_broker test db, remove it
