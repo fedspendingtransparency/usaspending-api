@@ -98,7 +98,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "financial_accounts_by_awards_id",
             "treasury_account",
@@ -133,7 +133,7 @@ class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "transaction_obligated_amount"
         ]
@@ -190,7 +190,7 @@ class Award(DataSourceTrackedModel):
     nonempty = AwardManager()
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "id",
             "type",
@@ -211,7 +211,8 @@ class Award(DataSourceTrackedModel):
             "procurement_set",
             "financialassistanceaward_set",
             "financial_set",
-            "recipient"
+            "recipient",
+            "date_signed__fy",
         ]
 
     def __str__(self):
@@ -317,7 +318,7 @@ class AwardAction(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "modification_number",
             "federal_action_obligation",
@@ -427,7 +428,7 @@ class Procurement(AwardAction):
     reporting_period_end = models.DateField(blank=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         default_fields = AwardAction.get_default_fields()
         return default_fields + [
             "type",
@@ -483,7 +484,7 @@ class FinancialAssistanceAward(AwardAction):
     period_of_performance_current_end_date = models.DateField(blank=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         default_fields = AwardAction.get_default_fields()
         return default_fields + [
             "cfda_number",

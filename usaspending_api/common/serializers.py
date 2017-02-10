@@ -68,7 +68,7 @@ class LimitableSerializer(serializers.ModelSerializer):
 
             else:
                 try:
-                    include_fields = self.Meta.model.get_default_fields()
+                    include_fields = self.Meta.model.get_default_fields(path=request._request.path_info)
                     allowed = set(include_fields)
                     existing = set(self.fields.keys())
                     for field_name in existing - allowed:
