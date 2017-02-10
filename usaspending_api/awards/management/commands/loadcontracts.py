@@ -106,7 +106,7 @@ class Command(BaseCommand):
             "submission": subattr
         }
 
-        loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map)
+        loader = ThreadedDataLoader(Procurement, field_map=field_map, value_map=value_map, collision_field="usaspending_unique_transaction_id")
         loader.load_from_file(options['file'][0])
 
     def get_agency(self, agency_string):
