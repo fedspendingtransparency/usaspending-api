@@ -176,7 +176,7 @@ POST request to `/awards/total`:
 ```json
 {
     "field": "total_obligation",
-    "group": "place_of_performance__location_state_code",
+    "group": "place_of_performance__state_code",
     "aggregate": "sum",
     "order": ["-aggregate"]
 }
@@ -242,7 +242,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
 ```
 {
     "verbose": true,
-    "order": ["recipient__location__location_state_code", "-recipient__recipient_name"],
+    "order": ["recipient__location__state_code", "-recipient__recipient_name"],
     "fields": ["fain", "total_obligation"],
     "exclude": ["recipient"],
     "filters": [
@@ -477,17 +477,17 @@ The response object structure is the same whether you are making a GET or a POST
         "recipient_name": "PROJECT SOLUTIONS, INC.",
         "business_types": "Q",
         "location": {
-          "location_country_name": "UNITED STATES",
-          "location_state_code": "SD",
-          "location_state_name": "South Dakota",
-          "location_city_name": "Rapid City",
-          "location_address_line1": "3022 W Saint Louis St",
-          "location_address_line2": null,
-          "location_address_line3": null,
-          "location_zip5": "57702",
-          "location_foreign_postal_code": null,
-          "location_foreign_province": null,
-          "location_foreign_city_name": null,
+          "country_name": "UNITED STATES",
+          "state_code": "SD",
+          "state_name": "South Dakota",
+          "city_name": "Rapid City",
+          "address_line1": "3022 W Saint Louis St",
+          "address_line2": null,
+          "address_line3": null,
+          "zip5": "57702",
+          "foreign_postal_code": null,
+          "foreign_province": null,
+          "foreign_city_name": null,
           "location_country_code": "USA"
         }
       },

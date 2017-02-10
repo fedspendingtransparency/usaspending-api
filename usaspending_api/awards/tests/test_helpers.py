@@ -35,21 +35,21 @@ def test_get_or_create_location_non_usa():
     expected = mommy.make(
         'references.Location',
         location_country_code=ref,
-        location_zip5='12345',
-        location_zip_last4='6789',
+        zip5='12345',
+        zip_last4='6789',
         # @todo: city_name has a different length than foreign_city_name, so
         # we can't use the random value
-        location_city_name='AAAAAAAA',
+        city_name='AAAAAAAA',
         _fill_optional=True)
 
     row = dict(
         vendorcountrycode='UAE',
         zipcode='12345-6789',
-        streetaddress=expected.location_address_line1,
-        streetaddress2=expected.location_address_line2,
-        streetaddress3=expected.location_address_line3,
-        state=expected.location_state_code,
-        city=expected.location_city_name)
+        streetaddress=expected.address_line1,
+        streetaddress2=expected.address_line2,
+        streetaddress3=expected.address_line3,
+        state=expected.state_code,
+        city=expected.city_name)
 
     # can't find it because we're looking at the POP fields
     assert helpers.get_or_create_location(
@@ -78,13 +78,13 @@ def test_get_or_create_location_creates_new_locations():
 
     loc = Location.objects.all().first()
     assert loc.location_country_code == ref
-    assert loc.location_zip5 == '12345'
-    assert loc.location_zip_last4 == '6789'
-    assert loc.location_address_line1 == 'Addy1'
-    assert loc.location_address_line2 == 'Addy2'
-    assert loc.location_address_line3 is None
-    assert loc.location_state_code == 'ST'
-    assert loc.location_city_name == 'My Town'
+    assert loc.zip5 == '12345'
+    assert loc.zip_last4 == '6789'
+    assert loc.address_line1 == 'Addy1'
+    assert loc.address_line2 == 'Addy2'
+    assert loc.address_line3 is None
+    assert loc.state_code == 'ST'
+    assert loc.city_name == 'My Town'
 
 
 @pytest.mark.django_db
@@ -111,10 +111,10 @@ def test_get_or_create_fa_place_of_performance_location_creates_new_locations(
 
     loc = Location.objects.all().first()
     assert loc.location_country_code == ref
-    assert loc.location_zip5 == '12345'
-    assert loc.location_zip_last4 == '6789'
-    assert loc.location_state_code == 'OH'
-    assert loc.location_county_name == 'MONTGOMERY'
+    assert loc.zip5 == '12345'
+    assert loc.zip_last4 == '6789'
+    assert loc.state_code == 'OH'
+    assert loc.county_name == 'MONTGOMERY'
 
 
 @pytest.mark.django_db
@@ -139,7 +139,7 @@ def test_get_or_create_fa_recipient_location_creates_new_locations():
 
     loc = Location.objects.all().first()
     assert loc.location_country_code == ref
-    assert loc.location_zip5 == '12345'
-    assert loc.location_zip_last4 == '6789'
-    assert loc.location_state_code == 'OH'
-    assert loc.location_county_name == 'MONTGOMERY'
+    assert loc.zip5 == '12345'
+    assert loc.zip_last4 == '6789'
+    assert loc.state_code == 'OH'
+    assert loc.county_name == 'MONTGOMERY'
