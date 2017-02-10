@@ -220,14 +220,14 @@ def evaluate_contract_award_type(row):
 def location_mapper_place_of_performance(row):
 
     loc = {
-        "location_city_name": row.get("placeofperformancecity", ""),
-        "location_congressional_code":
+        "city_name": row.get("placeofperformancecity", ""),
+        "congressional_code":
         row.get("placeofperformancecongressionaldistrict",
                 "")[2:],  # Need to strip the state off the front
         "location_country_code": row.get("placeofperformancecountrycode", ""),
         "location_zip": row.get("placeofperformancezipcode", "").replace(
             "-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
-        "location_state_code": h.up2colon(
+        "state_code": h.up2colon(
             row.get("pop_state_code", "")
         )  # Format is VA: VIRGINIA, so we need to grab the first bit
     }
@@ -236,16 +236,16 @@ def location_mapper_place_of_performance(row):
 
 def location_mapper_vendor(row):
     loc = {
-        "location_city_name": row.get("city", ""),
-        "location_congressional_code": row.get(
+        "city_name": row.get("city", ""),
+        "congressional_code": row.get(
             "vendor_cd", "").zfill(2),  # Need to add leading zeroes here
         "location_country_code":
             row.get("vendorcountrycode",
                     ""),  # Never actually a country code, just the string name
         "location_zip": row.get("zipcode", "").replace("-", ""),
-        "location_state_code": h.up2colon(row.get("vendor_state_code", "")),
-        "location_address_line1": row.get("streetaddress", ""),
-        "location_address_line2": row.get("streetaddress2", ""),
-        "location_address_line3": row.get("streetaddress3", "")
+        "state_code": h.up2colon(row.get("vendor_state_code", "")),
+        "address_line1": row.get("streetaddress", ""),
+        "address_line2": row.get("streetaddress2", ""),
+        "address_line3": row.get("streetaddress3", "")
     }
     return loc
