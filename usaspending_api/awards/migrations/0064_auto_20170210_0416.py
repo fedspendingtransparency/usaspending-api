@@ -74,7 +74,7 @@ class Migration(migrations.Migration):
                 ('submission', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='submissions.SubmissionAttributes')),
             ],
             options={
-                'db_table': 'transaction_asssistance',
+                'db_table': 'transaction_assistance',
             },
         ),
         migrations.CreateModel(

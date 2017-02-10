@@ -533,7 +533,7 @@ class TransactionAssistance(DataSourceTrackedModel):
         ]
 
     class Meta:
-        db_table = 'transaction_asssistance'
+        db_table = 'transaction_assistance'
 
 
 class SubAward(DataSourceTrackedModel):

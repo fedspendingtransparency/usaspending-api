@@ -128,6 +128,7 @@ def test_award_update_from_contract_transaction():
     assert award.potential_total_value_of_award == 1000
 
 
+@pytest.mark.skip(reason="deletion feature not yet implemented")
 @pytest.mark.django_db
 def test_deleted_transactions():
     """Test that award values are updated correctly when a txn is deleted."""
@@ -135,4 +136,3 @@ def test_deleted_transactions():
     # when transactions are deleted. since the Transaction model's delete()
     # method may not fire during a bulk deletion, we may want to use a signal
     # rather than override delete()
-    pass
