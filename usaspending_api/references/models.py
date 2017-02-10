@@ -93,7 +93,7 @@ class Agency(models.Model):
     office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "id",
             "toptier_agency",
@@ -125,7 +125,7 @@ class ToptierAgency(models.Model):
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Top-Tier Agency Name")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "cgac_code",
             "fpds_code",
@@ -145,7 +145,7 @@ class SubtierAgency(models.Model):
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Sub-Tier Agency Name")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "subtier_code",
             "name"
@@ -164,7 +164,7 @@ class OfficeAgency(models.Model):
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Office Name")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "aac_code",
             "name"
@@ -212,7 +212,7 @@ class Location(DataSourceTrackedModel):
     recipient_flag = models.BooleanField(default=False, verbose_name="Location used as recipient location")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "location_address_line1",
             "location_address_line2",
@@ -419,7 +419,7 @@ class LegalEntity(DataSourceTrackedModel):
         super(LegalEntity, self).save(*args, **kwargs)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "legal_entity_id",
             "ultimate_parent_legal_entity_id",
