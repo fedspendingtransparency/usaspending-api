@@ -443,7 +443,7 @@
   "fields": {
     "data_source": "DBR",
     "location": 9,
-    "ultimate_parent_legal_entity_id": null,
+    "parent_recipient_unique_id": null,
     "recipient_name": "UTAH STATE UNIVERSITY",
     "vendor_doing_as_business_name": null,
     "vendor_phone_number": null,
@@ -559,7 +559,7 @@
   "fields": {
     "data_source": "DBR",
     "location": 7,
-    "ultimate_parent_legal_entity_id": null,
+    "parent_recipient_unique_id": null,
     "recipient_name": "UNIVERSITY OF LOUISIANA AT MONROE",
     "vendor_doing_as_business_name": null,
     "vendor_phone_number": null,
@@ -675,7 +675,7 @@
   "fields": {
     "data_source": "DBR",
     "location": 3,
-    "ultimate_parent_legal_entity_id": null,
+    "parent_recipient_unique_id": null,
     "recipient_name": "PROJECT SOLUTIONS, INC.",
     "vendor_doing_as_business_name": null,
     "vendor_phone_number": null,
@@ -791,7 +791,7 @@
   "fields": {
     "data_source": "DBR",
     "location": 5,
-    "ultimate_parent_legal_entity_id": null,
+    "parent_recipient_unique_id": null,
     "recipient_name": "STATE OF MINNESOTA DEPARTMENT OF EMPLOYMENT &",
     "vendor_doing_as_business_name": null,
     "vendor_phone_number": null,
@@ -907,7 +907,7 @@
   "fields": {
     "data_source": "DBR",
     "location": 1,
-    "ultimate_parent_legal_entity_id": null,
+    "parent_recipient_unique_id": null,
     "recipient_name": "ASSOCIATION OF SMALL BUSINESS DEVELOPMENT CEN",
     "vendor_doing_as_business_name": null,
     "vendor_phone_number": null,

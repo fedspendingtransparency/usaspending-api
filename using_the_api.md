@@ -473,7 +473,7 @@ The response object structure is the same whether you are making a GET or a POST
       },
       "recipient": {
         "legal_entity_id": 799999094,
-        "ultimate_parent_legal_entity_id": null,
+        "parent_recipient_unique_id": null,
         "recipient_name": "PROJECT SOLUTIONS, INC.",
         "business_types": "Q",
         "location": {

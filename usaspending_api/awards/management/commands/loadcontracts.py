@@ -31,13 +31,17 @@ class Command(BaseCommand):
             "other_statutory_authority": "otherstatutoryauthority",
             "modification_number": "modnumber",
             "parent_award_id": "idvpiid",
-            "usaspending_unique_transaction_id": "unique_transaction_id"
+            "usaspending_unique_transaction_id": "unique_transaction_id",
         }
 
         value_map = {
             "data_source": "USA",
             "recipient": lambda row: self.get_or_create_recipient(row),
             "award": lambda row: self.get_or_create_award(row),
+            "period_of_performance_current_end_date": lambda row: h.convert_date(row['currentcompletiondate']),
+            "period_of_performance_potential_end_date": lambda row: h.convert_date(row['ultimatecompletiondate']),
+            "period_of_performance_start_date": lambda row: h.convert_date(row['effectivedate']),
+            "epa_designated_product": lambda row: self.parse_first_character(row['useofepadesignatedproducts']),
             "place_of_performance": lambda row: h.get_or_create_location(row, mapper=location_mapper_place_of_performance),
             "awarding_agency": lambda row: self.get_agency(row["contractingofficeagencyid"]),
             "funding_agency": lambda row: self.get_agency(row["fundingrequestingagencyid"]),
@@ -97,6 +101,8 @@ class Command(BaseCommand):
             "referenced_idv_modification_number": lambda row: self.parse_first_character(row['idvmodificationnumber']),
             "transaction_number": lambda row: self.parse_first_character(row['transactionnumber']),
             "solicitation_identifier": lambda row: self.parse_first_character(row['solicitationid']),
+            "current_total_value_award": lambda row: self.parse_numeric_value(row["baseandexercisedoptionsvalue"]),
+            "potential_total_value_of_award": lambda row: self.parse_numeric_value(row["baseandalloptionsvalue"]),
             "submission": subattr
         }
 
@@ -110,6 +116,12 @@ class Command(BaseCommand):
             self.logger.error("Missing agency: " + agency_string)
         return agency
 
+    def parse_numeric_value(self, string):
+        try:
+            return float(string)
+        except:
+            return None
+
     def get_or_create_recipient(self, row):
         recipient_dict = {
             "location_id": h.get_or_create_location(row, mapper=location_mapper_vendor).location_id,
@@ -117,6 +129,7 @@ class Command(BaseCommand):
             "vendor_phone_number": row['phoneno'],
             "vendor_fax_number": row['faxno'],
             "recipient_unique_id": row['dunsnumber'],
+            "parent_recipient_unique_id": row['parentdunsnumber'],
             "city_local_government": self.parse_first_character(row['iscitylocalgovernment']),
             "county_local_government": self.parse_first_character(row['iscountylocalgovernment']),
             "inter_municipal_local_government": self.parse_first_character(row['isintermunicipallocalgovernment']),
@@ -125,8 +138,10 @@ class Command(BaseCommand):
             "school_district_local_government": self.parse_first_character(row['isschooldistrictlocalgovernment']),
             "township_local_government": self.parse_first_character(row['istownshiplocalgovernment']),
             "federal_agency": self.parse_first_character(row['isfederalgovernmentagency']),
+            "us_federal_government": self.parse_first_character(row['federalgovernmentflag']),
             "federally_funded_research_and_development_corp": self.parse_first_character(row['isfederallyfundedresearchanddevelopmentcorp']),
             "us_tribal_government": self.parse_first_character(row['istriballyownedfirm']),
+            "c8a_program_participant": self.parse_first_character(row['firm8aflag']),
             "foreign_government": self.parse_first_character(row['isforeigngovernment']),
             "community_developed_corporation_owned_firm": self.parse_first_character(row['iscommunitydevelopedcorporationownedfirm']),
             "labor_surplus_area_firm": self.parse_first_character(row['islaborsurplusareafirm']),
@@ -171,12 +186,28 @@ class Command(BaseCommand):
             "tribally_owned_business": self.parse_first_character(row['istriballyownedfirm']),
             "asian_pacific_american_owned_business": self.parse_first_character(row['apaobflag']),
             "black_american_owned_business": self.parse_first_character(row['baobflag']),
-            "hispanic_american_owned_business": self.parse_first_character(row['baobflag']),
+            "hispanic_american_owned_business": self.parse_first_character(row['haobflag']),
             "native_american_owned_business": self.parse_first_character(row['naobflag']),
             "subcontinent_asian_asian_indian_american_owned_business": self.parse_first_character(row['saaobflag']),
+            "historically_black_college": self.parse_first_character(row['hbcuflag']),
             "us_local_government": self.parse_first_character(row['islocalgovernmentowned']),
             "division_name": self.parse_first_character(row['divisionname']),
             "division_number": self.parse_first_character(row['divisionnumberorofficecode']),
+            "historically_underutilized_business_zone": self.parse_first_character(row['hubzoneflag']),
+            "corporate_entity_tax_exempt": lambda row: self.parse_first_character(row['iscorporateentitytaxexempt']),
+            "corporate_entity_not_tax_exempt": lambda row: self.parse_first_character(row['iscorporateentitynottaxexempt']),
+            "council_of_governments": lambda row: self.parse_first_character(row['iscouncilofgovernments']),
+            "dot_certified_disadvantage": lambda row: self.parse_first_character(row['isdotcertifieddisadvantagedbusinessenterprise']),
+            "for_profit_organization": lambda row: self.parse_first_character(row['isforprofitorganization']),
+            "foundation": lambda row: self.parse_first_character(row['isfoundation']),
+            "joint_venture_women_owned_small_business": lambda row: self.parse_first_character(row['isjointventurewomenownedsmallbusiness']),
+            "limited_liability_corporation": lambda row: self.parse_first_character(row['islimitedliabilitycorporation']),
+            "other_not_for_profit_organization": lambda row: self.parse_first_character(row['isothernotforprofitorganization']),
+            "other_minority_owned_business": lambda row: self.parse_first_character(row['isotherminorityowned']),
+            "partnership_or_limited_liability_partnership": lambda row: self.parse_first_character(row['ispartnershiporlimitedliabilitypartnership']),
+            "sole_proprietorship": lambda row: self.parse_first_character(row['issoleproprietorship']),
+            "subchapter_scorporation": lambda row: self.parse_first_character(row['issubchapterscorporation']),
+            "nonprofit_organization": lambda row: self.parse_first_character(row['nonprofitorganizationflag']),
         }
 
         le = LegalEntity.objects.filter(recipient_unique_id=row['dunsnumber']).first()

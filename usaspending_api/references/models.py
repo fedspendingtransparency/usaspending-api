@@ -294,8 +294,7 @@ class Location(DataSourceTrackedModel):
 class LegalEntity(DataSourceTrackedModel):
     legal_entity_id = models.AutoField(primary_key=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
-    ultimate_parent_legal_entity_id = models.IntegerField(null=True)
-    # duns number ?
+    parent_recipient_unique_id = models.CharField(max_length=9, blank=True, null=True, verbose_name="Parent DUNS Number")
     recipient_name = models.CharField(max_length=120, blank=True, verbose_name="Recipient Name")
     vendor_doing_as_business_name = models.CharField(max_length=400, blank=True, null=True)
     vendor_phone_number = models.CharField(max_length=30, blank=True, null=True)
@@ -422,7 +421,7 @@ class LegalEntity(DataSourceTrackedModel):
     def get_default_fields(path=None):
         return [
             "legal_entity_id",
-            "ultimate_parent_legal_entity_id",
+            "parent_recipient_unique_id",
             "recipient_name",
             "business_types",
             "business_types_description",

@@ -14,6 +14,8 @@ def up2colon(input_string):
 
 
 def convert_date(date):
+    if date == "":
+        return None
     return datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
 
 
