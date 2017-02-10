@@ -243,9 +243,9 @@ class Location(DataSourceTrackedModel):
             q_kwargs = {
                 "city_code": self.city_code,
                 "county_code": self.county_code,
-                "state_code": self.state_code,
-                "city_name": self.city_name,
-                "county_name": self.county_name
+                "state_code__iexact": self.state_code,
+                "city_name__iexact": self.city_name,
+                "county_name__iexact": self.county_name
             }
             # Clear out any blank or None values in our filter, so we can find the best match
             q_kwargs = dict((k, v) for k, v in q_kwargs.items() if v)
@@ -261,7 +261,7 @@ class Location(DataSourceTrackedModel):
                 self.city_name = matched_reference.city_name
                 self.county_name = matched_reference.county_name
             else:
-                logging.getLogger('console').info("Could not find single matching city/county for following arguments:" + str(q_kwargs))
+                logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" + str(q_kwargs) + "; got " + str(matched_reference.count()))
 
     class Meta:
         # Let's make almost every column unique together so we don't have to
