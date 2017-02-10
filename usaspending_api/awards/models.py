@@ -98,7 +98,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "financial_accounts_by_awards_id",
             "treasury_account",
@@ -133,7 +133,7 @@ class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "transaction_obligated_amount"
         ]
@@ -190,7 +190,7 @@ class Award(DataSourceTrackedModel):
     nonempty = AwardManager()
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "id",
             "type",
@@ -349,7 +349,7 @@ class Transaction(DataSourceTrackedModel):
         return '%s award: %s' % (self.get_type_description(), self.award)
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "id",
             "modification_number",
