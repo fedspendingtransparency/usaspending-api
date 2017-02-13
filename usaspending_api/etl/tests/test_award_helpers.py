@@ -3,6 +3,7 @@ import datetime
 from model_mommy import mommy
 import pytest
 
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.references.models import Agency
 
 
@@ -30,6 +31,9 @@ def test_award_update_from_latest_transaction(agencies):
         action_date=datetime.date(2016, 2, 1)
     )
 
+    update_awards()
+    award.refresh_from_db()
+
     assert award.awarding_agency == agency1
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
     assert award.description == 'original award'
@@ -44,6 +48,8 @@ def test_award_update_from_latest_transaction(agencies):
         description='new description',
         action_date=datetime.date(2016, 1, 1)
     )
+    update_awards()
+    award.refresh_from_db()
 
     assert award.awarding_agency == agency1
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
@@ -60,6 +66,9 @@ def test_award_update_from_latest_transaction(agencies):
         description='new description',
         action_date=datetime.date(2017, 1, 1)
     )
+
+    update_awards()
+    award.refresh_from_db()
 
     assert award.awarding_agency == agency2
     assert award.period_of_performance_current_end_date == datetime.date(2010, 1, 1)
@@ -86,6 +95,10 @@ def test_award_update_from_earliest_transaction():
         award=award,
         action_date=datetime.date(2017, 1, 1)
     )
+
+    update_awards()
+    award.refresh_from_db()
+
     assert award.date_signed == datetime.date(2016, 1, 1)
 
     # adding earlier transaction should update award values
@@ -94,6 +107,10 @@ def test_award_update_from_earliest_transaction():
         award=award,
         action_date=datetime.date(2010, 1, 1)
     )
+
+    update_awards()
+    award.refresh_from_db()
+
     assert award.date_signed == datetime.date(2010, 1, 1)
 
 
@@ -108,6 +125,10 @@ def test_award_update_obligated_amt():
         federal_action_obligation=1000,
         _quantity=5
     )
+
+    update_awards()
+    award.refresh_from_db()
+
     assert award.total_obligation == 5000
 
 
@@ -125,6 +146,10 @@ def test_award_update_from_contract_transaction():
         transaction=txn,
         potential_total_value_of_award=1000
     )
+
+    update_contract_awards()
+    award.refresh_from_db()
+
     assert award.potential_total_value_of_award == 1000
 
 
