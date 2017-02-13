@@ -12,7 +12,7 @@ def update_location_flags(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
-    dependencies = [('references', '0045_auto_20170125_1500'), ]
+    dependencies = [('references', '0045_auto_20170125_1500'), ('awards', '0060_auto_20170207_1606')]
 
     operations = [
         # populate newly-added fields using data in old fields
