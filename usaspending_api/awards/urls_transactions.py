@@ -13,5 +13,5 @@ transaction_total = views.TransactionAggregateViewSet.as_view({
 urlpatterns = [
     url(r'^$', transaction_list, name='transaction-list'),
     url(r'(?P<pk>[0-9]+)/$', transaction_detail, name='transaction-detail'),
-    url(r'^total/', transaction_total)
+    url(r'^total/', transaction_total, name='transaction-total')
 ]

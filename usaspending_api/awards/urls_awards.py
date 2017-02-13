@@ -14,5 +14,5 @@ urlpatterns = [
     url(r'^$', award_list, name='award-list'),
     url(r'(?P<pk>[0-9]+)/$', award_detail, name='award-detail'),
     url(r'^autocomplete/', views.AwardAutocomplete.as_view()),
-    url(r'^total/', award_total)
+    url(r'^total/', award_total, name='award-total')
 ]
