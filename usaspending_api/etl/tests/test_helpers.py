@@ -27,6 +27,7 @@ def test_fetch_country_code():
     assert helpers.fetch_country_code('america') == name_match
     assert helpers.fetch_country_code('aMEriCA: : : :') == name_match
     assert helpers.fetch_country_code('america (u.s.a.):stuff') == complex_name
+    assert helpers.fetch_country_code('') is None
 
 
 @pytest.mark.django_db

@@ -488,6 +488,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     class Meta:
         db_table = 'transaction_assistance'
 
+
 class SubAward(DataSourceTrackedModel):
     sub_award_id = models.AutoField(primary_key=True, verbose_name="Sub-Award ID")
     award = models.ForeignKey(Award, models.CASCADE)
@@ -582,7 +583,7 @@ class Procurement(AwardAction):
     type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description")
     naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS")
     naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description")
-    period_of_performance_potential_end_date = models.CharField(max_length=8, blank=True, null=True, verbose_name="Period of Performance Potential End Date")
+    period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True)
     ordering_period_end_date = models.CharField(max_length=8, blank=True, null=True)
     current_total_value_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award")

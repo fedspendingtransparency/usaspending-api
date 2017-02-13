@@ -15,6 +15,8 @@ def cleanse_values(row):
 
 
 def convert_date(date):
+    if date == "":
+        return None
     return datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
 
 
@@ -31,6 +33,8 @@ def get_subtier_agency_dict():
 
 def fetch_country_code(vendor_country_code):
     code_str = up2colon(vendor_country_code)
+    if code_str == "":
+        return None
 
     country_code = RefCountryCode.objects.filter(
         Q(country_code=code_str) | Q(country_name__iexact=code_str)).first()
@@ -52,12 +56,12 @@ def get_or_create_location(row, mapper):
     location_dict["location_country_code"] = country_code
 
     # Country-specific adjustments
-    if country_code is not None and country_code.country_code == "USA":
+    if country_code and country_code.country_code == "USA":
         location_dict.update(
             zip5=location_dict["location_zip"][:5],
             zip_last4=location_dict["location_zip"][5:])
         location_dict.pop("location_zip")
-    elif country_code is not None:
+    else:
         location_dict.update(
             foreign_postal_code=location_dict.pop("location_zip",
                                                   None),
@@ -66,10 +70,6 @@ def get_or_create_location(row, mapper):
         if "city_name" in location_dict:
             location_dict['foreign_city_name'] = location_dict.pop(
                 "city_name")
-    else:
-        # we couldn't find a country code, so aren't sure what we're dealing with
-        location_dict.pop("location_zip")
-        location_dict.pop("city_name")
 
     location = Location.objects.filter(**location_dict).first()
     if not location:
@@ -83,3 +83,10 @@ def up2colon(input_string):
     if input_string:
         return input_string.split(':')[0].strip()
     return ''
+
+
+def parse_numeric_value(string):
+    try:
+        return float(string)
+    except:
+        return None
