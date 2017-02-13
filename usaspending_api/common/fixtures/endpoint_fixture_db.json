@@ -13,6 +13,18 @@
 },
 {
   "model": "references.refcountrycode",
+  "pk": "BRA",
+  "fields": {
+    "country_name": "BRAZIL",
+    "valid_begin_date": "2016-07-29T18:22:51.407Z",
+    "valid_end_date": null,
+    "valid_code_indicator": "y",
+    "create_date": "2016-07-29T18:22:51.407Z",
+    "update_date": "2016-07-29T18:22:51.407Z"
+  }
+},
+{
+  "model": "references.refcountrycode",
   "pk": "USA",
   "fields": {
     "country_name": "UNITED STATES",
