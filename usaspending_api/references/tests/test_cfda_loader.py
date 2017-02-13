@@ -1,9 +1,9 @@
 from usaspending_api.references.models import CFDAProgram
 from usaspending_api.references.management.commands.loadcfda import load_cfda
 from django.core.management import call_command
-from django.conf import settings
 import os
 import pytest
+from django.conf import settings
 
 
 # Scoping to module would save time, but db object is function-scoped
@@ -11,7 +11,9 @@ import pytest
 def cfda_data(db):
     "Load from small test CSV to test database"
     path = 'usaspending_api/references/management/commands/programs-01pct-usaspending.csv'
-    load_cfda(os.path.normpath(path))
+    path = os.path.normpath(path)
+    fullpath = os.path.join(settings.BASE_DIR, path)
+    load_cfda(fullpath)
 
 
 # @pytest.mark.django_db
