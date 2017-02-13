@@ -14,11 +14,15 @@ def up2colon(input_string):
 
 
 def convert_date(date):
+    if date == "":
+        return None
     return datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
 
 
 def fetch_country_code(vendor_country_code):
     code_str = up2colon(vendor_country_code)
+    if code_str == "":
+        return None
 
     country_code = RefCountryCode.objects.filter(
         Q(country_code=code_str) | Q(country_name__iexact=code_str)).first()
@@ -40,7 +44,7 @@ def get_or_create_location(row, mapper):
     location_dict["location_country_code"] = country_code
 
     # Country-specific adjustments
-    if country_code.country_code == "USA":
+    if country_code and country_code.country_code == "USA":
         location_dict.update(
             zip5=location_dict["location_zip"][:5],
             zip_last4=location_dict["location_zip"][5:])
