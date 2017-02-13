@@ -20,10 +20,6 @@ def aggregate_models():
     award_fain = [None, None, '123']
     award_piid = ['abc', 'def', None]
 
-    # todo: seems like this fake data could be
-    # useful in other tests...maybe move to
-    # to a common location?
-
     # create agency hierarchy for tests
     o = mommy.make(OfficeAgency, aac_code='aaa', name='The Office')
     s = mommy.make(SubtierAgency, subtier_code='hi', name='Subtiers of a Clown')
