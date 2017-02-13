@@ -52,12 +52,12 @@ def get_or_create_location(row, mapper):
     location_dict["location_country_code"] = country_code
 
     # Country-specific adjustments
-    if country_code.country_code == "USA":
+    if country_code is not None and country_code.country_code == "USA":
         location_dict.update(
             zip5=location_dict["location_zip"][:5],
             zip_last4=location_dict["location_zip"][5:])
         location_dict.pop("location_zip")
-    else:
+    elif country_code is not None:
         location_dict.update(
             foreign_postal_code=location_dict.pop("location_zip",
                                                   None),
@@ -66,6 +66,10 @@ def get_or_create_location(row, mapper):
         if "city_name" in location_dict:
             location_dict['foreign_city_name'] = location_dict.pop(
                 "city_name")
+    else:
+        # we couldn't find a country code, so aren't sure what we're dealing with
+        location_dict.pop("location_zip")
+        location_dict.pop("city_name")
 
     location = Location.objects.filter(**location_dict).first()
     if not location:

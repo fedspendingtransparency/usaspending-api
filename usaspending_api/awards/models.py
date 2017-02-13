@@ -444,6 +444,7 @@ class TransactionContract(DataSourceTrackedModel):
     class Meta:
         db_table = 'transaction_contract'
 
+
 class TransactionAssistance(DataSourceTrackedModel):
     transaction = models.OneToOneField(
         Transaction, on_delete=models.CASCADE,

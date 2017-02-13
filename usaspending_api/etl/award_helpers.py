@@ -10,6 +10,9 @@ def update_awards():
     of the child transactions was problematic to do in a set-based way
     via the ORM. These updates do need to be set-based, as looping through
     and updating individual award records would be an ETL bottleneck.
+
+    TODO: modify this to work with specific awards, so we aren't updating
+    every award, all the time
     """
 
     sql_update = (
