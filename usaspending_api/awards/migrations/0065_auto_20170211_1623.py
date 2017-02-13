@@ -16,20 +16,15 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('awards', '0064_auto_20170210_0416'),
-    ]
+    dependencies = [('awards', '0064_auto_20170210_0416'), ]
 
     _RAW_SQL = [
-
-    '''
+        '''
     CREATE TEMPORARY TABLE template_faa_mapping AS
     SELECT NEXTVAL('transaction_id_seq') AS transaction_id,
            financial_assistance_award_id
     FROM   financial_assistance_award;
-    ''',
-
-    '''
+    ''', '''
     INSERT INTO transaction (
          id,
          action_date,
@@ -84,9 +79,7 @@ class Migration(migrations.Migration):
          usaspending_unique_transaction_id
     FROM financial_assistance_award
     JOIN template_faa_mapping tfm USING (financial_assistance_award_id);
-    ''',
-
-    '''
+    ''', '''
     INSERT INTO transaction_assistance (
         transaction_id,
         business_funds_indicator,
@@ -145,16 +138,12 @@ class Migration(migrations.Migration):
         uri
     FROM financial_assistance_award
     JOIN template_faa_mapping tfm USING (financial_assistance_award_id);
-    ''',
-
-    '''
+    ''', '''
     CREATE TEMPORARY TABLE template_pcmt_mapping AS
     SELECT NEXTVAL('transaction_id_seq') AS transaction_id,
            procurement_id
     FROM   awards_procurement;
-    ''',
-
-    '''
+    ''', '''
     INSERT INTO transaction (
          id,
          action_date,
@@ -209,9 +198,7 @@ class Migration(migrations.Migration):
          usaspending_unique_transaction_id
     FROM awards_procurement
     JOIN template_pcmt_mapping tpm USING (procurement_id);
-    ''',
-
-    '''
+    ''', '''
     INSERT INTO transaction_contract (
         transaction_id,
          a76_fair_act_action,
@@ -379,16 +366,12 @@ class Migration(migrations.Migration):
     FROM awards_procurement
     JOIN template_pcmt_mapping tpm USING (procurement_id);
     ''',
-
-    'DROP TABLE template_faa_mapping',
-
-    'DROP TABLE template_pcmt_mapping'
-
+        'DROP TABLE template_faa_mapping',
+        'DROP TABLE template_pcmt_mapping'
     ]
 
     operations = [
-        migrations.RunSQL(sql, migrations.RunSQL.noop)
-        for sql in _RAW_SQL
+        migrations.RunSQL(sql, migrations.RunSQL.noop) for sql in _RAW_SQL
     ]
     # migrations.noop b/c otherwise creating the
     # temporary table throws an IrreversibleError
