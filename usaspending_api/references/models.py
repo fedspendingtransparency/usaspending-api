@@ -243,9 +243,9 @@ class Location(DataSourceTrackedModel):
             q_kwargs = {
                 "city_code": self.city_code,
                 "county_code": self.county_code,
-                "state_code": self.state_code,
-                "city_name": self.city_name,
-                "county_name": self.county_name
+                "state_code__iexact": self.state_code,
+                "city_name__iexact": self.city_name,
+                "county_name__iexact": self.county_name
             }
             # Clear out any blank or None values in our filter, so we can find the best match
             q_kwargs = dict((k, v) for k, v in q_kwargs.items() if v)
@@ -261,7 +261,7 @@ class Location(DataSourceTrackedModel):
                 self.city_name = matched_reference.city_name
                 self.county_name = matched_reference.county_name
             else:
-                logging.getLogger('console').info("Could not find single matching city/county for following arguments:" + str(q_kwargs))
+                logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" + str(q_kwargs) + "; got " + str(matched_reference.count()))
 
     class Meta:
         # Let's make almost every column unique together so we don't have to
@@ -294,8 +294,7 @@ class Location(DataSourceTrackedModel):
 class LegalEntity(DataSourceTrackedModel):
     legal_entity_id = models.AutoField(primary_key=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
-    ultimate_parent_legal_entity_id = models.IntegerField(null=True)
-    # duns number ?
+    parent_recipient_unique_id = models.CharField(max_length=9, blank=True, null=True, verbose_name="Parent DUNS Number")
     recipient_name = models.CharField(max_length=120, blank=True, verbose_name="Recipient Name")
     vendor_doing_as_business_name = models.CharField(max_length=400, blank=True, null=True)
     vendor_phone_number = models.CharField(max_length=30, blank=True, null=True)
@@ -422,7 +421,7 @@ class LegalEntity(DataSourceTrackedModel):
     def get_default_fields(path=None):
         return [
             "legal_entity_id",
-            "ultimate_parent_legal_entity_id",
+            "parent_recipient_unique_id",
             "recipient_name",
             "business_types",
             "business_types_description",
