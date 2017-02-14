@@ -387,7 +387,8 @@ class Command(BaseCommand):
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d'),
                 "period_of_performance_start_date": datetime.strptime(row['period_of_performance_star'], '%Y%m%d'),
-                "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d')
+                "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d'),
+                "period_of_performance_potential_end_date": datetime.strptime(row['period_of_perf_potential_e'], '%Y%m%d')
             }
 
             load_data_into_model(
