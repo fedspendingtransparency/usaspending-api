@@ -147,8 +147,12 @@ class Command(BaseCommand):
         Transaction.objects.bulk_create(txn_list)
         self.logger.info("Completed Transaction bulk insert")
         # Update txn contract list with newly-inserted transactions
+        award_id_list = []  # we'll need this when updating the awards later on
         for idx, t in enumerate(txn_contract_list):
+            # add transaction info to this TransactionContract object
             t.transaction = txn_list[idx]
+            # add the corresponding award id to a list we'll use when batch-updating award data
+            award_id_list.append(txn_list[idx].award_id)
         # Bulk insert transaction contract rows
         self.logger.info("Starting TransactionContract bulk insert ({} records)".format(len(txn_contract_list)))
         TransactionContract.objects.bulk_create(txn_contract_list)
@@ -159,9 +163,9 @@ class Command(BaseCommand):
         # override in the model itself, because those aren't
         # triggered by a bulk update
         self.logger.info("Starting Awards update")
-        update_awards()
-        update_contract_awards()
-        self.logger.info("Completed Awards update")
+        count = update_awards(tuple(award_id_list))
+        update_contract_awards(tuple(award_id_list))
+        self.logger.info("Completed Awards update ({} records)".format(count))
 
     def get_agency(self, agency_string, subtier_agency_dict):
         agency_code = h.up2colon(agency_string)

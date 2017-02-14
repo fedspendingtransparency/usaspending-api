@@ -99,8 +99,10 @@ class Command(BaseCommand):
         Transaction.objects.bulk_create(txn_list)
         self.logger.info("Completed Transaction bulk insert")
         # Update txn assistance list with newly-inserted transactions
+        award_id_list = []  # we'll need this when updating the awards later on
         for idx, t in enumerate(txn_assistance_list):
             t.transaction = txn_list[idx]
+            award_id_list.append(txn_list[idx].award_id)
         # Bulk insert transaction assistance rows
         self.logger.info("Starting TransactionAssistance bulk insert ({} records)".format(len(txn_assistance_list)))
         TransactionAssistance.objects.bulk_create(txn_assistance_list)
@@ -111,9 +113,9 @@ class Command(BaseCommand):
         # override in the model itself, because those aren't
         # triggered by a bulk update
         self.logger.info("Starting Awards update")
-        update_awards()
-        update_contract_awards()
-        self.logger.info("Completed Awards update")
+        count = update_awards(tuple(award_id_list))
+        update_contract_awards(tuple(award_id_list))
+        self.logger.info("Completed Awards update ({} records)".format(count))
 
     def get_or_create_award(self, row):
         fain = row.get("federal_award_id", None)
