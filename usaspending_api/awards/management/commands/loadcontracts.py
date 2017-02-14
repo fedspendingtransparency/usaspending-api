@@ -194,25 +194,27 @@ class Command(BaseCommand):
             "division_name": self.parse_first_character(row['divisionname']),
             "division_number": self.parse_first_character(row['divisionnumberorofficecode']),
             "historically_underutilized_business_zone": self.parse_first_character(row['hubzoneflag']),
-            "corporate_entity_tax_exempt": lambda row: self.parse_first_character(row['iscorporateentitytaxexempt']),
-            "corporate_entity_not_tax_exempt": lambda row: self.parse_first_character(row['iscorporateentitynottaxexempt']),
-            "council_of_governments": lambda row: self.parse_first_character(row['iscouncilofgovernments']),
-            "dot_certified_disadvantage": lambda row: self.parse_first_character(row['isdotcertifieddisadvantagedbusinessenterprise']),
-            "for_profit_organization": lambda row: self.parse_first_character(row['isforprofitorganization']),
-            "foundation": lambda row: self.parse_first_character(row['isfoundation']),
-            "joint_venture_women_owned_small_business": lambda row: self.parse_first_character(row['isjointventurewomenownedsmallbusiness']),
-            "limited_liability_corporation": lambda row: self.parse_first_character(row['islimitedliabilitycorporation']),
-            "other_not_for_profit_organization": lambda row: self.parse_first_character(row['isothernotforprofitorganization']),
-            "other_minority_owned_business": lambda row: self.parse_first_character(row['isotherminorityowned']),
-            "partnership_or_limited_liability_partnership": lambda row: self.parse_first_character(row['ispartnershiporlimitedliabilitypartnership']),
-            "sole_proprietorship": lambda row: self.parse_first_character(row['issoleproprietorship']),
-            "subchapter_scorporation": lambda row: self.parse_first_character(row['issubchapterscorporation']),
-            "nonprofit_organization": lambda row: self.parse_first_character(row['nonprofitorganizationflag']),
+            "corporate_entity_tax_exempt": self.parse_first_character(row['iscorporateentitytaxexempt']),
+            "corporate_entity_not_tax_exempt": self.parse_first_character(row['iscorporateentitynottaxexempt']),
+            "council_of_governments": self.parse_first_character(row['iscouncilofgovernments']),
+            "dot_certified_disadvantage": self.parse_first_character(row['isdotcertifieddisadvantagedbusinessenterprise']),
+            "for_profit_organization": self.parse_first_character(row['isforprofitorganization']),
+            "foundation": self.parse_first_character(row['isfoundation']),
+            "joint_venture_women_owned_small_business": self.parse_first_character(row['isjointventurewomenownedsmallbusiness']),
+            "limited_liability_corporation": self.parse_first_character(row['islimitedliabilitycorporation']),
+            "other_not_for_profit_organization": self.parse_first_character(row['isothernotforprofitorganization']),
+            "other_minority_owned_business": self.parse_first_character(row['isotherminorityowned']),
+            "partnership_or_limited_liability_partnership": self.parse_first_character(row['ispartnershiporlimitedliabilitypartnership']),
+            "sole_proprietorship": self.parse_first_character(row['issoleproprietorship']),
+            "subchapter_scorporation": self.parse_first_character(row['issubchapterscorporation']),
+            "nonprofit_organization": self.parse_first_character(row['nonprofitorganizationflag']),
         }
 
         le = LegalEntity.objects.filter(recipient_unique_id=row['dunsnumber']).first()
         if not le:
             le = LegalEntity.objects.create(**recipient_dict)
+        else:
+            LegalEntity.objects.filter(legal_entity_id=le.legal_entity_id).update(**recipient_dict)
 
         return le
 
