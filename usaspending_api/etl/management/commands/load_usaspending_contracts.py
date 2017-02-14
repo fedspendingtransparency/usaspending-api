@@ -264,6 +264,8 @@ class Command(BaseCommand):
         le = LegalEntity.objects.filter(recipient_unique_id=row['dunsnumber']).first()
         if not le:
             le = LegalEntity.objects.create(**recipient_dict)
+        else:
+            LegalEntity.objects.filter(legal_entity_id=le.legal_entity_id).update(**recipient_dict)
 
         return le
 
