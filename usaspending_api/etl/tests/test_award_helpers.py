@@ -39,13 +39,14 @@ def test_award_update_from_latest_transaction(agencies):
     assert award.description == 'original award'
 
     # adding an older transaction with different info updates award's total
-    # obligation amt but doesn't affect the other values
+    # obligation amt and the description (which is sourced from the
+    # earliest txn), but other info remains unchanged
     mommy.make(
         'awards.Transaction',
         award=award,
         awarding_agency=agency2,
         period_of_performance_current_end_date=datetime.date(2017, 1, 1),
-        description='new description',
+        description='older description',
         action_date=datetime.date(2016, 1, 1)
     )
     update_awards()
@@ -53,7 +54,7 @@ def test_award_update_from_latest_transaction(agencies):
 
     assert award.awarding_agency == agency1
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
-    assert award.description == 'original award'
+    assert award.description == 'older description'
 
     # adding an newer transaction with different info updates award's total
     # obligation amt and also overrides other values
@@ -72,7 +73,8 @@ def test_award_update_from_latest_transaction(agencies):
 
     assert award.awarding_agency == agency2
     assert award.period_of_performance_current_end_date == datetime.date(2010, 1, 1)
-    assert award.description == 'new description'
+    # award desc should still reflect the earliest txn
+    assert award.description == 'older description'
 
 
 @pytest.mark.django_db
