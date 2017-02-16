@@ -387,7 +387,8 @@ class Command(BaseCommand):
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d'),
                 "period_of_performance_start_date": datetime.strptime(row['period_of_performance_star'], '%Y%m%d'),
-                "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d')
+                "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d'),
+                "period_of_performance_potential_end_date": datetime.strptime(row['period_of_perf_potential_e'], '%Y%m%d')
             }
 
             load_data_into_model(
@@ -402,7 +403,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
-    db_cursor.execute('SELECT * FROM tas_lookup WHERE tas_id = %s', [tas_lookup_id])
+    db_cursor.execute('SELECT * FROM tas_lookup WHERE account_num = %s', [tas_lookup_id])
     tas_data = dictfetchall(db_cursor)
 
     # These or "" convert from none to a blank string, which is how the TAS table stores nulls

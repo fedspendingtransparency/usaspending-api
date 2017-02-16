@@ -1,7 +1,9 @@
 import pytest
 from model_mommy import mommy
 
-from usaspending_api.awards.management.commands import helpers, loadcontracts, loadfinancialassistance
+from usaspending_api.awards.management.commands import loadfinancialassistance
+from usaspending_api.etl import helpers
+from usaspending_api.etl.management.commands import load_usaspending_contracts
 from usaspending_api.references.models import Location
 
 
@@ -54,7 +56,7 @@ def test_get_or_create_location_non_usa():
 
     # can't find it because we're looking at the POP fields
     assert helpers.get_or_create_location(
-        row, loadcontracts.location_mapper_place_of_performance) != expected
+        row, load_usaspending_contracts.location_mapper_place_of_performance) != expected
 
 
 @pytest.mark.django_db
@@ -74,7 +76,7 @@ def test_get_or_create_location_creates_new_locations():
     # can't find it because we're looking at the US fields
     assert Location.objects.count() == 0
 
-    helpers.get_or_create_location(row, loadcontracts.location_mapper_vendor)
+    helpers.get_or_create_location(row, load_usaspending_contracts.location_mapper_vendor)
     assert Location.objects.count() == 1
 
     loc = Location.objects.all().first()

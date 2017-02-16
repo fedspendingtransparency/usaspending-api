@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'usaspending_api.common',
+    'usaspending_api.etl',
     'usaspending_api.references',
     'usaspending_api.awards',
     'usaspending_api.accounts',

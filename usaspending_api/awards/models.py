@@ -218,32 +218,6 @@ class Award(DataSourceTrackedModel):
     def __str__(self):
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
 
-    def update_from_transaction(self, mod):
-        transaction_set = self.transaction_set
-        transaction_latest = transaction_set.latest("action_date")
-        transaction_earliest = transaction_set.earliest("action_date")
-        self.awarding_agency = transaction_latest.awarding_agency
-        self.certified_date = transaction_latest.certified_date
-        self.data_source = transaction_latest.data_source
-        self.date_signed = transaction_earliest.action_date
-        self.description = transaction_latest.description
-        self.funding_agency = transaction_latest.funding_agency
-        self.last_modified_date = transaction_latest.last_modified_date
-        self.latest_submission = transaction_latest.submission
-        self.period_of_performance_start_date = transaction_earliest.period_of_performance_start_date
-        self.period_of_performance_current_end_date = transaction_latest.period_of_performance_current_end_date
-        self.place_of_performance = transaction_latest.place_of_performance
-        self.recipient = transaction_latest.recipient
-        self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
-        self.type = transaction_latest.type
-        self.type_description = transaction_latest.type_description
-        self.save()
-
-    def update_from_transaction_contract(self, mod):
-        transaction_latest = self.transaction_set.latest("action_date")
-        self.potential_total_value_of_award = transaction_latest.contract.potential_total_value_of_award
-        self.save()
-
     # note: the next 3 functions are deprecated. they will stay here as we
     # transition from the AwardAction series of transaction models to those
     # based on Transaction/TransactionContract/TransactionAssistance and
@@ -365,14 +339,9 @@ class Transaction(DataSourceTrackedModel):
         else:
             return description[0][1]
 
-    # Override the save method so that after saving we always call update_from_transaction on our Award
-    def save(self, *args, **kwargs):
-        self.type_description = self.get_type_description()
-        super(Transaction, self).save(*args, **kwargs)
-        self.award.update_from_transaction(self)
-
     class Meta:
         db_table = 'transaction'
+        index_together = ['award', 'action_date']
 
 
 class TransactionContract(DataSourceTrackedModel):
@@ -387,7 +356,7 @@ class TransactionContract(DataSourceTrackedModel):
     type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description")
     naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS")
     naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description")
-    period_of_performance_potential_end_date = models.CharField(max_length=8, blank=True, null=True, verbose_name="Period of Performance Potential End Date")
+    period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True)
     ordering_period_end_date = models.CharField(max_length=8, blank=True, null=True)
     current_total_value_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award")
@@ -471,22 +440,6 @@ class TransactionContract(DataSourceTrackedModel):
             "naics_description",
             "product_or_service_code"
         ]
-
-    def get_pricing_type_description(self):
-        description = [item for item in CONTRACT_PRICING_TYPES if item[0] == self.type_of_contract_pricing]
-        if len(description) == 0:
-            return "Unknown Type"
-        else:
-            return description[0][1]
-
-    # Override the save method so that after saving we always
-    # 1. update our type description
-    # 2. update contract-specific info on the corresponding award record
-    def save(self, *args, **kwargs):
-        self.type_of_contract_pricing_description = self.get_pricing_type_description()
-        super(TransactionContract, self).save(*args, **kwargs)
-        # Override the save method so that after saving we always call update_from_transaction_contract on our Award
-        self.transaction.award.update_from_transaction_contract(self)
 
     class Meta:
         db_table = 'transaction_contract'
@@ -630,7 +583,7 @@ class Procurement(AwardAction):
     type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description")
     naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS")
     naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description")
-    period_of_performance_potential_end_date = models.CharField(max_length=8, blank=True, null=True, verbose_name="Period of Performance Potential End Date")
+    period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True)
     ordering_period_end_date = models.CharField(max_length=8, blank=True, null=True)
     current_total_value_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award")

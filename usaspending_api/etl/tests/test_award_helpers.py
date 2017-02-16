@@ -3,6 +3,7 @@ import datetime
 from model_mommy import mommy
 import pytest
 
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.references.models import Agency
 
 
@@ -30,24 +31,30 @@ def test_award_update_from_latest_transaction(agencies):
         action_date=datetime.date(2016, 2, 1)
     )
 
+    update_awards()
+    award.refresh_from_db()
+
     assert award.awarding_agency == agency1
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
     assert award.description == 'original award'
 
     # adding an older transaction with different info updates award's total
-    # obligation amt but doesn't affect the other values
+    # obligation amt and the description (which is sourced from the
+    # earliest txn), but other info remains unchanged
     mommy.make(
         'awards.Transaction',
         award=award,
         awarding_agency=agency2,
         period_of_performance_current_end_date=datetime.date(2017, 1, 1),
-        description='new description',
+        description='older description',
         action_date=datetime.date(2016, 1, 1)
     )
+    update_awards()
+    award.refresh_from_db()
 
     assert award.awarding_agency == agency1
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
-    assert award.description == 'original award'
+    assert award.description == 'older description'
 
     # adding an newer transaction with different info updates award's total
     # obligation amt and also overrides other values
@@ -61,9 +68,13 @@ def test_award_update_from_latest_transaction(agencies):
         action_date=datetime.date(2017, 1, 1)
     )
 
+    update_awards()
+    award.refresh_from_db()
+
     assert award.awarding_agency == agency2
     assert award.period_of_performance_current_end_date == datetime.date(2010, 1, 1)
-    assert award.description == 'new description'
+    # award desc should still reflect the earliest txn
+    assert award.description == 'older description'
 
 
 @pytest.mark.django_db
@@ -86,6 +97,10 @@ def test_award_update_from_earliest_transaction():
         award=award,
         action_date=datetime.date(2017, 1, 1)
     )
+
+    update_awards()
+    award.refresh_from_db()
+
     assert award.date_signed == datetime.date(2016, 1, 1)
 
     # adding earlier transaction should update award values
@@ -94,6 +109,10 @@ def test_award_update_from_earliest_transaction():
         award=award,
         action_date=datetime.date(2010, 1, 1)
     )
+
+    update_awards()
+    award.refresh_from_db()
+
     assert award.date_signed == datetime.date(2010, 1, 1)
 
 
@@ -108,7 +127,58 @@ def test_award_update_obligated_amt():
         federal_action_obligation=1000,
         _quantity=5
     )
+
+    update_awards()
+    award.refresh_from_db()
+
     assert award.total_obligation == 5000
+
+
+@pytest.mark.django_db
+def test_award_update_with_list(agencies):
+    """Test optional parameter to update specific awards with txn data."""
+    awards = mommy.make('awards.Award', total_obligation=0, _quantity=10)
+    test_award = awards[3]
+
+    # test a single award update
+    mommy.make(
+        'awards.Transaction',
+        award=test_award,
+        federal_action_obligation=1000,
+        _quantity=5
+    )
+    count = update_awards((test_award.id,))
+    test_award.refresh_from_db()
+    # one award is updated
+    assert count == 1
+    # specified award is updated
+    assert test_award.total_obligation == 5000
+    # other awards not updated
+    assert awards[0].total_obligation == 0
+
+    # test updating several awards
+    mommy.make(
+        'awards.Transaction',
+        award=awards[0],
+        federal_action_obligation=2000,
+        _quantity=2
+    )
+    mommy.make(
+        'awards.Transaction',
+        award=awards[1],
+        federal_action_obligation=-1000,
+        _quantity=3
+    )
+    count = update_awards((awards[0].id, awards[1].id))
+    awards[0].refresh_from_db()
+    awards[1].refresh_from_db()
+    # two awards are updated
+    assert count == 2
+    # specified awards are updated
+    assert awards[0].total_obligation == 4000
+    assert awards[1].total_obligation == -3000
+    # other awards not updated
+    assert awards[4].total_obligation == 0
 
 
 @pytest.mark.django_db
@@ -125,7 +195,50 @@ def test_award_update_from_contract_transaction():
         transaction=txn,
         potential_total_value_of_award=1000
     )
+
+    update_contract_awards()
+    award.refresh_from_db()
+
     assert award.potential_total_value_of_award == 1000
+
+
+@pytest.mark.django_db
+def test_award_update_contract_txn_with_list(agencies):
+    """Test optional parameter to update specific awards from txn contract."""
+
+    awards = mommy.make('awards.Award', _quantity=5)
+    txn = mommy.make('awards.Transaction', award=awards[0])
+    mommy.make(
+        'awards.TransactionContract',
+        transaction=txn,
+        potential_total_value_of_award=1000
+    )
+    # single award is updated
+    count = update_contract_awards((awards[0].id,))
+    awards[0].refresh_from_db()
+    assert count == 1
+    assert awards[0].potential_total_value_of_award == 1000
+
+    # update multipe awards
+    txn1 = mommy.make('awards.Transaction', award=awards[1])
+    mommy.make(
+        'awards.TransactionContract',
+        transaction=txn1,
+        potential_total_value_of_award=4000
+    )
+    txn2 = mommy.make('awards.Transaction', award=awards[2])
+    mommy.make(
+        'awards.TransactionContract',
+        transaction=txn2,
+        potential_total_value_of_award=5000
+    )
+    # multiple awards updated
+    count = update_contract_awards((awards[1].id, awards[2].id))
+    awards[1].refresh_from_db()
+    awards[2].refresh_from_db()
+    assert count == 2
+    assert awards[1].potential_total_value_of_award == 4000
+    assert awards[2].potential_total_value_of_award == 5000
 
 
 @pytest.mark.skip(reason="deletion feature not yet implemented")

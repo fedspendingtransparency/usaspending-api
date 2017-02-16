@@ -2,21 +2,33 @@ from datetime import datetime
 
 from django.db.models import Q
 
-from usaspending_api.references.models import Location, RefCountryCode
+from usaspending_api.references.models import Agency, Location, RefCountryCode
 
 
-def up2colon(input_string):
-    'Takes the part of a string before `:`, if any.'
-
-    if input_string:
-        return input_string.split(':')[0].strip()
-    return ''
+def cleanse_values(row):
+    """
+    Remove textual quirks from CSV values.
+    """
+    row = {k: v.strip() for (k, v) in row.items()}
+    row = {k: (None if v.lower() == 'null' else v) for (k, v) in row.items()}
+    return row
 
 
 def convert_date(date):
     if date == "":
         return None
     return datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
+
+
+def get_subtier_agency_dict():
+    """Returns a dictionary with key = subtier agency code and value = agency id."""
+    # there's no unique constraint on subtier_code, so the order by below ensures
+    # that in the case of duplicate subtier codes, the dictionary we return will
+    # reflect the most recently updated one
+    agencies = Agency.objects.all().values('id', 'subtier_agency__subtier_code').order_by(
+        'subtier_agency__update_date')
+    subtier_agency_dict = {a['subtier_agency__subtier_code']: a['id'] for a in agencies}
+    return subtier_agency_dict
 
 
 def fetch_country_code(vendor_country_code):
@@ -63,3 +75,18 @@ def get_or_create_location(row, mapper):
     if not location:
         location = Location.objects.create(**location_dict)
     return location
+
+
+def up2colon(input_string):
+    'Takes the part of a string before `:`, if any.'
+
+    if input_string:
+        return input_string.split(':')[0].strip()
+    return ''
+
+
+def parse_numeric_value(string):
+    try:
+        return float(string)
+    except:
+        return None

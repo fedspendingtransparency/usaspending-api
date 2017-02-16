@@ -1,6 +1,6 @@
 
-import pytest
 from django.conf import settings
+import pytest
 from model_mommy import mommy
 
 from usaspending_api.references.models import Agency, OfficeAgency, SubtierAgency, ToptierAgency
@@ -13,7 +13,7 @@ def pytest_configure():
     settings.DATABASES.pop('data_broker', None)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def agencies():
     """Setup agency hierarchy for use in tests."""
     o = mommy.make(OfficeAgency, aac_code='aac1', name='The Office')
