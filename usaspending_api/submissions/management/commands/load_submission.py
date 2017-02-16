@@ -304,9 +304,9 @@ class Command(BaseCommand):
                 "submission": submission_attributes,
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
-                "action_date": datetime.strptime(row['action_date'], '%Y%m%d'),
-                "period_of_performance_start_date": datetime.strptime(row['period_of_performance_star'], '%Y%m%d'),
-                "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d')
+                "action_date": format_date(row['action_date']),
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr'])
             }
 
             financial_assistance_data = load_data_into_model(
@@ -385,10 +385,10 @@ class Command(BaseCommand):
                 'submission': submission_attributes,
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
-                "action_date": datetime.strptime(row['action_date'], '%Y%m%d'),
-                "period_of_performance_start_date": datetime.strptime(row['period_of_performance_star'], '%Y%m%d'),
-                "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d'),
-                "period_of_performance_potential_end_date": datetime.strptime(row['period_of_perf_potential_e'], '%Y%m%d')
+                "action_date": format_date(row['action_date']),
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'])
             }
 
             load_data_into_model(
@@ -396,6 +396,13 @@ class Command(BaseCommand):
                 field_map=procurement_field_map,
                 value_map=procurement_value_map,
                 save=True)
+
+
+def format_date(date_string, pattern='%Y%m%d'):
+    try:
+        return datetime.strptime(date_string, pattern)
+    except TypeError:
+        return None
 
 
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
@@ -497,10 +504,6 @@ def load_data_into_model(model_instance, data, **kwargs):
         return model_instance
     if as_dict:
         return mod
-
-
-def format_date(date):
-    return datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
 
 
 def get_or_create_location(location_map, row, location_value_map={}):
