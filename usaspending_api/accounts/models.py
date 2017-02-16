@@ -61,6 +61,42 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         concatenated_tas = ATA + AID + TYPECODE + POAPHRASE + ACCTPHRASE
         return concatenated_tas
 
+    @staticmethod
+    def get_default_fields(path=None):
+        if "awards" in path:
+            return [
+                "treasury_account_identifier",
+                "tas_rendering_label",
+                "account_title",
+                "reporting_agency_id",
+                "reporting_agency_name",
+            ]
+
+        return [
+            "treasury_account_identifier",
+            "tas_rendering_label",
+            "allocation_transfer_agency_id",
+            "agency_id",
+            "beginning_period_of_availability",
+            "ending_period_of_availability",
+            "availability_type_code",
+            "main_account_code",
+            "sub_account_code",
+            "account_title",
+            "reporting_agency_id",
+            "reporting_agency_name",
+            "budget_bureau_code",
+            "budget_bureau_name",
+            "fr_entity_code",
+            "fr_entity_description",
+            "budget_function_code",
+            "budget_function_title",
+            "budget_subfunction_code",
+            "budget_subfunction_title",
+            "account_balances",
+            "program_balances"
+        ]
+
     class Meta:
         managed = True
         db_table = 'treasury_appropriation_account'
@@ -72,7 +108,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
 # Table #4 - Appropriation Account Balances
 class AppropriationAccountBalances(DataSourceTrackedModel):
     appropriation_account_balances_id = models.AutoField(primary_key=True)
-    treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE, db_column='treasury_account_identifier')
+    treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE, db_column='treasury_account_identifier', related_name="account_balances")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     adjustments_to_unobligated_balance_brought_forward_cpe = models.DecimalField(max_digits=21, decimal_places=2)

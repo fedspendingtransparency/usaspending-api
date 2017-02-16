@@ -14,3 +14,20 @@ class DataSourceTrackedModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class FiscalYear(models.Transform):
+    """Allows Date and DateTime fields to support `__fy` operations
+
+    Requires that the FY function be defined in the database
+    (raw SQL is in helpers.py, run in a migration)"""
+    lookup_name = 'fy'
+    function = 'FY'
+
+    @property
+    def output_field(self):
+        return models.IntegerField()
+
+
+models.DateField.register_lookup(FiscalYear)
+models.DateTimeField.register_lookup(FiscalYear)

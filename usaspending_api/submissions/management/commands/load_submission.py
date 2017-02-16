@@ -101,6 +101,11 @@ class Command(BaseCommand):
             submission_attributes = SubmissionAttributes()
 
         # Update and save submission attributes
+        field_map = {
+            'reporting_period_start': 'reporting_start_date',
+            'reporting_period_end': 'reporting_end_date'
+        }
+
         # Create our value map - specific data to load
         value_map = {
             'broker_submission_id': submission_id
@@ -108,7 +113,7 @@ class Command(BaseCommand):
 
         del submission_data["submission_id"]  # To avoid collisions with the newer PK system
 
-        load_data_into_model(submission_attributes, submission_data, value_map=value_map, save=True)
+        load_data_into_model(submission_attributes, submission_data, field_map=field_map, value_map=value_map, save=True)
 
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
@@ -132,7 +137,9 @@ class Command(BaseCommand):
             value_map = {
                 'treasury_account_identifier': treasury_account,
                 'submission': submission_attributes,
-                'tas_rendering_label': treasury_account.tas_rendering_label
+                'tas_rendering_label': treasury_account.tas_rendering_label,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end
             }
 
             field_map = {}
@@ -159,6 +166,8 @@ class Command(BaseCommand):
 
             value_map = {
                 'submission': submission_attributes,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end,
                 'appropriation_account_balances': account_balances,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
                 'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
@@ -178,7 +187,6 @@ class Command(BaseCommand):
                 treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
                 if treasury_account is None:
                     raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
-                account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
                 # Find the award that this award transaction belongs to. If it doesn't exist, create it.
                 award = Award.get_or_create_summary_award(
                     piid=row.get('piid'),
@@ -195,7 +203,9 @@ class Command(BaseCommand):
             value_map = {
                 'award': award,
                 'submission': submission_attributes,
-                'appropriation_account_balances': account_balances,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end,
+                'treasury_account': treasury_account,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
                 'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
             }
@@ -218,18 +228,18 @@ class Command(BaseCommand):
 
         legal_entity_location_field_map = {
             "location_address_line1": "legal_entity_address_line1",
-            "location_address_line2": "legal_entity_address_line2",
-            "location_address_line3": "legal_entity_address_line3",
+            "address_line2": "legal_entity_address_line2",
+            "address_line3": "legal_entity_address_line3",
             "location_city_code": "legal_entity_city_code",
             "location_city_name": "legal_entity_city_name",
             "location_congressional_code": "legal_entity_congressional",
             "location_county_code": "legal_entity_county_code",
             "location_county_name": "legal_entity_county_name",
-            "location_foreign_city_name": "legal_entity_foreign_city",
-            "location_foreign_postal_code": "legal_entity_foreign_posta",
-            "location_foreign_province": "legal_entity_foreign_provi",
-            "location_state_code": "legal_entity_state_code",
-            "location_state_name": "legal_entity_state_name",
+            "foreign_city_name": "legal_entity_foreign_city",
+            "foreign_postal_code": "legal_entity_foreign_posta",
+            "foreign_province": "legal_entity_foreign_provi",
+            "state_code": "legal_entity_state_code",
+            "state_name": "legal_entity_state_name",
             "location_zip5": "legal_entity_zip5",
             "location_zip_last4": "legal_entity_zip_last4",
             "location_country_code": "legal_entity_country_code"
@@ -241,7 +251,7 @@ class Command(BaseCommand):
             "location_congressional_code": "place_of_performance_congr",
             "location_county_name": "place_of_perform_county_na",
             "location_foreign_location_description": "place_of_performance_forei",
-            "location_state_name": "place_of_perform_state_nam",
+            "state_name": "place_of_perform_state_nam",
             "location_zip4": "place_of_performance_zip4a",
             "location_country_code": "place_of_perform_country_c"
 
@@ -292,6 +302,8 @@ class Command(BaseCommand):
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 "submission": submission_attributes,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d'),
                 "period_of_performance_start_date": datetime.strptime(row['period_of_performance_star'], '%Y%m%d'),
                 "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d')
@@ -316,12 +328,12 @@ class Command(BaseCommand):
 
         legal_entity_location_field_map = {
             "location_address_line1": "legal_entity_address_line1",
-            "location_address_line2": "legal_entity_address_line2",
-            "location_address_line3": "legal_entity_address_line3",
+            "address_line2": "legal_entity_address_line2",
+            "address_line3": "legal_entity_address_line3",
             "location_country_code": "legal_entity_country_code",
             "location_city_name": "legal_entity_city_name",
             "location_congressional_code": "legal_entity_congressional",
-            "location_state_code": "legal_entity_state_code",
+            "state_code": "legal_entity_state_code",
             "location_zip4": "legal_entity_zip4"
         }
 
@@ -329,7 +341,7 @@ class Command(BaseCommand):
             # not sure place_of_performance_locat maps exactly to city name
             "location_city_name": "place_of_performance_locat",
             "location_congressional_code": "place_of_performance_congr",
-            "location_state_code": "place_of_performance_state",
+            "state_code": "place_of_performance_state",
             "location_zip4": "place_of_performance_zip4a",
             "location_country_code": "place_of_perform_country_c"
         }
@@ -371,9 +383,12 @@ class Command(BaseCommand):
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 'submission': submission_attributes,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end,
                 "action_date": datetime.strptime(row['action_date'], '%Y%m%d'),
                 "period_of_performance_start_date": datetime.strptime(row['period_of_performance_star'], '%Y%m%d'),
-                "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d')
+                "period_of_performance_current_end_date": datetime.strptime(row['period_of_performance_curr'], '%Y%m%d'),
+                "period_of_performance_potential_end_date": datetime.strptime(row['period_of_perf_potential_e'], '%Y%m%d')
             }
 
             load_data_into_model(
@@ -388,7 +403,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
-    db_cursor.execute('SELECT * FROM tas_lookup WHERE tas_id = %s', [tas_lookup_id])
+    db_cursor.execute('SELECT * FROM tas_lookup WHERE account_num = %s', [tas_lookup_id])
     tas_data = dictfetchall(db_cursor)
 
     # These or "" convert from none to a blank string, which is how the TAS table stores nulls
@@ -501,21 +516,21 @@ def get_or_create_location(location_map, row, location_value_map={}):
         country_code=row[location_map.get('location_country_code')]).first()
 
     # temporary fix until broker is patched: remove later
-    state_code = row.get(location_map.get('location_state_code'))
+    state_code = row.get(location_map.get('state_code'))
     if state_code is not None:
-        location_value_map.update({'location_state_code': state_code.replace('.', '')})
+        location_value_map.update({'state_code': state_code.replace('.', '')})
     # end of temporary fix
 
     if location_country:
         location_value_map.update({
             'location_country_code': location_country,
-            'location_country_name': location_country.country_name
+            'country_name': location_country.country_name
         })
     else:
         # no country found for this code
         location_value_map.update({
             'location_country_code': None,
-            'location_country_name': None
+            'country_name': None
         })
 
     location_data = load_data_into_model(
