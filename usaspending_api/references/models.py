@@ -1,5 +1,37 @@
+import logging
+
 from django.db import models
+from django.db.models import Q
 from usaspending_api.common.models import DataSourceTrackedModel
+
+
+LEGAL_ENTITY_BUSINESS_TYPES = (
+    ("A", "State government"),
+    ("B", "County Government"),
+    ("C", "City or township Government"),
+    ("D", "Special District Government"),
+    ("E", "Regional Organization"),
+    ("F", "U.S. Territory or Possession"),
+    ("G", "Independent School District"),
+    ("H", "Public/State Controlled Institution of Higher Education"),
+    ("I", "Indian/Native American Tribal Government (Federally Recognized)"),
+    ("J", "Indian/Native American Tribal Government (Other than Federally Recognized)"),
+    ("K", "Indian/Native American Tribal Designated Organization"),
+    ("L", "Public/Indian Housing Authority"),
+    ("M", "Nonprofit with 501C3 IRS Status (Other then Institution of Higher Education)"),
+    ("N", "Nonprofit without 501C3 IRS Status (Other then Institution of Higher Education)"),
+    ("O", "Private Institution of Higher Education"),
+    ("P", "Individual"),
+    ("Q", "For-Profit Organization (Other than Small Business)"),
+    ("R", "Small Business"),
+    ("S", "Hispanic-serving Institution"),
+    ("T", "Historically Black Colleges and Universities (HBCUs)"),
+    ("U", "Tribally Controlled Colleges and Universities (TCCUs)"),
+    ("V", "Alaska Native and Native Hawaiian Serving Institutions"),
+    ("W", "Non-domestic (non-US) Entity"),
+    ("X", "Other"),
+    ("UN", "Unknown Business Type")
+)
 
 
 class RefCityCountyCode(models.Model):
@@ -60,6 +92,15 @@ class Agency(models.Model):
     subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True)
     office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
 
+    @staticmethod
+    def get_default_fields(path=None):
+        return [
+            "id",
+            "toptier_agency",
+            "subtier_agency",
+            "office_agency"
+        ]
+
     class Meta:
         managed = True
         db_table = 'agency'
@@ -84,7 +125,7 @@ class ToptierAgency(models.Model):
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Top-Tier Agency Name")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "cgac_code",
             "fpds_code",
@@ -104,7 +145,7 @@ class SubtierAgency(models.Model):
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Sub-Tier Agency Name")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "subtier_code",
             "name"
@@ -122,6 +163,13 @@ class OfficeAgency(models.Model):
     aac_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Office Code")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Office Name")
 
+    @staticmethod
+    def get_default_fields(path=None):
+        return [
+            "aac_code",
+            "name"
+        ]
+
     class Meta:
         managed = True
         db_table = 'office_agency'
@@ -130,28 +178,27 @@ class OfficeAgency(models.Model):
 class Location(DataSourceTrackedModel):
     location_id = models.AutoField(primary_key=True)
     location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
-    location_country_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Country Name")
-    location_state_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="State Code")
-    location_state_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="State Name")
-    location_state_description = models.CharField(max_length=100, blank=True, null=True, verbose_name="State Description")
-    # Changed by KPJ to 100 from 40, on 20161013
-    location_city_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="City Name")
-    location_city_code = models.CharField(max_length=5, blank=True, null=True)
-    location_county_name = models.CharField(max_length=40, blank=True, null=True)
-    location_county_code = models.CharField(max_length=3, blank=True, null=True)
-    location_address_line1 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 1")
-    location_address_line2 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 2")
-    location_address_line3 = models.CharField(max_length=55, blank=True, null=True, verbose_name="Address Line 3")
-    location_foreign_location_description = models.CharField(max_length=100, blank=True, null=True)
-    location_zip4 = models.CharField(max_length=10, blank=True, null=True, verbose_name="ZIP+4")
-    location_zip_4a = models.CharField(max_length=10, blank=True, null=True)
-    location_congressional_code = models.CharField(max_length=2, blank=True, null=True,  verbose_name="Congressional District Code")
-    location_performance_code = models.CharField(max_length=9, blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
-    location_zip_last4 = models.CharField(max_length=4, blank=True, null=True)
-    location_zip5 = models.CharField(max_length=5, blank=True, null=True)
-    location_foreign_postal_code = models.CharField(max_length=50, blank=True, null=True)
-    location_foreign_province = models.CharField(max_length=25, blank=True, null=True)
-    location_foreign_city_name = models.CharField(max_length=40, blank=True, null=True)
+    country_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Country Name")
+    state_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="State Code")
+    state_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="State Name")
+    state_description = models.CharField(max_length=100, blank=True, null=True, verbose_name="State Description")
+    city_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="City Name")
+    city_code = models.CharField(max_length=5, blank=True, null=True)
+    county_name = models.CharField(max_length=100, blank=True, null=True)
+    county_code = models.CharField(max_length=3, blank=True, null=True)
+    address_line1 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 1")
+    address_line2 = models.CharField(max_length=150, blank=True, null=True, verbose_name="Address Line 2")
+    address_line3 = models.CharField(max_length=55, blank=True, null=True, verbose_name="Address Line 3")
+    foreign_location_description = models.CharField(max_length=100, blank=True, null=True)
+    zip4 = models.CharField(max_length=10, blank=True, null=True, verbose_name="ZIP+4")
+    zip_4a = models.CharField(max_length=10, blank=True, null=True)
+    congressional_code = models.CharField(max_length=2, blank=True, null=True,  verbose_name="Congressional District Code")
+    performance_code = models.CharField(max_length=9, blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
+    zip_last4 = models.CharField(max_length=4, blank=True, null=True)
+    zip5 = models.CharField(max_length=5, blank=True, null=True)
+    foreign_postal_code = models.CharField(max_length=50, blank=True, null=True)
+    foreign_province = models.CharField(max_length=25, blank=True, null=True)
+    foreign_city_name = models.CharField(max_length=40, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
@@ -165,46 +212,81 @@ class Location(DataSourceTrackedModel):
     recipient_flag = models.BooleanField(default=False, verbose_name="Location used as recipient location")
 
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
-            "location_address_line1",
-            "location_address_line2",
-            "location_address_line3",
-            "location_city_name",
-            "location_state_name",
-            "location_country_name",
-            "location_state_code",
+            "address_line1",
+            "address_line2",
+            "address_line3",
+            "city_name",
+            "state_name",
+            "country_name",
+            "state_code",
             "location_country_code",
-            "location_zip5",
-            "location_foreign_province",
-            "location_foreign_city_name",
-            "location_foreign_postal_code"
+            "zip5",
+            "foreign_province",
+            "foreign_city_name",
+            "foreign_postal_code"
         ]
+
+    def save(self, *args, **kwargs):
+        self.load_country_data()
+        self.load_city_county_data()
+        super(Location, self).save(*args, **kwargs)
+
+    def load_country_data(self):
+        if self.location_country_code:
+            self.country_name = self.location_country_code.country_name
+
+    def load_city_county_data(self):
+        # Here we fill in missing information from the ref city county code data
+        if self.location_country_code_id == "USA":
+            q_kwargs = {
+                "city_code": self.city_code,
+                "county_code": self.county_code,
+                "state_code__iexact": self.state_code,
+                "city_name__iexact": self.city_name,
+                "county_name__iexact": self.county_name
+            }
+            # Clear out any blank or None values in our filter, so we can find the best match
+            q_kwargs = dict((k, v) for k, v in q_kwargs.items() if v)
+            matched_reference = RefCityCountyCode.objects.filter(Q(**q_kwargs))
+            # We only load the data if our matched reference count is one; otherwise,
+            # we don't have data (count=0) or the match is ambiguous (count>1)
+            if matched_reference.count() == 1:
+                # Load this data
+                matched_reference = matched_reference.first()
+                self.city_code = matched_reference.city_code
+                self.county_code = matched_reference.county_code
+                self.state_code = matched_reference.state_code
+                self.city_name = matched_reference.city_name
+                self.county_name = matched_reference.county_name
+            else:
+                logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" + str(q_kwargs) + "; got " + str(matched_reference.count()))
 
     class Meta:
         # Let's make almost every column unique together so we don't have to
         # perform heavy lifting on checking if a location already exists or not
         unique_together = ("location_country_code",
-                           "location_country_name",
-                           "location_state_code",
-                           "location_state_name",
-                           "location_state_description",
-                           "location_city_name",
-                           "location_city_code",
-                           "location_county_name",
-                           "location_county_code",
-                           "location_address_line1",
-                           "location_address_line2",
-                           "location_address_line3",
-                           "location_foreign_location_description",
-                           "location_zip4",
-                           "location_congressional_code",
-                           "location_performance_code",
-                           "location_zip_last4",
-                           "location_zip5",
-                           "location_foreign_postal_code",
-                           "location_foreign_province",
-                           "location_foreign_city_name",
+                           "country_name",
+                           "state_code",
+                           "state_name",
+                           "state_description",
+                           "city_name",
+                           "city_code",
+                           "county_name",
+                           "county_code",
+                           "address_line1",
+                           "address_line2",
+                           "address_line3",
+                           "foreign_location_description",
+                           "zip4",
+                           "congressional_code",
+                           "performance_code",
+                           "zip_last4",
+                           "zip5",
+                           "foreign_postal_code",
+                           "foreign_province",
+                           "foreign_city_name",
                            "reporting_period_start",
                            "reporting_period_end")
 
@@ -212,13 +294,13 @@ class Location(DataSourceTrackedModel):
 class LegalEntity(DataSourceTrackedModel):
     legal_entity_id = models.AutoField(primary_key=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
-    ultimate_parent_legal_entity_id = models.IntegerField(null=True)
-    # duns number ?
+    parent_recipient_unique_id = models.CharField(max_length=9, blank=True, null=True, verbose_name="Parent DUNS Number")
     recipient_name = models.CharField(max_length=120, blank=True, verbose_name="Recipient Name")
     vendor_doing_as_business_name = models.CharField(max_length=400, blank=True, null=True)
     vendor_phone_number = models.CharField(max_length=30, blank=True, null=True)
     vendor_fax_number = models.CharField(max_length=30, blank=True, null=True)
-    business_types = models.CharField(max_length=3, blank=True, null=True)
+    business_types = models.CharField(max_length=3, blank=True, null=True, choices=LEGAL_ENTITY_BUSINESS_TYPES, default="UN")
+    business_types_description = models.CharField(max_length=150, blank=True, null=True, default="Unknown Business Type")
     recipient_unique_id = models.CharField(max_length=9, blank=True, null=True, verbose_name="DUNS Number")
     limited_liability_corporation = models.CharField(max_length=1, blank=True, null=True)
     sole_proprietorship = models.CharField(max_length=1, blank=True, null=True)
@@ -324,13 +406,25 @@ class LegalEntity(DataSourceTrackedModel):
     small_business = models.CharField(max_length=1, blank=True, null=True)
     individual = models.CharField(max_length=1, blank=True, null=True)
 
+    def get_type_description(self):
+        description = [item for item in LEGAL_ENTITY_BUSINESS_TYPES if item[0] == self.business_types]
+        if len(description) == 0:
+            return "Unknown Business Type"
+        else:
+            return description[0][1]
+
+    def save(self, *args, **kwargs):
+        self.business_types_description = self.get_type_description()
+        super(LegalEntity, self).save(*args, **kwargs)
+
     @staticmethod
-    def get_default_fields():
+    def get_default_fields(path=None):
         return [
             "legal_entity_id",
-            "ultimate_parent_legal_entity_id",
+            "parent_recipient_unique_id",
             "recipient_name",
             "business_types",
+            "business_types_description",
             "location"
         ]
 
