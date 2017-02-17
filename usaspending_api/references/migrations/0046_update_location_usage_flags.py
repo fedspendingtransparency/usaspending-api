@@ -14,8 +14,6 @@ class Migration(migrations.Migration):
 
     dependencies = [('references', '0045_auto_20170125_1500'), ('awards', '0060_auto_20170207_1606')]
 
-    operations = [
-        # populate newly-added fields using data in old fields
-        migrations.RunPython(
-            update_location_flags, reverse_code=migrations.RunPython.noop),
-    ]
+    # removing this migration because it fails whenever we change
+    # the "update_location_usage_flag" command
+    pass
