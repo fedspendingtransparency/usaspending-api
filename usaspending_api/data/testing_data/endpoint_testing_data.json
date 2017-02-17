@@ -1,24 +1,14 @@
 [
     {
-        "method": "POST",
-        "request_object": {
-            "fields": [
-                "fain",
-                "uri",
-                "piid"
-            ]
-        },
         "url": "/api/v1/awards/?page=1&limit=1",
-        "status_code": 200,
-        "name": "Test field limiting on awards/",
         "response_object": {
             "total_metadata": {
                 "count": 26
             },
             "page_metadata": {
+                "count": 1,
                 "page_number": 1,
-                "num_pages": 26,
-                "count": 1
+                "num_pages": 26
             },
             "results": [
                 {
@@ -27,30 +17,28 @@
                     "uri": null
                 }
             ]
-        }
-    },
-    {
+        },
+        "name": "Test field limiting on awards/",
         "method": "POST",
+        "status_code": 200,
         "request_object": {
-            "page": 1,
-            "limit": 1,
-            "exclude": [
+            "fields": [
                 "fain",
                 "uri",
                 "piid"
             ]
-        },
+        }
+    },
+    {
         "url": "/api/v1/awards/",
-        "status_code": 200,
-        "name": "Testing field exclusion on awards/",
         "response_object": {
             "total_metadata": {
                 "count": 26
             },
             "page_metadata": {
+                "count": 1,
                 "page_number": 1,
-                "num_pages": 26,
-                "count": 1
+                "num_pages": 26
             },
             "results": [
                 {
@@ -126,54 +114,33 @@
                         "foreign_city_name": null,
                         "location_country_code": "USA"
                     },
-                    "transaction_set": [
-                        {
-                            "id": 4,
-                            "federal_action_obligation": "6098.67",
-                            "period_of_performance_start_date": null,
-                            "period_of_performance_current_end_date": null,
-                            "action_date": "2016-09-20",
-                            "action_type": "A"
-                        },
-                        {
-                            "id": 3,
-                            "federal_action_obligation": "8901.33",
-                            "period_of_performance_start_date": null,
-                            "period_of_performance_current_end_date": null,
-                            "action_date": "2016-09-20",
-                            "action_type": "A"
-                        }
-                    ],
                     "financial_set": []
                 }
             ]
+        },
+        "name": "Testing field exclusion on awards/",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "exclude": [
+                "fain",
+                "uri",
+                "piid"
+            ],
+            "limit": 1,
+            "page": 1
         }
     },
     {
-        "method": "POST",
-        "request_object": {
-            "filters": [
-                {
-                    "operation": "equals",
-                    "value": "DEPARTMENT OF POORLY NAMED TEST DATA",
-                    "field": "funding_agency__toptier_agency__name"
-                }
-            ],
-            "fields": [
-                "funding_agency"
-            ]
-        },
         "url": "/api/v1/awards/?page=1&limit=1",
-        "status_code": 200,
-        "name": "Testing filter operation 'equals' on awards",
         "response_object": {
             "total_metadata": {
                 "count": 5
             },
             "page_metadata": {
+                "count": 1,
                 "page_number": 1,
-                "num_pages": 5,
-                "count": 1
+                "num_pages": 5
             },
             "results": [
                 {
@@ -192,14 +159,46 @@
                     }
                 }
             ]
+        },
+        "name": "Testing filter operation 'equals' on awards",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "fields": [
+                "funding_agency"
+            ],
+            "filters": [
+                {
+                    "value": "DEPARTMENT OF POORLY NAMED TEST DATA",
+                    "field": "funding_agency__toptier_agency__name",
+                    "operation": "equals"
+                }
+            ]
         }
     },
     {
+        "url": "/api/v1/awards/?page=1&limit=1",
+        "response_object": {
+            "total_metadata": {
+                "count": 0
+            },
+            "page_metadata": {
+                "count": 0,
+                "page_number": 1,
+                "num_pages": 1
+            },
+            "results": []
+        },
+        "name": "Testing filter operation 'range_intersect' on awards",
         "method": "POST",
+        "status_code": 200,
         "request_object": {
+            "fields": [
+                "create_date",
+                "update_date"
+            ],
             "filters": [
                 {
-                    "operation": "range_intersect",
                     "value": [
                         "2015-10-05",
                         "2016-12-10"
@@ -207,56 +206,22 @@
                     "field": [
                         "create_date",
                         "update_date"
-                    ]
+                    ],
+                    "operation": "range_intersect"
                 }
-            ],
-            "fields": [
-                "create_date",
-                "update_date"
             ]
-        },
-        "url": "/api/v1/awards/?page=1&limit=1",
-        "status_code": 200,
-        "name": "Testing filter operation 'range_intersect' on awards",
-        "response_object": {
-            "total_metadata": {
-                "count": 0
-            },
-            "page_metadata": {
-                "page_number": 1,
-                "num_pages": 1,
-                "count": 0
-            },
-            "results": []
         }
     },
     {
-        "method": "POST",
-        "request_object": {
-            "filters": [
-                {
-                    "operation": "search",
-                    "value": "poorly",
-                    "field": "funding_agency__toptier_agency__name"
-                }
-            ],
-            "fields": [
-                "fain",
-                "create_date",
-                "funding_agency"
-            ]
-        },
         "url": "/api/v1/awards/?page=1&limit=5",
-        "status_code": 200,
-        "name": "Testing filter operation 'search' on awards",
         "response_object": {
             "total_metadata": {
                 "count": 5
             },
             "page_metadata": {
+                "count": 5,
                 "page_number": 1,
-                "num_pages": 1,
-                "count": 5
+                "num_pages": 1
             },
             "results": [
                 {
@@ -345,44 +310,35 @@
                     }
                 }
             ]
+        },
+        "name": "Testing filter operation 'search' on awards",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "fields": [
+                "fain",
+                "create_date",
+                "funding_agency"
+            ],
+            "filters": [
+                {
+                    "value": "poorly",
+                    "field": "funding_agency__toptier_agency__name",
+                    "operation": "search"
+                }
+            ]
         }
     },
     {
-        "method": "POST",
-        "request_object": {
-            "filters": [
-                {
-                    "filters": [
-                        {
-                            "operation": "is_null",
-                            "value": false,
-                            "field": "fain"
-                        },
-                        {
-                            "operation": "equals",
-                            "value": "DEPARTMENT OF POORLY NAMED TEST DATA",
-                            "field": "funding_agency__toptier_agency__name"
-                        }
-                    ],
-                    "combine_method": "OR"
-                }
-            ],
-            "fields": [
-                "fain",
-                "uri"
-            ]
-        },
         "url": "/api/v1/awards/?page=1&limit=100",
-        "status_code": 200,
-        "name": "Testing filter combinations via OR on awards",
         "response_object": {
             "total_metadata": {
                 "count": 5
             },
             "page_metadata": {
+                "count": 5,
                 "page_number": 1,
-                "num_pages": 1,
-                "count": 5
+                "num_pages": 1
             },
             "results": [
                 {
@@ -406,58 +362,69 @@
                     "uri": null
                 }
             ]
+        },
+        "name": "Testing filter combinations via OR on awards",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "fields": [
+                "fain",
+                "uri"
+            ],
+            "filters": [
+                {
+                    "combine_method": "OR",
+                    "filters": [
+                        {
+                            "value": false,
+                            "field": "fain",
+                            "operation": "is_null"
+                        },
+                        {
+                            "value": "DEPARTMENT OF POORLY NAMED TEST DATA",
+                            "field": "funding_agency__toptier_agency__name",
+                            "operation": "equals"
+                        }
+                    ]
+                }
+            ]
         }
     },
     {
+        "url": "/api/v1/awards/autocomplete/",
+        "response_object": {
+            "results": {
+                "recipient__location__state_code": [
+                    "LA",
+                    "VA"
+                ],
+                "recipient__location__state_name": [
+                    "Minnesota",
+                    "South Dakota",
+                    "Utah",
+                    "Virginia",
+                    "Louisiana"
+                ]
+            },
+            "counts": {
+                "recipient__location__state_code": 2,
+                "recipient__location__state_name": 5
+            }
+        },
+        "name": "Testing mode 'contains' awards/autocomplete",
         "method": "POST",
+        "status_code": 200,
         "request_object": {
             "value": "a",
             "fields": [
                 "recipient__location__state_code",
                 "recipient__location__state_name"
             ]
-        },
-        "url": "/api/v1/awards/autocomplete/",
-        "status_code": 200,
-        "name": "Testing mode 'contains' awards/autocomplete",
-        "response_object": {
-            "counts": {
-                "recipient__location__state_code": 2,
-                "recipient__location__state_name": 5
-            },
-            "results": {
-                "recipient__location__state_code": [
-                    "VA",
-                    "LA"
-                ],
-                "recipient__location__state_name": [
-                    "Utah",
-                    "Minnesota",
-                    "Virginia",
-                    "Louisiana",
-                    "South Dakota"
-                ]
-            }
         }
     },
     {
-        "method": "POST",
-        "request_object": {
-            "mode": "startswith",
-            "value": "l",
-            "fields": [
-                "recipient__location__state_code",
-                "recipient__location__state_name"
-            ]
-        },
         "url": "/api/v1/awards/autocomplete/",
-        "status_code": 200,
-        "name": "Testing mode 'startswith' awards/autocomplete",
         "response_object": {
-            "counts": {
-                "recipient__location__state_code": 1,
-                "recipient__location__state_name": 1
-            },
             "results": {
                 "recipient__location__state_code": [
                     "LA"
@@ -465,19 +432,26 @@
                 "recipient__location__state_name": [
                     "Louisiana"
                 ]
+            },
+            "counts": {
+                "recipient__location__state_code": 1,
+                "recipient__location__state_name": 1
             }
+        },
+        "name": "Testing mode 'startswith' awards/autocomplete",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "value": "l",
+            "fields": [
+                "recipient__location__state_code",
+                "recipient__location__state_name"
+            ],
+            "mode": "startswith"
         }
     },
     {
-        "method": "POST",
-        "request_object": {
-            "aggregate": "sum",
-            "field": "total_obligation",
-            "group": "type_description"
-        },
         "url": "/api/v1/awards/total/",
-        "status_code": 200,
-        "name": "Testing awards/total",
         "response_object": {
             "results": [
                 {
@@ -493,129 +467,129 @@
                 "count": 2
             },
             "page_metadata": {
+                "count": 2,
                 "page_number": 1,
-                "num_pages": 1,
-                "count": 2
+                "num_pages": 1
             }
+        },
+        "name": "Testing awards/total",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "group": "type_description",
+            "aggregate": "sum",
+            "field": "total_obligation"
         }
     },
     {
-        "method": "POST",
-        "request_object": {
-            "filters": [
-                {
-                    "operation": "equals",
-                    "value": 530,
-                    "field": "appropriation_account_balances_id"
-                }
-            ],
-            "fields": [
-                "budget_authority_unobligated_balance_brought_forward_fyb"
-            ]
-        },
         "url": "/api/v1/accounts/",
-        "status_code": 200,
-        "name": "Test accounts endpoint POST request",
         "response_object": {
             "total_metadata": {
                 "count": 1
             },
             "page_metadata": {
+                "count": 1,
                 "page_number": 1,
-                "num_pages": 1,
-                "count": 1
+                "num_pages": 1
             },
             "results": [
                 {
                     "budget_authority_unobligated_balance_brought_forward_fyb": "864120.58"
                 }
             ]
+        },
+        "name": "Test accounts endpoint POST request",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "fields": [
+                "budget_authority_unobligated_balance_brought_forward_fyb"
+            ],
+            "filters": [
+                {
+                    "value": 530,
+                    "field": "appropriation_account_balances_id",
+                    "operation": "equals"
+                }
+            ]
         }
     },
     {
-        "method": "POST",
-        "request_object": {
-            "filters": [
-                {
-                    "operation": "equals",
-                    "value": 63031,
-                    "field": "treasury_account_identifier"
-                }
-            ],
-            "fields": [
-                "main_account_code"
-            ]
-        },
         "url": "/api/v1/accounts/tas/",
-        "status_code": 200,
-        "name": "Test TAS endpoint POST request",
         "response_object": {
             "total_metadata": {
                 "count": 1
             },
             "page_metadata": {
+                "count": 1,
                 "page_number": 1,
-                "num_pages": 1,
-                "count": 1
+                "num_pages": 1
             },
             "results": [
                 {
                     "main_account_code": "0100"
                 }
             ]
+        },
+        "name": "Test TAS endpoint POST request",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "fields": [
+                "main_account_code"
+            ],
+            "filters": [
+                {
+                    "value": 63031,
+                    "field": "treasury_account_identifier",
+                    "operation": "equals"
+                }
+            ]
         }
     },
     {
-        "method": "POST",
-        "request_object": {
-            "filters": [
-                {
-                    "operation": "equals",
-                    "value": 12,
-                    "field": "submission_id"
-                }
-            ],
-            "fields": [
-                "cgac_code"
-            ]
-        },
         "url": "/api/v1/submissions/",
-        "status_code": 200,
-        "name": "Test submission endpoint POST request",
         "response_object": {
             "total_metadata": {
                 "count": 1
             },
             "page_metadata": {
+                "count": 1,
                 "page_number": 1,
-                "num_pages": 1,
-                "count": 1
+                "num_pages": 1
             },
             "results": [
                 {
                     "cgac_code": "073"
                 }
             ]
+        },
+        "name": "Test submission endpoint POST request",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "fields": [
+                "cgac_code"
+            ],
+            "filters": [
+                {
+                    "value": 12,
+                    "field": "submission_id",
+                    "operation": "equals"
+                }
+            ]
         }
     },
     {
-        "method": "POST",
-        "request_object": {
-            "order": [
-                "award"
-            ]
-        },
         "url": "/api/v1/transactions/?page=1&limit=1",
-        "status_code": 200,
-        "name": "Test transaction endpoint POST request",
         "response_object": {
             "total_metadata": {
                 "count": 32
             },
             "page_metadata": {
+                "count": 1,
                 "page_number": 1,
-                "num_pages": 32,
-                "count": 1
+                "num_pages": 32
             },
             "results": [
                 {
@@ -644,19 +618,18 @@
                     "contract_data": null
                 }
             ]
+        },
+        "name": "Test transaction endpoint POST request",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "order": [
+                "award"
+            ]
         }
     },
     {
-        "method": "POST",
-        "request_object": {
-            "aggregate": "sum",
-            "date_part": "year",
-            "field": "federal_action_obligation",
-            "group": "action_date"
-        },
         "url": "/api/v1/transactions/total/",
-        "status_code": 200,
-        "name": "Test transaction total POST request",
         "response_object": {
             "results": [
                 {
@@ -668,18 +641,23 @@
                 "count": 1
             },
             "page_metadata": {
+                "count": 1,
                 "page_number": 1,
-                "num_pages": 1,
-                "count": 1
+                "num_pages": 1
             }
+        },
+        "name": "Test transaction total POST request",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "group": "action_date",
+            "date_part": "year",
+            "aggregate": "sum",
+            "field": "federal_action_obligation"
         }
     },
     {
-        "method": "POST",
-        "request_object": {},
         "url": "/api/v1/awards/47691/",
-        "status_code": 200,
-        "name": "Test single award endpoint",
         "response_object": {
             "id": 47691,
             "date_signed__fy": 2016,
@@ -706,27 +684,15 @@
             "recipient": null,
             "place_of_performance": null,
             "latest_submission": 12,
-            "transaction_set": [
-                {
-                    "id": 32,
-                    "federal_action_obligation": "54400.00",
-                    "period_of_performance_start_date": null,
-                    "period_of_performance_current_end_date": null,
-                    "action_date": "2016-09-01",
-                    "action_type": null
-                }
-            ],
             "financial_set": []
-        }
+        },
+        "name": "Test single award endpoint",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {}
     },
     {
-        "method": "POST",
-        "request_object": {
-            "verbose": true
-        },
         "url": "/api/v1/transactions/21/",
-        "status_code": 200,
-        "name": "Test single transaction endpoint",
         "response_object": {
             "id": 21,
             "data_source": "DBR",
@@ -837,6 +803,12 @@
                 "reporting_period_end": null,
                 "submission": 12
             }
+        },
+        "name": "Test single transaction endpoint",
+        "method": "POST",
+        "status_code": 200,
+        "request_object": {
+            "verbose": true
         }
     }
 ]

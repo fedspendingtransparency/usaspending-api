@@ -34,17 +34,6 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
         }
 
 
-class AwardTransactionSerializer(LimitableSerializer):
-    """Serialize basic transaction information to return in award/ endpoint."""
-
-    class Meta:
-        model = Transaction
-        fields = (
-            'id', 'federal_action_obligation',
-            'period_of_performance_start_date', 'period_of_performance_current_end_date',
-            'action_date', 'action_type')
-
-
 class AwardSerializer(LimitableSerializer):
 
     class Meta:
@@ -63,10 +52,6 @@ class AwardSerializer(LimitableSerializer):
             "funding_agency": {
                 "class": AgencySerializer,
                 "kwargs": {"read_only": True}
-            },
-            "transaction_set": {
-                "class": AwardTransactionSerializer,
-                "kwargs": {"read_only": True, "many": True}
             },
             "financial_set": {
                 "class": FinancialAccountsByAwardsSerializer,
