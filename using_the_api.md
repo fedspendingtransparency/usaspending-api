@@ -51,7 +51,7 @@ The currently available endpoints are listed below. To reduce unnecessary data t
 
 
   * **[/v1/awards/](https://spending-api.us/api/v1/awards/)**
-    - _Description_: Provides a list of awards, including a list of associated transactions. Award data pertains to grants, loans, direct payments to individuals, and contracts.
+    - _Description_: Provides a list of awards. Award data pertains to grants, loans, direct payments to individuals, and contracts.
     - _Methods_: GET, POST
 
 
@@ -66,7 +66,7 @@ The currently available endpoints are listed below. To reduce unnecessary data t
 
 
   * **[/v1/transactions/](https://spending-api.us/api/v1/transactions/)**
-    - _Description_: Provides award transactions data. Awards transaction represent specific actions that apply to an award, such as a purchase order. _Note:_ This endpoint is under active development and currently serves contract data only.
+    - _Description_: Provides award transactions data. Awards transaction represent specific actions that apply to an award, such as a purchase order.
     - _Methods_: GET, POST
 
 
@@ -434,92 +434,73 @@ The response object structure is the same whether you are making a GET or a POST
     "count": 26
   },
   "results": [
-    {
-      "id": 47950,
-      "type": "05",
-      "type_description": "Cooperative Agreement",
-      "piid": null,
-      "fain": "SBAHQ15J0005",
-      "uri": null,
-      "total_obligation": "15000.00",
-      "total_outlay": null,
-      "date_signed": "2016-09-20",
-      "description": "FY 15 7J",
-      "period_of_performance_start_date": "2015-09-30",
-      "period_of_performance_current_end_date": "2016-12-28",
-      "awarding_agency": {
-        "toptier_agency": {
-          "cgac_code": "073",
-          "fpds_code": "7300",
-          "name": "SMALL BUSINESS ADMINISTRATION"
-        },
-        "subtier_agency": {
-          "subtier_code": "7300",
-          "name": "SMALL BUSINESS ADMINISTRATION"
-        },
-        "office_agency": null
+  _agency": {
+        "subtier_code": "7300",
+        "name": "SMALL BUSINESS ADMINISTRATION"
       },
-      "funding_agency": {
-        "toptier_agency": {
-          "cgac_code": "073",
-          "fpds_code": "7300",
-          "name": "SMALL BUSINESS ADMINISTRATION"
+      "office_agency": null
+    },
+    "recipient": {
+      "legal_entity_id": 799999094,
+      "parent_recipient_unique_id": null,
+      "recipient_name": "PROJECT SOLUTIONS, INC.",
+      "business_types": "Q",
+      "business_types_description": "For-Profit Organization (Other than Small Business)",
+      "location": {
+        "country_name": "UNITED STATES",
+        "state_code": "SD",
+        "state_name": "South Dakota",
+        "city_name": null,
+        "address_line1": null,
+        "address_line2": null,
+        "address_line3": null,
+        "zip5": null,
+        "foreign_postal_code": null,
+        "foreign_province": null,
+        "foreign_city_name": null,
+        "location_country_code": "USA"
+      }
+    },
+    "place_of_performance": {
+      "country_name": "UNITED STATES",
+      "state_code": null,
+      "state_name": "South Dakota",
+      "city_name": null,
+      "address_line1": null,
+      "address_line2": null,
+      "address_line3": null,
+      "zip5": null,
+      "foreign_postal_code": null,
+      "foreign_province": null,
+      "foreign_city_name": null,
+      "location_country_code": "USA"
+    },
+    "financial_set": [
+      {
+        "financial_accounts_by_awards_id": 14185,
+        "program_activity_name": null,
+        "piid": null,
+        "fain": "SBAHQ15J0005",
+        "uri": null,
+        "gross_outlay_amount_by_award_fyb": null,
+        "gross_outlay_amount_by_award_cpe": null,
+        "last_modified_date": null,
+        "certified_date": null,
+        "treasury_account": {
+          "treasury_account_identifier": 63089,
+          "tas_rendering_label": "0732015/20160400",
+          "account_title": "Entrepreneurial Development Programs, Small Business Administration",
+          "reporting_agency_id": "073",
+          "reporting_agency_name": "Small Business Administration"
         },
-        "subtier_agency": {
-          "subtier_code": "7300",
-          "name": "SMALL BUSINESS ADMINISTRATION"
-        },
-        "office_agency": null
+        "program_activity_code": null,
+        "object_class": "410",
+        "transaction_obligations": [
+          {
+            "transaction_obligated_amount": "8901.33"
+          }
+        ]
       },
-      "recipient": {
-        "legal_entity_id": 799999094,
-        "parent_recipient_unique_id": null,
-        "recipient_name": "PROJECT SOLUTIONS, INC.",
-        "business_types": "Q",
-        "location": {
-          "country_name": "UNITED STATES",
-          "state_code": "SD",
-          "state_name": "South Dakota",
-          "city_name": "Rapid City",
-          "address_line1": "3022 W Saint Louis St",
-          "address_line2": null,
-          "address_line3": null,
-          "zip5": "57702",
-          "foreign_postal_code": null,
-          "foreign_province": null,
-          "foreign_city_name": null,
-          "location_country_code": "USA"
-        }
-      },
-      "place_of_performance": 18,
-      "procurement_set": [],
-      "financialassistanceaward_set": [
-        {
-          "type": "05",
-          "action_date": "2016-09-20",
-          "federal_action_obligation": "8901.33",
-          "modification_number": "0003:560400DB",
-          "description": "FY 15 7J",
-          "cfda_number": "59.007",
-          "cfda_title": "7(j) Technical Assistance",
-          "face_value_loan_guarantee": null,
-          "original_loan_subsidy_cost": null,
-          "update_date": "2017-01-20T21:27:59.580606Z"
-        },
-        {
-          "type": "05",
-          "action_date": "2016-09-20",
-          "federal_action_obligation": "6098.67",
-          "modification_number": "0003:670400DB",
-          "description": "FY 15 7J",
-          "cfda_number": "59.007",
-          "cfda_title": "7(j) Technical Assistance",
-          "face_value_loan_guarantee": null,
-          "original_loan_subsidy_cost": null,
-          "update_date": "2017-01-20T21:27:59.531692Z"
-        }
-      ]
-    }
   ]
 }
 ```
