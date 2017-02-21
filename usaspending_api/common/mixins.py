@@ -1,6 +1,5 @@
 from collections import OrderedDict
-from itertools import chain
-from django.db.models import Avg, Count, F, Max, Min, Sum, Func, DateField, IntegerField, ExpressionWrapper
+from django.db.models import Avg, Count, F, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 
 from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator
