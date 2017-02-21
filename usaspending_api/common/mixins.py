@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from itertools import chain
-from django.db.models import Avg, Count, F, Max, Min, Sum, Func, DateField
+from django.db.models import Avg, Count, F, Max, Min, Sum, Func, DateField, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 
 from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator
@@ -61,26 +61,22 @@ class AggregateQuerysetMixin(object):
 
         return aggregate
 
-    classes_with_lookups = (DateField, )
-
-    lookup_suffixes = set()
-    for cls in (DateField, ):
-        for suffix in cls.class_lookups.keys():
-            lookup_suffixes.add(suffix)
+    _sql_function_transformations = {'fy': IntegerField}
 
     def _wrapped_f_expression(self, col_name):
         """F-expression of col, wrapped if needed with SQL function call
 
         Assumes that there's an SQL function defined for each
         registered lookup."""
-        for suffix in self.lookup_suffixes:
+        for suffix in self._sql_function_transformations:
             full_suffix = '__' + suffix
             if col_name.endswith(full_suffix):
                 col_name = col_name[:-(len(full_suffix))]
                 result = Func(F(col_name), function=suffix)
+                output_type = self._sql_function_transformations[suffix]
+                result = ExpressionWrapper(result, output_field=output_type())
                 return result
         return F(col_name)
-
 
     def validate_request(self, params):
         """Validate request parameters."""
