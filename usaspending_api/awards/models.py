@@ -90,6 +90,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     gross_outlays_delivered_orders_paid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     drv_award_id_field_type = models.CharField(max_length=10, blank=True, null=True)
     drv_obligations_incurred_total_by_award = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
+    transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
