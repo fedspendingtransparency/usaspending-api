@@ -12,6 +12,8 @@ from usaspending_api.etl.management.commands import load_usaspending_contracts
 def test_contract_load():
     """Ensure contract awards can be loaded from usaspending"""
     call_command('loaddata', 'endpoint_fixture_db')
+    # Agency records from reference_fixture are a prereq
+    call_command('loaddata', 'reference_fixture')
     call_command('load_usaspending_contracts',
                  os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                               'usaspending_treasury_contracts.csv'))

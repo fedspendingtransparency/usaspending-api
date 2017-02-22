@@ -256,7 +256,7 @@ class Award(DataSourceTrackedModel):
         self.save()
 
     @staticmethod
-    def get_or_create_summary_award(piid=None, fain=None, uri=None, parent_award_id=None):
+    def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None):
         # If an award transaction's ID is a piid, it's contract data
         # If the ID is fain or a uri, it's financial assistance. If the award transaction
         # has both a fain and a uri, fain takes precedence.
@@ -272,16 +272,16 @@ class Award(DataSourceTrackedModel):
                 # Now search for it
                 # Do we want to log something if the the query below turns up
                 # more than one award record?
-                summary_award = Award.objects.all().filter(Q(**q_kwargs)).first()
+                summary_award = Award.objects.all().filter(Q(**q_kwargs)).filter(awarding_agency=awarding_agency).first()
                 if summary_award:
                     return summary_award
                 else:
                     parent_award = None
                     if parent_award_id:
                         # If we have a parent award id, recursively get/create the award for it
-                        parent_award = Award.get_or_create_summary_award(**{i[1]: parent_award_id})
+                        parent_award = Award.get_or_create_summary_award(**{i[1]: parent_award_id, 'awarding_agency': awarding_agency})
                     # Now create the award record for this award transaction
-                    summary_award = Award(**{i[1]: i[0], "parent_award": parent_award})
+                    summary_award = Award(**{i[1]: i[0], "parent_award": parent_award, "awarding_agency": awarding_agency})
                     summary_award.save()
                     return summary_award
 
