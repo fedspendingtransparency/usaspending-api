@@ -14,11 +14,15 @@ def up2colon(input_string):
 
 
 def convert_date(date):
+    if date == "":
+        return None
     return datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
 
 
 def fetch_country_code(vendor_country_code):
     code_str = up2colon(vendor_country_code)
+    if code_str == "":
+        return None
 
     country_code = RefCountryCode.objects.filter(
         Q(country_code=code_str) | Q(country_name__iexact=code_str)).first()
@@ -40,20 +44,20 @@ def get_or_create_location(row, mapper):
     location_dict["location_country_code"] = country_code
 
     # Country-specific adjustments
-    if country_code.country_code == "USA":
+    if country_code and country_code.country_code == "USA":
         location_dict.update(
-            location_zip5=location_dict["location_zip"][:5],
-            location_zip_last4=location_dict["location_zip"][5:])
+            zip5=location_dict["location_zip"][:5],
+            zip_last4=location_dict["location_zip"][5:])
         location_dict.pop("location_zip")
     else:
         location_dict.update(
-            location_foreign_postal_code=location_dict.pop("location_zip",
-                                                           None),
-            location_foreign_province=location_dict.pop("location_state_code",
-                                                        None))
-        if "location_city_name" in location_dict:
-            location_dict['location_foreign_city_name'] = location_dict.pop(
-                "location_city_name")
+            foreign_postal_code=location_dict.pop("location_zip",
+                                                  None),
+            foreign_province=location_dict.pop("state_code",
+                                               None))
+        if "city_name" in location_dict:
+            location_dict['foreign_city_name'] = location_dict.pop(
+                "city_name")
 
     location = Location.objects.filter(**location_dict).first()
     if not location:

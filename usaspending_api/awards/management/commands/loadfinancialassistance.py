@@ -162,30 +162,30 @@ class Command(BaseCommand):
 
 def location_mapper_fin_assistance_principal_place(row):
     loc = {
-        "location_county_name": row.get("principal_place_cc", ""),
+        "county_name": row.get("principal_place_cc", ""),
         "location_country_code": row.get("principal_place_country_code", ""),
         "location_zip": row.get("principal_place_zip", "").replace(
             "-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
-        "location_state_code": row.get("principal_place_state_code", ""),
-        "location_state_name": row.get("principal_place_state", ""),
+        "state_code": row.get("principal_place_state_code", ""),
+        "state_name": row.get("principal_place_state", ""),
     }
     return loc
 
 
 def location_mapper_fin_assistance_recipient(row):
     loc = {
-        "location_county_code": row.get("recipient_county_code", ""),
-        "location_county_name": row.get("recipient_county_name", ""),
+        "county_code": row.get("recipient_county_code", ""),
+        "county_name": row.get("recipient_county_name", ""),
         "location_country_code": row.get("recipient_country_code", ""),
-        "location_city_code": row.get("recipient_city_code"
-                                      ""),
-        "location_city_name": row.get("recipient_city_name"
-                                      ""),
+        "city_code": row.get("recipient_city_code"
+                             ""),
+        "city_name": row.get("recipient_city_name"
+                             ""),
         "location_zip": row.get("recipient_zip", "").replace(
             "-", ""),  # Either ZIP5, or ZIP5+4, sometimes with hypens
-        "location_state_code": row.get("recipient_state_code"),
-        "location_address_line1": row.get("receip_addr1"),
-        "location_address_line2": row.get("receip_addr2"),
-        "location_address_line3": row.get("receip_addr3"),
+        "state_code": row.get("recipient_state_code"),
+        "address_line1": row.get("receip_addr1"),
+        "address_line2": row.get("receip_addr2"),
+        "address_line3": row.get("receip_addr3"),
     }
     return loc

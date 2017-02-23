@@ -326,7 +326,7 @@ class AutoCompleteHandler():
         for field in fields:
             q_args = {}
             q_args[field + mode] = value
-            filter_matched_ids[field] = data_set.all().filter(Q(**q_args)).select_related(field)[:limit].values_list(pk_name, flat=True)
+            filter_matched_ids[field] = data_set.all().filter(Q(**q_args))[:limit].values_list(pk_name, flat=True)
 
         return filter_matched_ids, pk_name
 
@@ -348,6 +348,11 @@ class AutoCompleteHandler():
             AutoCompleteHandler.validate(body)
         except:
             raise
+
+        # If the serializer supports eager loading, set it up
+        if serializer:
+            if hasattr(serializer, "setup_eager_loading") and callable(serializer.setup_eager_loading):
+                data_set = serializer.setup_eager_loading(data_set)
 
         return_object = {}
 
@@ -388,35 +393,35 @@ class GeoCompleteHandler:
             "type": "COUNTRY",
             "parent": "location_country_code"
         }
-        self.search_fields["location_state_code"] = {
+        self.search_fields["state_code"] = {
             "type": "STATE",
             "parent": "location_country_code__country_name"
         }
-        self.search_fields["location_state_name"] = {
+        self.search_fields["state_name"] = {
             "type": "STATE",
             "parent": "location_country_code__country_name"
         }
-        self.search_fields["location_city_name"] = {
+        self.search_fields["city_name"] = {
             "type": "CITY",
-            "parent": "location_state_name"
+            "parent": "state_name"
         }
-        self.search_fields["location_county_name"] = {
+        self.search_fields["county_name"] = {
             "type": "COUNTY",
-            "parent": "location_state_name"
+            "parent": "state_name"
         }
-        self.search_fields["location_zip5"] = {
+        self.search_fields["zip5"] = {
             "type": "ZIP",
-            "parent": "location_state_name"
+            "parent": "state_name"
         }
-        self.search_fields["location_foreign_postal_code"] = {
+        self.search_fields["foreign_postal_code"] = {
             "type": "POSTAL CODE",
             "parent": "location_country_code__country_name"
         }
-        self.search_fields["location_foreign_province"] = {
+        self.search_fields["foreign_province"] = {
             "type": "PROVINCE",
             "parent": "location_country_code__country_name"
         }
-        self.search_fields["location_foreign_city_name"] = {
+        self.search_fields["foreign_city_name"] = {
             "type": "CITY",
             "parent": "location_country_code__country_name"
         }
@@ -451,27 +456,27 @@ class GeoCompleteHandler:
 
         """
         The front end will send congressional codes as XX-## format, where XX
-        the state code (location_state_code) and ## is the two digit district
-        code. (location_congressional_code). If we find a '-' in the value,
+        the state code (state_code) and ## is the two digit district
+        code. (congressional_code). If we find a '-' in the value,
         attempt to parse it as a congressional code search before the others
         """
         if value and '-' in value:
             temp_val = value.split('-')
 
             q_kwargs = {}
-            q_kwargs["location_state_code"] = temp_val[0]
+            q_kwargs["state_code"] = temp_val[0]
 
             if len(temp_val) >= 2:
-                q_kwargs["location_congressional_code__istartswith"] = temp_val[1]
+                q_kwargs["congressional_code__istartswith"] = temp_val[1]
 
             search_q = Q(**q_kwargs)
-            results = Location.objects.filter(search_q & scope_q & usage_q).order_by("location_state_code", "location_congressional_code").values_list("location_congressional_code", "location_state_code", "location_state_name").distinct()[:limit]
+            results = Location.objects.filter(search_q & scope_q & usage_q).order_by("state_code", "congressional_code").values_list("congressional_code", "state_code", "state_name").distinct()[:limit]
             for row in results:
                 response_row = {
                     "place": row[1] + "-" + str(row[0]),
                     "place_type": "CONGRESSIONAL DISTRICT",
                     "parent": row[2],
-                    "matched_ids": Location.objects.filter(Q(**{"location_congressional_code": row[0], "location_state_code": row[1], "location_state_name": row[2]})).values_list("location_id", flat=True)
+                    "matched_ids": Location.objects.filter(Q(**{"congressional_code": row[0], "state_code": row[1], "state_name": row[2]})).values_list("location_id", flat=True)
                 }
                 response_object.append(response_row)
                 if len(response_object) >= limit:
