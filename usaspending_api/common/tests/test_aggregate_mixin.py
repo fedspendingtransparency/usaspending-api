@@ -22,14 +22,12 @@ def aggregate_models():
     start_dates = [
         datetime.date(2016, 7, 13),
         datetime.date(2017, 1, 1),
-        datetime.date(
-            2018,
-            6,
-            1, ),
-        datetime.date(
-            2018,
-            1,
-            1, ),
+        datetime.date(2018,
+                      6,
+                      1, ),
+        datetime.date(2018,
+                      1,
+                      1, ),
     ]
     end_dates = [
         datetime.date(2018, 12, 31), datetime.date(2020, 1, 1),
@@ -160,7 +158,6 @@ _expected_fy_aggregated = [{
 }]
 
 
-
 @pytest.mark.django_db
 @pytest.mark.parametrize('model, request_data, expected', [(Award, {
     'field': 'total_obligation',
@@ -205,8 +202,8 @@ _expected_parent_fy_aggregated = [{
     'field': 'total_obligation',
     'group': 'parent_award__period_of_performance_start_date__fy'
 }, _expected_fy_aggregated)])
-def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model, request_data,
-                      expected):
+def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model,
+                                     request_data, expected):
     request = Mock()
     request.query_params = {}
     request.data = request_data
