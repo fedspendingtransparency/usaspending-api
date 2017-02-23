@@ -136,11 +136,7 @@ class FilterQuerysetMixin(object):
         if len(request.data):
             fg = FilterGenerator()
             filters = fg.create_from_request_body(request.data)
-            try:
-                filtered_qs = queryset.filter(filters).distinct()
-            except:
-                raise
-            return filtered_qs
+            return queryset.filter(filters).distinct()
         else:
             filter_map = kwargs.get('filter_map', {})
             fg = FilterGenerator(filter_map=filter_map)
