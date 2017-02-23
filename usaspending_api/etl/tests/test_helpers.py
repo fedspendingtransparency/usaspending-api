@@ -1,7 +1,7 @@
 import pytest
 from model_mommy import mommy
 
-from usaspending_api.awards.management.commands import loadfinancialassistance
+from usaspending_api.etl.management.commands import load_usaspending_assistance
 from usaspending_api.etl import helpers
 from usaspending_api.etl.management.commands import load_usaspending_contracts
 from usaspending_api.references.models import Location
@@ -109,7 +109,7 @@ def test_get_or_create_fa_place_of_performance_location_creates_new_locations(
 
     helpers.get_or_create_location(
         row,
-        loadfinancialassistance.location_mapper_fin_assistance_principal_place)
+        load_usaspending_assistance.location_mapper_fin_assistance_principal_place)
     assert Location.objects.count() == 1
 
     loc = Location.objects.all().first()
@@ -137,7 +137,7 @@ def test_get_or_create_fa_recipient_location_creates_new_locations():
     assert Location.objects.count() == 0
 
     helpers.get_or_create_location(
-        row, loadfinancialassistance.location_mapper_fin_assistance_recipient)
+        row, load_usaspending_assistance.location_mapper_fin_assistance_recipient)
     assert Location.objects.count() == 1
 
     loc = Location.objects.all().first()
