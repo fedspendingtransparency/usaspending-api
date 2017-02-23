@@ -4,6 +4,7 @@ import json
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework_tracking.mixins import LoggingMixin
 
 from usaspending_api.awards.models import Award, Transaction
 from usaspending_api.awards.serializers import AwardSerializer, TransactionSerializer
@@ -14,7 +15,8 @@ from usaspending_api.common.views import AggregateView, DetailViewSet
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
-class AwardViewSet(FilterQuerysetMixin,
+class AwardViewSet(LoggingMixin,
+                   FilterQuerysetMixin,
                    ResponseMetadatasetMixin,
                    DetailViewSet):
     """
@@ -52,7 +54,8 @@ class AwardAutocomplete(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AwardAggregateViewSet(FilterQuerysetMixin,
+class AwardAggregateViewSet(LoggingMixin,
+                            FilterQuerysetMixin,
                             AggregateView):
     """Return aggregated award information."""
     def get_queryset(self):
@@ -62,7 +65,8 @@ class AwardAggregateViewSet(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class TransactionViewset(FilterQuerysetMixin,
+class TransactionViewset(LoggingMixin,
+                         FilterQuerysetMixin,
                          ResponseMetadatasetMixin,
                          DetailViewSet):
     """Handles requests for award transaction data."""
@@ -77,7 +81,8 @@ class TransactionViewset(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class TransactionAggregateViewSet(FilterQuerysetMixin,
+class TransactionAggregateViewSet(LoggingMixin,
+                                  FilterQuerysetMixin,
                                   AggregateView):
     """Return aggregated transaction information."""
     def get_queryset(self):

@@ -8,9 +8,10 @@ from usaspending_api.references.serializers import LocationSerializer, AgencySer
 from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
 from usaspending_api.common.views import AggregateView, DetailViewSet
 import json
+from rest_framework_tracking.mixins import LoggingMixin
 
 
-class LocationEndpoint(APIView):
+class LocationEndpoint(LoggingMixin, APIView):
     """Return location information."""
     def post(self, request, geocomplete=False, format=None):
         try:
@@ -40,7 +41,8 @@ class AgencyAutocomplete(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AgencyEndpoint(FilterQuerysetMixin,
+class AgencyEndpoint(LoggingMixin,
+                     FilterQuerysetMixin,
                      ResponseMetadatasetMixin,
                      DetailViewSet):
     """Return an agency"""

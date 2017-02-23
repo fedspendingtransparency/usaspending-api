@@ -1,9 +1,12 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
+from rest_framework import status
 
 from usaspending_api.common.api_request_utils import ResponsePaginator
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.mixins import AggregateQuerysetMixin
+
+from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class AggregateView(AggregateQuerysetMixin,
@@ -22,33 +25,42 @@ class AggregateView(AggregateQuerysetMixin,
         Override the parent list method so we can aggregate the data
         before constructing a respones.
         """
-        queryset = self.aggregate(request, *args, **kwargs)
+        try:
+            queryset = self.aggregate(request, *args, **kwargs)
 
-        # construct metadata of entire queryset
-        metadata = {"count": queryset.count()}
+            # construct metadata of entire queryset
+            metadata = {"count": queryset.count()}
 
-        # get paged data for this request
-        paged_data = ResponsePaginator.get_paged_data(
-            queryset, request_parameters=request.data)
-        paged_queryset = paged_data.object_list.all()
+            # get paged data for this request
+            paged_data = ResponsePaginator.get_paged_data(
+                queryset, request_parameters=request.data)
+            paged_queryset = paged_data.object_list.all()
 
-        # construct page-specific metadata
-        page_metadata = {
-            "page_number": paged_data.number,
-            "num_pages": paged_data.paginator.num_pages,
-            "count": len(paged_data)
-        }
+            # construct page-specific metadata
+            page_metadata = {
+                "page_number": paged_data.number,
+                "num_pages": paged_data.paginator.num_pages,
+                "count": len(paged_data)
+            }
 
-        # serialize the paged data
-        serializer = self.get_serializer(paged_queryset, many=True)
-        serialized_data = serializer.data
+            # serialize the paged data
+            serializer = self.get_serializer(paged_queryset, many=True)
+            serialized_data = serializer.data
 
-        response_object = {
-            "total_metadata": metadata,
-            "page_metadata": page_metadata
-        }
-        response_object.update({'results': serialized_data})
-        return Response(response_object)
+            response_object = {
+                "total_metadata": metadata,
+                "page_metadata": page_metadata
+            }
+            response_object.update({'results': serialized_data})
+            status_code = status.HTTP_200_OK
+        except InvalidParameterException as e:
+            response_object = {"message": str(e)}
+            status_code = status.HTTP_400_BAD_REQUEST
+        except Exception as e:
+            response_object = {"message": str(e)}
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        finally:
+            return Response(response_object, status=status_code)
 
 
 class DetailViewSet(viewsets.ReadOnlyModelViewSet):
@@ -63,7 +75,15 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     # the application views.py files.
 
     def list(self, request, *args, **kwargs):
-
-        response = self.build_response(
-            self.request, queryset=self.get_queryset(), serializer=self.get_serializer_class())
-        return Response(response)
+        try:
+            response = self.build_response(
+                self.request, queryset=self.get_queryset(), serializer=self.get_serializer_class())
+            status_code = status.HTTP_200_OK
+        except InvalidParameterException as e:
+            response = {"message": str(e)}
+            status_code = status.HTTP_400_BAD_REQUEST
+        except Exception as e:
+            response = {"message": str(e)}
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        finally:
+            return Response(response, status=status_code)
