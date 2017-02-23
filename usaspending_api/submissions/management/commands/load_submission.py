@@ -12,7 +12,7 @@ from django.db.models import Q
 from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards, FinancialAccountsByAwardsTransactionObligations,
-    FinancialAssistanceAward, Procurement)
+    TransactionAssistance, TransactionContract, Transaction)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import (
     Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity)
@@ -293,7 +293,7 @@ class Command(BaseCommand):
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
 
-            fad_value_map = {
+            parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
                                                          subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
@@ -301,25 +301,34 @@ class Command(BaseCommand):
                                                         subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
+                'submission': submission_attributes,
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "action_date": format_date(row['action_date']),
+            }
+
+            transaction_instance = load_data_into_model(
+                Transaction(), row,
+                field_map=fad_field_map,
+                value_map=parent_txn_value_map,
+                as_dict=True)
+
+            transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+
+            fad_value_map = {
+                "transaction": transaction_instance,
                 "submission": submission_attributes,
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
-                "action_date": format_date(row['action_date']),
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr'])
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
             }
 
             financial_assistance_data = load_data_into_model(
-                FinancialAssistanceAward(), row,
+                TransactionAssistance(), row,
                 field_map=fad_field_map,
                 value_map=fad_value_map,
-                as_dict=True)
-
-            fad = FinancialAssistanceAward.objects.filter(award=award, modification_number=row['award_modification_amendme']).first()
-            if not fad:
-                FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
-            else:
-                FinancialAssistanceAward.objects.filter(pk=fad.pk).update(**financial_assistance_data)
+                save=True)
 
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
@@ -346,7 +355,7 @@ class Command(BaseCommand):
             "location_country_code": "place_of_perform_country_c"
         }
 
-        procurement_field_map = {
+        contract_field_map = {
             "type": "contract_award_type",
             "description": "award_description"
         }
@@ -360,7 +369,7 @@ class Command(BaseCommand):
             except ObjectDoesNotExist:
                 legal_entity_value_map = {
                     "location": legal_entity_location,
-                    "legal_entity_id": row['awardee_or_recipient_uniqu']
+                    "legal_entity_id": row['awardee_or_recipient_uniqu'],
                 }
                 legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
 
@@ -374,7 +383,7 @@ class Command(BaseCommand):
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
 
-            procurement_value_map = {
+            parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
                                                          subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
@@ -383,18 +392,31 @@ class Command(BaseCommand):
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 'submission': submission_attributes,
-                'reporting_period_start': submission_attributes.reporting_period_start,
-                'reporting_period_end': submission_attributes.reporting_period_end,
-                "action_date": format_date(row['action_date']),
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "action_date": format_date(row['action_date']),
+            }
+
+            transaction_instance = load_data_into_model(
+                Transaction(), row,
+                field_map=contract_field_map,
+                value_map=parent_txn_value_map,
+                as_dict=True)
+
+            transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+
+            contract_value_map = {
+                'transaction': transaction_instance,
+                'submission': submission_attributes,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end,
                 "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'])
             }
 
-            load_data_into_model(
-                Procurement(), row,
-                field_map=procurement_field_map,
-                value_map=procurement_value_map,
+            contract_instance = load_data_into_model(
+                TransactionContract(), row,
+                field_map=contract_field_map,
+                value_map=contract_value_map,
                 save=True)
 
 
