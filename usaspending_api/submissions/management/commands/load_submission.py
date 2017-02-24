@@ -170,8 +170,8 @@ class Command(BaseCommand):
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
                 'appropriation_account_balances': account_balances,
-                'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
-                'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
+                'object_class': get_or_create_object_class(row['object_class']),
+                'program_activity_code': get_or_create_program_activity(row['program_activity_code'])
             }
 
             load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
@@ -207,8 +207,8 @@ class Command(BaseCommand):
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
-                'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
-                'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
+                'object_class': get_or_create_object_class(row['object_class']),
+                'program_activity_code': get_or_create_program_activity(row['program_activity_code'])
             }
 
             load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
@@ -228,32 +228,32 @@ class Command(BaseCommand):
         self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
 
         legal_entity_location_field_map = {
-            "location_address_line1": "legal_entity_address_line1",
+            "address_line1": "legal_entity_address_line1",
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
-            "location_city_code": "legal_entity_city_code",
-            "location_city_name": "legal_entity_city_name",
-            "location_congressional_code": "legal_entity_congressional",
-            "location_county_code": "legal_entity_county_code",
-            "location_county_name": "legal_entity_county_name",
+            "city_code": "legal_entity_city_code",
+            "city_name": "legal_entity_city_name",
+            "congressional_code": "legal_entity_congressional",
+            "county_code": "legal_entity_county_code",
+            "county_name": "legal_entity_county_name",
             "foreign_city_name": "legal_entity_foreign_city",
             "foreign_postal_code": "legal_entity_foreign_posta",
             "foreign_province": "legal_entity_foreign_provi",
             "state_code": "legal_entity_state_code",
             "state_name": "legal_entity_state_name",
-            "location_zip5": "legal_entity_zip5",
-            "location_zip_last4": "legal_entity_zip_last4",
+            "zip5": "legal_entity_zip5",
+            "zip_last4": "legal_entity_zip_last4",
             "location_country_code": "legal_entity_country_code"
         }
 
         place_of_performance_field_map = {
-            "location_city_name": "place_of_performance_city",
-            "location_performance_code": "place_of_performance_code",
-            "location_congressional_code": "place_of_performance_congr",
-            "location_county_name": "place_of_perform_county_na",
-            "location_foreign_location_description": "place_of_performance_forei",
+            "city_name": "place_of_performance_city",
+            "performance_code": "place_of_performance_code",
+            "congressional_code": "place_of_performance_congr",
+            "county_name": "place_of_perform_county_na",
+            "foreign_location_description": "place_of_performance_forei",
             "state_name": "place_of_perform_state_nam",
-            "location_zip4": "place_of_performance_zip4a",
+            "zip4": "place_of_performance_zip4a",
             "location_country_code": "place_of_perform_country_c"
 
         }
@@ -337,22 +337,22 @@ class Command(BaseCommand):
         self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
         legal_entity_location_field_map = {
-            "location_address_line1": "legal_entity_address_line1",
+            "address_line1": "legal_entity_address_line1",
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
             "location_country_code": "legal_entity_country_code",
-            "location_city_name": "legal_entity_city_name",
-            "location_congressional_code": "legal_entity_congressional",
+            "city_name": "legal_entity_city_name",
+            "congressional_code": "legal_entity_congressional",
             "state_code": "legal_entity_state_code",
-            "location_zip4": "legal_entity_zip4"
+            "zip4": "legal_entity_zip4"
         }
 
         place_of_performance_field_map = {
             # not sure place_of_performance_locat maps exactly to city name
-            "location_city_name": "place_of_performance_locat",
-            "location_congressional_code": "place_of_performance_congr",
+            "city_name": "place_of_performance_locat",
+            "congressional_code": "place_of_performance_congr",
             "state_code": "place_of_performance_state",
-            "location_zip4": "place_of_performance_zip4a",
+            "zip4": "place_of_performance_zip4a",
             "location_country_code": "place_of_perform_country_c"
         }
 
@@ -426,6 +426,24 @@ def format_date(date_string, pattern='%Y%m%d'):
         return datetime.strptime(date_string, pattern)
     except TypeError:
         return None
+
+
+def get_or_create_object_class(object_class):
+    # We do it this way rather than .get_or_create because we do not want to
+    # duplicate existing pk's with null values
+    obj_class = RefObjectClassCode.objects.filter(object_class=object_class).first()
+    if obj_class is None and obj_class is not None:
+        obj_class = RefObjectClassCode.objects.create(object_class=object_class)
+    return obj_class
+
+
+def get_or_create_program_activity(program_activity_code):
+    # We do it this way rather than .get_or_create because we do not want to
+    # duplicate existing pk's with null values
+    prg_activity = RefProgramActivity.objects.filter(ref_program_activity_id=program_activity_code).first()
+    if prg_activity is None and program_activity_code is not None:
+        prg_activity = RefProgramActivity.objects.create(ref_program_activity_id=program_activity_code)
+    return prg_activity
 
 
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
@@ -544,7 +562,11 @@ def get_or_create_location(location_map, row, location_value_map={}):
     # temporary fix until broker is patched: remove later
     state_code = row.get(location_map.get('state_code'))
     if state_code is not None:
-        location_value_map.update({'state_code': state_code.replace('.', '')})
+        # Fix for procurement data foreign provinces stored as state_code
+        if location_country and location_country.country_code is not "USA":
+            location_value_map.update({'foreign_province': state_code})
+        else:
+            location_value_map.update({'state_code': state_code.replace('.', '')})
     # end of temporary fix
 
     if location_country:
