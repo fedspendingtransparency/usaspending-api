@@ -165,6 +165,21 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/debug.log'),
         },
+        'console_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
+        },
+        'events_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/events.log'),
+        },
+        'exceptions_file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/exceptions.log'),
+        },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
@@ -177,10 +192,20 @@ LOGGING = {
             'propagate': True,
         },
         'console': {
-            'handlers': ['console', ],
+            'handlers': ['console', 'console_file'],
             'level': 'INFO',
             'propagate': True,
-        }
+        },
+        'events': {
+            'handlers': ['events_file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'exceptions': {
+            'handlers': ['exceptions_file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
     },
 }
 
