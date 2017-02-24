@@ -1,12 +1,11 @@
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.financial_activities.serializers import FinancialAccountsByProgramActivityObjectClassSerializer
-from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
+from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin, SuperLoggingMixin
 from usaspending_api.common.views import DetailViewSet
-from rest_framework_tracking.mixins import LoggingMixin
 
 
 class FinancialAccountsByProgramActivityObjectClassListViewSet(
-        LoggingMixin,
+        SuperLoggingMixin,
         FilterQuerysetMixin,
         ResponseMetadatasetMixin,
         DetailViewSet):

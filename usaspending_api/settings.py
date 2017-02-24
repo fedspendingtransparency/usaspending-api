@@ -160,6 +160,11 @@ STATICFILES_DIRS = (
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'specifics': {
+            'format': "%(asctime)s %(filename)s %(funcName)s %(levelname)s %(lineno)s %(module)s %(message)s %(name)s %(pathname)s"
+        }
+    },
     'handlers': {
         'file': {
             'level': 'DEBUG',
@@ -170,6 +175,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
+            'formatter': 'specifics'
         },
         'events_file': {
             'level': 'INFO',
@@ -180,6 +186,7 @@ LOGGING = {
             'level': 'ERROR',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/exceptions.log'),
+            'formatter': 'specifics'
         },
         'console': {
             'level': 'INFO',

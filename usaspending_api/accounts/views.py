@@ -4,10 +4,10 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
 from usaspending_api.common.views import DetailViewSet
-from rest_framework_tracking.mixins import LoggingMixin
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 
-class TreasuryAppropriationAccountViewSet(LoggingMixin,
+class TreasuryAppropriationAccountViewSet(SuperLoggingMixin,
                                           FilterQuerysetMixin,
                                           ResponseMetadatasetMixin,
                                           DetailViewSet):
@@ -23,7 +23,7 @@ class TreasuryAppropriationAccountViewSet(LoggingMixin,
         return ordered_queryset
 
 
-class TreasuryAppropriationAccountBalancesViewSet(LoggingMixin,
+class TreasuryAppropriationAccountBalancesViewSet(SuperLoggingMixin,
                                                   FilterQuerysetMixin,
                                                   ResponseMetadatasetMixin,
                                                   DetailViewSet):

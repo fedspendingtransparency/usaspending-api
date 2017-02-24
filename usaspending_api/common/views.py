@@ -8,6 +8,8 @@ from usaspending_api.common.mixins import AggregateQuerysetMixin
 
 from usaspending_api.common.exceptions import InvalidParameterException
 
+import logging
+
 
 class AggregateView(AggregateQuerysetMixin,
                     viewsets.ReadOnlyModelViewSet):
@@ -19,6 +21,8 @@ class AggregateView(AggregateQuerysetMixin,
     this in the future.
     """
     serializer_class = AggregateSerializer
+
+    exception_logger = logging.getLogger("exceptions")
 
     def list(self, request, *args, **kwargs):
         """
@@ -56,9 +60,11 @@ class AggregateView(AggregateQuerysetMixin,
         except InvalidParameterException as e:
             response_object = {"message": str(e)}
             status_code = status.HTTP_400_BAD_REQUEST
+            self.exception_logger.exception(e)
         except Exception as e:
             response_object = {"message": str(e)}
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            self.exception_logger.exception(e)
         finally:
             return Response(response_object, status=status_code)
 
@@ -74,6 +80,8 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     # this class and inherit from ReadOnlyModelViewSet directly in
     # the application views.py files.
 
+    exception_logger = logging.getLogger("exceptions")
+
     def list(self, request, *args, **kwargs):
         try:
             response = self.build_response(
@@ -82,8 +90,10 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
         except InvalidParameterException as e:
             response = {"message": str(e)}
             status_code = status.HTTP_400_BAD_REQUEST
+            self.exception_logger.exception(e)
         except Exception as e:
             response = {"message": str(e)}
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            self.exception_logger.exception(e)
         finally:
             return Response(response, status=status_code)
