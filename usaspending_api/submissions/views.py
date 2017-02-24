@@ -2,9 +2,11 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
 from usaspending_api.common.views import DetailViewSet
+from rest_framework_tracking.mixins import LoggingMixin
 
 
-class SubmissionAttributesViewSet(FilterQuerysetMixin,
+class SubmissionAttributesViewSet(LoggingMixin,
+                                  FilterQuerysetMixin,
                                   ResponseMetadatasetMixin,
                                   DetailViewSet):
     """Handles requests for information about data submissions."""

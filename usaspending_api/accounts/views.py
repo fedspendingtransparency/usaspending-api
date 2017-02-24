@@ -4,9 +4,11 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
 from usaspending_api.common.views import DetailViewSet
+from rest_framework_tracking.mixins import LoggingMixin
 
 
-class TreasuryAppropriationAccountViewSet(FilterQuerysetMixin,
+class TreasuryAppropriationAccountViewSet(LoggingMixin,
+                                          FilterQuerysetMixin,
                                           ResponseMetadatasetMixin,
                                           DetailViewSet):
     """Handle requests for appropriation account (i.e., TAS) information."""
@@ -21,7 +23,8 @@ class TreasuryAppropriationAccountViewSet(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class TreasuryAppropriationAccountBalancesViewSet(FilterQuerysetMixin,
+class TreasuryAppropriationAccountBalancesViewSet(LoggingMixin,
+                                                  FilterQuerysetMixin,
                                                   ResponseMetadatasetMixin,
                                                   DetailViewSet):
     """Handle requests for appropriation account balance information."""

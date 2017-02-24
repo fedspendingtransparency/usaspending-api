@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework',
     'corsheaders',
+    'rest_framework_tracking',
     'usaspending_api.common',
     'usaspending_api.etl',
     'usaspending_api.references',
