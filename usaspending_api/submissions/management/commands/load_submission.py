@@ -168,6 +168,7 @@ class Command(BaseCommand):
                 'submission': submission_attributes,
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
+                'treasury_account': treasury_account,
                 'appropriation_account_balances': account_balances,
                 'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
                 'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
