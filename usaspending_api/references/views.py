@@ -11,7 +11,7 @@ import json
 from rest_framework_tracking.mixins import LoggingMixin
 
 
-class LocationEndpoint(LoggingMixin, APIView):
+class LocationEndpoint(APIView):
     """Return location information."""
     def post(self, request, geocomplete=False, format=None):
         try:
