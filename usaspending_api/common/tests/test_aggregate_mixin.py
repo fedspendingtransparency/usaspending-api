@@ -22,12 +22,14 @@ def aggregate_models():
     start_dates = [
         datetime.date(2016, 7, 13),
         datetime.date(2017, 1, 1),
-        datetime.date(2018,
-                      6,
-                      1, ),
-        datetime.date(2018,
-                      1,
-                      1, ),
+        datetime.date(
+            2018,
+            6,
+            1, ),
+        datetime.date(
+            2018,
+            1,
+            1, ),
     ]
     end_dates = [
         datetime.date(2018, 12, 31), datetime.date(2020, 1, 1),
@@ -52,6 +54,8 @@ def aggregate_models():
     parent = None
     for award in Award.objects.order_by('period_of_performance_start_date'):
         award.parent_award = parent
+        award.save()
+        parent = award
 
 
 @pytest.mark.django_db
@@ -184,24 +188,25 @@ def test_aggregate_fy(monkeypatch, aggregate_models, model, request_data,
 
 
 _expected_parent_fy_aggregated = [{
-    'item': None,
-    'aggregate': Decimal('1000.01')
+    'aggregate': Decimal('1000.01'),
+    'item': None
 }, {
-    'item': 2016,
-    'aggregate': Decimal('2000.00')
+    'aggregate': Decimal('2000.00'),
+    'item': 2016
 }, {
-    'item': 2017,
-    'aggregate': Decimal('4000.02')
+    'aggregate': Decimal('4000.02'),
+    'item': 2017
+}, {
+    'aggregate': None,
+    'item': 2018
 }]
 
 
-# TODO: support applying __fy through a FK traversal
-@pytest.mark.skip
 @pytest.mark.django_db
 @pytest.mark.parametrize('model, request_data, expected', [(Award, {
     'field': 'total_obligation',
     'group': 'parent_award__period_of_performance_start_date__fy'
-}, _expected_fy_aggregated)])
+}, _expected_parent_fy_aggregated)])
 def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model,
                                      request_data, expected):
     request = Mock()
@@ -211,12 +216,19 @@ def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model,
     a.get_queryset = lambda: model.objects.all()
     agg = a.aggregate(request=request)
 
+    def itemsorter(a):
+        if a['item'] is None:
+            return 0
+        return a['item']
+
     agg_list = [a for a in agg]
     if 'order' not in request_data:
         # this isn't an 'order by' request, (i.e., we're not testing
         # the result order), so sort the actual and expected results
         # to ensure a good comparison
-        agg_list.sort(key=itemgetter('item'))
-        expected.sort(key=itemgetter('item'))
-
+        agg_list.sort(key=itemsorter)
+        expected.sort(key=itemsorter)
+        # agg_list.sort(key=itemgetter('item'))
+        # expected.sort(key=itemgetter('item'))
+        #
     assert agg_list == expected
