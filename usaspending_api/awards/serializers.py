@@ -43,7 +43,8 @@ class AwardSerializer(LimitableSerializer):
         nested_serializers = {
             "recipient": {
                 "class": LegalEntitySerializer,
-                "kwargs": {"read_only": True}
+                "kwargs": {"read_only": True},
+                "retrieve": True
             },
             "awarding_agency": {
                 "class": AgencySerializer,
@@ -55,11 +56,12 @@ class AwardSerializer(LimitableSerializer):
             },
             "financial_set": {
                 "class": FinancialAccountsByAwardsSerializer,
-                "kwargs": {"read_only": True, "many": True}
+                "kwargs": {"read_only": True, "many": True},
             },
             "place_of_performance": {
                 "class": LocationSerializer,
-                "kwargs": {"read_only": True}
+                "kwargs": {"read_only": True},
+                "retrieve": True
             },
         }
 
