@@ -1,9 +1,14 @@
+import contextlib
+import csv
+import os
+import tempfile
+
 import pytest
 from model_mommy import mommy
 
-from usaspending_api.etl.management.commands import load_usaspending_assistance
 from usaspending_api.etl import helpers
-from usaspending_api.etl.management.commands import load_usaspending_contracts
+from usaspending_api.etl.management.commands import (load_usaspending_assistance,
+                                                     load_usaspending_contracts)
 from usaspending_api.references.models import Location
 
 
@@ -56,7 +61,8 @@ def test_get_or_create_location_non_usa():
 
     # can't find it because we're looking at the POP fields
     assert helpers.get_or_create_location(
-        row, load_usaspending_contracts.location_mapper_place_of_performance) != expected
+        row, load_usaspending_contracts.
+        location_mapper_place_of_performance) != expected
 
 
 @pytest.mark.django_db
@@ -76,7 +82,8 @@ def test_get_or_create_location_creates_new_locations():
     # can't find it because we're looking at the US fields
     assert Location.objects.count() == 0
 
-    helpers.get_or_create_location(row, load_usaspending_contracts.location_mapper_vendor)
+    helpers.get_or_create_location(
+        row, load_usaspending_contracts.location_mapper_vendor)
     assert Location.objects.count() == 1
 
     loc = Location.objects.all().first()
@@ -108,8 +115,8 @@ def test_get_or_create_fa_place_of_performance_location_creates_new_locations(
     assert Location.objects.count() == 0
 
     helpers.get_or_create_location(
-        row,
-        load_usaspending_assistance.location_mapper_fin_assistance_principal_place)
+        row, load_usaspending_assistance.
+        location_mapper_fin_assistance_principal_place)
     assert Location.objects.count() == 1
 
     loc = Location.objects.all().first()
@@ -137,7 +144,8 @@ def test_get_or_create_fa_recipient_location_creates_new_locations():
     assert Location.objects.count() == 0
 
     helpers.get_or_create_location(
-        row, load_usaspending_assistance.location_mapper_fin_assistance_recipient)
+        row,
+        load_usaspending_assistance.location_mapper_fin_assistance_recipient)
     assert Location.objects.count() == 1
 
     loc = Location.objects.all().first()
@@ -146,3 +154,26 @@ def test_get_or_create_fa_recipient_location_creates_new_locations():
     assert loc.zip_last4 == '6789'
     assert loc.state_code == 'OH'
     assert loc.county_name == 'MONTGOMERY'
+
+
+@contextlib.contextmanager
+def mutated_csv(filename, mutator):
+    """Returns tempfile copied from filename, but mutated.
+
+    If `filename` points to a CSV, then we load it,
+    apply the `mutator` function to each row, and save
+    the changed data to a tempfile, which is returned.
+
+    Used to create small, specific variants on test CSVs.
+    """
+
+    outfile = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
+    with open(filename) as infile:
+        reader = csv.DictReader(infile)
+        writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
+        writer.writeheader()
+        for row in reader:
+            writer.writerow(mutator(row))
+    outfile.close()
+    yield outfile
+    os.unlink(outfile.name)
