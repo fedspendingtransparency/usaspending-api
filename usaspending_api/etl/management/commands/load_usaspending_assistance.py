@@ -45,13 +45,15 @@ class Command(BaseCommand):
                 self.logger.info("Read row {}".format(len(reader)))
             row = h.cleanse_values(row)
 
+            awarding_agency = self.get_awarding_agency(row)  # todo: use agency dict?
+
             # Create the transaction object for this row
             txn_dict = {
                 "submission": subattr,
                 "action_date": h.convert_date(row['obligation_action_date']),
                 "action_type": h.up2colon(row['action_type']),
-                "award": self.get_or_create_award(row),
-                "awarding_agency": self.get_awarding_agency(row),  # todo: use agency dict?
+                "award": self.get_or_create_award(row, awarding_agency=awarding_agency),
+                "awarding_agency": awarding_agency,
                 "description": row["project_description"],  # ?? account_title is anther contender?
                 "data_source": "USA",
                 "federal_action_obligation": row["fed_funding_amount"],
@@ -117,10 +119,10 @@ class Command(BaseCommand):
         update_contract_awards(tuple(award_id_list))
         self.logger.info("Completed Awards update ({} records)".format(count))
 
-    def get_or_create_award(self, row):
+    def get_or_create_award(self, row, awarding_agency):
         fain = row.get("federal_award_id", None)
         uri = row.get("unique_transaction_id", None)  # ask: why unique_transaction_id instead of uri?
-        award = Award.get_or_create_summary_award(fain=fain, uri=uri)
+        award = Award.get_or_create_summary_award(fain=fain, uri=uri, awarding_agency=awarding_agency)
         return award
 
     def recipient_flags_by_type(self, type_name):
