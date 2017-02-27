@@ -42,22 +42,30 @@ def test_award_and_txn_uniqueness():
     filepath = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                             'usaspending_fin_assist_direct_payments.csv')
     call_command('load_usaspending_assistance', filepath)
-    base_award_count = Award.objects.count() - awards_before_loads
-    base_txn_count = Transaction.objects.count() - txn_before_loads
 
-    # Re-importing with new FAINS makes new awards
-    def fainchange(row):
-        return _replacer(row, 'federal_award_id', fain_prefixer)
+    # we record the # of records created by uploading the CSV
+    # in awards_in_csv and txn_in_csv
+    awards_in_csv = Award.objects.count() - awards_before_loads
+    txn_in_csv = Transaction.objects.count() - txn_before_loads
 
     def new_fain(row):
         row['federal_award_id'] = '{}-fain2'.format(row['federal_award_id'])
         return row
 
+    awards_before_test = Award.objects.count()
+
+    # Load the same test data, but this time giving each row a new
+    # FAIN, to verify that the new FAINs produce new records
     with mutated_csv(filepath, new_fain) as mutant_file:
         call_command('load_usaspending_assistance', mutant_file.name)
-        print('ok')
-    assert Award.objects.count() == awards_before_loads + (2 * base_award_count
-                                                           )
+
+    # Verify that each row created a new Award
+    assert Award.objects.count() == awards_before_test + awards_in_csv
+
+    # Next we verify that changing awarding agency creates
+    # new awards.  We do this by assigning existing Awards
+    # to a different awarding agency, then re-importing the
+    # original CSV (unchanged).
 
     # Find an agency with no awards
     agencies_in_use = Award.objects.values('awarding_agency__id')
@@ -67,25 +75,27 @@ def test_award_and_txn_uniqueness():
         award.awarding_agency = new_agency
         award.save()
     # re-import original file - should have new records
+    awards_before_test = Award.objects.count()
     call_command('load_usaspending_assistance', filepath)
-    assert Award.objects.count() == awards_before_loads + (3 * base_award_count
-                                                           )
+    assert Award.objects.count() == awards_before_test + awards_in_csv
 
     # changing the modification number should create new transaction
     # but not new award
-    awards_with_original_mods = Award.objects.count()
-    txn_with_original_mods = Transaction.objects.count()
 
     def increase_mod_num(row):
         current_mod = int(row['federal_award_mod'] or 0)
         row['federal_award_mod'] = current_mod + 1000
         return row
 
+    awards_before_test = Award.objects.count()
+    txn_before_test = Transaction.objects.count()
+
+    # Loading the original CSV again, but with a different
+    # modification number for each row
     with mutated_csv(filepath, increase_mod_num) as mutant_file:
         call_command('load_usaspending_assistance', mutant_file.name)
-    assert Award.objects.count() == awards_with_original_mods
-    assert Transaction.objects.count(
-    ) == txn_with_original_mods + base_txn_count
+    assert Award.objects.count() == awards_before_test
+    assert Transaction.objects.count() == txn_before_test + txn_in_csv
 
 
 @pytest.mark.parametrize('row,expected', [

@@ -158,7 +158,14 @@ def test_get_or_create_fa_recipient_location_creates_new_locations():
 
 @contextlib.contextmanager
 def mutated_csv(filename, mutator):
-    """Returns tempfile copied from filename, but mutated."""
+    """Returns tempfile copied from filename, but mutated.
+
+    If `filename` points to a CSV, then we load it,
+    apply the `mutator` function to each row, and save
+    the changed data to a tempfile, which is returned.
+
+    Used to create small, specific variants on test CSVs.
+    """
 
     outfile = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
     with open(filename) as infile:
