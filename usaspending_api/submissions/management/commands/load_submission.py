@@ -12,7 +12,7 @@ from django.db.models import Q
 from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards, FinancialAccountsByAwardsTransactionObligations,
-    FinancialAssistanceAward, Procurement)
+    TransactionAssistance, TransactionContract, Transaction)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import (
     Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity)
@@ -168,9 +168,10 @@ class Command(BaseCommand):
                 'submission': submission_attributes,
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
+                'treasury_account': treasury_account,
                 'appropriation_account_balances': account_balances,
-                'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
-                'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
+                'object_class': get_or_create_object_class(row['object_class']),
+                'program_activity_code': get_or_create_program_activity(row['program_activity_code'])
             }
 
             load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
@@ -206,8 +207,8 @@ class Command(BaseCommand):
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
-                'object_class': RefObjectClassCode.objects.filter(pk=row['object_class']).first(),
-                'program_activity_code': RefProgramActivity.objects.filter(pk=row['program_activity_code']).first(),
+                'object_class': get_or_create_object_class(row['object_class']),
+                'program_activity_code': get_or_create_program_activity(row['program_activity_code'])
             }
 
             load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
@@ -227,32 +228,32 @@ class Command(BaseCommand):
         self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
 
         legal_entity_location_field_map = {
-            "location_address_line1": "legal_entity_address_line1",
+            "address_line1": "legal_entity_address_line1",
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
-            "location_city_code": "legal_entity_city_code",
-            "location_city_name": "legal_entity_city_name",
-            "location_congressional_code": "legal_entity_congressional",
-            "location_county_code": "legal_entity_county_code",
-            "location_county_name": "legal_entity_county_name",
+            "city_code": "legal_entity_city_code",
+            "city_name": "legal_entity_city_name",
+            "congressional_code": "legal_entity_congressional",
+            "county_code": "legal_entity_county_code",
+            "county_name": "legal_entity_county_name",
             "foreign_city_name": "legal_entity_foreign_city",
             "foreign_postal_code": "legal_entity_foreign_posta",
             "foreign_province": "legal_entity_foreign_provi",
             "state_code": "legal_entity_state_code",
             "state_name": "legal_entity_state_name",
-            "location_zip5": "legal_entity_zip5",
-            "location_zip_last4": "legal_entity_zip_last4",
+            "zip5": "legal_entity_zip5",
+            "zip_last4": "legal_entity_zip_last4",
             "location_country_code": "legal_entity_country_code"
         }
 
         place_of_performance_field_map = {
-            "location_city_name": "place_of_performance_city",
-            "location_performance_code": "place_of_performance_code",
-            "location_congressional_code": "place_of_performance_congr",
-            "location_county_name": "place_of_perform_county_na",
-            "location_foreign_location_description": "place_of_performance_forei",
+            "city_name": "place_of_performance_city",
+            "performance_code": "place_of_performance_code",
+            "congressional_code": "place_of_performance_congr",
+            "county_name": "place_of_perform_county_na",
+            "foreign_location_description": "place_of_performance_forei",
             "state_name": "place_of_perform_state_nam",
-            "location_zip4": "place_of_performance_zip4a",
+            "zip4": "place_of_performance_zip4a",
             "location_country_code": "place_of_perform_country_c"
 
         }
@@ -293,7 +294,7 @@ class Command(BaseCommand):
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
 
-            fad_value_map = {
+            parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
                                                          subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
@@ -301,25 +302,34 @@ class Command(BaseCommand):
                                                         subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
+                'submission': submission_attributes,
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "action_date": format_date(row['action_date']),
+            }
+
+            transaction_instance = load_data_into_model(
+                Transaction(), row,
+                field_map=fad_field_map,
+                value_map=parent_txn_value_map,
+                as_dict=True)
+
+            transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+
+            fad_value_map = {
+                "transaction": transaction_instance,
                 "submission": submission_attributes,
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
-                "action_date": format_date(row['action_date']),
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr'])
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
             }
 
             financial_assistance_data = load_data_into_model(
-                FinancialAssistanceAward(), row,
+                TransactionAssistance(), row,
                 field_map=fad_field_map,
                 value_map=fad_value_map,
-                as_dict=True)
-
-            fad = FinancialAssistanceAward.objects.filter(award=award, modification_number=row['award_modification_amendme']).first()
-            if not fad:
-                FinancialAssistanceAward.objects.get_or_create(**financial_assistance_data)
-            else:
-                FinancialAssistanceAward.objects.filter(pk=fad.pk).update(**financial_assistance_data)
+                save=True)
 
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
@@ -327,26 +337,26 @@ class Command(BaseCommand):
         self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
         legal_entity_location_field_map = {
-            "location_address_line1": "legal_entity_address_line1",
+            "address_line1": "legal_entity_address_line1",
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
             "location_country_code": "legal_entity_country_code",
-            "location_city_name": "legal_entity_city_name",
-            "location_congressional_code": "legal_entity_congressional",
+            "city_name": "legal_entity_city_name",
+            "congressional_code": "legal_entity_congressional",
             "state_code": "legal_entity_state_code",
-            "location_zip4": "legal_entity_zip4"
+            "zip4": "legal_entity_zip4"
         }
 
         place_of_performance_field_map = {
             # not sure place_of_performance_locat maps exactly to city name
-            "location_city_name": "place_of_performance_locat",
-            "location_congressional_code": "place_of_performance_congr",
+            "city_name": "place_of_performance_locat",
+            "congressional_code": "place_of_performance_congr",
             "state_code": "place_of_performance_state",
-            "location_zip4": "place_of_performance_zip4a",
+            "zip4": "place_of_performance_zip4a",
             "location_country_code": "place_of_perform_country_c"
         }
 
-        procurement_field_map = {
+        contract_field_map = {
             "type": "contract_award_type",
             "description": "award_description"
         }
@@ -360,7 +370,7 @@ class Command(BaseCommand):
             except ObjectDoesNotExist:
                 legal_entity_value_map = {
                     "location": legal_entity_location,
-                    "legal_entity_id": row['awardee_or_recipient_uniqu']
+                    "legal_entity_id": row['awardee_or_recipient_uniqu'],
                 }
                 legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
 
@@ -374,7 +384,7 @@ class Command(BaseCommand):
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
 
-            procurement_value_map = {
+            parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
                                                          subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
@@ -383,18 +393,31 @@ class Command(BaseCommand):
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 'submission': submission_attributes,
-                'reporting_period_start': submission_attributes.reporting_period_start,
-                'reporting_period_end': submission_attributes.reporting_period_end,
-                "action_date": format_date(row['action_date']),
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "action_date": format_date(row['action_date']),
+            }
+
+            transaction_instance = load_data_into_model(
+                Transaction(), row,
+                field_map=contract_field_map,
+                value_map=parent_txn_value_map,
+                as_dict=True)
+
+            transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+
+            contract_value_map = {
+                'transaction': transaction_instance,
+                'submission': submission_attributes,
+                'reporting_period_start': submission_attributes.reporting_period_start,
+                'reporting_period_end': submission_attributes.reporting_period_end,
                 "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'])
             }
 
-            load_data_into_model(
-                Procurement(), row,
-                field_map=procurement_field_map,
-                value_map=procurement_value_map,
+            contract_instance = load_data_into_model(
+                TransactionContract(), row,
+                field_map=contract_field_map,
+                value_map=contract_value_map,
                 save=True)
 
 
@@ -403,6 +426,24 @@ def format_date(date_string, pattern='%Y%m%d'):
         return datetime.strptime(date_string, pattern)
     except TypeError:
         return None
+
+
+def get_or_create_object_class(object_class):
+    # We do it this way rather than .get_or_create because we do not want to
+    # duplicate existing pk's with null values
+    obj_class = RefObjectClassCode.objects.filter(object_class=object_class).first()
+    if obj_class is None and object_class is not None:
+        obj_class = RefObjectClassCode.objects.create(object_class=object_class)
+    return obj_class
+
+
+def get_or_create_program_activity(program_activity_code):
+    # We do it this way rather than .get_or_create because we do not want to
+    # duplicate existing pk's with null values
+    prg_activity = RefProgramActivity.objects.filter(ref_program_activity_id=program_activity_code).first()
+    if prg_activity is None and program_activity_code is not None:
+        prg_activity = RefProgramActivity.objects.create(ref_program_activity_id=program_activity_code)
+    return prg_activity
 
 
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
@@ -521,7 +562,11 @@ def get_or_create_location(location_map, row, location_value_map={}):
     # temporary fix until broker is patched: remove later
     state_code = row.get(location_map.get('state_code'))
     if state_code is not None:
-        location_value_map.update({'state_code': state_code.replace('.', '')})
+        # Fix for procurement data foreign provinces stored as state_code
+        if location_country and location_country.country_code is not "USA":
+            location_value_map.update({'foreign_province': state_code})
+        else:
+            location_value_map.update({'state_code': state_code.replace('.', '')})
     # end of temporary fix
 
     if location_country:
