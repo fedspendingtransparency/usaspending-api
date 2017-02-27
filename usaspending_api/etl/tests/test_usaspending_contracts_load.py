@@ -9,20 +9,20 @@ from usaspending_api.etl.management.commands import load_usaspending_contracts
 
 
 # Transaction test cases so threads can find the data
-@pytest.mark.django_db(transaction=true)
+@pytest.mark.django_db(transaction=True)
 def test_contract_load():
     """ensure contract awards can be loaded from usaspending"""
     call_command('loaddata', 'endpoint_fixture_db')
     # agency records from reference_fixture are a prereq
     call_command('loaddata', 'reference_fixture')
     call_command('load_usaspending_contracts',
-                 os.path.join(settings.base_dir, 'usaspending_api', 'data',
+                 os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                               'usaspending_treasury_contracts.csv'))
 
     # @todo - should there be an assert here?
 
 
-@pytest.mark.django_db(transaction=true)
+@pytest.mark.django_db(transaction=True)
 def test_award_and_txn_uniqueness():
     """Each Award should be unique by:
     - PIID (Contract) or FAIN/URI (Grants)
@@ -32,11 +32,11 @@ def test_award_and_txn_uniqueness():
     Each Transaction should be unique by
     - Award
     - Modification number"""
-    call_command('loaddata', 'endpoint_fixture_db')
+
     # agency records from reference_fixture are a prereq
     call_command('loaddata', 'reference_fixture')
     call_command('load_usaspending_contracts',
-                 os.path.join(settings.base_dir, 'usaspending_api', 'data',
+                 os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                               'usaspending_treasury_contracts.csv'))
 
     # Each award is unique on these three attributes
@@ -54,10 +54,9 @@ def test_award_and_txn_uniqueness():
     distincts = Transaction.objects.values(*attribs).distinct().count()
     assert distincts == Transaction.objects.count()
 
-    # But not unique otherwise
-    for attrib in ('piid', 'parent_award__piid', 'awarding_agency'):
-        less_distinct = Transaction.objects.values(attrib).distinct().count()
-        assert less_distinct < Transaction.objects.count()
+    # But not unique simply on award
+    less_distinct = Transaction.objects.values('award').distinct().count()
+    assert less_distinct < Transaction.objects.count()
 
 
 @pytest.mark.parametrize(
