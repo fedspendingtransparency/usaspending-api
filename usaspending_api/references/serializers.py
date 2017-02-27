@@ -61,6 +61,7 @@ class LegalEntitySerializer(LimitableSerializer):
         nested_serializers = {
             "location": {
                 "class": LocationSerializer,
-                "kwargs": {"read_only": True}
+                "kwargs": {"read_only": True},
+                "retrieve": True
             },
         }

@@ -12,6 +12,11 @@ class LimitableSerializer(serializers.ModelSerializer):
         exclude_fields = kwargs.pop('exclude', None)
         super(LimitableSerializer, self).__init__(*args, **kwargs)
 
+        # Check if this is a retrieve method; if so, children will not be
+        # serialized unless otherwise specified and all fields will be displayed
+        current_viewset = self.context.get('view')
+        retrieve_flag = (current_viewset and current_viewset.action == 'retrieve')
+
         # Create and initialize the child serializers
         try:
             # Initialize the child serializers
@@ -21,7 +26,11 @@ class LimitableSerializer(serializers.ModelSerializer):
                     **children[field].get("kwargs", {}),
                     "context": {**self.context, "child": True}
                 }  # The child tag should be removed when child field limiting is implemented
-                self.fields[field] = children[field]["class"](**child_args)
+                # If we're 'retreive'ing and the child is not marked as retreivable, reference FK by PK
+                if retrieve_flag and not children[field].get("retrieve", False):
+                    self.fields[field] = serializers.PrimaryKeyRelatedField(**children[field].get("kwargs", {}))
+                else:
+                    self.fields[field] = children[field]["class"](**child_args)
         except AttributeError:
             # We don't have any nested serializers
             pass
@@ -32,7 +41,6 @@ class LimitableSerializer(serializers.ModelSerializer):
             params.update(dict(request.data))
             exclude_fields = params.get('exclude')
             include_fields = params.get('fields')
-            current_viewset = self.context.get('view')
 
             if params.get('verbose', False):
                 # We have a request for verbose, so we return here so that we
@@ -60,7 +68,7 @@ class LimitableSerializer(serializers.ModelSerializer):
                         # limiting pass-down, this can happen due to the context pass down
                         pass
 
-            elif current_viewset and current_viewset.action == 'retrieve':
+            elif retrieve_flag:
                 # The view has specifically asked that all fields should
                 # be returned (for example, when the request url follows
                 # the item/{pk} pattern)
