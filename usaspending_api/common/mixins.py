@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from django.db.models import Avg, Count, F, Max, Min, Sum
+from django.db.models import Avg, Count, F, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 from django.core.serializers.json import json, DjangoJSONEncoder
 
@@ -56,12 +56,30 @@ class AggregateQuerysetMixin(object):
                 queryset.annotate(item=group_func(group_field)).values('item').annotate(
                     aggregate=agg_function(agg_field)))
         else:
+            group_expr = self._wrapped_f_expression(group_field)
             # group queryset by a non-date field and aggregate
             aggregate = (
-                queryset.annotate(item=F(group_field)).values('item').annotate(
+                queryset.annotate(item=group_expr).values('item').annotate(
                     aggregate=agg_function(agg_field)))
 
         return aggregate
+
+    _sql_function_transformations = {'fy': IntegerField}
+
+    def _wrapped_f_expression(self, col_name):
+        """F-expression of col, wrapped if needed with SQL function call
+
+        Assumes that there's an SQL function defined for each
+        registered lookup."""
+        for suffix in self._sql_function_transformations:
+            full_suffix = '__' + suffix
+            if col_name.endswith(full_suffix):
+                col_name = col_name[:-(len(full_suffix))]
+                result = Func(F(col_name), function=suffix)
+                output_type = self._sql_function_transformations[suffix]
+                result = ExpressionWrapper(result, output_field=output_type())
+                return result
+        return F(col_name)
 
     def validate_request(self, params):
         """Validate request parameters."""
