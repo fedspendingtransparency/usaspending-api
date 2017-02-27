@@ -432,7 +432,7 @@ def get_or_create_object_class(object_class):
     # We do it this way rather than .get_or_create because we do not want to
     # duplicate existing pk's with null values
     obj_class = RefObjectClassCode.objects.filter(object_class=object_class).first()
-    if obj_class is None and obj_class is not None:
+    if obj_class is None and object_class is not None:
         obj_class = RefObjectClassCode.objects.create(object_class=object_class)
     return obj_class
 
