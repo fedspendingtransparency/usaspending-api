@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from usaspending_api.common.api_request_utils import DataQueryHandler, GeoCompleteHandler, AutoCompleteHandler
 from usaspending_api.references.models import Location, Agency, LegalEntity
 from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer
-from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
+from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin, SuperLoggingMixin
 from usaspending_api.common.views import AggregateView, DetailViewSet
 import json
 
@@ -40,7 +40,8 @@ class AgencyAutocomplete(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AgencyEndpoint(FilterQuerysetMixin,
+class AgencyEndpoint(SuperLoggingMixin,
+                     FilterQuerysetMixin,
                      ResponseMetadatasetMixin,
                      DetailViewSet):
     """Return an agency"""

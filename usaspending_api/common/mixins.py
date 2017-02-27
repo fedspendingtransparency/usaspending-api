@@ -1,9 +1,13 @@
 from collections import OrderedDict
 from django.db.models import Avg, Count, F, Max, Min, Sum
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
+from django.core.serializers.json import json, DjangoJSONEncoder
 
 from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator
 from usaspending_api.common.exceptions import InvalidParameterException
+from rest_framework_tracking.mixins import LoggingMixin
+
+import logging
 
 
 class AggregateQuerysetMixin(object):
@@ -218,3 +222,19 @@ class ResponseMetadatasetMixin(object):
         response_object.update({'results': serialized_data})
 
         return response_object
+
+
+class SuperLoggingMixin(LoggingMixin):
+
+    events_logger = logging.getLogger("events")
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        # Use the actual logging mixin response
+        response = super(SuperLoggingMixin, self).finalize_response(request, response, *args, **kwargs)
+        # Log it now to the events file
+        data = dict(self.request.log.__dict__)
+        del data["_state"]  # Strip this out as (1) we don't need it and (2) it's not serializable
+        del data["_user_cache"]
+        self.events_logger.info(data)
+        # Return response
+        return response
