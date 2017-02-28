@@ -13,7 +13,7 @@ def move_field(apps, schema_editor):
             amount.financial_accounts_by_awards.transaction_obligated_amount = \
                 amount.transaction_obligated_amount
             amount.save()
-        else:  #if there's no associated financial account, skip.
+        else:  # if there's no associated financial account, skip.
             pass
 
 
