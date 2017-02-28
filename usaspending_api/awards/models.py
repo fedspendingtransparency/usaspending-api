@@ -208,8 +208,6 @@ class Award(DataSourceTrackedModel):
             "place_of_performance",
             "awarding_agency",
             "funding_agency",
-            "transaction_set",
-            "financial_set",
             "recipient",
             "date_signed__fy",
         ]
