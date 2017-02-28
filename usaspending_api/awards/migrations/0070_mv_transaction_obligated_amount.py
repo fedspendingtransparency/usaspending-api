@@ -13,14 +13,14 @@ def move_field(apps, schema_editor):
             amount.financial_accounts_by_awards.transaction_obligated_amount = \
                 amount.transaction_obligated_amount
             amount.save()
-        else: #if there's no associated financial account, skip.
+        else:  #if there's no associated financial account, skip.
             pass
+
 
 def move_field_back(apps, schema_editor):
     faba = apps.get_model("awards", "FinancialAccountsByAwards")
     for amount in faba.objects.all():
         if amount.transaction_obligations:
-            #fabato is an acronym for the table name
             fabato = amount.transaction_obligations.last()
             fabato.transaction_obligated_amount = amount.transaction_obligated_amount
             fabato.save()
