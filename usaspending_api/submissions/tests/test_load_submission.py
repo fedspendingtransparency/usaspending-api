@@ -44,8 +44,9 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     assert AppropriationAccountBalances.objects.count() == 1
     assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 10
     assert FinancialAccountsByAwards.objects.count() == 11
-    assert FinancialAccountsByAwardsTransactionObligations.objects.count(
-    ) == 11
+    for account in FinancialAccountsByAwards.objects.all():
+        assert account.transaction_obligated_amount == 6500
+        # for testing, data pulled from etl_test_data.json
     assert Location.objects.count() == 4
     assert LegalEntity.objects.count() == 2
     assert Award.objects.count() == 7
