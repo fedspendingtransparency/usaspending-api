@@ -11,7 +11,7 @@ from django.db.models import Q
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
 from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards, FinancialAccountsByAwardsTransactionObligations,
+    Award, FinancialAccountsByAwards,
     TransactionAssistance, TransactionContract, Transaction)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import (

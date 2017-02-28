@@ -1,8 +1,7 @@
 from django.core.management import call_command
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards,
-    FinancialAccountsByAwardsTransactionObligations, TransactionAssistance,
+    Award, FinancialAccountsByAwards, TransactionAssistance,
     TransactionContract, Transaction)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import LegalEntity, Location
@@ -25,7 +24,6 @@ def partially_flushed():
     AppropriationAccountBalances.objects.all().delete()
     FinancialAccountsByProgramActivityObjectClass.objects.all().delete()
     FinancialAccountsByAwards.objects.all().delete()
-    FinancialAccountsByAwardsTransactionObligations.objects.all().delete()
     TransactionAssistance.objects.all().delete()
     Transaction.objects.all().delete()
     Location.objects.all().delete()

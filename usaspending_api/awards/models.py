@@ -121,29 +121,6 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
         db_table = 'financial_accounts_by_awards'
 
 
-class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
-    financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)
-    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE, related_name="transaction_obligations")
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    reporting_period_start = models.DateField(blank=True, null=True)
-    reporting_period_end = models.DateField(blank=True, null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
-    certified_date = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "transaction_obligated_amount"
-        ]
-
-    class Meta:
-        managed = True
-        db_table = 'financial_accounts_by_awards_transaction_obligations'
-
-
 class AwardManager(models.Manager):
     def get_queryset(self):
         '''
