@@ -53,10 +53,6 @@ class AwardSerializer(LimitableSerializer):
                 "class": AgencySerializer,
                 "kwargs": {"read_only": True}
             },
-            "financial_set": {
-                "class": FinancialAccountsByAwardsSerializer,
-                "kwargs": {"read_only": True, "many": True}
-            },
             "place_of_performance": {
                 "class": LocationSerializer,
                 "kwargs": {"read_only": True}

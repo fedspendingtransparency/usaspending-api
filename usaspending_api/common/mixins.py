@@ -253,6 +253,12 @@ class SuperLoggingMixin(LoggingMixin):
         data = dict(self.request.log.__dict__)
         del data["_state"]  # Strip this out as (1) we don't need it and (2) it's not serializable
         del data["_user_cache"]
+        response_data = dict(response.data)
+        # Strip out any big arrays of data; these aren't stored to the file log, but will still
+        # be stored in the table
+        if "results" in response_data:
+            del response_data["results"]
+        data["response"] = response_data
         self.events_logger.info(data)
         # Return response
         return response
