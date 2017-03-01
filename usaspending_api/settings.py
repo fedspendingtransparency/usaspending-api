@@ -164,6 +164,9 @@ LOGGING = {
         'specifics': {
             '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
             'format': "%(asctime)s %(filename)s %(funcName)s %(levelname)s %(lineno)s %(module)s %(message)s %(name)s %(pathname)s"
+        },
+        'json': {
+            '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
         }
     },
     'handlers': {
@@ -182,6 +185,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/events.log'),
+            'formatter': 'json'
         },
         'exceptions_file': {
             'level': 'ERROR',
