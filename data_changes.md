@@ -1,21 +1,23 @@
 # Changes to Imported Data
 
 We load data from two primary sources:
-1. The current production [USAspending website](https://www.usaspending.gov) (aka, _legacy USAspending_). This provides us with historic data about contract and financial assistance spending.
+
+1. The current production [USAspending website](https://www.usaspending.gov) (aka, _legacy USAspending_). This provides us with historic data about contract and financial assistance spending.  
 2. The [DATA Broker](https://broker.usaspending.gov), which provides us with agency DATA Act submissions.
 
 Generally, data will be imported as-is. Below are the exceptions to that rule.
 
-## State Code and Foreign Province
+## Geographic Information
+
+Making sure our location-related fields are as robust and accurate as possible powers the geographic filters used by our website and API.
+
+### State Code and Foreign Province
 
 **Data Source:** DATA Broker  
 **Code:** `submissions/management/commands/load_submission.py`
 
 When loading information from the DATA Act broker, if the data has a state code but does not have a country code of `USA`, we load the state code as a foreign province.
 
-## Geographic Information
-
-Making sure our location-related fields are as robust and accurate as possible powers the geographic filters used by our website and API.
 
 ### State, County, and City
 
