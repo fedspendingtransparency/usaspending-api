@@ -48,3 +48,12 @@ In these cases, we extract the code to use in our data load. We then use that co
 **Code:** `etl/management/commands/load_usaspending_contracts.py`
 
 If a legacy USAspending contract record has a string description of the award type instead of a single character, we parse the string to find the appropriate single-character award type.
+
+## Awards
+
+**Data Source:** USAspending history and DATA Broker  
+**Code:** `awards/models.py`
+
+Currently, award-level data coming from both legacy USAspending records and data broker submissions represents transactional information. In other words, we receive information about individual spending events against an award, but no records that represent the award itself.
+
+To make it easier for users to see the lifespan of an award, we create award records when loading the contract and financial assistance transactions. These award "holders" allow us group all related transactions together, so people can see the entire spending history.
