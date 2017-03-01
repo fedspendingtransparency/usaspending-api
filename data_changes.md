@@ -1,58 +1,50 @@
-## Changes to Imported Data ##
+# Changes to Imported Data
 
-Generally, data will be imported as-is from historical data or newly given data
-with a few exceptions:
+We load data from two primary sources:
+1. The current production [USAspending website](https://www.usaspending.gov) (aka, _legacy USAspending_). This provides us with historic data about contract and financial assistance spending.
+2. The [DATA Broker](https://broker.usaspending.gov), which provides us with agency DATA Act submissions.
 
-- _IMPORT TYPE_: Broker, USASpending
-- _CHANGE_: **Creation of summary awards**
-- _DESCRIPTION_: Parent awards that do not currently exist in the database will be
-created with empty data, to provide references for transactions being loaded.
-- _FILE_: `submissions/management/commands/load_submission.py`, et. al.
+Generally, data will be imported as-is. Below are the exceptions to that rule.
 
+## State Code and Foreign Province
 
-- _IMPORT TYPE_: Broker
-- _CHANGE_: **State code converted to foreign province**
-- _DESCRIPTION_: Cases where a location must be created, but the data specified has
-a state code, but is not also specified with country code of 'USA' will be converted
-to a foreign province
-- _FILE_: `submissions/management/commands/load_submission.py`
+**Data Source:** DATA Broker  
+**Code:** `submissions/management/commands/load_submission.py`
 
+When loading information from the DATA Act broker, if the data has a state code but does not have a country code of `USA`, we load the state code as a foreign province.
 
-- _IMPORT TYPE_: All (Location Data)
-- _CHANGE_: **Location Data is updated if a valid match is found**
-- _DESCRIPTION_: Cases where some location, but not all, data is specified, if a
-single unique reference (STATE CODE, CITY CODE, COUNTY CODE, STATE NAME, COUNTY NAME)
-is found, the location object is updated with that matching data
-- _FILE_: `references/models.py`
+## Geographic Information
 
+Making sure our location-related fields are as robust and accurate as possible powers the geographic filters used by our website and API.
 
-- _IMPORT TYPE_: USA Spending, Contract; USA Spending, Financial
-- _CHANGE_: **Extraction of Single Character Codes**
-- _DESCRIPTION_: Data loaded from legacy USA Spending data typically comes in the format of
-"<CODE>: <DESCRIPTION>" where code is a single character. In these cases, the single code is
-extracted and stored in the database, with descriptions being provided via enumerated dictionaries.
-- _FILE_:
- `etl/management/commands/load_usaspending_contracts.py` et al.
+### State, County, and City
 
+**Data Source:** USAspending history and DATA Broker  
+**Code:** `references/models.py`
 
- - _IMPORT TYPE_: USA Spending, Contract; USA Spending, Financial
- - _CHANGE_: **Parsing Country Codes**
- - _DESCRIPTION_: Instances where `country_code` is not specified, if a single unique country code can be determined by searching a provided `country_name`, that country code will be used
- - _FILE_:
-  `etl/management/commands/load_usaspending_contracts.py` et al.
+We attempt to match incoming records that have partial location data to already-stored unique combinations of _state code_, _state name_, _city code_, _county code_, and _county name_.
 
+For example, if a record has a state code but no state name, we'll pull in state name from our master list of geographical data and add it to the record during the load.
 
-- _IMPORT TYPE_: USA Spending, Contract; USA Spending, Financial
-- _CHANGE_: **Extraction of Single Character Codes**
-- _DESCRIPTION_: Data loaded from legacy USA Spending data typically comes in the format of
-"<CODE>: <DESCRIPTION>" where code is a single character. In these cases, the single code is
-extracted and stored in the database, with descriptions being provided via enumerated dictionaries.
-- _FILE_: `etl/management/commands/load_usaspending_contracts.py` et al.
+### Country Codes and Names
 
+**Data Source:** USAspending history  
+**Code:** `etl/helpers.py`
 
-- _IMPORT TYPE_: USA Spending, Contract
-- _CHANGE_: **Award type derived from string**
-- _DESCRIPTION_: In some instances, a character representation of the award type is not
-provided, but rather a string description. In this case, the string is parsed to store
-an appropriate character.
-- _FILE_: `etl/management/commands/load_usaspending_contracts.py`
+If a legacy USAspending record doesn't have a country code, we attempt to find one by matching the country name (if provided) against our existing country list.
+
+## Single Character Code Extracts
+
+**Data Source:** USAspending history  
+**Code:** `etl/helpers.py`
+
+Codes and descriptions in legacy Usaspending data are often stored in the same field. For example, a funding agency column looks like `7300: SMALL BUSINESS ADMINISTRATION`.
+
+In these cases, we extract the code to use in our data load. We then use that code to look up the description against a canonical data source. Using a single, central source for code descriptions ensures data consistency.
+
+## Award Type
+
+**Data Source:** USAspending history  
+**Code:** `etl/management/commands/load_usaspending_contracts.py`
+
+If a legacy USAspending contract record has a string description of the award type instead of a single character, we parse the string to find the appropriate single-character award type.
