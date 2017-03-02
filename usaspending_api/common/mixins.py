@@ -145,7 +145,7 @@ class AggregateQuerysetMixin(object):
 class FilterQuerysetMixin(object):
     """Handles queryset filtering."""
 
-    def filter_records(self, request, annotatable=False, *args, **kwargs):
+    def filter_records(self, request, *args, **kwargs):
         """Filter a queryset based on request parameters"""
         queryset = kwargs.get('queryset')
 
@@ -159,10 +159,7 @@ class FilterQuerysetMixin(object):
         if len(request.data):
             fg = FilterGenerator()
             filters = fg.create_from_request_body(request.data)
-            if annotatable:
-                return queryset.filter(filters).values(queryset.model._meta.pk.name)
-            else:
-                return queryset.filter(filters).distinct(queryset.model._meta.pk.name)
+            return queryset.filter(filters)
         else:
             filter_map = kwargs.get('filter_map', {})
             fg = FilterGenerator(filter_map=filter_map)
@@ -173,12 +170,9 @@ class FilterQuerysetMixin(object):
                 fy = FiscalYear(request.query_params.get('fy'))
                 fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
                 filters = {**filters, **fy_arguments}
-            if annotatable:
-                return queryset.filter(**filters).values(queryset.model._meta.pk.name)
-            else:
-                return queryset.filter(**filters).distinct(queryset.model._meta.pk.name)
+            return queryset.filter(**filters)
 
-    def order_records(self, request, *args, **kwargs):
+    def order_records(self, request, annotatable=False, *args, **kwargs):
         """Order a queryset based on request parameters."""
         queryset = kwargs.get('queryset')
 
@@ -188,11 +182,12 @@ class FilterQuerysetMixin(object):
         # prescriptive that aggregate requests can only be of one type)
         params = dict(request.query_params)
         params.update(dict(request.data))
-        ordering = params.get('order')
-        if ordering is not None:
+        ordering = params.get('order', [])
+        if annotatable:
             return queryset.order_by(*ordering)
         else:
-            return queryset
+            ordering.append(queryset.model._meta.pk.name)
+            return queryset.order_by(*ordering).distinct(*ordering)
 
 
 class ResponseMetadatasetMixin(object):

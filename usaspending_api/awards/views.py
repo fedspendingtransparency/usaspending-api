@@ -59,8 +59,8 @@ class AwardAggregateViewSet(SuperLoggingMixin,
     """Return aggregated award information."""
     def get_queryset(self):
         queryset = Award.objects.all()
-        filtered_queryset = self.filter_records(self.request, annotatable=True, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, annotatable=True, queryset=filtered_queryset)
         return ordered_queryset
 
 
@@ -86,6 +86,6 @@ class TransactionAggregateViewSet(SuperLoggingMixin,
     """Return aggregated transaction information."""
     def get_queryset(self):
         queryset = Transaction.objects.all()
-        filtered_queryset = self.filter_records(self.request, annotatable=True, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, annotatable=True, queryset=filtered_queryset)
         return ordered_queryset
