@@ -258,7 +258,7 @@ class SuperLoggingMixin(LoggingMixin):
         # be stored in the table
         if "results" in response_data:
             del response_data["results"]
-            data["response"] = response_data
+        data["response"] = response_data
         self.events_logger.info(data)
         # Return response
         return response

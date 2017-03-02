@@ -145,6 +145,8 @@ The Django server has extract, transform, and load (ETL) processes built in as c
 
 For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
 
+For details on how our data loaders modify incoming data, see [data_changes.md](data_changes.md).
+
 ## Management Commands
 
 Below is a list of available management commands a brief description of their uses. For more help, check the command's help text.
