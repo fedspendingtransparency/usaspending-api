@@ -158,7 +158,7 @@ class FilterQuerysetMixin(object):
         if len(request.data):
             fg = FilterGenerator()
             filters = fg.create_from_request_body(request.data)
-            return queryset.filter(filters).distinct()
+            return queryset.filter(filters)
         else:
             filter_map = kwargs.get('filter_map', {})
             fg = FilterGenerator(filter_map=filter_map)
@@ -169,7 +169,7 @@ class FilterQuerysetMixin(object):
                 fy = FiscalYear(request.query_params.get('fy'))
                 fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
                 filters = {**filters, **fy_arguments}
-            return queryset.filter(**filters).distinct()
+            return queryset.filter(**filters)
 
     def order_records(self, request, *args, **kwargs):
         """Order a queryset based on request parameters."""
