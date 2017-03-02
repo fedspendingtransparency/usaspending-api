@@ -187,7 +187,9 @@ class FilterQuerysetMixin(object):
             return queryset.order_by(*ordering)
         else:
             ordering.append(queryset.model._meta.pk.name)
-            return queryset.order_by(*ordering).distinct(*ordering)
+            # Strip "-" of the ordering list so we can distinct on it
+            distinct_list = [x.lstrip('-') for x in ordering]
+            return queryset.order_by(*ordering).distinct(*distinct_list)
 
 
 class ResponseMetadatasetMixin(object):
