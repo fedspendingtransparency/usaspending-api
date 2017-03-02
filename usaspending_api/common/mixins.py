@@ -3,7 +3,7 @@ from django.db.models import Avg, Count, F, Q, Max, Min, Sum, Func, IntegerField
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 from django.core.serializers.json import json, DjangoJSONEncoder
 
-from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator
+from usaspending_api.common.api_request_utils import FilterGenerator, ResponsePaginator
 from usaspending_api.common.exceptions import InvalidParameterException
 from rest_framework_tracking.mixins import LoggingMixin
 
@@ -172,7 +172,11 @@ class FilterQuerysetMixin(object):
                 vector_sum += vector
             queryset = queryset.annotate(search=vector_sum)
 
-        return queryset.filter(filters).distinct()
+        # Create structure the query so we don't need to use distinct
+        # This happens by reforming the request as 'WHERE pk_id IN (SELECT pk_id FROM queryset WHERE filters)'
+        subwhere = Q(**{queryset.model._meta.pk.name + "__in": queryset.filter(filters).values_list(queryset.model._meta.pk.name, flat=True)})
+
+        return queryset.filter(subwhere)
 
     def order_records(self, request, *args, **kwargs):
         """Order a queryset based on request parameters."""
