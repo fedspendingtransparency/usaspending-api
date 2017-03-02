@@ -158,7 +158,10 @@ class AwardManager(models.Manager):
             "date_signed__isnull": True,
             "recipient__isnull": True
         }
-        return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
+
+        queryset = super(AwardManager, self).get_queryset()
+        queryset.select_related(recipient)
+        return queryset.filter(~Q(**q_kwargs))
 
 
 class Award(DataSourceTrackedModel):
