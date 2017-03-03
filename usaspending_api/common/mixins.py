@@ -214,12 +214,12 @@ class ResponseMetadatasetMixin(object):
         params = self.request.query_params.copy()  # copy() creates mutable copy of a QueryDict
         params.update(self.request.data.copy())
 
-        # construct metadata of entire set of data that matches the request specifications
-        total_metadata = {"count": queryset.count()}
-
         # get paged data for this request
         paged_data = ResponsePaginator.get_paged_data(
             queryset, request_parameters=params)
+
+        # construct metadata of entire set of data that matches the request specifications
+        total_metadata = {"count": paged_data.paginator.count}
 
         # construct page-specific metadata
         page_metadata = {
