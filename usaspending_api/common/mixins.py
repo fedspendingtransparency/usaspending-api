@@ -186,10 +186,8 @@ class FilterQuerysetMixin(object):
         if annotatable:
             return queryset.order_by(*ordering)
         else:
-            ordering.append(queryset.model._meta.pk.name)
-            # Strip "-" of the ordering list so we can distinct on it
-            distinct_list = [x.lstrip('-') for x in ordering]
-            return queryset.order_by(*ordering).distinct(*distinct_list)
+            ordering.insert(0, queryset.model._meta.pk.name)
+            return queryset.order_by(*ordering).distinct(queryset.model._meta.pk.name)
 
 
 class ResponseMetadatasetMixin(object):
