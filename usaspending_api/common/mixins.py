@@ -1,9 +1,13 @@
 from collections import OrderedDict
-from django.db.models import Avg, Count, F, Max, Min, Sum
+from django.db.models import Avg, Count, F, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
+from django.core.serializers.json import json, DjangoJSONEncoder
 
 from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator
 from usaspending_api.common.exceptions import InvalidParameterException
+from rest_framework_tracking.mixins import LoggingMixin
+
+import logging
 
 
 class AggregateQuerysetMixin(object):
@@ -52,12 +56,30 @@ class AggregateQuerysetMixin(object):
                 queryset.annotate(item=group_func(group_field)).values('item').annotate(
                     aggregate=agg_function(agg_field)))
         else:
+            group_expr = self._wrapped_f_expression(group_field)
             # group queryset by a non-date field and aggregate
             aggregate = (
-                queryset.annotate(item=F(group_field)).values('item').annotate(
+                queryset.annotate(item=group_expr).values('item').annotate(
                     aggregate=agg_function(agg_field)))
 
         return aggregate
+
+    _sql_function_transformations = {'fy': IntegerField}
+
+    def _wrapped_f_expression(self, col_name):
+        """F-expression of col, wrapped if needed with SQL function call
+
+        Assumes that there's an SQL function defined for each
+        registered lookup."""
+        for suffix in self._sql_function_transformations:
+            full_suffix = '__' + suffix
+            if col_name.endswith(full_suffix):
+                col_name = col_name[:-(len(full_suffix))]
+                result = Func(F(col_name), function=suffix)
+                output_type = self._sql_function_transformations[suffix]
+                result = ExpressionWrapper(result, output_field=output_type())
+                return result
+        return F(col_name)
 
     def validate_request(self, params):
         """Validate request parameters."""
@@ -218,3 +240,25 @@ class ResponseMetadatasetMixin(object):
         response_object.update({'results': serialized_data})
 
         return response_object
+
+
+class SuperLoggingMixin(LoggingMixin):
+
+    events_logger = logging.getLogger("events")
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        # Use the actual logging mixin response
+        response = super(SuperLoggingMixin, self).finalize_response(request, response, *args, **kwargs)
+        # Log it now to the events file
+        data = dict(self.request.log.__dict__)
+        del data["_state"]  # Strip this out as (1) we don't need it and (2) it's not serializable
+        del data["_user_cache"]
+        response_data = dict(response.data)
+        # Strip out any big arrays of data; these aren't stored to the file log, but will still
+        # be stored in the table
+        if "results" in response_data:
+            del response_data["results"]
+        data["response"] = response_data
+        self.events_logger.info(data)
+        # Return response
+        return response
