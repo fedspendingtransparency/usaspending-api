@@ -563,8 +563,9 @@ def get_or_create_location(location_map, row, location_value_map={}):
     state_code = row.get(location_map.get('state_code'))
     if state_code is not None:
         # Fix for procurement data foreign provinces stored as state_code
-        if location_country and location_country.country_code is not "USA":
+        if location_country and location_country.country_code != "USA":
             location_value_map.update({'foreign_province': state_code})
+            location_value_map.update({'state_code': None})
         else:
             location_value_map.update({'state_code': state_code.replace('.', '')})
     # end of temporary fix
