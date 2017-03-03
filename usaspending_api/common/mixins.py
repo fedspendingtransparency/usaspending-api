@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from django.db.models import Avg, Count, F, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
+from django.db.models import Avg, Count, F, Q, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 from django.core.serializers.json import json, DjangoJSONEncoder
 
@@ -158,7 +158,8 @@ class FilterQuerysetMixin(object):
         if len(request.data):
             fg = FilterGenerator()
             filters = fg.create_from_request_body(request.data)
-            return queryset.filter(filters)
+            subwhere = Q(**{queryset.model._meta.pk.name + "__in": queryset.filter(filters).values_list('id', flat=True)})
+            return queryset.filter(subwhere)
         else:
             filter_map = kwargs.get('filter_map', {})
             fg = FilterGenerator(filter_map=filter_map)
@@ -169,7 +170,8 @@ class FilterQuerysetMixin(object):
                 fy = FiscalYear(request.query_params.get('fy'))
                 fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
                 filters = {**filters, **fy_arguments}
-            return queryset.filter(**filters)
+            subwhere = Q(**{queryset.model._meta.pk.name + "__in": queryset.filter(**filters).values_list('id', flat=True)})
+            return queryset.filter(subwhere)
 
     def order_records(self, request, *args, **kwargs):
         """Order a queryset based on request parameters."""
