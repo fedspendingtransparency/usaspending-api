@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework',
     'corsheaders',
+    'rest_framework_tracking',
     'usaspending_api.common',
     'usaspending_api.etl',
     'usaspending_api.references',
@@ -55,7 +56,11 @@ INSTALLED_APPS = [
     'usaspending_api.api_docs'
 ]
 
-INTERNAL_IPS = ('127.0.0.1',)
+INTERNAL_IPS = ()
+
+DEBUG_TOOLBAR_CONFIG = {
+    "SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -159,11 +164,38 @@ STATICFILES_DIRS = (
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'specifics': {
+            '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
+            'format': "%(asctime)s %(filename)s %(funcName)s %(levelname)s %(lineno)s %(module)s %(message)s %(name)s %(pathname)s"
+        },
+        'json': {
+            '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
+        }
+    },
     'handlers': {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/debug.log'),
+        },
+        'console_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
+            'formatter': 'specifics'
+        },
+        'events_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/events.log'),
+            'formatter': 'json'
+        },
+        'exceptions_file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/exceptions.log'),
+            'formatter': 'specifics'
         },
         'console': {
             'level': 'INFO',
@@ -177,10 +209,20 @@ LOGGING = {
             'propagate': True,
         },
         'console': {
-            'handlers': ['console', ],
+            'handlers': ['console', 'console_file'],
             'level': 'INFO',
             'propagate': True,
-        }
+        },
+        'events': {
+            'handlers': ['events_file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'exceptions': {
+            'handlers': ['exceptions_file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
     },
 }
 
