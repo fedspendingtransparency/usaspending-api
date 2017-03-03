@@ -100,7 +100,7 @@ class LimitableSerializer(serializers.ModelSerializer):
                 if is_many or parent_is_many:
                     queryset = queryset.prefetch_related(prefix + child)
                 else:
-                    queryset = queryset.select_related(prefix + child)
+                    queryset = queryset.prefetch_related(prefix + child)
                 # Since the child might have nested serializers, we set up on that too
                 queryset = children[child]["class"].setup_eager_loading(queryset, prefix=prefix + child + "__", parent_is_many=is_many)
         except AttributeError:
