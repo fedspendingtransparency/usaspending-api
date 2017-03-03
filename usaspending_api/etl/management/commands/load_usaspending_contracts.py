@@ -8,7 +8,7 @@ from usaspending_api.awards.models import (Award, AWARD_TYPES, CONTRACT_PRICING_
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.csv_data_reader import CsvDataReader
 import usaspending_api.etl.helpers as h
-from usaspending_api.references.models import LegalEntity
+from usaspending_api.references.models import Agency, LegalEntity
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -48,15 +48,17 @@ class Command(BaseCommand):
                 self.logger.info("Read row {}".format(len(reader)))
             row = h.cleanse_values(row)
 
+            awarding_agency_id = self.get_agency_id(row["contractingofficeagencyid"], subtier_agency_dict)
+
             # Create the transaction object for this row
             txn_dict = {
                 "action_date": h.convert_date(row['signeddate']),
-                "award": self.get_or_create_award(row),
-                "awarding_agency_id": self.get_agency(row["contractingofficeagencyid"], subtier_agency_dict),
+                "award": self.get_or_create_award(row, awarding_agency_id),
+                "awarding_agency_id": awarding_agency_id,
                 "data_source": "USA",
                 "description": row["descriptionofcontractrequirement"],
                 "federal_action_obligation": row["dollarsobligated"],
-                "funding_agency_id": self.get_agency(row["fundingrequestingagencyid"], subtier_agency_dict),
+                "funding_agency_id": self.get_agency_id(row["fundingrequestingagencyid"], subtier_agency_dict),
                 "last_modified_date": h.convert_date(row['last_modified_date']),
                 "modification_number": row["modnumber"],
                 "place_of_performance": h.get_or_create_location(
@@ -167,7 +169,7 @@ class Command(BaseCommand):
         update_contract_awards(tuple(award_id_list))
         self.logger.info("Completed Awards update ({} records)".format(count))
 
-    def get_agency(self, agency_string, subtier_agency_dict):
+    def get_agency_id(self, agency_string, subtier_agency_dict):
         agency_code = h.up2colon(agency_string)
         agency_id = subtier_agency_dict.get(agency_code)
         if not agency_id:
@@ -264,14 +266,19 @@ class Command(BaseCommand):
         le = LegalEntity.objects.filter(recipient_unique_id=row['dunsnumber']).first()
         if not le:
             le = LegalEntity.objects.create(**recipient_dict)
+        else:
+            LegalEntity.objects.filter(legal_entity_id=le.legal_entity_id).update(**recipient_dict)
 
         return le
 
-    def get_or_create_award(self, row):
+    def get_or_create_award(self, row, awarding_agency_id):
         piid = row.get("piid", None)
         parent_award_id = row.get("idvpiid", None)
+
+        awarding_agency = Agency.objects.get(id=awarding_agency_id)
         award = Award.get_or_create_summary_award(
-            piid=piid, fain=None, uri=None, parent_award_id=parent_award_id)
+            piid=piid, fain=None, uri=None, awarding_agency=awarding_agency,
+            parent_award_id=parent_award_id)
         return award
 
     def parse_first_character(self, flag):
