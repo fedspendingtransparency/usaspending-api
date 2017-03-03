@@ -208,9 +208,6 @@ class Award(DataSourceTrackedModel):
             "place_of_performance",
             "awarding_agency",
             "funding_agency",
-            "procurement_set",
-            "financialassistanceaward_set",
-            "financial_set",
             "recipient",
             "date_signed__fy",
         ]
@@ -257,7 +254,7 @@ class Award(DataSourceTrackedModel):
         self.save()
 
     @staticmethod
-    def get_or_create_summary_award(piid=None, fain=None, uri=None, parent_award_id=None):
+    def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None):
         # If an award transaction's ID is a piid, it's contract data
         # If the ID is fain or a uri, it's financial assistance. If the award transaction
         # has both a fain and a uri, fain takes precedence.
@@ -273,16 +270,16 @@ class Award(DataSourceTrackedModel):
                 # Now search for it
                 # Do we want to log something if the the query below turns up
                 # more than one award record?
-                summary_award = Award.objects.all().filter(Q(**q_kwargs)).first()
+                summary_award = Award.objects.all().filter(Q(**q_kwargs)).filter(awarding_agency=awarding_agency).first()
                 if summary_award:
                     return summary_award
                 else:
                     parent_award = None
                     if parent_award_id:
                         # If we have a parent award id, recursively get/create the award for it
-                        parent_award = Award.get_or_create_summary_award(**{i[1]: parent_award_id})
+                        parent_award = Award.get_or_create_summary_award(**{i[1]: parent_award_id, 'awarding_agency': awarding_agency})
                     # Now create the award record for this award transaction
-                    summary_award = Award(**{i[1]: i[0], "parent_award": parent_award})
+                    summary_award = Award(**{i[1]: i[0], "parent_award": parent_award, "awarding_agency": awarding_agency})
                     summary_award.save()
                     return summary_award
 
@@ -326,10 +323,22 @@ class Transaction(DataSourceTrackedModel):
     def get_default_fields(path=None):
         return [
             "id",
-            "modification_number",
-            "federal_action_obligation",
+            "type",
+            "type_description",
+            "period_of_performance_start_date",
+            "period_of_performance_current_end_date",
             "action_date",
-            "description"
+            "action_type",
+            "action_date__fy",
+            "federal_action_obligation",
+            "modification_number",
+            "awarding_agency",
+            "funding_agency",
+            "recipient",
+            "description",
+            "place_of_performance",
+            "contract_data",  # must match related_name in TransactionContract
+            "assistance_data"  # must match related_name in TransactionAssistance
         ]
 
     def get_type_description(self):
@@ -347,7 +356,7 @@ class Transaction(DataSourceTrackedModel):
 class TransactionContract(DataSourceTrackedModel):
     transaction = models.OneToOneField(
         Transaction, on_delete=models.CASCADE,
-        primary_key=True, related_name='contract')
+        primary_key=True, related_name='contract_data')
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     piid = models.CharField(max_length=50, blank=True)
     parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
@@ -431,6 +440,8 @@ class TransactionContract(DataSourceTrackedModel):
     @staticmethod
     def get_default_fields(path=None):
         return [
+            "piid",
+            "parent_award_id",
             "type",
             "type_description",
             "cost_or_pricing_data",
@@ -448,7 +459,7 @@ class TransactionContract(DataSourceTrackedModel):
 class TransactionAssistance(DataSourceTrackedModel):
     transaction = models.OneToOneField(
         Transaction, on_delete=models.CASCADE,
-        primary_key=True, related_name='assistance')
+        primary_key=True, related_name='assistance_data')
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     fain = models.CharField(max_length=30, blank=True, null=True)
     uri = models.CharField(max_length=70, blank=True, null=True)
@@ -478,6 +489,8 @@ class TransactionAssistance(DataSourceTrackedModel):
     @staticmethod
     def get_default_fields(path=None):
         return [
+            "fain",
+            "uri",
             "cfda_number",
             "cfda_title",
             "face_value_loan_guarantee",

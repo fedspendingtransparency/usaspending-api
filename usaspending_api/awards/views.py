@@ -5,16 +5,17 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from usaspending_api.awards.models import Award, Procurement
+from usaspending_api.awards.models import Award, Transaction
 from usaspending_api.awards.serializers import AwardSerializer, TransactionSerializer
 from usaspending_api.common.api_request_utils import AutoCompleteHandler
-from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
+from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin, SuperLoggingMixin
 from usaspending_api.common.views import AggregateView, DetailViewSet
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
-class AwardViewSet(FilterQuerysetMixin,
+class AwardViewSet(SuperLoggingMixin,
+                   FilterQuerysetMixin,
                    ResponseMetadatasetMixin,
                    DetailViewSet):
     """
@@ -52,7 +53,8 @@ class AwardAutocomplete(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AwardAggregateViewSet(FilterQuerysetMixin,
+class AwardAggregateViewSet(SuperLoggingMixin,
+                            FilterQuerysetMixin,
                             AggregateView):
     """Return aggregated award information."""
     def get_queryset(self):
@@ -62,32 +64,28 @@ class AwardAggregateViewSet(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class TransactionViewset(FilterQuerysetMixin,
+class TransactionViewset(SuperLoggingMixin,
+                         FilterQuerysetMixin,
                          ResponseMetadatasetMixin,
                          DetailViewSet):
     """Handles requests for award transaction data."""
-    # Note: until we update the AwardAction abstract class to
-    # a physical Transaction table, the transaction endpoint's first
-    # iteration will include procurement data only. This will let us
-    # demo and test the endpoint while avoiding the work
-    # of combining the separate procurement/assistance tables (that work
-    # won't be needed once we make the AwardAction-->Transaction change).
     serializer_class = TransactionSerializer
 
     def get_queryset(self):
         """Return the view's queryset."""
-        queryset = Procurement.objects.all()
+        queryset = Transaction.objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
 
 
-class TransactionAggregateViewSet(FilterQuerysetMixin,
+class TransactionAggregateViewSet(SuperLoggingMixin,
+                                  FilterQuerysetMixin,
                                   AggregateView):
     """Return aggregated transaction information."""
     def get_queryset(self):
-        queryset = Procurement.objects.all()
+        queryset = Transaction.objects.all()
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset

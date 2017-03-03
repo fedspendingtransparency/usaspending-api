@@ -2,8 +2,8 @@ from django.core.management import call_command
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
-    FinancialAccountsByAwardsTransactionObligations, FinancialAssistanceAward,
-    Procurement)
+    FinancialAccountsByAwardsTransactionObligations, TransactionAssistance,
+    TransactionContract, Transaction)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import LegalEntity, Location
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -20,13 +20,14 @@ def endpoint_data():
 @pytest.fixture()
 @pytest.mark.django_db
 def partially_flushed():
-    Procurement.objects.all().delete()
+    TransactionContract.objects.all().delete()
     SubmissionAttributes.objects.all().delete()
     AppropriationAccountBalances.objects.all().delete()
     FinancialAccountsByProgramActivityObjectClass.objects.all().delete()
     FinancialAccountsByAwards.objects.all().delete()
     FinancialAccountsByAwardsTransactionObligations.objects.all().delete()
-    FinancialAssistanceAward.objects.all().delete()
+    TransactionAssistance.objects.all().delete()
+    Transaction.objects.all().delete()
     Location.objects.all().delete()
     LegalEntity.objects.all().delete()
     Award.objects.all().delete()
@@ -48,5 +49,6 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     assert Location.objects.count() == 4
     assert LegalEntity.objects.count() == 2
     assert Award.objects.count() == 7
-    assert Procurement.objects.count() == 1
-    assert FinancialAssistanceAward.objects.count() == 1
+    assert Transaction.objects.count() == 2
+    assert TransactionContract.objects.count() == 1
+    assert TransactionAssistance.objects.count() == 1
