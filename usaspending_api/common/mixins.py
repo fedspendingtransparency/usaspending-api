@@ -158,7 +158,7 @@ class FilterQuerysetMixin(object):
         if len(request.data):
             fg = FilterGenerator()
             filters = fg.create_from_request_body(request.data)
-            subwhere = Q(**{queryset.model._meta.pk.name + "__in": queryset.filter(filters).values_list('id', flat=True)})
+            subwhere = Q(**{queryset.model._meta.pk.name + "__in": queryset.filter(filters).values_list(queryset.model._meta.pk.name, flat=True)})
             return queryset.filter(subwhere)
         else:
             filter_map = kwargs.get('filter_map', {})
@@ -170,7 +170,7 @@ class FilterQuerysetMixin(object):
                 fy = FiscalYear(request.query_params.get('fy'))
                 fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
                 filters = {**filters, **fy_arguments}
-            subwhere = Q(**{queryset.model._meta.pk.name + "__in": queryset.filter(**filters).values_list('id', flat=True)})
+            subwhere = Q(**{queryset.model._meta.pk.name + "__in": queryset.filter(**filters).values_list(queryset.model._meta.pk.name, flat=True)})
             return queryset.filter(subwhere)
 
     def order_records(self, request, *args, **kwargs):
