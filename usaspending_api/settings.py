@@ -104,7 +104,7 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 # import an environment variable, DATABASE_URL
 # see https://github.com/kennethreitz/dj-database-url for more info
 
-DATABASES = {'default': dj_database_url.config(conn_max_age=600)}
+DATABASES = {'default': dj_database_url.config(conn_max_age=10)}
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
