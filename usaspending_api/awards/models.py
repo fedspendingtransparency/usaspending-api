@@ -24,6 +24,9 @@ AWARD_TYPES = (
     ('D', 'Definitive Contract')
 )
 
+AWARD_TYPES_D = dict(AWARD_TYPES)
+_UNKNOWN_TYPE = "Unknown Type"
+
 CONTRACT_PRICING_TYPES = (
     ('A', 'Fixed Price Redetermination'),
     ('B', 'Fixed Price Level of Effort'),
@@ -40,6 +43,8 @@ CONTRACT_PRICING_TYPES = (
     ('Z', 'Labor Hours'),
     ('UN', 'Unknown Type')
 )
+
+CONTRACT_PRICING_TYPES_D = dict(CONTRACT_PRICING_TYPES)
 
 
 class FinancialAccountsByAwards(DataSourceTrackedModel):
@@ -296,7 +301,7 @@ class Transaction(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
-        return '%s award: %s' % (self.get_type_description(), self.award)
+        return '%s award: %s' % (AWARD_TYPES_D.get(self.type, _UNKNOWN_TYPE), self.award)
 
     @staticmethod
     def get_default_fields(path=None):
@@ -319,13 +324,6 @@ class Transaction(DataSourceTrackedModel):
             "contract_data",  # must match related_name in TransactionContract
             "assistance_data"  # must match related_name in TransactionAssistance
         ]
-
-    def get_type_description(self):
-        description = [item for item in AWARD_TYPES if item[0] == self.type]
-        if len(description) == 0:
-            return "Unknown Type"
-        else:
-            return description[0][1]
 
     class Meta:
         db_table = 'transaction'
@@ -549,16 +547,9 @@ class AwardAction(DataSourceTrackedModel):
             "update_date"
         ]
 
-    def get_type_description(self):
-        description = [item for item in AWARD_TYPES if item[0] == self.type]
-        if len(description) == 0:
-            return "Unknown Type"
-        else:
-            return description[0][1]
-
     # Override the save method so that after saving we always call update_from_mod on our Award
     def save(self, *args, **kwargs):
-        self.type_description = self.get_type_description()
+        self.type_description = AWARD_TYPES_D.get(self.type, _UNKNOWN_TYPE)
         super(AwardAction, self).save(*args, **kwargs)
         self.award.update_from_mod(self)
 
@@ -663,16 +654,9 @@ class Procurement(AwardAction):
             "product_or_service_code"
         ]
 
-    def get_pricing_type_description(self):
-        description = [item for item in CONTRACT_PRICING_TYPES if item[0] == self.type_of_contract_pricing]
-        if len(description) == 0:
-            return "Unknown Type"
-        else:
-            return description[0][1]
-
     # Override the save method so that after saving we always update our type description
     def save(self, *args, **kwargs):
-        self.type_of_contract_pricing_description = self.get_pricing_type_description()
+        self.type_of_contract_pricing_description = CONTRACT_PRICING_TYPES_D.get(self.type_of_contract_pricing, _UNKNOWN_TYPE)
         super(Procurement, self).save(*args, **kwargs)
 
 
