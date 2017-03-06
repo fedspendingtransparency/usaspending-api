@@ -15,7 +15,7 @@ from usaspending_api.awards.models import (
     TransactionAssistance, TransactionContract, Transaction)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import (
-    Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity)
+    Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity, CFDAProgram)
 from usaspending_api.submissions.models import SubmissionAttributes
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
@@ -268,7 +268,7 @@ class Command(BaseCommand):
 
         fad_field_map = {
             "type": "assistance_type",
-            "description": "award_description"
+            "description": "award_description",
         }
 
         for row in award_financial_assistance_data:
@@ -319,6 +319,7 @@ class Command(BaseCommand):
             fad_value_map = {
                 "transaction": transaction_instance,
                 "submission": submission_attributes,
+                "cfda": CFDAProgram.objects.filter(program_number=row['cfda_number']).first(),
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
