@@ -191,7 +191,7 @@ class Award(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     latest_submission = models.ForeignKey(SubmissionAttributes, null=True)
-    latest_transaction = models.ForeignKey("awards.Transaction", related_name="latest_transaction", null=True)
+    latest_transaction = models.ForeignKey("awards.Transaction", related_name="latest_for_award", null=True)
 
     objects = models.Manager()
     nonempty = AwardManager()

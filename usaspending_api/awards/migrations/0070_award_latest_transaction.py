@@ -16,6 +16,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='award',
             name='latest_transaction',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='latest_transaction', to='awards.Transaction'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='latest_for_award', to='awards.Transaction'),
         ),
     ]
