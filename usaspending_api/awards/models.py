@@ -3,7 +3,7 @@ from django.db.models import F, Q, Sum
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity
+from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity, CFDAProgram
 from usaspending_api.common.models import DataSourceTrackedModel
 
 AWARD_TYPES = (
@@ -102,6 +102,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     def get_default_fields(path=None):
         return [
             "financial_accounts_by_awards_id",
+            "award",
             "treasury_account",
             "transaction_obligations",
             "object_class",
@@ -186,8 +187,6 @@ class Award(DataSourceTrackedModel):
             "place_of_performance",
             "awarding_agency",
             "funding_agency",
-            "transaction_set",
-            "financial_set",
             "recipient",
             "date_signed__fy",
         ]
@@ -445,6 +444,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     uri = models.CharField(max_length=70, blank=True, null=True)
     cfda_number = models.CharField(max_length=7, blank=True, null=True, verbose_name="CFDA Number")
     cfda_title = models.CharField(max_length=250, blank=True, null=True, verbose_name="CFDA Title")
+    cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
     business_funds_indicator = models.CharField(max_length=3)
     non_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     total_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -471,6 +471,7 @@ class TransactionAssistance(DataSourceTrackedModel):
         return [
             "fain",
             "uri",
+            "cfda",
             "cfda_number",
             "cfda_title",
             "face_value_loan_guarantee",

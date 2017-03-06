@@ -56,7 +56,11 @@ INSTALLED_APPS = [
     'usaspending_api.api_docs'
 ]
 
-INTERNAL_IPS = ('127.0.0.1',)
+INTERNAL_IPS = ()
+
+DEBUG_TOOLBAR_CONFIG = {
+    "SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -162,7 +166,11 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'specifics': {
+            '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
             'format': "%(asctime)s %(filename)s %(funcName)s %(levelname)s %(lineno)s %(module)s %(message)s %(name)s %(pathname)s"
+        },
+        'json': {
+            '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
         }
     },
     'handlers': {
@@ -181,6 +189,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/events.log'),
+            'formatter': 'json'
         },
         'exceptions_file': {
             'level': 'ERROR',

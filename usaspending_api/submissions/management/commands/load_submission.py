@@ -15,7 +15,7 @@ from usaspending_api.awards.models import (
     TransactionAssistance, TransactionContract, Transaction)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import (
-    Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity)
+    Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity, CFDAProgram)
 from usaspending_api.submissions.models import SubmissionAttributes
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
@@ -259,7 +259,7 @@ class Command(BaseCommand):
 
         fad_field_map = {
             "type": "assistance_type",
-            "description": "award_description"
+            "description": "award_description",
         }
 
         for row in award_financial_assistance_data:
@@ -310,6 +310,7 @@ class Command(BaseCommand):
             fad_value_map = {
                 "transaction": transaction_instance,
                 "submission": submission_attributes,
+                "cfda": CFDAProgram.objects.filter(program_number=row['cfda_number']).first(),
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
@@ -554,8 +555,9 @@ def get_or_create_location(location_map, row, location_value_map={}):
     state_code = row.get(location_map.get('state_code'))
     if state_code is not None:
         # Fix for procurement data foreign provinces stored as state_code
-        if location_country and location_country.country_code is not "USA":
+        if location_country and location_country.country_code != "USA":
             location_value_map.update({'foreign_province': state_code})
+            location_value_map.update({'state_code': None})
         else:
             location_value_map.update({'state_code': state_code.replace('.', '')})
     # end of temporary fix

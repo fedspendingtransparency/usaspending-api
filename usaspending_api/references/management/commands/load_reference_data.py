@@ -25,4 +25,7 @@ class Command(BaseCommand):
         self.logger.info("Loading ref_city_county_code.csv")
         call_command('load_reference_csv', 'RefCityCountyCode', 'usaspending_api/data/ref_city_county_code.csv', 'Latin-1')
 
+        self.logger.info("Loading CFDA data")
+        call_command('loadcfda')
+
         self.logger.info("Reference data loaded.")
