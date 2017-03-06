@@ -6,7 +6,7 @@ from usaspending_api.awards.models import (
     Transaction, TransactionAssistance, TransactionContract)
 from usaspending_api.accounts.serializers import TreasuryAppropriationAccountSerializer
 from usaspending_api.common.serializers import LimitableSerializer
-from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer
+from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer, CfdaSerializer
 from usaspending_api.common.helpers import fy
 
 
@@ -70,6 +70,13 @@ class TransactionAssistanceSerializer(LimitableSerializer):
     class Meta:
         model = TransactionAssistance
         fields = '__all__'
+
+        nested_serializers = {
+            "cfda": {
+                "class": CfdaSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
 
 
 class TransactionContractSerializer(LimitableSerializer):
