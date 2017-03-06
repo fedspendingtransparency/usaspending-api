@@ -1,5 +1,6 @@
 # USASpending API
 
+
 [![Build Status](https://travis-ci.org/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.org/fedspendingtransparency/usaspending-api)
 [![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage)[![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
 
@@ -144,6 +145,8 @@ The Django server has extract, transform, and load (ETL) processes built in as c
 ## Loading Data
 
 For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
+
+For details on how our data loaders modify incoming data, see [data_changes.md](data_changes.md).
 
 ## Management Commands
 
