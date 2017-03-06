@@ -7,12 +7,6 @@ from django.db.models import F
 import django.db.models.deletion
 
 
-def update_cfda_links(apps, schema_editor):
-    # Use award model at time of migration
-    Assistance = apps.get_model("awards", "TransactionAssistance")
-    Assistance.objects.update(cfda_id=F("cfda_number"))
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -35,6 +29,5 @@ class Migration(migrations.Migration):
             model_name='transactioncontract',
             name='transaction',
             field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='contract_data', serialize=False, to='awards.Transaction'),
-        ),
-        migrations.RunPython(update_cfda_links),
+        )
     ]
