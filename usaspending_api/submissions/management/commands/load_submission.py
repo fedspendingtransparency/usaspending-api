@@ -17,10 +17,13 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 from usaspending_api.references.models import (
     Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity, CFDAProgram)
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
 TAS_ID_TO_ACCOUNT = {}
+AWARD_UPDATE_ID_LIST = []
+AWARD_CONTRACT_UPDATE_ID_LIST = []
 
 
 class Command(BaseCommand):
@@ -294,6 +297,8 @@ class Command(BaseCommand):
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
 
+            AWARD_UPDATE_ID_LIST.append(award.id)
+
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
@@ -385,6 +390,9 @@ class Command(BaseCommand):
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
 
+            AWARD_UPDATE_ID_LIST.append(award.id)
+            AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
+
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
@@ -420,6 +428,10 @@ class Command(BaseCommand):
                 field_map=contract_field_map,
                 value_map=contract_value_map,
                 save=True)
+
+        # Update awards for new linkages
+        update_awards(tuple(AWARD_UPDATE_ID_LIST))
+        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
 
 
 def format_date(date_string, pattern='%Y%m%d'):

@@ -67,6 +67,7 @@ def update_awards(award_tuple=None):
         'place_of_performance_id = l.place_of_performance_id, '
         'recipient_id = l.recipient_id, '
         'total_obligation = t.total_obligation, '
+        'latest_transaction_id = l.id, '
         'type = l.type, '
         'type_description = l.type_description '
         'FROM txn_earliest e '

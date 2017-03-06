@@ -95,6 +95,16 @@ The currently available endpoints are listed below. To reduce unnecessary data t
     - _Methods_: POST
 
 
+  * **[/v1/references/cfda/](https://spending-api.us/api/v1/references/cfda/)**
+    - _Description_: Returns a list of CFDA programs
+    - _Methods_: GET, POST
+
+
+  * **/v1/references/cfda/{CFDA Program Code}**
+    - _Description_: Provides information about a single CFDA Program. Unlike the CFDA list endpoint (`/references/cfda`), this one returns all available fields instead of the default set.
+    - _Methods_: GET, POST
+
+
   * **[/v1/submissions/](https://spending-api.us/api/v1/submissions/)**
     - _Description_: Returns metadata about submissions loaded from the DATA Act broker. _Note_: This endpoint is due for a rework in the near future.
     - _Methods_: GET, POST
