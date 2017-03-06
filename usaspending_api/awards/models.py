@@ -101,6 +101,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     def get_default_fields(path=None):
         return [
             "financial_accounts_by_awards_id",
+            "award",
             "treasury_account",
             "transaction_obligations",
             "object_class",
