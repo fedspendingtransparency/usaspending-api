@@ -521,3 +521,13 @@ class CFDAProgram(DataSourceTrackedModel):
 
     def __str__(self):
         return "%s" % (self.program_title)
+
+    @staticmethod
+    def get_default_fields(path=None):
+        return [
+            "program_number",
+            "program_title",
+            "popular_name",
+            "website_address",
+            "objectives",
+        ]

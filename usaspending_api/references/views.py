@@ -3,8 +3,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.common.api_request_utils import DataQueryHandler, GeoCompleteHandler, AutoCompleteHandler
-from usaspending_api.references.models import Location, Agency, LegalEntity
-from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer
+from usaspending_api.references.models import Location, Agency, LegalEntity, CFDAProgram
+from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, CfdaSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin, SuperLoggingMixin
 from usaspending_api.common.views import AggregateView, DetailViewSet
 import json
@@ -50,6 +50,23 @@ class AgencyEndpoint(SuperLoggingMixin,
     def get_queryset(self):
         """Return the view's queryset."""
         queryset = Agency.objects.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
+
+
+class CfdaEndpoint(SuperLoggingMixin,
+                   FilterQuerysetMixin,
+                   ResponseMetadatasetMixin,
+                   DetailViewSet):
+    """Return information about CFDA Programs"""
+    serializer_class = CfdaSerializer
+    lookup_field = "program_number"
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = CFDAProgram.objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
