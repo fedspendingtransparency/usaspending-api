@@ -215,7 +215,7 @@ class FilterGenerator():
             if field in self.filter_map:
                 field = self.filter_map[field]
 
-            q_kwargs[field + operation] = value[0]
+            q_kwargs[field + operation] = value
 
             if negate:
                 return ~Q(**q_kwargs)
