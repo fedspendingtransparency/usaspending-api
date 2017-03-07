@@ -207,6 +207,11 @@ class FilterGenerator():
                 if negate:
                     q_obj = ~q_obj
                 return q_obj
+            if operation is '__iexact':
+                # We can't perform iexact if we don't have a string, so in that
+                # case just do a flat equals comparison
+                if not isinstance(value, str):
+                    operation = ""
 
             # We don't have a special operation, so handle the remaining cases
             # It's unlikely anyone would specify and ignored parameter via post
