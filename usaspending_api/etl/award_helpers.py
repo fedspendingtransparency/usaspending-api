@@ -97,21 +97,33 @@ def update_contract_awards(award_tuple=None):
         sql_txn_contract_latest += 'WHERE award_id IN %s '
     sql_txn_contract_latest += 'ORDER BY award_id, action_date DESC) '
 
+    # sum the potential_total_value_of_award from contract_data for an award
+    sql_txn_totals = (
+        'txn_totals AS ('
+        'SELECT tx.award_id, SUM(potential_total_value_of_award) AS total_potential_award '
+        'FROM transaction_contract INNER JOIN transaction as tx on '
+        'transaction_contract.transaction_id = tx.id ')
+    if award_tuple is not None:
+        sql_txn_totals += 'WHERE tx.award_id IN %s '
+    sql_txn_totals += 'GROUP BY tx.award_id) '
+
     # construct a sql query that uses the latest txn contract common table
     # expression above and joins it to the corresopnding
     # award. that joined data is used to update awards fields as appropriate
     # (currently, there's only one trasnaction_contract field that trickles
     # up and updates an award record: potential_total_value_of_award)
-    sql_update = 'WITH {}'.format(sql_txn_contract_latest)
+    sql_update = 'WITH {}, {}'.format(sql_txn_contract_latest, sql_txn_totals)
     sql_update += (
         'UPDATE awards a '
-        'SET potential_total_value_of_award = l.potential_total_value_of_award '
+        'SET potential_total_value_of_award = t.total_potential_award '
         'FROM txn_contract_latest l '
+        'JOIN txn_totals t '
+        'ON l.award_id = t.award_id '
         'WHERE l.award_id = a.id'
     )
 
     with connection.cursor() as cursor:
-        cursor.execute(sql_update, [award_tuple])
+        cursor.execute(sql_update, [award_tuple, award_tuple])
         rows = cursor.rowcount
 
     return rows
