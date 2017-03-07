@@ -34,37 +34,6 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
         }
 
 
-class AwardSerializer(LimitableSerializer):
-
-    class Meta:
-
-        model = Award
-        fields = '__all__'
-        nested_serializers = {
-            "recipient": {
-                "class": LegalEntitySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "awarding_agency": {
-                "class": AgencySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "funding_agency": {
-                "class": AgencySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "place_of_performance": {
-                "class": LocationSerializer,
-                "kwargs": {"read_only": True}
-            },
-        }
-
-    date_signed__fy = serializers.SerializerMethodField()
-
-    def get_date_signed__fy(self, obj):
-        return fy(obj.date_signed)
-
-
 class TransactionAssistanceSerializer(LimitableSerializer):
 
     class Meta:
@@ -122,3 +91,38 @@ class TransactionSerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             }
         }
+
+
+class AwardSerializer(LimitableSerializer):
+
+    class Meta:
+
+        model = Award
+        fields = '__all__'
+        nested_serializers = {
+            "recipient": {
+                "class": LegalEntitySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "awarding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "funding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "place_of_performance": {
+                "class": LocationSerializer,
+                "kwargs": {"read_only": True}
+            },
+            "latest_transaction": {
+                "class": TransactionSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
+
+    date_signed__fy = serializers.SerializerMethodField()
+
+    def get_date_signed__fy(self, obj):
+        return fy(obj.date_signed)
