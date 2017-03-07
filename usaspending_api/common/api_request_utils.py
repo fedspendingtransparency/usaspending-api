@@ -44,11 +44,10 @@ class FilterGenerator():
     """Support for multiple methods of dynamically creating filter queries."""
     operators = {
         # Django standard operations
-        'equals': '',
+        'equals': '__iexact',
         'less_than': '__lt',
         'greater_than': '__gt',
         'contains': '__icontains',
-        'in': '__in',
         'less_than_or_equal': '__lte',
         'greater_than_or_equal': '__gte',
         'range': '__range',
@@ -56,6 +55,7 @@ class FilterGenerator():
         'search': '__search',
 
         # Special operations follow
+        'in': 'in',
         'fy': 'fy',
         'range_intersect': 'range_intersect'
     }
@@ -196,6 +196,17 @@ class FilterGenerator():
                 if negate:
                     return ~self.range_intersect(field, value)
                 return self.range_intersect(field, value)
+            if operation is 'in':
+                # make in operation case insensitive
+                q_obj = Q()
+                for item in value:
+                    new_q = {}
+                    new_q[field + "__iexact"] = item
+                    new_q = Q(**new_q)
+                    q_obj = q_obj | new_q
+                if negate:
+                    q_obj = ~q_obj
+                return q_obj
 
             # We don't have a special operation, so handle the remaining cases
             # It's unlikely anyone would specify and ignored parameter via post
@@ -204,7 +215,7 @@ class FilterGenerator():
             if field in self.filter_map:
                 field = self.filter_map[field]
 
-            q_kwargs[field + operation] = value
+            q_kwargs[field + operation] = value[0]
 
             if negate:
                 return ~Q(**q_kwargs)
