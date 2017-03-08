@@ -44,7 +44,7 @@ class FilterGenerator():
     """Support for multiple methods of dynamically creating filter queries."""
     operators = {
         # Django standard operations
-        'equals': '__iexact',
+        'equals': '',
         'less_than': '__lt',
         'greater_than': '__gt',
         'contains': '__icontains',
@@ -68,8 +68,9 @@ class FilterGenerator():
     Additionally, ignored parameters specifies parameters to ignore. Always includes
     to ["page", "limit", "last"]
     """
-    def __init__(self, filter_map={}, ignored_parameters=[]):
+    def __init__(self, model, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
+        self.model = model
         self.ignored_parameters = ['page', 'limit', 'last'] + ignored_parameters
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
@@ -197,21 +198,24 @@ class FilterGenerator():
                     return ~self.range_intersect(field, value)
                 return self.range_intersect(field, value)
             if operation is 'in':
-                # make in operation case insensitive
-                q_obj = Q()
-                for item in value:
-                    new_q = {}
-                    new_q[field + "__iexact"] = item
-                    new_q = Q(**new_q)
-                    q_obj = q_obj | new_q
-                if negate:
-                    q_obj = ~q_obj
-                return q_obj
-            if operation is '__iexact':
-                # We can't perform iexact if we don't have a string, so in that
-                # case just do a flat equals comparison
-                if not isinstance(value, str):
-                    operation = ""
+                # make in operation case insensitive for string fields
+                if self.is_string_field(field):
+                    q_obj = Q()
+                    for item in value:
+                        new_q = {}
+                        new_q[field + "__iexact"] = item
+                        new_q = Q(**new_q)
+                        q_obj = q_obj | new_q
+                    if negate:
+                        q_obj = ~q_obj
+                    return q_obj
+                else:
+                    # Otherwise, use built in django in
+                    operation = "__in"
+            if operation is '' and self.is_string_field(field):
+                # If we're doing a simple comparison, we need to use iexact for
+                # string fields
+                operation = "__iexact"
 
             # We don't have a special operation, so handle the remaining cases
             # It's unlikely anyone would specify and ignored parameter via post
@@ -275,6 +279,17 @@ class FilterGenerator():
         q_case[fields[0] + "__lte"] = values[1]  # f1 <= r2
         q_case[fields[1] + "__gte"] = values[0]  # f2 >= r1
         return Q(**q_case)
+
+    def is_string_field(self, field):
+        fields = field.split("__")
+        model_to_check = self.model
+
+        # If fields > 1, we're following a fk traversal - we need to move the model we're checking
+        # down via the fk path, then check the field on that model
+        if len(fields) > 1:
+            for f in fields[:-1]:
+                model_to_check = model_to_check._meta.get_field(f).rel.to
+        return (model_to_check._meta.get_field(fields[-1]).get_internal_type() in ["TextField", "CharField"])
 
 
 # Handles unique value requests

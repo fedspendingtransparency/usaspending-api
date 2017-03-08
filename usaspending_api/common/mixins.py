@@ -156,12 +156,12 @@ class FilterQuerysetMixin(object):
         # and create filters without needing to know about the structure
         # of the request itself.
         if len(request.data):
-            fg = FilterGenerator()
+            fg = FilterGenerator(queryset.model)
             filters = fg.create_from_request_body(request.data)
             return queryset.filter(filters).distinct()
         else:
             filter_map = kwargs.get('filter_map', {})
-            fg = FilterGenerator(filter_map=filter_map)
+            fg = FilterGenerator(queryset.model, filter_map=filter_map)
             filters = fg.create_from_query_params(request.query_params)
             # add fiscal year to filters if requested
             # deprecated: we plan to start storing fiscal years in the database
