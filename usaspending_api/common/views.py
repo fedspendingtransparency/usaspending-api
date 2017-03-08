@@ -32,13 +32,13 @@ class AggregateView(AggregateQuerysetMixin,
         try:
             queryset = self.aggregate(request, *args, **kwargs)
 
-            # construct metadata of entire queryset
-            metadata = {"count": queryset.count()}
-
             # get paged data for this request
             paged_data = ResponsePaginator.get_paged_data(
                 queryset, request_parameters=request.data)
             paged_queryset = paged_data.object_list.all()
+
+            # construct metadata of entire queryset
+            metadata = {"count": paged_data.paginator.count}
 
             # construct page-specific metadata
             page_metadata = {

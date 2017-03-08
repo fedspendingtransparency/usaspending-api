@@ -90,9 +90,9 @@ class Agency(models.Model):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
-    toptier_agency = models.ForeignKey('ToptierAgency', models.DO_NOTHING, null=True)
-    subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True)
-    office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
+    toptier_agency = models.ForeignKey('ToptierAgency', models.DO_NOTHING, null=True, db_index=True)
+    subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True, db_index=True)
+    office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True, db_index=True)
 
     @staticmethod
     def get_default_fields(path=None):
@@ -183,7 +183,7 @@ class OfficeAgency(models.Model):
 
 class Location(DataSourceTrackedModel):
     location_id = models.AutoField(primary_key=True)
-    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
+    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code", db_index=True)
     country_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Country Name")
     state_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="State Code")
     state_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="State Name")
@@ -299,7 +299,7 @@ class Location(DataSourceTrackedModel):
 
 class LegalEntity(DataSourceTrackedModel):
     legal_entity_id = models.AutoField(primary_key=True)
-    location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
+    location = models.ForeignKey('Location', models.DO_NOTHING, null=True, db_index=True)
     parent_recipient_unique_id = models.CharField(max_length=9, blank=True, null=True, verbose_name="Parent DUNS Number")
     recipient_name = models.CharField(max_length=120, blank=True, verbose_name="Recipient Name")
     vendor_doing_as_business_name = models.CharField(max_length=400, blank=True, null=True)

@@ -2,6 +2,7 @@ from collections import OrderedDict
 from django.db.models import Avg, Count, F, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 from django.core.serializers.json import json, DjangoJSONEncoder
+from django.utils.timezone import now
 
 from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -158,7 +159,7 @@ class FilterQuerysetMixin(object):
         if len(request.data):
             fg = FilterGenerator(queryset.model)
             filters = fg.create_from_request_body(request.data)
-            return queryset.filter(filters).distinct()
+            return queryset.filter(filters)
         else:
             filter_map = kwargs.get('filter_map', {})
             fg = FilterGenerator(queryset.model, filter_map=filter_map)
@@ -169,9 +170,9 @@ class FilterQuerysetMixin(object):
                 fy = FiscalYear(request.query_params.get('fy'))
                 fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
                 filters = {**filters, **fy_arguments}
-            return queryset.filter(**filters).distinct()
+            return queryset.filter(**filters)
 
-    def order_records(self, request, *args, **kwargs):
+    def order_records(self, request, annotatable=False, *args, **kwargs):
         """Order a queryset based on request parameters."""
         queryset = kwargs.get('queryset')
 
@@ -181,11 +182,12 @@ class FilterQuerysetMixin(object):
         # prescriptive that aggregate requests can only be of one type)
         params = dict(request.query_params)
         params.update(dict(request.data))
-        ordering = params.get('order')
-        if ordering is not None:
+        ordering = params.get('order', [])
+        if annotatable:
             return queryset.order_by(*ordering)
         else:
-            return queryset
+            ordering.insert(0, queryset.model._meta.pk.name)
+            return queryset.order_by(*ordering).distinct(queryset.model._meta.pk.name)
 
 
 class ResponseMetadatasetMixin(object):
@@ -207,12 +209,13 @@ class ResponseMetadatasetMixin(object):
         params = self.request.query_params.copy()  # copy() creates mutable copy of a QueryDict
         params.update(self.request.data.copy())
 
-        # construct metadata of entire set of data that matches the request specifications
-        total_metadata = {"count": queryset.count()}
-
         # get paged data for this request
         paged_data = ResponsePaginator.get_paged_data(
             queryset, request_parameters=params)
+
+        # grab the total from the paginator. This is quicker than .count() in this case, and
+        # is less lazy, saving SQL queries
+        total_metadata = {"count": paged_data.paginator.count}
 
         # construct page-specific metadata
         page_metadata = {
@@ -248,7 +251,22 @@ class SuperLoggingMixin(LoggingMixin):
 
     def finalize_response(self, request, response, *args, **kwargs):
         # Use the actual logging mixin response
-        response = super(SuperLoggingMixin, self).finalize_response(request, response, *args, **kwargs)
+        response = super(LoggingMixin, self).finalize_response(request, response, *args, **kwargs)
+
+        # check if request method is being logged
+        if self.logging_methods != '__all__' and request.method not in self.logging_methods:
+            return response
+
+        # compute response time
+        response_timedelta = now() - self.request.log.requested_at
+        response_ms = int(response_timedelta.total_seconds() * 1000)
+
+        # save to log
+        self.request.log.response = json.dumps(response.data, cls=DjangoJSONEncoder)
+        self.request.log.status_code = response.status_code
+        self.request.log.response_ms = response_ms
+        self.request.log.save()
+
         # Log it now to the events file
         data = dict(self.request.log.__dict__)
         del data["_state"]  # Strip this out as (1) we don't need it and (2) it's not serializable
