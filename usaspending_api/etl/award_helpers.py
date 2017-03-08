@@ -78,6 +78,8 @@ def update_awards(award_tuple=None):
         'WHERE t.award_id = a.id'
     )
     with connection.cursor() as cursor:
+        # If another expression is added and includes %s, you must add the tuple
+        # for that string interpolation to this list (even if it uses the same one!)
         cursor.execute(sql_update, [award_tuple, award_tuple, award_tuple])
         rows = cursor.rowcount
 
@@ -86,16 +88,6 @@ def update_awards(award_tuple=None):
 
 def update_contract_awards(award_tuple=None):
     """Update contract-specific award data based on the info in child transactions."""
-
-    # common table expression for each award's latest transaction contract record
-    sql_txn_contract_latest = (
-        'txn_contract_latest AS ('
-        'SELECT DISTINCT ON (award_id) * '
-        'FROM transaction_contract '
-        'JOIN transaction ON transaction_id = id ')
-    if award_tuple is not None:
-        sql_txn_contract_latest += 'WHERE award_id IN %s '
-    sql_txn_contract_latest += 'ORDER BY award_id, action_date DESC) '
 
     # sum the potential_total_value_of_award from contract_data for an award
     sql_txn_totals = (
@@ -112,18 +104,18 @@ def update_contract_awards(award_tuple=None):
     # award. that joined data is used to update awards fields as appropriate
     # (currently, there's only one trasnaction_contract field that trickles
     # up and updates an award record: potential_total_value_of_award)
-    sql_update = 'WITH {}, {}'.format(sql_txn_contract_latest, sql_txn_totals)
+    sql_update = 'WITH {}'.format(sql_txn_totals)
     sql_update += (
         'UPDATE awards a '
         'SET potential_total_value_of_award = t.total_potential_award '
-        'FROM txn_contract_latest l '
-        'JOIN txn_totals t '
-        'ON l.award_id = t.award_id '
-        'WHERE l.award_id = a.id'
+        'FROM txn_totals t '
+        'WHERE t.award_id = a.id'
     )
 
     with connection.cursor() as cursor:
-        cursor.execute(sql_update, [award_tuple, award_tuple])
+        # If another expression is added and includes %s, you must add the tuple
+        # for that string interpolation to this list (even if it uses the same one!)
+        cursor.execute(sql_update, [award_tuple])
         rows = cursor.rowcount
 
     return rows
