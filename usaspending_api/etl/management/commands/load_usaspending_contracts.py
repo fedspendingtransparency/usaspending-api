@@ -20,7 +20,6 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('file', nargs=1, help='the file to load')
 
-    @profile
     def handle(self, *args, **options):
 
         h.clear_caches()
@@ -175,7 +174,6 @@ class Command(BaseCommand):
             self.logger.error("Missing agency: " + agency_string)
         return agency_id
 
-    @profile
     def get_or_create_recipient(self, row):
         recipient_dict = {
             "location_id": h.get_or_create_location(row, mapper=location_mapper_vendor).location_id,

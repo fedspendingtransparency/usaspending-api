@@ -8,6 +8,7 @@ from usaspending_api.references.models import Agency, Location, RefCountryCode
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
+
 def clear_caches():
     for cache in ['locations', 'recipients', 'summary-awards']:
         caches[cache].clear()
@@ -58,7 +59,7 @@ def fetch_country_code(vendor_country_code):
 
 location_cache = caches['locations']
 
-@profile
+
 def get_or_create_location(row, mapper):
     location_dict = mapper(row)
 
@@ -89,7 +90,6 @@ def get_or_create_location(row, mapper):
     location = Location.objects.filter(**location_dict).first()
     if not location:
         location = Location.objects.create(**location_dict)
-        location.save()
         location_cache.set(location_tup, location)
     return location
 
