@@ -10,7 +10,7 @@ warnings.simplefilter("ignore", CacheKeyWarning)
 
 
 def clear_caches():
-    for cache in ['locations', 'recipients', 'summary-awards']:
+    for cache in ['locations', ]:
         caches[cache].clear()
 
 

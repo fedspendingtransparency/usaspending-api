@@ -852,16 +852,8 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'default-loc-mem-cache',
     },
-    'recipients': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'recipients-loc-mem-cache',
-    },
     'locations': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'locations-loc-mem-cache',
-    },
-    'summary-awards': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'summary-awards-loc-mem-cache',
     },
 }
