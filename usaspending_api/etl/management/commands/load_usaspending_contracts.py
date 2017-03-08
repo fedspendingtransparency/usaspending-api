@@ -22,6 +22,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        h.clear_caches()
+
         csv_file = options['file'][0]
         self.logger.info("Starting load for file {}".format(csv_file))
 
