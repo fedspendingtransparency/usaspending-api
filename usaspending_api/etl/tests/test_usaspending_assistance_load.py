@@ -38,7 +38,7 @@ def test_award_and_txn_uniqueness():
 
     awards_before_loads = Award.objects.count()
     txn_before_loads = Transaction.objects.count()
-    call_command('loaddata', 'reference_fixture')
+    call_command('loadagencies')
     filepath = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                             'usaspending_fin_assist_direct_payments.csv')
     call_command('load_usaspending_assistance', filepath)

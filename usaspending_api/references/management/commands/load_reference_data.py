@@ -19,6 +19,9 @@ class Command(BaseCommand):
         self.logger.info("Loading reference_fixture.json")
         call_command('loaddata', 'reference_fixture')
 
+        self.logger.info("Loading agency list")
+        call_command('loadagencies')
+
         self.logger.info("Loading tas_list.csv")
         call_command('loadtas', 'usaspending_api/data/tas_list.csv')
 
