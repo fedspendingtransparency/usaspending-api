@@ -16,7 +16,7 @@ class Command(BaseCommand):
 
         try:
             with open(os.path.join(django.conf.settings.BASE_DIR,
-                      'usaspending_api/data/authoritative_agency_list.csv')) \
+                      'usaspending_api', 'data', 'authoritative_agency_list.csv'), encoding="Latin-1") \
                       as csvfile:
 
                 reader = csv.DictReader(csvfile)
