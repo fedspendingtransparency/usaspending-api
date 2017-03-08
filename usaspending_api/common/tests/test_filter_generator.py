@@ -12,11 +12,15 @@ from usaspending_api.common.api_request_utils import FilterGenerator
 @pytest.fixture
 def mock_data():
     """mock data"""
+    toptier = mommy.make("references.ToptierAgency", toptier_agency_id=11, name="LEXCORP")
+    agency = mommy.make("references.Agency", id=10, toptier_agency=toptier)
     mommy.make(
         'awards.Award',
+        id=1234,
         piid='zzz',
         fain='abc123',
         type='B',
+        awarding_agency=agency,
         total_obligation=1000,
         description='SMALL BUSINESS ADMINISTRATION',
         date_signed=date(2012, 3, 1))
@@ -132,3 +136,86 @@ def test_filter_generator_equals_operation(client, mock_data):
 
     # Verify the filter returns the appropriate number of matches
     assert Award.objects.filter(q_obj).count() == 2
+
+
+@pytest.mark.django_db
+def test_filter_generator_fk_traversal(client, mock_data):
+    """Test equals case insensitivity"""
+    # Test FK filter
+    filters = [
+        {
+            "field": "awarding_agency",
+            "operation": "equals",
+            "value": "10"
+        }
+    ]
+
+    fg = FilterGenerator(Award)
+    q_obj = fg.create_q_from_filter_list(filters)
+
+    # Verify the filter returns the appropriate number of matches
+    assert Award.objects.filter(q_obj).count() == 1
+    assert Award.objects.filter(q_obj).first().id == 1234
+
+    # Test FK traversal filter
+    filters = [
+        {
+            "field": "awarding_agency__toptier_agency",
+            "operation": "equals",
+            "value": "11"
+        }
+    ]
+
+    fg = FilterGenerator(Award)
+    q_obj = fg.create_q_from_filter_list(filters)
+
+    # Verify the filter returns the appropriate number of matches
+    assert Award.objects.filter(q_obj).count() == 1
+    assert Award.objects.filter(q_obj).first().id == 1234
+
+    # Test FK traversal to string
+    filters = [
+        {
+            "field": "awarding_agency__toptier_agency__name",
+            "operation": "equals",
+            "value": "LEXCORP"
+        }
+    ]
+
+    fg = FilterGenerator(Award)
+    q_obj = fg.create_q_from_filter_list(filters)
+
+    # Verify the filter returns the appropriate number of matches
+    assert Award.objects.filter(q_obj).count() == 1
+    assert Award.objects.filter(q_obj).first().id == 1234
+
+    # Test fk traversal to string (Case-insensitive)
+    filters = [
+        {
+            "field": "awarding_agency__toptier_agency__name",
+            "operation": "equals",
+            "value": "lexcorp"
+        }
+    ]
+
+    fg = FilterGenerator(Award)
+    q_obj = fg.create_q_from_filter_list(filters)
+
+    # Verify the filter returns the appropriate number of matches
+    assert Award.objects.filter(q_obj).count() == 1
+    assert Award.objects.filter(q_obj).first().id == 1234
+
+    # Test lookup query - matching year on a month field
+    filters = [
+        {
+            "field": "date_signed__year",
+            "operation": "equals",
+            "value": "2012"
+        }
+    ]
+
+    fg = FilterGenerator(Award)
+    q_obj = fg.create_q_from_filter_list(filters)
+
+    # Verify the filter returns the appropriate number of matches
+    assert Award.objects.filter(q_obj).count() == 5
