@@ -287,9 +287,18 @@ class FilterGenerator():
         # If fields > 1, we're following a fk traversal - we need to move the model we're checking
         # down via the fk path, then check the field on that model
         if len(fields) > 1:
-            for f in fields[:-1]:
-                model_to_check = model_to_check._meta.get_field(f).rel.to
-        return (model_to_check._meta.get_field(fields[-1]).get_internal_type() in ["TextField", "CharField"])
+            while len(fields) > 1:
+                mf = model_to_check._meta.get_field(fields.pop(0))
+                # Check if this field is a foreign key
+                if mf.get_internal_type() in ["ForeignKey", "ManyToManyField", "OneToOneField"]:
+                    # Continue traversal
+                    model_to_check = mf.rel.to
+                else:
+                    # We've hit something that ISN'T a related field, which means it is either
+                    # a lookup, or a field with '__' in the name. In either case, we can return
+                    # false here
+                    return False
+        return (model_to_check._meta.get_field(fields[0]).get_internal_type() in ["TextField", "CharField"])
 
 
 # Handles unique value requests
