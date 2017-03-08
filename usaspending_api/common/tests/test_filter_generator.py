@@ -65,7 +65,7 @@ def test_filter_generator_search_operation(client, mock_data):
         }
     ]
 
-    fg = FilterGenerator()
+    fg = FilterGenerator(Award)
     q_obj = fg.create_q_from_filter_list(filters)
 
     # Verify the filter returns the appropriate number of matches
@@ -83,7 +83,7 @@ def test_filter_generator_in_operation(client, mock_data):
         }
     ]
 
-    fg = FilterGenerator()
+    fg = FilterGenerator(Award)
     q_obj = fg.create_q_from_filter_list(filters)
 
     # Verify the filter returns the appropriate number of matches
@@ -114,7 +114,7 @@ def test_filter_generator_equals_operation(client, mock_data):
         }
     ]
 
-    fg = FilterGenerator()
+    fg = FilterGenerator(Award)
     q_obj = fg.create_q_from_filter_list(filters)
 
     # Verify the filter returns the appropriate number of matches
