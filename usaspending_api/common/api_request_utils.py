@@ -253,6 +253,13 @@ class FilterGenerator():
                                 raise InvalidParameterException("Invalid field, operation 'range_intersect' requires an array of length 2 for field")
                             if (not isinstance(filt['value'], list) or len(filt['value']) != 2) and 'value_format' not in filt:
                                 raise InvalidParameterException("Invalid value, operation 'range_intersect' requires an array value of length 2, or a single value with value_format set to a ranged format (such as fy)")
+                        if filt['operation'] == 'search':
+                            if not isinstance(filt['field'], list) and not self.is_string_field(filt['field']):
+                                raise InvalidParameterException("Invalid field: '" + filt['field'] + "', operation 'search' requires a text-field for searching")
+                            elif isinstance(filt['field'], list):
+                                for search_field in filt['field']:
+                                    if not self.is_string_field(search_field):
+                                        raise InvalidParameterException("Invalid field: '" + search_field + "', operation 'search' requires a text-field for searching")
                     else:
                         raise InvalidParameterException("Malformed filter - missing field, operation, or value")
 
