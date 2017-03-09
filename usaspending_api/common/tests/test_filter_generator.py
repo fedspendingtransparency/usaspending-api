@@ -51,7 +51,7 @@ def mock_data():
     mommy.make(
         'awards.Award',
         piid='zzz',
-        fain='abc123',
+        fain='small',
         type='B',
         total_obligation=1000,
         description='LARGE BUSINESS ADMINISTRATION',
@@ -74,6 +74,19 @@ def test_filter_generator_search_operation(client, mock_data):
 
     # Verify the filter returns the appropriate number of matches
     assert Award.objects.filter(q_obj).count() == 3
+
+    resp = client.post(
+        '/api/v1/awards/',
+        content_type='application/json',
+        data=json.dumps({"filters": [{
+            "field": ["description", "fain"],
+            "operation": "search",
+            "value": "small"
+        }]}))
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.data['results']
+
+    assert len(results) == 4
 
 
 @pytest.mark.django_db
