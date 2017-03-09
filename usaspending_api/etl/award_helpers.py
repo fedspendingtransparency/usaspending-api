@@ -32,7 +32,7 @@ def update_awards(award_tuple=None):
         'txn_earliest AS ('
         'SELECT DISTINCT ON (award_id) * '
         'FROM transaction ')
-    if award_tuple is not None:
+    if award_tuple:
         sql_txn_earliest += 'WHERE award_id IN %s '
     sql_txn_earliest += 'ORDER BY award_id, action_date) '
 
@@ -43,7 +43,7 @@ def update_awards(award_tuple=None):
         'txn_totals AS ('
         'SELECT award_id, SUM(federal_action_obligation) AS total_obligation '
         'FROM transaction ')
-    if award_tuple is not None:
+    if award_tuple:
         sql_txn_totals += 'WHERE award_id IN %s '
     sql_txn_totals += 'GROUP BY award_id) '
 
@@ -95,7 +95,7 @@ def update_contract_awards(award_tuple=None):
         'SELECT tx.award_id, SUM(potential_total_value_of_award) AS total_potential_award '
         'FROM transaction_contract INNER JOIN transaction as tx on '
         'transaction_contract.transaction_id = tx.id ')
-    if award_tuple is not None:
+    if award_tuple:
         sql_txn_totals += 'WHERE tx.award_id IN %s '
     sql_txn_totals += 'GROUP BY tx.award_id) '
 
