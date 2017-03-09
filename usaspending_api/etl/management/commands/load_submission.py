@@ -9,6 +9,8 @@ from django.core.serializers.json import json
 from django.db import connections
 from django.db.models import Q
 
+import usaspending_api.etl.helpers as h
+
 from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards, FinancialAccountsByAwardsTransactionObligations,
@@ -60,7 +62,11 @@ class Command(BaseCommand):
             help='Runs the submission loader in test mode, sets the delete flag enabled, and uses stored data rather than pulling from a database'
         )
 
+    @profile
     def handle(self, *args, **options):
+
+        h.clear_caches()
+
         # Grab the data broker database connections
         if not options['test']:
             try:
@@ -81,15 +87,15 @@ class Command(BaseCommand):
         db_cursor.execute('SELECT * FROM submission WHERE submission_id = %s', [submission_id])
         submission_data = dictfetchall(db_cursor)
 
-        if len(submission_data) == 0:
+        if db_cursor.rowcount == 0:
             self.logger.error('Could not find submission with id ' + str(submission_id))
             return
-        elif len(submission_data) > 1:
+        elif db_cursor.rowcount > 1:
             self.logger.error('Found multiple submissions with id ' + str(submission_id))
             return
 
         # We have a single submission, which is what we want
-        submission_data = submission_data[0]
+        submission_data = next(submission_data)
 
         # Create the submission data instances
         # We load in currently available data, but the model references will
@@ -127,7 +133,8 @@ class Command(BaseCommand):
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
+        self.logger.info('Acquired appropriation data for %s, there are %d rows.'
+                         % (submission_id, db_cursor.rowcount))
 
         # Create account objects
         for row in appropriation_data:
@@ -158,7 +165,8 @@ class Command(BaseCommand):
         # Let's get File B information
         db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
         prg_act_obj_cls_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
+        self.logger.info('Acquired program activity object class data for %s, there are %d rows.'
+                         % (submission_id, db_cursor.rowcount))
 
         for row in prg_act_obj_cls_data:
             account_balances = None
@@ -188,7 +196,8 @@ class Command(BaseCommand):
         # Let's get File C information
         db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
         award_financial_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
+        self.logger.info('Acquired award financial data for %s, there are %d rows.'
+                         % (submission_id, db_cursor.rowcount))
 
         for row in award_financial_data:
             account_balances = None
@@ -234,7 +243,8 @@ class Command(BaseCommand):
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
         award_financial_assistance_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
+        self.logger.info('Acquired award financial assistance data for %s, there are %d rows.'
+                         % (submission_id, db_cursor.rowcount))
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -347,7 +357,8 @@ class Command(BaseCommand):
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
         procurement_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
+        self.logger.info('Acquired award procurement data for %s, there are %d rows.'
+                         % (submission_id, db_cursor.rowcount))
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -468,29 +479,33 @@ def get_or_create_program_activity(program_activity_code):
     return prg_activity
 
 
+@profile
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     """Get the matching TAS object from the broker database and save it to our running list."""
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
     db_cursor.execute('SELECT * FROM tas_lookup WHERE account_num = %s', [tas_lookup_id])
-    tas_data = dictfetchall(db_cursor)
+    tas_data = next(dictfetchall(db_cursor))
+
+    # Arbitrarily taking the first result, not raising if error; is that OK?
 
     # These or "" convert from none to a blank string, which is how the TAS table stores nulls
     q_kwargs = {
-        "allocation_transfer_agency_id": tas_data[0]["allocation_transfer_agency"] or "",
-        "agency_id": tas_data[0]["agency_identifier"] or "",
-        "beginning_period_of_availability": tas_data[0]["beginning_period_of_availa"] or "",
-        "ending_period_of_availability": tas_data[0]["ending_period_of_availabil"] or "",
-        "availability_type_code": tas_data[0]["availability_type_code"] or "",
-        "main_account_code": tas_data[0]["main_account_code"] or "",
-        "sub_account_code": tas_data[0]["sub_account_code"] or ""
+        "allocation_transfer_agency_id": tas_data["allocation_transfer_agency"] or "",
+        "agency_id": tas_data["agency_identifier"] or "",
+        "beginning_period_of_availability": tas_data["beginning_period_of_availa"] or "",
+        "ending_period_of_availability": tas_data["ending_period_of_availabil"] or "",
+        "availability_type_code": tas_data["availability_type_code"] or "",
+        "main_account_code": tas_data["main_account_code"] or "",
+        "sub_account_code": tas_data["sub_account_code"] or ""
     }
 
     TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
+@profile
 def load_data_into_model(model_instance, data, **kwargs):
     """
     Loads data into a model instance
@@ -512,36 +527,26 @@ def load_data_into_model(model_instance, data, **kwargs):
         save - Defaults to False, but when set to true will save the model at the end
         as_dict - If true, returns the model as a dict instead of saving or altering
     """
-    field_map = None
-    value_map = None
-    save = False
-    as_dict = False
 
-    if 'field_map' in kwargs:
-        field_map = kwargs['field_map']
-    if 'value_map' in kwargs:
-        value_map = kwargs['value_map']
-    if 'save' in kwargs:
-        save = kwargs['save']
-    if 'as_dict' in kwargs:
-        as_dict = kwargs['as_dict']
+    field_map = kwargs.get('field_map')
+    value_map = kwargs.get('value_map')
+    save = kwargs.get('save', False)
+    as_dict = kwargs.get('as_dict', False)
 
     # Grab all the field names from the meta class of the model instance
     fields = [field.name for field in model_instance._meta.get_fields()]
-    mod = model_instance
 
-    if as_dict:
-        mod = {}
+    mod = {} if as_dict else model_instance
 
     for field in fields:
         # Let's handle the data source field here for all objects
         if field is 'data_source':
             store_value(mod, field, 'DBR')
-        broker_field = field
+
         # If our field is the 'long form' field, we need to get what it maps to
         # in the broker so we can map the data properly
-        if broker_field in settings.LONG_TO_TERSE_LABELS:
-            broker_field = settings.LONG_TO_TERSE_LABELS[broker_field]
+        broker_field = settings.LONG_TO_TERSE_LABELS.get(field, field)
+
         sts = False
         if value_map:
             if broker_field in value_map:
@@ -634,16 +639,15 @@ def store_value(model_instance_or_dict, field, value):
         setattr(model_instance_or_dict, field, value)
 
 
+@profile
 def dictfetchall(cursor):
     if isinstance(cursor, PhonyCursor):
-        return cursor.results
+        yield from cursor.results
     else:
-        "Return all rows from a cursor as a dict"
+        "Yield all rows from a cursor as dictst"
         columns = [col[0] for col in cursor.description]
-        return [
-            dict(zip(columns, row))
-            for row in cursor.fetchall()
-        ]
+        for row in cursor:
+            yield dict(zip(columns, row))
 
 
 class PhonyCursor:
@@ -654,7 +658,7 @@ class PhonyCursor:
         self.db_responses = json.load(json_data)
         json_data.close()
 
-        self.results = None
+        self.results = iter([])
 
     def execute(self, statement, parameters):
-        self.results = self.db_responses[statement]
+        self.results = iter(self.db_responses[statement])
