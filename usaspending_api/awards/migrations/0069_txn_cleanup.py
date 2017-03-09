@@ -11,10 +11,59 @@ class Migration(migrations.Migration):
         ('awards', '0068_merge_20170216_1631'),
     ]
 
-    _RAW_SQL = [
-        'DROP TABLE awards_procurement;',
-        'DROP TABLE financial_assistance_award;'
-    ]
     operations = [
-        migrations.RunSQL(sql, migrations.RunSQL.noop) for sql in _RAW_SQL
+        migrations.RemoveField(
+            model_name='financialassistanceaward',
+            name='award',
+        ),
+        migrations.RemoveField(
+            model_name='financialassistanceaward',
+            name='awarding_agency',
+        ),
+        migrations.RemoveField(
+            model_name='financialassistanceaward',
+            name='funding_agency',
+        ),
+        migrations.RemoveField(
+            model_name='financialassistanceaward',
+            name='place_of_performance',
+        ),
+        migrations.RemoveField(
+            model_name='financialassistanceaward',
+            name='recipient',
+        ),
+        migrations.RemoveField(
+            model_name='financialassistanceaward',
+            name='submission',
+        ),
+        migrations.RemoveField(
+            model_name='procurement',
+            name='award',
+        ),
+        migrations.RemoveField(
+            model_name='procurement',
+            name='awarding_agency',
+        ),
+        migrations.RemoveField(
+            model_name='procurement',
+            name='funding_agency',
+        ),
+        migrations.RemoveField(
+            model_name='procurement',
+            name='place_of_performance',
+        ),
+        migrations.RemoveField(
+            model_name='procurement',
+            name='recipient',
+        ),
+        migrations.RemoveField(
+            model_name='procurement',
+            name='submission',
+        ),
+        migrations.DeleteModel(
+            name='FinancialAssistanceAward',
+        ),
+        migrations.DeleteModel(
+            name='Procurement',
+        ),
     ]
