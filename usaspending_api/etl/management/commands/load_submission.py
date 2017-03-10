@@ -193,9 +193,6 @@ class Command(BaseCommand):
             load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
 
         # Let's get File C information
-        # fields_required = 'tas_id, tas, piid, fain, uri, parent_award_id'
-        # qry = 'SELECT {} FROM award_financial WHERE submission_id = %s'.format(fields_required)
-        # db_cursor.execute(qry, [submission_id])
         db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
         award_financial_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award financial data for %s, there are %d rows.'
@@ -643,7 +640,7 @@ def dictfetchall(cursor):
     if isinstance(cursor, PhonyCursor):
         yield from cursor.results
     else:
-        "Yield all rows from a cursor as dictst"
+        "Yield all rows from a cursor as dicts"
         columns = [col[0] for col in cursor.description]
         for row in cursor:
             yield dict(zip(columns, row))
