@@ -244,7 +244,6 @@ class Award(DataSourceTrackedModel):
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
 
     @staticmethod
-    # @profile
     def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None):
         # If an award transaction's ID is a piid, it's contract data
         # If the ID is fain or a uri, it's financial assistance. If the award transaction

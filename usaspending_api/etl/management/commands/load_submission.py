@@ -62,7 +62,6 @@ class Command(BaseCommand):
             help='Runs the submission loader in test mode, sets the delete flag enabled, and uses stored data rather than pulling from a database'
         )
 
-    # @profile
     def handle(self, *args, **options):
 
         h.clear_caches()
@@ -482,7 +481,6 @@ def get_or_create_program_activity(program_activity_code):
     return prg_activity
 
 
-# @profile
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     """Get the matching TAS object from the broker database and save it to our running list."""
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
@@ -508,7 +506,6 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
-# @profile
 def load_data_into_model(model_instance, data, **kwargs):
     """
     Loads data into a model instance
@@ -642,7 +639,6 @@ def store_value(model_instance_or_dict, field, value):
         setattr(model_instance_or_dict, field, value)
 
 
-# @profile
 def dictfetchall(cursor):
     if isinstance(cursor, PhonyCursor):
         yield from cursor.results
