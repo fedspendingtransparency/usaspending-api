@@ -62,7 +62,7 @@ class Command(BaseCommand):
             help='Runs the submission loader in test mode, sets the delete flag enabled, and uses stored data rather than pulling from a database'
         )
 
-    @profile
+    # @profile
     def handle(self, *args, **options):
 
         h.clear_caches()
@@ -194,6 +194,9 @@ class Command(BaseCommand):
             load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
 
         # Let's get File C information
+        # fields_required = 'tas_id, tas, piid, fain, uri, parent_award_id'
+        # qry = 'SELECT {} FROM award_financial WHERE submission_id = %s'.format(fields_required)
+        # db_cursor.execute(qry, [submission_id])
         db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
         award_financial_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award financial data for %s, there are %d rows.'
@@ -479,7 +482,7 @@ def get_or_create_program_activity(program_activity_code):
     return prg_activity
 
 
-@profile
+# @profile
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     """Get the matching TAS object from the broker database and save it to our running list."""
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
@@ -505,7 +508,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
-@profile
+# @profile
 def load_data_into_model(model_instance, data, **kwargs):
     """
     Loads data into a model instance
@@ -639,7 +642,7 @@ def store_value(model_instance_or_dict, field, value):
         setattr(model_instance_or_dict, field, value)
 
 
-@profile
+# @profile
 def dictfetchall(cursor):
     if isinstance(cursor, PhonyCursor):
         yield from cursor.results
@@ -659,6 +662,9 @@ class PhonyCursor:
         json_data.close()
 
         self.results = iter([])
+        self.rowcount = 0
 
     def execute(self, statement, parameters):
-        self.results = iter(self.db_responses[statement])
+        results = self.db_responses[statement]
+        self.rowcount = len(results)
+        self.results = iter(results)
