@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework_extensions.cache.decorators import cache_response
 
 from usaspending_api.common.api_request_utils import ResponsePaginator
+from usaspending_api.common.cache import USAspendingKeyConstructor
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.mixins import AggregateQuerysetMixin
 
@@ -29,7 +30,7 @@ class AggregateView(AggregateQuerysetMixin,
     # rather than the CacheResponseMixin, which as of right now doesn't
     # work with custom list() methods
     # https://github.com/chibisov/drf-extensions/issues/159
-    @cache_response()
+    @cache_response(key_func=USAspendingKeyConstructor())
     def list(self, request, *args, **kwargs):
         """
         Override the parent list method so we can aggregate the data
@@ -91,7 +92,7 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     # we use drf-extensions caching. note that we're using the decorator
     # rather than the CacheResponseMixin, which as of right now doesn't
     # work with custom list() methods
-    @cache_response()
+    @cache_response(key_func=USAspendingKeyConstructor())
     def list(self, request, *args, **kwargs):
         try:
             response = self.build_response(
