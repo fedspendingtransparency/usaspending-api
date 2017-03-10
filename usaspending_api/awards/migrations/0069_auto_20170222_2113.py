@@ -17,15 +17,5 @@ class Migration(migrations.Migration):
             model_name='financialaccountsbyawards',
             name='transaction_obligated_amount',
             field=models.DecimalField(blank=True, decimal_places=2, max_digits=21, null=True),
-        ),
-        migrations.AlterField(
-            model_name='transactionassistance',
-            name='transaction',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='assistance_data', serialize=False, to='awards.Transaction'),
-        ),
-        migrations.AlterField(
-            model_name='transactioncontract',
-            name='transaction',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='contract_data', serialize=False, to='awards.Transaction'),
-        ),
+        )
     ]
