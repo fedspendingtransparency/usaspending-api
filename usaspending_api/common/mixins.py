@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from django.db.models import Avg, Count, F, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
+from django.db.models import Avg, Count, F, Q, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 from django.core.serializers.json import json, DjangoJSONEncoder
 
@@ -155,21 +155,24 @@ class FilterQuerysetMixin(object):
         # process to accept a list of paramaters
         # and create filters without needing to know about the structure
         # of the request itself.
+        filters = None
+        filter_map = kwargs.get('filter_map', {})
+        fg = FilterGenerator(queryset.model, filter_map=filter_map)
+
         if len(request.data):
-            fg = FilterGenerator()
+            fg = FilterGenerator(queryset.model)
             filters = fg.create_from_request_body(request.data)
-            return queryset.filter(filters).distinct()
         else:
-            filter_map = kwargs.get('filter_map', {})
-            fg = FilterGenerator(filter_map=filter_map)
-            filters = fg.create_from_query_params(request.query_params)
-            # add fiscal year to filters if requested
-            # deprecated: we plan to start storing fiscal years in the database
-            if request.query_params.get('fy'):
-                fy = FiscalYear(request.query_params.get('fy'))
-                fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
-                filters = {**filters, **fy_arguments}
-            return queryset.filter(**filters).distinct()
+            filters = Q(**fg.create_from_query_params(request.query_params))
+
+        # Handle FTS vectors
+        if len(fg.search_vectors) > 0:
+            vector_sum = fg.search_vectors[0]
+            for vector in fg.search_vectors[1:]:
+                vector_sum += vector
+            queryset = queryset.annotate(search=vector_sum)
+
+        return queryset.filter(filters).distinct()
 
     def order_records(self, request, *args, **kwargs):
         """Order a queryset based on request parameters."""

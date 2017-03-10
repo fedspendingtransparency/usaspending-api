@@ -32,7 +32,7 @@ def update_awards(award_tuple=None):
         'txn_earliest AS ('
         'SELECT DISTINCT ON (award_id) * '
         'FROM transaction ')
-    if award_tuple is not None:
+    if award_tuple:
         sql_txn_earliest += 'WHERE award_id IN %s '
     sql_txn_earliest += 'ORDER BY award_id, action_date) '
 
@@ -43,7 +43,7 @@ def update_awards(award_tuple=None):
         'txn_totals AS ('
         'SELECT award_id, SUM(federal_action_obligation) AS total_obligation '
         'FROM transaction ')
-    if award_tuple is not None:
+    if award_tuple:
         sql_txn_totals += 'WHERE award_id IN %s '
     sql_txn_totals += 'GROUP BY award_id) '
 
@@ -67,6 +67,7 @@ def update_awards(award_tuple=None):
         'place_of_performance_id = l.place_of_performance_id, '
         'recipient_id = l.recipient_id, '
         'total_obligation = t.total_obligation, '
+        'latest_transaction_id = l.id, '
         'type = l.type, '
         'type_description = l.type_description '
         'FROM txn_earliest e '
@@ -77,6 +78,8 @@ def update_awards(award_tuple=None):
         'WHERE t.award_id = a.id'
     )
     with connection.cursor() as cursor:
+        # If another expression is added and includes %s, you must add the tuple
+        # for that string interpolation to this list (even if it uses the same one!)
         cursor.execute(sql_update, [award_tuple, award_tuple, award_tuple])
         rows = cursor.rowcount
 
@@ -86,30 +89,32 @@ def update_awards(award_tuple=None):
 def update_contract_awards(award_tuple=None):
     """Update contract-specific award data based on the info in child transactions."""
 
-    # common table expression for each award's latest transaction contract record
-    sql_txn_contract_latest = (
-        'txn_contract_latest AS ('
-        'SELECT DISTINCT ON (award_id) * '
-        'FROM transaction_contract '
-        'JOIN transaction ON transaction_id = id ')
-    if award_tuple is not None:
-        sql_txn_contract_latest += 'WHERE award_id IN %s '
-    sql_txn_contract_latest += 'ORDER BY award_id, action_date DESC) '
+    # sum the potential_total_value_of_award from contract_data for an award
+    sql_txn_totals = (
+        'txn_totals AS ('
+        'SELECT tx.award_id, SUM(potential_total_value_of_award) AS total_potential_award '
+        'FROM transaction_contract INNER JOIN transaction as tx on '
+        'transaction_contract.transaction_id = tx.id ')
+    if award_tuple:
+        sql_txn_totals += 'WHERE tx.award_id IN %s '
+    sql_txn_totals += 'GROUP BY tx.award_id) '
 
     # construct a sql query that uses the latest txn contract common table
     # expression above and joins it to the corresopnding
     # award. that joined data is used to update awards fields as appropriate
     # (currently, there's only one trasnaction_contract field that trickles
     # up and updates an award record: potential_total_value_of_award)
-    sql_update = 'WITH {}'.format(sql_txn_contract_latest)
+    sql_update = 'WITH {}'.format(sql_txn_totals)
     sql_update += (
         'UPDATE awards a '
-        'SET potential_total_value_of_award = l.potential_total_value_of_award '
-        'FROM txn_contract_latest l '
-        'WHERE l.award_id = a.id'
+        'SET potential_total_value_of_award = t.total_potential_award '
+        'FROM txn_totals t '
+        'WHERE t.award_id = a.id'
     )
 
     with connection.cursor() as cursor:
+        # If another expression is added and includes %s, you must add the tuple
+        # for that string interpolation to this list (even if it uses the same one!)
         cursor.execute(sql_update, [award_tuple])
         rows = cursor.rowcount
 

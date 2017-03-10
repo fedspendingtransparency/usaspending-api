@@ -14,7 +14,7 @@ def test_contract_load():
     """ensure contract awards can be loaded from usaspending"""
     call_command('loaddata', 'endpoint_fixture_db')
     # agency records from reference_fixture are a prereq
-    call_command('loaddata', 'reference_fixture')
+    call_command('loadagencies')
     call_command('load_usaspending_contracts',
                  os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                               'usaspending_treasury_contracts.csv'))
@@ -34,7 +34,7 @@ def test_award_and_txn_uniqueness():
     - Modification number"""
 
     # agency records from reference_fixture are a prereq
-    call_command('loaddata', 'reference_fixture')
+    call_command('loadagencies')
     call_command('load_usaspending_contracts',
                  os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                               'usaspending_treasury_contracts.csv'))

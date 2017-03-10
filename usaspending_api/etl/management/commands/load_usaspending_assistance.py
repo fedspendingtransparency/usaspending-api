@@ -22,6 +22,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        h.clear_caches()
+
         csv_file = options['file'][0]
         self.logger.info("Starting load for file {}".format(csv_file))
 
@@ -162,6 +164,7 @@ class Command(BaseCommand):
         return flags
 
     def get_or_create_recipient(self, row):
+
         recipient_dict = {
             "location_id": h.get_or_create_location(
                 row,

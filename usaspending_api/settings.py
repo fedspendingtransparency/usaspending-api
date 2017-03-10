@@ -845,3 +845,15 @@ LONG_TO_TERSE_LABELS = {
     "original_loan_subsidy_cost": "original_loan_subsidy_cost",
     "business_funds_indicator": "business_funds_indicator"
 }
+
+# If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'default-loc-mem-cache',
+    },
+    'locations': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'locations-loc-mem-cache',
+    },
+}
