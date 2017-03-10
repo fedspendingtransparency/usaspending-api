@@ -25,6 +25,10 @@ class AggregateView(AggregateQuerysetMixin,
 
     exception_logger = logging.getLogger("exceptions")
 
+    # we use drf-extensions caching. note that we're using the decorator
+    # rather than the CacheResponseMixin, which as of right now doesn't
+    # work with custom list() methods
+    # https://github.com/chibisov/drf-extensions/issues/159
     @cache_response()
     def list(self, request, *args, **kwargs):
         """
@@ -84,6 +88,9 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
 
     exception_logger = logging.getLogger("exceptions")
 
+    # we use drf-extensions caching. note that we're using the decorator
+    # rather than the CacheResponseMixin, which as of right now doesn't
+    # work with custom list() methods
     @cache_response()
     def list(self, request, *args, **kwargs):
         try:

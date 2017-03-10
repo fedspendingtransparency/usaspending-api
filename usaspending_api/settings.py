@@ -62,6 +62,16 @@ DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG
 }
 
+REST_FRAMEWORK_EXTENSIONS = {
+    # Setting below controls whether or not we cache error responses
+    'DEFAULT_CACHE_ERRORS': False,
+    # Set DRF cache timeline in seconds. A value of None is the default,
+    # which means "cache forever." Setting to 0 effectively disables caching.
+    #'DEFAULT_CACHE_RESPONSE_TIMEOUT': 60 * 15,
+    # DRF cache uses Django's default cache unless value below is set
+    # 'DEFAULT_USE_CACHE': 'special_cache',
+}
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
