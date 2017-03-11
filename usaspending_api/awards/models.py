@@ -1,10 +1,15 @@
+import warnings
+
 from django.db import models
 from django.db.models import F, Q, Sum
+from django.core.cache import caches, CacheKeyWarning
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity, CFDAProgram
 from usaspending_api.common.models import DataSourceTrackedModel
+
+warnings.simplefilter("ignore", CacheKeyWarning)
 
 AWARD_TYPES = (
     ('U', 'Unknown Type'),
@@ -166,6 +171,8 @@ class AwardManager(models.Manager):
         }
         return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
 
+awards_cache = caches['awards']
+
 
 class Award(DataSourceTrackedModel):
     """
@@ -253,8 +260,15 @@ class Award(DataSourceTrackedModel):
                 # Now search for it
                 # Do we want to log something if the the query below turns up
                 # more than one award record?
+
+                q_kwargs_tup = tuple(tuple(q_kwargs.items()) + (('awarding_agency', awarding_agency)))
+                summary_award = awards_cache.get(q_kwargs_tup)
+                if summary_award:
+                    return summary_award
+
                 summary_award = Award.objects.all().filter(Q(**q_kwargs)).filter(awarding_agency=awarding_agency).first()
                 if summary_award:
+                    awards_cache.set(q_kwargs_tup, summary_award)
                     return summary_award
                 else:
                     parent_award = None
@@ -264,6 +278,7 @@ class Award(DataSourceTrackedModel):
                     # Now create the award record for this award transaction
                     summary_award = Award(**{i[1]: i[0], "parent_award": parent_award, "awarding_agency": awarding_agency})
                     summary_award.save()
+                    awards_cache.set(q_kwargs_tup, summary_award)
                     return summary_award
 
         raise ValueError(
