@@ -261,7 +261,7 @@ class Award(DataSourceTrackedModel):
                 # Do we want to log something if the the query below turns up
                 # more than one award record?
 
-                q_kwargs_tup = tuple(q_kwargs.items())
+                q_kwargs_tup = tuple(tuple(q_kwargs.items()) + (('awarding_agency', awarding_agency)))
                 summary_award = awards_cache.get(q_kwargs_tup)
                 if summary_award:
                     return summary_award

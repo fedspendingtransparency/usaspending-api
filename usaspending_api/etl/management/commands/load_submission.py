@@ -66,18 +66,17 @@ class Command(BaseCommand):
 
         h.clear_caches()
 
-        # Grab the data broker database connections
-        if not options['test']:
+        if options['test']:
+            options['delete'] = True
+            cursor_maker = PhonyCursor
+        else:
             try:
-                db_conn = connections['data_broker']
-                db_cursor = db_conn.cursor()
-            except Exception as err:
+                cursor_maker = connections['data_broker'].cursor
+            except:
                 self.logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
                 self.logger.critical(print(err))
                 return
-        else:
-            options['delete'] = True
-            db_cursor = PhonyCursor()
+        db_cursor = cursor_maker()
 
         # Grab the submission id
         submission_id = options['submission_id'][0]
@@ -138,7 +137,7 @@ class Command(BaseCommand):
         # Create account objects
         for row in appropriation_data:
             # Check and see if there is an entry for this TAS
-            treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
+            treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), cursor_maker())
             if treasury_account is None:
                 raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
 
@@ -171,7 +170,7 @@ class Command(BaseCommand):
             account_balances = None
             try:
                 # Check and see if there is an entry for this TAS
-                treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
+                treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), cursor_maker())
                 if treasury_account is None:
                     raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
                 account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
@@ -202,7 +201,7 @@ class Command(BaseCommand):
             account_balances = None
             try:
                 # Check and see if there is an entry for this TAS
-                treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
+                treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), cursor_maker())
                 if treasury_account is None:
                     raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
                 # Find the award that this award transaction belongs to. If it doesn't exist, create it.
@@ -216,7 +215,7 @@ class Command(BaseCommand):
             except:
                 continue
 
-            award_financial_data = FinancialAccountsByAwards()
+            award_account_financial_data = FinancialAccountsByAwards()
 
             value_map = {
                 'award': award,
@@ -228,12 +227,12 @@ class Command(BaseCommand):
                 'program_activity_code': get_or_create_program_activity(row['program_activity_code'])
             }
 
-            load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
+            load_data_into_model(award_account_financial_data, row, value_map=value_map, save=True)
 
             afd_trans = FinancialAccountsByAwardsTransactionObligations()
 
             value_map = {
-                'financial_accounts_by_awards': award_financial_data,
+                'financial_accounts_by_awards': award_account_financial_data,
                 'submission': submission_attributes
             }
 
