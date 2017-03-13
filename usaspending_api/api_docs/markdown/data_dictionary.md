@@ -111,3 +111,36 @@ The list of industries and codes is updated every 5 years.|
 ## Endpoint Details <a name="endpoint-details"></a>
 
 #### Award Endpoints <a name="award"></a>
+This data is represented internally as the model: `Award`
+
+| Field | Type | Description |
+| ----- | ----- | ----- |
+| financial_set | Relation | Reverse look-up for relation from FinancialAccountsByAwards::award |
+| child_award | Relation | Reverse look-up for relation from Award::parent_award |
+| transaction | Relation | Reverse look-up for relation from Transaction::award |
+| subaward | Relation | Reverse look-up for relation from SubAward::award |
+| id | Integer | Internal primary key. Guaranteed to be unique. |
+| data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
+| type | String | The type of the award. For example, A, B, C, D |
+| type_description | String | The plain text description of the type of the award |
+| piid | String | The piid of the award |
+| parent_award | Relation | The parent award, if applicable |
+| fain | String | The fain of the award |
+| uri | String | The uri of the award |
+| total_obligation | Float | The sum of all federal_action_obligation of assosciated transactions |
+| total_outlay | Float | The total outlay on the award |
+| awarding_agency | Relation | The awarding agency for the award |
+| funding_agency | Relation | The funding agency for the award |
+| date_signed | Date | The date the award was signed |
+| recipient | Relation | The recipient of the award |
+| description | String | A description of the award |
+| period_of_performance_start_date | Date | The start date for the period of performance |
+| period_of_performance_current_end_date | Date | The current, not original, period of performance end date |
+| place_of_performance | Relation | The location where work is being performed |
+| potential_total_value_of_award | Float | The sum of the potential_value_of_award from associated transactions |
+| last_modified_date | Date | The date this award was last modified |
+| certified_date | Date | The date this record was certified |
+| create_date | Datetime | The date this record was created in the API |
+| update_date | Datetime | The last time this record was updated in the API |
+| latest_submission | Relation | The submission attribute object that created this award |
+| latest_transaction | Relation | The latest transaction by action_date associated with this award |
