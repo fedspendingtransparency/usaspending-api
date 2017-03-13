@@ -30,11 +30,8 @@ urlpatterns = [
     url(r'^api/v1/financial_activities/', include('usaspending_api.financial_activities.urls')),
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^docs/', include('usaspending_api.api_docs.urls')),
     url(r'^$', MarkdownView.as_view(markdown='using_the_api.md')),
-    url(r'^docs/$', MarkdownView.as_view(markdown='using_the_api.md')),
-    url(r'^docs/tutorial', MarkdownView.as_view(markdown='api_tutorial.md')),
-    url(r'^docs/data-dictionary', MarkdownView.as_view(markdown='data_dictionary.md')),
-    url(r'^docs/recipies', MarkdownView.as_view(markdown='request_recipies.md')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
