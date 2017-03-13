@@ -63,3 +63,27 @@ def test_intro_tutorial_post_requests(client, url, req, documentation_test_data)
 def test_intro_tutorial_get_requests(client, url, documentation_test_data):
     assert client.get(
         url).status_code == status.HTTP_200_OK
+
+
+@pytest.mark.parametrize("url, req", [
+    ("/api/v1/awards/", {"filters": [{"field": "awarding_agency__toptier_agency__cgac_code", "operation": "equals", "value": "097"}]}),
+    ("/api/v1/awards/", {"filters": [{"field": "type", "operation": "in", "value": ["A", "B", "C", "D"]}]}),
+    ("/api/v1/awards/", {"filters": [{"field": "transaction__contract_data", "operation": "is_null", "value": False}]}),
+    ("/api/v1/awards/", {"filters": [{"field": "place_of_performance__state_code", "operation": "not_equals", "value": "NJ"}]})
+
+])
+@pytest.mark.django_db
+def test_recipe_post_requests(client, url, req, documentation_test_data):
+    assert client.post(
+        url,
+        data=json.dumps(req),
+        content_type='application/json').status_code == status.HTTP_200_OK
+
+
+@pytest.mark.parametrize("url", [
+    "/api/v1/awards/?awarding_agency__toptier_agency__cgac_code=097",
+])
+@pytest.mark.django_db
+def test_recipe_get_requests(client, url, documentation_test_data):
+    assert client.get(
+        url).status_code == status.HTTP_200_OK

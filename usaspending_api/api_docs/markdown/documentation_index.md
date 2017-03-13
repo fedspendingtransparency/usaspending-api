@@ -10,7 +10,7 @@
 
 ## Tutorials <a name="tutorials"></a>
 * [USASpending API Introductory Tutorial](/docs/intro-tutorial) - A short tutorial covering basic API usage, generally covering: endpoints, filtering, and autocompletes
-* [Request Recipies](/docs/recipies) - A set of how-to recipies for requesting specific sets of data, and examples of various filters
+* [Request Recipes](/docs/recipes) - A set of how-to recipes for requesting specific sets of data, and examples of various filters
 
 ## Technical <a name="technical"></a>
 * [Using the API](/docs/using-the-api) - General overview of all API endpoints, functionality, and filters

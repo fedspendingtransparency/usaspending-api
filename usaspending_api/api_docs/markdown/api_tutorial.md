@@ -116,7 +116,7 @@ We're only halfway done with our request. To establish the upper bound on our da
 }
 ```
 
-There we have it, a post request that finds all award records from 2016-06-01 to 2017-06-01. This is just the start, we can combine many different operations to construct very versatile filters. Check out the [request recipies](/docs/recipies) for some ideas.
+There we have it, a post request that finds all award records from 2016-06-01 to 2017-06-01. This is just the start, we can combine many different operations to construct very versatile filters. Check out the [request recipes](/docs/recipes) for some ideas.
 
 #### OR-ing filters via POST
 
