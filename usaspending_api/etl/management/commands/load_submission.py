@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand
 from django.core.serializers.json import json
 from django.db import connections
 from django.db.models import Q
+from django.core.cache import caches
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
 from usaspending_api.awards.models import (
@@ -18,6 +19,7 @@ from usaspending_api.references.models import (
     Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity, CFDAProgram)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
+import usaspending_api.etl.helpers as h
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
@@ -31,6 +33,7 @@ contract_pricing_dict = {c[0]: c[1] for c in CONTRACT_PRICING_TYPES}
 AWARD_UPDATE_ID_LIST = []
 AWARD_CONTRACT_UPDATE_ID_LIST = []
 
+awards_cache = caches['awards']
 
 class Command(BaseCommand):
     """
@@ -61,6 +64,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+
+        awards_cache.clear()
+
         # Grab the data broker database connections
         if not options['test']:
             try:
@@ -206,11 +212,11 @@ class Command(BaseCommand):
                     fain=row.get('fain'),
                     uri=row.get('uri'),
                     parent_award_id=row.get('parent_award_id'),
-                    save=False)
+                    use_cache=True)
                 award.latest_submission = submission_attributes
                 # without a cache, will it fail to find newly created?
                 award_queue.append(award)
-            except:
+            except:   # augh, bare excepts are bad!
                 continue
 
             award_financial_data = FinancialAccountsByAwards()
@@ -229,7 +235,8 @@ class Command(BaseCommand):
             afd_queue.append(afd)
 
         Award.objects.bulk_create(award_queue)
-        FinancialAccountsByAwards.objects.bulk_create(afd)
+        FinancialAccountsByAwards.objects.bulk_create(afd_queue)
+        awards_cache.clear()  # but now that cache is operating for other records...
 
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
@@ -566,9 +573,10 @@ def load_data_into_model(model_instance, data, **kwargs):
 
     if save:
         model_instance.save()
-        return model_instance
     if as_dict:
         return mod
+    else:
+        return model_instance
 
 
 def get_or_create_location(location_map, row, location_value_map={}):

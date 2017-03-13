@@ -856,4 +856,13 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'locations-loc-mem-cache',
     },
+    'awards': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'awards-loc-mem-cache',
+        'TIMEOUT': None, 
+        'MAX_ENTRIES': 9999999,
+        # We only want to clear this cache manually - it holds unsaved
+        # Award records, and until they are saved, forgetting them would
+        # lose data
+    },
 }
