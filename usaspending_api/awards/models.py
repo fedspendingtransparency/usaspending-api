@@ -215,7 +215,7 @@ class Award(DataSourceTrackedModel):
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
 
     @staticmethod
-    def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None):
+    def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None, save=True):
         # If an award transaction's ID is a piid, it's contract data
         # If the ID is fain or a uri, it's financial assistance. If the award transaction
         # has both a fain and a uri, fain takes precedence.
@@ -238,10 +238,11 @@ class Award(DataSourceTrackedModel):
                     parent_award = None
                     if parent_award_id:
                         # If we have a parent award id, recursively get/create the award for it
-                        parent_award = Award.get_or_create_summary_award(**{i[1]: parent_award_id, 'awarding_agency': awarding_agency})
+                        parent_award = Award.get_or_create_summary_award(save=save, **{i[1]: parent_award_id, 'awarding_agency': awarding_agency})
                     # Now create the award record for this award transaction
                     summary_award = Award(**{i[1]: i[0], "parent_award": parent_award, "awarding_agency": awarding_agency})
-                    summary_award.save()
+                    if save:
+                        summary_award.save()
                     return summary_award
 
         raise ValueError(

@@ -190,6 +190,9 @@ class Command(BaseCommand):
         award_financial_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
 
+        award_queue = []
+        afd_queue = []
+
         for row in award_financial_data:
             account_balances = None
             try:
@@ -202,9 +205,11 @@ class Command(BaseCommand):
                     piid=row.get('piid'),
                     fain=row.get('fain'),
                     uri=row.get('uri'),
-                    parent_award_id=row.get('parent_award_id'))
+                    parent_award_id=row.get('parent_award_id'),
+                    save=False)
                 award.latest_submission = submission_attributes
-                award.save()
+                # without a cache, will it fail to find newly created?
+                award_queue.append(award)
             except:
                 continue
 
@@ -220,7 +225,11 @@ class Command(BaseCommand):
                 'program_activity_code': get_or_create_program_activity(row['program_activity_code'])
             }
 
-            load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
+            afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False)
+            afd_queue.append(afd)
+
+        Award.objects.bulk_create(award_queue)
+        FinancialAccountsByAwards.objects.bulk_create(afd)
 
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
@@ -293,6 +302,7 @@ class Command(BaseCommand):
                 fain=row.get('fain'),
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
+            award.save()
 
             AWARD_UPDATE_ID_LIST.append(award.id)
 
@@ -387,6 +397,7 @@ class Command(BaseCommand):
                 fain=row.get('fain'),
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
+            award.save()
 
             AWARD_UPDATE_ID_LIST.append(award.id)
             AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
