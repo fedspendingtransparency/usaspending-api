@@ -95,6 +95,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     gross_outlays_delivered_orders_paid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     drv_award_id_field_type = models.CharField(max_length=10, blank=True, null=True)
     drv_obligations_incurred_total_by_award = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
+    transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
@@ -124,29 +125,6 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_awards'
-
-
-class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
-    financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)
-    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE, related_name="transaction_obligations")
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    reporting_period_start = models.DateField(blank=True, null=True)
-    reporting_period_end = models.DateField(blank=True, null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
-    certified_date = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "transaction_obligated_amount"
-        ]
-
-    class Meta:
-        managed = True
-        db_table = 'financial_accounts_by_awards_transaction_obligations'
 
 
 class AwardManager(models.Manager):
