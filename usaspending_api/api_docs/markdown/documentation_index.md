@@ -1,6 +1,7 @@
 <ul class="nav nav-stacked" id="sidebar">
   <li><a href="#documentation-index">Documentation Index</a></li>
   <li><a href="#tutorials">Tutorials</a></li>
+  <li><a name="technical">Technical</a></li>
   <li><a href="#data">Data</a></li>
 </ul>
 [//]: # (Begin Content)
@@ -10,6 +11,8 @@
 ## Tutorials <a name="tutorials"></a>
 * [USASpending API Introductory Tutorial](/docs/intro-tutorial) - A short tutorial covering basic API usage, generally covering: endpoints, filtering, and autocompletes
 * [Request Recipies](/docs/recipies) - A set of how-to recipies for requesting specific sets of data, and examples of various filters
+
+## Technical <a name="technical"></a>
 * [Using the API](/docs/using-the-api) - General overview of all API endpoints, functionality, and filters
 
 ## Data <a name="data"></a>

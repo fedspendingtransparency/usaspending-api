@@ -31,7 +31,7 @@ urlpatterns = [
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^docs/', include('usaspending_api.api_docs.urls')),
-    url(r'^$', MarkdownView.as_view(markdown='using_the_api.md')),
+    url(r'^$', MarkdownView.as_view(markdown='landing_page.md')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
