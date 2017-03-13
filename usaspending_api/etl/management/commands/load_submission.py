@@ -61,6 +61,7 @@ class Command(BaseCommand):
             help='Runs the submission loader in test mode, sets the delete flag enabled, and uses stored data rather than pulling from a database'
         )
 
+    @profile
     def handle(self, *args, **options):
 
         h.clear_caches()

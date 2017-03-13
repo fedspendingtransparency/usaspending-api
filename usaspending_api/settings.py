@@ -859,5 +859,6 @@ CACHES = {
     'awards': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'awards-loc-mem-cache',
+        'MAX_ENTRIES': 15000,
     },
 }
