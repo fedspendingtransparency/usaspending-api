@@ -11,12 +11,14 @@ class Command(BaseCommand):
 
     friendly_names = {
         "ForeignKey": "Relation",
+        "OneToOneField": "Relation",
         "CharField": "String",
         "TextField": "String",
         "AutoField": "Integer",
         "DecimalField": "Float",
         "DateField": "Date",
         "DateTimeField": "Datetime",
+        "BooleanField": "Boolean"
     }
 
     def add_arguments(self, parser):
