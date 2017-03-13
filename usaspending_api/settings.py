@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'usaspending_api.accounts',
     'usaspending_api.submissions',
     'usaspending_api.financial_activities',
-    'usaspending_api.api_docs'
+    'usaspending_api.api_docs',
+    'django_spaghetti',
 ]
 
 INTERNAL_IPS = ()
@@ -856,4 +857,12 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'locations-loc-mem-cache',
     },
+}
+
+# Django spaghetti-and-meatballs (entity relationship diagram) settings
+SPAGHETTI_SAUCE = {
+  'apps': ['awards', 'financial_activities', 'references', 'submissions', ],
+  'show_fields': False,
+  'exclude': {},
+  'show_proxy': False,
 }
