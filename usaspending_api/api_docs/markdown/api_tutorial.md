@@ -17,7 +17,7 @@ Welcome to the introductory USASpending API tutorial. Over the next few sections
 
 # Endpoint Overview <a name="endpoint-overview"></a>
 
-The USASpending API supports a number of endpoints. Endpoints are the individual URLs used to access the data, for example `/api/v1/awards`. All endpoints return data in a json format. Generally, these are broken into a few groups:
+The USASpending API supports a number of endpoints. Endpoints are the individual URLs used to access the data, for example `/api/v1/awards/`. All endpoints return data in a json format. Generally, these are broken into a few groups:
 
 * Data endpoints - Return a number of records corresponding to that endpoint's data
 * Autocomplete endpoints - Support autocomplete queries for constructing user interfaces based upon API data
@@ -55,7 +55,7 @@ Most endpoints support both GET and POST methods for making a request. The cases
 
 Simple filters can also be used in a GET request. An example of this would be `/api/v1/awards/?awarding_agency=1788`[<sup>Try it!</sup>](/api/v1/awards/?awarding_agency=1788) would return all awards where the <span title="The government department, agency, or office which awarded the associated award">`awarding_agency`<sup>?</sup></span> was set to `1788`.
 
-POST requests are used when more advanced filtering is required. For example, if we wanted to search for awards with signing dates between June 1st 2016 and June 1st 2017, we would need to construct a complex filter and POST it to the `/api/v1/awards` endpoint. This example is created in the filtering section of this tutorial.
+POST requests are used when more advanced filtering is required. For example, if we wanted to search for awards with signing dates between June 1st 2016 and June 1st 2017, we would need to construct a complex filter and POST it to the `/api/v1/awards/` endpoint. This example is created in the filtering section of this tutorial.
 
 
 # Filtering <a name="filtering"></a>
@@ -194,7 +194,7 @@ As you can probably see, this method of filtering is very flexible.
 
 Filtering on <span title="Fields belonging to the type of record directly matching the endpoint, instead of a referenced object">top level fields<sup>?</sup></span> is nice, but the real power of the API is in linking data together. As we use the API, you may notice that the <span title="The data returned by an endpoint after a request">response objects<sup>?</sup></span> have objects nested within them. These are other records referenced by the record matching your query, and are included for convenience. However, you _can_ filter on them! Let's look at an example of that in both a GET and POST request.
 
-If we look at `/api/v1/awards` we can see that most award records have a recipient - the company or entity who received the award. Let's make a filter to find all contracts awarded to `GENERAL ELECTRIC COMPANY`. When we want to traverse into a nested object, we use a double underscore `__` and attach the nested object's field. So, in this case, we want to use the `recipient_name` field from the nested object called `recipient`, so our filter field is `recipient__recipient_name`. This is known as foreign key traversal throughout the API documentation. Most of the time, if you are specifying a field to the API, you can use foreign key traversal. Let's perform this request using GET:
+If we look at `/api/v1/awards/` we can see that most award records have a recipient - the company or entity who received the award. Let's make a filter to find all contracts awarded to `GENERAL ELECTRIC COMPANY`. When we want to traverse into a nested object, we use a double underscore `__` and attach the nested object's field. So, in this case, we want to use the `recipient_name` field from the nested object called `recipient`, so our filter field is `recipient__recipient_name`. This is known as foreign key traversal throughout the API documentation. Most of the time, if you are specifying a field to the API, you can use foreign key traversal. Let's perform this request using GET:
 
 `/api/v1/awards/?recipient__recipient_name=GENERAL%20ELECTRIC%20COMPANY`[<sup>Try it!</sup>](/api/v1/awards/?recipient__recipient_name=GENERAL%20ELECTRIC%20COMPANY)
 
@@ -212,11 +212,11 @@ Since this is a get request, we had to encode our spaces as `%20`, but this requ
 }
 ```
 
-We can try this out the same way by opening [`/api/v1/awards`]() and pasting that request into the 'Raw Data' form at the bottom.
+We can try this out the same way by opening [`/api/v1/awards/`]() and pasting that request into the 'Raw Data' form at the bottom.
 
 #### Other POST request options
 
-The POST method supports many other options. For instance, if you only want to view the description and recipients of an awards, you can send the following request via POST to `/api/v1/awards`
+The POST method supports many other options. For instance, if you only want to view the description and recipients of an awards, you can send the following request via POST to `/api/v1/awards/`
 
 ```
 {
@@ -258,7 +258,7 @@ You can even combine these with filters! Here's a request that gets only the typ
 
 # Ordering Responses <a name="ordering"></a>
 
-One of the most powerful extra POST request parameters is the `order` parameter. This allows you to order the response by any field you wish to specify. For example, to order a request to `/api/v1/awards` by recipient name:
+One of the most powerful extra POST request parameters is the `order` parameter. This allows you to order the response by any field you wish to specify. For example, to order a request to `/api/v1/awards/` by recipient name:
 
 ```
 {
