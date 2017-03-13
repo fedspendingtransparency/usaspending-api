@@ -108,3 +108,7 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             self.exception_logger.exception(e)
         finally:
             return Response(response, status=status_code)
+
+    @cache_response(key_func=USAspendingKeyConstructor())
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
