@@ -18,6 +18,7 @@ from usaspending_api.references.models import (
     Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity, CFDAProgram)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
+import usaspending_api.etl.helpers as h
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
@@ -61,6 +62,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+
+        h.clear_caches()
+
         # Grab the data broker database connections
         if not options['test']:
             try:
