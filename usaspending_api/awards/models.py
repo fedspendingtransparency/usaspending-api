@@ -240,15 +240,16 @@ class Award(DataSourceTrackedModel):
                 # more than one award record?
 
                 if use_cache:
-                    q_kwargs_tup = tuple(tuple(q_kwargs.items()) + (('awarding_agency', awarding_agency)))
-                    summary_award = awards_cache.get(q_kwargs_tup)
+                    q_kwargs_fixed = list(q_kwargs.items()) + [('awarding_agency', awarding_agency), ]
+                    q_kwargs_fixed.sort()
+                    summary_award = awards_cache.get(q_kwargs_fixed)
                     if summary_award:
                         return summary_award
 
                 summary_award = Award.objects.all().filter(Q(**q_kwargs)).filter(awarding_agency=awarding_agency).first()
                 if summary_award:
                     if use_cache:
-                        awards_cache.set(q_kwargs_tup, summary_award)
+                        awards_cache.set(q_kwargs_fixed, summary_award)
                     return summary_award
                 else:
                     parent_award = None
@@ -258,7 +259,7 @@ class Award(DataSourceTrackedModel):
                     # Now create the award record for this award transaction
                     summary_award = Award(**{i[1]: i[0], "parent_award": parent_award, "awarding_agency": awarding_agency})
                     if use_cache:
-                        awards_cache.set(q_kwargs_tup, summary_award)
+                        awards_cache.set(q_kwargs_fixed, summary_award)
                     else:
                         summary_award.save()
                     return summary_award
