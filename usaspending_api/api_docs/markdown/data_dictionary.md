@@ -89,27 +89,27 @@ In this section you will find definitions for common terms used in the API. For 
 
 ## Endpoint Index <a name="endpoint-index"></a>
 
-| Endpoint | Methods | Data
-| -------- | ---: | ------ |
-| [/api/v1/awards/]() | GET, POST | Returns a list of award records |
-| /api/v1/awards/:id | GET, POST | Returns a single award records with all fields |
-| [/api/v1/awards/autocomplete/]() | POST | Supports autocomplete on award records |
-| [/api/v1/awards/total/]() | POST | Supports aggregation on award records |
-| [/api/v1/accounts/]() | GET, POST | Returns a list of appropriation account balances |
-| [/api/v1/accounts/tas/]() | GET, POST | Returns a list of treasury appropriation accounts, by TAS |
-| [/api/v1/accounts/awards/]() | GET, POST | Returns a list of financial account data grouped by TAS and broken up by Program Activity and Object Class codes |
-| /api/v1/accounts/awards/:id | GET, POST | Returns a single financial account record, grouped by TAS, with all fields |
-| [/api/v1/transactions/]() | GET, POST | Returns a list of transactions - contracts, grants, loans, etc. |
-| /api/v1/transactions/:id | GET, POST | Returns a single transaction record with all fields |
-| [/api/v1/transactions/total/]() | POST | Supports aggregation on transaction records |
-| [/api/v1/references/locations/]() | POST | Returns a list of locations - places of performance or vendor locations |
-| [/api/v1/references/locations/geocomplete/]() | POST | Supports geocomplete queries, see [Using the API](/docs/using-the-api) |
-| [/api/v1/references/agency/]() | GET, POST | Returns a list of agency records |
-| [/api/v1/references/agency/autocomplete/]() | POST | Supports autocomplete on agency records |
-| [/api/v1/references/cfda/]() | GET, POST | Returns a list of CFDA Programs |
-| /api/v1/references/cfda/:id | GET, POST | Returns a single CFDA program, with all fields |
-| [/api/v1/references/recipients/autocomplete/]() | POST | Supports autocomplete on recipient records |
-| [/api/v1/submissions/]() | GET, POST | Returns a list of submissions |
+| Endpoint | Methods | DB Model | Data
+| -------- | ---: | ------ | ------ |
+| [/api/v1/awards/]() | GET, POST | Award | Returns a list of award records |
+| /api/v1/awards/:id | GET, POST | Award | Returns a single award records with all fields |
+| [/api/v1/awards/autocomplete/]() | POST | Award | Supports autocomplete on award records |
+| [/api/v1/awards/total/]() | POST | Award | Supports aggregation on award records |
+| [/api/v1/accounts/]() | GET, POST | AppropriationAccountBalances | Returns a list of appropriation account balances |
+| [/api/v1/accounts/tas/]() | GET, POST | TreasuryAppropriationAccount | Returns a list of treasury appropriation accounts, by TAS |
+| [/api/v1/accounts/awards/]() | GET, POST | FinancialAccountsByAwards | Returns a list of financial account data grouped by TAS and broken up by Program Activity and Object Class codes |
+| /api/v1/accounts/awards/:id | GET, POST | FinancialAccountsByAwards | Returns a single financial account record, grouped by TAS, with all fields |
+| [/api/v1/transactions/]() | GET, POST | Transaction | Returns a list of transactions - contracts, grants, loans, etc. |
+| /api/v1/transactions/:id | GET, POST | Transaction | Returns a single transaction record with all fields |
+| [/api/v1/transactions/total/]() | POST | Transaction | Supports aggregation on transaction records |
+| [/api/v1/references/locations/]() | POST | Location | Returns a list of locations - places of performance or vendor locations |
+| [/api/v1/references/locations/geocomplete/]() | POST | Location | Supports geocomplete queries, see [Using the API](/docs/using-the-api) |
+| [/api/v1/references/agency/]() | GET, POST | Agency | Returns a list of agency records |
+| [/api/v1/references/agency/autocomplete/]() | POST | Agency | Supports autocomplete on agency records |
+| [/api/v1/references/cfda/]() | GET, POST | CFDAProgram | Returns a list of CFDA Programs |
+| /api/v1/references/cfda/:id | GET, POST | CFDAProgram | Returns a single CFDA program, with all fields |
+| [/api/v1/references/recipients/autocomplete/]() | POST | LegalEntity | Supports autocomplete on recipient records |
+| [/api/v1/submissions/]() | GET, POST | SubmissionAttributes | Returns a list of submissions |
 
 
 ## Endpoint Details <a name="endpoint-details"></a>
