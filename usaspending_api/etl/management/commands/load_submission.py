@@ -11,7 +11,7 @@ from django.db.models import Q
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
 from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards, FinancialAccountsByAwardsTransactionObligations,
+    Award, FinancialAccountsByAwards,
     TransactionAssistance, TransactionContract, Transaction, AWARD_TYPES, CONTRACT_PRICING_TYPES)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import (
@@ -221,15 +221,6 @@ class Command(BaseCommand):
             }
 
             load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
-
-            afd_trans = FinancialAccountsByAwardsTransactionObligations()
-
-            value_map = {
-                'financial_accounts_by_awards': award_financial_data,
-                'submission': submission_attributes
-            }
-
-            load_data_into_model(afd_trans, row, value_map=value_map, save=True)
 
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
