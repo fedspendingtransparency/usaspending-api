@@ -63,6 +63,16 @@ DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG
 }
 
+REST_FRAMEWORK_EXTENSIONS = {
+    # Setting below controls whether or not we cache error responses
+    'DEFAULT_CACHE_ERRORS': False,
+    # Specify the Django cache to use for DRF caching
+    'DEFAULT_USE_CACHE': 'drf-cache',
+    # Set DRF cache timeline in seconds. A value of None is the default,
+    # which means "cache forever." Setting to 0 effectively disables caching.
+    # 'DEFAULT_CACHE_RESPONSE_TIMEOUT': 60 * 15
+}
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
@@ -857,6 +867,12 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'locations-loc-mem-cache',
     },
+    # Below is the cache used by drf-extensions for caching API results
+    # To turn that caching off, set 'BACKEND' to 'django.core.cache.backends.dummy.DummyCache'
+    'drf-cache': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'default-loc-mem-cache',
+    }
 }
 
 # Django spaghetti-and-meatballs (entity relationship diagram) settings
