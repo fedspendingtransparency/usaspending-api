@@ -1,0 +1,124 @@
+{% load docs %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>USAspending Prototype API</title>
+    <link rel="stylesheet" href='{% static "css/google-fonts.css" %}'>
+    <link rel="stylesheet" href='{% static "css/monokai-sublime.css" %}'>
+    <link rel="stylesheet" href='{% static "css/main.css" %}'>
+    <script src='{% static "js/modernizr.js" %}'></script>
+    <style>
+      .logo {width:350px;background-color:white;padding:15px;margin-right:20px;}
+      .row-fluid outter-wrap {padding-top: 30px;}
+      p { max-width: 80rem;}
+      h1{ font-size: 5rem;}
+      h2 {font-size: 4rem;}
+      .outter-wrap { margin-top:204px; }
+      #sidebar{margin-top: 100px;}
+    </style>
+  </head>
+  <body>
+    <div class="container-fluid usa-da-header">
+      {% include "warning.html" %}
+        <div class="row">
+            <nav class="navbar">
+                <div class="container usa-da-header-container">
+                    <h1><a href="/"><img class="logo" src='{% static "img/logo.png" %}'/>Prototype API</a></h1>
+                    <ul id="usa-da-header-link-holder" class="nav nav-row">
+
+                        <li class="element first active ">
+                            <a href="/docs/">Docs</a>
+                        </li>
+
+                        <li class="element   last">
+                            <a href="https://github.com/fedspendingtransparency/usaspending-api">Github</a>
+                        </li>
+
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <div class="usa-da-outter-wrap">
+      <div class="container homepage">
+        <div class="row-fluid outter-wrap">
+          <div class="container">
+            <div class="row">
+              <div class="col-md-3" id="leftCol">
+                <section class="wrap">
+                <div class="row">
+                  <p>The diagram to the right is an entity relationship diagram displaying the relationships among database models.</p>
+                  <p>You can pan around the diagram using your cursor, and zoom in and out using a scroll wheel.</p>
+                </div>
+              </section>
+              </div>
+              <div class="col-md-9">
+                <section class="wrap">
+                <div id="visualization">
+                </div>
+                </section>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <script src='{% static "js/jquery-2.2.0.min.js" %}'></script>
+      <script src='{% static "js/bootstrap.min.js" %}'></script>
+      <script src='{% static "js/mobile-head.js" %}'></script>
+      <script src='{% static "js/Chart.js" %}'></script>
+      <script src='{% static "js/fedSpend_base.js" %}'></script>
+      <script src='{% static "js/highlight.pack.js" %}'></script>
+      <script src='{% static "js/flyLabel.js" %}'></script>
+      <script>
+            if (Modernizr.input.placeholder) {
+              $('body').flyLabels();
+            }
+      </script>
+
+
+      <script>hljs.initHighlightingOnLoad();</script>
+
+      {% block extra_scripts %}
+      <script src="//cdnjs.cloudflare.com/ajax/libs/vis/4.7.0/vis.min.js"></script>
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.7.0/vis.min.css" rel="stylesheet" type="text/css" />
+      {% endblock %}
+
+      <script>
+        var nodes = new vis.DataSet(
+            {{ meatballs|safe }}
+        );
+        var edges = new vis.DataSet(
+            {{ spaghetti|safe }}
+        );
+        var data = {
+          nodes: nodes,
+          edges: edges
+        };
+        var container = document.getElementById('visualization');
+        var options = {
+          "edges": {
+            "smooth": {
+              "type": "cubicBezier",
+              "roundness": 0.55
+            }
+          },
+
+          "layout": {
+              hierarchical: {
+                  sortMethod: 'hubsize',
+                  direction:'LR'
+              }
+          },
+        };
+
+        var timeline = new vis.Network(container, data, options);
+        $('#visualization .vis-network canvas')[0].height = window.innerHeight;
+      </script>
+
+  </body>
+</html>

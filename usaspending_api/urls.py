@@ -32,7 +32,6 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^docs/', include('usaspending_api.api_docs.urls')),
     url(r'^$', MarkdownView.as_view(markdown='landing_page.md')),
-    url(r'^entity-relationships/', include('django_spaghetti.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
