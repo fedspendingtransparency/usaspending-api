@@ -4,6 +4,7 @@
   <li><a href="#endpoint-details">Endpoint Details</a></li>
   <li>
     <ul>
+      <li><a href="#type-description">Type Descriptions</a></li>
       <li><a href="#award">Award Endpoints</a></li>
       <li><a href="#transaction">Transaction Endpoints</a></li>
       <li><a href="#accounts">Accounts Endpoints</a></li>
@@ -13,6 +14,8 @@
   </li>
 </ul>
 [//]: # (Begin Content)
+
+**Please note, the data dictionary is under heavy development. As a result, some information may be missing**
 
 ## Lexicon <a name="lexicon"></a>
 
@@ -89,83 +92,91 @@ In this section you will find definitions for common terms used in the API. For 
 
 ## Endpoint Index <a name="endpoint-index"></a>
 
-| Endpoint | Methods | DB Model | Data
+| Endpoint | Methods | Response Object | Data
 | -------- | ---: | ------ | ------ |
-| [/api/v1/awards/]() | GET, POST | Award | Returns a list of award records |
-| /api/v1/awards/:id | GET, POST | Award | Returns a single award records with all fields |
-| [/api/v1/awards/autocomplete/]() | POST | Award | Supports autocomplete on award records |
-| [/api/v1/awards/total/]() | POST | Award | Supports aggregation on award records |
-| [/api/v1/accounts/]() | GET, POST | AppropriationAccountBalances | Returns a list of appropriation account balances |
-| [/api/v1/accounts/tas/]() | GET, POST | TreasuryAppropriationAccount | Returns a list of treasury appropriation accounts, by TAS |
-| [/api/v1/accounts/awards/]() | GET, POST | FinancialAccountsByAwards | Returns a list of financial account data grouped by TAS and broken up by Program Activity and Object Class codes |
-| /api/v1/accounts/awards/:id | GET, POST | FinancialAccountsByAwards | Returns a single financial account record, grouped by TAS, with all fields |
-| [/api/v1/transactions/]() | GET, POST | Transaction | Returns a list of transactions - contracts, grants, loans, etc. |
-| /api/v1/transactions/:id | GET, POST | Transaction | Returns a single transaction record with all fields |
-| [/api/v1/transactions/total/]() | POST | Transaction | Supports aggregation on transaction records |
-| [/api/v1/references/locations/]() | POST | Location | Returns a list of locations - places of performance or vendor locations |
-| [/api/v1/references/locations/geocomplete/]() | POST | Location | Supports geocomplete queries, see [Using the API](/docs/using-the-api) |
-| [/api/v1/references/agency/]() | GET, POST | Agency | Returns a list of agency records |
-| [/api/v1/references/agency/autocomplete/]() | POST | Agency | Supports autocomplete on agency records |
-| [/api/v1/references/cfda/]() | GET, POST | CFDAProgram | Returns a list of CFDA Programs |
-| /api/v1/references/cfda/:id | GET, POST | CFDAProgram | Returns a single CFDA program, with all fields |
-| [/api/v1/references/recipients/autocomplete/]() | POST | LegalEntity | Supports autocomplete on recipient records |
-| [/api/v1/submissions/]() | GET, POST | SubmissionAttributes | Returns a list of submissions |
+| [/api/v1/awards/](/api/v1/awards/) | GET, POST | <a href="#award">Awards</a> | Returns a list of award records |
+| /api/v1/awards/:id | GET, POST | <a href="#award">Award</a> | Returns a single award records with all fields |
+| [/api/v1/awards/autocomplete/](/api/v1/awards/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on award records |
+| [/api/v1/awards/total/](/api/v1/awards/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on award records |
+| [/api/v1/accounts/](/api/v1/accounts/) | GET, POST | <a href="#accounts">Appropriation Account Balances</a> | Returns a list of appropriation account balances |
+| [/api/v1/accounts/tas/](/api/v1/accounts/tas/) | GET, POST | <a href="#tas">Treasury Appropriation Account</a> | Returns a list of treasury appropriation accounts, by TAS |
+| [/api/v1/accounts/awards/](/api/v1/accounts/awards/) | GET, POST | <a href="#accounts-by-award">Financial Accounts (by Award)</a> | Returns a list of financial account data grouped by TAS and broken up by Program Activity and Object Class codes |
+| /api/v1/accounts/awards/:id | GET, POST | <a href="#accounts-by-award">Financial Account (by Award)</a> | Returns a single financial account record, grouped by TAS, with all fields |
+| [/api/v1/transactions/](/api/v1/transactions/) | GET, POST | <a href="#transaction">Transaction</a> | Returns a list of transactions - contracts, grants, loans, etc. |
+| /api/v1/transactions/:id | GET, POST | <a href="#transaction">Transaction</a> | Returns a single transaction record with all fields |
+| [/api/v1/transactions/total/](/api/v1/transactions/total/) | POST | Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on transaction records |
+| [/api/v1/references/locations/](/api/v1/references/locations/) | POST | <a href="#locations">Location</a> | Returns a list of locations - places of performance or vendor locations |
+| [/api/v1/references/locations/geocomplete/](/api/v1/references/locations/geocomplete/) | POST | Location Hierarchy (see [Using the API](/docs/using-the-api)) | Supports geocomplete queries, see [Using the API](/docs/using-the-api) |
+| [/api/v1/references/agency/](/api/v1/references/agency/) | GET, POST | <a href="#agencies">Agency</a> | Returns a list of agency records |
+| [/api/v1/references/agency/autocomplete/](/api/v1/references/agency/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api)) | Supports autocomplete on agency records |
+| [/api/v1/references/cfda/](/api/v1/references/cfda/) | GET, POST | <a href="#cfda-programs">CFDA Programs</a> | Returns a list of CFDA Programs |
+| /api/v1/references/cfda/:id | GET, POST | <a href="#cfda-programs">CFDA Program</a> | Returns a single CFDA program, with all fields |
+| [/api/v1/references/recipients/autocomplete/](/api/v1/references/recipients/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api)) | Supports autocomplete on recipient records |
+| [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | <a href="#submissions">SubmissionAttributes</a> | Returns a list of submissions |
 
 
 ## Endpoint Details <a name="endpoint-details"></a>
 
-#### Award Endpoints <a name="award"></a>
-This data is represented internally as the model: `Award`
+#### Type Descriptions <a name="type-description"></a>
 
+| Type | Description |
+| ---- | ---- |
+| Nested Object | This field contains _another_ object. Where applicable, the description for these fields will contain a link to the appropriate list of fields for that nested object, and descriptions of those fields.|
+| Integer | This field contains an Integer |
+| String | This field contains a string. Special formatting is noted in the description, or the lexicon |
+| Float | This field contains a floating point number |
+| Date | This field contains a date, represented as a string in [YYYY]-[MM]-[DD] format |
+| Datetime | This field contains a date, represented as a string in [YYYY]-[MM]-[DD] format, and time. Example: `2017-03-14T14:52:03.398918Z` |
+| Boolean | This field contains a boolean value, either `true` or `false` |
+
+#### Award Endpoints <a name="award"></a>
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| financial_set | Relation | Reverse look-up for relation from FinancialAccountsByAwards::award |
-| child_award | Relation | Reverse look-up for relation from Award::parent_award |
-| transaction | Relation | Reverse look-up for relation from Transaction::award |
-| subaward | Relation | Reverse look-up for relation from SubAward::award |
+| financial_set | Nested Object | An array of objects containing data from <a href="#accounts-by-award">Financial Accounts (by Award)</a> for which this award is the parent |
+| child_award | Nested Object | An array of objects containing data from this endpoint, representing child awards of this award |
+| transaction | Nested Object | An array of <a href="#transaction">transactions</a> for which this award is the parent |
+| subaward | Nested Object | An array of subawards (NOT YET IMPLEMENTED) for which this award is the parent |
 | id | Integer | Internal primary key. Guaranteed to be unique. |
 | data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
 | type | String | 	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments. |
 | type_description | String | The plain text description of the type of the award |
 | piid | String | Procurement Instrument Identifier - A unique identifier assigned to a federal contract, purchase order, basic ordering agreement, basic agreement, and blanket purchase agreement. It is used to track the contract, and any modifications or transactions related to it. After October 2017, it is between 13 and 17 digits, both letters and numbers. |
-| parent_award | Relation | The parent award, if applicable |
+| parent_award | Integer | The parent award's id, if applicable |
 | fain | String | An identification code assigned to each financial assistance award tracking purposes. The FAIN is tied to that award (and all future modifications to that award) throughout the award’s life. Each FAIN is assigned by an agency. Within an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN stands for Federal Award Identification Number, though the digits are letters, not numbers. |
 | uri | String | The uri of the award |
 | total_obligation | Float | The amount of money the government is obligated to pay for the award |
 | total_outlay | Float | The total amount of money paid out for this award |
-| awarding_agency | Relation | The awarding agency for the award |
-| funding_agency | Relation | The funding agency for the award |
+| awarding_agency | Nested Object | The awarding <a href="#agencies">agency</a> for the award |
+| funding_agency | Nested Object | The funding <a href="#agencies">agency</a> for the award |
 | date_signed | Date | The date the award was signed |
-| recipient | Relation | The recipient of the award |
+| recipient | Nested Object | The <a href="#recipients">recipient</a> of the award |
 | description | String | A description of the award |
 | period_of_performance_start_date | Date | The start date for the period of performance |
 | period_of_performance_current_end_date | Date | The current, not original, period of performance end date |
-| place_of_performance | Relation | The principal place of business, where the majority of the work is performed. For example, in a manufacturing contract, this would be the main plant where items are produced. |
+| place_of_performance | Nested Object | The principal place of business, where the majority of the work is performed. For example, in a manufacturing contract, this would be the main plant where items are produced. The nested object uses the fields from <a href="#locations">locations</a> |
 | potential_total_value_of_award | Float | The sum of the potential_value_of_award from associated transactions |
 | last_modified_date | Date | The date this award was last modified |
 | certified_date | Date | The date this record was certified |
 | create_date | Datetime | The date this record was created in the API |
 | update_date | Datetime | The last time this record was updated in the API |
-| latest_submission | Relation | The submission attribute object that created this award |
-| latest_transaction | Relation | The latest transaction by action_date associated with this award |
+| latest_submission | Nested Object | The <a href="#submission">submission</a> attribute object that created this award |
+| latest_transaction | Nested Object | The latest <a href="#transaction">transaction</a> by action_date associated with this award |
 
 #### Transaction Endpoints <a name="transaction"></a>
 
-Transaction data is returned as a combination of the three following models:
-This data is represented internally as the model: `Transaction`
-
+###### Transaction
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| latest_for_award | Relation | Reverse look-up for relation from Award::latest_transaction |
-| contract_data | Relation | Reverse look-up for relation from TransactionContract::transaction |
-| assistance_data | Relation | Reverse look-up for relation from TransactionAssistance::transaction |
+| latest_for_award | Nested Object | The <a href="#award">award</a> for which this transaction is the latest |
+| contract_data | Nested Object | The <a href="#transaction-contract">contract</a> data for this transaction, if applicable |
+| assistance_data | Nested Object | The <a href="#transaction-assistance">assistance</a> data for this transaction, if applicable |
 | id | Integer | Internal primary key. Guaranteed to be unique. |
 | data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
-| award | Relation | The award which this transaction is contained in |
+| award | Integer | The id of the award which to which this transaction applies |
 | usaspending_unique_transaction_id | String | If this record is legacy USASpending data, this is the unique transaction identifier from that system |
-| submission | Relation | The submission which created this record |
+| submission | Integer | The id of the submission which created this submission |
 | type | String | The type for this transaction. For example, A, B, C, D |
 | type_description | String | The plain text description of the transaction type |
 | period_of_performance_start_date | Date | The period of performance start date |
@@ -174,11 +185,11 @@ This data is represented internally as the model: `Transaction`
 | action_type | String | The type of transaction. For example, A, B, C, D |
 | federal_action_obligation | Float | The obligation of the federal government for this transaction |
 | modification_number | String | The modification number for this transaction |
-| awarding_agency | Relation | The agency which awarded this transaction |
-| funding_agency | Relation | The agency which is funding this transaction |
-| recipient | Relation | The recipient for this transaction |
+| awarding_agency | Nested Object | The awarding <a href="#agencies">agency</a> for the transaction |
+| funding_agency | Nested Object | The funding <a href="#agencies">agency</a> for the transaction |
+| recipient | Nested Object | The <a href="#recipients">recipient</a> of the transaction |
 | description | String | The description of this transaction |
-| place_of_performance | Relation | The location where the work on this transaction was performed |
+| place_of_performance | Nested Object | The <a href="#locations">location</a> where the work on this transaction was performed |
 | drv_award_transaction_usaspend | Float |  |
 | drv_current_total_award_value_amount_adjustment | Float |  |
 | drv_potential_total_award_value_amount_adjustment | Float |  |
@@ -188,14 +199,14 @@ This data is represented internally as the model: `Transaction`
 | update_date | Datetime | The last time this transaction was updated in the API |
 
 
-This data is represented internally as the model: `TransactionContract`
+###### Transaction Contract Data <a name="transaction-contract"></a>
 
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
 | data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
-| transaction | Relation | Non-specific transaction data, fields shared among both assistance and contract transactions |
-| submission | Relation |  |
+| transaction | Nested Object | The <a href="#transaction">transaction</a> for which this is the contract data |
+| submission | Integer | The id of the <a href="#submission">submission</a> which created this entity |
 | piid | String | The PIID of this transaction |
 | parent_award_id | String | The parent award id for this transaction. This is generally the piid of an IDV |
 | cost_or_pricing_data | String |  |
@@ -276,19 +287,18 @@ This data is represented internally as the model: `TransactionContract`
 | reporting_period_end | Date | The date marking the end of the reporting period |
 
 
-This data is represented internally as the model: `TransactionAssistance`
-
+###### Transaction Assistance Data <a name="transaction-assistance"></a>
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
 | data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
-| transaction | Relation | Non-specific transaction data, fields shared among both assistance and contract transactions |
-| submission | Relation |  |
+| transaction | Nested Object | The <a href="#transaction">transaction</a> for which this is the assistance data |
+| submission | Integer | The id of the <a href="#submission">submission</a> which created this entity |
 | fain | String |  |
 | uri | String |  |
 | cfda_number | String |  |
 | cfda_title | String |  |
-| cfda | Relation |  |
+| cfda | Nested Object | The <a href="#cfda-program">CFDA program</a> associated with this transaction  |
 | business_funds_indicator | String |  |
 | non_federal_funding_amount | Float |  |
 | total_funding_amount | Float |  |
@@ -312,14 +322,13 @@ This data is represented internally as the model: `TransactionAssistance`
 
 #### Accounts Endpoints <a name="accounts"></a>
 
-This data is represented internally as the model: `AppropriationAccountBalances`
-
+###### Appropriation Account Balances <a name="appropriation-account"></a>
 | Field | Type | Description |
 | ----- | ----- | ----- |
 | data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
 | appropriation_account_balances_id | Integer | Internal primary key. Guaranteed to be unique. |
-| treasury_account_identifier | Relation |  |
-| submission | Relation |  |
+| treasury_account_identifier | Nested Object | The <a href="#tas">Treasury Account</a> for this balance record |
+| submission | Integer | The id of the <a href="#submission">submission</a> which created this entity |
 | budget_authority_unobligated_balance_brought_forward_fyb | Float |  |
 | adjustments_to_unobligated_balance_brought_forward_cpe | Float |  |
 | budget_authority_appropriated_amount_cpe | Float |  |
@@ -346,17 +355,13 @@ This data is represented internally as the model: `AppropriationAccountBalances`
 | create_date | Datetime |  |
 | update_date | Datetime |  |
 
-
-##### TAS <a name="tas"></a>
-
-This data is represented internally as the model: `TreasuryAppropriationAccount`
-
+##### TAS <a name="tas"></a> (Treasury Account Symbol)
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| financialaccountsbyawards | Relation | Reverse look-up for relation from FinancialAccountsByAwards::treasury_account |
-| account_balances | Relation | Reverse look-up for relation from AppropriationAccountBalances::treasury_account_identifier |
-| program_balances | Relation | Reverse look-up for relation from FinancialAccountsByProgramActivityObjectClass::treasury_account |
+| financialaccountsbyawards | Nested Object | Array of <a href="#accounts-by-award">financial accounts (by award)</a> assosciated to this account_title |
+| account_balances | Nested Object | Array of <a href="#appropriation-account">appropriation account balances</a> assosciated with this account |
+| program_balances | Nested Object | Array of financial accounts (by program activity and object class) assosciated with this account |
 | data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
 | treasury_account_identifier | Integer | Internal primary key. Guaranteed to be unique. |
 | tas_rendering_label | String |  |
@@ -384,22 +389,18 @@ This data is represented internally as the model: `TreasuryAppropriationAccount`
 | create_date | Datetime |  |
 | update_date | Datetime |  |
 
-
 ##### Accounts by Award <a name="accounts-by-award"></a>
-
-This data is represented internally as the model: `FinancialAccountsByAwards`
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| transaction_obligations | Relation | Reverse look-up for relation from FinancialAccountsByAwardsTransactionObligations::financial_accounts_by_awards |
 | data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
 | financial_accounts_by_awards_id | Integer | Internal primary key. Guaranteed to be unique. |
-| treasury_account | Relation |  |
-| submission | Relation |  |
-| award | Relation |  |
+| treasury_account | Nested Object | The <a href="#tas">treasury account</a> for this entry |
+| submission | Integer | The id of the <a href="#submission">submission</a> which created this entity |
+| award | Integer | The id of the <a href="#award">award</a> to which this entity is associated |
 | program_activity_name | String |  |
-| program_activity_code | Relation |  |
-| object_class | Relation |  |
+| program_activity_code | Nested Object |  |
+| object_class | Nested Object |  |
 | by_direct_reimbursable_funding_source | String |  |
 | piid | String |  |
 | parent_award_id | String |  |
@@ -449,16 +450,14 @@ This data is represented internally as the model: `FinancialAccountsByAwards`
 
 #### Reference Endpoints <a name="references"></a>
 
-##### Locations <a name="locations"></a>
-
-This data is represented internally as the model: `Location`
+###### Locations <a name="locations"></a>
 
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| legalentity | Relation | Reverse look-up for relation from LegalEntity::location |
-| award | Relation | Reverse look-up for relation from Award::place_of_performance |
-| transaction | Relation | Reverse look-up for relation from Transaction::place_of_performance |
+| legalentity | Nested Object | Array of <a href="#recipients">recipients</a> located at this location |
+| award | Nested Object | An array of <a href="#award">awards</a> for which this location is the place of performance |
+| transaction | Nested Object | An array of <a href="#transaction">transaction</a> for which this location is the place of performance |
 | data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
 | location_id | Integer | Internal primary key. Guaranteed to be unique. |
 | location_country_code | Relation |  |
@@ -493,27 +492,24 @@ This data is represented internally as the model: `Location`
 | recipient_flag | BooleanField |  |
 
 
-##### Agencies <a name="agencies"></a>
-
-This data is represented internally as the model: `Agency`
+###### Agencies <a name="agencies"></a>
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| awards_transaction_awarding_agency | Relation | Reverse look-up for relation from Transaction::awarding_agency |
-| awards_transaction_funding_agency | Relation | Reverse look-up for relation from Transaction::funding_agency |
+| awards_transaction_awarding_agency | Nested Object | An array of <a href="#transaction">transactions</a> for which this agency is the awarding agency |
+| awards_transaction_funding_agency | Nested Object | An array of <a href="#transaction">transactions</a> for which this agency is the funding agency |
 | id | Integer | Internal primary key. Guaranteed to be unique. |
 | create_date | Datetime |  |
 | update_date | Datetime |  |
-| toptier_agency | Relation |  |
-| subtier_agency | Relation |  |
-| office_agency | Relation |  |
+| toptier_agency | Nested Object |  |
+| subtier_agency | Nested Object |  |
+| office_agency | Nested Object |  |
 
 
-This data is represented internally as the model: `ToptierAgency`
+###### Toptier Agency <a name="agency-toptier"></a>
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| agency | Relation | Reverse look-up for relation from Agency::toptier_agency |
 | toptier_agency_id | Integer | Internal primary key. Guaranteed to be unique. |
 | create_date | Datetime |  |
 | update_date | Datetime |  |
@@ -523,11 +519,10 @@ This data is represented internally as the model: `ToptierAgency`
 | name | String |  |
 
 
-This data is represented internally as the model: `SubtierAgency`
+###### Subtier Agency <a name="agency-subtier"></a>
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| agency | Relation | Reverse look-up for relation from Agency::subtier_agency |
 | subtier_agency_id | Integer | Internal primary key. Guaranteed to be unique. |
 | create_date | Datetime |  |
 | update_date | Datetime |  |
@@ -536,24 +531,20 @@ This data is represented internally as the model: `SubtierAgency`
 | name | String |  |
 
 
-This data is represented internally as the model: `OfficeAgency`
+###### Agency Office <a name="agency-office"></a>
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| agency | Relation | Reverse look-up for relation from Agency::office_agency |
 | office_agency_id | Integer | Internal primary key. Guaranteed to be unique. |
 | create_date | Datetime |  |
 | update_date | Datetime |  |
 | aac_code | String |  |
 | name | String |  |
 
-##### CFDA Programs <a name="cfda-programs"></a>
-
-This data is represented internally as the model: `CFDAProgram`
+###### CFDA Programs <a name="cfda-programs"></a>
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| transactionassistance | Relation | Reverse look-up for relation from TransactionAssistance::cfda |
 | data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
 | program_number | String | Internal primary key. Guaranteed to be unique. |
 | program_title | String |  |
@@ -598,18 +589,13 @@ This data is represented internally as the model: `CFDAProgram`
 | create_date | Datetime |  |
 | update_date | Datetime |  |
 
-##### Recipients <a name="recipients"></a>
-
-This data is represented internally as the model: `LegalEntity`
+###### Recipients <a name="recipients"></a>
 
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| award | Relation | Reverse look-up for relation from Award::recipient |
-| transaction | Relation | Reverse look-up for relation from Transaction::recipient |
-| subaward | Relation | Reverse look-up for relation from SubAward::legal_entity |
 | data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
 | legal_entity_id | Integer | Internal primary key. Guaranteed to be unique. |
-| location | Relation |  |
+| location | Nested Objects | The <a href="#locations">location</a> of this recipient |
 | parent_recipient_unique_id | String |  |
 | recipient_name | String |  |
 | vendor_doing_as_business_name | String |  |
@@ -722,18 +708,8 @@ This data is represented internally as the model: `LegalEntity`
 
 #### Submission Endpoint <a name="submission"></a>
 
-This data is represented internally as the model: `SubmissionAttributes`
-
 | Field | Type | Description |
 | ----- | ----- | ----- |
-| financialaccountsbyawards | Relation | Reverse look-up for relation from FinancialAccountsByAwards::submission |
-| financialaccountsbyawardstransactionobligations | Relation | Reverse look-up for relation from FinancialAccountsByAwardsTransactionObligations::submission |
-| award | Relation | Reverse look-up for relation from Award::latest_submission |
-| transaction | Relation | Reverse look-up for relation from Transaction::submission |
-| transactioncontract | Relation | Reverse look-up for relation from TransactionContract::submission |
-| transactionassistance | Relation | Reverse look-up for relation from TransactionAssistance::submission |
-| appropriationaccountbalances | Relation | Reverse look-up for relation from AppropriationAccountBalances::submission |
-| financialaccountsbyprogramactivityobjectclass | Relation | Reverse look-up for relation from FinancialAccountsByProgramActivityObjectClass::submission |
 | submission_id | Integer | Internal primary key. Guaranteed to be unique. |
 | broker_submission_id | IntegerField |  |
 | usaspending_update | Date |  |

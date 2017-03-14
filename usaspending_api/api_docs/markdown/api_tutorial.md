@@ -95,7 +95,7 @@ For our operation, we will use `greater_than_or_equal` because we want to know i
 }
 ```
 
-Not bad! This request will get us all award records with a signing date after June 1st 2016. To try it, we can navigate to [/api/v1/awards/]() and paste our request into the 'Raw Data' form at the bottom and then clicking 'POST'.
+Not bad! This request will get us all award records with a signing date after June 1st 2016. To try it, we can navigate to [/api/v1/awards/](/api/v1/awards/) and paste our request into the 'Raw Data' form at the bottom and then clicking 'POST'.
 
 We're only halfway done with our request. To establish the upper bound on our date range, we will need another filter. It will look similar to our first one, except our operation will now be `less_than` and our value will be `2017-06-01`. We can simply add this filter into our list.
 
@@ -212,7 +212,7 @@ Since this is a get request, we had to encode our spaces as `%20`, but this requ
 }
 ```
 
-We can try this out the same way by opening [`/api/v1/awards/`]() and pasting that request into the 'Raw Data' form at the bottom.
+We can try this out the same way by opening [`/api/v1/awards/`](/api/v1/awards/) and pasting that request into the 'Raw Data' form at the bottom.
 
 #### Other POST request options
 

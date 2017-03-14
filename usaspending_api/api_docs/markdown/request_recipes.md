@@ -10,6 +10,8 @@ These example requests are for the `/api/v1/awards/` endpoint.
 
 ###### Get all Awards for a Specific Agency
 
+This request will find all awards awarded by the Department of Defense, which is a top-tier agency with a CGAC code of '097'.
+
 GET
 `/api/v1/awards/?awarding_agency__toptier_agency__cgac_code=097`
 
@@ -29,6 +31,8 @@ POST
 
 ###### Get all Awards with a Type of A, B, C, or D
 
+This request will find all awards with types 'A' (BPA Call), 'B' (Purchase Order), 'C' (Delivery Order), or 'D' (Definitive Contract)
+
 POST
 ```
 {
@@ -43,7 +47,9 @@ POST
 ```
 
 
-###### Get all Awards which have associate TransactionConract data
+###### Get all Awards which have associated contract data
+
+This request will find all awards with transactions that provide contract data.
 
 POST
 ```
@@ -60,6 +66,8 @@ POST
 
 
 ###### Get all Awards where the Place of Performance is _not_ in New Jersey
+
+This request will find all awards whose place of performance is not in a location with a state code of 'NJ' (New Jersey)
 
 POST
 ```

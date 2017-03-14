@@ -15,7 +15,7 @@ The USAspending API allows the public to access data published under the DATA Ac
 
 **Familiar with APIs?** Roll up your sleeves with our more technical documentation [Using the API](/docs/using-the-api), or jump right into the data with some [request recipes](/docs/recipes/)
 
-**New to government financial data?** Check out our [data dictionary](/docs/data-dictioanry) to learn to navigate it
+**New to government financial data?** Check out our [data dictionary](/docs/data-dictionary) to learn to navigate it
 
 ## Background <a name="background"></a>
 
