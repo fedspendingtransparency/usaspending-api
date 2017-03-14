@@ -30,13 +30,9 @@ urlpatterns = [
     url(r'^api/v1/financial_activities/', include('usaspending_api.financial_activities.urls')),
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-<<<<<<< HEAD
     url(r'^docs/', include('usaspending_api.api_docs.urls')),
     url(r'^$', MarkdownView.as_view(markdown='landing_page.md')),
-=======
-    url(r'^$', TemplateView.as_view(template_name='index.html')),
     url(r'^entity-relationships/', include('django_spaghetti.urls')),
->>>>>>> dev
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
