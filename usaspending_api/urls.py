@@ -30,6 +30,7 @@ urlpatterns = [
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^$', TemplateView.as_view(template_name='index.html')),
+    url(r'^entity-relationships/', include('django_spaghetti.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
