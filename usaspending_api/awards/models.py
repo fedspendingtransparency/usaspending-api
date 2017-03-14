@@ -152,6 +152,7 @@ class AwardManager(models.Manager):
 
 awards_cache = caches['awards']
 
+
 class Award(DataSourceTrackedModel):
     """
     Model that provides a high-level award that individual transaction

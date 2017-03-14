@@ -35,6 +35,7 @@ AWARD_CONTRACT_UPDATE_ID_LIST = []
 
 awards_cache = caches['awards']
 
+
 class Command(BaseCommand):
     """
     This command will load a single submission from the data broker database into
@@ -200,10 +201,6 @@ class Command(BaseCommand):
         afd_queue = []
 
         for row in award_financial_data:
-            if row['piid'] == 'SBAHQ13C0010':
-                import ipdb; ipdb.set_trace()
-                # cached != retrieved from cache
-
             account_balances = None
             try:
                 # Check and see if there is an entry for this TAS
@@ -218,9 +215,10 @@ class Command(BaseCommand):
                     parent_award_id=row.get('parent_award_id'),
                     use_cache=True)
                 award.latest_submission = submission_attributes
-                # without a cache, will it fail to find newly created?
-                award_queue.append(award)
-            except:   # augh, bare excepts are bad!
+                if (award.piid, award.fain, award.uri) not in [
+                        (a.piid, a.fain, a.uri) for a in award_queue]:
+                    award_queue.append(award)
+            except:   # TODO: silently swallowing a bare exception is bad mojo
                 continue
 
             award_financial_data = FinancialAccountsByAwards()
@@ -238,7 +236,6 @@ class Command(BaseCommand):
             afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False)
             afd_queue.append(afd)
 
-        import ipdb; ipdb.set_trace()
         Award.objects.bulk_create(award_queue)
         FinancialAccountsByAwards.objects.bulk_create(afd_queue)
         awards_cache.clear()  # but now that cache is operating for other records...
@@ -293,8 +290,6 @@ class Command(BaseCommand):
         }
 
         for row in award_financial_assistance_data:
-            if row['piid'] == 'SBAHQ13C0010':
-                import ipdb; ipdb.set_trace()
 
             legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
