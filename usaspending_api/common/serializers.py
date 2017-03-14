@@ -78,7 +78,7 @@ class LimitableSerializer(serializers.ModelSerializer):
                     pass
 
     @classmethod
-    def setup_eager_loading(cls, queryset, prefix="", parent_is_many=False):
+    def setup_eager_loading(cls, queryset, prefix=""):
         '''
         This method will set up prefetch and selected related statements appropriately
         on a specified query set based upon the serializer's nested_serializer parameter
@@ -96,13 +96,9 @@ class LimitableSerializer(serializers.ModelSerializer):
             # Grab the nested serializers (aka children)
             children = cls.Meta.nested_serializers
             for child in children:
-                is_many = children[child].get("kwargs", {}).get("many", False)
-                if is_many or parent_is_many:
-                    queryset = queryset.prefetch_related(prefix + child)
-                else:
-                    queryset = queryset.select_related(prefix + child)
+                queryset = queryset.prefetch_related(prefix + child)
                 # Since the child might have nested serializers, we set up on that too
-                queryset = children[child]["class"].setup_eager_loading(queryset, prefix=prefix + child + "__", parent_is_many=is_many)
+                queryset = children[child]["class"].setup_eager_loading(queryset, prefix=prefix + child + "__")
         except AttributeError:
             # We don't have any nested serializers
             pass
