@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'usaspending_api.accounts',
     'usaspending_api.submissions',
     'usaspending_api.financial_activities',
-    'usaspending_api.api_docs'
+    'usaspending_api.api_docs',
+    'django_spaghetti',
 ]
 
 INTERNAL_IPS = ()
@@ -865,4 +866,12 @@ CACHES = {
         # Award records, and until they are saved, forgetting them would
         # lose data
     },
+}
+
+# Django spaghetti-and-meatballs (entity relationship diagram) settings
+SPAGHETTI_SAUCE = {
+  'apps': ['awards', 'financial_activities', 'references', 'submissions', ],
+  'show_fields': False,
+  'exclude': {},
+  'show_proxy': False,
 }
