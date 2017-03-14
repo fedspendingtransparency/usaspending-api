@@ -12,5 +12,4 @@ urlpatterns = [
     url(r'^recipes', MarkdownView.as_view(markdown='request_recipes.md')),
     url(r'^using-the-api', MarkdownView.as_view(markdown='using_the_api.md')),
     url(r'^entity-relationships', Plate.as_view(plate_template_name='plate.html'), name='plate'),
-    url(r'^erd', include('django_spaghetti.urls')),
 ]
