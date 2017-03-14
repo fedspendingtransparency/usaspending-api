@@ -197,7 +197,7 @@ class Command(BaseCommand):
         award_financial_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
 
-        award_queue = []
+        award_queue = {}
         afd_queue = []
 
         for row in award_financial_data:
@@ -215,9 +215,11 @@ class Command(BaseCommand):
                     parent_award_id=row.get('parent_award_id'),
                     use_cache=True)
                 award.latest_submission = submission_attributes
-                if (award.piid, award.fain, award.uri) not in [
-                        (a.piid, a.fain, a.uri) for a in award_queue]:
-                    award_queue.append(award)
+                if award.manual_hash() in award_queue:
+                    aw0 = award_queue[award.manual_hash()]
+                    if award.parent_award or aw0.parent_award:
+                        import ipdb; ipdb.set_trace()
+                award_queue[award.manual_hash()] = award
             except:   # TODO: silently swallowing a bare exception is bad mojo
                 continue
 
@@ -236,7 +238,7 @@ class Command(BaseCommand):
             afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False)
             afd_queue.append(afd)
 
-        Award.objects.bulk_create(award_queue)
+        Award.objects.bulk_create(award_queue.values())
         FinancialAccountsByAwards.objects.bulk_create(afd_queue)
         awards_cache.clear()  # but now that cache is operating for other records...
 

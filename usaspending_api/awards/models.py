@@ -196,6 +196,39 @@ class Award(DataSourceTrackedModel):
     objects = models.Manager()
     nonempty = AwardManager()
 
+    def manual_hash(self):
+        """Used to manually establish equality between instances.
+
+        Useful for unsaved records where `.id` is not yet set.
+        Possibly this could be converted to __hash__"""
+
+        return hash((self.piid, self.fain, self.uri,
+                    (self.parent_award and
+                     (self.parent_award.piid,
+                      self.parent_award.fain,
+                      self.parent_award.uri))))
+
+    '''
+    def __eq__(self, other):
+        """Whether this instance is equal to another.
+
+        # Because we need to judge equality of not-yet-daved records,
+        # the usual rule of comparing primary keys is insufficient."""
+        if not isinstance(other, Award):
+            return False
+        if not (self.piid == other.piid and self.fain == other.fain
+                and self.uri == other.uri):
+                return False
+        if (not self.parent_award) and (not other.parent_award):
+            return True
+        if self.parent_award and other.parent_award:
+            return (self.parent_award.piid == other.parent_award.piid
+                    and self.parent_award.fain == other.parent_award.fain
+                    and self.parent_award.uri == other.parent_award.uri)
+        else:
+            return False
+    '''
+
     @staticmethod
     def get_default_fields(path=None):
         return [
@@ -233,6 +266,7 @@ class Award(DataSourceTrackedModel):
                 q_kwargs[i[1]] = i[0]
                 if parent_award_id:
                     q_kwargs["parent_award__" + i[1]] = parent_award_id
+                    # parent_award__piid, parent_award__fain, parent_award__uri
                 else:
                     q_kwargs["parent_award"] = None
 
@@ -261,6 +295,8 @@ class Award(DataSourceTrackedModel):
                     summary_award = Award(**{i[1]: i[0], "parent_award": parent_award, "awarding_agency": awarding_agency})
                     if use_cache:
                         awards_cache.set(q_kwargs_fixed, summary_award)
+                        # when we cache a summary_award whose parent_award is not yet save()ed,
+                        # then get it later, what happens?
                     else:
                         summary_award.save()
                     return summary_award

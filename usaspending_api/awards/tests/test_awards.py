@@ -63,17 +63,17 @@ def test_award_endpoint(client):
 
 @pytest.mark.django_db
 def test_null_awards():
-    """Test the award.nonempty command."""
-    mommy.make('awards.Award', total_obligation="2000", _quantity=2)
+    """test the award.nonempty command."""
+    mommy.make('awards.award', total_obligation="2000", _quantity=2)
     mommy.make(
-        'awards.Award',
-        type="U",
-        total_obligation=None,
-        date_signed=None,
-        recipient=None)
+        'awards.award',
+        type="u",
+        total_obligation=none,
+        date_signed=none,
+        recipient=none)
 
-    assert Award.objects.count() == 3
-    assert Award.nonempty.count() == 2
+    assert award.objects.count() == 3
+    assert award.nonempty.count() == 2
 
 
 @pytest.fixture
@@ -134,3 +134,19 @@ def test_award_date_signed_fy(client):
     for result in resp.data['results']:
         assert 'date_signed__fy' in result
         assert int(result['date_signed__fy']) > 2012
+
+
+@pytest.mark.django_db
+def test_award_eq_fain():
+    """test that records with equal FAIN are equal"""
+    m1 = mommy.make('awards.award', fain='ABC')
+    m2 = mommy.make('awards.award', fain='ABC')
+    assert m1 == m2
+
+
+@pytest.mark.django_db
+def test_award_ineq_fain():
+    """test that records with unequal FAIN are unequal"""
+    m1 = mommy.make('awards.award', fain='ABC')
+    m2 = mommy.make('awards.award', fain='XYZ')
+    assert m1 != m2
