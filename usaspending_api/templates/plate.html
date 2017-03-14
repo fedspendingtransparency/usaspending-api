@@ -48,17 +48,17 @@
           <div class="container">
             <div class="row">
               <div class="col-md-3" id="leftCol">
+                <section class="wrap">
                 <div class="row">
-                {% autoescape off %}
-                {% display_contents %}
-                {% endautoescape %}
+                  <p>The diagram to the right is an entity relationship diagram displaying the relationships among database models.</p>
+                  <p>You can pan around the diagram using your cursor, and zoom in and out using a scroll wheel.</p>
                 </div>
+              </section>
               </div>
               <div class="col-md-9">
                 <section class="wrap">
-                {% autoescape off %}
-                {% display_docs %}
-                {% endautoescape %}
+                <div id="visualization">
+                </div>
                 </section>
               </div>
             </div>
@@ -82,6 +82,43 @@
 
 
       <script>hljs.initHighlightingOnLoad();</script>
+
+      {% block extra_scripts %}
+      <script src="//cdnjs.cloudflare.com/ajax/libs/vis/4.7.0/vis.min.js"></script>
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.7.0/vis.min.css" rel="stylesheet" type="text/css" />
+      {% endblock %}
+
+      <script>
+        var nodes = new vis.DataSet(
+            {{ meatballs|safe }}
+        );
+        var edges = new vis.DataSet(
+            {{ spaghetti|safe }}
+        );
+        var data = {
+          nodes: nodes,
+          edges: edges
+        };
+        var container = document.getElementById('visualization');
+        var options = {
+          "edges": {
+            "smooth": {
+              "type": "cubicBezier",
+              "roundness": 0.55
+            }
+          },
+
+          "layout": {
+              hierarchical: {
+                  sortMethod: 'hubsize',
+                  direction:'LR'
+              }
+          },
+        };
+
+        var timeline = new vis.Network(container, data, options);
+        $('#visualization .vis-network canvas')[0].height = window.innerHeight;
+      </script>
 
   </body>
 </html>

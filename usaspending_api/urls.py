@@ -17,6 +17,7 @@ from django.conf import settings
 from django.conf.urls import url, include
 from usaspending_api import views as views
 from django.views.generic import TemplateView
+from usaspending_api.common.views import MarkdownView
 from django.conf.urls.static import static
 
 
@@ -29,8 +30,8 @@ urlpatterns = [
     url(r'^api/v1/financial_activities/', include('usaspending_api.financial_activities.urls')),
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^$', TemplateView.as_view(template_name='index.html')),
-    url(r'^entity-relationships/', include('django_spaghetti.urls')),
+    url(r'^docs/', include('usaspending_api.api_docs.urls')),
+    url(r'^$', MarkdownView.as_view(markdown='landing_page.md')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
