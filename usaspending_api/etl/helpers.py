@@ -9,6 +9,11 @@ from usaspending_api.references.models import Agency, Location, RefCountryCode
 warnings.simplefilter("ignore", CacheKeyWarning)
 
 
+def clear_caches():
+    for cache_name in ('default', 'locations', 'awards'):
+        caches[cache_name].clear()
+
+
 def cleanse_values(row):
     """
     Remove textual quirks from CSV values.
