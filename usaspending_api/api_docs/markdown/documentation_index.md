@@ -14,6 +14,7 @@
 
 ## Technical <a name="technical"></a>
 * [Using the API](/docs/using-the-api) - General overview of all API endpoints, functionality, and filters
+* [Entity Relationship Diagram](/docs/entity-relationships) - A diagram of the relationships between the various entities available through the endpoints
 
 ## Data <a name="data"></a>
 * [Data Dictionary](/docs/data-dictionary) - Reference table of endpoints and what data is provided by those endpoints
