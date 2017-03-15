@@ -208,27 +208,6 @@ class Award(DataSourceTrackedModel):
                       self.parent_award.fain,
                       self.parent_award.uri))))
 
-    '''
-    def __eq__(self, other):
-        """Whether this instance is equal to another.
-
-        # Because we need to judge equality of not-yet-daved records,
-        # the usual rule of comparing primary keys is insufficient."""
-        if not isinstance(other, Award):
-            return False
-        if not (self.piid == other.piid and self.fain == other.fain
-                and self.uri == other.uri):
-                return False
-        if (not self.parent_award) and (not other.parent_award):
-            return True
-        if self.parent_award and other.parent_award:
-            return (self.parent_award.piid == other.parent_award.piid
-                    and self.parent_award.fain == other.parent_award.fain
-                    and self.parent_award.uri == other.parent_award.uri)
-        else:
-            return False
-    '''
-
     @staticmethod
     def get_default_fields(path=None):
         return [

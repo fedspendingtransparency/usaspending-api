@@ -215,10 +215,6 @@ class Command(BaseCommand):
                     parent_award_id=row.get('parent_award_id'),
                     use_cache=True)
                 award.latest_submission = submission_attributes
-                if award.manual_hash() in award_queue:
-                    aw0 = award_queue[award.manual_hash()]
-                    if award.parent_award or aw0.parent_award:
-                        import ipdb; ipdb.set_trace()
                 award_queue[award.manual_hash()] = award
             except:   # TODO: silently swallowing a bare exception is bad mojo
                 continue
