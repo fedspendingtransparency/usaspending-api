@@ -22,7 +22,7 @@ def test_award_update_from_latest_transaction(agencies):
     )
 
     # adding transaction with same info should not change award values
-    mommy.make(
+    transaction = mommy.make(
         'awards.Transaction',
         award=award,
         awarding_agency=award.awarding_agency,
@@ -37,6 +37,7 @@ def test_award_update_from_latest_transaction(agencies):
     assert award.awarding_agency == agency1
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
     assert award.description == 'original award'
+    assert award.latest_transaction == transaction
 
     # adding an older transaction with different info updates award's total
     # obligation amt and the description (which is sourced from the
@@ -190,16 +191,22 @@ def test_award_update_from_contract_transaction():
     # should updte the corresponding field on the award table
     award = mommy.make('awards.Award')
     txn = mommy.make('awards.Transaction', award=award)
+    txn2 = mommy.make('awards.Transaction', award=award)
     mommy.make(
         'awards.TransactionContract',
         transaction=txn,
         potential_total_value_of_award=1000
     )
+    mommy.make(
+        'awards.TransactionContract',
+        transaction=txn2,
+        potential_total_value_of_award=1001
+    )
 
     update_contract_awards()
     award.refresh_from_db()
 
-    assert award.potential_total_value_of_award == 1000
+    assert award.potential_total_value_of_award == 2001
 
 
 @pytest.mark.django_db

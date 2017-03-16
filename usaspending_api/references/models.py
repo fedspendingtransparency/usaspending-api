@@ -33,6 +33,8 @@ LEGAL_ENTITY_BUSINESS_TYPES = (
     ("UN", "Unknown Business Type")
 )
 
+LEGAL_ENTITY_BUSINESS_TYPES_D = dict(LEGAL_ENTITY_BUSINESS_TYPES)
+
 
 class RefCityCountyCode(models.Model):
     city_county_code_id = models.AutoField(primary_key=True)
@@ -122,6 +124,7 @@ class ToptierAgency(models.Model):
     update_date = models.DateTimeField(auto_now=True, null=True)
     cgac_code = models.CharField(max_length=6, blank=True, null=True, verbose_name="Top-Tier Agency Code")
     fpds_code = models.CharField(max_length=4, blank=True, null=True)
+    abbreviation = models.CharField(max_length=150, blank=True, null=True, verbose_name="Agency Abbreviation")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Top-Tier Agency Name")
 
     @staticmethod
@@ -129,7 +132,8 @@ class ToptierAgency(models.Model):
         return [
             "cgac_code",
             "fpds_code",
-            "name"
+            "name",
+            "abbreviation"
         ]
 
     class Meta:
@@ -142,13 +146,15 @@ class SubtierAgency(models.Model):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     subtier_code = models.CharField(max_length=4, blank=True, null=True, verbose_name="Sub-Tier Agency Code")
+    abbreviation = models.CharField(max_length=150, blank=True, null=True, verbose_name="Agency Abbreviation")
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Sub-Tier Agency Name")
 
     @staticmethod
     def get_default_fields(path=None):
         return [
             "subtier_code",
-            "name"
+            "name",
+            "abbreviation"
         ]
 
     class Meta:
@@ -406,15 +412,8 @@ class LegalEntity(DataSourceTrackedModel):
     small_business = models.CharField(max_length=1, blank=True, null=True)
     individual = models.CharField(max_length=1, blank=True, null=True)
 
-    def get_type_description(self):
-        description = [item for item in LEGAL_ENTITY_BUSINESS_TYPES if item[0] == self.business_types]
-        if len(description) == 0:
-            return "Unknown Business Type"
-        else:
-            return description[0][1]
-
     def save(self, *args, **kwargs):
-        self.business_types_description = self.get_type_description()
+        self.business_types_description = LEGAL_ENTITY_BUSINESS_TYPES_D.get(self.business_types, "Uknown Business Type")
         super(LegalEntity, self).save(*args, **kwargs)
 
     @staticmethod
@@ -526,3 +525,13 @@ class CFDAProgram(DataSourceTrackedModel):
 
     def __str__(self):
         return "%s" % (self.program_title)
+
+    @staticmethod
+    def get_default_fields(path=None):
+        return [
+            "program_number",
+            "program_title",
+            "popular_name",
+            "website_address",
+            "objectives",
+        ]

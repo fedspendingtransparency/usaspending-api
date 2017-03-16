@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'usaspending_api.accounts',
     'usaspending_api.submissions',
     'usaspending_api.financial_activities',
-    'usaspending_api.api_docs'
+    'usaspending_api.api_docs',
+    'django_spaghetti',
 ]
 
 INTERNAL_IPS = ()
@@ -104,7 +105,7 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 # import an environment variable, DATABASE_URL
 # see https://github.com/kennethreitz/dj-database-url for more info
 
-DATABASES = {'default': dj_database_url.config(conn_max_age=600)}
+DATABASES = {'default': dj_database_url.config(conn_max_age=10)}
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
@@ -844,4 +845,24 @@ LONG_TO_TERSE_LABELS = {
     "face_value_loan_guarantee": "face_value_loan_guarantee",
     "original_loan_subsidy_cost": "original_loan_subsidy_cost",
     "business_funds_indicator": "business_funds_indicator"
+}
+
+# If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'default-loc-mem-cache',
+    },
+    'locations': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'locations-loc-mem-cache',
+    },
+}
+
+# Django spaghetti-and-meatballs (entity relationship diagram) settings
+SPAGHETTI_SAUCE = {
+  'apps': ['awards', 'financial_activities', 'references', 'submissions', ],
+  'show_fields': False,
+  'exclude': {},
+  'show_proxy': False,
 }

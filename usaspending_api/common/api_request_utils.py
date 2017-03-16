@@ -48,7 +48,6 @@ class FilterGenerator():
         'less_than': '__lt',
         'greater_than': '__gt',
         'contains': '__icontains',
-        'in': '__in',
         'less_than_or_equal': '__lte',
         'greater_than_or_equal': '__gte',
         'range': '__range',
@@ -56,6 +55,7 @@ class FilterGenerator():
         'search': '__search',
 
         # Special operations follow
+        'in': 'in',
         'fy': 'fy',
         'range_intersect': 'range_intersect'
     }
@@ -68,8 +68,9 @@ class FilterGenerator():
     Additionally, ignored parameters specifies parameters to ignore. Always includes
     to ["page", "limit", "last"]
     """
-    def __init__(self, filter_map={}, ignored_parameters=[]):
+    def __init__(self, model, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
+        self.model = model
         self.ignored_parameters = ['page', 'limit', 'last'] + ignored_parameters
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
@@ -196,6 +197,25 @@ class FilterGenerator():
                 if negate:
                     return ~self.range_intersect(field, value)
                 return self.range_intersect(field, value)
+            if operation is 'in':
+                # make in operation case insensitive for string fields
+                if self.is_string_field(field):
+                    q_obj = Q()
+                    for item in value:
+                        new_q = {}
+                        new_q[field + "__iexact"] = item
+                        new_q = Q(**new_q)
+                        q_obj = q_obj | new_q
+                    if negate:
+                        q_obj = ~q_obj
+                    return q_obj
+                else:
+                    # Otherwise, use built in django in
+                    operation = "__in"
+            if operation is '' and self.is_string_field(field):
+                # If we're doing a simple comparison, we need to use iexact for
+                # string fields
+                operation = "__iexact"
 
             # We don't have a special operation, so handle the remaining cases
             # It's unlikely anyone would specify and ignored parameter via post
@@ -233,6 +253,13 @@ class FilterGenerator():
                                 raise InvalidParameterException("Invalid field, operation 'range_intersect' requires an array of length 2 for field")
                             if (not isinstance(filt['value'], list) or len(filt['value']) != 2) and 'value_format' not in filt:
                                 raise InvalidParameterException("Invalid value, operation 'range_intersect' requires an array value of length 2, or a single value with value_format set to a ranged format (such as fy)")
+                        if filt['operation'] == 'search':
+                            if not isinstance(filt['field'], list) and not self.is_string_field(filt['field']):
+                                raise InvalidParameterException("Invalid field: '" + filt['field'] + "', operation 'search' requires a text-field for searching")
+                            elif isinstance(filt['field'], list):
+                                for search_field in filt['field']:
+                                    if not self.is_string_field(search_field):
+                                        raise InvalidParameterException("Invalid field: '" + search_field + "', operation 'search' requires a text-field for searching")
                     else:
                         raise InvalidParameterException("Malformed filter - missing field, operation, or value")
 
@@ -259,6 +286,26 @@ class FilterGenerator():
         q_case[fields[0] + "__lte"] = values[1]  # f1 <= r2
         q_case[fields[1] + "__gte"] = values[0]  # f2 >= r1
         return Q(**q_case)
+
+    def is_string_field(self, field):
+        fields = field.split("__")
+        model_to_check = self.model
+
+        # If fields > 1, we're following a fk traversal - we need to move the model we're checking
+        # down via the fk path, then check the field on that model
+        if len(fields) > 1:
+            while len(fields) > 1:
+                mf = model_to_check._meta.get_field(fields.pop(0))
+                # Check if this field is a foreign key
+                if mf.get_internal_type() in ["ForeignKey", "ManyToManyField", "OneToOneField"]:
+                    # Continue traversal
+                    model_to_check = mf.rel.to
+                else:
+                    # We've hit something that ISN'T a related field, which means it is either
+                    # a lookup, or a field with '__' in the name. In either case, we can return
+                    # false here
+                    return False
+        return (model_to_check._meta.get_field(fields[0]).get_internal_type() in ["TextField", "CharField"])
 
 
 # Handles unique value requests

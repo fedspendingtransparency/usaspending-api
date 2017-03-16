@@ -10,7 +10,7 @@ class DataSourceTrackedModel(models.Model):
         ('DBR', 'DATA Act Broker')
     )
 
-    data_source = models.CharField(max_length=3, choices=DATASOURCES, null=True)  # Allowing null for the time being
+    data_source = models.CharField(max_length=3, choices=DATASOURCES, null=True, help_text="The source of this entry, either Data Broker (DBR) or USASpending (USA)")  # Allowing null for the time being
 
     class Meta:
         abstract = True
