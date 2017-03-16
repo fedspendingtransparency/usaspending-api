@@ -3,7 +3,7 @@ from django.db.models import F, Q, Sum
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity
+from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity, CFDAProgram
 from usaspending_api.common.models import DataSourceTrackedModel
 
 AWARD_TYPES = (
@@ -24,6 +24,9 @@ AWARD_TYPES = (
     ('D', 'Definitive Contract')
 )
 
+AWARD_TYPES_D = dict(AWARD_TYPES)
+_UNKNOWN_TYPE = "Unknown Type"
+
 CONTRACT_PRICING_TYPES = (
     ('A', 'Fixed Price Redetermination'),
     ('B', 'Fixed Price Level of Effort'),
@@ -40,6 +43,8 @@ CONTRACT_PRICING_TYPES = (
     ('Z', 'Labor Hours'),
     ('UN', 'Unknown Type')
 )
+
+CONTRACT_PRICING_TYPES_D = dict(CONTRACT_PRICING_TYPES)
 
 
 class FinancialAccountsByAwards(DataSourceTrackedModel):
@@ -90,6 +95,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     gross_outlays_delivered_orders_paid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     drv_award_id_field_type = models.CharField(max_length=10, blank=True, null=True)
     drv_obligations_incurred_total_by_award = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
+    transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
@@ -101,6 +107,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     def get_default_fields(path=None):
         return [
             "financial_accounts_by_awards_id",
+            "award",
             "treasury_account",
             "transaction_obligations",
             "object_class",
@@ -118,29 +125,6 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_awards'
-
-
-class FinancialAccountsByAwardsTransactionObligations(DataSourceTrackedModel):
-    financial_accounts_by_awards_transaction_obligations_id = models.AutoField(primary_key=True)
-    financial_accounts_by_awards = models.ForeignKey('FinancialAccountsByAwards', models.CASCADE, related_name="transaction_obligations")
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    transaction_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    reporting_period_start = models.DateField(blank=True, null=True)
-    reporting_period_end = models.DateField(blank=True, null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
-    certified_date = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "transaction_obligated_amount"
-        ]
-
-    class Meta:
-        managed = True
-        db_table = 'financial_accounts_by_awards_transaction_obligations'
 
 
 class AwardManager(models.Manager):
@@ -162,29 +146,44 @@ class AwardManager(models.Manager):
 
 
 class Award(DataSourceTrackedModel):
+    """
+    Model that provides a high-level award that individual transaction
+    data can be mapped to. Transactions (i.e., contract and financial assistance
+    data from the old USAspending site and D1/D2 files from the broker) represent
+    specific actions against an award, though the award records themselves aren't
+    assigned on the incoming data. To rectify that and to make the transactional
+    data easier for people to understand, we create Award objects and map
+    transactions to them.
 
-    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True)
-    type_description = models.CharField(max_length=50, verbose_name="Award Type Description", default="Unknown Type", null=True)
-    piid = models.CharField(max_length=50, blank=True, null=True)
-    parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True)
-    fain = models.CharField(max_length=30, blank=True, null=True)
-    uri = models.CharField(max_length=70, blank=True, null=True)
-    total_obligation = models.DecimalField(max_digits=15, decimal_places=2, null=True, verbose_name="Total Obligated")
-    total_outlay = models.DecimalField(max_digits=15, decimal_places=2, null=True)
-    awarding_agency = models.ForeignKey(Agency, related_name='+', null=True)
-    funding_agency = models.ForeignKey(Agency, related_name='+', null=True)
-    date_signed = models.DateField(null=True, verbose_name="Award Date")
-    recipient = models.ForeignKey(LegalEntity, null=True)
-    description = models.CharField(max_length=4000, null=True, verbose_name="Award Description")
-    period_of_performance_start_date = models.DateField(null=True, verbose_name="Start Date")
-    period_of_performance_current_end_date = models.DateField(null=True, verbose_name="End Date")
-    place_of_performance = models.ForeignKey(Location, null=True)
-    potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award")
-    last_modified_date = models.DateField(blank=True, null=True)
-    certified_date = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-    latest_submission = models.ForeignKey(SubmissionAttributes, null=True)
+    Much of the award record data (for example, awarding_agency, funding_agency,
+    type) is automatically populated from info in the award's child transactions.
+    These updates happen in our USAspending and data act broker load processes:
+    see ETL\award_helpers.py for details.
+    """
+
+    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True, help_text="	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.")
+    type_description = models.CharField(max_length=50, verbose_name="Award Type Description", default="Unknown Type", null=True, help_text="The plain text description of the type of the award")
+    piid = models.CharField(max_length=50, blank=True, null=True, help_text="Procurement Instrument Identifier - A unique identifier assigned to a federal contract, purchase order, basic ordering agreement, basic agreement, and blanket purchase agreement. It is used to track the contract, and any modifications or transactions related to it. After October 2017, it is between 13 and 17 digits, both letters and numbers.")
+    parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True, help_text="The parent award, if applicable")
+    fain = models.CharField(max_length=30, blank=True, null=True, help_text="An identification code assigned to each financial assistance award tracking purposes. The FAIN is tied to that award (and all future modifications to that award) throughout the award’s life. Each FAIN is assigned by an agency. Within an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN stands for Federal Award Identification Number, though the digits are letters, not numbers.")
+    uri = models.CharField(max_length=70, blank=True, null=True, help_text="The uri of the award")
+    total_obligation = models.DecimalField(max_digits=15, decimal_places=2, null=True, verbose_name="Total Obligated", help_text="The amount of money the government is obligated to pay for the award")
+    total_outlay = models.DecimalField(max_digits=15, decimal_places=2, null=True, help_text="The total amount of money paid out for this award")
+    awarding_agency = models.ForeignKey(Agency, related_name='+', null=True, help_text="The awarding agency for the award")
+    funding_agency = models.ForeignKey(Agency, related_name='+', null=True, help_text="The funding agency for the award")
+    date_signed = models.DateField(null=True, verbose_name="Award Date", help_text="The date the award was signed")
+    recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient of the award")
+    description = models.CharField(max_length=4000, null=True, verbose_name="Award Description", help_text="A description of the award")
+    period_of_performance_start_date = models.DateField(null=True, verbose_name="Start Date", help_text="The start date for the period of performance")
+    period_of_performance_current_end_date = models.DateField(null=True, verbose_name="End Date", help_text="The current, not original, period of performance end date")
+    place_of_performance = models.ForeignKey(Location, null=True, help_text="The principal place of business, where the majority of the work is performed. For example, in a manufacturing contract, this would be the main plant where items are produced.")
+    potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award", help_text="The sum of the potential_value_of_award from associated transactions")
+    last_modified_date = models.DateField(blank=True, null=True, help_text="The date this award was last modified")
+    certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="The date this record was created in the API")
+    update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this record was updated in the API")
+    latest_submission = models.ForeignKey(SubmissionAttributes, null=True, help_text="The submission attribute object that created this award")
+    latest_transaction = models.ForeignKey("awards.Transaction", related_name="latest_for_award", null=True, help_text="The latest transaction by action_date associated with this award")
 
     objects = models.Manager()
     nonempty = AwardManager()
@@ -214,44 +213,6 @@ class Award(DataSourceTrackedModel):
 
     def __str__(self):
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
-
-    # note: the next 3 functions are deprecated. they will stay here as we
-    # transition from the AwardAction series of transaction models to those
-    # based on Transaction/TransactionContract/TransactionAssistance and
-    # should be removed when that work is done
-    def __get_latest_transaction(self):
-        return self.__get_transaction_set().latest("action_date")
-
-    # We should only have either procurements or financial assistance awards
-    def __get_transaction_set(self):
-        # Do we have procurements or financial assistance awards?
-        transaction_set = self.procurement_set
-        if transaction_set.count() == 0:
-            transaction_set = self.financialassistanceaward_set
-        return transaction_set
-
-    def update_from_mod(self, mod):
-        transaction_set = self.__get_transaction_set()
-        transaction_latest = transaction_set.latest("action_date")
-        transaction_earliest = transaction_set.earliest("action_date")
-        self.awarding_agency = transaction_latest.awarding_agency
-        self.certified_date = transaction_latest.certified_date
-        self.data_source = transaction_latest.data_source
-        self.date_signed = transaction_earliest.action_date
-        self.description = transaction_latest.description
-        self.funding_agency = transaction_latest.funding_agency
-        self.last_modified_date = transaction_latest.last_modified_date
-        self.latest_submission = transaction_latest.submission
-        self.period_of_performance_start_date = transaction_earliest.period_of_performance_start_date
-        self.period_of_performance_current_end_date = transaction_latest.period_of_performance_current_end_date
-        self.place_of_performance = transaction_latest.place_of_performance
-        self.recipient = transaction_latest.recipient
-        self.total_obligation = transaction_set.aggregate(total_obs=Sum(F('federal_action_obligation')))['total_obs']
-        self.type = transaction_latest.type
-        self.type_description = transaction_latest.type_description
-        if hasattr(transaction_latest, "potential_total_value_of_award"):
-            self.potential_total_value_of_award = transaction_latest.potential_total_value_of_award
-        self.save()
 
     @staticmethod
     def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None):
@@ -292,32 +253,32 @@ class Award(DataSourceTrackedModel):
 
 
 class Transaction(DataSourceTrackedModel):
-    award = models.ForeignKey(Award, models.CASCADE)
-    usaspending_unique_transaction_id = models.CharField(max_length=256, blank=True, null=True)
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Action Type", default='U', null=True)
-    type_description = models.CharField(max_length=50, verbose_name="Action Type Description", default="Unknown Type", null=True)
-    period_of_performance_start_date = models.DateField(max_length=10, verbose_name="Period of Performance Start Date", null=True)
-    period_of_performance_current_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Current End Date", null=True)
-    action_date = models.DateField(max_length=10, verbose_name="Transaction Date")
-    action_type = models.CharField(max_length=1, blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    modification_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modification Number")
-    awarding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_awarding_agency', null=True)
-    funding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_funding_agency', null=True)
-    recipient = models.ForeignKey(LegalEntity, null=True)
-    description = models.CharField(max_length=4000, null=True)
-    place_of_performance = models.ForeignKey(Location, null=True)
+    award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
+    usaspending_unique_transaction_id = models.CharField(max_length=256, blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
+    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Action Type", default='U', null=True, help_text="The type for this transaction. For example, A, B, C, D")
+    type_description = models.CharField(max_length=50, verbose_name="Action Type Description", default="Unknown Type", null=True, help_text="The plain text description of the transaction type")
+    period_of_performance_start_date = models.DateField(max_length=10, verbose_name="Period of Performance Start Date", null=True, help_text="The period of performance start date")
+    period_of_performance_current_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Current End Date", null=True, help_text="The current end date of the period of performance")
+    action_date = models.DateField(max_length=10, verbose_name="Transaction Date", help_text="The date this transaction was actioned")
+    action_type = models.CharField(max_length=1, blank=True, null=True, help_text="The type of transaction. For example, A, B, C, D")
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, help_text="The obligation of the federal government for this transaction")
+    modification_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modification Number", help_text="The modification number for this transaction")
+    awarding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_awarding_agency', null=True, help_text="The agency which awarded this transaction")
+    funding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_funding_agency', null=True, help_text="The agency which is funding this transaction")
+    recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient for this transaction")
+    description = models.CharField(max_length=4000, null=True, help_text="The description of this transaction")
+    place_of_performance = models.ForeignKey(Location, null=True, help_text="The location where the work on this transaction was performed")
     drv_award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_potential_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
-    certified_date = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
+    last_modified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was last modified")
+    certified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was certified")
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="The date this transaction was created in the API")
+    update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this transaction was updated in the API")
 
     def __str__(self):
-        return '%s award: %s' % (self.get_type_description(), self.award)
+        return '%s award: %s' % (AWARD_TYPES_D.get(self.type, _UNKNOWN_TYPE), self.award)
 
     @staticmethod
     def get_default_fields(path=None):
@@ -341,13 +302,6 @@ class Transaction(DataSourceTrackedModel):
             "assistance_data"  # must match related_name in TransactionAssistance
         ]
 
-    def get_type_description(self):
-        description = [item for item in AWARD_TYPES if item[0] == self.type]
-        if len(description) == 0:
-            return "Unknown Type"
-        else:
-            return description[0][1]
-
     class Meta:
         db_table = 'transaction'
         index_together = ['award', 'action_date']
@@ -356,24 +310,24 @@ class Transaction(DataSourceTrackedModel):
 class TransactionContract(DataSourceTrackedModel):
     transaction = models.OneToOneField(
         Transaction, on_delete=models.CASCADE,
-        primary_key=True, related_name='contract_data')
+        primary_key=True, related_name='contract_data', help_text="Non-specific transaction data, fields shared among both assistance and contract transactions")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    piid = models.CharField(max_length=50, blank=True)
-    parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
-    cost_or_pricing_data = models.CharField(max_length=1, blank=True, null=True)
-    type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, choices=CONTRACT_PRICING_TYPES, verbose_name="Type of Contract Pricing")
-    type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description")
-    naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS")
-    naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description")
-    period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True)
-    ordering_period_end_date = models.CharField(max_length=8, blank=True, null=True)
-    current_total_value_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award")
-    referenced_idv_agency_identifier = models.CharField(max_length=4, blank=True, null=True)
-    idv_type = models.CharField(max_length=1, blank=True, null=True, verbose_name="IDV Type")
-    multiple_or_single_award_idv = models.CharField(max_length=1, blank=True, null=True)
-    type_of_idc = models.CharField(max_length=1, blank=True, null=True, verbose_name="Type of IDC")
-    a76_fair_act_action = models.CharField(max_length=1, blank=True, null=True, verbose_name="A-76 FAIR Act Action")
+    piid = models.CharField(max_length=50, blank=True, help_text="The PIID of this transaction")
+    parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID", help_text="The parent award id for this transaction. This is generally the piid of an IDV")
+    cost_or_pricing_data = models.CharField(max_length=1, blank=True, null=True, help_text="")
+    type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, choices=CONTRACT_PRICING_TYPES, verbose_name="Type of Contract Pricing", help_text="The type of contract pricing data, as a code")
+    type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description", help_text="A plain text description of the type of contract pricing data")
+    naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
+    naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description", help_text="A plain text description of the NAICS code")
+    period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True, help_text="The potential end date of the period of performance")
+    ordering_period_end_date = models.CharField(max_length=8, blank=True, null=True, help_text="The end date for the ordering period")
+    current_total_value_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, help_text="The current value of the award")
+    potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award", help_text="The potential total value of the award")
+    referenced_idv_agency_identifier = models.CharField(max_length=4, blank=True, null=True, help_text="The agency identifier of the agency on the IDV")
+    idv_type = models.CharField(max_length=1, blank=True, null=True, verbose_name="IDV Type", help_text="The IDV type code")
+    multiple_or_single_award_idv = models.CharField(max_length=1, blank=True, null=True, help_text="Specifies whether the IDV is a single more multiple award vehicle")
+    type_of_idc = models.CharField(max_length=1, blank=True, null=True, verbose_name="Type of IDC", help_text="Code representing the type of IDC")
+    a76_fair_act_action = models.CharField(max_length=1, blank=True, null=True, verbose_name="A-76 FAIR Act Action", help_text="A-76 FAIR act action")
     dod_claimant_program_code = models.CharField(max_length=3, blank=True, null=True)
     clinger_cohen_act_planning = models.CharField(max_length=1, blank=True, null=True)
     commercial_item_acquisition_procedures = models.CharField(max_length=1, blank=True, null=True)
@@ -419,10 +373,10 @@ class TransactionContract(DataSourceTrackedModel):
     program_system_or_equipment_code = models.CharField(max_length=4, blank=True, null=True)
     type_set_aside = models.CharField(max_length=10, blank=True, null=True, verbose_name="Type Set Aside")
     epa_designated_product = models.CharField(max_length=1, blank=True, null=True)
-    walsh_healey_act = models.CharField(max_length=1, blank=True, null=True)
-    transaction_number = models.CharField(max_length=6, blank=True, null=True)
-    referenced_idv_modification_number = models.CharField(max_length=25, blank=True, null=True)
-    rec_flag = models.CharField(max_length=1, blank=True, null=True)
+    walsh_healey_act = models.CharField(max_length=1, blank=True, null=True, help_text="Denotes whether this transaction is subject to the Walsh-Healey act")
+    transaction_number = models.CharField(max_length=6, blank=True, null=True, help_text="The transaction number for this transaction")
+    referenced_idv_modification_number = models.CharField(max_length=25, blank=True, null=True, help_text="The modification number for the referenced IDV")
+    rec_flag = models.CharField(max_length=1, blank=True, null=True, help_text="The rec flag")
     drv_parent_award_awarding_agency_code = models.CharField(max_length=4, blank=True, null=True)
     drv_current_aggregated_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_current_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -430,12 +384,12 @@ class TransactionContract(DataSourceTrackedModel):
     drv_potential_aggregated_award_idv_amount_total_estimate = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_potential_aggregated_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
-    certified_date = models.DateField(blank=True, null=True)
-    reporting_period_start = models.DateField(blank=True, null=True)
-    reporting_period_end = models.DateField(blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="The date this record was created in the API")
+    update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this record was updated in the API")
+    last_modified_date = models.DateField(blank=True, null=True, help_text="The last time this transaction was modified")
+    certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
+    reporting_period_start = models.DateField(blank=True, null=True, help_text="The date marking the start of the reporting period")
+    reporting_period_end = models.DateField(blank=True, null=True, help_text="The date marking the end of the reporting period")
 
     @staticmethod
     def get_default_fields(path=None):
@@ -465,6 +419,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     uri = models.CharField(max_length=70, blank=True, null=True)
     cfda_number = models.CharField(max_length=7, blank=True, null=True, verbose_name="CFDA Number")
     cfda_title = models.CharField(max_length=250, blank=True, null=True, verbose_name="CFDA Title")
+    cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
     business_funds_indicator = models.CharField(max_length=3)
     non_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     total_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -491,6 +446,7 @@ class TransactionAssistance(DataSourceTrackedModel):
         return [
             "fain",
             "uri",
+            "cfda",
             "cfda_number",
             "cfda_title",
             "face_value_loan_guarantee",
@@ -529,212 +485,3 @@ class SubAward(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'sub_award'
-
-
-# To be removed: older transaction-related models here temporarily
-# for interim compatibility
-class AwardAction(DataSourceTrackedModel):
-    award = models.ForeignKey(Award, models.CASCADE, related_name="actions")
-    usaspending_unique_transaction_id = models.CharField(max_length=256, blank=True, null=True)
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Action Type", default='U', null=True)
-    type_description = models.CharField(max_length=50, verbose_name="Action Type Description", default="Unknown Type", null=True)
-    period_of_performance_start_date = models.DateField(max_length=10, verbose_name="Period of Performance Start Date", null=True)
-    period_of_performance_current_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Current End Date", null=True)
-    action_date = models.DateField(max_length=10, verbose_name="Transaction Date")
-    action_type = models.CharField(max_length=1, blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    modification_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modification Number")
-    awarding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_awarding_agency', null=True)
-    funding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_funding_agency', null=True)
-    recipient = models.ForeignKey(LegalEntity, null=True)
-    description = models.CharField(max_length=4000, null=True)
-    place_of_performance = models.ForeignKey(Location, null=True)
-    drv_award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    drv_potential_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
-    certified_date = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "modification_number",
-            "federal_action_obligation",
-            "action_date",
-            "description",
-            "update_date"
-        ]
-
-    def get_type_description(self):
-        description = [item for item in AWARD_TYPES if item[0] == self.type]
-        if len(description) == 0:
-            return "Unknown Type"
-        else:
-            return description[0][1]
-
-    # Override the save method so that after saving we always call update_from_mod on our Award
-    def save(self, *args, **kwargs):
-        self.type_description = self.get_type_description()
-        super(AwardAction, self).save(*args, **kwargs)
-        self.award.update_from_mod(self)
-
-    class Meta:
-        abstract = True
-
-
-class Procurement(AwardAction):
-    procurement_id = models.AutoField(primary_key=True)
-    award = models.ForeignKey(Award, models.CASCADE)
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    piid = models.CharField(max_length=50, blank=True)
-    parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID")
-    cost_or_pricing_data = models.CharField(max_length=1, blank=True, null=True)
-    type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, choices=CONTRACT_PRICING_TYPES, verbose_name="Type of Contract Pricing")
-    type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description")
-    naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS")
-    naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description")
-    period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True)
-    ordering_period_end_date = models.CharField(max_length=8, blank=True, null=True)
-    current_total_value_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award")
-    referenced_idv_agency_identifier = models.CharField(max_length=4, blank=True, null=True)
-    idv_type = models.CharField(max_length=1, blank=True, null=True, verbose_name="IDV Type")
-    multiple_or_single_award_idv = models.CharField(max_length=1, blank=True, null=True)
-    type_of_idc = models.CharField(max_length=1, blank=True, null=True, verbose_name="Type of IDC")
-    a76_fair_act_action = models.CharField(max_length=1, blank=True, null=True, verbose_name="A-76 FAIR Act Action")
-    dod_claimant_program_code = models.CharField(max_length=3, blank=True, null=True)
-    clinger_cohen_act_planning = models.CharField(max_length=1, blank=True, null=True)
-    commercial_item_acquisition_procedures = models.CharField(max_length=1, blank=True, null=True)
-    commercial_item_test_program = models.CharField(max_length=1, blank=True, null=True)
-    consolidated_contract = models.CharField(max_length=1, blank=True, null=True)
-    contingency_humanitarian_or_peacekeeping_operation = models.CharField(max_length=1, blank=True, null=True)
-    contract_bundling = models.CharField(max_length=1, blank=True, null=True)
-    contract_financing = models.CharField(max_length=1, blank=True, null=True)
-    contracting_officers_determination_of_business_size = models.CharField(max_length=1, blank=True, null=True)
-    cost_accounting_standards = models.CharField(max_length=1, blank=True, null=True)
-    country_of_product_or_service_origin = models.CharField(max_length=3, blank=True, null=True)
-    davis_bacon_act = models.CharField(max_length=1, blank=True, null=True)
-    evaluated_preference = models.CharField(max_length=6, blank=True, null=True)
-    extent_competed = models.CharField(max_length=3, blank=True, null=True)
-    fed_biz_opps = models.CharField(max_length=1, blank=True, null=True)
-    foreign_funding = models.CharField(max_length=1, blank=True, null=True)
-    gfe_gfp = models.CharField(max_length=1, blank=True, null=True)
-    information_technology_commercial_item_category = models.CharField(max_length=1, blank=True, null=True)
-    interagency_contracting_authority = models.CharField(max_length=1, blank=True, null=True)
-    local_area_set_aside = models.CharField(max_length=1, blank=True, null=True)
-    major_program = models.CharField(max_length=100, blank=True, null=True)
-    purchase_card_as_payment_method = models.CharField(max_length=1, blank=True, null=True)
-    multi_year_contract = models.CharField(max_length=1, blank=True, null=True)
-    national_interest_action = models.CharField(max_length=4, blank=True, null=True)
-    number_of_actions = models.CharField(max_length=6, blank=True, null=True)
-    number_of_offers_received = models.CharField(max_length=3, blank=True, null=True)
-    other_statutory_authority = models.CharField(max_length=1000, blank=True, null=True)
-    performance_based_service_acquisition = models.CharField(max_length=1, blank=True, null=True)
-    place_of_manufacture = models.CharField(max_length=1, blank=True, null=True)
-    price_evaluation_adjustment_preference_percent_difference = models.DecimalField(max_digits=2, decimal_places=2, blank=True, null=True)
-    product_or_service_code = models.CharField(max_length=4, blank=True, null=True)
-    program_acronym = models.CharField(max_length=25, blank=True, null=True)
-    other_than_full_and_open_competition = models.CharField(max_length=3, blank=True, null=True)
-    recovered_materials_sustainability = models.CharField(max_length=1, blank=True, null=True)
-    research = models.CharField(max_length=3, blank=True, null=True)
-    sea_transportation = models.CharField(max_length=1, blank=True, null=True)
-    service_contract_act = models.CharField(max_length=1, blank=True, null=True)
-    small_business_competitiveness_demonstration_program = models.CharField(max_length=1, blank=True, null=True)
-    solicitation_identifier = models.CharField(max_length=25, blank=True, null=True, verbose_name="Solicitation ID")
-    solicitation_procedures = models.CharField(max_length=5, blank=True, null=True)
-    fair_opportunity_limited_sources = models.CharField(max_length=50, blank=True, null=True)
-    subcontracting_plan = models.CharField(max_length=1, blank=True, null=True)
-    program_system_or_equipment_code = models.CharField(max_length=4, blank=True, null=True)
-    type_set_aside = models.CharField(max_length=10, blank=True, null=True, verbose_name="Type Set Aside")
-    epa_designated_product = models.CharField(max_length=1, blank=True, null=True)
-    walsh_healey_act = models.CharField(max_length=1, blank=True, null=True)
-    transaction_number = models.CharField(max_length=6, blank=True, null=True)
-    referenced_idv_modification_number = models.CharField(max_length=25, blank=True, null=True)
-    rec_flag = models.CharField(max_length=1, blank=True, null=True)
-    drv_parent_award_awarding_agency_code = models.CharField(max_length=4, blank=True, null=True)
-    drv_current_aggregated_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    drv_current_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    drv_potential_award_idv_amount_total_estimate = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    drv_potential_aggregated_award_idv_amount_total_estimate = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    drv_potential_aggregated_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    drv_potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
-    certified_date = models.DateField(blank=True, null=True)
-    reporting_period_start = models.DateField(blank=True, null=True)
-    reporting_period_end = models.DateField(blank=True, null=True)
-
-    @staticmethod
-    def get_default_fields(path=None):
-        default_fields = AwardAction.get_default_fields()
-        return default_fields + [
-            "type",
-            "type_description",
-            "cost_or_pricing_data",
-            "type_of_contract_pricing",
-            "type_of_contract_pricing_description",
-            "naics",
-            "naics_description",
-            "product_or_service_code"
-        ]
-
-    def get_pricing_type_description(self):
-        description = [item for item in CONTRACT_PRICING_TYPES if item[0] == self.type_of_contract_pricing]
-        if len(description) == 0:
-            return "Unknown Type"
-        else:
-            return description[0][1]
-
-    # Override the save method so that after saving we always update our type description
-    def save(self, *args, **kwargs):
-        self.type_of_contract_pricing_description = self.get_pricing_type_description()
-        super(Procurement, self).save(*args, **kwargs)
-
-
-class FinancialAssistanceAward(AwardAction):
-    financial_assistance_award_id = models.AutoField(primary_key=True)
-    award = models.ForeignKey(Award, models.CASCADE)
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    fain = models.CharField(max_length=30, blank=True, null=True)
-    uri = models.CharField(max_length=70, blank=True, null=True)
-    cfda_number = models.CharField(max_length=7, blank=True, null=True, verbose_name="CFDA Number")
-    cfda_title = models.CharField(max_length=250, blank=True, null=True, verbose_name="CFDA Title")
-    business_funds_indicator = models.CharField(max_length=3)
-    non_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    total_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    face_value_loan_guarantee = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    original_loan_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    record_type = models.IntegerField()
-    correction_late_delete_indicator = models.CharField(max_length=1, blank=True, null=True)
-    fiscal_year_and_quarter_correction = models.CharField(max_length=5, blank=True, null=True)
-    sai_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="SAI Number")
-    drv_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    drv_award_finance_assistance_type_label = models.CharField(max_length=50, blank=True, null=True)
-    reporting_period_start = models.DateField(blank=True, null=True)
-    reporting_period_end = models.DateField(blank=True, null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
-    submitted_type = models.CharField(max_length=1, blank=True, null=True, verbose_name="Submitted Type")
-    certified_date = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-    period_of_performance_start_date = models.DateField(blank=True, null=True)
-    period_of_performance_current_end_date = models.DateField(blank=True, null=True)
-
-    @staticmethod
-    def get_default_fields(path=None):
-        default_fields = AwardAction.get_default_fields()
-        return default_fields + [
-            "cfda_number",
-            "cfda_title",
-            "face_value_loan_guarantee",
-            "original_loan_subsidy_cost",
-            "type"
-        ]
-
-    class Meta:
-        managed = True
-        db_table = 'financial_assistance_award'

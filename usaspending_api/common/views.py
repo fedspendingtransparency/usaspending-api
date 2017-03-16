@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
+from django.views.generic import TemplateView
 
 from usaspending_api.common.api_request_utils import ResponsePaginator
 from usaspending_api.common.serializers import AggregateSerializer
@@ -32,13 +33,13 @@ class AggregateView(AggregateQuerysetMixin,
         try:
             queryset = self.aggregate(request, *args, **kwargs)
 
-            # construct metadata of entire queryset
-            metadata = {"count": queryset.count()}
-
             # get paged data for this request
             paged_data = ResponsePaginator.get_paged_data(
                 queryset, request_parameters=request.data)
             paged_queryset = paged_data.object_list.all()
+
+            # construct metadata of entire queryset
+            metadata = {"count": paged_data.paginator.count}
 
             # construct page-specific metadata
             page_metadata = {
@@ -97,3 +98,16 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             self.exception_logger.exception(e)
         finally:
             return Response(response, status=status_code)
+
+
+class MarkdownView(TemplateView):
+
+    template_name = 'index.html'
+    markdown = ''
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super(TemplateView, self).get_context_data(**kwargs)
+        # Add in the markdown to the context, for use in the template tags
+        context.update({'markdown': self.markdown})
+        return context

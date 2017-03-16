@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.core.management.base import BaseCommand
 
-from usaspending_api.awards.models import (Award, AWARD_TYPES, CONTRACT_PRICING_TYPES,
+from usaspending_api.awards.models import (Award, AWARD_TYPES_D, CONTRACT_PRICING_TYPES_D,
                                            Transaction, TransactionContract)
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.csv_data_reader import CsvDataReader
@@ -22,6 +22,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        h.clear_caches()
+
         csv_file = options['file'][0]
         self.logger.info("Starting load for file {}".format(csv_file))
 
@@ -38,10 +40,6 @@ class Command(BaseCommand):
         txn_contract_list = []
 
         subtier_agency_dict = h.get_subtier_agency_dict()
-
-        # Store some additional support data needed for the laod
-        award_type_dict = {a[0]: a[1] for a in AWARD_TYPES}
-        contract_pricing_dict = {c[0]: c[1] for c in CONTRACT_PRICING_TYPES}
 
         for idx, row in enumerate(reader):
             if len(reader) % 1000 == 0:
@@ -68,7 +66,7 @@ class Command(BaseCommand):
                 "recipient": self.get_or_create_recipient(row),
                 "submission": subattr,
                 "type": evaluate_contract_award_type(row),
-                "type_description": award_type_dict.get(evaluate_contract_award_type(row)),
+                "type_description": AWARD_TYPES_D.get(evaluate_contract_award_type(row)),
                 "usaspending_unique_transaction_id": row["unique_transaction_id"]
             }
             txn = Transaction(**txn_dict)
@@ -86,7 +84,7 @@ class Command(BaseCommand):
                 "gfe_gfp": h.up2colon(row['gfe_gfp']),
                 "cost_or_pricing_data": h.up2colon(row['costorpricingdata']),
                 "type_of_contract_pricing": h.up2colon(row['typeofcontractpricing']),
-                "type_of_contract_pricing_description": contract_pricing_dict.get(h.up2colon(row['typeofcontractpricing'])),
+                "type_of_contract_pricing_description": CONTRACT_PRICING_TYPES_D.get(h.up2colon(row['typeofcontractpricing'])),
                 "multiple_or_single_award_idv": h.up2colon(row['multipleorsingleawardidc']),
                 "naics": h.up2colon(row['nationalinterestactioncode']),
                 "dod_claimant_program_code": h.up2colon(row['claimantprogramcode']),

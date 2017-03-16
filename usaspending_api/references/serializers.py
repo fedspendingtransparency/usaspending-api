@@ -45,6 +45,13 @@ class AgencySerializer(LimitableSerializer):
         }
 
 
+class CfdaSerializer(LimitableSerializer):
+
+    class Meta:
+        model = CFDAProgram
+        fields = '__all__'
+
+
 class LocationSerializer(LimitableSerializer):
 
     class Meta:

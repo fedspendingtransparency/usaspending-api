@@ -19,10 +19,16 @@ class Command(BaseCommand):
         self.logger.info("Loading reference_fixture.json")
         call_command('loaddata', 'reference_fixture')
 
+        self.logger.info("Loading agency list")
+        call_command('loadagencies')
+
         self.logger.info("Loading tas_list.csv")
         call_command('loadtas', 'usaspending_api/data/tas_list.csv')
 
         self.logger.info("Loading ref_city_county_code.csv")
         call_command('load_reference_csv', 'RefCityCountyCode', 'usaspending_api/data/ref_city_county_code.csv', 'Latin-1')
+
+        self.logger.info("Loading CFDA data")
+        call_command('loadcfda')
 
         self.logger.info("Reference data loaded.")

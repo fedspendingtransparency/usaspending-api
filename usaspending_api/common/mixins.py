@@ -1,9 +1,10 @@
 from collections import OrderedDict
-from django.db.models import Avg, Count, F, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
+from django.db.models import Avg, Count, F, Q, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 from django.core.serializers.json import json, DjangoJSONEncoder
+from django.utils.timezone import now
 
-from usaspending_api.common.api_request_utils import FilterGenerator, FiscalYear, ResponsePaginator
+from usaspending_api.common.api_request_utils import FilterGenerator, ResponsePaginator
 from usaspending_api.common.exceptions import InvalidParameterException
 from rest_framework_tracking.mixins import LoggingMixin
 
@@ -155,21 +156,28 @@ class FilterQuerysetMixin(object):
         # process to accept a list of paramaters
         # and create filters without needing to know about the structure
         # of the request itself.
+        filters = None
+        filter_map = kwargs.get('filter_map', {})
+        fg = FilterGenerator(queryset.model, filter_map=filter_map)
+
         if len(request.data):
-            fg = FilterGenerator()
+            fg = FilterGenerator(queryset.model)
             filters = fg.create_from_request_body(request.data)
-            return queryset.filter(filters).distinct()
         else:
-            filter_map = kwargs.get('filter_map', {})
-            fg = FilterGenerator(filter_map=filter_map)
-            filters = fg.create_from_query_params(request.query_params)
-            # add fiscal year to filters if requested
-            # deprecated: we plan to start storing fiscal years in the database
-            if request.query_params.get('fy'):
-                fy = FiscalYear(request.query_params.get('fy'))
-                fy_arguments = fy.get_filter_object('date_signed', as_dict=True)
-                filters = {**filters, **fy_arguments}
-            return queryset.filter(**filters).distinct()
+            filters = Q(**fg.create_from_query_params(request.query_params))
+
+        # Handle FTS vectors
+        if len(fg.search_vectors) > 0:
+            vector_sum = fg.search_vectors[0]
+            for vector in fg.search_vectors[1:]:
+                vector_sum += vector
+            queryset = queryset.annotate(search=vector_sum)
+
+        # Create structure the query so we don't need to use distinct
+        # This happens by reforming the request as 'WHERE pk_id IN (SELECT pk_id FROM queryset WHERE filters)'
+        subwhere = Q(**{queryset.model._meta.pk.name + "__in": queryset.filter(filters).values_list(queryset.model._meta.pk.name, flat=True)})
+
+        return queryset.filter(subwhere)
 
     def order_records(self, request, *args, **kwargs):
         """Order a queryset based on request parameters."""
@@ -207,12 +215,12 @@ class ResponseMetadatasetMixin(object):
         params = self.request.query_params.copy()  # copy() creates mutable copy of a QueryDict
         params.update(self.request.data.copy())
 
-        # construct metadata of entire set of data that matches the request specifications
-        total_metadata = {"count": queryset.count()}
-
         # get paged data for this request
         paged_data = ResponsePaginator.get_paged_data(
             queryset, request_parameters=params)
+
+        # construct metadata of entire set of data that matches the request specifications
+        total_metadata = {"count": paged_data.paginator.count}
 
         # construct page-specific metadata
         page_metadata = {
@@ -247,8 +255,22 @@ class SuperLoggingMixin(LoggingMixin):
     events_logger = logging.getLogger("events")
 
     def finalize_response(self, request, response, *args, **kwargs):
-        # Use the actual logging mixin response
-        response = super(SuperLoggingMixin, self).finalize_response(request, response, *args, **kwargs)
+        response = super(LoggingMixin, self).finalize_response(request, response, *args, **kwargs)
+
+        # check if request method is being logged
+        if self.logging_methods != '__all__' and request.method not in self.logging_methods:
+            return response
+
+        # compute response time
+        response_timedelta = now() - self.request.log.requested_at
+        response_ms = int(response_timedelta.total_seconds() * 1000)
+
+        # save to log
+        self.request.log.response = json.dumps(response.data, cls=DjangoJSONEncoder)
+        self.request.log.status_code = response.status_code
+        self.request.log.response_ms = response_ms
+        self.request.log.save()
+
         # Log it now to the events file
         data = dict(self.request.log.__dict__)
         del data["_state"]  # Strip this out as (1) we don't need it and (2) it's not serializable

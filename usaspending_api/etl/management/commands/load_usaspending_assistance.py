@@ -22,6 +22,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        h.clear_caches()
+
         csv_file = options['file'][0]
         self.logger.info("Starting load for file {}".format(csv_file))
 
@@ -81,6 +83,7 @@ class Command(BaseCommand):
                 "uri": row["uri"],
                 "cfda_number": row["cfda_program_num"],
                 "cfda_title": row["cfda_program_title"],
+                "cfda_id": row["cfda_program_num"],
                 "correction_late_delete_indicator": h.up2colon(row['correction_late_ind']),
                 "face_value_loan_guarantee": row["face_loan_guran"],
                 "fiscal_year_and_quarter_correction": row["fyq_correction"],
@@ -161,6 +164,7 @@ class Command(BaseCommand):
         return flags
 
     def get_or_create_recipient(self, row):
+
         recipient_dict = {
             "location_id": h.get_or_create_location(
                 row,
