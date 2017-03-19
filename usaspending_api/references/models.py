@@ -433,7 +433,11 @@ class LegalEntity(DataSourceTrackedModel):
         unique_together = (('recipient_unique_id'),)
 
 
-# Reference tables
+# RefObjectClassCode is depcrecated in favor of a new object class
+# model (ObjectClass) that has a surrogate key and reflects a
+# fuller version of the oject class hierarchy. RefObjectClassCode
+# will remain until the entire code base (including the submission loader
+# is transitioned)
 class RefObjectClassCode(models.Model):
     object_class = models.CharField(primary_key=True, max_length=4)
     max_object_class_name = models.CharField(max_length=60, blank=True, null=True)
@@ -450,7 +454,20 @@ class RefObjectClassCode(models.Model):
         db_table = 'ref_object_class_code'
 
 
-"""BD 09/21 - Added the ref_program_activity_id, responsible_agency_id, allocation_transfer_agency_id,main_account_code to the RefProgramActivity model as well as unique concatenated key"""
+class ObjectClass(models.Model):
+    major_object_class = models.CharField(max_length=2, db_index=True)
+    major_object_class_name = models.CharField(max_length=100)
+    object_class = models.CharField(max_length=3, db_index=True)
+    object_class_name = models.CharField(max_length=60)
+    direct_reimbursable = models.CharField(max_length=1, db_index=True, blank=True, null=True)
+    direct_reimbursable_name = models.CharField(max_length=50, blank=True, null=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = 'object_class'
+        unique_together = ['object_class', 'direct_reimbursable']
 
 
 class RefProgramActivity(models.Model):
