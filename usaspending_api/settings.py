@@ -270,7 +270,8 @@ REST_FRAMEWORK_EXTENSIONS = {
     # Not caching errors, these are logged to exceptions.log
     'DEFAULT_CACHE_ERRORS': False,
     # Default cache is usaspending-cache, which is set above based upon environment
-    'DEFAULT_USE_CACHE': 'usaspending-cache'
+    'DEFAULT_USE_CACHE': 'usaspending-cache',
+    'DEFAULT_CACHE_KEY_FUNC': 'usaspending_api.common.cache.usaspending_key_func'
 }
 
 # Django spaghetti-and-meatballs (entity relationship diagram) settings

@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 from usaspending_api.common.api_request_utils import ResponsePaginator
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.mixins import AggregateQuerysetMixin
+from usaspending_api.common.cache import USAspendingKeyConstructor
 
 from usaspending_api.common.exceptions import InvalidParameterException
 
@@ -101,6 +102,10 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             self.exception_logger.exception(e)
         finally:
             return Response(response, status=status_code)
+
+    @cache_response()
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
 
 
 class MarkdownView(TemplateView):
