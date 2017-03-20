@@ -137,8 +137,7 @@ class AwardManager(models.Manager):
         and the award will no longer match these criteria
         '''
         q_kwargs = {
-            "date_signed__isnull": True,
-            "recipient__isnull": True
+            "latest_transaction__isnull": True
         }
 
         return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
