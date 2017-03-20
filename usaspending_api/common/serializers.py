@@ -96,9 +96,12 @@ class LimitableSerializer(serializers.ModelSerializer):
             # Grab the nested serializers (aka children)
             children = cls.Meta.nested_serializers
             for child in children:
+                serializer_class = children[child]["class"]
+                if (not hasattr(serializer_class, 'prefetchable')) or (not serializer_class.prefetchable):
+                    continue
                 queryset = queryset.prefetch_related(prefix + child)
                 # Since the child might have nested serializers, we set up on that too
-                queryset = children[child]["class"].setup_eager_loading(queryset, prefix=prefix + child + "__")
+                queryset = serializer_class.setup_eager_loading(queryset, prefix=prefix + child + "__")
         except AttributeError:
             # We don't have any nested serializers
             pass

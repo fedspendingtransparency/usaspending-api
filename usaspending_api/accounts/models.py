@@ -94,8 +94,23 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             "budget_subfunction_code",
             "budget_subfunction_title",
             "account_balances",
-            "program_balances"
+            "program_balances",
+            "program_activities",
+            "object_classes",
         ]
+
+    @property
+    def program_activities(self):
+        return [pb.program_activity_code for pb in self.program_balances.distinct('program_activity_code')]
+
+    @property
+    def object_classes(self):
+        return []
+        """Once FinancialAccountsByProgramActivityObjectClass.object_class
+        has been fixed to point to ObjectClass instead of RefObjectClassCode,
+        this will work with:
+            return [pb.object_class for pb in self.program_balances.distinct('object_class')]
+        """
 
     class Meta:
         managed = True
