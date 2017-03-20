@@ -7,7 +7,6 @@ from django.views.generic import TemplateView
 from usaspending_api.common.api_request_utils import ResponsePaginator
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.mixins import AggregateQuerysetMixin
-from usaspending_api.common.cache import USAspendingKeyConstructor
 
 from usaspending_api.common.exceptions import InvalidParameterException
 
