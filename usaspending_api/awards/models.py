@@ -137,11 +137,10 @@ class AwardManager(models.Manager):
         and the award will no longer match these criteria
         '''
         q_kwargs = {
-            "type": "U",
-            "total_obligation__isnull": True,
             "date_signed__isnull": True,
             "recipient__isnull": True
         }
+
         return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
 
 
@@ -171,7 +170,7 @@ class Award(DataSourceTrackedModel):
     total_outlay = models.DecimalField(max_digits=15, decimal_places=2, null=True, help_text="The total amount of money paid out for this award")
     awarding_agency = models.ForeignKey(Agency, related_name='+', null=True, help_text="The awarding agency for the award")
     funding_agency = models.ForeignKey(Agency, related_name='+', null=True, help_text="The funding agency for the award")
-    date_signed = models.DateField(null=True, verbose_name="Award Date", help_text="The date the award was signed")
+    date_signed = models.DateField(null=True, db_index=True, verbose_name="Award Date", help_text="The date the award was signed")
     recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient of the award")
     description = models.CharField(max_length=4000, null=True, verbose_name="Award Description", help_text="A description of the award")
     period_of_performance_start_date = models.DateField(null=True, verbose_name="Start Date", help_text="The start date for the period of performance")
