@@ -93,3 +93,12 @@ class ObjectClassBriefSerializer(serializers.ModelSerializer):
 
         model = ObjectClass
         fields = ('major_object_class_code', 'major_object_class_name', )
+
+
+class RefObjectClassCodeBriefSerializer(serializers.ModelSerializer):
+    prefetchable = False
+
+    class Meta:
+
+        model = RefObjectClassCode
+        fields = ('object_class', 'max_object_class_name', )
