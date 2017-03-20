@@ -3,7 +3,8 @@ from django.db.models import F, Q, Sum
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.models import RefProgramActivity, RefObjectClassCode, Agency, Location, LegalEntity, CFDAProgram
+from usaspending_api.references.models import (
+    Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefObjectClassCode, RefProgramActivity)
 from usaspending_api.common.models import DataSourceTrackedModel
 
 AWARD_TYPES = (
@@ -54,7 +55,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     award = models.ForeignKey('awards.Award', models.CASCADE, null=True, related_name="financial_set")
     program_activity_name = models.CharField(max_length=164, blank=True, null=True)
     program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code', blank=True, null=True)
-    object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, null=True, db_column='object_class')
+    object_class = models.ForeignKey(ObjectClass, models.DO_NOTHING, null=True, db_index=True)
     by_direct_reimbursable_funding_source = models.CharField(max_length=1, blank=True, null=True)
     piid = models.CharField(max_length=50, blank=True, null=True)
     parent_award_id = models.CharField(max_length=50, blank=True, null=True)
