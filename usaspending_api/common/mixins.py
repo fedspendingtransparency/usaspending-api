@@ -173,9 +173,11 @@ class FilterQuerysetMixin(object):
                 vector_sum += vector
             queryset = queryset.annotate(search=vector_sum)
 
+        subwhere = filters
         # Create structure the query so we don't need to use distinct
         # This happens by reforming the request as 'WHERE pk_id IN (SELECT pk_id FROM queryset WHERE filters)'
-        subwhere = Q(**{queryset.model._meta.pk.name + "__in": queryset.filter(filters).values_list(queryset.model._meta.pk.name, flat=True)})
+        if len(filters) > 0:
+            subwhere = Q(**{queryset.model._meta.pk.name + "__in": queryset.filter(filters).values_list(queryset.model._meta.pk.name, flat=True)})
 
         return queryset.filter(subwhere)
 
