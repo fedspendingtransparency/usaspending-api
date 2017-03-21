@@ -29,7 +29,7 @@ More complete install documentation is available on the PostgreSQL [wiki](https:
 **Note:** If you're setting up the project on Mac OSX, we recommend using [homebrew](http://brew.sh) to install PostgreSQL.
 
 ### Install Memcached
-The API performs query caching via Memcached. You can find instructions for installing memcached on it's [website](https://memcached.org/)
+The API performs query caching via Memcached. If you want to experiment with AWS caching in your development environment, you can find instructions for installing memcached on it's [website](https://memcached.org/). You will also need to install requirements via pip from `requirements-caching.txt` in addition to the other baseline requirements.
 
 ### Install Python and Create Virtual Environment
 
@@ -86,7 +86,11 @@ Navigate to the USAspending API's main folder:
 
 Install the dependencies.  
 
-        $ pip install -r requirements.txt
+        $ pip install -r requirements/requirements.txt
+
+Install caching dependencies. (This is optional, and should only be done if you have installed Memcached and require AWS caching for development)
+
+        $ pip install -r requirements/requirements-caching.txt
 
 Next, configure your local settings. The `settings.py` file will check for an environment variable named `DATABASE_URL`. You can export this variable on the command line, or use a library like [autoenv](https://github.com/kennethreitz/autoenv) to load your environment variables when you `cd` into that directory.
 
