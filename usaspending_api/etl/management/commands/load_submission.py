@@ -15,7 +15,7 @@ from usaspending_api.awards.models import (
     TransactionAssistance, TransactionContract, Transaction, AWARD_TYPES, CONTRACT_PRICING_TYPES)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import (
-    Agency, LegalEntity, Location, RefObjectClassCode, RefCountryCode, RefProgramActivity, CFDAProgram)
+    Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 
@@ -179,8 +179,8 @@ class Command(BaseCommand):
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
                 'appropriation_account_balances': account_balances,
-                'object_class': get_or_create_object_class(row['object_class']),
-                'program_activity_code': get_or_create_program_activity(row['program_activity_code'])
+                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], self.logger),
+                'program_activity_id': get_or_create_program_activity(row['program_activity_code'])
             }
 
             load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
@@ -216,8 +216,8 @@ class Command(BaseCommand):
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
-                'object_class': get_or_create_object_class(row['object_class']),
-                'program_activity_code': get_or_create_program_activity(row['program_activity_code'])
+                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], self.logger),
+                'program_activity_id': get_or_create_program_activity(row['program_activity_code'])
             }
 
             load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
@@ -441,12 +441,55 @@ def format_date(date_string, pattern='%Y%m%d'):
         return None
 
 
-def get_or_create_object_class(object_class):
-    # We do it this way rather than .get_or_create because we do not want to
-    # duplicate existing pk's with null values
-    obj_class = RefObjectClassCode.objects.filter(object_class=object_class).first()
-    if obj_class is None and object_class is not None:
-        obj_class = RefObjectClassCode.objects.create(object_class=object_class)
+def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
+    """Lookup an object class record.
+
+        Args:
+            row_object_class: object class from the broker
+            row_direct_reimbursable: direct/reimbursable flag from the broker
+                (used only when the object_class is 3 digits instead of 4)
+    """
+    if len(row_object_class) == 4:
+        # this is a 4 digit object class, 1st digit = direct/reimbursable information
+        direct_reimbursable = row_object_class[:1]
+        object_class = row_object_class[1:]
+    else:
+        # the object class field is the 3 digit version, so grab direct/reimbursable
+        # information from a separate field
+        if row_direct_reimbursable.lower() == 'd':
+            direct_reimbursable = 1
+        elif row_direct_reimbursable.lower() == 'r':
+            direct_reimbursable = 2
+        else:
+            direct_reimbursable = None
+        object_class = row_object_class
+
+    # set major object class; note that we shouldn't have to do this
+    # once we have a complete list of object classes loaded to ObjectClass
+    # (we only fill it in now should it be needed by the subsequent get_or_create)
+    major_object_class = '{}0'.format(object_class[:1])
+    if major_object_class == '10':
+        major_object_class_name = 'Personnel compensation and benefits'
+    elif major_object_class == '20':
+        major_object_class_name = 'Contractual services and supplies'
+    elif major_object_class == '30':
+        major_object_class_name = 'Acquisition of assets'
+    elif major_object_class == '40':
+        major_object_class_name = 'Grants and fixed charges'
+    else:
+        major_object_class_name = 'Other'
+
+    # we couldn't find a matching object class record, so create one
+    # (note: is this really what we want to do? should we map to an 'unknown' instead?)
+    # should
+    obj_class, created = ObjectClass.objects.get_or_create(
+        major_object_class=major_object_class,
+        major_object_class_name=major_object_class_name,
+        object_class=object_class,
+        direct_reimbursable=direct_reimbursable)
+    if created:
+        logger.warning('Created missing object_class record for {}'.format(object_class))
+
     return obj_class
 
 
