@@ -102,7 +102,11 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             "program_balances",
             "program_activities",
             "object_classes",
+            "totals_program_activity",
+            "totals_object_class",
+            "totals",
         ]
+
     @property
     def program_activities(self):
         return [
@@ -172,9 +176,27 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
                 'obligations': obligations,
                 'outlays': outlays,
             }
-            # fy(self.program_balances.first().submission.reporting_period_start)
-            # fy: linked self.program_balances.submission.reporting_period_start ?
             results.append(result)
+        return results
+
+    @property
+    def totals(self):
+        outlays = defaultdict(Decimal)
+        obligations = defaultdict(Decimal)
+        budget_authority = defaultdict(Decimal)
+        for ab in self.account_balances.all():
+            fiscal_year = fy(ab.reporting_period_start)
+            budget_authority[fiscal_year] += ab.budget_authority_appropriated_amount_cpe
+            outlays[fiscal_year] += ab.gross_outlay_amount_by_tas_cpe
+            obligations[fiscal_year] += ab.obligations_incurred_total_by_tas_cpe
+        results = {
+            'outgoing': {
+                'outlays': outlays,
+                'obligations': obligations,
+                'budget_authority': budget_authority,
+            },
+            'incoming': {}
+        }
         return results
 
     class Meta:
@@ -184,7 +206,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     def __str__(self):
         return "%s" % (self.tas_rendering_label)
 
-        
+
 # Table #4 - Appropriation Account Balances
 class AppropriationAccountBalances(DataSourceTrackedModel):
     appropriation_account_balances_id = models.AutoField(primary_key=True)

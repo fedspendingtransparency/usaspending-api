@@ -10,7 +10,7 @@ from usaspending_api.common.models import DataSourceTrackedModel
 class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity_name = models.CharField(max_length=164)  # uselessly denormalized
-    program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code') # This should just be named `program_activity`, right?  It should be named after the object, not a field on the object
+    program_activity_code = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, db_column='program_activity_code')  # This should just be named `program_activity`, right?  It should be named after the object, not a field on the object
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     object_class = models.ForeignKey(RefObjectClassCode, models.DO_NOTHING, db_column='object_class', null=True)
     by_direct_reimbursable_funding_source = models.CharField(max_length=1)
