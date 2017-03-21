@@ -4,7 +4,7 @@ from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 from django.core.serializers.json import json, DjangoJSONEncoder
 from django.utils.timezone import now
 
-from usaspending_api.common.api_request_utils import FilterGenerator, ResponsePaginator
+from usaspending_api.common.api_request_utils import FilterGenerator, ResponsePaginator, AutoCompleteHandler
 from usaspending_api.common.exceptions import InvalidParameterException
 from rest_framework_tracking.mixins import LoggingMixin
 
@@ -194,6 +194,20 @@ class FilterQuerysetMixin(object):
             return queryset.order_by(*ordering)
         else:
             return queryset
+
+
+class AutocompleteResponseMixin(object):
+    """Handles autocomplete responses and requests"""
+
+    def build_response(self, request, *args, **kwargs):
+        queryset = kwargs.get('queryset')
+
+        serializer = kwargs.get('serializer')
+
+        params = self.request.query_params.copy()  # copy() creates mutable copy of a QueryDict
+        params.update(self.request.data.copy())
+
+        return AutoCompleteHandler.handle(queryset, params, serializer)
 
 
 class ResponseMetadatasetMixin(object):
