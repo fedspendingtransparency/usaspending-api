@@ -28,6 +28,9 @@ More complete install documentation is available on the PostgreSQL [wiki](https:
 
 **Note:** If you're setting up the project on Mac OSX, we recommend using [homebrew](http://brew.sh) to install PostgreSQL.
 
+### Install Memcached
+The API performs query caching via Memcached. You can find instructions for installing memcached on it's [website](https://memcached.org/)
+
 ### Install Python and Create Virtual Environment
 
 The API's backend components currently run on Python 3.5 or higher. These instructions will walk you through the process of installing Python and creating a Python-based virtual environment to house the API. A virtual environment will isolate the project and its libraries from those running on your local system and prevent potential conflicts.
