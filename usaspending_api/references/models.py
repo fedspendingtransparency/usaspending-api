@@ -433,24 +433,20 @@ class LegalEntity(DataSourceTrackedModel):
         unique_together = (('recipient_unique_id'),)
 
 
-# Reference tables
-class RefObjectClassCode(models.Model):
-    object_class = models.CharField(primary_key=True, max_length=4)
-    max_object_class_name = models.CharField(max_length=60, blank=True, null=True)
-    direct_or_reimbursable = models.CharField(max_length=25, blank=True, null=True)
-    label = models.CharField(max_length=100, blank=True, null=True)
-    valid_begin_date = models.DateTimeField(blank=True, null=True)
-    valid_end_date = models.DateTimeField(blank=True, null=True)
-    valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
+class ObjectClass(models.Model):
+    major_object_class = models.CharField(max_length=2, db_index=True)
+    major_object_class_name = models.CharField(max_length=100)
+    object_class = models.CharField(max_length=3, db_index=True)
+    object_class_name = models.CharField(max_length=60)
+    direct_reimbursable = models.CharField(max_length=1, db_index=True, blank=True, null=True)
+    direct_reimbursable_name = models.CharField(max_length=50, blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
-        db_table = 'ref_object_class_code'
-
-
-"""BD 09/21 - Added the ref_program_activity_id, responsible_agency_id, allocation_transfer_agency_id,main_account_code to the RefProgramActivity model as well as unique concatenated key"""
+        db_table = 'object_class'
+        unique_together = ['object_class', 'direct_reimbursable']
 
 
 class RefProgramActivity(models.Model):

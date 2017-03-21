@@ -1,10 +1,7 @@
-from django.core.management.base import BaseCommand, CommandError
-from usaspending_api.references.models import RefCityCountyCode, RefCountryCode, RefObjectClassCode, RefProgramActivity
+from django.core.management.base import BaseCommand
+from usaspending_api.references.models import RefCityCountyCode, RefCountryCode, ObjectClass, RefProgramActivity
 from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
-import os
-import csv
 import logging
-import django
 
 
 class Command(BaseCommand):
@@ -22,7 +19,7 @@ class Command(BaseCommand):
         possible_models = {
             "RefCityCountyCode": RefCityCountyCode,
             "RefCountryCode": RefCountryCode,
-            "RefObjectClassCode": RefObjectClassCode,
+            "ObjectClass": ObjectClass,
             "RefProgramActivity": RefProgramActivity
         }
 
