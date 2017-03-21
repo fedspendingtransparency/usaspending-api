@@ -422,12 +422,12 @@ class AutoCompleteHandler():
     def validate(body):
         if "fields" in body and "value" in body:
             if not isinstance(body["fields"], list):
-                raise Exception("Invalid field, autocomplete fields value must be a list")
+                raise InvalidParameterException("Invalid field, autocomplete fields value must be a list")
         else:
-            raise Exception("Invalid request, autocomplete requests need parameters 'fields' and 'value'")
+            raise InvalidParameterException("Invalid request, autocomplete requests need parameters 'fields' and 'value'")
         if "mode" in body:
             if body["mode"] not in ["contains", "startswith"]:
-                raise Exception("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
+                raise InvalidParameterException("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
 
 
 class GeoCompleteHandler:
