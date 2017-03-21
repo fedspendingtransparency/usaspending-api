@@ -12,6 +12,7 @@ financial_accounts_by_award = views.FinancialAccountsByAwardListViewSet.as_view(
 
 urlpatterns = [
     url(r'^$', tas_balances_list),
-    url(r'^tas/', tas_list),
+    url(r'^tas/$', tas_list),
     url(r'^awards/', financial_accounts_by_award),
+    url(r'^tas/autocomplete/', views.TreasuryAppropriationAccountAutocomplete.as_view())
 ]

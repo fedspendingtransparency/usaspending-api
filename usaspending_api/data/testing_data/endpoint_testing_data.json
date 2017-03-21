@@ -844,8 +844,6 @@
                 {
                     "financial_accounts_by_awards_id": 12544,
                     "data_source": "DBR",
-                    "program_activity_name": "Executive direction",
-                    "by_direct_reimbursable_funding_source": "",
                     "piid": null,
                     "parent_award_id": null,
                     "fain": null,
@@ -895,8 +893,8 @@
                     "treasury_account": null,
                     "submission": 12,
                     "award": null,
-                    "program_activity_code": 1,
-                    "object_class": "310"
+                    "program_activity": 1,
+                    "object_class": 197
                 }
             ]
         },
