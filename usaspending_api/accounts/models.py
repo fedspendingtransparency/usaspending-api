@@ -110,8 +110,8 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     @property
     def program_activities(self):
         return [
-            pb.program_activity_code
-            for pb in self.program_balances.distinct('program_activity_code')
+            pb.program_activity
+            for pb in self.program_balances.distinct('program_activity')
         ]
 
     @property
@@ -161,7 +161,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         for pa in self.program_activities:
             obligations = defaultdict(Decimal)
             outlays = defaultdict(Decimal)
-            for pb in self.program_balances.filter(program_activity_code=pa):
+            for pb in self.program_balances.filter(program_activity=pa):
                 reporting_fiscal_year = fy(
                     pb.submission.reporting_period_start)
                 # TODO: once it is present, use the reporting_fiscal_year directly
