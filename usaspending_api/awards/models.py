@@ -4,7 +4,7 @@ from django.db.models import F, Q, Sum
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import (
-    Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefObjectClassCode, RefProgramActivity)
+    Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefProgramActivity)
 from usaspending_api.common.models import DataSourceTrackedModel
 
 AWARD_TYPES = (
