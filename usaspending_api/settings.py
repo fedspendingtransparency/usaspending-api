@@ -249,9 +249,6 @@ CACHE_ENVIRONMENTS = {
         'BACKEND': 'django_elasticache.memcached.ElastiCache',
         'LOCATION': 'ELASTICACHE-CONNECTION-STRING',
         'TIMEOUT': 'TIMEOUT-IN-SECONDS',
-        'OPTIONS': {
-            'IGNORE_CLUSTER_ERRORS': True,
-        },
     },
     'local': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
