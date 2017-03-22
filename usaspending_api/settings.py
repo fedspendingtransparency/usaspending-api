@@ -227,6 +227,60 @@ LOGGING = {
     },
 }
 
+# If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'default-loc-mem-cache',
+    },
+    'locations': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'locations-loc-mem-cache',
+    },
+}
+
+# Cache environment - 'local', 'disabled', or 'elasticache'
+CACHE_ENVIRONMENT = 'local'
+
+# Set up the appropriate elasticache for our environment
+CACHE_ENVIRONMENTS = {
+    # Elasticache settings are changed during deployment, or can be set manually
+    'elasticache': {
+        'BACKEND': 'django_elasticache.memcached.ElastiCache',
+        'LOCATION': 'ELASTICACHE-CONNECTION-STRING',
+        'TIMEOUT': 'TIMEOUT-IN-SECONDS',
+    },
+    'local': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'locations-loc-mem-cache',
+    },
+    'disabled': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+
+# Set the usaspending-cache to whatever our environment cache dictates
+CACHES["usaspending-cache"] = CACHE_ENVIRONMENTS[CACHE_ENVIRONMENT]
+
+# DRF extensions
+REST_FRAMEWORK_EXTENSIONS = {
+    # Not caching errors, these are logged to exceptions.log
+    'DEFAULT_CACHE_ERRORS': False,
+    # Default cache is usaspending-cache, which is set above based upon environment
+    'DEFAULT_USE_CACHE': 'usaspending-cache',
+    'DEFAULT_CACHE_KEY_FUNC': 'usaspending_api.common.cache.usaspending_key_func'
+}
+
+# Django spaghetti-and-meatballs (entity relationship diagram) settings
+SPAGHETTI_SAUCE = {
+  'apps': ['awards', 'financial_activities', 'references', 'submissions', ],
+  'show_fields': False,
+  'exclude': {},
+  'show_proxy': False,
+}
+
+# **** KEEP THESE DICTIONARIES AT THE BOTTOM - any additions should go above! ****
+
 # Mapping dictionaries (used for converting terse_labels from broker to
 # semi-terse labels used in the datastore)
 TERSE_TO_LONG_LABELS = {
@@ -837,24 +891,4 @@ LONG_TO_TERSE_LABELS = {
     "face_value_loan_guarantee": "face_value_loan_guarantee",
     "original_loan_subsidy_cost": "original_loan_subsidy_cost",
     "business_funds_indicator": "business_funds_indicator"
-}
-
-# If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'default-loc-mem-cache',
-    },
-    'locations': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'locations-loc-mem-cache',
-    },
-}
-
-# Django spaghetti-and-meatballs (entity relationship diagram) settings
-SPAGHETTI_SAUCE = {
-  'apps': ['awards', 'financial_activities', 'references', 'submissions', ],
-  'show_fields': False,
-  'exclude': {},
-  'show_proxy': False,
 }
