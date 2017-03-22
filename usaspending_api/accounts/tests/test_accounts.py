@@ -99,7 +99,6 @@ def test_tas_categories_total(account_models, client):
         }))
 
     assert resp.status_code == 200
-    print(resp.data)
     for result in resp.data['results']:
         assert response_obj_sums[result["item"]] == result["aggregate"]
 
