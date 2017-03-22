@@ -1,3 +1,5 @@
+import warnings
+
 from django.db import models
 from django.db.models import F, Q, Sum
 
@@ -6,6 +8,9 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefProgramActivity)
 from usaspending_api.common.models import DataSourceTrackedModel
+from django.core.cache import caches, CacheKeyWarning
+
+warnings.simplefilter("ignore", CacheKeyWarning)
 
 AWARD_TYPES = (
     ('U', 'Unknown Type'),
@@ -127,6 +132,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
 
 
 class AwardManager(models.Manager):
+
     def get_queryset(self):
         '''
         A generated award will have these set to null, but will also receive no
@@ -142,6 +148,8 @@ class AwardManager(models.Manager):
         }
 
         return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
+
+awards_cache = caches['awards']
 
 
 class Award(DataSourceTrackedModel):
@@ -187,6 +195,18 @@ class Award(DataSourceTrackedModel):
     objects = models.Manager()
     nonempty = AwardManager()
 
+    def manual_hash(self):
+        """Used to manually establish equality between instances.
+
+        Useful for unsaved records where `.id` is not yet set.
+        Possibly this could be converted to __hash__"""
+
+        return hash((self.piid, self.fain, self.uri,
+                    (self.parent_award and
+                     (self.parent_award.piid,
+                      self.parent_award.fain,
+                      self.parent_award.uri))))
+
     @staticmethod
     def get_default_fields(path=None):
         return [
@@ -214,7 +234,7 @@ class Award(DataSourceTrackedModel):
         return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
 
     @staticmethod
-    def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None):
+    def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None, use_cache=False):
         # If an award transaction's ID is a piid, it's contract data
         # If the ID is fain or a uri, it's financial assistance. If the award transaction
         # has both a fain and a uri, fain takes precedence.
@@ -224,23 +244,37 @@ class Award(DataSourceTrackedModel):
                 q_kwargs[i[1]] = i[0]
                 if parent_award_id:
                     q_kwargs["parent_award__" + i[1]] = parent_award_id
+                    # parent_award__piid, parent_award__fain, parent_award__uri
                 else:
                     q_kwargs["parent_award"] = None
 
                 # Now search for it
                 # Do we want to log something if the the query below turns up
                 # more than one award record?
+
+                if use_cache:
+                    q_kwargs_fixed = list(q_kwargs.items()) + [('awarding_agency', awarding_agency), ]
+                    q_kwargs_fixed.sort()
+                    summary_award = awards_cache.get(q_kwargs_fixed)
+                    if summary_award:
+                        return summary_award
+
                 summary_award = Award.objects.all().filter(Q(**q_kwargs)).filter(awarding_agency=awarding_agency).first()
                 if summary_award:
+                    if use_cache:
+                        awards_cache.set(q_kwargs_fixed, summary_award)
                     return summary_award
                 else:
                     parent_award = None
                     if parent_award_id:
                         # If we have a parent award id, recursively get/create the award for it
-                        parent_award = Award.get_or_create_summary_award(**{i[1]: parent_award_id, 'awarding_agency': awarding_agency})
+                        parent_award = Award.get_or_create_summary_award(use_cache=use_cache, **{i[1]: parent_award_id, 'awarding_agency': awarding_agency})
                     # Now create the award record for this award transaction
                     summary_award = Award(**{i[1]: i[0], "parent_award": parent_award, "awarding_agency": awarding_agency})
-                    summary_award.save()
+                    if use_cache:
+                        awards_cache.set(q_kwargs_fixed, summary_award)
+                    else:
+                        summary_award.save()
                     return summary_award
 
         raise ValueError(

@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand
 from django.core.serializers.json import json
 from django.db import connections
 from django.db.models import Q
+from django.core.cache import caches
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
 from usaspending_api.awards.models import (
@@ -18,6 +19,7 @@ from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
+import usaspending_api.etl.helpers as h
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
@@ -30,6 +32,8 @@ contract_pricing_dict = {c[0]: c[1] for c in CONTRACT_PRICING_TYPES}
 # Lists to store for update_awards and update_contract_awards
 AWARD_UPDATE_ID_LIST = []
 AWARD_CONTRACT_UPDATE_ID_LIST = []
+
+awards_cache = caches['awards']
 
 
 class Command(BaseCommand):
@@ -61,6 +65,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+
+        awards_cache.clear()
+
         # Grab the data broker database connections
         if not options['test']:
             try:
@@ -190,6 +197,9 @@ class Command(BaseCommand):
         award_financial_data = dictfetchall(db_cursor)
         self.logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
 
+        award_queue = {}
+        afd_queue = []
+
         for row in award_financial_data:
             account_balances = None
             try:
@@ -202,10 +212,11 @@ class Command(BaseCommand):
                     piid=row.get('piid'),
                     fain=row.get('fain'),
                     uri=row.get('uri'),
-                    parent_award_id=row.get('parent_award_id'))
+                    parent_award_id=row.get('parent_award_id'),
+                    use_cache=True)
                 award.latest_submission = submission_attributes
-                award.save()
-            except:
+                award_queue[award.manual_hash()] = award
+            except:   # TODO: silently swallowing a bare exception is bad mojo
                 continue
 
             award_financial_data = FinancialAccountsByAwards()
@@ -220,7 +231,12 @@ class Command(BaseCommand):
                 'program_activity_id': get_or_create_program_activity(row['program_activity_code'])
             }
 
-            load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
+            afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False)
+            afd_queue.append(afd)
+
+        Award.objects.bulk_create(award_queue.values())
+        FinancialAccountsByAwards.objects.bulk_create(afd_queue)
+        awards_cache.clear()
 
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
@@ -272,6 +288,7 @@ class Command(BaseCommand):
         }
 
         for row in award_financial_assistance_data:
+
             legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
             # Create the legal entity if it doesn't exist
@@ -293,6 +310,7 @@ class Command(BaseCommand):
                 fain=row.get('fain'),
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
+            award.save()
 
             AWARD_UPDATE_ID_LIST.append(award.id)
 
@@ -387,6 +405,7 @@ class Command(BaseCommand):
                 fain=row.get('fain'),
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
+            award.save()
 
             AWARD_UPDATE_ID_LIST.append(award.id)
             AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
@@ -598,9 +617,10 @@ def load_data_into_model(model_instance, data, **kwargs):
 
     if save:
         model_instance.save()
-        return model_instance
     if as_dict:
         return mod
+    else:
+        return model_instance
 
 
 def get_or_create_location(location_map, row, location_value_map={}):
