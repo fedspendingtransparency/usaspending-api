@@ -142,11 +142,11 @@ class AwardManager(models.Manager):
         and the award will no longer match these criteria
         '''
         q_kwargs = {
-            "type": "U",
-            "total_obligation__isnull": True,
+            "latest_transaction__isnull": True,
             "date_signed__isnull": True,
-            "recipient__isnull": True
+            "total_obligation__isnull": True
         }
+
         return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
 
 awards_cache = caches['awards']
@@ -168,23 +168,23 @@ class Award(DataSourceTrackedModel):
     see ETL\award_helpers.py for details.
     """
 
-    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True, help_text="	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.")
+    type = models.CharField(max_length=5, db_index=True, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True, help_text="	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.")
     type_description = models.CharField(max_length=50, verbose_name="Award Type Description", default="Unknown Type", null=True, help_text="The plain text description of the type of the award")
-    piid = models.CharField(max_length=50, blank=True, null=True, help_text="Procurement Instrument Identifier - A unique identifier assigned to a federal contract, purchase order, basic ordering agreement, basic agreement, and blanket purchase agreement. It is used to track the contract, and any modifications or transactions related to it. After October 2017, it is between 13 and 17 digits, both letters and numbers.")
+    piid = models.CharField(max_length=50, db_index=True, blank=True, null=True, help_text="Procurement Instrument Identifier - A unique identifier assigned to a federal contract, purchase order, basic ordering agreement, basic agreement, and blanket purchase agreement. It is used to track the contract, and any modifications or transactions related to it. After October 2017, it is between 13 and 17 digits, both letters and numbers.")
     parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True, help_text="The parent award, if applicable")
-    fain = models.CharField(max_length=30, blank=True, null=True, help_text="An identification code assigned to each financial assistance award tracking purposes. The FAIN is tied to that award (and all future modifications to that award) throughout the award’s life. Each FAIN is assigned by an agency. Within an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN stands for Federal Award Identification Number, though the digits are letters, not numbers.")
-    uri = models.CharField(max_length=70, blank=True, null=True, help_text="The uri of the award")
-    total_obligation = models.DecimalField(max_digits=15, decimal_places=2, null=True, verbose_name="Total Obligated", help_text="The amount of money the government is obligated to pay for the award")
-    total_outlay = models.DecimalField(max_digits=15, decimal_places=2, null=True, help_text="The total amount of money paid out for this award")
+    fain = models.CharField(max_length=30, db_index=True, blank=True, null=True, help_text="An identification code assigned to each financial assistance award tracking purposes. The FAIN is tied to that award (and all future modifications to that award) throughout the award’s life. Each FAIN is assigned by an agency. Within an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN stands for Federal Award Identification Number, though the digits are letters, not numbers.")
+    uri = models.CharField(max_length=70, db_index=True, blank=True, null=True, help_text="The uri of the award")
+    total_obligation = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True, verbose_name="Total Obligated", help_text="The amount of money the government is obligated to pay for the award")
+    total_outlay = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True, help_text="The total amount of money paid out for this award")
     awarding_agency = models.ForeignKey(Agency, related_name='+', null=True, help_text="The awarding agency for the award")
     funding_agency = models.ForeignKey(Agency, related_name='+', null=True, help_text="The funding agency for the award")
-    date_signed = models.DateField(null=True, verbose_name="Award Date", help_text="The date the award was signed")
+    date_signed = models.DateField(null=True, db_index=True, verbose_name="Award Date", help_text="The date the award was signed")
     recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient of the award")
     description = models.CharField(max_length=4000, null=True, verbose_name="Award Description", help_text="A description of the award")
-    period_of_performance_start_date = models.DateField(null=True, verbose_name="Start Date", help_text="The start date for the period of performance")
-    period_of_performance_current_end_date = models.DateField(null=True, verbose_name="End Date", help_text="The current, not original, period of performance end date")
+    period_of_performance_start_date = models.DateField(null=True, db_index=True, verbose_name="Start Date", help_text="The start date for the period of performance")
+    period_of_performance_current_end_date = models.DateField(null=True, db_index=True, verbose_name="End Date", help_text="The current, not original, period of performance end date")
     place_of_performance = models.ForeignKey(Location, null=True, help_text="The principal place of business, where the majority of the work is performed. For example, in a manufacturing contract, this would be the main plant where items are produced.")
-    potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award", help_text="The sum of the potential_value_of_award from associated transactions")
+    potential_total_value_of_award = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award", help_text="The sum of the potential_value_of_award from associated transactions")
     last_modified_date = models.DateField(blank=True, null=True, help_text="The date this award was last modified")
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="The date this record was created in the API")
@@ -295,7 +295,7 @@ class Transaction(DataSourceTrackedModel):
     period_of_performance_current_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Current End Date", null=True, help_text="The current end date of the period of performance")
     action_date = models.DateField(max_length=10, verbose_name="Transaction Date", help_text="The date this transaction was actioned")
     action_type = models.CharField(max_length=1, blank=True, null=True, help_text="The type of transaction. For example, A, B, C, D")
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, help_text="The obligation of the federal government for this transaction")
+    federal_action_obligation = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True, null=True, help_text="The obligation of the federal government for this transaction")
     modification_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modification Number", help_text="The modification number for this transaction")
     awarding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_awarding_agency', null=True, help_text="The agency which awarded this transaction")
     funding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_funding_agency', null=True, help_text="The agency which is funding this transaction")
