@@ -237,6 +237,15 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'locations-loc-mem-cache',
     },
+    'awards': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'awards-loc-mem-cache',
+        'TIMEOUT': None,
+        'MAX_ENTRIES': 9999999,
+        # We only want to clear this cache manually - it holds unsaved
+        # Award records, and until they are saved, forgetting them would
+        # lose data
+    },
 }
 
 # Cache environment - 'local', 'disabled', or 'elasticache'
@@ -273,7 +282,7 @@ REST_FRAMEWORK_EXTENSIONS = {
 
 # Django spaghetti-and-meatballs (entity relationship diagram) settings
 SPAGHETTI_SAUCE = {
-  'apps': ['awards', 'financial_activities', 'references', 'submissions', ],
+  'apps': ['accounts', 'awards', 'financial_activities', 'references', 'submissions', ],
   'show_fields': False,
   'exclude': {},
   'show_proxy': False,
