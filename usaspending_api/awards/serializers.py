@@ -2,19 +2,11 @@ from rest_framework import serializers
 
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
-    FinancialAccountsByAwardsTransactionObligations,
     Transaction, TransactionAssistance, TransactionContract)
 from usaspending_api.accounts.serializers import TreasuryAppropriationAccountSerializer
 from usaspending_api.common.serializers import LimitableSerializer
-from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer
+from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer, CfdaSerializer
 from usaspending_api.common.helpers import fy
-
-
-class FinancialAccountsByAwardsTransactionObligationsSerializer(LimitableSerializer):
-
-    class Meta:
-        model = FinancialAccountsByAwardsTransactionObligations
-        fields = '__all__'
 
 
 class FinancialAccountsByAwardsSerializer(LimitableSerializer):
@@ -27,42 +19,7 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
                 "class": TreasuryAppropriationAccountSerializer,
                 "kwargs": {"read_only": True}
             },
-            "transaction_obligations": {
-                "class": FinancialAccountsByAwardsTransactionObligationsSerializer,
-                "kwargs": {"read_only": True, "many": True}
-            },
         }
-
-
-class AwardSerializer(LimitableSerializer):
-
-    class Meta:
-
-        model = Award
-        fields = '__all__'
-        nested_serializers = {
-            "recipient": {
-                "class": LegalEntitySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "awarding_agency": {
-                "class": AgencySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "funding_agency": {
-                "class": AgencySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "place_of_performance": {
-                "class": LocationSerializer,
-                "kwargs": {"read_only": True}
-            },
-        }
-
-    date_signed__fy = serializers.SerializerMethodField()
-
-    def get_date_signed__fy(self, obj):
-        return fy(obj.date_signed)
 
 
 class TransactionAssistanceSerializer(LimitableSerializer):
@@ -70,6 +27,13 @@ class TransactionAssistanceSerializer(LimitableSerializer):
     class Meta:
         model = TransactionAssistance
         fields = '__all__'
+
+        nested_serializers = {
+            "cfda": {
+                "class": CfdaSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
 
 
 class TransactionContractSerializer(LimitableSerializer):
@@ -115,3 +79,38 @@ class TransactionSerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             }
         }
+
+
+class AwardSerializer(LimitableSerializer):
+
+    class Meta:
+
+        model = Award
+        fields = '__all__'
+        nested_serializers = {
+            "recipient": {
+                "class": LegalEntitySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "awarding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "funding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "place_of_performance": {
+                "class": LocationSerializer,
+                "kwargs": {"read_only": True}
+            },
+            "latest_transaction": {
+                "class": TransactionSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
+
+    date_signed__fy = serializers.SerializerMethodField()
+
+    def get_date_signed__fy(self, obj):
+        return fy(obj.date_signed)
