@@ -525,7 +525,7 @@
             ]
         },
         "method": "POST",
-        "url": "/api/v1/accounts/",
+        "url": "/api/v1/accounts/tas/balances/",
         "name": "Test accounts endpoint POST request",
         "status_code": 200
     },

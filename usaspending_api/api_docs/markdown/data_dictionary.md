@@ -98,7 +98,10 @@ In this section you will find definitions for common terms used in the API. For 
 | /api/v1/awards/:id | GET, POST | <a href="#award">Award</a> | Returns a single award records with all fields |
 | [/api/v1/awards/autocomplete/](/api/v1/awards/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on award records |
 | [/api/v1/awards/total/](/api/v1/awards/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on award records |
-| [/api/v1/accounts/](/api/v1/accounts/) | GET, POST | <a href="#accounts">Appropriation Account Balances</a> | Returns a list of appropriation account balances |
+| [/api/v1/accounts/balances/](/api/v1/accounts/balances/) | GET, POST | <a href="#accounts">Appropriation Account Balances</a> | Returns a list of appropriation account balances |
+| [/api/v1/accounts/balances/total/](/api/v1/accounts/balances/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on appropriation account records |
+| [/api/v1/accounts/categories/](/api/v1/accounts/categories/) | GET, POST | <a href="#accounts-prg-obj">Appropriation Account Balances (by Category)</a> | Returns a list of appropriation account balances broken up by program activities and object class |
+| [/api/v1/accounts/categories/total/](/api/v1/accounts/categories/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on appropriation account (by category) records |
 | [/api/v1/accounts/tas/](/api/v1/accounts/tas/) | GET, POST | <a href="#tas">Treasury Appropriation Account</a> | Returns a list of treasury appropriation accounts, by TAS |
 | [/api/v1/accounts/tas/autocomplete/](/api/v1/accounts/tas/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on TAS records |
 | [/api/v1/accounts/awards/](/api/v1/accounts/awards/) | GET, POST | <a href="#accounts-by-award">Financial Accounts (by Award)</a> | Returns a list of financial account data grouped by TAS and broken up by Program Activity and Object Class codes |
@@ -349,6 +352,57 @@ In this section you will find definitions for common terms used in the API. For 
 | tas_rendering_label | String |  |
 | drv_obligations_unpaid_amount | Float |  |
 | drv_other_obligated_amount | Float |  |
+| reporting_period_start | Date |  |
+| reporting_period_end | Date |  |
+| last_modified_date | Date |  |
+| certified_date | Date |  |
+| create_date | Datetime |  |
+| update_date | Datetime |  |
+
+##### Appropriation Account (by Category) <a name="accounts-prg-obj"></a>
+
+| Field | Type | Description |
+| ----- | ----- | ----- |
+| data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
+| financial_accounts_by_program_activity_object_class_id | Integer | Internal primary key. Guaranteed to be unique. |
+| program_activity | Relation |  |
+| submission | Relation |  |
+| object_class | Relation |  |
+| treasury_account | Relation |  |
+| ussgl480100_undelivered_orders_obligations_unpaid_fyb | Float |  |
+| ussgl480100_undelivered_orders_obligations_unpaid_cpe | Float |  |
+| ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe | Float |  |
+| ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe | Float |  |
+| ussgl490100_delivered_orders_obligations_unpaid_fyb | Float |  |
+| ussgl490100_delivered_orders_obligations_unpaid_cpe | Float |  |
+| ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe | Float |  |
+| ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe | Float |  |
+| ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb | Float |  |
+| ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe | Float |  |
+| ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe | Float |  |
+| ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe | Float |  |
+| ussgl490200_delivered_orders_obligations_paid_cpe | Float |  |
+| ussgl490800_authority_outlayed_not_yet_disbursed_fyb | Float |  |
+| ussgl490800_authority_outlayed_not_yet_disbursed_cpe | Float |  |
+| ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe | Float |  |
+| obligations_undelivered_orders_unpaid_total_fyb | Float |  |
+| obligations_undelivered_orders_unpaid_total_cpe | Float |  |
+| obligations_delivered_orders_unpaid_total_fyb | Float |  |
+| obligations_delivered_orders_unpaid_total_cpe | Float |  |
+| gross_outlays_undelivered_orders_prepaid_total_fyb | Float |  |
+| gross_outlays_undelivered_orders_prepaid_total_cpe | Float |  |
+| gross_outlays_delivered_orders_paid_total_fyb | Float |  |
+| gross_outlays_delivered_orders_paid_total_cpe | Float |  |
+| gross_outlay_amount_by_program_object_class_fyb | Float |  |
+| gross_outlay_amount_by_program_object_class_cpe | Float |  |
+| obligations_incurred_by_program_object_class_cpe | Float |  |
+| ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe | Float |  |
+| ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe | Float |  |
+| ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe | Float |  |
+| ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe | Float |  |
+| deobligations_recoveries_refund_pri_program_object_class_cpe | Float |  |
+| drv_obligations_incurred_by_program_object_class | Float |  |
+| drv_obligations_undelivered_orders_unpaid | Float |  |
 | reporting_period_start | Date |  |
 | reporting_period_end | Date |  |
 | last_modified_date | Date |  |
