@@ -139,14 +139,14 @@ def test_award_date_signed_fy(client):
 @pytest.mark.django_db
 def test_manual_hash_eq_fain():
     """test that records with equal FAIN hash as equal"""
-    m1 = mommy.make('awards.award', fain='ABC')
-    m2 = mommy.make('awards.award', fain='ABC')
+    m1 = mommy.make('awards.award', fain='ABC', piid=None, uri=None, _fill_optional=True)
+    m2 = mommy.make('awards.award', fain='ABC', piid=None, uri=None, _fill_optional=True)
     assert m1.manual_hash() == m2.manual_hash()
 
 
 @pytest.mark.django_db
 def test_award_hash_ineq_fain():
     """test that records with unequal FAIN hash as unequal"""
-    m1 = mommy.make('awards.award', fain='ABC')
-    m2 = mommy.make('awards.award', fain='XYZ')
+    m1 = mommy.make('awards.award', fain='ABC', piid=None, uri=None, _fill_optional=True)
+    m2 = mommy.make('awards.award', fain='XYZ', piid=None, uri=None, _fill_optional=True)
     assert m1.manual_hash() != m2.manual_hash()

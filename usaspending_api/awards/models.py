@@ -273,8 +273,6 @@ class Award(DataSourceTrackedModel):
                     summary_award = Award(**{i[1]: i[0], "parent_award": parent_award, "awarding_agency": awarding_agency})
                     if use_cache:
                         awards_cache.set(q_kwargs_fixed, summary_award)
-                        # when we cache a summary_award whose parent_award is not yet save()ed,
-                        # then get it later, what happens?
                     else:
                         summary_award.save()
                     return summary_award

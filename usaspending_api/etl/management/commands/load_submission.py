@@ -236,7 +236,7 @@ class Command(BaseCommand):
 
         Award.objects.bulk_create(award_queue.values())
         FinancialAccountsByAwards.objects.bulk_create(afd_queue)
-        awards_cache.clear()  # but now that cache is operating for other records...
+        awards_cache.clear()
 
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
