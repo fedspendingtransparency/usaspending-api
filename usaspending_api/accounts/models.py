@@ -92,11 +92,13 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
                 "account_title",
                 "reporting_agency_id",
                 "reporting_agency_name",
+                "federal_account"
             ]
 
         return [
             "treasury_account_identifier",
             "tas_rendering_label",
+            "federal_account",
             "allocation_transfer_agency_id",
             "agency_id",
             "beginning_period_of_availability",
