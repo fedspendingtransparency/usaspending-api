@@ -136,8 +136,6 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     fiscal year.
     """
     appropriation_account_balances_id = models.AutoField(primary_key=True)
-    # a convenience FK back to federal accounts for ease of traversal
-    federal_account = models.ForeignKey('FederalAccount', models.DO_NOTHING, null=True)
     treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE, db_column='treasury_account_identifier', related_name="account_balances")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)

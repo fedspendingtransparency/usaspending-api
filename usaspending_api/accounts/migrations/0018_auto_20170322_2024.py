@@ -19,13 +19,6 @@ class Migration(migrations.Migration):
         and t.main_account_code = fa.main_account_code
         '''
 
-    ab_fk_sql = '''
-        update appropriation_account_balances ab
-        set federal_account_id = t.federal_account_id
-        from treasury_appropriation_account t
-        where ab.treasury_account_identifier = t.treasury_account_identifier
-        '''
-
     def insert_federal_accounts(apps, schema_editor):
         TreasuryAppropriationAccount = apps.get_model(
             "accounts", "TreasuryAppropriationAccount")
@@ -54,14 +47,6 @@ class Migration(migrations.Migration):
         if expected_federal_accounts != federal_accounts.count():
             raise ValueError('Federal account check failed: aborting migration')
 
-    def get_temp_federal_account_fk(apps):
-        """
-        Return a valid federal account pk that we can use as a temporary
-        default value when adding federal_account FKs to tables
-        """
-        FederalAccount = apps.get_model("accounts", "FederalAccount")
-        return FederalAccount.objects.values_list('id').first()[0]
-
     operations = [
         migrations.CreateModel(
             name='FederalAccount',
@@ -85,16 +70,7 @@ class Migration(migrations.Migration):
         # insert records to newly-created finanical_accouns table
         migrations.RunPython(insert_federal_accounts, migrations.RunPython.noop),
 
-        # add federal account foreign keys to TAS-related tables
-        migrations.AddField(
-            model_name='appropriationaccountbalances',
-            name='federal_account',
-            field=models.ForeignKey(
-                null=True,
-                on_delete=django.db.models.deletion.DO_NOTHING,
-                to='accounts.FederalAccount'),
-            preserve_default=False,
-        ),
+        # add federal account foreign key to TAS table
         migrations.AddField(
             model_name='treasuryappropriationaccount',
             name='federal_account',
@@ -105,7 +81,6 @@ class Migration(migrations.Migration):
             preserve_default=False,
         ),
 
-        # set values for new federal account FKs
+        # set values for new federal account FK
         migrations.RunSQL(tas_fk_sql, migrations.RunSQL.noop),
-        migrations.RunSQL(ab_fk_sql, migrations.RunSQL.noop),
     ]
