@@ -26,6 +26,7 @@ urlpatterns = [
     url(r'^api/v1/awards/', include('usaspending_api.awards.urls_awards')),
     url(r'^api/v1/transactions/', include('usaspending_api.awards.urls_transactions')),
     url(r'^api/v1/submissions/', include('usaspending_api.submissions.urls')),
+    url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
     url(r'^api/v1/federal_accounts/', include('usaspending_api.accounts.urls_federal')),
     url(r'^api/v1/tas/', include('usaspending_api.accounts.urls_tas')),
     url(r'^api/v1/financial_activities/', include('usaspending_api.financial_activities.urls')),

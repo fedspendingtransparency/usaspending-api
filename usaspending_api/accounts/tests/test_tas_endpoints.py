@@ -24,7 +24,7 @@ def test_tas_balances_list(account_models, client):
     """
     Ensure the accounts endpoint lists the right number of entities
     """
-    resp = client.get('/api/v1/accounts/tas/balances/')
+    resp = client.get('/api/v1/tas/balances/')
     assert resp.status_code == 200
     assert len(resp.data['results']) == 5
 
@@ -41,7 +41,7 @@ def test_tas_balances_total(account_models, client):
     }
 
     resp = client.post(
-        '/api/v1/accounts/tas/balances/total/',
+        '/api/v1/tas/balances/total/',
         content_type='application/json',
         data=json.dumps({
             "field": "budget_authority_unobligated_balance_brought_forward_fyb",
@@ -58,7 +58,7 @@ def test_tas_categories_list(account_models, client):
     """
     Ensure the categories endpoint lists the right number of entities
     """
-    resp = client.get('/api/v1/accounts/tas/categories/')
+    resp = client.get('/api/v1/tas/categories/')
     assert resp.status_code == 200
     assert len(resp.data['results']) == 5
 
@@ -79,7 +79,7 @@ def test_tas_categories_total(account_models, client):
     }
 
     resp = client.post(
-        '/api/v1/accounts/tas/categories/total/',
+        '/api/v1/tas/categories/total/',
         content_type='application/json',
         data=json.dumps({
             "field": "obligations_undelivered_orders_unpaid_total_cpe",
@@ -91,7 +91,7 @@ def test_tas_categories_total(account_models, client):
         assert response_prg_sums[result["item"]] == result["aggregate"]
 
     resp = client.post(
-        '/api/v1/accounts/tas/categories/total/',
+        '/api/v1/tas/categories/total/',
         content_type='application/json',
         data=json.dumps({
             "field": "obligations_undelivered_orders_unpaid_total_cpe",
@@ -108,6 +108,6 @@ def test_tas_list(account_models, client):
     """
     Ensure the accounts endpoint lists the right number of entities
     """
-    resp = client.get('/api/v1/accounts/tas/')
+    resp = client.get('/api/v1/tas/')
     assert resp.status_code == 200
     assert len(resp.data) == 3

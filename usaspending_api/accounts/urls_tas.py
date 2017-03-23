@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from usaspending_api.accounts import views
+from usaspending_api.accounts.views import tas as views
 
 # bind ViewSets to URLs
 tas_list = views.TreasuryAppropriationAccountViewSet.as_view(

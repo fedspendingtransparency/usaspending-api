@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from usaspending_api.accounts import views
+from usaspending_api.accounts.views import common as views
 
 # bind ViewSets to URLs
 financial_accounts_by_award = views.FinancialAccountsByAwardListViewSet.as_view(
