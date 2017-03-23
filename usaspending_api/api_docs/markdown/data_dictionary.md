@@ -99,7 +99,7 @@ In this section you will find definitions for common terms used in the API. For 
 | [/api/v1/awards/autocomplete/](/api/v1/awards/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on award records |
 | [/api/v1/awards/total/](/api/v1/awards/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on award records |
 | [/api/v1/federal_accounts/](/api/v1/federal_accounts/) | GET, POST | <a href="#federal-account">Federal Account</a> | Returns a list of federal accounts |
-| [/api/v1/federal_accounts/total/](/api/v1/federal_accounts/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on federal accounts records |
+| [/api/v1/federal_accounts/autocomplete/](/api/v1/federal_accounts/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on federal account records |
 | [/api/v1/tas/balances/](/api/v1/tas/balances/) | GET, POST | <a href="#accounts">Appropriation Account Balances</a> | Returns a list of appropriation account balances |
 | [/api/v1/tas/balances/total/](/api/v1/tas/balances/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on appropriation account records |
 | [/api/v1/tas/categories/](/api/v1/tas/categories/) | GET, POST | <a href="#accounts-prg-obj">Appropriation Account Balances (by Category)</a> | Returns a list of appropriation account balances broken up by program activities and object class |

@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from usaspending_api.accounts.views import federal as views
+from usaspending_api.accounts.views import federal_account as views
 
 # bind ViewSets to URLs
 federal_list = views.FederalAccountViewSet.as_view(
