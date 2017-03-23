@@ -3,11 +3,33 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
-# Table #3 - Treasury Appropriation Accounts.
+class FederalAccount(models.Model):
+    """
+    Represents a single federal account. A federal account encompasses
+    multiple Treasury Account Symbols (TAS), represented by
+    :model:`accounts.TreasuryAppropriationAccount`.
+    """
+    agency_identifier = models.CharField(max_length=3, db_index=True)
+    main_account_code = models.CharField(max_length=4, db_index=True)
+    account_title = account_title = models.CharField(max_length=300)
+
+    class Meta:
+        managed = True
+        db_table = 'federal_account'
+        unique_together = ('agency_identifier', 'main_account_code')
+
+
 class TreasuryAppropriationAccount(DataSourceTrackedModel):
+    """Represents a single Treasury Account Symbol (TAS)."""
     treasury_account_identifier = models.AutoField(primary_key=True)
+    federal_account = models.ForeignKey('FederalAccount', models.DO_NOTHING, null=True)
     tas_rendering_label = models.CharField(max_length=50, blank=True, null=True)
     allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
+    # todo: update the agency details to match FederalAccounts. Is there a way that we can
+    # retain the text-based agency TAS components (since those are attributes of TAS
+    # while still having a convenient FK that links to our agency tables using Django's
+    # default fk naming standard? Something like agency_identifier for the 3 digit TAS
+    # component and agency_id for the FK?)
     agency_id = models.CharField(max_length=3)
     beginning_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
     ending_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
@@ -105,8 +127,14 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         return "%s" % (self.tas_rendering_label)
 
 
-# Table #4 - Appropriation Account Balances
 class AppropriationAccountBalances(DataSourceTrackedModel):
+    """
+    Represents Treasury Account Symbol (TAS) balances for each DATA Act
+    broker submission. Each submission provides a snapshot of the most
+    recent numbers for that fiscal year. In other words, the lastest
+    submission for a fiscal year reflects the balances for the entire
+    fiscal year.
+    """
     appropriation_account_balances_id = models.AutoField(primary_key=True)
     treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE, db_column='treasury_account_identifier', related_name="account_balances")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
