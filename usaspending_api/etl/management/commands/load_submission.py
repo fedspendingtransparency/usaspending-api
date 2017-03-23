@@ -18,6 +18,7 @@ from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
+from usaspending_api.common.helpers import fy
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
@@ -180,7 +181,7 @@ class Command(BaseCommand):
                 'treasury_account': treasury_account,
                 'appropriation_account_balances': account_balances,
                 'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], self.logger),
-                'program_activity_id': get_or_create_program_activity(row['program_activity_code'])
+                'program_activity_id': get_or_create_program_activity(row, submission_attributes)
             }
 
             load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
@@ -217,7 +218,7 @@ class Command(BaseCommand):
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
                 'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], self.logger),
-                'program_activity_id': get_or_create_program_activity(row['program_activity_code'])
+                'program_activity_id': get_or_create_program_activity(row, submission_attributes)
             }
 
             load_data_into_model(award_financial_data, row, value_map=value_map, save=True)
@@ -493,12 +494,16 @@ def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger
     return obj_class
 
 
-def get_or_create_program_activity(program_activity_code):
+def get_or_create_program_activity(row, submission_attributes):
     # We do it this way rather than .get_or_create because we do not want to
     # duplicate existing pk's with null values
-    prg_activity = RefProgramActivity.objects.filter(ref_program_activity_id=program_activity_code).first()
-    if prg_activity is None and program_activity_code is not None:
-        prg_activity = RefProgramActivity.objects.create(ref_program_activity_id=program_activity_code)
+    filters = {'ref_program_activity_id': row['program_activity_code'],
+               'budget_year': fy(submission_attributes.reporting_period_start),
+               'responsible_agency_id': row['agency_identifier'],
+               }
+    prg_activity = RefProgramActivity.objects.filter(**filters).first()
+    if prg_activity is None and row['program_activity_code'] is not None:
+        prg_activity = RefProgramActivity.objects.create(**filters)
     return prg_activity
 
 
