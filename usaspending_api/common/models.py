@@ -1,5 +1,5 @@
 from django.db import models
-
+import hashlib
 
 # This is an abstract model that should be the foundation for any model that
 # requires data source tracking - history tracking will then be added to this
@@ -14,6 +14,23 @@ class DataSourceTrackedModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class RequestCatalog(models.Model):
+    """Stores a POST request and generates a string identifier (checksum), allowing it to be re-run via a GET request"""
+
+    request = models.TextField(null=False, help_text="The serialized form of the POST request")
+    checksum = models.CharField(max_length=256, unique=True, null=False, db_index=True, help_text="The SHA-256 checksum of the serialized POST request")
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    last_accessed = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        self.checksum = hashlib.sha256(self.request).hexdigest()
+        super(RequestSlugs, self).save(*args, **kwargs)
+
+    class Meta:
+        managed = True
+        db_table = 'request_catalog'
 
 
 class FiscalYear(models.Transform):
