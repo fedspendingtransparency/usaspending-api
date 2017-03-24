@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, connection
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.models import DataSourceTrackedModel
 
@@ -165,7 +165,20 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    final_of_fy = models.BooleanField(blank=False, null=False, default=False, db_index=True)
 
     class Meta:
         managed = True
         db_table = 'appropriation_account_balances'
+
+    @classmethod
+    def populate_final_of_fy(cls):
+        sql = """   UPDATE appropriation_account_balances
+                    SET final_of_fy = submission_id in
+                    ( SELECT DISTINCT ON (FY(reporting_period_start),
+                                          submission_id) submission_id
+                    FROM submission_attributes
+                    ORDER BY FY(reporting_period_start), submission_id,
+                    reporting_period_start DESC)"""
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
