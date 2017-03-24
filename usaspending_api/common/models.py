@@ -1,5 +1,11 @@
 from django.db import models
+from django.contrib.postgres.fields import JSONField
+from django.core.exceptions import ObjectDoesNotExist
 import hashlib
+import pickle
+import datetime
+import json
+
 
 # This is an abstract model that should be the foundation for any model that
 # requires data source tracking - history tracking will then be added to this
@@ -19,14 +25,74 @@ class DataSourceTrackedModel(models.Model):
 class RequestCatalog(models.Model):
     """Stores a POST request and generates a string identifier (checksum), allowing it to be re-run via a GET request"""
 
-    request = models.TextField(null=False, help_text="The serialized form of the POST request")
+    request = JSONField(null=False, help_text="The serialized form of the POST request")
     checksum = models.CharField(max_length=256, unique=True, null=False, db_index=True, help_text="The SHA-256 checksum of the serialized POST request")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     last_accessed = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
-    def save(self, *args, **kwargs):
-        self.checksum = hashlib.sha256(self.request).hexdigest()
-        super(RequestSlugs, self).save(*args, **kwargs)
+    @staticmethod
+    def get_or_create_from_request(request):
+        # Get the useful parts
+        query_params = request.query_params.copy()
+        data = request.data.copy()
+
+        # First, check for the "req" parameter
+        checksum = None
+        if "req" in data:
+            checksum = data["req"]
+        elif "req" in query_params:
+            checksum = query_params["req"]
+
+        if checksum:
+            try:
+                request_catalog = RequestCatalog.objects.get(checksum=checksum)
+                request_catalog.last_accessed = datetime.datetime.now()
+                request_catalog.save()
+                return False, request_catalog
+            except ObjectDoesNotExist:
+                # The checksum they sent doesn't exist
+                raise Exception("Requested 'req' " + checksum + " does not exist or has expired.")
+
+        # Delete any pagination data
+        for item in ["page", "limit"]:
+            if data.get(item, None):
+                del data[item]
+            if query_params.get(item, None):
+                del query_params[item]
+
+        json_request = {"data": data, "query_params": query_params}
+
+        print(json_request)
+
+        # Make the checksum
+        checksum = hashlib.sha256(json.dumps(json_request).encode('utf-8')).hexdigest()
+
+        # See if the checksum exists, and return that catalog. Otherwise, create it
+        created = False
+        request_catalog = None
+        try:
+            request_catalog = RequestCatalog.objects.get(request=json_request)
+            request_catalog.last_accessed = datetime.datetime.now()
+            request_catalog.save()
+            created = False
+        except ObjectDoesNotExist:
+            request_catalog = RequestCatalog.objects.create(request=json_request, checksum=checksum)
+            created = True
+
+        return created, request_catalog
+
+    def merge_requests(self, request):
+        '''Merges a request with the stored values (i.e. taking pagination data from incoming request)'''
+        req = self.request
+
+        # Copy over pagination data from the incoming request, and merge it with stored search
+        for item in ["page", "limit"]:
+            if request.data.get(item, None):
+                req["data"][item] = request.data.get(item)
+            if request.query_params.get(item, None):
+                req["query_params"][item] = request.query_params.get(item)
+
+        return req
 
     class Meta:
         managed = True

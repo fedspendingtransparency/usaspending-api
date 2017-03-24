@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 
 from usaspending_api.common.api_request_utils import ResponsePaginator
 from usaspending_api.common.serializers import AggregateSerializer
+from usaspending_api.common.models import RequestCatalog
 from usaspending_api.common.mixins import AggregateQuerysetMixin, AutocompleteResponseMixin
 
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -81,7 +82,7 @@ class AutocompleteView(AutocompleteResponseMixin,
     def post(self, request, *args, **kwargs):
         try:
             response = self.build_response(
-                self.request, queryset=self.get_queryset(), serializer=self.serializer_class)
+                request, queryset=self.get_queryset(), serializer=self.serializer_class)
             status_code = status.HTTP_200_OK
         except InvalidParameterException as e:
             response = {"message": str(e)}
@@ -111,8 +112,10 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     @cache_response()
     def list(self, request, *args, **kwargs):
         try:
+            created, req = RequestCatalog.get_or_create_from_request(request)
             response = self.build_response(
-                self.request, queryset=self.get_queryset(), serializer=self.get_serializer_class())
+                request, queryset=self.get_queryset(), serializer=self.get_serializer_class(),
+                request_checksum=req.checksum)
             status_code = status.HTTP_200_OK
         except InvalidParameterException as e:
             response = {"message": str(e)}
