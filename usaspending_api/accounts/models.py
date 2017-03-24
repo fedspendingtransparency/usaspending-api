@@ -175,10 +175,15 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     def populate_final_of_fy(cls):
         sql = """   UPDATE appropriation_account_balances
                     SET final_of_fy = submission_id in
-                    ( SELECT DISTINCT ON (FY(reporting_period_start),
-                                          submission_id) submission_id
-                    FROM submission_attributes
-                    ORDER BY FY(reporting_period_start), submission_id,
-                    reporting_period_start DESC)"""
+                    ( SELECT DISTINCT ON
+                        (aab.treasury_account_identifier,
+                         FY(s.reporting_period_start))
+                      s.submission_id
+                      FROM submission_attributes s
+                      JOIN appropriation_account_balances aab
+                          ON (s.submission_id = aab.submission_id)
+                      ORDER BY aab.treasury_account_identifier,
+                               FY(s.reporting_period_start),
+                               s.reporting_period_start DESC)"""
         with connection.cursor() as cursor:
             cursor.execute(sql)
