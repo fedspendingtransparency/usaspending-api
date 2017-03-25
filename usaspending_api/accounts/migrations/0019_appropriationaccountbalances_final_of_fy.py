@@ -4,6 +4,9 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 
+from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.common.helpers import FY_PG_FUNCTION_DEF
+
 
 class Migration(migrations.Migration):
 
@@ -17,4 +20,6 @@ class Migration(migrations.Migration):
             name='final_of_fy',
             field=models.BooleanField(db_index=True, default=False),
         ),
+        migrations.RunSQL(FY_PG_FUNCTION_DEF),
+        migrations.RunSQL(AppropriationAccountBalances.FINAL_OF_FY_SQL),
     ]
