@@ -29,4 +29,6 @@ def test_final_of_fy_population(app_acc_bal_models, client):
     """
     Ensure the accounts endpoint lists the right number of entities
     """
+    assert AppropriationAccountBalances.objects.count() == 6
+    assert AppropriationAccountBalances.final_objects.count() == 3
     assert AppropriationAccountBalances.objects.filter(final_of_fy=True).count() == 3

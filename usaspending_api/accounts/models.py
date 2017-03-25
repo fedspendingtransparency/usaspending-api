@@ -129,6 +129,16 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         return "%s" % (self.tas_rendering_label)
 
 
+class AppropriationAccountBalancesManager(models.Manager):
+
+    def get_queryset(self):
+        '''
+        Get only records from the last submission per TAS per fiscal year.
+        '''
+
+        return super(AppropriationAccountBalancesManager, self).get_queryset().filter(final_of_fy=True)
+
+
 class AppropriationAccountBalances(DataSourceTrackedModel):
     """
     Represents Treasury Account Symbol (TAS) balances for each DATA Act
@@ -170,6 +180,9 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'appropriation_account_balances'
+
+    objects = models.Manager()
+    final_objects = AppropriationAccountBalancesManager()
 
     FINAL_OF_FY_SQL = """
         UPDATE appropriation_account_balances
