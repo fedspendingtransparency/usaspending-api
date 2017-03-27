@@ -1,0 +1,24 @@
+from datetime import datetime
+import logging
+import os
+from django.core.management.base import BaseCommand
+
+from usaspending_api.submissions.models import SubmissionAttributes
+
+
+class Command(BaseCommand):
+    """
+    This command will remove a submission and all associated data with it from the
+    database
+    """
+    help = "Removes a single submission from the configured data broker database"
+    logger = logging.getLogger('console')
+
+    def add_arguments(self, parser):
+        parser.add_argument('submission_id', nargs=1, help='the broker submission id to delete', type=int)
+
+    def handle(self, *args, **options):
+        # This will throw an exception and exit the command if the id doesn't exist
+        submission = SubmissionAttributes.objects.get(broker_submission_id=options["submission_id"][0])
+
+        submission.delete()
