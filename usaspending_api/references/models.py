@@ -433,27 +433,6 @@ class LegalEntity(DataSourceTrackedModel):
         unique_together = (('recipient_unique_id'),)
 
 
-# RefObjectClassCode is depcrecated in favor of a new object class
-# model (ObjectClass) that has a surrogate key and reflects a
-# fuller version of the oject class hierarchy. RefObjectClassCode
-# will remain until the entire code base (including the submission loader
-# is transitioned)
-class RefObjectClassCode(models.Model):
-    object_class = models.CharField(primary_key=True, max_length=4)
-    max_object_class_name = models.CharField(max_length=60, blank=True, null=True)
-    direct_or_reimbursable = models.CharField(max_length=25, blank=True, null=True)
-    label = models.CharField(max_length=100, blank=True, null=True)
-    valid_begin_date = models.DateTimeField(blank=True, null=True)
-    valid_end_date = models.DateTimeField(blank=True, null=True)
-    valid_code_indicator = models.CharField(max_length=1, blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'ref_object_class_code'
-
-
 class ObjectClass(models.Model):
     major_object_class = models.CharField(max_length=2, db_index=True)
     major_object_class_name = models.CharField(max_length=100)

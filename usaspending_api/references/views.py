@@ -6,7 +6,7 @@ from usaspending_api.common.api_request_utils import DataQueryHandler, GeoComple
 from usaspending_api.references.models import Location, Agency, LegalEntity, CFDAProgram
 from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, CfdaSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin, SuperLoggingMixin
-from usaspending_api.common.views import AggregateView, DetailViewSet
+from usaspending_api.common.views import AggregateView, DetailViewSet, AutocompleteView
 import json
 
 
@@ -29,15 +29,17 @@ class LocationEndpoint(APIView):
         return Response(response_data)
 
 
-class AgencyAutocomplete(APIView):
+class AgencyAutocomplete(FilterQuerysetMixin,
+                         AutocompleteView):
     """Autocomplete support for agency objects."""
-    def post(self, request, format=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
-            return Response(AutoCompleteHandler.handle(Agency.objects.all(), body, serializer=AgencySerializer))
-        except Exception as e:
-            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    serializer_class = AgencySerializer
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = Agency.objects.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        return filtered_queryset
 
 
 class AgencyEndpoint(SuperLoggingMixin,
@@ -73,12 +75,14 @@ class CfdaEndpoint(SuperLoggingMixin,
         return ordered_queryset
 
 
-class RecipientAutocomplete(APIView):
+class RecipientAutocomplete(FilterQuerysetMixin,
+                            AutocompleteView):
     """Autocomplete support for legal entity (recipient) objects."""
-    def post(self, request, format=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
-            return Response(AutoCompleteHandler.handle(LegalEntity.objects.all(), body, LegalEntitySerializer))
-        except Exception as e:
-            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    serializer_class = LegalEntitySerializer
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = LegalEntity.objects.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        return filtered_queryset

@@ -1,20 +1,11 @@
 from django.conf.urls import url
 
-from usaspending_api.accounts import views
+from usaspending_api.accounts.views import common as views
 
 # bind ViewSets to URLs
-tas_list = views.TreasuryAppropriationAccountViewSet.as_view(
-    {'get': 'list', 'post': 'list'})
-tas_detail = views.TreasuryAppropriationAccountViewSet.as_view(
-    {'get': 'retrieve', 'post': 'retrieve'})
-tas_balances_list = views.TreasuryAppropriationAccountBalancesViewSet.as_view(
-    {'get': 'list', 'post': 'list'})
 financial_accounts_by_award = views.FinancialAccountsByAwardListViewSet.as_view(
     {'get': 'list', 'post': 'list'})
 
 urlpatterns = [
-    url(r'^$', tas_balances_list),
-    url(r'^tas/$', tas_list),
-    url(r'^tas/(?P<pk>\w+)/', tas_detail),
     url(r'^awards/', financial_accounts_by_award),
 ]

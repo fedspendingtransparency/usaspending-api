@@ -50,6 +50,11 @@ The currently available endpoints are listed below. To reduce unnecessary data t
     - _Methods_: GET, POST
 
 
+  * **/v1/accounts/tas/autocomplete/**
+    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the TAS endpoint.
+    - _Methods_: POST
+
+
   * **[/v1/awards/](https://spending-api.us/api/v1/awards/)**
     - _Description_: Provides a list of awards. Award data pertains to grants, loans, direct payments to individuals, and contracts.
     - _Methods_: GET, POST
@@ -537,6 +542,7 @@ Autocomplete queries currently require the endpoint to have additional handling,
 	"mode": "contains",
     "limit": 100,
     "matched_objects": true
+  "filters": []
 }
 ```
 #### Options
@@ -547,6 +553,7 @@ Autocomplete queries currently require the endpoint to have additional handling,
     * `startswith` - Matches if the field's value starts with the specified value
   * `matched_objects` - _Optional_ - Boolean value specifying whether or not to return matching data objects. Default: false
   * `limit` - _Optional_ - Limits the number of query matches. Defaults to 10.
+  * `filters` - _Optional_ - As on regular endpoint, filters the data before performing the autocomplete
 
 #### Response
 ```

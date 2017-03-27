@@ -59,3 +59,12 @@ If a legacy USAspending contract record has a string description of the award ty
 Currently, award-level data coming from both legacy USAspending records and data broker submissions represents transactional information. In other words, we receive information about individual spending events against an award, but no records that represent the award itself.
 
 To make it easier for users to see the lifespan of an award, we create award records when loading the contract and financial assistance transactions. These award "holders" allow us group all related transactions together, so people can see the entire spending history.
+
+## Federal Accounts
+
+**Data Source:** DATA Broker  
+**Code:** `accounts/models.py`
+
+Agencies submit financial information to the DATA Broker by Treasury Account Symbol (TAS). In addition to displaying financial data for each individual TAS, USAspending groups financial data by federal account. Each federal account contains multiple individual TAS.
+
+To create federal account records, we use a unique combination of TAS agency identifier (AID) and main account code. The title that we assign to each federal account is the title of its child TAS with the most recent ending period of availability.

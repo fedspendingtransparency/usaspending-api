@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount
 from usaspending_api.financial_activities.serializers import FinancialAccountsByProgramActivityObjectClassSerializer
 from usaspending_api.common.serializers import LimitableSerializer
-from usaspending_api.references.serializers import RefProgramActivityBriefSerializer, ObjectClassBriefSerializer, RefObjectClassCodeBriefSerializer
+from usaspending_api.references.serializers import RefProgramActivityBriefSerializer, ObjectClassBriefSerializer
 
 
 class AppropriationAccountBalancesSerializer(LimitableSerializer):
@@ -12,6 +12,14 @@ class AppropriationAccountBalancesSerializer(LimitableSerializer):
     class Meta:
 
         model = AppropriationAccountBalances
+        fields = '__all__'
+
+
+class FederalAccountSerializer(LimitableSerializer):
+
+    class Meta:
+
+        model = FederalAccount
         fields = '__all__'
 
 
@@ -26,6 +34,10 @@ class TreasuryAppropriationAccountSerializer(LimitableSerializer):
         model = TreasuryAppropriationAccount
         fields = '__all__'
         nested_serializers = {
+            "federal_account": {
+                "class": FederalAccountSerializer,
+                "kwargs": {"read_only": True}
+            },
             "account_balances": {
                 "class": AppropriationAccountBalancesSerializer,
                 "kwargs": {"read_only": True, "many": True}
@@ -39,8 +51,7 @@ class TreasuryAppropriationAccountSerializer(LimitableSerializer):
                 "kwargs": {"read_only": True, "many": True}
             },
             "object_classes": {
-                # "class": ObjectClassBriefSerializer, # TODO: switch to this when ObjectClass loaded
-                "class": RefObjectClassCodeBriefSerializer,
+                "class": ObjectClassBriefSerializer,
                 "kwargs": {"read_only": True, "many": True}
             },
         }
