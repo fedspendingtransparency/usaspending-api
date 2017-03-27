@@ -2,6 +2,7 @@ from datetime import datetime
 import logging
 import os
 from django.core.management.base import BaseCommand
+from django.core.exceptions import ObjectDoesNotExist
 
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -19,6 +20,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # This will throw an exception and exit the command if the id doesn't exist
-        submission = SubmissionAttributes.objects.get(broker_submission_id=options["submission_id"][0])
+        try:
+            submission = SubmissionAttributes.objects.get(broker_submission_id=options["submission_id"][0])
+        except ObjectDoesNotExist:
+            self.logger.error("Submission with broker id " + str(options["submission_id"][0]) + " does not exist")
+            return
 
         submission.delete()
