@@ -162,6 +162,8 @@ class Command(BaseCommand):
 
             load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True)
 
+        AppropriationAccountBalances.populate_final_of_fy()
+
         # Let's get File B information
         db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
         prg_act_obj_cls_data = dictfetchall(db_cursor)
