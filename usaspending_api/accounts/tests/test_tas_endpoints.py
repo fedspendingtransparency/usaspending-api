@@ -3,6 +3,8 @@ import pytest
 from model_mommy import mommy
 import json
 
+from usaspending_api.accounts.models import AppropriationAccountBalances
+
 
 @pytest.fixture
 def account_models():
@@ -14,6 +16,7 @@ def account_models():
     tas_2 = mommy.make('accounts.TreasuryAppropriationAccount', tas_rendering_label="XYZ", _fill_optional=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas_1, budget_authority_unobligated_balance_brought_forward_fyb=10, _quantity=2, _fill_optional=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas_2, budget_authority_unobligated_balance_brought_forward_fyb=10, _quantity=3, _fill_optional=True)
+    AppropriationAccountBalances.populate_final_of_fy()
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_1, program_activity=prg_atvy_1, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=1000, _quantity=2, _fill_optional=True)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_2, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=2000, _quantity=2, _fill_optional=True)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_1, treasury_account=tas_1, obligations_undelivered_orders_unpaid_total_cpe=50, _fill_optional=True)
@@ -26,7 +29,7 @@ def test_tas_balances_list(account_models, client):
     """
     resp = client.get('/api/v1/tas/balances/')
     assert resp.status_code == 200
-    assert len(resp.data['results']) == 5
+    assert len(resp.data['results']) == 2
 
 
 @pytest.mark.django_db
