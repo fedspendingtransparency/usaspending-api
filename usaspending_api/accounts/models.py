@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, connection
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.models import DataSourceTrackedModel
 
@@ -129,6 +129,16 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         return "%s" % (self.tas_rendering_label)
 
 
+class AppropriationAccountBalancesManager(models.Manager):
+
+    def get_queryset(self):
+        '''
+        Get only records from the last submission per TAS per fiscal year.
+        '''
+
+        return super(AppropriationAccountBalancesManager, self).get_queryset().filter(final_of_fy=True)
+
+
 class AppropriationAccountBalances(DataSourceTrackedModel):
     """
     Represents Treasury Account Symbol (TAS) balances for each DATA Act
@@ -165,7 +175,30 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    final_of_fy = models.BooleanField(blank=False, null=False, default=False, db_index=True)
 
     class Meta:
         managed = True
         db_table = 'appropriation_account_balances'
+
+    objects = models.Manager()
+    final_objects = AppropriationAccountBalancesManager()
+
+    FINAL_OF_FY_SQL = """
+        UPDATE appropriation_account_balances
+        SET final_of_fy = submission_id in
+        ( SELECT DISTINCT ON
+            (aab.treasury_account_identifier,
+             FY(s.reporting_period_start))
+          s.submission_id
+          FROM submission_attributes s
+          JOIN appropriation_account_balances aab
+              ON (s.submission_id = aab.submission_id)
+          ORDER BY aab.treasury_account_identifier,
+                   FY(s.reporting_period_start),
+                   s.reporting_period_start DESC)"""
+
+    @classmethod
+    def populate_final_of_fy(cls):
+        with connection.cursor() as cursor:
+            cursor.execute(cls.FINAL_OF_FY_SQL)

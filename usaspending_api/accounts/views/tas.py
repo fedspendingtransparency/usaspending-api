@@ -44,7 +44,7 @@ class TreasuryAppropriationAccountBalancesViewSet(SuperLoggingMixin,
     serializer_class = AppropriationAccountBalancesSerializer
 
     def get_queryset(self):
-        queryset = AppropriationAccountBalances.objects.all()
+        queryset = AppropriationAccountBalances.final_objects.all()  # last per FY
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
