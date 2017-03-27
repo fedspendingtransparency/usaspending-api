@@ -2,6 +2,7 @@ from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_extensions.cache.decorators import cache_response
 from django.views.generic import TemplateView
 
 from usaspending_api.common.api_request_utils import ResponsePaginator
@@ -26,6 +27,7 @@ class AggregateView(AggregateQuerysetMixin,
 
     exception_logger = logging.getLogger("exceptions")
 
+    @cache_response()
     def list(self, request, *args, **kwargs):
         """
         Override the parent list method so we can aggregate the data
@@ -106,6 +108,7 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
 
     exception_logger = logging.getLogger("exceptions")
 
+    @cache_response()
     def list(self, request, *args, **kwargs):
         try:
             response = self.build_response(
@@ -121,6 +124,10 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             self.exception_logger.exception(e)
         finally:
             return Response(response, status=status_code)
+
+    @cache_response()
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
 
 
 class MarkdownView(TemplateView):

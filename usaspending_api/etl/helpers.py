@@ -10,8 +10,8 @@ warnings.simplefilter("ignore", CacheKeyWarning)
 
 
 def clear_caches():
-    for cache in ['locations', ]:
-        caches[cache].clear()
+    for cache_name in ('default', 'locations', 'awards'):
+        caches[cache_name].clear()
 
 
 def cleanse_values(row):
