@@ -1,0 +1,74 @@
+from django.db import connection
+from django.db.models.functions import Coalesce
+from django.db.models import Value
+
+from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
+
+
+def update_federal_accounts(tas_tuple=None):
+    """
+    Update existing federal account records based on the latest information
+    from the TreasuryAppropriationAccount (TAS) table. The account title
+    for each federal account should reflect the account title of the
+    a related TAS with the most recent ending period of availability.
+
+    Returns:
+        Number of rows updated
+    """
+
+    # Because orm doesn't support join updates, dropping down to raw SQL
+    # to update existing federal_account FK relationships on the tas table.
+    tas_fk_sql = '''
+        update treasury_appropriation_account t
+        set federal_account_id = fa.id
+        from federal_account fa
+        where t.agency_id = fa.agency_identifier
+        and t.main_account_code = fa.main_account_code
+        '''
+    if tas_tuple is not None:
+        tas_fk_sql += 'AND t.treasury_account_identifier IN %s '
+
+    with connection.cursor() as cursor:
+        cursor.execute(tas_fk_sql, [tas_tuple])
+        rows = cursor.rowcount
+
+    return rows
+
+
+def insert_federal_accounts():
+    """
+    Insert new federal accounts records based on the TreasuryAppropriationAccount
+    (TAS) table. Each TAS maps to a higher-level federal account, defined
+    by a unique combination of TAS agency_id (AID) and TAS main account
+    code (MAC).
+    """
+
+    # look for treasury_appropriation_accounts with no federal_account FK
+    tas_no_federal_account = TreasuryAppropriationAccount.objects.filter(
+        federal_account__isnull=True)
+
+    if tas_no_federal_account.count() > 0:
+        # there are tas records with no corresponding federal_account,
+        # so insert the necessary federal_account records
+        # to get the federal accounts title, we use the title from the tas
+        # with the most recent ending period of availability (which is
+        # coalesced to a string to ensure the descending sort works as expected)
+        federal_accounts = TreasuryAppropriationAccount.objects.values_list(
+            'agency_id', 'main_account_code', 'account_title').\
+            annotate(epoa=Coalesce('ending_period_of_availability', Value(''))).\
+            distinct('agency_id', 'main_account_code').\
+            order_by('agency_id', 'main_account_code', '-epoa').\
+            filter(treasury_account_identifier__in=tas_no_federal_account)
+
+        # create a list of the new federal account objects and bulk insert them
+        fa_objects = [FederalAccount(
+            agency_identifier=f[0],
+            main_account_code=f[1],
+            account_title=f[2]) for f in federal_accounts]
+        FederalAccount.objects.bulk_create(fa_objects)
+
+        # now that the new account records are inserted, add federal_account
+        # FKs to their corresponding treasury_appropriation_account records
+        tas_update_list = [
+            t.treasury_account_identifier for t in tas_no_federal_account]
+        update_federal_accounts(tuple(tas_update_list))
