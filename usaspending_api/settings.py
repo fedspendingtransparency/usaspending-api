@@ -179,23 +179,31 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/debug.log'),
+            'maxBytes': 1024*20, # 20 KB
+            'backupCount': 5
         },
         'console_file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
+            'maxBytes': 1024*20, # 20 KB
+            'backupCount': 5,
             'formatter': 'specifics'
         },
         'events_file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/events.log'),
+            'maxBytes': 1024*20, # 20 KB
+            'backupCount': 5,
             'formatter': 'json'
         },
         'exceptions_file': {
             'level': 'ERROR',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/exceptions.log'),
+            'maxBytes': 1024*20, # 20 KB
+            'backupCount': 5,
             'formatter': 'specifics'
         },
         'console': {
