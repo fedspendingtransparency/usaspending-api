@@ -127,10 +127,10 @@ In this section you will find definitions for common terms used in the API. For 
 
 | Type | Description |
 | ---- | ---- |
-| Nested Object | This field contains _another_ object. Where applicable, the description for these fields will contain a link to the appropriate list of fields for that nested object, and descriptions of those fields.|
-| Integer | This field contains an Integer |
-| String | This field contains a string. Special formatting is noted in the description, or the lexicon |
-| Float | This field contains a floating point number |
+| Nested Object | This field contains a set of its own fields. Where applicable, the description for Nested Objects will contain a link to the list of fields that it contains, and descriptions of those fields.|
+| Integer | This field contains a whole number, with no decimals or fractions.|
+| String | This field contains a 'string' of text--which can be anything from a few letters and numbers to multiple paragraphs. Special formatting is noted in the description, or the lexicon |
+| Float | This field contains a 'floating point number,' which is a number that can contain one or more decimal places. |
 | Date | This field contains a date, represented as a string in [YYYY]-[MM]-[DD] format |
 | Datetime | This field contains a date, represented as a string in [YYYY]-[MM]-[DD] format, and time. Example: `2017-03-14T14:52:03.398918Z` |
 | Boolean | This field contains a boolean value, either `true` or `false` |
