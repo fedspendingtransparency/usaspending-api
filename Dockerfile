@@ -13,9 +13,15 @@ FROM python:3.5.3
 
 WORKDIR /dockermount
 
-ADD requirements.txt /dockermount/requirements.txt
+RUN apt-get update -y
 
-RUN pip install -r requirements.txt
+RUN apt-get install -y \
+	memcached \
+	libmemcached-dev
+
+ADD requirements/requirements.txt /dockermount/requirements/requirements.txt
+
+RUN pip install -r requirements/requirements.txt
 
 ADD . /dockermount
 
