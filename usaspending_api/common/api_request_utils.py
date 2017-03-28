@@ -71,7 +71,7 @@ class FilterGenerator():
     def __init__(self, model, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
         self.model = model
-        self.ignored_parameters = ['page', 'limit', 'last'] + ignored_parameters
+        self.ignored_parameters = ['page', 'limit', 'last', 'req'] + ignored_parameters
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
 

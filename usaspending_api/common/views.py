@@ -112,10 +112,9 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     @cache_response()
     def list(self, request, *args, **kwargs):
         try:
-            created, req = RequestCatalog.get_or_create_from_request(request)
+            created, self.req = RequestCatalog.get_or_create_from_request(request)
             response = self.build_response(
-                request, queryset=self.get_queryset(), serializer=self.get_serializer_class(),
-                request_checksum=req.checksum)
+                request, queryset=self.get_queryset(), serializer=self.get_serializer_class())
             status_code = status.HTTP_200_OK
         except InvalidParameterException as e:
             response = {"message": str(e)}

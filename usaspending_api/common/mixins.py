@@ -161,14 +161,12 @@ class FilterQuerysetMixin(object):
         filter_map = kwargs.get('filter_map', {})
         fg = FilterGenerator(queryset.model, filter_map=filter_map)
 
-        # Check to see if we have some stored filters to use
-        created, req = RequestCatalog.get_or_create_from_request(request)
-
-        if len(req.request["data"]):
+        # req here is the request catalog entry for this request
+        if len(self.req.request["data"]):
             fg = FilterGenerator(queryset.model)
-            filters = fg.create_from_request_body(req.request["data"])
+            filters = fg.create_from_request_body(self.req.request["data"])
         else:
-            filters = Q(**fg.create_from_query_params(req.request["query_params"]))
+            filters = Q(**fg.create_from_query_params(self.req.request["query_params"]))
 
         # Handle FTS vectors
         if len(fg.search_vectors) > 0:
@@ -194,11 +192,8 @@ class FilterQuerysetMixin(object):
         # (not sure if this is a good practice, or we should be more
         # prescriptive that aggregate requests can only be of one type)
 
-        # Check to see if we have some stored filters to use
-        created, req = RequestCatalog.get_or_create_from_request(request)
-
-        params = dict(req.request["query_params"])
-        params.update(dict(req.request["data"]))
+        params = dict(self.req.request["query_params"])
+        params.update(dict(self.req.request["data"]))
         ordering = params.get('order')
         if ordering is not None:
             return queryset.order_by(*ordering)
@@ -234,7 +229,7 @@ class ResponseMetadatasetMixin(object):
     def build_response(self, request, *args, **kwargs):
         """Returns total and page metadata that can be attached to a response."""
         queryset = kwargs.get('queryset')
-        checksum = kwargs.get('request_checksum', None)
+        checksum = self.req.checksum
 
         # workaround to handle both GET and POST requests
         params = self.request.query_params.copy()  # copy() creates mutable copy of a QueryDict

@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
+from usaspending_api.common.exceptions import InvalidParameterException
 import hashlib
 import pickle
 import datetime
@@ -51,7 +52,7 @@ class RequestCatalog(models.Model):
                 return False, request_catalog
             except ObjectDoesNotExist:
                 # The checksum they sent doesn't exist
-                raise Exception("Requested 'req' " + checksum + " does not exist or has expired.")
+                raise InvalidParameterException("Requested 'req' " + checksum + " does not exist or has expired.")
 
         # Delete any pagination data
         for item in ["page", "limit"]:
