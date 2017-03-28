@@ -177,14 +177,14 @@ LOGGING = {
     'handlers': {
         'file': {
             'level': 'DEBUG',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/debug.log'),
             'maxBytes': 1024*20, # 20 KB
             'backupCount': 5
         },
         'console_file': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
             'maxBytes': 1024*20, # 20 KB
             'backupCount': 5,
@@ -192,7 +192,7 @@ LOGGING = {
         },
         'events_file': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/events.log'),
             'maxBytes': 1024*20, # 20 KB
             'backupCount': 5,
@@ -200,7 +200,7 @@ LOGGING = {
         },
         'exceptions_file': {
             'level': 'ERROR',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/exceptions.log'),
             'maxBytes': 1024*20, # 20 KB
             'backupCount': 5,
