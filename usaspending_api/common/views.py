@@ -5,7 +5,6 @@ from rest_framework import status
 from rest_framework_extensions.cache.decorators import cache_response
 from django.views.generic import TemplateView
 
-from usaspending_api.common.api_request_utils import ResponsePaginator
 from usaspending_api.common.models import RequestCatalog
 from usaspending_api.common.mixins import AutocompleteResponseMixin, FilterQuerysetMixin
 

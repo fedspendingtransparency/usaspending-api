@@ -4,7 +4,7 @@ from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 from django.core.serializers.json import json, DjangoJSONEncoder
 from django.utils.timezone import now
 
-from usaspending_api.common.api_request_utils import FilterGenerator, ResponsePaginator, AutoCompleteHandler
+from usaspending_api.common.api_request_utils import FilterGenerator, AutoCompleteHandler
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.models import RequestCatalog
 from rest_framework_tracking.mixins import LoggingMixin
