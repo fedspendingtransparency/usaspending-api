@@ -63,8 +63,6 @@ class RequestCatalog(models.Model):
 
         json_request = {"data": data, "query_params": query_params}
 
-        print(json_request)
-
         # Make the checksum
         checksum = hashlib.sha256(json.dumps(json_request).encode('utf-8')).hexdigest()
 

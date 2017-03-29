@@ -34,6 +34,8 @@ class AggregateView(AggregateQuerysetMixin,
         Override the parent list method so we can aggregate the data
         before constructing a respones.
         """
+        created, self.req = RequestCatalog.get_or_create_from_request(request)
+
         try:
             queryset = self.aggregate(request, *args, **kwargs)
 
@@ -81,6 +83,7 @@ class AutocompleteView(AutocompleteResponseMixin,
 
     def post(self, request, *args, **kwargs):
         try:
+            created, self.req = RequestCatalog.get_or_create_from_request(request)
             response = self.build_response(
                 request, queryset=self.get_queryset(), serializer=self.serializer_class)
             status_code = status.HTTP_200_OK
@@ -129,6 +132,7 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
 
     @cache_response()
     def retrieve(self, request, *args, **kwargs):
+        created, self.req = RequestCatalog.get_or_create_from_request(request)
         return super().retrieve(request, *args, **kwargs)
 
 

@@ -1,15 +1,17 @@
 import pytest
 import json
 from datetime import date
+from collections import namedtuple
 
 from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.awards.models import Award
+from usaspending_api.common.models import RequestCatalog
 
 
 @pytest.fixture
-def mock_award_data():
+def mock_request_catalog_data():
     toptier = mommy.make("references.ToptierAgency", toptier_agency_id=11, name="LEXCORP")
     agency = mommy.make("references.Agency", id=10, toptier_agency=toptier)
     mommy.make(
@@ -56,33 +58,37 @@ def mock_award_data():
         date_signed=date(2012, 3, 1))
 
 
-@pytest.mark.django_db
-def test_request_catalog_generation_and_retrieval(client, mock_award_data):
+@pytest.mark.django_db(transaction=True)
+def test_request_catalog_generation_and_retrieval(client, mock_request_catalog_data):
+    request = {"filters": [{
+        "field": "type",
+        "operation": "equals",
+        "value": "C"
+    }]}
+
     resp = client.post(
         '/api/v1/awards/',
         content_type='application/json',
-        data=json.dumps({"filters": [{
-            "field": ["description", "fain"],
-            "operation": "search",
-            "value": "small"
-        }]}))
+        data=json.dumps(request))
     assert resp.status_code == status.HTTP_200_OK
     results = resp.data['results']
-    assert len(results) == 4
+    assert len(results) == 1
 
-    checksum = resp.data['req']
+    # Spoof a real request with a named tuple
+    reqStruct = namedtuple('reqStruct', 'query_params data')
+    created, req = RequestCatalog.get_or_create_from_request(reqStruct(query_params={}, data=request))
 
     # Check that a post query for this request checksum returns the same thing
     resp = client.post(
         '/api/v1/awards/',
         content_type='application/json',
-        data=json.dumps({"req": checksum}))
+        data=json.dumps({"req": req.checksum}))
 
     assert resp.status_code == status.HTTP_200_OK
     assert results == resp.data['results']
 
     # Check that a post query returns the same thing
-    resp = client.get('/api/v1/awards/?req=' + checksum)
+    resp = client.get('/api/v1/awards/?req=' + req.checksum)
 
     assert resp.status_code == status.HTTP_200_OK
     assert results == resp.data['results']

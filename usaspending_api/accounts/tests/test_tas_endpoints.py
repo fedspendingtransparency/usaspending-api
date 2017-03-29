@@ -135,4 +135,4 @@ def test_tas_list(account_models, client):
     """
     resp = client.get('/api/v1/tas/')
     assert resp.status_code == 200
-    assert len(resp.data) == 3
+    assert len(resp.data) == 4
