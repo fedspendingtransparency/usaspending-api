@@ -629,19 +629,31 @@ class ResponsePaginator:
         if 'limit' in request_parameters:
             page_limit = int(request_parameters['limit'])
         if 'page' in request_parameters:
-            page = request_parameters['page']
+            page = int(request_parameters['page'])
 
-        paginator = Paginator(data_set, page_limit)
+        # Let's try an offset-limit nonsense
+        limit = page_limit * page
+        offset = page_limit * (page - 1)
 
-        try:
-            paged_data = paginator.page(page)
-        except PageNotAnInteger:
-            # Either no page or garbage page
-            paged_data = paginator.page(1)
-            page = 1
-        except EmptyPage:
-            # Page is too far, give last page
-            paged_data = paginator.page(paginator.num_pages)
-            page = paginator.num_pages
+        # Does next page exist?
+        next_limit = page_limit * (page + 1)
+        next_offset = page_limit * page
+
+        print(data_set[next_offset:next_limit].count())
+
+        return data_set[offset:limit]
+
+        # paginator = Paginator(data_set, page_limit)
+        #
+        # try:
+        #     paged_data = paginator.page(page)
+        # except PageNotAnInteger:
+        #     # Either no page or garbage page
+        #     paged_data = paginator.page(1)
+        #     page = 1
+        # except EmptyPage:
+        #     # Page is too far, give last page
+        #     paged_data = paginator.page(paginator.num_pages)
+        #     page = paginator.num_pages
 
         return paged_data

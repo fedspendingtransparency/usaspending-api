@@ -26,14 +26,14 @@ class AggregateQuerysetMixin(object):
         # regardless of request type (e.g., GET, POST)
         # (not sure if this is a good practice, or we should be more
         # prescriptive that aggregate requests can only be of one type)
-        params = dict(request.query_params)
-        params.update(dict(request.data))
-
-        # validate request parameters
-        agg_field, group_field, date_part = self.validate_request(params)
+        params = dict(self.req.request["query_params"])
+        params.update(dict(self.req.request["data"]))
 
         # get the queryset to be aggregated
-        queryset = self.get_queryset()
+        queryset = kwargs.get('queryset', None)
+
+        # validate request parameters
+        agg_field, group_field, date_part = self.validate_request(params, queryset)
 
         # get the aggregate function to use (default is Sum)
         agg_map = {
@@ -83,13 +83,13 @@ class AggregateQuerysetMixin(object):
                 return result
         return F(col_name)
 
-    def validate_request(self, params):
+    def validate_request(self, params, queryset):
         """Validate request parameters."""
 
         agg_field = params.get('field')
         group_field = params.get('group')
         date_part = params.get('date_part')
-        model = self.get_queryset().model
+        model = queryset.model
 
         # field to aggregate is required
         if agg_field is None:
@@ -213,62 +213,6 @@ class AutocompleteResponseMixin(object):
         params.update(self.request.data.copy())
 
         return AutoCompleteHandler.handle(queryset, params, serializer)
-
-
-class ResponseMetadatasetMixin(object):
-    """Handles response metadata."""
-
-    # This mixin ensures that views which have been
-    # refactored to use generic views/viewsets and mixins
-    # send back metadata consistent with the views that
-    # haven't yet been updated. Going forward, we can
-    # probably handle metadata in way that's more consistent
-    # with Django Rest Framework constructs (e.g., using
-    # the pagination that comes for free in generic views)
-
-    def build_response(self, request, *args, **kwargs):
-        """Returns total and page metadata that can be attached to a response."""
-        queryset = kwargs.get('queryset')
-        checksum = self.req.checksum
-
-        # workaround to handle both GET and POST requests
-        params = self.request.query_params.copy()  # copy() creates mutable copy of a QueryDict
-        params.update(self.request.data.copy())
-
-        # get paged data for this request
-        paged_data = ResponsePaginator.get_paged_data(
-            queryset, request_parameters=params)
-
-        # construct metadata of entire set of data that matches the request specifications
-        total_metadata = {"count": paged_data.paginator.count}
-
-        # construct page-specific metadata
-        page_metadata = {
-            "page_number": paged_data.number,
-            "num_pages": paged_data.paginator.num_pages,
-            "count": len(paged_data)
-        }
-
-        # note that generics/viewsets pass request and view info to the
-        # serializer context automatically. however, we explicitly add it here
-        # because our common DetailViewSet overrides the 'list' method, which
-        # somehow prevents the extra info from being added to the serializer
-        # context. because we can get rid of DetailViewSet and use
-        # ReadOnlyModelViewSet directly as soon as the pagination changes
-        # are in, not going spend a lot of time researching this.
-        context = {'request': request, 'view': self}
-        # serialize the paged data
-        serializer = kwargs.get('serializer')(paged_data, many=True, context=context)
-        serialized_data = serializer.data
-
-        response_object = OrderedDict({
-            "req": checksum,
-            "total_metadata": total_metadata,
-            "page_metadata": page_metadata
-        })
-        response_object.update({'results': serialized_data})
-
-        return response_object
 
 
 class SuperLoggingMixin(LoggingMixin):

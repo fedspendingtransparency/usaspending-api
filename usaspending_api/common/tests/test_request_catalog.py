@@ -96,3 +96,49 @@ def test_request_catalog_generation_and_retrieval(client, mock_request_catalog_d
     # check that a no-good checksum returns 500
     resp = client.get('/api/v1/awards/?req=1234')
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db(transaction=True)
+def test_request_catalog_on_aggregate_endpoints(client, mock_request_catalog_data):
+    request = {"filters": [{
+        "field": "description",
+        "operation": "search",
+        "value": "small"
+    }],
+        "field": "total_obligation",
+        "group": "type",
+        "aggregate": "sum"
+    }
+
+    resp = client.post(
+        '/api/v1/awards/total/',
+        content_type='application/json',
+        data=json.dumps(request))
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.data['results']
+    assert len(results) == 1
+    assert results[0]["item"] == "B"
+    assert results[0]["aggregate"] == "3000.00"
+
+    # Spoof a real request with a named tuple
+    reqStruct = namedtuple('reqStruct', 'query_params data')
+    created, req = RequestCatalog.get_or_create_from_request(reqStruct(query_params={}, data=request))
+
+    # Check that a post query for this request checksum returns the same thing
+    resp = client.post(
+        '/api/v1/awards/total/',
+        content_type='application/json',
+        data=json.dumps({"req": req.checksum}))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert results == resp.data['results']
+
+    # Check that a post query returns the same thing
+    resp = client.get('/api/v1/awards/total/?req=' + req.checksum)
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert results == resp.data['results']
+
+    # check that a no-good checksum returns 500
+    resp = client.get('/api/v1/awards/total/?req=1234')
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST

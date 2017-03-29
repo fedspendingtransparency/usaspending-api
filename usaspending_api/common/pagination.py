@@ -1,40 +1,117 @@
 from collections import OrderedDict
 
 from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import BasePagination
+from rest_framework.settings import api_settings
+from django.template import loader
+from rest_framework.utils.urls import remove_query_param, replace_query_param
+from rest_framework.compat import template_render
 
 
-class UsaspendingPagination(PageNumberPagination):
-    # the default number of items to be returned on a single page
+class UsaspendingPagination(BasePagination):
+    # The default page size
     page_size = 100
-    # the name of the query param that can be used to override the
-    # default page size
-    page_size_query_param = 'limit'
-    # the param below sets the max number of items that a request will
-    # return, regardless of the page size specified in the request
+
+    # The maximum page size
     max_page_size = 500
 
-    def get_paginated_response(self, data):
-        """Override the built-in serializer for paged data."""
-        # return Response(OrderedDict([
-        #     ('total_count', self.page.paginator.count),
-        #     ('page_count', len(self.page)),
-        #     ('page_num', self.page.number),
-        #     ('page_total', self.page.paginator.num_pages),
-        #     ('next', self.get_next_link()),
-        #     ('previous', self.get_previous_link()),
-        #     ('results', data)
-        # ]))
+    # Page size query param
+    page_size_query_param = 'limit'
 
-        # note: code below will give us the old metadata format
-        return Response({
-            'page_metadata': {
-                'count': len(self.page),
-                'num_pages': self.page.paginator.num_pages,
-                'page_number': self.page.number
-            },
-            'total_metadata': {
-                'count': self.page.paginator.count
-            },
-            'results': data
-        })
+    # Page query param
+    page_query_param = 'page'
+
+    # Use a lazy template (i.e. doesn't need to know the total number of pages)
+    template = 'rest_framework/pagination/previous_and_next.html'
+
+    def paginate_queryset(self, queryset, request, view=None):
+        self.request = request
+        self.limit = self.get_limit(request)
+        self.page = self.get_page(request)
+        self.offset = self.get_offset(request)
+        self.has_next_page = self.next_page_exists(queryset)
+
+        # Turn on the controls if we have multiple pages
+        if self.next_page_exists and self.template is not None:
+            self.display_page_controls = True
+
+        return list(queryset[self.offset:self.offset+self.limit])
+
+    def next_page_exists(self, queryset):
+        # If our next page has a count > 0, return true
+        return (bool(queryset[(self.offset+self.limit):(self.offset+self.limit*2)]))
+
+    def get_limit(self, request):
+        # Check both POST and GET parameters for limit
+        request_parameters = {**request.data, **request.query_params}
+
+        if 'limit' in request_parameters:
+            # We need to check if this is a list due to the fact we support both POST and GET
+            l = request_parameters['limit']
+            if isinstance(l, list):
+                l = l[0]
+            return min(int(l), self.max_page_size)
+        else:
+            return self.page_size
+
+    def get_page(self, request):
+        # Check both POST and GET parameters for page
+        request_parameters = {**request.data, **request.query_params}
+        if 'page' in request_parameters:
+            # We need to check if this is a list due to the fact we support both POST and GET
+            p = request_parameters['page']
+            if isinstance(p, list):
+                p = p[0]
+            return int(p)
+        else:
+            return 1
+
+    def get_offset(self, request):
+        return (self.page - 1) * self.limit
+
+    def get_paginated_response(self, data):
+        page_metadata = OrderedDict([
+            ('page', self.page),
+            ('has_next_page', self.has_next_page),
+            ('next', self.get_next_link()),
+            ('previous', self.get_previous_link())
+        ])
+
+        return Response(OrderedDict([
+            ('page_metadata', page_metadata),
+            ('req', self.req.checksum),
+            ('results', data)
+        ]))
+
+    def get_next_link(self):
+        if not self.has_next_page:
+            return None
+
+        url = self.request.build_absolute_uri()
+        url = replace_query_param(url, self.page_size_query_param, self.limit)
+        url = replace_query_param(url, self.page_query_param, self.page + 1)
+        url = replace_query_param(url, "req", self.req.checksum)
+
+        return url
+
+    def get_previous_link(self):
+        if self.page == 1:
+            return None
+
+        url = self.request.build_absolute_uri()
+        url = replace_query_param(url, self.page_size_query_param, self.limit)
+        url = replace_query_param(url, self.page_query_param, self.page - 1)
+        url = replace_query_param(url, "req", self.req.checksum)
+
+        return url
+
+    def get_html_context(self):
+        return {
+            'previous_url': self.get_previous_link(),
+            'next_url': self.get_next_link()
+        }
+
+    def to_html(self):
+        template = loader.get_template(self.template)
+        context = self.get_html_context()
+        return template_render(template, context)

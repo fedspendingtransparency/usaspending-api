@@ -71,6 +71,9 @@ def test_endpoints(endpoint_data, client):
         # be a multi-tiered nest of lists and objects, and can also be OrderedDicts
         # and ResultLists, which don't play nice with the native equality checks
         # TESTING TODO: I bet I can beat this
+        print(url)
+        print(response_object)
+        print(response.data)
         assert evaluateEquivalence(response_object, response.data)
 
 
@@ -99,6 +102,12 @@ def evaluateEquivalence(item1, item2):
             if key not in item2:  # If the other dict doesn't have this key, we don't have a match
                 return False
             if 'date' in key:  # Date fields don't play nicely with the database, so skip them
+                continue
+            if 'req' in key:  # Ignore checksums for comparisons
+                continue
+            if 'next' in key:  # Ignore this due to checksum comparison
+                continue
+            if 'previous' in key:  # Ignore this due to checksum comparison
                 continue
             equality = equality and evaluateEquivalence(item1[key], item2[key])
     else:

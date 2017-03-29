@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from usaspending_api.common.api_request_utils import DataQueryHandler, GeoCompleteHandler, AutoCompleteHandler
 from usaspending_api.references.models import Location, Agency, LegalEntity, CFDAProgram
 from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, CfdaSerializer
-from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin, SuperLoggingMixin
-from usaspending_api.common.views import AggregateView, DetailViewSet, AutocompleteView
+from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin
+from usaspending_api.common.views import DetailViewSet, AutocompleteView
 import json
 
 
@@ -44,7 +44,6 @@ class AgencyAutocomplete(FilterQuerysetMixin,
 
 class AgencyEndpoint(SuperLoggingMixin,
                      FilterQuerysetMixin,
-                     ResponseMetadatasetMixin,
                      DetailViewSet):
     """Return an agency"""
     serializer_class = AgencySerializer
@@ -60,7 +59,6 @@ class AgencyEndpoint(SuperLoggingMixin,
 
 class CfdaEndpoint(SuperLoggingMixin,
                    FilterQuerysetMixin,
-                   ResponseMetadatasetMixin,
                    DetailViewSet):
     """Return information about CFDA Programs"""
     serializer_class = CfdaSerializer

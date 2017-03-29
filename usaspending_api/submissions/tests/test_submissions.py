@@ -15,4 +15,4 @@ def test_submissions_list(submissions_data, client):
     """
     resp = client.get('/api/v1/submissions/')
     assert resp.status_code == 200
-    assert len(resp.data) == 4
+    assert len(resp.data["results"]) == 2
