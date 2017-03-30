@@ -23,7 +23,7 @@ def update_awards(award_tuple=None):
         'txn_latest AS ('
         'SELECT DISTINCT ON (award_id) * '
         'FROM transaction ')
-    if award_tuple is not None:
+    if award_tuple:
         sql_txn_latest += 'WHERE award_id IN %s '
     sql_txn_latest += 'ORDER BY award_id, action_date DESC) '
 
