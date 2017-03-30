@@ -1,13 +1,35 @@
-from django.db import models
+from django.db import models, connection
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
-# Table #3 - Treasury Appropriation Accounts.
+class FederalAccount(models.Model):
+    """
+    Represents a single federal account. A federal account encompasses
+    multiple Treasury Account Symbols (TAS), represented by
+    :model:`accounts.TreasuryAppropriationAccount`.
+    """
+    agency_identifier = models.CharField(max_length=3, db_index=True)
+    main_account_code = models.CharField(max_length=4, db_index=True)
+    account_title = account_title = models.CharField(max_length=300)
+
+    class Meta:
+        managed = True
+        db_table = 'federal_account'
+        unique_together = ('agency_identifier', 'main_account_code')
+
+
 class TreasuryAppropriationAccount(DataSourceTrackedModel):
+    """Represents a single Treasury Account Symbol (TAS)."""
     treasury_account_identifier = models.AutoField(primary_key=True)
+    federal_account = models.ForeignKey('FederalAccount', models.DO_NOTHING, null=True)
     tas_rendering_label = models.CharField(max_length=50, blank=True, null=True)
     allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
+    # todo: update the agency details to match FederalAccounts. Is there a way that we can
+    # retain the text-based agency TAS components (since those are attributes of TAS
+    # while still having a convenient FK that links to our agency tables using Django's
+    # default fk naming standard? Something like agency_identifier for the 3 digit TAS
+    # component and agency_id for the FK?)
     agency_id = models.CharField(max_length=3)
     beginning_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
     ending_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
@@ -70,11 +92,13 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
                 "account_title",
                 "reporting_agency_id",
                 "reporting_agency_name",
+                "federal_account"
             ]
 
         return [
             "treasury_account_identifier",
             "tas_rendering_label",
+            "federal_account",
             "allocation_transfer_agency_id",
             "agency_id",
             "beginning_period_of_availability",
@@ -105,8 +129,24 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         return "%s" % (self.tas_rendering_label)
 
 
-# Table #4 - Appropriation Account Balances
+class AppropriationAccountBalancesManager(models.Manager):
+
+    def get_queryset(self):
+        '''
+        Get only records from the last submission per TAS per fiscal year.
+        '''
+
+        return super(AppropriationAccountBalancesManager, self).get_queryset().filter(final_of_fy=True)
+
+
 class AppropriationAccountBalances(DataSourceTrackedModel):
+    """
+    Represents Treasury Account Symbol (TAS) balances for each DATA Act
+    broker submission. Each submission provides a snapshot of the most
+    recent numbers for that fiscal year. In other words, the lastest
+    submission for a fiscal year reflects the balances for the entire
+    fiscal year.
+    """
     appropriation_account_balances_id = models.AutoField(primary_key=True)
     treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE, db_column='treasury_account_identifier', related_name="account_balances")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
@@ -135,7 +175,30 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    final_of_fy = models.BooleanField(blank=False, null=False, default=False, db_index=True)
 
     class Meta:
         managed = True
         db_table = 'appropriation_account_balances'
+
+    objects = models.Manager()
+    final_objects = AppropriationAccountBalancesManager()
+
+    FINAL_OF_FY_SQL = """
+        UPDATE appropriation_account_balances
+        SET final_of_fy = submission_id in
+        ( SELECT DISTINCT ON
+            (aab.treasury_account_identifier,
+             FY(s.reporting_period_start))
+          s.submission_id
+          FROM submission_attributes s
+          JOIN appropriation_account_balances aab
+              ON (s.submission_id = aab.submission_id)
+          ORDER BY aab.treasury_account_identifier,
+                   FY(s.reporting_period_start),
+                   s.reporting_period_start DESC)"""
+
+    @classmethod
+    def populate_final_of_fy(cls):
+        with connection.cursor() as cursor:
+            cursor.execute(cls.FINAL_OF_FY_SQL)

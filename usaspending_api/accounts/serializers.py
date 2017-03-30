@@ -1,5 +1,5 @@
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount
 from usaspending_api.financial_activities.serializers import FinancialAccountsByProgramActivityObjectClassSerializer
 from usaspending_api.common.serializers import LimitableSerializer
 
@@ -12,6 +12,14 @@ class AppropriationAccountBalancesSerializer(LimitableSerializer):
         fields = '__all__'
 
 
+class FederalAccountSerializer(LimitableSerializer):
+
+    class Meta:
+
+        model = FederalAccount
+        fields = '__all__'
+
+
 class TreasuryAppropriationAccountSerializer(LimitableSerializer):
 
     class Meta:
@@ -19,6 +27,10 @@ class TreasuryAppropriationAccountSerializer(LimitableSerializer):
         model = TreasuryAppropriationAccount
         fields = '__all__'
         nested_serializers = {
+            "federal_account": {
+                "class": FederalAccountSerializer,
+                "kwargs": {"read_only": True}
+            },
             "account_balances": {
                 "class": AppropriationAccountBalancesSerializer,
                 "kwargs": {"read_only": True, "many": True}
