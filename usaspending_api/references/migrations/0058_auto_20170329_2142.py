@@ -12,9 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.DeleteModel(
-            name='RefObjectClassCode',
-        ),
         migrations.AddField(
             model_name='refprogramactivity',
             name='id',
