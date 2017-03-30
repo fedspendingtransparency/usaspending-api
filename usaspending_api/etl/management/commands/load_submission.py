@@ -517,7 +517,7 @@ def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger
 def get_or_create_program_activity(row, submission_attributes):
     # We do it this way rather than .get_or_create because we do not want to
     # duplicate existing pk's with null values
-    filters = {'ref_program_activity_id': row['program_activity_code'],
+    filters = {'program_activity_code': row['program_activity_code'],
                'budget_year': fy(submission_attributes.reporting_period_start),
                'responsible_agency_id': row['agency_identifier'],
                }
