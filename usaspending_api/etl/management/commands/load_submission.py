@@ -153,7 +153,6 @@ class Command(BaseCommand):
             value_map = {
                 'treasury_account_identifier': treasury_account,
                 'submission': submission_attributes,
-                'tas_rendering_label': treasury_account.tas_rendering_label,
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end
             }
