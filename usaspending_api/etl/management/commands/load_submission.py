@@ -518,9 +518,9 @@ def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger
 def get_or_create_program_activity(program_activity_code):
     # We do it this way rather than .get_or_create because we do not want to
     # duplicate existing pk's with null values
-    prg_activity = RefProgramActivity.objects.filter(ref_program_activity_id=program_activity_code).first()
+    prg_activity = RefProgramActivity.objects.filter(program_activity_code=program_activity_code).first()
     if prg_activity is None and program_activity_code is not None:
-        prg_activity = RefProgramActivity.objects.create(ref_program_activity_id=program_activity_code)
+        prg_activity = RefProgramActivity.objects.create(program_activity_code=program_activity_code)
     return prg_activity
 
 
