@@ -1,11 +1,10 @@
-from django.core.management.base import BaseCommand, CommandError
+import logging
+
+from django.core.management.base import BaseCommand
+
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
-from datetime import datetime
-import os
-import csv
-import logging
-import django
+from usaspending_api.references.reference_helpers import insert_federal_accounts, update_federal_accounts
 
 
 class Command(BaseCommand):
@@ -46,6 +45,10 @@ class Command(BaseCommand):
 
         loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map, collision_field='treasury_account_identifier', collision_behavior='update')
         loader.load_from_file(options['file'][0])
+
+        # update TAS fk relationships to federal accounts
+        update_federal_accounts()
+        insert_federal_accounts()
 
     def generate_tas_rendering_label(self, row):
         return TreasuryAppropriationAccount.generate_tas_rendering_label(row["ATA"],

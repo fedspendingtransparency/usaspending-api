@@ -7,6 +7,7 @@ import pytest
 import json
 
 
+@pytest.mark.skip(reason="Table logging is now disabled")
 @pytest.mark.django_db()
 def test_drf_tracking_logging(client):
     # Hit an endpoint
