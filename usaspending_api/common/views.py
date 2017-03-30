@@ -1,11 +1,13 @@
 from rest_framework import viewsets
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_extensions.cache.decorators import cache_response
 from django.views.generic import TemplateView
 
 from usaspending_api.common.api_request_utils import ResponsePaginator
 from usaspending_api.common.serializers import AggregateSerializer
-from usaspending_api.common.mixins import AggregateQuerysetMixin
+from usaspending_api.common.mixins import AggregateQuerysetMixin, AutocompleteResponseMixin
 
 from usaspending_api.common.exceptions import InvalidParameterException
 
@@ -25,6 +27,7 @@ class AggregateView(AggregateQuerysetMixin,
 
     exception_logger = logging.getLogger("exceptions")
 
+    @cache_response()
     def list(self, request, *args, **kwargs):
         """
         Override the parent list method so we can aggregate the data
@@ -70,6 +73,28 @@ class AggregateView(AggregateQuerysetMixin,
             return Response(response_object, status=status_code)
 
 
+class AutocompleteView(AutocompleteResponseMixin,
+                       APIView):
+
+    exception_logger = logging.getLogger("exceptions")
+
+    def post(self, request, *args, **kwargs):
+        try:
+            response = self.build_response(
+                self.request, queryset=self.get_queryset(), serializer=self.serializer_class)
+            status_code = status.HTTP_200_OK
+        except InvalidParameterException as e:
+            response = {"message": str(e)}
+            status_code = status.HTTP_400_BAD_REQUEST
+            self.exception_logger.exception(e)
+        except Exception as e:
+            response = {"message": str(e)}
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            self.exception_logger.exception(e)
+        finally:
+            return Response(response, status=status_code)
+
+
 class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Handles the views for endpoints that request a detailed
@@ -83,6 +108,7 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
 
     exception_logger = logging.getLogger("exceptions")
 
+    @cache_response()
     def list(self, request, *args, **kwargs):
         try:
             response = self.build_response(
@@ -98,6 +124,10 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             self.exception_logger.exception(e)
         finally:
             return Response(response, status=status_code)
+
+    @cache_response()
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
 
 
 class MarkdownView(TemplateView):

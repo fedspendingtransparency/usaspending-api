@@ -1,5 +1,5 @@
 <ul class="nav nav-stacked" id="sidebar">
-  <li><a href="#background">Background</a></li>
+  <li><a href="#introduction">Introduction</a></li>
   <li><a href="#status-codes">Status Codes</a></li>
   <li><a href="#data-endpoints">Data Endpoints</a></li>
   <li><a href="#endpoints-and-methods">Endpoints and Methods</a></li>
@@ -12,17 +12,15 @@
 </ul>
 [//]: # (Begin Content)
 
-# The USAspending Application Programming Interface (API)
+# Using the USAspending Application Program Interface (API) <a name="introduction"></a>
 
-The USAspending API allows the public to access data published via the DATA Act Data Broker or via USAspending. While the API is under development, we are gradually increasing the amount of available data, which is currently limited to a few Data Broker submissions and small slices of USAspending history.
+The USAspending API allows the public to access data published via the DATA Act Data Broker or via USAspending.
 
-## Background <a name="background"></a>
-
-The U.S. Department of the Treasury is building a suite of open-source tools to help federal agencies comply with the [DATA Act](http://fedspendingtransparency.github.io/about/ "Federal Spending Transparency Background") and to deliver the resulting standardized federal spending information back to agencies and to the public.
-
-For more information about the DATA Act Broker codebase, please visit this repository's [main README](https://github.com/fedspendingtransparency/data-act-broker-backend/README.md "DATA Act Broker Backend README").
+This guide is intended for users who are already familiar with APIs. If you're not sure what "endpoint" means, and what `GET` and `POST` requests are, you'll probably find the [introductory tutorial](/docs/intro-tutorial) more useful.
 
 ## DATA Act Data Store Endpoint Documentation
+
+While the API is under development, we are gradually increasing the amount of available data, which is currently limited to a few Data Broker submissions and small slices of USAspending history.
 
 Endpoints do not currently require any authorization.
 
@@ -38,7 +36,9 @@ In general, status codes returned are as follows:
 Data endpoints are split by payload into POST and GET methods. In general, the format of a request and response will remain the same among endpoints.
 
 #### Endpoints and Methods <a name="endpoints-and-methods"></a>
-The currently available endpoints are listed below. To reduce unnecessary data transfer, most return a default set of information about the items being requested. To override the default field list, use the `fields`, `exclude`, and `verbose` options (see [POST Requests](#post-requests) for more information).
+The currently available endpoints are listed below. Our [data dictionary](/docs/data-dictionary) provides more comprehensive definitions of the technical terms and government-specific language we use in the API.
+
+To reduce unnecessary data transfer, most endpoints return a default set of information about the items being requested. To override the default field list, use the `fields`, `exclude`, and `verbose` options (see [POST Requests](#post-requests) for more information).
 
   * **[/v1/accounts/](https://spending-api.us/api/v1/accounts/)**
     - _Description_: Provides financial information by appropriations account. Financial information is data such as total budget authority, outlays, obligations, and unobligated balance. _Note_: This endpoint is due for a rework in the near future.
@@ -48,6 +48,11 @@ The currently available endpoints are listed below. To reduce unnecessary data t
   * **[/v1/accounts/tas/](https://spending-api.us/api/v1/accounts/tas/)**
     - _Description_: Returns a list of appropriations accounts, including the account name, Treasury Account Symbol (TAS) components, the associated budget function, and the corresponding agency information. _Note_: This endpoint is due for a rework in the near future.
     - _Methods_: GET, POST
+
+
+  * **/v1/accounts/tas/autocomplete/**
+    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the TAS endpoint.
+    - _Methods_: POST
 
 
   * **[/v1/awards/](https://spending-api.us/api/v1/awards/)**
@@ -275,10 +280,10 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
 * `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
 * `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name. For example, to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
 * `verbose` - _Optional_ - Endpoints that return lists of items (`/awards/` and `/accounts/`, for example) return a default list of fields. To instead return all fields, set this value to `true`. Note that you can also use the `fields` and `exclude` options to override the default field list. Default: false.
-* `filters` - _Optional_ - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_
+* `filters` - _Optional_ - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_.
   * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__fpds_code` will filter on the field `fpds_code` for the referenced object stored in `funding_agency`.
   * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. To negate an operation, use `not_`. For example, `not_equals` or `not_in`. The options for this field are:
-    * `equals` - Evaluates the equality of the value with that stored in the field
+    * `equals` - Evaluates the equality of the value with that stored in the field.
       ```
       {
         "field": "fain",
@@ -286,7 +291,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
         "value": "1234567"
       }
       ```
-    * `less_than` - Evaluates whether the value stored in the field is less than the value specified in the filter
+    * `less_than` - Evaluates whether the value stored in the field is less than the value specified in the filter.
     ```
     {
       "field": "total_obligation",
@@ -302,7 +307,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": 100000
     }
     ```
-    * `greater_than` - Evaluates whether the value stored in the field is greater than the value specified in the filter
+    * `greater_than` - Evaluates whether the value stored in the field is greater than the value specified in the filter.
     ```
     {
       "field": "total_obligation",
@@ -318,7 +323,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": 20
     }
     ```
-    * `in` - Evaluates if the value stored in the field is any of the values specified in the value parameter. `value` must be an array of values
+    * `in` - Evaluates if the value stored in the field is any of the values specified in the value parameter. `value` must be an array of values.
     ```
     {
       "field": "recipient__name",
@@ -346,7 +351,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": "BOEING"
     }
     ```
-    * `is_null` - Evaluates if the field is null or not null. `value` must be either `true` or `false`
+    * `is_null` - Evaluates if the field is null or not null. `value` must be either `true` or `false`.
     ```
     {
       "field": "awarding_agency",
@@ -354,7 +359,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": false
     }
     ```
-    * `search` - Executes a full text search on the specified field or fields
+    * `search` - Executes a full text search on the specified field or fields.
     ```
     {
       "field": "awarding_agency__name",
@@ -378,9 +383,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": 2017
     }
     ```
-    * `range_intersect` - Evaluates if the range defined by a two-field list intersects with the range defined
-    by the two length array `value`. `value` can be a single item _only_ if `value_format` is also set to a
-    range converting value. An example of where this is useful is when a contract spans multiple fiscal years, to evaluate whether it overlaps with any one particular fiscal year - that is, the range defined by `period_of_performance_start` to `period_of_performance_end` intersects with the fiscal year.
+    * `range_intersect` - Evaluates if the range defined by a two-field list intersects with the range defined by the two length array `value`. `value` can be a single item _only_ if `value_format` is also set to a range converting value. An example of where this is useful is when a contract spans multiple fiscal years, to evaluate whether it overlaps with any one particular fiscal year - that is, the range defined by `period_of_performance_start` to `period_of_performance_end` intersects with the fiscal year.
 
     For example, if your `field` parameter defines a range as `[3,5]` then the following ranges will intersect:
       * `[2,3]` - As the 3 overlaps
@@ -406,8 +409,8 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
     }
     ```
   * `value` - Specifies the value to compare the field against. Some operations require specific datatypes for the value, and they are documented in the `operation` section.
-  * `value_format` - Specifies the format for the value. Only used in some operations where noted. Valid choices are enumerated below
-    * `fy` - Treats a single value as a fiscal year range
+  * `value_format` - Specifies the format for the value. Only used in some operations where noted. Valid choices are enumerated below.
+    * `fy` - Treats a single value as a fiscal year range.
   * `combine_method` - This is a special field which modifies how the filter behaves. When `combine_method` is specified, the only other allowed parameter on the filter is `filters` which should contain an array of filter objects. The `combine_method` will be used to logically join the filters in this list. Options are `AND` or `OR`.
   ```
   {
@@ -431,7 +434,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
   ```
 
 #### Response (JSON)
-The response object structure is the same whether you are making a GET or a POST request. The only difference is the data objects contained within the results parameter. An example of a response from `/v1/awards/` can be found below
+The response object structure is the same whether you are making a GET or a POST request. An example of a response from `/v1/awards/` can be found below:
 
 ```
 {
@@ -517,19 +520,35 @@ The response object structure is the same whether you are making a GET or a POST
 
 ### Response Description
 The response has three functional parts:
-  * `page_metadata` - Includes data about the pagination and any page-level metadata specific to the endpoint
-    * `page_number` - What page is currently being returned
-    * `num_page` - The number of pages available for this set of filters
-    * `count` - The length of the `results` array for this page
-  * `total_metadata` - Includes data about the total dataset and any dataset-level metadata specific to the endpoint
-    * `count` - The total number of items in this dataset, spanning all pages
+  * `page_metadata` - Includes data about the pagination and any page-level metadata specific to the endpoint.
+    * `page_number` - What page is currently being returned.
+    * `num_page` - The number of pages available for this set of filters.
+    * `count` - The length of the `results` array for this page.
+  * `total_metadata` - Includes data about the total dataset and any dataset-level metadata specific to the endpoint.
+    * `count` - The total number of items in this dataset, spanning all pages.
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
 
 ### Autocomplete Queries <a name="autocomplete-queries"></a>
-Autocomplete queries currently require the endpoint to have additional handling, as such, only a few have been implemented (notably `/awards/`).
 
-#### Body
+Autocomplete Endpoints allow developers to include autocomplete functionality in user interfaces for the API. Only a few have been implemented thus far (notably `/awards/`).
+
+These endpoints currently only support POST requests. Let's look at `/api/v1/awards/autocomplete`, which performs autocomplete requests against award records. Each autocomplete request requires at least an array of `fields` to search against, and a `value` to search for.
+
+
+#### Options
+  * `fields` - A list of fields to be searched for autocomplete. This allows for foreign key traversal using the usual Django patterns. This should _always_ be a list, even if the length is only one.
+  * `value` - The value to use as the autocomplete pattern. Typically a string, but could be a number in uncommon circumstances. The search will currently _always_ be case insensitive.
+  * `mode` - _Optional_ - The search mode. Options available are:
+    * `contains` - Matches if the field's value contains the specified value.
+    * `startswith` - Matches if the field's value starts with the specified value.
+  * `matched_objects` - _Optional_ - Boolean value specifying whether or not to return matching data objects. Default: false.
+  * `limit` - _Optional_ - Limits the number of query matches. Defaults to 10.
+  * `filters` - _Optional_ - As on regular endpoint, filters the data before performing the autocomplete.
+
+#### Example
+  
+##### Body
 ```
 {
 	fields": ["toptier_agency__name", "subtier_agency__name"],
@@ -537,18 +556,11 @@ Autocomplete queries currently require the endpoint to have additional handling,
 	"mode": "contains",
     "limit": 100,
     "matched_objects": true
+  "filters": []
 }
 ```
-#### Options
-  * `fields` - A list of fields to be searched for autocomplete. This allows for foreign key traversal using the usual Django patterns. This should _always_ be a list, even if the length is only one
-  * `value` - The value to use as the autocomplete pattern. Typically a string, but could be a number in uncommon circumstances. The search will currently _always_ be case insensitive
-  * `mode` - _Optional_ - The search mode. Options available are:
-    * `contains` - Matches if the field's value contains the specified value
-    * `startswith` - Matches if the field's value starts with the specified value
-  * `matched_objects` - _Optional_ - Boolean value specifying whether or not to return matching data objects. Default: false
-  * `limit` - _Optional_ - Limits the number of query matches. Defaults to 10.
 
-#### Response
+##### Response
 ```
 {
   "results": {
@@ -650,19 +662,19 @@ This is a special type of autocomplete query which allows users to search for ge
 ```
 
 #### Body Description
-  * `value` - The value to use as the autocomplete pattern. The search will currently _always_ be case insensitive
+  * `value` - The value to use as the autocomplete pattern. The search will currently _always_ be case insensitive.
   * `mode` - _Optional_ -The search mode. Options available are:
-    * `contains` - Matches if the field's value contains the specified value. This is the default behavior
-    * `startswith` - Matches if the field's value starts with the specified value
+    * `contains` - Matches if the field's value contains the specified value. This is the default behavior.
+    * `startswith` - Matches if the field's value starts with the specified value.
   * `scope` - _Optional_ - The scope of the search. Options available are:
     * `domestic` - Matches only entries with the United States as the `location_country_code`
     * `foreign` - Matches only entries where the `location_country_code` is _not_ the United States
     * `all` - Matches any location entry. This is the default behavior
   * `usage` - _Optional_ - The usage of the search. Options available are:
-    * `recipient` - Matches only entries where the location is used as a recipient location
-    * `place_of_performance` - Matches only entries where the location is used as a place of performance
-    * `all` - Matches all locations. This is the default behavior
-  * `limit` - _Optional_ - The maximum number of responses in the autocomplete response. Defaults to 10
+    * `recipient` - Matches only entries where the location is used as a recipient location.
+    * `place_of_performance` - Matches only entries where the location is used as a place of performance.
+    * `all` - Matches all locations. This is the default behavior.
+  * `limit` - _Optional_ - The maximum number of responses in the autocomplete response. Defaults to 10.
 
 #### Response
 ```
@@ -701,12 +713,12 @@ This is a special type of autocomplete query which allows users to search for ge
     ],
     "place": "UT"
   }
-  ```
+```
 #### Response Description
   * `place` - The value of the place. e.g. A country's name, or a county name, etc.
-  * `matched_ids` - An array of `location_id`s that match the given data. This can be used to look up awards, recipients, or other data by requesting these ids
+  * `matched_ids` - An array of `location_id`s that match the given data. This can be used to look up awards, recipients, or other data by requesting these ids.
   * `place_type` - The type of place. Options are:
-    * `CONGRESSIONAL DISTRICT` - These are searched using the pattern `XX-##` where `XX` designates a state code, and `##` designates the district number. For example, `VA-06` is district `06` in Virginia
+    * `CONGRESSIONAL DISTRICT` - These are searched using the pattern `XX-##` where `XX` designates a state code, and `##` designates the district number. For example, `VA-06` is district `06` in Virginia.
     * `COUNTRY`
     * `CITY`
     * `COUNTY`
@@ -715,11 +727,11 @@ This is a special type of autocomplete query which allows users to search for ge
     * `POSTAL CODE` - Used for foreign postal codes
     * `PROVINCE`
   * `parent` - The parent of the object, in a logical hierarchy. The parents for each type are listed below:
-    * `CONGRESSIONAL DISTRICT` - Will specify the parent as the state containing the district
-    * `COUNTRY` - Will specify the parent as the country code for reference purposes
-    * `CITY` - Will specify the state the city is in for domestic cities, or the country for foreign cities
-    * `COUNTY` - Will specify the state the the city is in for domestic cities
-    * `STATE` - Will specify the country the state is in
-    * `ZIP` - Will specify the state the zip code falls in. If a zip code falls in multiple states, two results will be generated
-    * `POSTAL CODE` - Will specify the country the postal code falls in
-    * `PROVINCE` - Will specify the country the province is in
+    * `CONGRESSIONAL DISTRICT` - Will specify the parent as the state containing the district.
+    * `COUNTRY` - Will specify the parent as the country code for reference purposes.
+    * `CITY` - Will specify the state the city is in for domestic cities, or the country for foreign cities.
+    * `COUNTY` - Will specify the state the the city is in for domestic cities.
+    * `STATE` - Will specify the country the state is in.
+    * `ZIP` - Will specify the state the zip code falls in. If a zip code falls in multiple states, two results will be generated.
+    * `POSTAL CODE` - Will specify the country the postal code falls in.
+    * `PROVINCE` - Will specify the country the province is in.
