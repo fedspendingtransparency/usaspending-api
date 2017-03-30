@@ -477,7 +477,9 @@ def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger
     else:
         # the object class field is the 3 digit version, so grab direct/reimbursable
         # information from a separate field
-        if row_direct_reimbursable.lower() == 'd':
+        if row_direct_reimbursable is None:
+            direct_reimbursable = None
+        elif row_direct_reimbursable.lower() == 'd':
             direct_reimbursable = 1
         elif row_direct_reimbursable.lower() == 'r':
             direct_reimbursable = 2
