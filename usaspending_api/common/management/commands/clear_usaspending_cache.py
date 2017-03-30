@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import caches
 
+
 class Command(BaseCommand):
     """
     This command will clear the usaspending-cache (useful after a load or a deletion
