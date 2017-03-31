@@ -268,7 +268,6 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     drv_appropriation_availability_period_start_date = models.DateField(blank=True, null=True)
     drv_appropriation_availability_period_end_date = models.DateField(blank=True, null=True)
     drv_appropriation_account_expired_status = models.CharField(max_length=10, blank=True, null=True)
-    tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
     drv_obligations_unpaid_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     drv_other_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
