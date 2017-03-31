@@ -235,6 +235,9 @@ class Award(DataSourceTrackedModel):
 
     @staticmethod
     def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None, use_cache=False):
+        """
+        Returns a boolean and award, the boolean being True if the award was created (or needs to be created, if using cache)
+        """
         # If an award transaction's ID is a piid, it's contract data
         # If the ID is fain or a uri, it's financial assistance. If the award transaction
         # has both a fain and a uri, fain takes precedence.
