@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.core.management import call_command
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
@@ -52,6 +54,16 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     assert Transaction.objects.count() == 2
     assert TransactionContract.objects.count() == 1
     assert TransactionAssistance.objects.count() == 1
+
+    # Check specific submission attributes to make sure we're loading what
+    # we need from the data broker
+    sub = SubmissionAttributes.objects.all().first()
+    assert sub.broker_submission_id == -1
+    assert sub.reporting_fiscal_year == 2016
+    assert sub.reporting_fiscal_period == 3
+    assert sub.reporting_fiscal_quarter == 1
+    assert sub.reporting_period_start == date(2015, 10, 1)
+    assert sub.reporting_period_end == date(2015, 12, 31)
 
 
 @pytest.mark.django_db
