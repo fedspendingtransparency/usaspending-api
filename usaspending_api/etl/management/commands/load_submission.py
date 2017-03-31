@@ -209,14 +209,15 @@ class Command(BaseCommand):
                 if treasury_account is None:
                     raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
                 # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-                award = Award.get_or_create_summary_award(
-                    piid=row.get('piid'),
-                    fain=row.get('fain'),
-                    uri=row.get('uri'),
-                    parent_award_id=row.get('parent_award_id'),
-                    use_cache=True)
+                created, award = Award.get_or_create_summary_award(
+                        piid=row.get('piid'),
+                        fain=row.get('fain'),
+                        uri=row.get('uri'),
+                        parent_award_id=row.get('parent_award_id'),
+                        use_cache=True)
                 award.latest_submission = submission_attributes
-                award_queue[award.manual_hash()] = award
+                if created:
+                    award_queue[award.manual_hash()] = award
             except:   # TODO: silently swallowing a bare exception is bad mojo
                 continue
 
@@ -306,7 +307,7 @@ class Command(BaseCommand):
             pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            award = Award.get_or_create_summary_award(
+            created, award = Award.get_or_create_summary_award(
                 piid=row.get('piid'),
                 fain=row.get('fain'),
                 uri=row.get('uri'),
@@ -401,7 +402,7 @@ class Command(BaseCommand):
             pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            award = Award.get_or_create_summary_award(
+            created, award = Award.get_or_create_summary_award(
                 piid=row.get('piid'),
                 fain=row.get('fain'),
                 uri=row.get('uri'),
