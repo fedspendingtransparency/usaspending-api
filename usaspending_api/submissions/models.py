@@ -9,6 +9,7 @@ class SubmissionAttributes(models.Model):
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     reporting_fiscal_year = models.IntegerField(blank=True, null=True)
+    reporting_fiscal_quarter = models.IntegerField(blank=True, null=True)
     reporting_fiscal_period = models.IntegerField(blank=True, null=True)
     quarter_format_flag = models.BooleanField(default=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
