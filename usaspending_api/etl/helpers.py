@@ -110,7 +110,11 @@ def parse_numeric_value(string):
 
 
 def get_fiscal_quarter(fiscal_reporting_period):
-    """Return the fiscal quarter."""
+    """
+    Return the fiscal quarter.
+    Note: the reporting period being passed should already be in
+    "federal fiscal format", where period 1 = Oct. and period 12 = Sept.
+    """
     if fiscal_reporting_period in [1, 2, 3]:
         return 1
     elif fiscal_reporting_period in [4, 5, 6]:
