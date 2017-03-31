@@ -87,13 +87,13 @@ def test_request_catalog_generation_and_retrieval(client, mock_request_catalog_d
     assert resp.status_code == status.HTTP_200_OK
     assert results == resp.data['results']
 
-    # Check that a post query returns the same thing
+    # Check that a get query returns the same thing
     resp = client.get('/api/v1/awards/?req=' + req.checksum)
 
     assert resp.status_code == status.HTTP_200_OK
     assert results == resp.data['results']
 
-    # check that a no-good checksum returns 500
+    # check that a no-good checksum returns 400
     resp = client.get('/api/v1/awards/?req=1234')
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 

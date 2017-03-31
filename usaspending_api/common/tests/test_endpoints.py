@@ -71,9 +71,6 @@ def test_endpoints(endpoint_data, client):
         # be a multi-tiered nest of lists and objects, and can also be OrderedDicts
         # and ResultLists, which don't play nice with the native equality checks
         # TESTING TODO: I bet I can beat this
-        print(url)
-        print(response_object)
-        print(response.data)
         assert evaluateEquivalence(response_object, response.data)
 
 

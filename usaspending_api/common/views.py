@@ -27,6 +27,9 @@ class AutocompleteView(AutocompleteResponseMixin,
         except InvalidParameterException as e:
             response = {"message": str(e)}
             status_code = status.HTTP_400_BAD_REQUEST
+            if 'req' in self.__dict__:
+                # If we've made a request catalog, but the request is bad, we need to delete it
+                self.req.delete()
             self.exception_logger.exception(e)
         except Exception as e:
             response = {"message": str(e)}
@@ -52,7 +55,7 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             created, self.req = RequestCatalog.get_or_create_from_request(request)
             # Pass this to the paginator
             self.paginator.req = self.req
-            # Get the queryset (the view will handle filtering and ordering)
+            # Get the queryset (this will handle filtering and ordering)
             queryset = self.get_queryset()
             # Grab the page of data
             page = self.paginate_queryset(queryset)
@@ -64,6 +67,9 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             response = {"message": str(e)}
             status_code = status.HTTP_400_BAD_REQUEST
             self.exception_logger.exception(e)
+            if 'req' in self.__dict__:
+                # If we've made a request catalog, but the request is bad, we need to delete it
+                self.req.delete()
             return Response(response, status=status_code)
         except Exception as e:
             response = {"message": str(e)}

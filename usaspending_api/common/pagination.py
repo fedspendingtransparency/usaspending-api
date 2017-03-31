@@ -30,6 +30,7 @@ class UsaspendingPagination(BasePagination):
         self.page = self.get_page(request)
         self.offset = self.get_offset(request)
         self.has_next_page = self.next_page_exists(queryset)
+        self.has_previous_page = bool(self.page > 1)
 
         # Turn on the controls if we have multiple pages
         if self.next_page_exists and self.template is not None:
@@ -50,7 +51,8 @@ class UsaspendingPagination(BasePagination):
             l = request_parameters['limit']
             if isinstance(l, list):
                 l = l[0]
-            return min(int(l), self.max_page_size)
+            # This will ensure our limit is bounded by [1, max_page_size]
+            return max(min(int(l), self.max_page_size), 1)
         else:
             return self.page_size
 
@@ -62,7 +64,8 @@ class UsaspendingPagination(BasePagination):
             p = request_parameters['page']
             if isinstance(p, list):
                 p = p[0]
-            return int(p)
+            # Ensures our page is bounded by [1, ..]
+            return max(int(p), 1)
         else:
             return 1
 
@@ -73,6 +76,7 @@ class UsaspendingPagination(BasePagination):
         page_metadata = OrderedDict([
             ('page', self.page),
             ('has_next_page', self.has_next_page),
+            ('has_previous_page', self.has_previous_page),
             ('next', self.get_next_link()),
             ('previous', self.get_previous_link())
         ])

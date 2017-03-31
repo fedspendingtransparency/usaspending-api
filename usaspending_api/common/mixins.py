@@ -209,8 +209,8 @@ class AutocompleteResponseMixin(object):
 
         serializer = kwargs.get('serializer')
 
-        params = self.request.query_params.copy()  # copy() creates mutable copy of a QueryDict
-        params.update(self.request.data.copy())
+        params = request.query_params.copy()  # copy() creates mutable copy of a QueryDict
+        params.update(request.data.copy())
 
         return AutoCompleteHandler.handle(queryset, params, serializer)
 

@@ -263,6 +263,13 @@ Do note that this _ignores_ pagination variables, so you can request a different
 
 `/api/v1/awards/?req=abcd&page=2`
 
+Or by POSTing
+```
+{
+  "page": 2,
+  "req": "abcd"
+}
+```
 Would get the second page of the previous request.
 
 #### Body (JSON)

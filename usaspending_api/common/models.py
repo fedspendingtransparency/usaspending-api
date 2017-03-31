@@ -33,6 +33,14 @@ class RequestCatalog(models.Model):
 
     @staticmethod
     def get_or_create_from_request(request):
+        """
+        This method takes a POST or GET request, and checks for its existence in the RequestCatalog
+        This method returns two fields, a boolean of whether the record was created or not, and the
+        RequestCatalog itself.
+
+        If a checksum is supplied in the request, but there is no matching Request, an
+        InvalidParameterException is generated
+        """
         # Get the useful parts
         query_params = request.query_params.copy()
         data = request.data.copy()
@@ -79,19 +87,6 @@ class RequestCatalog(models.Model):
             created = True
 
         return created, request_catalog
-
-    def merge_requests(self, request):
-        '''Merges a request with the stored values (i.e. taking pagination data from incoming request)'''
-        req = self.request
-
-        # Copy over pagination data from the incoming request, and merge it with stored search
-        for item in ["page", "limit"]:
-            if request.data.get(item, None):
-                req["data"][item] = request.data.get(item)
-            if request.query_params.get(item, None):
-                req["query_params"][item] = request.query_params.get(item)
-
-        return req
 
     class Meta:
         managed = True
