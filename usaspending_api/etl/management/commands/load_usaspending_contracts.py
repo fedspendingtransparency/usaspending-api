@@ -274,7 +274,7 @@ class Command(BaseCommand):
         parent_award_id = row.get("idvpiid", None)
 
         awarding_agency = Agency.objects.get(id=awarding_agency_id)
-        award = Award.get_or_create_summary_award(
+        created, award = Award.get_or_create_summary_award(
             piid=piid, fain=None, uri=None, awarding_agency=awarding_agency,
             parent_award_id=parent_award_id)
         return award
