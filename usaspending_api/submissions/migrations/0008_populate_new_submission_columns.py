@@ -29,7 +29,7 @@ def update_broker_submissions(apps, schema_editor):
         s.reporting_fiscal_year = fiscal_year
         s.reporting_fiscal_period = fiscal_period
         s.reporting_fiscal_quarter = get_fiscal_quarter(fiscal_period)
-        s.quarter_format_flag = True # not used in USAspending code right now
+        s.quarter_format_flag = True  # not used in USAspending code right now
         s.save()
 
 
