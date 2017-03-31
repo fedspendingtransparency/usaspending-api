@@ -125,7 +125,7 @@ class Command(BaseCommand):
     def get_or_create_award(self, row, awarding_agency):
         fain = row.get("federal_award_id", None)
         uri = row.get("unique_transaction_id", None)  # ask: why unique_transaction_id instead of uri?
-        award = Award.get_or_create_summary_award(fain=fain, uri=uri, awarding_agency=awarding_agency)
+        created, award = Award.get_or_create_summary_award(fain=fain, uri=uri, awarding_agency=awarding_agency)
         return award
 
     def recipient_flags_by_type(self, type_name):
