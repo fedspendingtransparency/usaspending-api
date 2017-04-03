@@ -60,7 +60,7 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             # Grab the page of data
             page = self.paginate_queryset(queryset)
             # Serialize the page
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, read_only=True, many=True)
             # Return the paginated response
             return self.get_paginated_response(serializer.data)
         except InvalidParameterException as e:
