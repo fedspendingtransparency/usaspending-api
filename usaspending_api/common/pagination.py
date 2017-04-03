@@ -78,6 +78,7 @@ class UsaspendingPagination(BasePagination):
             ('has_next_page', self.has_next_page),
             ('has_previous_page', self.has_previous_page),
             ('next', self.get_next_link()),
+            ('current', self.get_current_link()),
             ('previous', self.get_previous_link())
         ])
 
@@ -94,6 +95,14 @@ class UsaspendingPagination(BasePagination):
         url = self.request.build_absolute_uri()
         url = replace_query_param(url, self.page_size_query_param, self.limit)
         url = replace_query_param(url, self.page_query_param, self.page + 1)
+        url = replace_query_param(url, "req", self.req.checksum)
+
+        return url
+
+    def get_current_link(self):
+        url = self.request.build_absolute_uri()
+        url = replace_query_param(url, self.page_size_query_param, self.limit)
+        url = replace_query_param(url, self.page_query_param, self.page)
         url = replace_query_param(url, "req", self.req.checksum)
 
         return url

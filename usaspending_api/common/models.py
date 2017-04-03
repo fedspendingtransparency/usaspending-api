@@ -60,7 +60,7 @@ class RequestCatalog(models.Model):
                 return False, request_catalog
             except ObjectDoesNotExist:
                 # The checksum they sent doesn't exist
-                raise InvalidParameterException("Requested 'req' " + checksum + " does not exist or has expired.")
+                raise InvalidParameterException("Requested 'req' '" + checksum + "' does not exist or has expired.")
 
         # Delete any pagination data
         for item in ["page", "limit"]:
@@ -71,10 +71,7 @@ class RequestCatalog(models.Model):
 
         json_request = {"data": data, "query_params": query_params}
 
-        # Make the checksum
-        checksum = hashlib.sha256(json.dumps(json_request).encode('utf-8')).hexdigest()
-
-        # See if the checksum exists, and return that catalog. Otherwise, create it
+        # See if the request exists, and return that catalog. Otherwise, create it
         created = False
         request_catalog = None
         try:
@@ -83,6 +80,19 @@ class RequestCatalog(models.Model):
             request_catalog.save()
             created = False
         except ObjectDoesNotExist:
+            # Make the checksum
+            checksum = hashlib.sha256(json.dumps(json_request).encode('utf-8')).hexdigest()
+
+            # Take the last 11
+            checksum = checksum[-11:]
+
+            # Check if we already use this checksum, if so hash the checksum again
+            # The likelyhood of this happening is astronomically low, but should
+            # still be accounted for since we are only using a slice of the
+            # full SHA-256 checksum
+            while RequestCatalog.objects.filter(checksum=checksum).exists():
+                checksum = hashlib.sha256(checksum.encode('utf-8')).hexdigest()[-11:]
+
             request_catalog = RequestCatalog.objects.create(request=json_request, checksum=checksum)
             created = True
 
