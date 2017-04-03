@@ -26,4 +26,10 @@ class Command(BaseCommand):
             self.logger.error("Submission with broker id " + str(options["submission_id"][0]) + " does not exist")
             return
 
-        submission.delete()
+        deleted = submission.delete()
+
+        statistics = "Statistics:\n  Total objects Removed: " + str(deleted[0])
+        for model in deleted[1].keys():
+            statistics = statistics + "\n  " + model + ": " + str(deleted[1][model])
+
+        self.logger.info("Deleted submission " + str(options["submission_id"][0]) + ". " + statistics)

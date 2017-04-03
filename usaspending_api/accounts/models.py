@@ -1,4 +1,9 @@
+from collections import defaultdict
+from decimal import Decimal
+
 from django.db import models, connection
+
+from usaspending_api.common.helpers import fy
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.models import DataSourceTrackedModel
 
@@ -118,8 +123,105 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             "budget_subfunction_code",
             "budget_subfunction_title",
             "account_balances",
-            "program_balances"
+            "program_balances",
+            "program_activities",
+            "object_classes",
+            "totals_program_activity",
+            "totals_object_class",
+            "totals",
         ]
+
+    @property
+    def program_activities(self):
+        return [
+            pb.program_activity
+            for pb in self.program_balances.distinct('program_activity')
+        ]
+
+    @property
+    def future_object_classes(self):
+        results = []
+        return results
+        """TODO: Once FinancialAccountsByProgramActivityObjectClass.object_class
+        has been fixed to point to ObjectClass instead of RefObjectClassCode,
+        this will work with:
+            return [pb.object_class for pb in self.program_balances.distinct('object_class')]
+        """
+
+    @property
+    def object_classes(self):
+        return [
+            pb.object_class
+            for pb in self.program_balances.distinct('object_class')
+        ]
+
+    @property
+    def totals_object_class(self):
+        results = []
+        for object_class in self.object_classes:
+            obligations = defaultdict(Decimal)
+            outlays = defaultdict(Decimal)
+            for pb in self.program_balances.filter(object_class=object_class):
+                reporting_fiscal_year = fy(
+                    pb.submission.reporting_period_start)
+                obligations[
+                    reporting_fiscal_year] += pb.obligations_incurred_by_program_object_class_cpe
+                outlays[
+                    reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
+            result = {
+                'major_object_class_code': None,
+                'major_object_class_name':
+                None,  # TODO: enable once ObjectClass populated
+                'object_class': object_class.object_class,  # TODO: remove
+                'outlays': obligations,
+                'obligations': outlays,
+            }
+            results.append(result)
+        return results
+
+    @property
+    def totals_program_activity(self):
+        results = []
+        for pa in self.program_activities:
+            obligations = defaultdict(Decimal)
+            outlays = defaultdict(Decimal)
+            for pb in self.program_balances.filter(program_activity=pa):
+                reporting_fiscal_year = fy(
+                    pb.submission.reporting_period_start)
+                # TODO: once it is present, use the reporting_fiscal_year directly
+                obligations[
+                    reporting_fiscal_year] += pb.obligations_incurred_by_program_object_class_cpe
+                outlays[
+                    reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
+            result = {
+                'id': pa.ref_program_activity_id,
+                'program_activity_name': pa.program_activity_name,
+                'program_activity_code': pa.program_activity_code,
+                'obligations': obligations,
+                'outlays': outlays,
+            }
+            results.append(result)
+        return results
+
+    @property
+    def totals(self):
+        outlays = defaultdict(Decimal)
+        obligations = defaultdict(Decimal)
+        budget_authority = defaultdict(Decimal)
+        for ab in self.account_balances.all():
+            fiscal_year = fy(ab.reporting_period_start)
+            budget_authority[fiscal_year] += ab.budget_authority_appropriated_amount_cpe
+            outlays[fiscal_year] += ab.gross_outlay_amount_by_tas_cpe
+            obligations[fiscal_year] += ab.obligations_incurred_total_by_tas_cpe
+        results = {
+            'outgoing': {
+                'outlays': outlays,
+                'obligations': obligations,
+                'budget_authority': budget_authority,
+            },
+            'incoming': {}
+        }
+        return results
 
     class Meta:
         managed = True
@@ -166,7 +268,6 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     drv_appropriation_availability_period_start_date = models.DateField(blank=True, null=True)
     drv_appropriation_availability_period_end_date = models.DateField(blank=True, null=True)
     drv_appropriation_account_expired_status = models.CharField(max_length=10, blank=True, null=True)
-    tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
     drv_obligations_unpaid_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     drv_other_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)

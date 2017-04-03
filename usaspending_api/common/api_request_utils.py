@@ -299,7 +299,11 @@ class FilterGenerator():
                 # Check if this field is a foreign key
                 if mf.get_internal_type() in ["ForeignKey", "ManyToManyField", "OneToOneField"]:
                     # Continue traversal
-                    model_to_check = mf.rel.to
+                    related = getattr(mf, "rel", None)
+                    if related:
+                        model_to_check = related.to
+                    else:
+                        model_to_check = mf.related_model
                 else:
                     # We've hit something that ISN'T a related field, which means it is either
                     # a lookup, or a field with '__' in the name. In either case, we can return
