@@ -214,8 +214,8 @@ class Command(BaseCommand):
                         parent_award_id=row.get('parent_award_id'),
                         use_cache=True)
                 award.latest_submission = submission_attributes
-                if created:
-                    award_queue[award.manual_hash()] = award
+                for aw in created:
+                    award_queue[aw.manual_hash()] = aw
             except:   # TODO: silently swallowing a bare exception is bad mojo
                 continue
 
