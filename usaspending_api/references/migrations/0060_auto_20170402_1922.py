@@ -17,8 +17,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL('''ALTER SEQUENCE
-                             ref_program_activity_ref_program_activity_id_seq
+                             ref_program_activity_id_seq
                              OWNED BY
-                             ref_program_activity.ref_program_activity_id''',
+                             ref_program_activity.id''',
                           migrations.RunSQL.noop)
     ]
