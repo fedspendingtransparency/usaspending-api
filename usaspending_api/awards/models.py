@@ -235,6 +235,13 @@ class Award(DataSourceTrackedModel):
 
     @staticmethod
     def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None, use_cache=False):
+        """
+        Returns a list and award
+
+        Tuple contains all the awards that were created
+        (or need to be created, if using cache) -
+        so that correct records can be bulk_created
+        """
         # If an award transaction's ID is a piid, it's contract data
         # If the ID is fain or a uri, it's financial assistance. If the award transaction
         # has both a fain and a uri, fain takes precedence.
@@ -257,25 +264,28 @@ class Award(DataSourceTrackedModel):
                     q_kwargs_fixed.sort()
                     summary_award = awards_cache.get(q_kwargs_fixed)
                     if summary_award:
-                        return False, summary_award
+                        return [], summary_award
 
                 summary_award = Award.objects.all().filter(Q(**q_kwargs)).filter(awarding_agency=awarding_agency).first()
                 if summary_award:
                     if use_cache:
                         awards_cache.set(q_kwargs_fixed, summary_award)
-                    return False, summary_award
+                    return [], summary_award
                 else:
-                    parent_award = None
                     if parent_award_id:
                         # If we have a parent award id, recursively get/create the award for it
                         parent_created, parent_award = Award.get_or_create_summary_award(use_cache=use_cache, **{i[1]: parent_award_id, 'awarding_agency': awarding_agency})
+                    else:
+                        parent_created, parent_award = [], None
                     # Now create the award record for this award transaction
                     summary_award = Award(**{i[1]: i[0], "parent_award": parent_award, "awarding_agency": awarding_agency})
+                    created = [summary_award, ]
+                    created.extend(parent_created)
                     if use_cache:
                         awards_cache.set(q_kwargs_fixed, summary_award)
                     else:
                         summary_award.save()
-                    return True, summary_award
+                    return created, summary_award
 
         raise ValueError(
             'Unable to find or create an award with the provided information: piid={}, fain={}, uri={}, parent_id={}'.format(

@@ -19,7 +19,7 @@ from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
-import usaspending_api.etl.helpers as h
+from usaspending_api.etl.helpers import get_fiscal_quarter
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
@@ -98,11 +98,6 @@ class Command(BaseCommand):
         # We have a single submission, which is what we want
         submission_data = submission_data[0]
 
-        # Create the submission data instances
-        # We load in currently available data, but the model references will
-        # stick around so we can update and save as we get more data from
-        # other tables
-
         # First, check if we already have entries for this submission id
         submission_attributes = None
         try:
@@ -119,12 +114,15 @@ class Command(BaseCommand):
         # Update and save submission attributes
         field_map = {
             'reporting_period_start': 'reporting_start_date',
-            'reporting_period_end': 'reporting_end_date'
+            'reporting_period_end': 'reporting_end_date',
+            'quarter_format_flag': 'is_quarter_format',
         }
 
         # Create our value map - specific data to load
         value_map = {
-            'broker_submission_id': submission_id
+            'broker_submission_id': submission_id,
+            'reporting_fiscal_quarter': get_fiscal_quarter(
+                submission_data['reporting_fiscal_period'])
         }
 
         del submission_data["submission_id"]  # To avoid collisions with the newer PK system
@@ -216,8 +214,8 @@ class Command(BaseCommand):
                         parent_award_id=row.get('parent_award_id'),
                         use_cache=True)
                 award.latest_submission = submission_attributes
-                if created:
-                    award_queue[award.manual_hash()] = award
+                for aw in created:
+                    award_queue[aw.manual_hash()] = aw
             except:   # TODO: silently swallowing a bare exception is bad mojo
                 continue
 
