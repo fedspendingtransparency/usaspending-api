@@ -71,3 +71,25 @@ class LegalEntitySerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             },
         }
+
+
+class RefProgramActivityBriefSerializer(serializers.ModelSerializer):
+    prefetchable = False
+    id = serializers.IntegerField(source='ref_program_activity_id')
+    code = serializers.CharField(source='program_activity_code')
+    title = serializers.CharField(source='program_activity_name')
+
+    class Meta:
+
+        model = RefProgramActivity
+        fields = ('id', 'code', 'title')
+
+
+class ObjectClassBriefSerializer(serializers.ModelSerializer):
+    prefetchable = False
+    major_object_class_code = serializers.CharField(source='major_object_class')
+
+    class Meta:
+
+        model = ObjectClass
+        fields = ('major_object_class_code', 'major_object_class_name', )
