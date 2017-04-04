@@ -28,10 +28,14 @@ class LimitableSerializer(serializers.ModelSerializer):
             # We don't have any nested serializers
             pass
 
-        request = self.context.get('request')
+        req = self.context.get('req')
+        request = None
+        if req:
+            request = req.request
+
         if request:
-            params = dict(request.query_params)
-            params.update(dict(request.data))
+            params = request["query_params"]
+            params.update(request["data"])
             exclude_fields = params.get('exclude')
             include_fields = params.get('fields')
             current_viewset = self.context.get('view')
@@ -112,6 +116,27 @@ class LimitableSerializer(serializers.ModelSerializer):
 
 
 class AggregateSerializer(serializers.Serializer):
+
+    def __init__(self, *args, **kwargs):
+        super(AggregateSerializer, self).__init__(*args, **kwargs)
+
+        include_fields = None
+
+        req = self.context.get('req')
+        request = None
+        if req:
+            request = req.request
+
+        if request:
+            params = request["query_params"]
+            params.update(request["data"])
+            include_fields = params.get('group')
+            if not isinstance(include_fields, list):
+                include_fields = [include_fields]
+
+        if include_fields:
+            for field_name in include_fields:
+                self.fields[field_name] = serializers.CharField(required=False)
 
     item = serializers.CharField(required=False)
     aggregate = serializers.DecimalField(20, 2)
