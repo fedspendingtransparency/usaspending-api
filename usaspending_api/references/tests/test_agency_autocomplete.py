@@ -40,11 +40,12 @@ def test_agency_autocomplete(client, agency_data, fields, value,
                        expected)
 
 
+@pytest.mark.django_db
 def test_bad_agency_autocomplete_request(client):
     """Verify error on bad autocomplete request for recipients."""
 
     resp = client.post(
-        '/api/v1/references/agency/autocomplete',
+        '/api/v1/references/agency/autocomplete/',
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

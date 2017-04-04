@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 
 class LimitableSerializer(serializers.ModelSerializer):
+    prefetchable = True
+
     """Extends the model serializer to support field limiting."""
     def __init__(self, *args, **kwargs):
         # next two lines are deprecated and will be removed

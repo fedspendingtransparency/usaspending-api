@@ -38,11 +38,12 @@ def test_recipients_autocomplete(client, recipients_data, fields, value,
                        expected)
 
 
+@pytest.mark.django_db
 def test_bad_recipients_autocomplete_request(client):
     """Verify error on bad autocomplete request for recipients."""
 
     resp = client.post(
-        '/api/v1/references/recipients/autocomplete',
+        '/api/v1/references/recipients/autocomplete/',
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

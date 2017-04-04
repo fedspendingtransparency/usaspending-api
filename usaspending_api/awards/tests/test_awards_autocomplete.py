@@ -53,6 +53,7 @@ def test_awards_autocomplete(client, awards_data, fields, value, expected):
     check_autocomplete('awards', client, fields, value, expected)
 
 
+@pytest.mark.django_db
 def test_bad_awards_autocomplete_request(client):
     """Verify error on bad autocomplete request for awards."""
 

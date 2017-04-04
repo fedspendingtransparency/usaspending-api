@@ -9,6 +9,7 @@ from model_mommy.recipe import Recipe
 
 from usaspending_api.awards.models import Award
 from usaspending_api.common.mixins import AggregateQuerysetMixin
+from usaspending_api.common.models import RequestCatalog
 
 
 @pytest.fixture()
@@ -65,8 +66,8 @@ def test_agg_fields(monkeypatch, aggregate_models):
     request.query_params = {}
     request.data = {'field': 'total_obligation', 'group': 'type'}
     a = AggregateQuerysetMixin()
-    a.get_queryset = lambda: Award.objects.all()
-    agg = a.aggregate(request=request)
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=Award.objects.all())
 
     # Test number of returned recrods
     assert agg.count() == 3
@@ -136,8 +137,8 @@ def test_aggregate(monkeypatch, aggregate_models, model, request_data, result):
     request.query_params = {}
     request.data = request_data
     a = AggregateQuerysetMixin()
-    a.get_queryset = lambda: model.objects.all()
-    agg = a.aggregate(request=request)
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=model.objects.all())
 
     agg_list = [a for a in agg]
     if 'order' not in request_data:
@@ -173,8 +174,8 @@ def test_aggregate_fy(monkeypatch, aggregate_models, model, request_data,
     request.query_params = {}
     request.data = request_data
     a = AggregateQuerysetMixin()
-    a.get_queryset = lambda: model.objects.all()
-    agg = a.aggregate(request=request)
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=model.objects.all())
 
     agg_list = [a for a in agg]
     if 'order' not in request_data:
@@ -213,8 +214,8 @@ def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model,
     request.query_params = {}
     request.data = request_data
     a = AggregateQuerysetMixin()
-    a.get_queryset = lambda: model.objects.all()
-    agg = a.aggregate(request=request)
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=model.objects.all())
 
     def itemsorter(a):
         if a['item'] is None:

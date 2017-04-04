@@ -163,13 +163,11 @@ Response:
 
 ```json
 {
-  "total_metadata": {
-    "count": 2
-  },
   "page_metadata": {
-    "page_number": 1,
-    "num_pages": 1,
-    "count": 2
+   "page": 1,
+   "has_next_page": false,
+   "next": null,
+   "previous": null
   },
   "results": [
     {
@@ -201,9 +199,10 @@ Response:
 ```json
 {
   "page_metadata": {
-    "num_pages": 1,
-    "page_number": 1,
-    "count": 4
+   "page": 1,
+   "has_next_page": false,
+   "next": null,
+   "previous": null
   },
   "results": [
     {
@@ -223,9 +222,6 @@ Response:
       "aggregate": "-2891.33"
     }
   ],
-  "total_metadata": {
-    "count": 4
-  }
 }
 ```
 
@@ -250,6 +246,31 @@ Field names support Django's foreign key traversal; for more details on this see
 
 #### POST Requests <a name="post-requests"></a>
 The structure of the post request allows for a flexible and complex query.
+
+#### POST Request Preservation <a name="post-requests-preservation"></a>
+All requests will return a `req` object in their response. This code allows you to share and preserve POST requests from page to page. You can send a request to any endpoint and specify the `req` from any request to re-run that request. For example, if you sent a POST request to `/api/v1/awards/` and returned a `req` of `abcd` you could re-run that request by hitting:
+
+`/api/v1/awards/?req=abcd`
+
+Or by POSTing
+```
+{
+  "req": "abcd"
+}
+```
+
+Do note that this _ignores_ pagination variables, so you can request a different page from the same request without changing your `req`. For example:
+
+`/api/v1/awards/?req=abcd&page=2`
+
+Or by POSTing
+```
+{
+  "page": 2,
+  "req": "abcd"
+}
+```
+Would get the second page of the previous request.
 
 #### Body (JSON)
 Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. The API expects the content in JSON format, so the requests's content-type header should be set to `application/json`.
@@ -439,12 +460,10 @@ The response object structure is the same whether you are making a GET or a POST
 ```
 {
   "page_metadata": {
-    "page_number": 1,
-    "num_pages": 26,
-    "count": 1
-  },
-  "total_metadata": {
-    "count": 26
+   "page": 1,
+   "has_next_page": false,
+   "next": null,
+   "previous": null
   },
   "results": [
   _agency": {
@@ -521,11 +540,11 @@ The response object structure is the same whether you are making a GET or a POST
 ### Response Description
 The response has three functional parts:
   * `page_metadata` - Includes data about the pagination and any page-level metadata specific to the endpoint.
-    * `page_number` - What page is currently being returned.
-    * `num_page` - The number of pages available for this set of filters.
-    * `count` - The length of the `results` array for this page.
-  * `total_metadata` - Includes data about the total dataset and any dataset-level metadata specific to the endpoint.
-    * `count` - The total number of items in this dataset, spanning all pages.
+    * `page` - What page is currently being returned.
+    * `has_next_page` - Whether or not there is a page after this one.
+    * `next` - The link to the next page of this response, if applicable.
+    * `previous` - The link to the previous page of this response, if applicable.
+  * `req` - The special code corresponding to this POST request. See [Post request preservation]("#post-requests-preservation") for how to use this
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
 
@@ -547,7 +566,7 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
   * `filters` - _Optional_ - As on regular endpoint, filters the data before performing the autocomplete.
 
 #### Example
-  
+
 ##### Body
 ```
 {
