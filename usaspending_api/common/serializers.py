@@ -138,6 +138,8 @@ class AggregateSerializer(serializers.Serializer):
 
         if include_fields:
             for field_name in include_fields:
+                if field_name is None:
+                    continue
                 self.fields[field_name] = serializers.CharField(required=False)
 
     item = serializers.CharField(required=False)
