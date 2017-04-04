@@ -114,6 +114,29 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
         """
         Return a RawQuerySet of quarterly financial numbers by TAS,
         object class, and program activity.
+
+        Because we receive financial data as YTD aggregates (i.e., Q3 numbers
+        represent financial activity in Q1, Q2, and Q3), we subtract previously
+        reported FY numbers when calculating discrete quarters.
+
+        For example, consider a Q3 submission in fiscal year 2017. Using
+        total_outlays (a simplified field name) as an example, we would get
+        discrete Q3 total_outlays by taking total_outlays as reported in
+        the Q3 submission and subtracting the total_outlays that were reported
+        in the Q2 submission (or the most recent prior-to-Q3 submission we
+        have on record for that agency in the current fiscal year).
+
+        If there is no previous submission matching for an agency in the
+        current fiscal year (for example, Q1 submission), quarterly numbers
+        are the same as the submission's YTD numbers). The COALESCE function
+        in the SQL above is what handles this scenario.
+
+        Args:
+            current_submission_id: the submission to retrieve quarterly data for
+                (if None, return quarterly data for all submisisons)
+
+        Returns:
+            A RawQuerySet of FinancialAccountsByProgramActivityObjectClass objects
         """
         if current_submission_id is None:
             return FinancialAccountsByProgramActivityObjectClass.objects.raw(
@@ -213,8 +236,6 @@ class TasProgramActivityObjectClassQuarterly(DataSourceTrackedModel):
             # more easily. it's a bit hacky, but avoids the need to explicitly
             # set dozens of attributes when creating TasProgramActivityObjectClassQuarterly
             rec_dict = rec.__dict__
-            for key in list(rec_dict.keys()):
-                if key not in field_list:
-                    del rec_dict[key]
+            rec_dict = {key: rec_dict[key] for key in rec_dict if key in field_list}
             qtr_list.append(TasProgramActivityObjectClassQuarterly(**rec_dict))
         TasProgramActivityObjectClassQuarterly.objects.bulk_create(qtr_list)
