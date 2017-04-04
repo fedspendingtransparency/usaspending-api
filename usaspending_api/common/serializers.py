@@ -29,13 +29,15 @@ class LimitableSerializer(serializers.ModelSerializer):
             pass
 
         req = self.context.get('req')
-        request = None
-        if req:
-            request = req.request
+        request = self.context.get('request')
 
         if request:
-            params = request["query_params"]
-            params.update(request["data"])
+            params = dict(request.query_params)
+            params.update(dict(request.data))
+
+            if req:
+                params = req.request["query_params"]
+                params.update(req.request["data"])
             exclude_fields = params.get('exclude')
             include_fields = params.get('fields')
             current_viewset = self.context.get('view')
