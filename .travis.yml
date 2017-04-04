@@ -5,6 +5,9 @@ python:
 
 services: postgresql
 
+addons:
+  postgresql: "9.4"
+
 env:
   global:
   - DATABASE_URL=postgres://postgres@localhost/usaspending_api
