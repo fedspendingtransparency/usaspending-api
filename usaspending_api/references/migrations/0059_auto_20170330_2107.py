@@ -12,4 +12,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AlterField(
+            model_name='refprogramactivity',
+            name='ref_program_activity_id',
+            field=models.AutoField(primary_key=True, serialize=False),
+        ),
     ]

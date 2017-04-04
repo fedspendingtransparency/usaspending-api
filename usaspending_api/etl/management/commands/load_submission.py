@@ -20,7 +20,7 @@ from usaspending_api.references.models import (
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.common.helpers import fy
-from usaspending_api.etl.helpers import get_fiscal_quarter
+from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
@@ -35,6 +35,7 @@ AWARD_UPDATE_ID_LIST = []
 AWARD_CONTRACT_UPDATE_ID_LIST = []
 
 awards_cache = caches['awards']
+logger = logging.getLogger('console')
 
 
 class Command(BaseCommand):
@@ -44,7 +45,6 @@ class Command(BaseCommand):
     by creating new django model instances for each object
     """
     help = "Loads a single submission from the configured data broker database"
-    logger = logging.getLogger('console')
 
     def add_arguments(self, parser):
         parser.add_argument('submission_id', nargs=1, help='the submission id to load', type=int)
@@ -75,8 +75,8 @@ class Command(BaseCommand):
                 db_conn = connections['data_broker']
                 db_cursor = db_conn.cursor()
             except Exception as err:
-                self.logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
-                self.logger.critical(print(err))
+                logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                logger.critical(print(err))
                 return
         else:
             options['delete'] = True
@@ -90,50 +90,22 @@ class Command(BaseCommand):
         submission_data = dictfetchall(db_cursor)
 
         if len(submission_data) == 0:
-            self.logger.error('Could not find submission with id ' + str(submission_id))
+            logger.error('Could not find submission with id ' + str(submission_id))
             return
         elif len(submission_data) > 1:
-            self.logger.error('Found multiple submissions with id ' + str(submission_id))
+            logger.error('Found multiple submissions with id ' + str(submission_id))
             return
 
         # We have a single submission, which is what we want
         submission_data = submission_data[0]
-
-        # First, check if we already have entries for this submission id
-        submission_attributes = None
-        try:
-            submission_attributes = SubmissionAttributes.objects.get(broker_submission_id=submission_id)
-            if options['delete']:
-                self.logger.info('Submission id ' + str(submission_id) + ' already exists. It will be deleted.')
-                submission_attributes.delete()
-                submission_attributes = SubmissionAttributes()
-            else:
-                self.logger.info('Submission id ' + str(submission_id) + ' already exists. Records will be updated.')
-        except ObjectDoesNotExist:
-            submission_attributes = SubmissionAttributes()
-
-        # Update and save submission attributes
-        field_map = {
-            'reporting_period_start': 'reporting_start_date',
-            'reporting_period_end': 'reporting_end_date',
-            'quarter_format_flag': 'is_quarter_format',
-        }
-
-        # Create our value map - specific data to load
-        value_map = {
-            'broker_submission_id': submission_id,
-            'reporting_fiscal_quarter': get_fiscal_quarter(
-                submission_data['reporting_fiscal_period'])
-        }
-
-        del submission_data["submission_id"]  # To avoid collisions with the newer PK system
-
-        load_data_into_model(submission_attributes, submission_data, field_map=field_map, value_map=value_map, save=True)
+        broker_submission_id = submission_data['submission_id']
+        del submission_data['submission_id']  # To avoid collisions with the newer PK system
+        submission_attributes = get_submission_attributes(broker_submission_id, submission_data, options['delete'])
 
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
+        logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
 
         # Create account objects
         for row in appropriation_data:
@@ -165,7 +137,7 @@ class Command(BaseCommand):
         # Let's get File B information
         db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
         prg_act_obj_cls_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
+        logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
 
         for row in prg_act_obj_cls_data:
             account_balances = None
@@ -186,7 +158,7 @@ class Command(BaseCommand):
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
                 'appropriation_account_balances': account_balances,
-                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], self.logger),
+                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
                 'program_activity_id': get_or_create_program_activity(row, submission_attributes)
             }
 
@@ -195,7 +167,7 @@ class Command(BaseCommand):
         # Let's get File C information
         db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
         award_financial_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
+        logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
 
         award_queue = {}
         afd_queue = []
@@ -228,7 +200,7 @@ class Command(BaseCommand):
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
-                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], self.logger),
+                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
                 'program_activity_id': get_or_create_program_activity(row, submission_attributes)
             }
 
@@ -242,7 +214,7 @@ class Command(BaseCommand):
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
         award_financial_assistance_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
+        logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -357,7 +329,7 @@ class Command(BaseCommand):
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
         procurement_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
+        logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -628,6 +600,69 @@ def load_data_into_model(model_instance, data, **kwargs):
         return mod
     else:
         return model_instance
+
+
+def get_submission_attributes(broker_submission_id, submission_data, delete=False):
+    """
+    For a specified broker submission, return the existing corresponding usaspending
+    submission record or create and return a new one.
+    """
+    # check if we already have an entry for this broker submission id; if not, create one
+    submission_attributes, created = SubmissionAttributes.objects.get_or_create(
+        broker_submission_id=broker_submission_id)
+
+    if created:
+        # this is the first time we're loading this broker submission
+        logger.info('Creating broker submission id {}'.format(broker_submission_id))
+
+    elif delete:
+        # we've already loaded this broker submission and are being asked to delete it.
+        # if there's another submission that references this one as a "previous submission"
+        # do not proceed.
+        # TODO: now that we're chaining submisisons together, get clarification on
+        # what should happen when a submission in the middle of the chain is deleted
+        downstream_submission = SubmissionAttributes.objects.filter(previous_submission=submission_attributes).first()
+        if downstream_submission is not None:
+            message = (
+                'Broker submission {} (API submission id = {}) has a downstream submission (id={}) and '
+                'cannot be deleted'.format(
+                    broker_submission_id,
+                    submission_attributes.submission_id,
+                    downstream_submission.submission_id)
+            )
+            raise ValueError(message)
+
+        logger.info('Broker bubmission id {} already exists. It will be deleted.'.format(broker_submission_id))
+        submission_attributes.delete()
+
+    else:
+        # broker submission has already been loaded, but delete flag was not passed
+        logger.info('Broker submission id {} already exists. Records will be updated.'.format(broker_submission_id))
+
+    # Find the previous submission for this CGAC and fiscal year (if there is one)
+    previous_submission = get_previous_submission(
+        submission_data['cgac_code'],
+        submission_data['reporting_fiscal_year'],
+        submission_data['reporting_fiscal_period'])
+
+    # Update and save submission attributes
+    field_map = {
+        'reporting_period_start': 'reporting_start_date',
+        'reporting_period_end': 'reporting_end_date',
+        'quarter_format_flag': 'is_quarter_format',
+    }
+
+    # Create our value map - specific data to load
+    value_map = {
+        'broker_submission_id': broker_submission_id,
+        'reporting_fiscal_quarter': get_fiscal_quarter(
+            submission_data['reporting_fiscal_period']),
+        'previous_submission': None if previous_submission is None else previous_submission
+    }
+
+    return load_data_into_model(
+        submission_attributes, submission_data,
+        field_map=field_map, value_map=value_map, save=True)
 
 
 def get_or_create_location(location_map, row, location_value_map={}):

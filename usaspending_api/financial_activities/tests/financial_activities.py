@@ -17,4 +17,4 @@ def test_financial_activities_list(fin_act_models, client):
     """
     resp = client.get('/api/v1/financial_activities/')
     assert resp.status_code == 200
-    assert len(resp.data) == 3
+    assert len(resp.data) == 4

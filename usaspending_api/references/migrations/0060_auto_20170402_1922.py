@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
+
 """
 As Django's auto-generated migration creates it, the sequence
 on ref_program_activity_id_seq is not "owned" by the corresponding
@@ -10,15 +11,16 @@ column; thus `repair_sequences` does not fix it, and primary key
 errors result.
 """
 
-
 class Migration(migrations.Migration):
 
-    dependencies = [('references', '0059_auto_20170330_2107'), ]
+    dependencies = [
+        ('references', '0059_auto_20170330_2107'),
+    ]
 
     operations = [
         migrations.RunSQL('''ALTER SEQUENCE
-                             ref_program_activity_id_seq
+                             ref_program_activity_ref_program_activity_id_seq
                              OWNED BY
-                             ref_program_activity.id''',
-                          migrations.RunSQL.noop)
+                             ref_program_activity.ref_program_activity_id''',
+                             migrations.RunSQL.noop)
     ]

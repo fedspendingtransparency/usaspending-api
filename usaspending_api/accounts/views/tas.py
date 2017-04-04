@@ -2,14 +2,14 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount, Approp
 from usaspending_api.accounts.serializers import TreasuryAppropriationAccountSerializer, AppropriationAccountBalancesSerializer
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.financial_activities.serializers import FinancialAccountsByProgramActivityObjectClassSerializer
-from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin
-from usaspending_api.common.views import DetailViewSet, AutocompleteView, AggregateView
+from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
+from usaspending_api.common.views import DetailViewSet, AutocompleteView
 from usaspending_api.common.mixins import SuperLoggingMixin
+from usaspending_api.common.serializers import AggregateSerializer
 
 
 class TreasuryAppropriationAccountViewSet(SuperLoggingMixin,
                                           FilterQuerysetMixin,
-                                          ResponseMetadatasetMixin,
                                           DetailViewSet):
     """Handle requests for appropriation account (i.e., TAS) information."""
     serializer_class = TreasuryAppropriationAccountSerializer
@@ -38,7 +38,6 @@ class TreasuryAppropriationAccountAutocomplete(FilterQuerysetMixin,
 
 class TreasuryAppropriationAccountBalancesViewSet(SuperLoggingMixin,
                                                   FilterQuerysetMixin,
-                                                  ResponseMetadatasetMixin,
                                                   DetailViewSet):
     """Handle requests for appropriation account balance information."""
     serializer_class = AppropriationAccountBalancesSerializer
@@ -53,18 +52,22 @@ class TreasuryAppropriationAccountBalancesViewSet(SuperLoggingMixin,
 
 class TASBalancesAggregate(SuperLoggingMixin,
                            FilterQuerysetMixin,
-                           AggregateView):
+                           AggregateQuerysetMixin,
+                           DetailViewSet):
+
+    serializer_class = AggregateSerializer
+
     """Return aggregated award information."""
     def get_queryset(self):
         queryset = AppropriationAccountBalances.objects.all()
-        filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
-        return ordered_queryset
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.aggregate(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
 
 
 class TASCategoryList(SuperLoggingMixin,
                       FilterQuerysetMixin,
-                      ResponseMetadatasetMixin,
                       DetailViewSet):
     """Handle requests for appropriation account balance information."""
     serializer_class = FinancialAccountsByProgramActivityObjectClassSerializer
@@ -79,10 +82,15 @@ class TASCategoryList(SuperLoggingMixin,
 
 class TASCategoryAggregate(SuperLoggingMixin,
                            FilterQuerysetMixin,
-                           AggregateView):
+                           AggregateQuerysetMixin,
+                           DetailViewSet):
+
+    serializer_class = AggregateSerializer
+
     """Return aggregated award information."""
     def get_queryset(self):
         queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
-        filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
-        return ordered_queryset
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.aggregate(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
