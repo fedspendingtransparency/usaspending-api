@@ -121,3 +121,99 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
             sql = cls.QUARTERLY_SQL + ' WHERE current.submission_id = %s'
             return FinancialAccountsByProgramActivityObjectClass.objects.raw(
                 sql, [current_submission_id])
+
+
+class TasProgramActivityObjectClassQuarterly(DataSourceTrackedModel):
+    """
+    Represents quarterly financial amounts by tas, program activity, and
+    object class for each DATA Act broker submission.
+    Each submission provides a snapshot of the most
+    recent numbers for that fiscal year. Thus, to populate this model, we
+    subtract previous quarters' balances from the balances of the current
+    submission.
+
+    Note: this model name isn't consistent with
+    FinancialAccountsByProgramActivityObjectClass, but hopefull we'll change
+    that to something easier to manage in the near future.
+    """
+    treasury_account = models.ForeignKey(TreasuryAppropriationAccount, models.CASCADE, null=True)
+    program_activity = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, null=True)
+    object_class = models.ForeignKey(ObjectClass, models.DO_NOTHING, null=True)
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    ussgl480100_undelivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl480100_undelivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl490100_delivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl490100_delivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl490200_delivered_orders_obligations_paid_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl490800_authority_outlayed_not_yet_disbursed_fyb = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl490800_authority_outlayed_not_yet_disbursed_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    obligations_undelivered_orders_unpaid_total_fyb = models.DecimalField(max_digits=21, decimal_places=2)
+    obligations_undelivered_orders_unpaid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    obligations_delivered_orders_unpaid_total_fyb = models.DecimalField(max_digits=21, decimal_places=2)
+    obligations_delivered_orders_unpaid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    gross_outlays_undelivered_orders_prepaid_total_fyb = models.DecimalField(max_digits=21, decimal_places=2)
+    gross_outlays_undelivered_orders_prepaid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    gross_outlays_delivered_orders_paid_total_fyb = models.DecimalField(max_digits=21, decimal_places=2)
+    gross_outlays_delivered_orders_paid_total_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    gross_outlay_amount_by_program_object_class_fyb = models.DecimalField(max_digits=21, decimal_places=2)
+    gross_outlay_amount_by_program_object_class_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    obligations_incurred_by_program_object_class_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    deobligations_recoveries_refund_pri_program_object_class_cpe = models.DecimalField(max_digits=21, decimal_places=2)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = 'tas_program_activity_object_class_quarterly'
+        unique_together = (
+            'treasury_account', 'program_activity', 'object_class', 'submission')
+
+    @classmethod
+    def insert_quarterly_numbers(cls, submission_id=None):
+        """
+        Bulk insert quarterly finanical numbers by tas, program activity, and
+        object class.
+        """
+        field_list = [field.column for field in TasProgramActivityObjectClassQuarterly._meta.get_fields()]
+
+        # delete existing quarterly data
+        if submission_id is None:
+            TasProgramActivityObjectClassQuarterly.objects.all().delete()
+        else:
+            TasProgramActivityObjectClassQuarterly.objects.filter(
+                submission_id=submission_id).delete()
+
+        # retrieve RawQuerySet of quarterly breakouts
+        qtr_records = FinancialAccountsByProgramActivityObjectClass.get_quarterly_numbers(
+            submission_id)
+        qtr_list = []
+
+        # for each record in the RawQuerySet, create a corresponding
+        # TasProgramActivityObjectClassQuarterly object and save it to a list
+        # for subsequent bulk insert
+        # TODO: maybe we don't want this entire list in memory?
+        for rec in qtr_records:
+
+            # remove any fields in the qtr_record RawQuerySet object so that we
+            # can create its TasProgramActivityObjectClassQuarterly counterpart
+            # more easily. it's a bit hacky, but avoids the need to explicitly
+            # set dozens of attributes when creating TasProgramActivityObjectClassQuarterly
+            rec_dict = rec.__dict__
+            for key in list(rec_dict.keys()):
+                if key not in field_list:
+                    del rec_dict[key]
+            qtr_list.append(TasProgramActivityObjectClassQuarterly(**rec_dict))
+        TasProgramActivityObjectClassQuarterly.objects.bulk_create(qtr_list)
