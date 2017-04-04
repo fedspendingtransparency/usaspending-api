@@ -9,6 +9,8 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('references', '0057_merge_20170321_2024'),
+        ('awards', '0075_accounts_awards_oc_cleanup'),
+        ('financial_activities', '0018_merge_20170321_2024')
     ]
 
     operations = [
