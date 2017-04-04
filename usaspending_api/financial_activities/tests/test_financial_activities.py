@@ -56,7 +56,7 @@ def test_get_quarterly_numbers(tas_oc_pa_data):
     assert len(list(quarters)) == 2
 
     # submission 1: has no previous subission
-    # submission 2: it's previous submission is submission 1
+    # submission 2: its previous submission is submission 1
     sub1 = SubmissionAttributes.objects.get(previous_submission__isnull=True)
     sub2 = SubmissionAttributes.objects.get(previous_submission__isnull=False)
 
