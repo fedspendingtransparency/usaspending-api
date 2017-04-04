@@ -8,15 +8,15 @@ from rest_framework.response import Response
 from usaspending_api.awards.models import Award, Transaction
 from usaspending_api.awards.serializers import AwardSerializer, TransactionSerializer
 from usaspending_api.common.api_request_utils import AutoCompleteHandler
-from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin, SuperLoggingMixin
-from usaspending_api.common.views import AggregateView, DetailViewSet, AutocompleteView
+from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin, AggregateQuerysetMixin
+from usaspending_api.common.views import DetailViewSet, AutocompleteView
+from usaspending_api.common.serializers import AggregateSerializer
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
 class AwardViewSet(SuperLoggingMixin,
                    FilterQuerysetMixin,
-                   ResponseMetadatasetMixin,
                    DetailViewSet):
     """
     ## Spending data by Award (i.e. a grant, contract, loan, etc)
@@ -57,18 +57,22 @@ class AwardAutocomplete(FilterQuerysetMixin,
 
 class AwardAggregateViewSet(SuperLoggingMixin,
                             FilterQuerysetMixin,
-                            AggregateView):
+                            AggregateQuerysetMixin,
+                            DetailViewSet):
+
+    serializer_class = AggregateSerializer
+
     """Return aggregated award information."""
     def get_queryset(self):
         queryset = Award.objects.all()
-        filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
-        return ordered_queryset
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.aggregate(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
 
 
 class TransactionViewset(SuperLoggingMixin,
                          FilterQuerysetMixin,
-                         ResponseMetadatasetMixin,
                          DetailViewSet):
     """Handles requests for award transaction data."""
     serializer_class = TransactionSerializer
@@ -84,10 +88,15 @@ class TransactionViewset(SuperLoggingMixin,
 
 class TransactionAggregateViewSet(SuperLoggingMixin,
                                   FilterQuerysetMixin,
-                                  AggregateView):
+                                  AggregateQuerysetMixin,
+                                  DetailViewSet):
+
+    serializer_class = AggregateSerializer
+
     """Return aggregated transaction information."""
     def get_queryset(self):
         queryset = Transaction.objects.all()
-        filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
-        return ordered_queryset
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.aggregate(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
