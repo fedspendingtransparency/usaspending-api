@@ -65,6 +65,7 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
             current.treasury_account_id,
             current.object_class_id,
             current.program_activity_id,
+            current.data_source,
             current.ussgl480100_undelivered_orders_obligations_unpaid_fyb - COALESCE(previous.ussgl480100_undelivered_orders_obligations_unpaid_fyb, 0) AS ussgl480100_undelivered_orders_obligations_unpaid_fyb,
             current.ussgl480100_undelivered_orders_obligations_unpaid_cpe - COALESCE(previous.ussgl480100_undelivered_orders_obligations_unpaid_cpe, 0) AS ussgl480100_undelivered_orders_obligations_unpaid_cpe,
             current.ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe - COALESCE(previous.ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe, 0) AS ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe,
