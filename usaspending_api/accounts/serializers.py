@@ -2,9 +2,12 @@ from rest_framework import serializers
 
 from usaspending_api.accounts.models import (
     AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount)
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass
+)
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import (
-    RefProgramActivityBriefSerializer, ObjectClassBriefSerializer)
+    ProgramActivitySerializer, ObjectClassSerializer)
 
 
 class AppropriationAccountBalancesSerializer(LimitableSerializer):
@@ -43,11 +46,19 @@ class TreasuryAppropriationAccountSerializer(LimitableSerializer):
                 "kwargs": {"read_only": True, "many": True}
             },
             "program_activities": {
-                "class": RefProgramActivityBriefSerializer,
+                "class": ProgramActivitySerializer,
                 "kwargs": {"read_only": True, "many": True}
             },
             "object_classes": {
-                "class": ObjectClassBriefSerializer,
+                "class": ObjectClassSerializer,
                 "kwargs": {"read_only": True, "many": True}
             },
         }
+
+
+class FinancialAccountsByProgramActivityObjectClassSerializer(LimitableSerializer):
+
+    class Meta:
+
+        model = FinancialAccountsByProgramActivityObjectClass
+        fields = '__all__'
