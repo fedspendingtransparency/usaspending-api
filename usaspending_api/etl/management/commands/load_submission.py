@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 import logging
 import os
 import re
@@ -111,6 +112,7 @@ class Command(BaseCommand):
         reverse = re.compile('gross_outlay_amount_by_tas_cpe')
         # Create account objects
         for row in appropriation_data:
+
             # Check and see if there is an entry for this TAS
             treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
@@ -726,8 +728,7 @@ def store_value(model_instance_or_dict, field, value, reverse=None):
     if value is None:
         return
     if reverse and reverse.search(field):
-        value = -1 * value
-    # print('Loading ' + str(field) + ' with ' + str(value))
+        value = -1 * Decimal(value)
     if isinstance(model_instance_or_dict, dict):
         model_instance_or_dict[field] = value
     else:
