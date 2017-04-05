@@ -75,7 +75,6 @@ class LegalEntitySerializer(LimitableSerializer):
 
 class RefProgramActivityBriefSerializer(serializers.ModelSerializer):
     prefetchable = False
-    id = serializers.IntegerField(source='ref_program_activity_id')
     code = serializers.CharField(source='program_activity_code')
     title = serializers.CharField(source='program_activity_name')
 

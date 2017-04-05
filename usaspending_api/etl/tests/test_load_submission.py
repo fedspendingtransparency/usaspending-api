@@ -8,13 +8,13 @@ from usaspending_api.awards.models import (
     TransactionContract, Transaction)
 from usaspending_api.etl.management.commands.load_submission import get_submission_attributes
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.models import LegalEntity, Location
+from usaspending_api.references.models import LegalEntity, Location, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
 
 import pytest
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def endpoint_data():
     call_command('flush', '--noinput')
     call_command('loaddata', 'endpoint_fixture_db')
@@ -120,3 +120,18 @@ def test_get_get_submission_attributes():
     # a "downstream" submission
     with pytest.raises(ValueError):
         get_submission_attributes(11111, new_submission_data, True)
+
+
+@pytest.mark.django_db
+def test_load_submission_command_program_activity_uniqueness(endpoint_data, partially_flushed):
+    """
+    Verify that loaded RefProgramActivities are unique across
+    agency as well as program_activity_code
+    """
+
+    code_0001s = RefProgramActivity.objects.filter(program_activity_code='0001')
+    assert code_0001s.count() == 3
+    assert not code_0001s.filter(responsible_agency_id=19).exists()
+    call_command('load_submission', '-1', '--delete', '--test')
+    assert code_0001s.count() == 4
+    assert code_0001s.filter(responsible_agency_id=19).exists()

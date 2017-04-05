@@ -10,8 +10,8 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 def account_models():
     obj_clas_1 = mommy.make('references.ObjectClass', object_class=1)
     obj_clas_2 = mommy.make('references.ObjectClass', object_class=2)
-    prg_atvy_1 = mommy.make('references.RefProgramActivity', ref_program_activity_id=1)
-    prg_atvy_2 = mommy.make('references.RefProgramActivity', ref_program_activity_id=2)
+    prg_atvy_1 = mommy.make('references.RefProgramActivity', id=1)
+    prg_atvy_2 = mommy.make('references.RefProgramActivity', id=2)
     tas_1 = mommy.make('accounts.TreasuryAppropriationAccount', tas_rendering_label="ABC", _fill_optional=True)
     tas_2 = mommy.make('accounts.TreasuryAppropriationAccount', tas_rendering_label="XYZ", _fill_optional=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas_1, budget_authority_unobligated_balance_brought_forward_fyb=10, _quantity=2, _fill_optional=True)
