@@ -73,6 +73,20 @@ class LegalEntitySerializer(LimitableSerializer):
         }
 
 
+class ObjectClassSerializer(LimitableSerializer):
+
+    class Meta:
+        model = ObjectClass
+        fields = '__all__'
+
+
+class RefProgramActivitySerializer(LimitableSerializer):
+
+    class Meta:
+        model = RefProgramActivity
+        fields = '__all__'
+
+
 class RefProgramActivityBriefSerializer(serializers.ModelSerializer):
     prefetchable = False
     code = serializers.CharField(source='program_activity_code')
