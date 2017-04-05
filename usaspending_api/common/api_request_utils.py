@@ -71,7 +71,7 @@ class FilterGenerator():
     def __init__(self, model, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
         self.model = model
-        self.ignored_parameters = ['page', 'limit', 'last'] + ignored_parameters
+        self.ignored_parameters = ['page', 'limit', 'last', 'req'] + ignored_parameters
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
 
@@ -299,48 +299,17 @@ class FilterGenerator():
                 # Check if this field is a foreign key
                 if mf.get_internal_type() in ["ForeignKey", "ManyToManyField", "OneToOneField"]:
                     # Continue traversal
-                    model_to_check = mf.rel.to
+                    related = getattr(mf, "rel", None)
+                    if related:
+                        model_to_check = related.to
+                    else:
+                        model_to_check = mf.related_model
                 else:
                     # We've hit something that ISN'T a related field, which means it is either
                     # a lookup, or a field with '__' in the name. In either case, we can return
                     # false here
                     return False
         return (model_to_check._meta.get_field(fields[0]).get_internal_type() in ["TextField", "CharField"])
-
-
-# Handles unique value requests
-class UniqueValueHandler:
-
-    @staticmethod
-    def get_values_and_counts(data_set, fields):
-        """Get unique values for specified fields in a filtered queryset.
-
-        Keyword arguments:
-            data_set -- Django QuerySet
-            fields -- list of fields in data_set that we unique values for
-
-        Returns:
-            A dictionary keyed by fields. Each entry is another dictionary that
-            contains the field's unique values and corresponding counts.
-            For example:
-            {
-              "recipient__name": {
-                  "Jon": 5,
-                  "Joe": 2
-              }
-            }
-
-        """
-        data_set = data_set.all()  # Do this because we don't want to get finicky with annotations
-        response_object = {}
-        if fields:
-            for field in fields:
-                response_object[field] = {}
-                unique_values = data_set.values(field).distinct()
-                for value in unique_values:
-                    q_kwargs = {field: value[field]}
-                    response_object[field][value[field]] = data_set.filter(**q_kwargs).count()
-        return response_object
 
 
 # Handles autocomplete requests
@@ -422,12 +391,12 @@ class AutoCompleteHandler():
     def validate(body):
         if "fields" in body and "value" in body:
             if not isinstance(body["fields"], list):
-                raise Exception("Invalid field, autocomplete fields value must be a list")
+                raise InvalidParameterException("Invalid field, autocomplete fields value must be a list")
         else:
-            raise Exception("Invalid request, autocomplete requests need parameters 'fields' and 'value'")
+            raise InvalidParameterException("Invalid request, autocomplete requests need parameters 'fields' and 'value'")
         if "mode" in body:
             if body["mode"] not in ["contains", "startswith"]:
-                raise Exception("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
+                raise InvalidParameterException("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
 
 
 class GeoCompleteHandler:
@@ -545,103 +514,3 @@ class GeoCompleteHandler:
                         return response_object
 
         return response_object
-
-
-class DataQueryHandler:
-    """Handles complex queries via POST requests data."""
-
-    def __init__(self, model, serializer, request_body, agg_list=[], ordering=None):
-        self.request_body = request_body
-        self.serializer = serializer
-        self.model = model
-        self.agg_list = agg_list
-        self.ordering = ordering
-
-    def build_response(self):
-        """Returns a dictionary from a POST request that can be used to create a response."""
-        fg = FilterGenerator()
-        filters = fg.create_from_request_body(self.request_body)
-        # Grab the ordering
-        self.ordering = self.request_body.get("order", self.ordering)
-
-        records = self.model.objects.all()
-
-        if len(fg.search_vectors) > 0:
-            vector_sum = fg.search_vectors[0]
-            for vector in fg.search_vectors[1:]:
-                vector_sum += vector
-            records = records.annotate(search=vector_sum)
-
-        # filter model records
-        records = records.filter(filters)
-
-        # Order the response
-        if self.ordering:
-            records = records.order_by(*self.ordering)
-
-        # if this request specifies unique values, get those
-        unique_values = UniqueValueHandler.get_values_and_counts(
-            records, self.request_body.get('unique_values', None))
-
-        # construct metadata of entire set of data that matches the request specifications
-        metadata = {"count": records.count()}
-        # for each aggregate field/function passed in, calculate value and add to metadata
-        aggregates = {
-            '{}_{}'.format(a.field, a.func.__name__.lower()):
-                next(iter(records.aggregate(a.func(a.field)).values())) for a in self.agg_list}
-        metadata.update(aggregates)
-
-        # get paged data for this request
-        paged_data = ResponsePaginator.get_paged_data(
-            records, request_parameters=self.request_body)
-        paged_queryset = paged_data.object_list.all()
-
-        # construct page-specific metadata
-        page_metadata = {
-            "page_number": paged_data.number,
-            "num_pages": paged_data.paginator.num_pages,
-            "count": len(paged_data)
-        }
-        page_aggregates = {
-            '{}_{}'.format(a.field, a.func.__name__.lower()):
-                next(iter(paged_queryset.aggregate(a.func(a.field)).values())) for a in self.agg_list}
-        page_metadata.update(page_aggregates)
-
-        # serialize the paged data
-        fields = self.request_body.get('fields', None)
-        exclude = self.request_body.get('exclude', None)
-        serializer = self.serializer(paged_data, fields=fields, exclude=exclude, many=True)
-        serialized_data = serializer.data
-
-        response_object = OrderedDict({
-            "unique_values_metadata": unique_values,
-            "total_metadata": metadata,
-            "page_metadata": page_metadata
-        })
-        response_object.update({'results': serialized_data})
-
-        return response_object
-
-
-class ResponsePaginator:
-    @staticmethod
-    def get_paged_data(data_set, page=1, page_limit=100, request_parameters={}):
-        if 'limit' in request_parameters:
-            page_limit = int(request_parameters['limit'])
-        if 'page' in request_parameters:
-            page = request_parameters['page']
-
-        paginator = Paginator(data_set, page_limit)
-
-        try:
-            paged_data = paginator.page(page)
-        except PageNotAnInteger:
-            # Either no page or garbage page
-            paged_data = paginator.page(1)
-            page = 1
-        except EmptyPage:
-            # Page is too far, give last page
-            paged_data = paginator.page(paginator.num_pages)
-            page = paginator.num_pages
-
-        return paged_data

@@ -1,13 +1,40 @@
-from django.db import models
+from collections import defaultdict
+from decimal import Decimal
+
+from django.db import models, connection
+
+from usaspending_api.common.helpers import fy
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
-# Table #3 - Treasury Appropriation Accounts.
+class FederalAccount(models.Model):
+    """
+    Represents a single federal account. A federal account encompasses
+    multiple Treasury Account Symbols (TAS), represented by
+    :model:`accounts.TreasuryAppropriationAccount`.
+    """
+    agency_identifier = models.CharField(max_length=3, db_index=True)
+    main_account_code = models.CharField(max_length=4, db_index=True)
+    account_title = account_title = models.CharField(max_length=300)
+
+    class Meta:
+        managed = True
+        db_table = 'federal_account'
+        unique_together = ('agency_identifier', 'main_account_code')
+
+
 class TreasuryAppropriationAccount(DataSourceTrackedModel):
+    """Represents a single Treasury Account Symbol (TAS)."""
     treasury_account_identifier = models.AutoField(primary_key=True)
+    federal_account = models.ForeignKey('FederalAccount', models.DO_NOTHING, null=True)
     tas_rendering_label = models.CharField(max_length=50, blank=True, null=True)
     allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
+    # todo: update the agency details to match FederalAccounts. Is there a way that we can
+    # retain the text-based agency TAS components (since those are attributes of TAS
+    # while still having a convenient FK that links to our agency tables using Django's
+    # default fk naming standard? Something like agency_identifier for the 3 digit TAS
+    # component and agency_id for the FK?)
     agency_id = models.CharField(max_length=3)
     beginning_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
     ending_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
@@ -70,11 +97,13 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
                 "account_title",
                 "reporting_agency_id",
                 "reporting_agency_name",
+                "federal_account"
             ]
 
         return [
             "treasury_account_identifier",
             "tas_rendering_label",
+            "federal_account",
             "allocation_transfer_agency_id",
             "agency_id",
             "beginning_period_of_availability",
@@ -94,8 +123,105 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             "budget_subfunction_code",
             "budget_subfunction_title",
             "account_balances",
-            "program_balances"
+            "program_balances",
+            "program_activities",
+            "object_classes",
+            "totals_program_activity",
+            "totals_object_class",
+            "totals",
         ]
+
+    @property
+    def program_activities(self):
+        return [
+            pb.program_activity
+            for pb in self.program_balances.distinct('program_activity')
+        ]
+
+    @property
+    def future_object_classes(self):
+        results = []
+        return results
+        """TODO: Once FinancialAccountsByProgramActivityObjectClass.object_class
+        has been fixed to point to ObjectClass instead of RefObjectClassCode,
+        this will work with:
+            return [pb.object_class for pb in self.program_balances.distinct('object_class')]
+        """
+
+    @property
+    def object_classes(self):
+        return [
+            pb.object_class
+            for pb in self.program_balances.distinct('object_class')
+        ]
+
+    @property
+    def totals_object_class(self):
+        results = []
+        for object_class in self.object_classes:
+            obligations = defaultdict(Decimal)
+            outlays = defaultdict(Decimal)
+            for pb in self.program_balances.filter(object_class=object_class):
+                reporting_fiscal_year = fy(
+                    pb.submission.reporting_period_start)
+                obligations[
+                    reporting_fiscal_year] += pb.obligations_incurred_by_program_object_class_cpe
+                outlays[
+                    reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
+            result = {
+                'major_object_class_code': None,
+                'major_object_class_name':
+                None,  # TODO: enable once ObjectClass populated
+                'object_class': object_class.object_class,  # TODO: remove
+                'outlays': obligations,
+                'obligations': outlays,
+            }
+            results.append(result)
+        return results
+
+    @property
+    def totals_program_activity(self):
+        results = []
+        for pa in self.program_activities:
+            obligations = defaultdict(Decimal)
+            outlays = defaultdict(Decimal)
+            for pb in self.program_balances.filter(program_activity=pa):
+                reporting_fiscal_year = fy(
+                    pb.submission.reporting_period_start)
+                # TODO: once it is present, use the reporting_fiscal_year directly
+                obligations[
+                    reporting_fiscal_year] += pb.obligations_incurred_by_program_object_class_cpe
+                outlays[
+                    reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
+            result = {
+                'id': pa.ref_program_activity_id,
+                'program_activity_name': pa.program_activity_name,
+                'program_activity_code': pa.program_activity_code,
+                'obligations': obligations,
+                'outlays': outlays,
+            }
+            results.append(result)
+        return results
+
+    @property
+    def totals(self):
+        outlays = defaultdict(Decimal)
+        obligations = defaultdict(Decimal)
+        budget_authority = defaultdict(Decimal)
+        for ab in self.account_balances.all():
+            fiscal_year = fy(ab.reporting_period_start)
+            budget_authority[fiscal_year] += ab.budget_authority_appropriated_amount_cpe
+            outlays[fiscal_year] += ab.gross_outlay_amount_by_tas_cpe
+            obligations[fiscal_year] += ab.obligations_incurred_total_by_tas_cpe
+        results = {
+            'outgoing': {
+                'outlays': outlays,
+                'obligations': obligations,
+                'budget_authority': budget_authority,
+            },
+            'incoming': {}
+        }
+        return results
 
     class Meta:
         managed = True
@@ -105,8 +231,24 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         return "%s" % (self.tas_rendering_label)
 
 
-# Table #4 - Appropriation Account Balances
+class AppropriationAccountBalancesManager(models.Manager):
+
+    def get_queryset(self):
+        '''
+        Get only records from the last submission per TAS per fiscal year.
+        '''
+
+        return super(AppropriationAccountBalancesManager, self).get_queryset().filter(final_of_fy=True)
+
+
 class AppropriationAccountBalances(DataSourceTrackedModel):
+    """
+    Represents Treasury Account Symbol (TAS) balances for each DATA Act
+    broker submission. Each submission provides a snapshot of the most
+    recent numbers for that fiscal year. In other words, the lastest
+    submission for a fiscal year reflects the balances for the entire
+    fiscal year.
+    """
     appropriation_account_balances_id = models.AutoField(primary_key=True)
     treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE, db_column='treasury_account_identifier', related_name="account_balances")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
@@ -126,7 +268,6 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     drv_appropriation_availability_period_start_date = models.DateField(blank=True, null=True)
     drv_appropriation_availability_period_end_date = models.DateField(blank=True, null=True)
     drv_appropriation_account_expired_status = models.CharField(max_length=10, blank=True, null=True)
-    tas_rendering_label = models.CharField(max_length=22, blank=True, null=True)
     drv_obligations_unpaid_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     drv_other_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
@@ -135,7 +276,30 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    final_of_fy = models.BooleanField(blank=False, null=False, default=False, db_index=True)
 
     class Meta:
         managed = True
         db_table = 'appropriation_account_balances'
+
+    objects = models.Manager()
+    final_objects = AppropriationAccountBalancesManager()
+
+    FINAL_OF_FY_SQL = """
+        UPDATE appropriation_account_balances
+        SET final_of_fy = submission_id in
+        ( SELECT DISTINCT ON
+            (aab.treasury_account_identifier,
+             FY(s.reporting_period_start))
+          s.submission_id
+          FROM submission_attributes s
+          JOIN appropriation_account_balances aab
+              ON (s.submission_id = aab.submission_id)
+          ORDER BY aab.treasury_account_identifier,
+                   FY(s.reporting_period_start),
+                   s.reporting_period_start DESC)"""
+
+    @classmethod
+    def populate_final_of_fy(cls):
+        with connection.cursor() as cursor:
+            cursor.execute(cls.FINAL_OF_FY_SQL)

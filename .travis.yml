@@ -1,17 +1,20 @@
 language: python
 
-python: 
+python:
 - "3.5"
 
 services: postgresql
+
+addons:
+  postgresql: "9.4"
 
 env:
   global:
   - DATABASE_URL=postgres://postgres@localhost/usaspending_api
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
 
-install: 
-- pip install -r requirements.txt
+install:
+- pip install -r requirements/requirements.txt
 - pip install coveralls
 
 before_script:

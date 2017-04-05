@@ -8,15 +8,15 @@ from rest_framework.response import Response
 from usaspending_api.awards.models import Award, Transaction
 from usaspending_api.awards.serializers import AwardSerializer, TransactionSerializer
 from usaspending_api.common.api_request_utils import AutoCompleteHandler
-from usaspending_api.common.mixins import FilterQuerysetMixin, ResponseMetadatasetMixin, SuperLoggingMixin
-from usaspending_api.common.views import AggregateView, DetailViewSet
+from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin, AggregateQuerysetMixin
+from usaspending_api.common.views import DetailViewSet, AutocompleteView
+from usaspending_api.common.serializers import AggregateSerializer
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
 class AwardViewSet(SuperLoggingMixin,
                    FilterQuerysetMixin,
-                   ResponseMetadatasetMixin,
                    DetailViewSet):
     """
     ## Spending data by Award (i.e. a grant, contract, loan, etc)
@@ -41,32 +41,38 @@ class AwardViewSet(SuperLoggingMixin,
         return ordered_queryset
 
 
-class AwardAutocomplete(APIView):
+class AwardAutocomplete(FilterQuerysetMixin,
+                        AutocompleteView):
     """Autocomplete support for award summary objects."""
     # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
-    def post(self, request, format=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
-            return Response(AutoCompleteHandler.handle(Award.objects.all(), body, AwardSerializer))
-        except Exception as e:
-            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    serializer_class = AwardSerializer
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = Award.nonempty.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        return filtered_queryset
 
 
 class AwardAggregateViewSet(SuperLoggingMixin,
                             FilterQuerysetMixin,
-                            AggregateView):
+                            AggregateQuerysetMixin,
+                            DetailViewSet):
+
+    serializer_class = AggregateSerializer
+
     """Return aggregated award information."""
     def get_queryset(self):
         queryset = Award.objects.all()
-        filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
-        return ordered_queryset
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.aggregate(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
 
 
 class TransactionViewset(SuperLoggingMixin,
                          FilterQuerysetMixin,
-                         ResponseMetadatasetMixin,
                          DetailViewSet):
     """Handles requests for award transaction data."""
     serializer_class = TransactionSerializer
@@ -82,10 +88,15 @@ class TransactionViewset(SuperLoggingMixin,
 
 class TransactionAggregateViewSet(SuperLoggingMixin,
                                   FilterQuerysetMixin,
-                                  AggregateView):
+                                  AggregateQuerysetMixin,
+                                  DetailViewSet):
+
+    serializer_class = AggregateSerializer
+
     """Return aggregated transaction information."""
     def get_queryset(self):
         queryset = Transaction.objects.all()
-        filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
-        return ordered_queryset
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.aggregate(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset

@@ -100,6 +100,12 @@ def evaluateEquivalence(item1, item2):
                 return False
             if 'date' in key:  # Date fields don't play nicely with the database, so skip them
                 continue
+            if 'req' in key:  # Ignore checksums for comparisons
+                continue
+            if 'next' in key:  # Ignore this due to checksum comparison
+                continue
+            if 'previous' in key:  # Ignore this due to checksum comparison
+                continue
             equality = equality and evaluateEquivalence(item1[key], item2[key])
     else:
         # Converting to string represenations to clear up some issues with Decimal casting

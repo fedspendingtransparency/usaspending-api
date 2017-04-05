@@ -177,25 +177,33 @@ LOGGING = {
     'handlers': {
         'file': {
             'level': 'DEBUG',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/debug.log'),
+            'maxBytes': 1024*1024*2,  # 2 MB
+            'backupCount': 5
         },
         'console_file': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
+            'maxBytes': 1024*1024*2,  # 2 MB
+            'backupCount': 5,
             'formatter': 'specifics'
         },
         'events_file': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/events.log'),
+            'maxBytes': 1024*1024*2,  # 2 MB
+            'backupCount': 5,
             'formatter': 'json'
         },
         'exceptions_file': {
             'level': 'ERROR',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/exceptions.log'),
+            'maxBytes': 1024*1024*2,  # 2 MB
+            'backupCount': 5,
             'formatter': 'specifics'
         },
         'console': {
@@ -226,6 +234,69 @@ LOGGING = {
         },
     },
 }
+
+# If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'default-loc-mem-cache',
+    },
+    'locations': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'locations-loc-mem-cache',
+    },
+    'awards': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'awards-loc-mem-cache',
+        'TIMEOUT': None,
+        'MAX_ENTRIES': 9999999,
+        # We only want to clear this cache manually - it holds unsaved
+        # Award records, and until they are saved, forgetting them would
+        # lose data
+    },
+}
+
+# Cache environment - 'local', 'disabled', or 'elasticache'
+CACHE_ENVIRONMENT = 'local'
+
+# Set up the appropriate elasticache for our environment
+CACHE_ENVIRONMENTS = {
+    # Elasticache settings are changed during deployment, or can be set manually
+    'elasticache': {
+        'BACKEND': 'django_elasticache.memcached.ElastiCache',
+        'LOCATION': 'ELASTICACHE-CONNECTION-STRING',
+        'TIMEOUT': 'TIMEOUT-IN-SECONDS',
+    },
+    'local': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'locations-loc-mem-cache',
+    },
+    'disabled': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+
+# Set the usaspending-cache to whatever our environment cache dictates
+CACHES["usaspending-cache"] = CACHE_ENVIRONMENTS[CACHE_ENVIRONMENT]
+
+# DRF extensions
+REST_FRAMEWORK_EXTENSIONS = {
+    # Not caching errors, these are logged to exceptions.log
+    'DEFAULT_CACHE_ERRORS': False,
+    # Default cache is usaspending-cache, which is set above based upon environment
+    'DEFAULT_USE_CACHE': 'usaspending-cache',
+    'DEFAULT_CACHE_KEY_FUNC': 'usaspending_api.common.cache.usaspending_key_func'
+}
+
+# Django spaghetti-and-meatballs (entity relationship diagram) settings
+SPAGHETTI_SAUCE = {
+  'apps': ['accounts', 'awards', 'financial_activities', 'references', 'submissions', ],
+  'show_fields': False,
+  'exclude': {},
+  'show_proxy': False,
+}
+
+# **** KEEP THESE DICTIONARIES AT THE BOTTOM - any additions should go above! ****
 
 # Mapping dictionaries (used for converting terse_labels from broker to
 # semi-terse labels used in the datastore)
@@ -445,10 +516,6 @@ TERSE_TO_LONG_LABELS = {
     "domestic_or_foreign_entity": "domestic_or_foreign_entity",
     "fain": "fain",
     "uri": "uri",
-    "program_activity_name": "program_activity_name",
-    "program_activity_code": "program_activity_code",
-    "object_class": "object_class",
-    "by_direct_reimbursable_fun": "by_direct_reimbursable_funding_source",
     "transaction_obligated_amou": "transaction_obligated_amount",
     "ussgl480100_undelivered_or_fyb": "ussgl480100_undelivered_orders_obligations_unpaid_fyb",
     "ussgl480100_undelivered_or_cpe": "ussgl480100_undelivered_orders_obligations_unpaid_cpe",
@@ -754,10 +821,6 @@ LONG_TO_TERSE_LABELS = {
     "domestic_or_foreign_entity": "domestic_or_foreign_entity",
     "fain": "fain",
     "uri": "uri",
-    "program_activity_name": "program_activity_name",
-    "program_activity_code": "program_activity_code",
-    "object_class": "object_class",
-    "by_direct_reimbursable_funding_source": "by_direct_reimbursable_fun",
     "transaction_obligated_amount": "transaction_obligated_amou",
     "ussgl480100_undelivered_orders_obligations_unpaid_fyb": "ussgl480100_undelivered_or_fyb",
     "ussgl480100_undelivered_orders_obligations_unpaid_cpe": "ussgl480100_undelivered_or_cpe",
@@ -845,24 +908,4 @@ LONG_TO_TERSE_LABELS = {
     "face_value_loan_guarantee": "face_value_loan_guarantee",
     "original_loan_subsidy_cost": "original_loan_subsidy_cost",
     "business_funds_indicator": "business_funds_indicator"
-}
-
-# If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'default-loc-mem-cache',
-    },
-    'locations': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'locations-loc-mem-cache',
-    },
-}
-
-# Django spaghetti-and-meatballs (entity relationship diagram) settings
-SPAGHETTI_SAUCE = {
-  'apps': ['awards', 'financial_activities', 'references', 'submissions', ],
-  'show_fields': False,
-  'exclude': {},
-  'show_proxy': False,
 }
