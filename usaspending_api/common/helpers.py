@@ -1,11 +1,16 @@
 import datetime
 
+from django.utils.dateparse import parse_date
+
 
 def fy(raw_date):
     'Federal fiscal year corresponding to date'
 
     if raw_date is None:
         return None
+
+    if isinstance(raw_date, str):
+        raw_date = parse_date(raw_date)
 
     try:
         result = raw_date.year

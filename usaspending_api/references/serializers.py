@@ -75,15 +75,17 @@ class LegalEntitySerializer(LimitableSerializer):
         }
 
 
-class ProgramActivitySerializer(serializers.ModelSerializer):
+class ProgramActivitySerializer(LimitableSerializer):
 
     class Meta:
 
         model = RefProgramActivity
-        fields = ('ref_program_activity_id', 'program_activity_code', 'program_activity_name')
+        fields = (
+            'ref_program_activity_id', 'program_activity_code',
+            'program_activity_name')
 
 
-class ObjectClassSerializer(serializers.ModelSerializer):
+class ObjectClassSerializer(LimitableSerializer):
 
     class Meta:
 
