@@ -3,6 +3,23 @@ import datetime
 from django.utils.dateparse import parse_date
 
 
+def get_params_from_req_or_request(request=None, req=None):
+    """
+    Uses requests and req to return a single param dictionary combining query params and data
+    Prefers the data from req, if available
+    """
+    params = None
+    if request:
+        params = dict(request.query_params)
+        params.update(dict(request.data))
+
+    if req:
+        params = req.request["query_params"]
+        params.update(req.request["data"])
+
+    return params
+
+
 def fy(raw_date):
     'Federal fiscal year corresponding to date'
 
