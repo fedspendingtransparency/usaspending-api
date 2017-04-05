@@ -2,8 +2,7 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount, Approp
 from usaspending_api.accounts.serializers import (
     AppropriationAccountBalancesSerializer,
     TasCategorySerializer,
-    TreasuryAppropriationAccountSerializer)
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+    TasSerializer)
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
 from usaspending_api.common.mixins import SuperLoggingMixin
@@ -14,7 +13,7 @@ class TreasuryAppropriationAccountViewSet(SuperLoggingMixin,
                                           FilterQuerysetMixin,
                                           DetailViewSet):
     """Handle requests for appropriation account (i.e., TAS) information."""
-    serializer_class = TreasuryAppropriationAccountSerializer
+    serializer_class = TasSerializer
 
     def get_queryset(self):
         """Return the view's queryset."""
@@ -28,7 +27,7 @@ class TreasuryAppropriationAccountViewSet(SuperLoggingMixin,
 class TreasuryAppropriationAccountAutocomplete(FilterQuerysetMixin,
                                                AutocompleteView):
     """Handle autocomplete requests for appropriation account (i.e., TAS) information."""
-    serializer_class = TreasuryAppropriationAccountSerializer
+    serializer_class = TasSerializer
 
     def get_queryset(self):
         """Return the view's queryset."""

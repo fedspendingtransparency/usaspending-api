@@ -26,7 +26,7 @@ class FederalAccountSerializer(LimitableSerializer):
         fields = '__all__'
 
 
-class TreasuryAppropriationAccountSerializer(LimitableSerializer):
+class TasSerializer(LimitableSerializer):
 
     totals_program_activity = serializers.ListField()
     totals_object_class = serializers.ListField()
