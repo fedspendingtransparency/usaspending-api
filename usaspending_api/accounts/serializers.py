@@ -28,10 +28,6 @@ class FederalAccountSerializer(LimitableSerializer):
 
 class TasSerializer(LimitableSerializer):
 
-    totals_program_activity = serializers.ListField()
-    totals_object_class = serializers.ListField()
-    totals = serializers.DictField()
-
     class Meta:
 
         model = TreasuryAppropriationAccount
@@ -40,19 +36,7 @@ class TasSerializer(LimitableSerializer):
             "federal_account": {
                 "class": FederalAccountSerializer,
                 "kwargs": {"read_only": True}
-            },
-            "account_balances": {
-                "class": AppropriationAccountBalancesSerializer,
-                "kwargs": {"read_only": True, "many": True}
-            },
-            "program_activities": {
-                "class": ProgramActivitySerializer,
-                "kwargs": {"read_only": True, "many": True}
-            },
-            "object_classes": {
-                "class": ObjectClassSerializer,
-                "kwargs": {"read_only": True, "many": True}
-            },
+            }
         }
 
 
@@ -62,3 +46,17 @@ class TasCategorySerializer(LimitableSerializer):
 
         model = FinancialAccountsByProgramActivityObjectClass
         fields = '__all__'
+        nested_serializers = {
+            "program_activity": {
+                "class": ProgramActivitySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "object_class": {
+                "class": ObjectClassSerializer,
+                "kwargs": {"read_only": True}
+            },
+            "treasury_account": {
+                "class": TasSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
