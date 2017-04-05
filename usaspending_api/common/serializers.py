@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from usaspending_api.common.helpers import get_params_from_req_or_request
 
 
 class LimitableSerializer(serializers.ModelSerializer):
@@ -32,12 +33,8 @@ class LimitableSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
 
         if request:
-            params = dict(request.query_params)
-            params.update(dict(request.data))
+            params = get_params_from_req_or_request(request=request, req=req)
 
-            if req:
-                params = req.request["query_params"]
-                params.update(req.request["data"])
             exclude_fields = params.get('exclude')
             include_fields = params.get('fields')
             current_viewset = self.context.get('view')
@@ -125,13 +122,8 @@ class AggregateSerializer(serializers.Serializer):
         include_fields = None
 
         req = self.context.get('req')
-        request = None
         if req:
-            request = req.request
-
-        if request:
-            params = request["query_params"]
-            params.update(request["data"])
+            params = get_params_from_req_or_request(req=req)
             include_fields = params.get('group')
             if not isinstance(include_fields, list):
                 include_fields = [include_fields]
