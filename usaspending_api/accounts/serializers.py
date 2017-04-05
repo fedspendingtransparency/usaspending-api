@@ -56,7 +56,7 @@ class TreasuryAppropriationAccountSerializer(LimitableSerializer):
         }
 
 
-class FinancialAccountsByProgramActivityObjectClassSerializer(LimitableSerializer):
+class TasCategorySerializer(LimitableSerializer):
 
     class Meta:
 

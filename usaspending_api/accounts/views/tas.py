@@ -1,7 +1,7 @@
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, AppropriationAccountBalances
 from usaspending_api.accounts.serializers import (
     AppropriationAccountBalancesSerializer,
-    FinancialAccountsByProgramActivityObjectClassSerializer,
+    TasCategorySerializer,
     TreasuryAppropriationAccountSerializer)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
@@ -72,7 +72,7 @@ class TASCategoryList(SuperLoggingMixin,
                       FilterQuerysetMixin,
                       DetailViewSet):
     """Handle requests for appropriation account balance information."""
-    serializer_class = FinancialAccountsByProgramActivityObjectClassSerializer
+    serializer_class = TasCategorySerializer
 
     def get_queryset(self):
         queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
@@ -105,7 +105,7 @@ class TASCategoryQuarterList(SuperLoggingMixin,
     Handle requests for quarterly financial data by appropriationappropriation
     account (tas), program activity, and object class.
     """
-    serializer_class = FinancialAccountsByProgramActivityObjectClassSerializer
+    serializer_class = TasCategorySerializer
 
     def get_queryset(self):
         queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
@@ -124,7 +124,7 @@ class FinancialAccountsByProgramActivityObjectClassListViewSet(
     activity and object class.
     """
 
-    serializer_class = FinancialAccountsByProgramActivityObjectClassSerializer
+    serializer_class = TasCategorySerializer
 
     def get_queryset(self):
         """Return the view's queryset."""
