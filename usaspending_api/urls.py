@@ -29,7 +29,6 @@ urlpatterns = [
     url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
     url(r'^api/v1/federal_accounts/', include('usaspending_api.accounts.urls_federal_account')),
     url(r'^api/v1/tas/', include('usaspending_api.accounts.urls_tas')),
-    url(r'^api/v1/financial_activities/', include('usaspending_api.financial_activities.urls')),
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^docs/', include('usaspending_api.api_docs.urls')),
