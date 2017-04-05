@@ -20,7 +20,6 @@ from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
-from usaspending_api.common.helpers import fy
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
@@ -496,7 +495,7 @@ def get_or_create_program_activity(row, submission_attributes):
     # We do it this way rather than .get_or_create because we do not want to
     # duplicate existing pk's with null values
     filters = {'program_activity_code': row['program_activity_code'],
-               'budget_year': fy(submission_attributes.reporting_period_start),
+               'budget_year': submission_attributes.reporting_fiscal_year,
                'responsible_agency_id': row['agency_identifier'],
                }
     prg_activity = RefProgramActivity.objects.filter(**filters).first()
