@@ -14,7 +14,8 @@ from usaspending_api.accounts.models import AppropriationAccountBalances, Treasu
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
     TransactionAssistance, TransactionContract, Transaction, AWARD_TYPES, CONTRACT_PRICING_TYPES)
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -158,10 +159,14 @@ class Command(BaseCommand):
                 'treasury_account': treasury_account,
                 'appropriation_account_balances': account_balances,
                 'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
-                'program_activity_id': get_or_create_program_activity(row['program_activity_code'])
+                'program_activity_id': get_or_create_program_activity(row, submission_attributes)
             }
 
             load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
+
+        # Insert File B quarterly numbers for this submission
+        TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(
+            submission_attributes.submission_id)
 
         # Let's get File C information
         db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
@@ -200,7 +205,7 @@ class Command(BaseCommand):
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
                 'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
-                'program_activity_id': get_or_create_program_activity(row['program_activity_code'])
+                'program_activity_id': get_or_create_program_activity(row, submission_attributes)
             }
 
             afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False)
@@ -486,12 +491,16 @@ def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger
     return obj_class
 
 
-def get_or_create_program_activity(program_activity_code):
+def get_or_create_program_activity(row, submission_attributes):
     # We do it this way rather than .get_or_create because we do not want to
     # duplicate existing pk's with null values
-    prg_activity = RefProgramActivity.objects.filter(program_activity_code=program_activity_code).first()
-    if prg_activity is None and program_activity_code is not None:
-        prg_activity = RefProgramActivity.objects.create(program_activity_code=program_activity_code)
+    filters = {'program_activity_code': row['program_activity_code'],
+               'budget_year': submission_attributes.reporting_fiscal_year,
+               'responsible_agency_id': row['agency_identifier'],
+               }
+    prg_activity = RefProgramActivity.objects.filter(**filters).first()
+    if prg_activity is None and row['program_activity_code'] is not None:
+        prg_activity = RefProgramActivity.objects.create(**filters)
     return prg_activity
 
 

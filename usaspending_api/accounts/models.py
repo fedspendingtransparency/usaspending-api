@@ -194,7 +194,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
                 outlays[
                     reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
             result = {
-                'id': pa.ref_program_activity_id,
+                'id': pa.id,
                 'program_activity_name': pa.program_activity_name,
                 'program_activity_code': pa.program_activity_code,
                 'obligations': obligations,

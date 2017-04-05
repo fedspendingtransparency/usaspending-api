@@ -1,5 +1,7 @@
 import datetime
 
+from django.utils.dateparse import parse_date
+
 
 def get_params_from_req_or_request(request=None, req=None):
     """
@@ -23,6 +25,9 @@ def fy(raw_date):
 
     if raw_date is None:
         return None
+
+    if isinstance(raw_date, str):
+        raw_date = parse_date(raw_date)
 
     try:
         result = raw_date.year
