@@ -80,9 +80,7 @@ class ProgramActivitySerializer(LimitableSerializer):
     class Meta:
 
         model = RefProgramActivity
-        fields = (
-            'ref_program_activity_id', 'program_activity_code',
-            'program_activity_name')
+        fields = ('id', 'program_activity_code', 'program_activity_name')
 
 
 class ObjectClassSerializer(LimitableSerializer):

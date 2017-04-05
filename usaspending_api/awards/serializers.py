@@ -5,7 +5,7 @@ from usaspending_api.awards.models import (
     Transaction, TransactionAssistance, TransactionContract)
 from usaspending_api.accounts.serializers import TasSerializer
 from usaspending_api.common.serializers import LimitableSerializer
-from usaspending_api.references.serializers import RefProgramActivitySerializer, ObjectClassSerializer
+from usaspending_api.references.serializers import ProgramActivitySerializer, ObjectClassSerializer
 from usaspending_api.references.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer, CfdaSerializer
 from usaspending_api.common.helpers import fy
 
@@ -21,7 +21,7 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             },
             "program_activity": {
-                "class": RefProgramActivitySerializer,
+                "class": ProgramActivitySerializer,
                 "kwargs": {"read_only": True}
             },
             "object_class": {
