@@ -8,7 +8,7 @@ from usaspending_api.financial_activities.models import (
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import (
     ProgramActivitySerializer, ObjectClassSerializer)
-
+from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 
 class AppropriationAccountBalancesSerializer(LimitableSerializer):
 
@@ -59,4 +59,8 @@ class TasCategorySerializer(LimitableSerializer):
                 "class": TasSerializer,
                 "kwargs": {"read_only": True}
             },
+            "submission": {
+                "class": SubmissionAttributesSerializer,
+                "kwargs": {"read_only": True}
+            }
         }
