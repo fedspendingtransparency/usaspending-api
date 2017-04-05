@@ -110,27 +110,6 @@ class TASCategoryQuarterList(SuperLoggingMixin,
     serializer_class = TasCategorySerializer
 
     def get_queryset(self):
-        queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
-        queryset = self.serializer_class.setup_eager_loading(queryset)
-        filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
-        return ordered_queryset
-
-
-class TasCategoryQuarterListViewSet(
-        SuperLoggingMixin,
-        FilterQuerysetMixin,
-        DetailViewSet):
-    """
-    Handles requests for quarterly financial data grouped by treasury
-    account symbol (aka appropriations account, aka TAS), program
-    activity, and object class.
-    """
-
-    serializer_class = TasCategorySerializer
-
-    def get_queryset(self):
-        """Return the view's queryset."""
         queryset = TasProgramActivityObjectClassQuarterly.objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
