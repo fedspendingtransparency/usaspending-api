@@ -10,6 +10,7 @@ from usaspending_api.references.serializers import (
     ProgramActivitySerializer, ObjectClassSerializer)
 from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 
+
 class AppropriationAccountBalancesSerializer(LimitableSerializer):
 
     class Meta:
