@@ -143,7 +143,7 @@ class Command(BaseCommand):
         prg_act_obj_cls_data = dictfetchall(db_cursor)
         logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
 
-        reverse = re.compile(r'_(cpe|fyb)$')
+        reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
         for row in prg_act_obj_cls_data:
             account_balances = None
             try:
