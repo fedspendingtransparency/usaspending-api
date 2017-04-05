@@ -136,3 +136,13 @@ def test_tas_list(account_models, client):
     resp = client.get('/api/v1/tas/')
     assert resp.status_code == 200
     assert len(resp.data['results']) == 2
+
+
+@pytest.mark.django_db
+def test_tas_categories_quarters_list(account_models, client):
+    """
+    Ensure the tas categories quarters endpoint is functioning
+    """
+    resp = client.get('/api/v1/tas/categories/quarters/')
+    assert resp.status_code == 200
+    assert len(resp.data['results']) == 5

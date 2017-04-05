@@ -7,4 +7,6 @@ class SubmissionAttributesSerializer(LimitableSerializer):
     class Meta:
 
         model = SubmissionAttributes
-        fields = '__all__'
+        fields = (
+            'submission_id', 'cgac_code',
+            'reporting_fiscal_year', 'reporting_fiscal_quarter')
