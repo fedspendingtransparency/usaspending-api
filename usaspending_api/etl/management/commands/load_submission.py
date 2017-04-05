@@ -14,7 +14,8 @@ from usaspending_api.accounts.models import AppropriationAccountBalances, Treasu
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
     TransactionAssistance, TransactionContract, Transaction, AWARD_TYPES, CONTRACT_PRICING_TYPES)
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -163,6 +164,10 @@ class Command(BaseCommand):
             }
 
             load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
+
+        # Insert File B quarterly numbers for this submission
+        TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(
+            submission_attributes.submission_id)
 
         # Let's get File C information
         db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
