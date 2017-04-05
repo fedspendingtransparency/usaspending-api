@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from usaspending_api.common.helpers import get_params_from_req_or_request
 
 
 class LimitableSerializer(serializers.ModelSerializer):
@@ -28,10 +29,12 @@ class LimitableSerializer(serializers.ModelSerializer):
             # We don't have any nested serializers
             pass
 
+        req = self.context.get('req')
         request = self.context.get('request')
+
         if request:
-            params = dict(request.query_params)
-            params.update(dict(request.data))
+            params = get_params_from_req_or_request(request=request, req=req)
+
             exclude_fields = params.get('exclude')
             include_fields = params.get('fields')
             current_viewset = self.context.get('view')
@@ -112,6 +115,24 @@ class LimitableSerializer(serializers.ModelSerializer):
 
 
 class AggregateSerializer(serializers.Serializer):
+
+    def __init__(self, *args, **kwargs):
+        super(AggregateSerializer, self).__init__(*args, **kwargs)
+
+        include_fields = None
+
+        req = self.context.get('req')
+        if req:
+            params = get_params_from_req_or_request(req=req)
+            include_fields = params.get('group')
+            if not isinstance(include_fields, list):
+                include_fields = [include_fields]
+
+        if include_fields:
+            for field_name in include_fields:
+                if field_name is None:
+                    continue
+                self.fields[field_name] = serializers.CharField(required=False)
 
     item = serializers.CharField(required=False)
     aggregate = serializers.DecimalField(20, 2)

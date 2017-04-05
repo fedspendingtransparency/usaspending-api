@@ -19,7 +19,6 @@ class AggregateQuerysetMixin(object):
     is already done (it's handled at the view level, in the
     get_queryset method).
     """
-
     def aggregate(self, request, *args, **kwargs):
         """Perform an aggregate function on a Django queryset with an optional group by field."""
         # create a single dict that contains the requested aggregate parameters,
@@ -33,7 +32,7 @@ class AggregateQuerysetMixin(object):
         queryset = kwargs.get('queryset', None)
 
         # validate request parameters
-        agg_field, group_field, date_part = self.validate_request(params, queryset)
+        agg_field, group_fields, date_part = self.validate_request(params, queryset)
 
         # get the aggregate function to use (default is Sum)
         agg_map = {
@@ -46,7 +45,7 @@ class AggregateQuerysetMixin(object):
         agg_function = params.get('aggregate', 'sum').lower()
         agg_function = agg_map.get(agg_function, Sum)
 
-        if group_field and date_part:
+        if group_fields and date_part:
             # group queryset by a date field and aggregate
             group_func_map = {
                 'year': ExtractYear,
@@ -55,13 +54,23 @@ class AggregateQuerysetMixin(object):
             }
             group_func = group_func_map.get(date_part)
             aggregate = (
-                queryset.annotate(item=group_func(group_field)).values('item').annotate(
+                queryset.annotate(item=group_func(group_fields[0])).values('item').annotate(
                     aggregate=agg_function(agg_field)))
         else:
-            group_expr = self._wrapped_f_expression(group_field)
+            # item is deprecated and should be removed soon
             # group queryset by a non-date field and aggregate
+
+            # Support expression wrappers on all items in the group field array
+            # We must do this so users can specify a __fy request on any field
+            # in any order, rather than being required to do so as the first item
+            item_annotations = {'item': self._wrapped_f_expression(group_fields[0])}
+            for gf in group_fields:
+                expr = self._wrapped_f_expression(gf)
+                if isinstance(expr, ExpressionWrapper):
+                    item_annotations[gf] = expr
+            group_fields.append('item')
             aggregate = (
-                queryset.annotate(item=group_expr).values('item').annotate(
+                queryset.annotate(**item_annotations).values(*group_fields).annotate(
                     aggregate=agg_function(agg_field)))
 
         return aggregate
@@ -87,7 +96,7 @@ class AggregateQuerysetMixin(object):
         """Validate request parameters."""
 
         agg_field = params.get('field')
-        group_field = params.get('group')
+        group_fields = params.get('group')
         date_part = params.get('date_part')
         model = queryset.model
 
@@ -114,22 +123,29 @@ class AggregateQuerysetMixin(object):
             )
 
         # field to group by is required
-        if group_field is None:
+        if group_fields is None:
             raise InvalidParameterException(
                 'Request is missing the field to group by'
             )
 
+        # make sure group fields is a list
+        if not isinstance(group_fields, list):
+            group_fields = [group_fields]
+
         # if a groupby date part is specified, make sure the groupby field is
         # a date and the groupby value is year, quarter, or month
         if date_part is not None:
+            # only allow date parts when grouping by a single field (for now)
+            if len(group_fields) > 1:
+                raise InvalidParameterException("Date parts are only valid when grouping by a single field.")
             # if the request is asking to group by a date component, the field
             # we're grouping by must be a date-related field
             # (there is probably a better way to do this?)
             date_fields = ['DateField', 'DateTimeField']
-            if model._meta.get_field(group_field).get_internal_type() not in date_fields:
+            if model._meta.get_field(group_fields[0]).get_internal_type() not in date_fields:
                 raise InvalidParameterException(
                     'Group by date part ({}) requested for a non-date group by ({})'.format(
-                        date_part, group_field)
+                        date_part, group_fields[0])
                 )
             # date_part must be a supported date component
             supported_date_parts = ['year', 'month', 'quarter', 'day']
@@ -140,7 +156,7 @@ class AggregateQuerysetMixin(object):
                         date_part, supported_date_parts)
                 )
 
-        return agg_field, group_field, date_part
+        return agg_field, group_fields, date_part
 
 
 class FilterQuerysetMixin(object):
