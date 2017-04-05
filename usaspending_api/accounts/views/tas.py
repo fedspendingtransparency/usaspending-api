@@ -3,6 +3,9 @@ from usaspending_api.accounts.serializers import (
     AppropriationAccountBalancesSerializer,
     TasCategorySerializer,
     TasSerializer)
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+    TasProgramActivityObjectClassQuarterly)
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
 from usaspending_api.common.mixins import SuperLoggingMixin
@@ -114,20 +117,21 @@ class TASCategoryQuarterList(SuperLoggingMixin,
         return ordered_queryset
 
 
-class FinancialAccountsByProgramActivityObjectClassListViewSet(
+class TasCategoryQuarterListViewSet(
         SuperLoggingMixin,
         FilterQuerysetMixin,
         DetailViewSet):
     """
-    Handles requests for financial account data grouped by program
-    activity and object class.
+    Handles requests for quarterly financial data grouped by treasury
+    account symbol (aka appropriations account, aka TAS), program
+    activity, and object class.
     """
 
     serializer_class = TasCategorySerializer
 
     def get_queryset(self):
         """Return the view's queryset."""
-        queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
+        queryset = TasProgramActivityObjectClassQuarterly.objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
