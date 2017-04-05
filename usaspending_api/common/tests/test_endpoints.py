@@ -102,12 +102,13 @@ def evaluateEquivalence(item1, item2):
                 continue
             if 'req' in key:  # Ignore checksums for comparisons
                 continue
-            if 'next' in key:  # Ignore this due to checksum comparison
-                continue
-            if 'previous' in key:  # Ignore this due to checksum comparison
+            if 'page_metadata' in key:  # Ignore this due to checksum comparison
                 continue
             equality = equality and evaluateEquivalence(item1[key], item2[key])
     else:
         # Converting to string represenations to clear up some issues with Decimal casting
+        # print(str(item1))  # Leaving these here for future debugging
+        # print(str(item2))
         equality = equality and (str(item1) == str(item2))
+        # print(equality)
     return equality
