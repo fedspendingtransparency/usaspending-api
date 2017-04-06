@@ -134,3 +134,21 @@ class TASCategoryQuarterList(SuperLoggingMixin,
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
+
+
+class TASCategoryQuarterAggregate(SuperLoggingMixin,
+                                  FilterQuerysetMixin,
+                                  AggregateQuerysetMixin,
+                                  DetailViewSet):
+    """
+    Handle requests for quarterly financial data by appropriationappropriation
+    account (tas), program activity, and object class.
+    """
+    serializer_class = AggregateSerializer
+
+    def get_queryset(self):
+        queryset = TasProgramActivityObjectClassQuarterly.objects.all()
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.aggregate(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset

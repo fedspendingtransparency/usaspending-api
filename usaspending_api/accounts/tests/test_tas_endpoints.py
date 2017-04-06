@@ -134,6 +134,68 @@ def test_tas_categories_total(account_models, client):
 
 
 @pytest.mark.django_db
+def test_tas_categories_quarters_total(account_models, client):
+    """
+    Ensure the categories quarters aggregation counts properly
+    """
+
+    response_prg_sums = {
+        "1": "10100.00",
+        "2": "6000.00"
+    }
+    response_obj_sums = {
+        "1": "10000.00",
+        "2": "6100.00"
+    }
+    response_tas_1_obj_sums = {
+        "2": "100.00"
+    }
+
+    resp = client.post(
+        '/api/v1/tas/categories/quarters/total/',
+        content_type='application/json',
+        data=json.dumps({
+            "field": "obligations_undelivered_orders_unpaid_total_cpe",
+            "group": "program_activity"
+        }))
+
+    assert resp.status_code == 200
+    for result in resp.data['results']:
+        assert response_prg_sums[result["item"]] == result["aggregate"]
+
+    resp = client.post(
+        '/api/v1/tas/categories/quarters/total/',
+        content_type='application/json',
+        data=json.dumps({
+            "field": "obligations_undelivered_orders_unpaid_total_cpe",
+            "group": "object_class__object_class"
+        }))
+
+    assert resp.status_code == 200
+    for result in resp.data['results']:
+        assert response_obj_sums[result["item"]] == result["aggregate"]
+
+    resp = client.post(
+        '/api/v1/tas/categories/quarters/total/',
+        content_type='application/json',
+        data=json.dumps({
+            "field": "obligations_undelivered_orders_unpaid_total_cpe",
+            "group": "object_class__object_class",
+            "filters": [
+                {
+                    "field": "treasury_account__tas_rendering_label",
+                    "operation": "equals",
+                    "value": "ABC"
+                }
+            ]
+        }))
+
+    assert resp.status_code == 200
+    for result in resp.data['results']:
+        assert response_tas_1_obj_sums[result["item"]] == result["aggregate"]
+
+
+@pytest.mark.django_db
 def test_tas_list(account_models, client):
     """
     Ensure the accounts endpoint lists the right number of entities
