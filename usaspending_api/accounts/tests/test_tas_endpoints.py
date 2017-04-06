@@ -17,6 +17,8 @@ def account_models():
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas_1, budget_authority_unobligated_balance_brought_forward_fyb=10, _quantity=2, _fill_optional=True)
     mommy.make('accounts.AppropriationAccountBalances', treasury_account_identifier=tas_2, budget_authority_unobligated_balance_brought_forward_fyb=10, _quantity=3, _fill_optional=True)
     AppropriationAccountBalances.populate_final_of_fy()
+    mommy.make('accounts.AppropriationAccountBalancesQuarterly', treasury_account_identifier=tas_1, budget_authority_unobligated_balance_brought_forward_fyb=10, _fill_optional=True)
+    mommy.make('accounts.AppropriationAccountBalancesQuarterly', treasury_account_identifier=tas_2, budget_authority_unobligated_balance_brought_forward_fyb=10, _fill_optional=True)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_1, program_activity=prg_atvy_1, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=1000, _quantity=2, _fill_optional=True)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_2, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=2000, _quantity=2, _fill_optional=True)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_1, treasury_account=tas_1, obligations_undelivered_orders_unpaid_total_cpe=50, _fill_optional=True),
@@ -211,3 +213,13 @@ def test_tas_categories_quarters_list(account_models, client):
     resp = client.get('/api/v1/tas/categories/quarters/')
     assert resp.status_code == 200
     assert len(resp.data['results']) == 5
+
+
+@pytest.mark.django_db
+def test_tas_balances_quarters_list(account_models, client):
+    """
+    Ensure the tas balances quarters endpoint is functioning
+    """
+    resp = client.get('/api/v1/tas/balances/quarters/')
+    assert resp.status_code == 200
+    assert len(resp.data['results']) == 2

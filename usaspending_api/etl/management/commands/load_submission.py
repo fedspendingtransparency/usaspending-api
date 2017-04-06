@@ -12,7 +12,9 @@ from django.db import connections
 from django.db.models import Q
 from django.core.cache import caches
 
-from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
+from usaspending_api.accounts.models import (
+    AppropriationAccountBalances, AppropriationAccountBalancesQuarterly,
+    TreasuryAppropriationAccount)
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
     TransactionAssistance, TransactionContract, Transaction, AWARD_TYPES, CONTRACT_PRICING_TYPES)
@@ -137,6 +139,10 @@ class Command(BaseCommand):
             load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True, reverse=reverse)
 
         AppropriationAccountBalances.populate_final_of_fy()
+
+        # Insert File A quarterly numbers for this submission
+        AppropriationAccountBalancesQuarterly.insert_quarterly_numbers(
+            submission_attributes.submission_id)
 
         # Let's get File B information
         db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])

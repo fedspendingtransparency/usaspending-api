@@ -11,14 +11,6 @@ from usaspending_api.references.serializers import (
 from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 
 
-class AppropriationAccountBalancesSerializer(LimitableSerializer):
-
-    class Meta:
-
-        model = AppropriationAccountBalances
-        fields = '__all__'
-
-
 class FederalAccountSerializer(LimitableSerializer):
 
     class Meta:
@@ -36,6 +28,24 @@ class TasSerializer(LimitableSerializer):
         nested_serializers = {
             "federal_account": {
                 "class": FederalAccountSerializer,
+                "kwargs": {"read_only": True}
+            }
+        }
+
+
+class AppropriationAccountBalancesSerializer(LimitableSerializer):
+
+    class Meta:
+
+        model = AppropriationAccountBalances
+        fields = '__all__'
+        nested_serializers = {
+            "treasury_account_identifier": {
+                "class": TasSerializer,
+                "kwargs": {"read_only": True}
+            },
+            "submission": {
+                "class": SubmissionAttributesSerializer,
                 "kwargs": {"read_only": True}
             }
         }
