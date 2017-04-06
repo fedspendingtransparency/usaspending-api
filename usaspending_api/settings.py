@@ -107,10 +107,17 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 
 DATABASES = {'default': dj_database_url.config(conn_max_age=10)}
 
+# read replica env vars... if not set, default DATABASE_URL will get used
+if os.environ.get('DB_SOURCE') and os.environ.get('DB_R1'):
+    DATABASES['db_source'] = dj_database_url.parse(os.environ.get('DB_SOURCE'), conn_max_age=10)
+    DATABASES['db_r1'] = dj_database_url.parse(os.environ.get('DB_R1'), conn_max_age=10)
+    DATABASE_ROUTERS = ['usaspending_api.routers.default.ReadReplicaRouter']
+
 # import a second database connection for ETL, connecting to the data broker
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
 if os.environ.get('DATA_BROKER_DATABASE_URL') and not sys.argv[1:2] == ['test']:
     DATABASES['data_broker'] = dj_database_url.parse(os.environ.get('DATA_BROKER_DATABASE_URL'), conn_max_age=600)
+
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
