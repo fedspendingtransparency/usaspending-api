@@ -1,4 +1,6 @@
-from usaspending_api.accounts.models import TreasuryAppropriationAccount, AppropriationAccountBalances
+from usaspending_api.accounts.models import (
+    TreasuryAppropriationAccount, AppropriationAccountBalances,
+    AppropriationAccountBalancesQuarterly)
 from usaspending_api.accounts.serializers import (
     AppropriationAccountBalancesSerializer,
     TasCategorySerializer,
@@ -48,6 +50,23 @@ class TreasuryAppropriationAccountBalancesViewSet(SuperLoggingMixin,
 
     def get_queryset(self):
         queryset = AppropriationAccountBalances.final_objects.all()  # last per FY
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
+
+
+class TASBalancesQuarterList(SuperLoggingMixin,
+                             FilterQuerysetMixin,
+                             DetailViewSet):
+    """
+    Handle requests for quarterly financial data by appropriationappropriation
+    account (tas)..
+    """
+    serializer_class = AppropriationAccountBalancesSerializer
+
+    def get_queryset(self):
+        queryset = AppropriationAccountBalancesQuarterly.objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
