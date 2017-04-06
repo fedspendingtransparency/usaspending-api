@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 from django.db import migrations
 from django.db.models import F
 
+from usaspending_api.financial_activities.models import TasProgramActivityObjectClassQuarterly
+
 
 def forwards_or_backwards_func(apps, schema_editor):
     """
@@ -19,6 +21,11 @@ def forwards_or_backwards_func(apps, schema_editor):
                for field_name in dir(cls) if (
                    field_name.endswith('_cpe') or field_name.endswith('_fyb'))}
     cls.objects.using(db_alias).update(**updates)
+
+    # re-calculate all TasProgramActivityObjectClassQuarterly numbers
+    # to ensure that they match the signs of the underlying
+    # FinancialAccountsByProgramActivityObjectClass data
+    TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers()
 
 
 class Migration(migrations.Migration):
