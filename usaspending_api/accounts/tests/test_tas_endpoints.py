@@ -19,7 +19,10 @@ def account_models():
     AppropriationAccountBalances.populate_final_of_fy()
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_1, program_activity=prg_atvy_1, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=1000, _quantity=2, _fill_optional=True)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_2, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=2000, _quantity=2, _fill_optional=True)
-    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_1, treasury_account=tas_1, obligations_undelivered_orders_unpaid_total_cpe=50, _fill_optional=True)
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_1, treasury_account=tas_1, obligations_undelivered_orders_unpaid_total_cpe=50, _fill_optional=True),
+    mommy.make('financial_activities.TasProgramActivityObjectClassQuarterly', object_class=obj_clas_1, program_activity=prg_atvy_1, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=5000, _quantity=2, _fill_optional=True)
+    mommy.make('financial_activities.TasProgramActivityObjectClassQuarterly', object_class=obj_clas_2, program_activity=prg_atvy_2, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=3000, _quantity=2, _fill_optional=True)
+    mommy.make('financial_activities.TasProgramActivityObjectClassQuarterly', object_class=obj_clas_2, program_activity=prg_atvy_1, treasury_account=tas_1, obligations_undelivered_orders_unpaid_total_cpe=100, _fill_optional=True)
 
 
 @pytest.mark.django_db
