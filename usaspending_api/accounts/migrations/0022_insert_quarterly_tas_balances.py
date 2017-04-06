@@ -21,6 +21,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('accounts', '0021_appropriationaccountbalancesquarterly'),
+        ('accounts', '0021_auto_20170405_1909'),  # needs to run after migration to fix signs
     ]
 
     operations = [
