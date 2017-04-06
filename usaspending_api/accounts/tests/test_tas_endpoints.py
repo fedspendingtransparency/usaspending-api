@@ -223,3 +223,28 @@ def test_tas_balances_quarters_list(account_models, client):
     resp = client.get('/api/v1/tas/balances/quarters/')
     assert resp.status_code == 200
     assert len(resp.data['results']) == 2
+
+
+@pytest.mark.django_db
+def test_tas_balances_quarter_total(account_models, client):
+    """
+    Ensure the categories aggregation counts properly
+    """
+
+    response_tas_sums = {
+        "ABC": "20.00",
+        "XYZ": "30.00"
+    }
+
+    resp = client.post(
+        '/api/v1/tas/balances/total/',
+        content_type='application/json',
+        data=json.dumps({
+            "field": "budget_authority_unobligated_balance_brought_forward_fyb",
+            "group": "treasury_account_identifier__tas_rendering_label"
+        }))
+
+    assert resp.status_code == 200
+    for result in resp.data['results']:
+        print(response_tas_sums[result["item"]] + " " + result["aggregate"])
+        assert response_tas_sums[result["item"]] == result["aggregate"]
