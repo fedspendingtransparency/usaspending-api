@@ -100,6 +100,7 @@ def test_get_quarterly_null_current_submission(tas_balances_data):
     was not null in the previous submission.
     """
 
+
 @pytest.mark.django_db
 def test_insert_quarterly_numbers(tas_balances_data):
     """
