@@ -73,6 +73,22 @@ class TASBalancesQuarterList(SuperLoggingMixin,
         return ordered_queryset
 
 
+class TASBalancesQuarterAggregate(SuperLoggingMixin,
+                                  FilterQuerysetMixin,
+                                  AggregateQuerysetMixin,
+                                  DetailViewSet):
+
+    serializer_class = AggregateSerializer
+
+    """Return aggregated award information."""
+    def get_queryset(self):
+        queryset = AppropriationAccountBalancesQuarterly.objects.all()
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.aggregate(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
+
+
 class TASBalancesAggregate(SuperLoggingMixin,
                            FilterQuerysetMixin,
                            AggregateQuerysetMixin,
