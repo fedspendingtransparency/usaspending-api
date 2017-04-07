@@ -113,7 +113,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
             "financial_accounts_by_awards_id",
             "award",
             "treasury_account",
-            "transaction_obligations",
+            "transaction_obligated_amount",
             "object_class",
             "program_activity",
             "piid",

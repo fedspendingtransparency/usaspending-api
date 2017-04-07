@@ -170,7 +170,7 @@ class Command(BaseCommand):
                 'treasury_account': treasury_account,
                 'appropriation_account_balances': account_balances,
                 'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
-                'program_activity_id': get_or_create_program_activity(row, submission_attributes)
+                'program_activity': get_or_create_program_activity(row, submission_attributes)
             }
 
             load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True, reverse=reverse)
@@ -216,7 +216,7 @@ class Command(BaseCommand):
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
                 'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
-                'program_activity_id': get_or_create_program_activity(row, submission_attributes)
+                'program_activity': get_or_create_program_activity(row, submission_attributes)
             }
 
             # Still using the cpe|fyb regex compiled above for reverse
@@ -513,6 +513,7 @@ def get_or_create_program_activity(row, submission_attributes):
     prg_activity = RefProgramActivity.objects.filter(**filters).first()
     if prg_activity is None and row['program_activity_code'] is not None:
         prg_activity = RefProgramActivity.objects.create(**filters)
+        logger.warning('Created missing program activity record for {}'.format(str(filters)))
     return prg_activity
 
 
