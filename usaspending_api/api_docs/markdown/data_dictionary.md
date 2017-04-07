@@ -100,10 +100,14 @@ In this section you will find definitions for common terms used in the API. For 
 | [/api/v1/awards/total/](/api/v1/awards/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on award records |
 | [/api/v1/federal_accounts/](/api/v1/federal_accounts/) | GET, POST | <a href="#federal-account">Federal Account</a> | Returns a list of federal accounts |
 | [/api/v1/federal_accounts/autocomplete/](/api/v1/federal_accounts/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on federal account records |
-| [/api/v1/tas/balances/](/api/v1/tas/balances/) | GET, POST | <a href="#accounts">Appropriation Account Balances</a> | Returns a list of appropriation account balances |
+| [/api/v1/tas/balances/](/api/v1/tas/balances/) | GET, POST | <a href="#appropriation-account">Yearly Appropriation Account Balances</a> | Returns a list of appropriation account balances by fiscal year |
 | [/api/v1/tas/balances/total/](/api/v1/tas/balances/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on appropriation account records |
-| [/api/v1/tas/categories/](/api/v1/tas/categories/) | GET, POST | <a href="#accounts-prg-obj">Appropriation Account Balances (by Category)</a> | Returns a list of appropriation account balances broken up by program activities and object class |
+| [/api/v1/tas/balances/quarters/](/api/v1/tas/balances/quarters/) | GET, POST | <a href="#appropriation-account-balances-quarterly">Quarterly Appropriation Account Balances</a> | Returns a list of appropriation account balances by fiscal quarter|
+| [/api/v1/tas/balances/quarters/total/](/api/v1/tas/balances/quarters/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on quarterly appropriation account records |
+| [/api/v1/tas/categories/](/api/v1/tas/categories/) | GET, POST | <a href="#accounts-prg-obj">Yearly Appropriation Account Balances (by Category)</a> | Returns a list of appropriation account balances by fiscal year broken up by program activities and object class |
 | [/api/v1/tas/categories/total/](/api/v1/tas/categories/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on appropriation account (by category) records |
+| [/api/v1/tas/categories/quarters/](/api/v1/tas/categories/quarters/) | GET, POST | <a href="#accounts-prg-obj-quarterly">Quarterly Appropriation Account Balances (by Category)</a> | Returns a list of appropriation account balances by fiscal quarter broken up by program activities and object class |
+| [/api/v1/tas/categories/quarters/total/](/api/v1/tas/categories/quarters/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on quarterly appropriation account (by category) records |
 | [/api/v1/tas/](/api/v1/tas/) | GET, POST | <a href="#tas">Treasury Appropriation Account</a> | Returns a list of treasury appropriation accounts, by TAS |
 | [/api/v1/tas/autocomplete/](/api/v1/tas/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on TAS records |
 | [/api/v1/accounts/awards/](/api/v1/accounts/awards/) | GET, POST | <a href="#accounts-by-award">Financial Accounts (by Award)</a> | Returns a list of financial account data grouped by TAS and broken up by Program Activity and Object Class codes |
@@ -361,6 +365,30 @@ In this section you will find definitions for common terms used in the API. For 
 | create_date | Datetime |  |
 | update_date | Datetime |  |
 
+###### Appropriation Account Balances Quarterly <a name="appropriation-account-balances-quarterly"></a>
+
+| Field | Type | Description |
+| ----- | ----- | ----- |
+| id | Integer | Internal primary key. Guaranteed to be unique. |
+| data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
+| treasury_account_identifier | Relation |  |
+| submission | Relation |  |
+| budget_authority_unobligated_balance_brought_forward_fyb | Float |  |
+| adjustments_to_unobligated_balance_brought_forward_cpe | Float |  |
+| budget_authority_appropriated_amount_cpe | Float |  |
+| borrowing_authority_amount_total_cpe | Float |  |
+| contract_authority_amount_total_cpe | Float |  |
+| spending_authority_from_offsetting_collections_amount_cpe | Float |  |
+| other_budgetary_resources_amount_cpe | Float |  |
+| budget_authority_available_amount_total_cpe | Float |  |
+| gross_outlay_amount_by_tas_cpe | Float |  |
+| deobligations_recoveries_refunds_by_tas_cpe | Float |  |
+| unobligated_balance_cpe | Float |  |
+| status_of_budgetary_resources_total_cpe | Float |  |
+| obligations_incurred_total_by_tas_cpe | Float |  |
+| create_date | Datetime |  |
+| update_date | Datetime |  |
+
 ##### Appropriation Account (by Category) <a name="accounts-prg-obj"></a>
 
 | Field | Type | Description |
@@ -411,6 +439,52 @@ In this section you will find definitions for common terms used in the API. For 
 | certified_date | Date |  |
 | create_date | Datetime |  |
 | update_date | Datetime |  |
+
+##### Appropriation Account (by Category) Quarterly <a name="accounts-prg-obj-quarterly"></a>
+
+| Field | Type | Description |
+| ----- | ----- | ----- |
+| id | Integer | Internal primary key. Guaranteed to be unique. |
+| data_source | String | The source of this entry, either Data Broker (DBR) or USASpending (USA) |
+| treasury_account | Relation |  |
+| program_activity | Relation |  |
+| object_class | Relation |  |
+| submission | Relation |  |
+| ussgl480100_undelivered_orders_obligations_unpaid_fyb | Float |  |
+| ussgl480100_undelivered_orders_obligations_unpaid_cpe | Float |  |
+| ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe | Float |  |
+| ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe | Float |  |
+| ussgl490100_delivered_orders_obligations_unpaid_fyb | Float |  |
+| ussgl490100_delivered_orders_obligations_unpaid_cpe | Float |  |
+| ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe | Float |  |
+| ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe | Float |  |
+| ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb | Float |  |
+| ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe | Float |  |
+| ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe | Float |  |
+| ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe | Float |  |
+| ussgl490200_delivered_orders_obligations_paid_cpe | Float |  |
+| ussgl490800_authority_outlayed_not_yet_disbursed_fyb | Float |  |
+| ussgl490800_authority_outlayed_not_yet_disbursed_cpe | Float |  |
+| ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe | Float |  |
+| obligations_undelivered_orders_unpaid_total_fyb | Float |  |
+| obligations_undelivered_orders_unpaid_total_cpe | Float |  |
+| obligations_delivered_orders_unpaid_total_fyb | Float |  |
+| obligations_delivered_orders_unpaid_total_cpe | Float |  |
+| gross_outlays_undelivered_orders_prepaid_total_fyb | Float |  |
+| gross_outlays_undelivered_orders_prepaid_total_cpe | Float |  |
+| gross_outlays_delivered_orders_paid_total_fyb | Float |  |
+| gross_outlays_delivered_orders_paid_total_cpe | Float |  |
+| gross_outlay_amount_by_program_object_class_fyb | Float |  |
+| gross_outlay_amount_by_program_object_class_cpe | Float |  |
+| obligations_incurred_by_program_object_class_cpe | Float |  |
+| ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe | Float |  |
+| ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe | Float |  |
+| ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe | Float |  |
+| ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe | Float |  |
+| deobligations_recoveries_refund_pri_program_object_class_cpe | Float |  |
+| create_date | Datetime |  |
+| update_date | Datetime |  |
+
 
 ##### Federal Account <a name="federal-account"></a>
 
