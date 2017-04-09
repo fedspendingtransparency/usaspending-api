@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand
 from usaspending_api.awards.models import Award, AWARD_TYPES, Transaction, TransactionAssistance
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.csv_data_reader import CsvDataReader
+from usaspending_api.etl.commands.update_description_fields import update_model_description_fields
 import usaspending_api.etl.helpers as h
 from usaspending_api.references.models import Agency, LegalEntity
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -120,6 +121,7 @@ class Command(BaseCommand):
         self.logger.info("Starting Awards update")
         count = update_awards(tuple(award_id_list))
         update_contract_awards(tuple(award_id_list))
+        update_model_description_fields()
         self.logger.info("Completed Awards update ({} records)".format(count))
 
     def get_or_create_award(self, row, awarding_agency):

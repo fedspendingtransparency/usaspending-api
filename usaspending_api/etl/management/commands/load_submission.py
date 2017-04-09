@@ -26,6 +26,8 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 
+from usaspending_api.etl.commands.update_description_fields import update_model_description_fields
+
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
 TAS_ID_TO_ACCOUNT = {}
@@ -440,6 +442,9 @@ class Command(BaseCommand):
         # Update awards for new linkages
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
         update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+
+        # Update the descriptions TODO: If this is slow, add ID limiting as above
+        update_model_description_fields()
 
 
 def format_date(date_string, pattern='%Y%m%d'):

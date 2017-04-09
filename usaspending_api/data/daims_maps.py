@@ -388,5 +388,11 @@ daims_maps = {
         "EDWOSB": "Economically-Disadvantaged Women-Owned Small Business",
     },
 
+    # File A, B, C fields
+    "availability_type_code_map": {
+        "X": "Appropriation account has an unlimited period to incur new obligations.",
+        "_BLANK": "Appropriation account has a designated period of availability.",
+    },
 
+    
 }
