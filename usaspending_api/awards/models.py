@@ -12,46 +12,6 @@ from django.core.cache import caches, CacheKeyWarning
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
-AWARD_TYPES = (
-    ('U', 'Unknown Type'),
-    ('02', 'Block Grant'),
-    ('03', 'Formula Grant'),
-    ('04', 'Project Grant'),
-    ('05', 'Cooperative Agreement'),
-    ('06', 'Direct Payment for Specified Use'),
-    ('07', 'Direct Loan'),
-    ('08', 'Guaranteed/Insured Loan'),
-    ('09', 'Insurance'),
-    ('10', 'Direct Payment unrestricted'),
-    ('11', 'Other'),
-    ('A', 'BPA Call'),
-    ('B', 'Purchase Order'),
-    ('C', 'Delivery Order'),
-    ('D', 'Definitive Contract')
-)
-
-AWARD_TYPES_D = dict(AWARD_TYPES)
-_UNKNOWN_TYPE = "Unknown Type"
-
-CONTRACT_PRICING_TYPES = (
-    ('A', 'Fixed Price Redetermination'),
-    ('B', 'Fixed Price Level of Effort'),
-    ('J', 'Firm Fixed Price'),
-    ('K', 'Fixed Price with Economic Price Adjustment'),
-    ('L', 'Fixed Price Incentive'),
-    ('M', 'Fixed Price Award Fee'),
-    ('R', 'Cost Plus Award Fee'),
-    ('S', 'Cost No Fee'),
-    ('T', 'Cost Sharing'),
-    ('U', 'Cost Plus Fixed Fee'),
-    ('V', 'Cost Plus Incentive Fee'),
-    ('Y', 'Time and Materials'),
-    ('Z', 'Labor Hours'),
-    ('UN', 'Unknown Type')
-)
-
-CONTRACT_PRICING_TYPES_D = dict(CONTRACT_PRICING_TYPES)
-
 
 class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
@@ -167,8 +127,8 @@ class Award(DataSourceTrackedModel):
     see ETL\award_helpers.py for details.
     """
 
-    type = models.CharField(max_length=5, db_index=True, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True, help_text="	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.")
-    type_description = models.CharField(max_length=50, verbose_name="Award Type Description", default="Unknown Type", null=True, help_text="The plain text description of the type of the award")
+    type = models.CharField(max_length=5, db_index=True, verbose_name="Award Type", null=True, help_text="	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.")
+    type_description = models.TextField(verbose_name="Award Type Description", blank=True, null=True, help_text="The plain text description of the type of the award")
     piid = models.CharField(max_length=50, db_index=True, blank=True, null=True, help_text="Procurement Instrument Identifier - A unique identifier assigned to a federal contract, purchase order, basic ordering agreement, basic agreement, and blanket purchase agreement. It is used to track the contract, and any modifications or transactions related to it. After October 2017, it is between 13 and 17 digits, both letters and numbers.")
     parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True, help_text="The parent award, if applicable")
     fain = models.CharField(max_length=30, db_index=True, blank=True, null=True, help_text="An identification code assigned to each financial assistance award tracking purposes. The FAIN is tied to that award (and all future modifications to that award) throughout the award’s life. Each FAIN is assigned by an agency. Within an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN stands for Federal Award Identification Number, though the digits are letters, not numbers.")
@@ -298,8 +258,8 @@ class Transaction(DataSourceTrackedModel):
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.CharField(max_length=256, blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
-    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Action Type", default='U', null=True, help_text="The type for this transaction. For example, A, B, C, D")
-    type_description = models.CharField(max_length=50, verbose_name="Action Type Description", default="Unknown Type", null=True, help_text="The plain text description of the transaction type")
+    type = models.CharField(max_length=5, verbose_name="Action Type", null=True, help_text="The type for this transaction. For example, A, B, C, D")
+    type_description = models.TextField(blank=True, verbose_name="Action Type Description", null=True, help_text="The plain text description of the transaction type")
     period_of_performance_start_date = models.DateField(max_length=10, verbose_name="Period of Performance Start Date", null=True, help_text="The period of performance start date")
     period_of_performance_current_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Current End Date", null=True, help_text="The current end date of the period of performance")
     action_date = models.DateField(max_length=10, verbose_name="Transaction Date", help_text="The date this transaction was actioned")
@@ -321,7 +281,7 @@ class Transaction(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this transaction was updated in the API")
 
     def __str__(self):
-        return '%s award: %s' % (AWARD_TYPES_D.get(self.type, _UNKNOWN_TYPE), self.award)
+        return '%s award: %s' % (self.type_description, self.award)
 
     @staticmethod
     def get_default_fields(path=None):
@@ -360,8 +320,8 @@ class TransactionContract(DataSourceTrackedModel):
     parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID", help_text="The parent award id for this transaction. This is generally the piid of an IDV")
     cost_or_pricing_data = models.CharField(max_length=1, blank=True, null=True, help_text="")
     cost_or_pricing_data_description = models.TextField(blank=True, null=True)
-    type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, choices=CONTRACT_PRICING_TYPES, verbose_name="Type of Contract Pricing", help_text="The type of contract pricing data, as a code")
-    type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description", help_text="A plain text description of the type of contract pricing data")
+    type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, verbose_name="Type of Contract Pricing", help_text="The type of contract pricing data, as a code")
+    type_of_contract_pricing_description = models.TextField(blank=True, null=True, verbose_name="Type of Contract Pricing Description", help_text="A plain text description of the type of contract pricing data")
     naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
     naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description", help_text="A plain text description of the NAICS code")
     period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True, help_text="The potential end date of the period of performance")

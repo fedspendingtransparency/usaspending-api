@@ -156,6 +156,10 @@ def update_model_description_fields():
         usaspending_api/data/daims_maps.py
 
     Each map should be <field_name>_map for discoverability.
+    If there are conflicting maps (i.e., two models use type_description, but
+    different enumerations) prepend the map name with the model name and a dot.
+
+    For examples of these situations, see the documentation in daims_maps.py
     """
 
     logger = logging.getLogger('console')
@@ -196,20 +200,28 @@ def update_model_description_fields():
 
             source_field = "_".join(split_name[:-1])
             destination_field = field
+            # This is the map name, prefixed by model name for when there are
+            # non-unique description fields
+            model_map_name = "{}.{}_map".format(model.__name__, source_field)
             map_name = "{}_map".format(source_field)
+
+            # This stores a direct reference to the enumeration mapping
+            code_map = None
 
             # Validate we have the source field
             if source_field not in model_fields:
-                logger.info("Tried to update '{}' on model '{}', but source field '{}' does not exist.".format(destination_field, model.__name__, source_field))
+                logger.warn("Tried to update '{}' on model '{}', but source field '{}' does not exist.".format(destination_field, model.__name__, source_field))
                 continue
 
             # Validate we have a map
-            if map_name not in daims_maps.keys():
-                logger.info("Tried to update '{}' on model '{}', but map '{}' does not exist.".format(destination_field, model.__name__, map_name))
+            # Prefer model_map_name over map_name
+            if model_map_name in daims_maps.keys():
+                code_map = daims_maps[model_map_name]
+            elif map_name in daims_maps.keys():
+                code_map = daims_maps[map_name]
+            else:
+                logger.warn("Tried to update '{}' on model '{}', but neither map '{}' nor '{}' exists.".format(destination_field, model.__name__, model_map_name, map_name))
                 continue
-
-            # Grab the map
-            code_map = daims_maps[map_name]
 
             # Construct the set of whens for this field
             when_list = []
@@ -221,11 +233,11 @@ def update_model_description_fields():
 
                 # If our code is blank, change the comparison to ""
                 if code == "_BLANK":
-                    when_args[source_field] = ""
+                    when_args[source_field] = Value("")
 
                 # We handle the default case later
                 if code == "_DEFAULT":
-                    default = code_map[code]
+                    default = Value(code_map[code])
                     continue
 
                 # Append a new when to our when-list

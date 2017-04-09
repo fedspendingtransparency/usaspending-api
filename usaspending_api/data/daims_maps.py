@@ -1,5 +1,22 @@
 """
 This is a map of code enumerations, extracted from the DAIMS.
+
+Each should be named following this pattern:
+    - For a field that is unique among all models, <field>_map
+    - For a field that is not unique among models, <model_name>.<field>_map
+
+Example 1: For the "action_type_description" field to be automatically updated,
+we create a map called "action_type_map" because that field is unique among all
+models.
+
+Example 2: For the "type_description" field to be automatically updated, we need
+to uniquely identify the maps on a per-model basis as this field exists on multiple
+models, but cannot share enumeration maps. Thus, we will make two maps:
+"Award.type_map" and "Transaction.type_map".
+
+Each map has a key of enumerable values, paired with the description field for
+that value.
+
 There are a few special keys:
     _DEFAULT - A default value to use, if the incoming value is NoneType
     _BLANK - A value to use if the incoming value is blank
@@ -45,6 +62,7 @@ daims_maps = {
         "V": "Alaska Native and Native Hawaiian Serving Institutions",
         "W": "Non-domestic (non-US) Entity",
         "X": "Other",
+        "_DEFAULT": "Unknown Types",
     },
 
     "small_business_map": {
@@ -388,11 +406,62 @@ daims_maps = {
         "EDWOSB": "Economically-Disadvantaged Women-Owned Small Business",
     },
 
+    "type_of_contract_pricing_map": {
+        "A": "Fixed Price Redetermination",
+        "B": "Fixed Price Level of Effort",
+        "J": "Firm Fixed Price",
+        "K": "Fixed Price with Economic Price Adjustment",
+        "L": "Fixed Price Incentive",
+        "M": "Fixed Price Award Fee",
+        "R": "Cost Plus Award Fee",
+        "S": "Cost No Fee",
+        "T": "Cost Sharing",
+        "U": "Cost Plus Fixed Fee",
+        "V": "Cost Plus Incentive Fee",
+        "Y": "Time and Materials",
+        "Z": "Labor Hours",
+        "1": "Order Dependent",
+        "2": "Combination",
+        "3": "Other",
+        "_DEFAULT": "Unknown Type",
+    },
+
+    # Used on both Award and Transaction, but the mapping is the same
+    "type_map": {
+        "02": "Block Grant",
+        "03": "Formula Grant",
+        "04": "Project Grant",
+        "05": "Cooperative Agreement",
+        "06": "Direct Payment for Specified Use",
+        "07": "Direct Loan",
+        "08": "Guaranteed/Insured Loan",
+        "09": "Insurance",
+        "10": "Direct Payment with Unrestricted Use",
+        "11": "Other Financial Assistance",
+        "A": "Fixed Price Redetermination",
+        "B": "Fixed Price Level of Effort",
+        "J": "Firm Fixed Price",
+        "K": "Fixed Price with Economic Price Adjustment",
+        "L": "Fixed Price Incentive",
+        "M": "Fixed Price Award Fee",
+        "R": "Cost Plus Award Fee",
+        "S": "Cost No Fee",
+        "T": "Cost Sharing",
+        "U": "Cost Plus Fixed Fee",
+        "V": "Cost Plus Incentive Fee",
+        "Y": "Time and Materials",
+        "Z": "Labor Hours",
+        "1": "Order Dependent",
+        "2": "Combination",
+        "3": "Other",
+        "_DEFAULT": "Unknown Type"
+    },
+
     # File A, B, C fields
     "availability_type_code_map": {
         "X": "Appropriation account has an unlimited period to incur new obligations.",
         "_BLANK": "Appropriation account has a designated period of availability.",
     },
 
-    
+
 }

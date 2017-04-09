@@ -275,7 +275,7 @@ class LegalEntity(DataSourceTrackedModel):
     vendor_phone_number = models.CharField(max_length=30, blank=True, null=True)
     vendor_fax_number = models.CharField(max_length=30, blank=True, null=True)
     business_types = models.CharField(max_length=3, blank=True, null=True)
-    business_types_description = models.CharField(max_length=150, blank=True, null=True, default="Unknown Business Type")
+    business_types_description = models.CharField(max_length=150, blank=True, null=True)
     recipient_unique_id = models.CharField(max_length=9, blank=True, null=True, verbose_name="DUNS Number")
     limited_liability_corporation = models.CharField(max_length=1, blank=True, null=True)
     sole_proprietorship = models.CharField(max_length=1, blank=True, null=True)
