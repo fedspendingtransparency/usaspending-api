@@ -52,7 +52,12 @@ def update_model_description_fields():
 
         model_fields = [f.name for f in model._meta.get_fields()]
 
-        # Loop through each of the models fields
+        # This dictionary stores an array of field-names > case objects which
+        # we can then pass to a bulk update for a set-based update
+        model_update_case_map = {}
+
+        # Loop through each of the models fields to construct a case for each
+        # applicable field
         for field in model_fields:
             # We're looking for field names ending in _description
             split_name = field.split("_")
@@ -79,3 +84,36 @@ def update_model_description_fields():
             code_map = daims_maps[map_name]
 
             # Construct the set of whens for this field
+            when_list = []
+            default = None
+            for code in code_map.keys():
+                when_args = {}
+                when_args[source_field] = code
+                when_args["then"] = Value(code_map[code])
+
+                # If our code is blank, change the comparison to ""
+                if code == "_BLANK":
+                    when_args[source_field] = ""
+
+                # We handle the default case later
+                if code == "_DEFAULT":
+                    default = code_map[code]
+                    continue
+
+                # Append a new when to our when-list
+                when_list.append(When(**when_args))
+
+            # Now we have an array of When() objects, a default (if applicable)
+            # We can now make our Case object
+            case = Case(*when_list, default=default)
+
+            # Add it to our dictionary
+            model_update_case_map[field] = case
+
+        # We are done looping over all fields, check if our case dictionary has anything in it
+        if len(model_update_case_map.keys()) > 0:
+            # Update all of the instances of this model with our case map
+            # TODO: In the future, if this starts taking to long we can
+            # filter the dataset to a subset of id's
+            logger.info("Updating model {}, fields:\n\t{}".format(model.__name__, "\n\t".join(model_update_case_map.keys())))
+            model.objects.update(**model_update_case_map)
