@@ -26,7 +26,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 
-from usaspending_api.etl.commands.update_description_fields import update_model_description_fields
+from usaspending_api.etl.helpers import update_model_description_fields
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
