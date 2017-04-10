@@ -85,6 +85,7 @@ class Command(BaseCommand):
                 "cost_or_pricing_data": h.up2colon(row['costorpricingdata']),
                 "type_of_contract_pricing": h.up2colon(row['typeofcontractpricing']),
                 "type_of_contract_pricing_description": CONTRACT_PRICING_TYPES_D.get(h.up2colon(row['typeofcontractpricing'])),
+                "modification_reason": h.up2colon(row['reasonformodification']),
                 "multiple_or_single_award_idv": h.up2colon(row['multipleorsingleawardidc']),
                 "naics": h.up2colon(row['nationalinterestactioncode']),
                 "dod_claimant_program_code": h.up2colon(row['claimantprogramcode']),
