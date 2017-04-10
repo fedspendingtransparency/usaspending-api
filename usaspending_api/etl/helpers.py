@@ -184,9 +184,17 @@ def update_model_description_fields():
 
         model_fields = [f.name for f in model._meta.get_fields()]
 
-        # This dictionary stores an array of field-names > case objects which
-        # we can then pass to a bulk update for a set-based update
-        model_update_case_map = {}
+        # This supports multi-case DAIMS
+        # We must filter on the model level rather than add them to the
+        # when clauses, because if there is a FK in the when clause Django is
+        # not guaranteed to join on that table properly.
+        #
+        # This is an array of tuples of the following format
+        # (Q object of filter, field_names -> case objects map for this filter)
+        #
+        # It is initialized with a blank filter and empty list, which is where
+        # default updates are stored
+        model_filtered_update_case_map = [(Q(), {})]
 
         # Loop through each of the models fields to construct a case for each
         # applicable field
@@ -226,34 +234,70 @@ def update_model_description_fields():
             # Construct the set of whens for this field
             when_list = []
             default = None
-            for code in code_map.keys():
-                when_args = {}
-                when_args[source_field] = code
-                when_args["then"] = Value(code_map[code])
 
-                # If our code is blank, change the comparison to ""
-                if code == "_BLANK":
-                    when_args[source_field] = Value("")
+            # Cases start from 1
+            case_number = 1
+            case_name = "case_1"
+            case_map = "case_1_map"
+            while case_name in code_map.keys():
+                case_object = create_case(code_map[case_map], source_field)
+                # Construct a Q filter for this case
+                case_filter = Q(**code_map[case_name])
 
-                # We handle the default case later
-                if code == "_DEFAULT":
-                    default = Value(code_map[code])
-                    continue
+                # See if we already have a tuple for this filter
+                case_tuple = [x for x in model_filtered_update_case_map if x[0] == case_filter]
+                if len(case_tuple) == 0:
+                    # We don't, so create the tuple
+                    temp_case_dict = {}
+                    temp_case_dict[field] = case_object
+                    model_filtered_update_case_map.append((case_filter, temp_case_dict))
+                else:
+                    # We do, so just add our case object to that dictionary
+                    case_tuple[0][1][field] = case_object
 
-                # Append a new when to our when-list
-                when_list.append(When(**when_args))
+                # Check for the next case
+                case_number += 1
+                case_name = "case_{}".format(case_number)
+                case_map = "case_{}_map".format(case_number)
 
-            # Now we have an array of When() objects, a default (if applicable)
-            # We can now make our Case object
-            case = Case(*when_list, default=default)
+            # If our case number is still 1, then we didn't have any cases.
+            # Therefore, we perform the default
+            if case_number == 1:
+                case_object = create_case(code_map, source_field)
 
-            # Add it to our dictionary
-            model_update_case_map[field] = case
+                # Grab the first tuple, which has no filters
+                case_tuple = model_filtered_update_case_map[0]
 
-        # We are done looping over all fields, check if our case dictionary has anything in it
-        if len(model_update_case_map.keys()) > 0:
-            # Update all of the instances of this model with our case map
-            # TODO: In the future, if this starts taking to long we can
-            # filter the dataset to a subset of id's
-            logger.info("Updating model {}, fields:\n\t{}".format(model.__name__, "\n\t".join(model_update_case_map.keys())))
-            model.objects.update(**model_update_case_map)
+                # Add it to our dictionary
+                case_tuple[1][field] = case_object
+
+        for filter_tuple in model_filtered_update_case_map:
+            # For each filter tuple, check if the dictionary has any entries
+            if len(filter_tuple[1].keys()) > 0:
+                logger.info("Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".format(model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())))
+                model.objects.filter(filter_tuple[0]).update(**filter_tuple[1])
+
+
+# Utility method for update_model_description_fields, creates the Case object
+def create_case(code_map, source_field):
+    when_list = []
+    default = None
+
+    for code in code_map.keys():
+        when_args = {}
+        when_args[source_field] = code
+        when_args["then"] = Value(code_map[code])
+
+        # If our code is blank, change the comparison to ""
+        if code == "_BLANK":
+            when_args[source_field] = Value("")
+
+        # We handle the default case later
+        if code == "_DEFAULT":
+            default = Value(code_map[code])
+            continue
+
+        # Append a new when to our when-list
+        when_list.append(When(**when_args))
+
+    return Case(*when_list, default=default)

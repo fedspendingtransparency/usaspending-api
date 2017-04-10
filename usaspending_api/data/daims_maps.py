@@ -20,15 +20,59 @@ that value.
 There are a few special keys:
     _DEFAULT - A default value to use, if the incoming value is NoneType
     _BLANK - A value to use if the incoming value is blank
+
+CASES:
+If you have a need to specify a different mapping based upon other fields on the
+same model, you can do so by specify cases. These must be numbered from 1, and
+store conditions in the "case_<INT>" and the mappings in "case_<INT>_map".
+For an example, see Transaction.action_type_map
 """
 
 daims_maps = {
     # D1, D2 DAIMS MAPS - These are found in awards.models unless noted
-    "action_type_map": {
-        "A": "New Assistance Award",
-        "B": "Continuation",
-        "C": "Revision",
-        "D": "Funding adjustment to completed project",
+
+    # This map is an example of how to have TWO different maps for the same field,
+    # on the same object, separated by a case.
+    "Transaction.action_type_map": {
+        # When we are financial assistance
+        "case_1": {
+            "assistance_data__isnull": False,
+            "contract_data__isnull": True
+        },
+        "case_1_map": {
+            "A": "New Assistance Award",
+            "B": "Continuation",
+            "C": "Revision",
+            "D": "Funding adjustment to completed project",
+        },
+
+        # When we are a contract
+        "case_2": {
+            "assistance_data__isnull": True,
+            "contract_data__isnull": False
+        },
+        "case_2_map": {
+            "A": "Additional Work (new agreement, FAR part 6 applies)",
+            "B": "Supplemental Agreement for work within scope",
+            "C": "Funding Only Action",
+            "D": "Change Order",
+            "E": "Terminate for Default (complete or partial)",
+            "F": "Terminate for Convenience (complete or partial)",
+            "G": "Exercise an Option",
+            "H": "Definitize Letter Contract",
+            "J": "Novation Agreement",
+            "K": "Close Out",
+            "L": "Definitize Change Order",
+            "M": "Other Administrative Action",
+            "N": "Legal Contract Cancellation",
+            "P": "Representation of Non-Novated Merger/Acquisition",
+            "R": "Representation",
+            "S": "Change PIID",
+            "T": "Transfer Action",
+            "V": "Vendor DUNS or Name Change - Non-Novation",
+            "W": "Vendor Address Change",
+            "X": "Terminate for Cause",
+        },
     },
 
     "business_funds_indicator_map": {
@@ -455,29 +499,6 @@ daims_maps = {
         "2": "Combination",
         "3": "Other",
         "_DEFAULT": "Unknown Type"
-    },
-
-    "modification_reason_map": {
-        "A": "Additional Work (new agreement, FAR part 6 applies)",
-        "B": "Supplemental Agreement for work within scope",
-        "C": "Funding Only Action",
-        "D": "Change Order",
-        "E": "Terminate for Default (complete or partial)",
-        "F": "Terminate for Convenience (complete or partial)",
-        "G": "Exercise an Option",
-        "H": "Definitize Letter Contract",
-        "J": "Novation Agreement",
-        "K": "Close Out",
-        "L": "Definitize Change Order",
-        "M": "Other Administrative Action",
-        "N": "Legal Contract Cancellation",
-        "P": "Representation of Non-Novated Merger/Acquisition",
-        "R": "Representation",
-        "S": "Change PIID",
-        "T": "Transfer Action",
-        "V": "Vendor DUNS or Name Change - Non-Novation",
-        "W": "Vendor Address Change",
-        "X": "Terminate for Cause",
     },
 
     # File A, B, C fields
