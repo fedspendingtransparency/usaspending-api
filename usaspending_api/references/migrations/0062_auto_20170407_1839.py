@@ -4,25 +4,24 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
+from usaspending_api.references.helpers import canonicalize_location_instance
 
 
-def canonicalize(apps, schema_editor):
+def run_canonicalize(apps, schema_editor):
     """
     Canonicalizes legacy Location records.
     """
     db_alias = schema_editor.connection.alias
 
     Location = apps.get_model('references', 'Location')
-    # Canonicalization is now built into .save(), so
-    Location.objects.all().save()
+
+    for loc in Location.objects.all():
+        canonicalize_location_instance(loc)
+        loc.save()
 
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('references', '0061_auto_20170404_2153'),
-    ]
+    dependencies = [('references', '0061_auto_20170404_2153'), ]
 
-    operations = [
-        migrations.RunPython(canonicalize)
-    ]
+    operations = [migrations.RunPython(run_canonicalize)]

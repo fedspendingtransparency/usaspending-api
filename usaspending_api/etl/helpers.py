@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.core.cache import caches, CacheKeyWarning
 
 from usaspending_api.references.models import Agency, Location, RefCountryCode
+from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.submissions.models import SubmissionAttributes
 
 warnings.simplefilter("ignore", CacheKeyWarning)
@@ -35,9 +36,13 @@ def get_subtier_agency_dict():
     # there's no unique constraint on subtier_code, so the order by below ensures
     # that in the case of duplicate subtier codes, the dictionary we return will
     # reflect the most recently updated one
-    agencies = Agency.objects.all().values('id', 'subtier_agency__subtier_code').order_by(
-        'subtier_agency__update_date')
-    subtier_agency_dict = {a['subtier_agency__subtier_code']: a['id'] for a in agencies}
+    agencies = Agency.objects.all().values(
+        'id',
+        'subtier_agency__subtier_code').order_by('subtier_agency__update_date')
+    subtier_agency_dict = {
+        a['subtier_agency__subtier_code']: a['id']
+        for a in agencies
+    }
     return subtier_agency_dict
 
 
@@ -58,6 +63,7 @@ def fetch_country_code(vendor_country_code):
 
     return country_code
 
+
 location_cache = caches['locations']
 
 
@@ -75,13 +81,12 @@ def get_or_create_location(row, mapper):
         location_dict.pop("location_zip")
     else:
         location_dict.update(
-            foreign_postal_code=location_dict.pop("location_zip",
-                                                  None),
-            foreign_province=location_dict.pop("state_code",
-                                               None))
+            foreign_postal_code=location_dict.pop("location_zip", None),
+            foreign_province=location_dict.pop("state_code", None))
         if "city_name" in location_dict:
-            location_dict['foreign_city_name'] = location_dict.pop(
-                "city_name")
+            location_dict['foreign_city_name'] = location_dict.pop("city_name")
+
+    location_dict = canonicalize_location_dict(location_dict)
 
     location_tup = tuple(location_dict.items())
     location = location_cache.get(location_tup)

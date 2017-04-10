@@ -11,7 +11,7 @@ def canonicalize_string(val):
 
 canonicalizable = [
     'address_line1', 'address_line2', 'address_line3', 'city_name',
-    'country_name', 'county_name', 'foreign_city_name', 'foreign_province',
+    'county_name', 'foreign_city_name', 'foreign_province',
     'state_name'
 ]
 
