@@ -15,7 +15,10 @@ class ReadReplicaRouter(object):
         return 'db_source'
 
     def allow_relation(self, obj1, obj2, **hints):
-        return True
+        db_list = ('db_source', 'db_r1')
+        if obj1._state.db in db_list and obj2._state.db in db_list:
+            return True
+        return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         return True
