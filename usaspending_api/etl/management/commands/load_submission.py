@@ -17,7 +17,7 @@ from usaspending_api.accounts.models import (
     TreasuryAppropriationAccount)
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
-    TransactionAssistance, TransactionContract, Transaction, AWARD_TYPES, CONTRACT_PRICING_TYPES)
+    TransactionAssistance, TransactionContract, Transaction)
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
@@ -27,13 +27,11 @@ from usaspending_api.etl.award_helpers import update_awards, update_contract_awa
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 from usaspending_api.references.helpers import canonicalize_location_dict
 
+from usaspending_api.etl.helpers import update_model_description_fields
+
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
 TAS_ID_TO_ACCOUNT = {}
-
-# Store some additional support data needed for the type description matching
-award_type_dict = {a[0]: a[1] for a in AWARD_TYPES}
-contract_pricing_dict = {c[0]: c[1] for c in CONTRACT_PRICING_TYPES}
 
 # Lists to store for update_awards and update_contract_awards
 AWARD_UPDATE_ID_LIST = []
@@ -313,7 +311,6 @@ class Command(BaseCommand):
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 'submission': submission_attributes,
-                'type_description': award_type_dict.get(row['assistance_type']),
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
@@ -407,7 +404,6 @@ class Command(BaseCommand):
                 "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
                                                         subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "recipient": legal_entity,
-                'type_description': award_type_dict.get(row['contract_award_type']),
                 "place_of_performance": pop_location,
                 'submission': submission_attributes,
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
@@ -426,7 +422,6 @@ class Command(BaseCommand):
             contract_value_map = {
                 'transaction': transaction_instance,
                 'submission': submission_attributes,
-                'type_of_contract_pricing_description': contract_pricing_dict.get(row['type_of_contract_pricing']),
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'])
@@ -441,6 +436,9 @@ class Command(BaseCommand):
         # Update awards for new linkages
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
         update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+
+        # Update the descriptions TODO: If this is slow, add ID limiting as above
+        update_model_description_fields()
 
 
 def format_date(date_string, pattern='%Y%m%d'):

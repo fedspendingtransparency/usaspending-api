@@ -59,6 +59,9 @@ class LimitableSerializer(serializers.ModelSerializer):
                 existing = set(self.fields.keys())
                 for field_name in existing - allowed:
                     try:
+                        # If we have a coded field, always include its description
+                        if field_name.split("_")[-1] == "description" and "_".join(field_name.split("_")[:-1]) not in allowed:
+                            continue
                         self.fields.pop(field_name)
                     except KeyError:
                         # Because we're not currently handling nested serializer field

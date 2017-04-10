@@ -1,12 +1,15 @@
 from datetime import datetime
 import warnings
+import logging
 
-from django.db.models import Q
+from django.db.models import Q, F, Case, Value, When
 from django.core.cache import caches, CacheKeyWarning
+import django.apps
 
 from usaspending_api.references.models import Agency, Location, RefCountryCode
 from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.data.daims_maps import daims_maps
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
@@ -146,3 +149,160 @@ def get_previous_submission(cgac_code, fiscal_year, fiscal_period):
         .order_by('-reporting_fiscal_period') \
         .first()
     return previous_submission
+
+
+def update_model_description_fields():
+    """
+    This method searches through every model Django has registered, checks if it
+    belongs to a list of apps we should update, and updates all fields with
+    '_description' at the end with their relevant information.
+
+    Dictionaries for DAIMS definitions should be stored in:
+        usaspending_api/data/daims_maps.py
+
+    Each map should be <field_name>_map for discoverability.
+    If there are conflicting maps (i.e., two models use type_description, but
+    different enumerations) prepend the map name with the model name and a dot.
+
+    For examples of these situations, see the documentation in daims_maps.py
+    """
+
+    logger = logging.getLogger('console')
+
+    # This is a list of apps whose models will be checked for description fields
+    updatable_apps = [
+        "accounts",
+        "awards",
+        "common",
+        "financial_activities",
+        "references",
+        "submissions"
+    ]
+
+    # This iterates over every model that Django has registered
+    for model in django.apps.apps.get_models():
+        # This checks the app_label of the model, and thus we can skip it if it
+        # is not in one of our updatable_apps. Thus, we'll skip any django admin
+        # apps, like auth, corsheaders, etc.
+        if model._meta.app_label not in updatable_apps:
+            continue
+
+        model_fields = [f.name for f in model._meta.get_fields()]
+
+        # This supports multi-case DAIMS
+        # We must filter on the model level rather than add them to the
+        # when clauses, because if there is a FK in the when clause Django is
+        # not guaranteed to join on that table properly.
+        #
+        # This is an array of tuples of the following format
+        # (Q object of filter, field_names -> case objects map for this filter)
+        #
+        # It is initialized with a blank filter and empty list, which is where
+        # default updates are stored
+        model_filtered_update_case_map = [(Q(), {})]
+
+        # Loop through each of the models fields to construct a case for each
+        # applicable field
+        for field in model_fields:
+            # We're looking for field names ending in _description
+            split_name = field.split("_")
+
+            # If the last element in our split name isn't description, skip it
+            if len(split_name) == 1 or split_name[-1] != "description":
+                continue
+
+            source_field = "_".join(split_name[:-1])
+            destination_field = field
+            # This is the map name, prefixed by model name for when there are
+            # non-unique description fields
+            model_map_name = "{}.{}_map".format(model.__name__, source_field)
+            map_name = "{}_map".format(source_field)
+
+            # This stores a direct reference to the enumeration mapping
+            code_map = None
+
+            # Validate we have the source field
+            if source_field not in model_fields:
+                logger.warn("Tried to update '{}' on model '{}', but source field '{}' does not exist.".format(destination_field, model.__name__, source_field))
+                continue
+
+            # Validate we have a map
+            # Prefer model_map_name over map_name
+            if model_map_name in daims_maps.keys():
+                code_map = daims_maps[model_map_name]
+            elif map_name in daims_maps.keys():
+                code_map = daims_maps[map_name]
+            else:
+                logger.warn("Tried to update '{}' on model '{}', but neither map '{}' nor '{}' exists.".format(destination_field, model.__name__, model_map_name, map_name))
+                continue
+
+            # Construct the set of whens for this field
+            when_list = []
+            default = None
+
+            # Cases start from 1
+            case_number = 1
+            case_name = "case_1"
+            case_map = "case_1_map"
+            while case_name in code_map.keys():
+                case_object = create_case(code_map[case_map], source_field)
+                # Construct a Q filter for this case
+                case_filter = Q(**code_map[case_name])
+
+                # See if we already have a tuple for this filter
+                case_tuple = [x for x in model_filtered_update_case_map if x[0] == case_filter]
+                if len(case_tuple) == 0:
+                    # We don't, so create the tuple
+                    temp_case_dict = {}
+                    temp_case_dict[field] = case_object
+                    model_filtered_update_case_map.append((case_filter, temp_case_dict))
+                else:
+                    # We do, so just add our case object to that dictionary
+                    case_tuple[0][1][field] = case_object
+
+                # Check for the next case
+                case_number += 1
+                case_name = "case_{}".format(case_number)
+                case_map = "case_{}_map".format(case_number)
+
+            # If our case number is still 1, then we didn't have any cases.
+            # Therefore, we perform the default
+            if case_number == 1:
+                case_object = create_case(code_map, source_field)
+
+                # Grab the first tuple, which has no filters
+                case_tuple = model_filtered_update_case_map[0]
+
+                # Add it to our dictionary
+                case_tuple[1][field] = case_object
+
+        for filter_tuple in model_filtered_update_case_map:
+            # For each filter tuple, check if the dictionary has any entries
+            if len(filter_tuple[1].keys()) > 0:
+                logger.info("Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".format(model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())))
+                model.objects.filter(filter_tuple[0]).update(**filter_tuple[1])
+
+
+# Utility method for update_model_description_fields, creates the Case object
+def create_case(code_map, source_field):
+    when_list = []
+    default = None
+
+    for code in code_map.keys():
+        when_args = {}
+        when_args[source_field] = code
+        when_args["then"] = Value(code_map[code])
+
+        # If our code is blank, change the comparison to ""
+        if code == "_BLANK":
+            when_args[source_field] = Value("")
+
+        # We handle the default case later
+        if code == "_DEFAULT":
+            default = Value(code_map[code])
+            continue
+
+        # Append a new when to our when-list
+        when_list.append(When(**when_args))
+
+    return Case(*when_list, default=default)

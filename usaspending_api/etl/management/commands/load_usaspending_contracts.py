@@ -3,9 +3,10 @@ from datetime import datetime
 
 from django.core.management.base import BaseCommand
 
-from usaspending_api.awards.models import (Award, AWARD_TYPES_D, CONTRACT_PRICING_TYPES_D,
+from usaspending_api.awards.models import (Award,
                                            Transaction, TransactionContract)
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
+from usaspending_api.etl.helpers import update_model_description_fields
 from usaspending_api.etl.csv_data_reader import CsvDataReader
 import usaspending_api.etl.helpers as h
 from usaspending_api.references.models import Agency, LegalEntity
@@ -66,7 +67,6 @@ class Command(BaseCommand):
                 "recipient": self.get_or_create_recipient(row),
                 "submission": subattr,
                 "type": evaluate_contract_award_type(row),
-                "type_description": AWARD_TYPES_D.get(evaluate_contract_award_type(row)),
                 "usaspending_unique_transaction_id": row["unique_transaction_id"]
             }
             txn = Transaction(**txn_dict)
@@ -84,7 +84,6 @@ class Command(BaseCommand):
                 "gfe_gfp": h.up2colon(row['gfe_gfp']),
                 "cost_or_pricing_data": h.up2colon(row['costorpricingdata']),
                 "type_of_contract_pricing": h.up2colon(row['typeofcontractpricing']),
-                "type_of_contract_pricing_description": CONTRACT_PRICING_TYPES_D.get(h.up2colon(row['typeofcontractpricing'])),
                 "multiple_or_single_award_idv": h.up2colon(row['multipleorsingleawardidc']),
                 "naics": h.up2colon(row['nationalinterestactioncode']),
                 "dod_claimant_program_code": h.up2colon(row['claimantprogramcode']),
@@ -165,6 +164,7 @@ class Command(BaseCommand):
         self.logger.info("Starting Awards update")
         count = update_awards(tuple(award_id_list))
         update_contract_awards(tuple(award_id_list))
+        update_model_description_fields()
         self.logger.info("Completed Awards update ({} records)".format(count))
 
     def get_agency_id(self, agency_string, subtier_agency_dict):
