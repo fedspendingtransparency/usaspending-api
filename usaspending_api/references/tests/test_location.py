@@ -15,8 +15,8 @@ def test_location_reference_fill():
         'references.RefCityCountyCode', city_code="A", county_code="B", _fill_optional=True)
     location = mommy.make(
         'references.Location', location_country_code=country_code, city_code="A", county_code="B")
-    assert location.city_name == city_county_code.city_name.upper()
-    assert location.county_name == city_county_code.county_name.upper()
+    assert location.city_name == city_county_code.city_name
+    assert location.county_name == city_county_code.county_name
     assert location.state_code == city_county_code.state_code
     assert location.country_name == country_code.country_name
 
@@ -89,36 +89,3 @@ def test_geocomplete_usage_flag():
     assert Location.objects.filter(recipient_flag=True).count() == 3
     assert len(response_recipient) == 4
     assert len(response_pop) == 3
-
-
-@pytest.mark.django_db
-def test_canonicalize():
-    raw = {
-        'state_code': 'oh',  # state_code not canonicalized
-        'city_name': ' Dayton\n',
-        'foreign_city_name': ' Däytön\n',
-        'country_name': '\t\t\tusa',  # also not canonicalized
-        'state_name': 'oHIo ',
-        'county_name': ' montgomery ',
-        'address_line1': '200   w 2nd\tST.',
-        'address_line2': '#100',
-        'address_line3': 'suite\n22',
-        'foreign_province': ' ontariO',
-        'foreign_city_name': ' Däytön\n',
-    }
-    loc = Location(**raw)
-    loc.save()
-    actual = set(loc.__dict__.items())
-    desired = set({
-        'address_line1': '200 W 2ND ST.',
-        'address_line2': '#100',
-        'address_line3': 'SUITE 22',
-        'city_name': 'DAYTON',
-        'country_name': '\t\t\tusa',
-        'county_name': 'MONTGOMERY',
-        'foreign_city_name': 'DÄYTÖN',
-        'foreign_province': 'ONTARIO',
-        'state_code': 'oh',
-        'state_name': 'OHIO'
-    }.items())
-    assert not (desired - actual)

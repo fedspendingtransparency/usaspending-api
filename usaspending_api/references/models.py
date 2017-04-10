@@ -181,17 +181,6 @@ class OfficeAgency(models.Model):
         db_table = 'office_agency'
 
 
-def _canonicalize_string(val):
-    """
-    Return version of string in UPPERCASE and without redundant whitespace.
-    """
-
-    try:
-        return " ".join(val.upper().split())
-    except AttributeError: # was not upper-able, was not a string
-        return val
-
-
 class Location(DataSourceTrackedModel):
     location_id = models.AutoField(primary_key=True)
     location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
@@ -245,21 +234,9 @@ class Location(DataSourceTrackedModel):
             "foreign_postal_code"
         ]
 
-    def canonicalize(self):
-        "UPPERCASE field values and trim extraneous whitespace"
-
-        canonicalizable = ['address_line1', 'address_line2', 'address_line3', 'city_name',
-                           'county_name', 'foreign_city_name', 'foreign_province',
-                           'state_name']
-        for field in canonicalizable:
-            val = getattr(self, field)
-            if val:
-                setattr(self, field, _canonicalize_string(val))
-
     def save(self, *args, **kwargs):
         self.load_country_data()
         self.load_city_county_data()
-        self.canonicalize()
         super(Location, self).save(*args, **kwargs)
 
     def load_country_data(self):
@@ -291,20 +268,6 @@ class Location(DataSourceTrackedModel):
                 self.county_name = matched_reference.county_name
             else:
                 logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" + str(q_kwargs) + "; got " + str(matched_reference.count()))
-
-def canonicalize_location_strings(dct):
-    """
-    Canonicalize location-related values in `dct` according to the
-    rules in `canonicalize_string`.
-    """
-    fields = ['address_line1', 'address_line2', 'address_line3', 'city_name',
-              'country_name', 'county_name', 'foreign_city_name', 'foreign_province',
-              'state_name']
-    for field in fields:
-        if field in dct:
-            dct[field] = canonicalize_string(dct[field])
-    return dct
-
 
     class Meta:
         # Let's make almost every column unique together so we don't have to
