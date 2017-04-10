@@ -359,6 +359,8 @@ class TransactionContract(DataSourceTrackedModel):
     cost_or_pricing_data = models.CharField(max_length=1, blank=True, null=True, help_text="")
     type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, choices=CONTRACT_PRICING_TYPES, verbose_name="Type of Contract Pricing", help_text="The type of contract pricing data, as a code")
     type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description", help_text="A plain text description of the type of contract pricing data")
+    modification_reason = models.TextField(blank=True, null=True, verbose_name="Modification reason code", help_text="Code for the modification reason")
+    modification_reason_description = models.TextField(blank=True, null=True, verbose_name="Modification reason description", help_text="Description of the reason for modification")
     naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
     naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description", help_text="A plain text description of the NAICS code")
     period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True, help_text="The potential end date of the period of performance")
