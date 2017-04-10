@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from usaspending_api.references.models import *
+from usaspending_api.references.models import (
+    Agency, CFDAProgram, LegalEntity, Location, ObjectClass, OfficeAgency,
+    RefProgramActivity, SubtierAgency, ToptierAgency)
 from usaspending_api.common.serializers import LimitableSerializer
 
 
@@ -73,36 +75,19 @@ class LegalEntitySerializer(LimitableSerializer):
         }
 
 
+class ProgramActivitySerializer(LimitableSerializer):
+
+    class Meta:
+
+        model = RefProgramActivity
+        fields = ('id', 'program_activity_code', 'program_activity_name')
+
+
 class ObjectClassSerializer(LimitableSerializer):
 
     class Meta:
-        model = ObjectClass
-        fields = '__all__'
-
-
-class RefProgramActivitySerializer(LimitableSerializer):
-
-    class Meta:
-        model = RefProgramActivity
-        fields = '__all__'
-
-
-class RefProgramActivityBriefSerializer(serializers.ModelSerializer):
-    prefetchable = False
-    code = serializers.CharField(source='program_activity_code')
-    title = serializers.CharField(source='program_activity_name')
-
-    class Meta:
-
-        model = RefProgramActivity
-        fields = ('id', 'code', 'title')
-
-
-class ObjectClassBriefSerializer(serializers.ModelSerializer):
-    prefetchable = False
-    major_object_class_code = serializers.CharField(source='major_object_class')
-
-    class Meta:
 
         model = ObjectClass
-        fields = ('major_object_class_code', 'major_object_class_name', )
+        fields = (
+            'id', 'major_object_class', 'major_object_class_name',
+            'object_class', 'object_class_name')

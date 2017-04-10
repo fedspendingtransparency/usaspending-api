@@ -47,7 +47,7 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 10
     assert FinancialAccountsByAwards.objects.count() == 11
     for account in FinancialAccountsByAwards.objects.all():
-        assert account.transaction_obligated_amount == 6500
+        assert account.transaction_obligated_amount == -6500
         # for testing, data pulled from etl_test_data.json
     assert Location.objects.count() == 4
     assert LegalEntity.objects.count() == 2
@@ -55,6 +55,15 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     assert Transaction.objects.count() == 2
     assert TransactionContract.objects.count() == 1
     assert TransactionAssistance.objects.count() == 1
+
+    # Verify that sign has been reversed during load where appropriate
+    assert AppropriationAccountBalances.objects.filter(gross_outlay_amount_by_tas_cpe__lt=0).count() == 1
+    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_cpe__lt=0).count() == 10
+    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_fyb__lt=0).count() == 10
+    assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_cpe__lt=0).count() == 11
+    assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_fyb__lt=0).count() == 11
+    assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_fyb__lt=0).count() == 11
+    assert FinancialAccountsByAwards.objects.filter(transaction_obligated_amount__lt=0).count() == 11
 
 
 @pytest.mark.django_db

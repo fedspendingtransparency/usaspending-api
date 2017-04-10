@@ -882,27 +882,14 @@
               "program_activity": {
                 "id": 1,
                 "program_activity_code": "0001",
-                "program_activity_name": "2013 Hurricane Sandy Emergency Supplemental (P.L. 113-2)",
-                "budget_year": "2016",
-                "responsible_agency_id": null,
-                "allocation_transfer_agency_id": null,
-                "main_account_code": null,
-                "valid_begin_date": "2016-07-29T17:39:02.471000Z",
-                "valid_end_date": null,
-                "valid_code_indicator": "y",
-                "create_date": "2016-07-29T17:39:02.471000Z",
-                "update_date": "2016-07-29T17:39:02.471000Z"
+                "program_activity_name": "2013 Hurricane Sandy Emergency Supplemental (P.L. 113-2)"
               },
               "object_class": {
                 "id": 197,
                 "major_object_class": "30",
                 "major_object_class_name": "Acquisition of assets",
                 "object_class": "310",
-                "object_class_name": "Equipment",
-                "direct_reimbursable": null,
-                "direct_reimbursable_name": null,
-                "create_date": "2017-03-20T00:00:00Z",
-                "update_date": "2017-03-20T00:00:00Z"
+                "object_class_name": "Equipment"
               }
             }
           ]

@@ -1,6 +1,8 @@
 from datetime import datetime
+from decimal import Decimal
 import logging
 import os
+import re
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
@@ -10,7 +12,9 @@ from django.db import connections
 from django.db.models import Q
 from django.core.cache import caches
 
-from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
+from usaspending_api.accounts.models import (
+    AppropriationAccountBalances, AppropriationAccountBalancesQuarterly,
+    TreasuryAppropriationAccount)
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
     TransactionAssistance, TransactionContract, Transaction, AWARD_TYPES, CONTRACT_PRICING_TYPES)
@@ -21,6 +25,7 @@ from usaspending_api.references.models import (
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
+from usaspending_api.references.helpers import canonicalize_location_dict
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
@@ -107,8 +112,10 @@ class Command(BaseCommand):
         appropriation_data = dictfetchall(db_cursor)
         logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
 
+        reverse = re.compile('gross_outlay_amount_by_tas_cpe')
         # Create account objects
         for row in appropriation_data:
+
             # Check and see if there is an entry for this TAS
             treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
@@ -130,15 +137,20 @@ class Command(BaseCommand):
 
             field_map = {}
 
-            load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True)
+            load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True, reverse=reverse)
 
         AppropriationAccountBalances.populate_final_of_fy()
+
+        # Insert File A quarterly numbers for this submission
+        AppropriationAccountBalancesQuarterly.insert_quarterly_numbers(
+            submission_attributes.submission_id)
 
         # Let's get File B information
         db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
         prg_act_obj_cls_data = dictfetchall(db_cursor)
         logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
 
+        reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
         for row in prg_act_obj_cls_data:
             account_balances = None
             try:
@@ -159,10 +171,10 @@ class Command(BaseCommand):
                 'treasury_account': treasury_account,
                 'appropriation_account_balances': account_balances,
                 'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
-                'program_activity_id': get_or_create_program_activity(row, submission_attributes)
+                'program_activity': get_or_create_program_activity(row, submission_attributes)
             }
 
-            load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
+            load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True, reverse=reverse)
 
         # Insert File B quarterly numbers for this submission
         TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(
@@ -205,10 +217,11 @@ class Command(BaseCommand):
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
                 'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
-                'program_activity_id': get_or_create_program_activity(row, submission_attributes)
+                'program_activity': get_or_create_program_activity(row, submission_attributes)
             }
 
-            afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False)
+            # Still using the cpe|fyb regex compiled above for reverse
+            afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False, reverse=reverse)
             afd_queue.append(afd)
 
         Award.objects.bulk_create(award_queue.values())
@@ -497,10 +510,11 @@ def get_or_create_program_activity(row, submission_attributes):
     filters = {'program_activity_code': row['program_activity_code'],
                'budget_year': submission_attributes.reporting_fiscal_year,
                'responsible_agency_id': row['agency_identifier'],
-               }
+               'main_account_code': row['main_account_code'], }
     prg_activity = RefProgramActivity.objects.filter(**filters).first()
     if prg_activity is None and row['program_activity_code'] is not None:
         prg_activity = RefProgramActivity.objects.create(**filters)
+        logger.warning('Created missing program activity record for {}'.format(str(filters)))
     return prg_activity
 
 
@@ -546,21 +560,15 @@ def load_data_into_model(model_instance, data, **kwargs):
                     column is present in both value_map and field_map, value map takes
                     precedence over the other
         save - Defaults to False, but when set to true will save the model at the end
+        reverse -   Field names matching this regex should be reversed
+                    (multiplied by -1) before saving.
         as_dict - If true, returns the model as a dict instead of saving or altering
     """
-    field_map = None
-    value_map = None
-    save = False
-    as_dict = False
-
-    if 'field_map' in kwargs:
-        field_map = kwargs['field_map']
-    if 'value_map' in kwargs:
-        value_map = kwargs['value_map']
-    if 'save' in kwargs:
-        save = kwargs['save']
-    if 'as_dict' in kwargs:
-        as_dict = kwargs['as_dict']
+    field_map = kwargs.get('field_map')
+    value_map = kwargs.get('value_map')
+    save = kwargs.get('save')
+    as_dict = kwargs.get('as_dict', False)
+    reverse = kwargs.get('reverse')
 
     # Grab all the field names from the meta class of the model instance
     fields = [field.name for field in model_instance._meta.get_fields()]
@@ -572,7 +580,7 @@ def load_data_into_model(model_instance, data, **kwargs):
     for field in fields:
         # Let's handle the data source field here for all objects
         if field is 'data_source':
-            store_value(mod, field, 'DBR')
+            store_value(mod, field, 'DBR', reverse)
         broker_field = field
         # If our field is the 'long form' field, we need to get what it maps to
         # in the broker so we can map the data properly
@@ -581,22 +589,22 @@ def load_data_into_model(model_instance, data, **kwargs):
         sts = False
         if value_map:
             if broker_field in value_map:
-                store_value(mod, field, value_map[broker_field])
+                store_value(mod, field, value_map[broker_field], reverse)
                 sts = True
             elif field in value_map:
-                store_value(mod, field, value_map[field])
+                store_value(mod, field, value_map[field], reverse)
                 sts = True
         if field_map and not sts:
             if broker_field in field_map:
-                store_value(mod, field, data[field_map[broker_field]])
+                store_value(mod, field, data[field_map[broker_field]], reverse)
                 sts = True
             elif field in field_map:
-                store_value(mod, field, data[field_map[field]])
+                store_value(mod, field, data[field_map[field]], reverse)
                 sts = True
         if broker_field in data and not sts:
-            store_value(mod, field, data[broker_field])
+            store_value(mod, field, data[broker_field], reverse)
         elif field in data and not sts:
-            store_value(mod, field, data[field])
+            store_value(mod, field, data[field], reverse)
 
     if save:
         model_instance.save()
@@ -704,6 +712,8 @@ def get_or_create_location(location_map, row, location_value_map={}):
             'country_name': None
         })
 
+    row = canonicalize_location_dict(row)
+
     location_data = load_data_into_model(
         Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
 
@@ -724,10 +734,11 @@ def get_or_create_location(location_map, row, location_value_map={}):
         return None, None
 
 
-def store_value(model_instance_or_dict, field, value):
+def store_value(model_instance_or_dict, field, value, reverse=None):
     if value is None:
         return
-    # print('Loading ' + str(field) + ' with ' + str(value))
+    if reverse and reverse.search(field):
+        value = -1 * Decimal(value)
     if isinstance(model_instance_or_dict, dict):
         model_instance_or_dict[field] = value
     else:
