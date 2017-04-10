@@ -457,6 +457,29 @@ daims_maps = {
         "_DEFAULT": "Unknown Type"
     },
 
+    "modification_reason_map": {
+        "A": "Additional Work (new agreement, FAR part 6 applies)",
+        "B": "Supplemental Agreement for work within scope",
+        "C": "Funding Only Action",
+        "D": "Change Order",
+        "E": "Terminate for Default (complete or partial)",
+        "F": "Terminate for Convenience (complete or partial)",
+        "G": "Exercise an Option",
+        "H": "Definitize Letter Contract",
+        "J": "Novation Agreement",
+        "K": "Close Out",
+        "L": "Definitize Change Order",
+        "M": "Other Administrative Action",
+        "N": "Legal Contract Cancellation",
+        "P": "Representation of Non-Novated Merger/Acquisition",
+        "R": "Representation",
+        "S": "Change PIID",
+        "T": "Transfer Action",
+        "V": "Vendor DUNS or Name Change - Non-Novation",
+        "W": "Vendor Address Change",
+        "X": "Terminate for Cause",
+    },
+
     # File A, B, C fields
     "availability_type_code_map": {
         "X": "Appropriation account has an unlimited period to incur new obligations.",
