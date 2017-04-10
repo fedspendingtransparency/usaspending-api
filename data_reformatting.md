@@ -35,6 +35,24 @@ For example, if a record has a state code but no state name, we'll pull in state
 
 If a legacy USAspending record doesn't have a country code, we attempt to find one by matching the country name (if provided) against our existing country list.
 
+### Canonicalizing location text fields
+
+**Data Source:** USAspending history and DATA Broker  
+**Code:** `references/helpers.py`
+
+Text fields in location records are stored in a standard format to avoid
+false duplicates owing only to quirks of spacing or capitalization.
+Values are stored in UPPERCASE, with leading and trailing whitespace
+removed, and with any internal whitespace converted to a single space
+between words.
+
+The following fields are canonicalized this way:
+
+- _city_name_, _county_name_, _state_name_
+- _foreign_city_name_, _foreign_province_
+- Address (line 1, 2, and 3)
+
+
 ## Single Character Code Extracts
 
 **Data Source:** USAspending history  

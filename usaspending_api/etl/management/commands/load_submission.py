@@ -25,6 +25,7 @@ from usaspending_api.references.models import (
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
+from usaspending_api.references.helpers import canonicalize_location_dict
 
 from usaspending_api.etl.helpers import update_model_description_fields
 
@@ -507,7 +508,7 @@ def get_or_create_program_activity(row, submission_attributes):
     filters = {'program_activity_code': row['program_activity_code'],
                'budget_year': submission_attributes.reporting_fiscal_year,
                'responsible_agency_id': row['agency_identifier'],
-               }
+               'main_account_code': row['main_account_code'], }
     prg_activity = RefProgramActivity.objects.filter(**filters).first()
     if prg_activity is None and row['program_activity_code'] is not None:
         prg_activity = RefProgramActivity.objects.create(**filters)
@@ -708,6 +709,8 @@ def get_or_create_location(location_map, row, location_value_map={}):
             'location_country_code': None,
             'country_name': None
         })
+
+    row = canonicalize_location_dict(row)
 
     location_data = load_data_into_model(
         Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
