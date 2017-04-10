@@ -10,6 +10,7 @@ from usaspending_api.etl import helpers
 from usaspending_api.etl.management.commands import (load_usaspending_assistance,
                                                      load_usaspending_contracts)
 from usaspending_api.references.models import Location
+from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -80,6 +81,9 @@ def test_get_or_create_location_creates_new_locations():
         vendor_state_code='ST',
         city='My Town')
 
+    # this canonicalization step runs during load_submission, also
+    row = canonicalize_location_dict(row)
+
     # can't find it because we're looking at the US fields
     assert Location.objects.count() == 0
 
@@ -91,11 +95,11 @@ def test_get_or_create_location_creates_new_locations():
     assert loc.location_country_code == ref
     assert loc.zip5 == '12345'
     assert loc.zip_last4 == '6789'
-    assert loc.address_line1 == 'Addy1'
-    assert loc.address_line2 == 'Addy2'
+    assert loc.address_line1 == 'ADDY1'
+    assert loc.address_line2 == 'ADDY2'
     assert loc.address_line3 is None
     assert loc.state_code == 'ST'
-    assert loc.city_name == 'My Town'
+    assert loc.city_name == 'MY TOWN'
 
 
 @pytest.mark.django_db
