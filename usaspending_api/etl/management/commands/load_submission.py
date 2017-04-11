@@ -109,347 +109,37 @@ class Command(BaseCommand):
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
         logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
-
-        reverse = re.compile('gross_outlay_amount_by_tas_cpe')
-        # Create account objects
-        for row in appropriation_data:
-
-            # Check and see if there is an entry for this TAS
-            treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
-            if treasury_account is None:
-                raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
-
-            # Now that we have the account, we can load the appropriation balances
-            # TODO: Figure out how we want to determine what row is overriden by what row
-            # If we want to correlate, the following attributes are available in the
-            # data broker data that might be useful: appropriation_id, row_number
-            # appropriation_balances = somethingsomething get appropriation balances...
-            appropriation_balances = AppropriationAccountBalances()
-
-            value_map = {
-                'treasury_account_identifier': treasury_account,
-                'submission': submission_attributes,
-                'reporting_period_start': submission_attributes.reporting_period_start,
-                'reporting_period_end': submission_attributes.reporting_period_end
-            }
-
-            field_map = {}
-
-            load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True, reverse=reverse)
-
-        AppropriationAccountBalances.populate_final_of_fy()
-
-        # Insert File A quarterly numbers for this submission
-        AppropriationAccountBalancesQuarterly.insert_quarterly_numbers(
-            submission_attributes.submission_id)
+        load_file_a(submission_attributes, appropriation_data, db_cursor)
 
         # Let's get File B information
         db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
         prg_act_obj_cls_data = dictfetchall(db_cursor)
         logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
-
-        reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
-        for row in prg_act_obj_cls_data:
-            account_balances = None
-            try:
-                # Check and see if there is an entry for this TAS
-                treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
-                if treasury_account is None:
-                    raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
-                account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
-            except:
-                continue
-
-            financial_by_prg_act_obj_cls = FinancialAccountsByProgramActivityObjectClass()
-
-            value_map = {
-                'submission': submission_attributes,
-                'reporting_period_start': submission_attributes.reporting_period_start,
-                'reporting_period_end': submission_attributes.reporting_period_end,
-                'treasury_account': treasury_account,
-                'appropriation_account_balances': account_balances,
-                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
-                'program_activity': get_or_create_program_activity(row, submission_attributes)
-            }
-
-            load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True, reverse=reverse)
-
-        # Insert File B quarterly numbers for this submission
-        TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(
-            submission_attributes.submission_id)
-
-        # Let's get File C information
-        db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
-        award_financial_data = dictfetchall(db_cursor)
-        logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
-
-        award_queue = {}
-        afd_queue = []
-
-        for row in award_financial_data:
-            account_balances = None
-            try:
-                # Check and see if there is an entry for this TAS
-                treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
-                if treasury_account is None:
-                    raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
-                # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-                created, award = Award.get_or_create_summary_award(
-                        piid=row.get('piid'),
-                        fain=row.get('fain'),
-                        uri=row.get('uri'),
-                        parent_award_id=row.get('parent_award_id'),
-                        use_cache=True)
-                award.latest_submission = submission_attributes
-                for aw in created:
-                    award_queue[aw.manual_hash()] = aw
-            except:   # TODO: silently swallowing a bare exception is bad mojo
-                continue
-
-            award_financial_data = FinancialAccountsByAwards()
-
-            value_map = {
-                'award': award,
-                'submission': submission_attributes,
-                'reporting_period_start': submission_attributes.reporting_period_start,
-                'reporting_period_end': submission_attributes.reporting_period_end,
-                'treasury_account': treasury_account,
-                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
-                'program_activity': get_or_create_program_activity(row, submission_attributes)
-            }
-
-            # Still using the cpe|fyb regex compiled above for reverse
-            afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False, reverse=reverse)
-            afd_queue.append(afd)
-
-        Award.objects.bulk_create(award_queue.values())
-        FinancialAccountsByAwards.objects.bulk_create(afd_queue)
-        awards_cache.clear()
+        load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor)
 
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
         award_financial_assistance_data = dictfetchall(db_cursor)
         logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
-
-        legal_entity_location_field_map = {
-            "address_line1": "legal_entity_address_line1",
-            "address_line2": "legal_entity_address_line2",
-            "address_line3": "legal_entity_address_line3",
-            "city_code": "legal_entity_city_code",
-            "city_name": "legal_entity_city_name",
-            "congressional_code": "legal_entity_congressional",
-            "county_code": "legal_entity_county_code",
-            "county_name": "legal_entity_county_name",
-            "foreign_city_name": "legal_entity_foreign_city",
-            "foreign_postal_code": "legal_entity_foreign_posta",
-            "foreign_province": "legal_entity_foreign_provi",
-            "state_code": "legal_entity_state_code",
-            "state_name": "legal_entity_state_name",
-            "zip5": "legal_entity_zip5",
-            "zip_last4": "legal_entity_zip_last4",
-            "location_country_code": "legal_entity_country_code"
-        }
-
-        place_of_performance_field_map = {
-            "city_name": "place_of_performance_city",
-            "performance_code": "place_of_performance_code",
-            "congressional_code": "place_of_performance_congr",
-            "county_name": "place_of_perform_county_na",
-            "foreign_location_description": "place_of_performance_forei",
-            "state_name": "place_of_perform_state_nam",
-            "zip4": "place_of_performance_zip4a",
-            "location_country_code": "place_of_perform_country_c"
-
-        }
-
-        legal_entity_location_value_map = {
-            "recipient_flag": True
-        }
-
-        place_of_performance_value_map = {
-            "place_of_performance_flag": True
-        }
-
-        fad_field_map = {
-            "type": "assistance_type",
-            "description": "award_description",
-        }
-
-        for row in award_financial_assistance_data:
-
-            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
-
-            # Create the legal entity if it doesn't exist
-            try:
-                legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
-            except ObjectDoesNotExist:
-                legal_entity_value_map = {
-                    "location": legal_entity_location,
-                    "legal_entity_id": row['awardee_or_recipient_uniqu']
-                }
-                legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
-
-            # Create the place of performance location
-            pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
-
-            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = Agency.objects \
-                .filter(
-                    toptier_agency__cgac_code=row['awarding_agency_code'],
-                    subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]) \
-                .first()
-
-            created, award = Award.get_or_create_summary_award(
-                awarding_agency=awarding_agency,
-                piid=row.get('piid'),
-                fain=row.get('fain'),
-                uri=row.get('uri'),
-                parent_award_id=row.get('parent_award_id'))
-            award.save()
-
-            AWARD_UPDATE_ID_LIST.append(award.id)
-
-            parent_txn_value_map = {
-                "award": award,
-                "awarding_agency": awarding_agency,
-                "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
-                                                        subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
-                "recipient": legal_entity,
-                "place_of_performance": pop_location,
-                'submission': submission_attributes,
-                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                "action_date": format_date(row['action_date']),
-            }
-
-            transaction_instance = load_data_into_model(
-                Transaction(), row,
-                field_map=fad_field_map,
-                value_map=parent_txn_value_map,
-                as_dict=True)
-
-            transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
-
-            fad_value_map = {
-                "transaction": transaction_instance,
-                "submission": submission_attributes,
-                "cfda": CFDAProgram.objects.filter(program_number=row['cfda_number']).first(),
-                'reporting_period_start': submission_attributes.reporting_period_start,
-                'reporting_period_end': submission_attributes.reporting_period_end,
-                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-            }
-
-            financial_assistance_data = load_data_into_model(
-                TransactionAssistance(), row,
-                field_map=fad_field_map,
-                value_map=fad_value_map,
-                save=True)
+        load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor)
 
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
         procurement_data = dictfetchall(db_cursor)
         logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
+        load_file_d1(submission_attributes, procurement_data, db_cursor)
 
-        legal_entity_location_field_map = {
-            "address_line1": "legal_entity_address_line1",
-            "address_line2": "legal_entity_address_line2",
-            "address_line3": "legal_entity_address_line3",
-            "location_country_code": "legal_entity_country_code",
-            "city_name": "legal_entity_city_name",
-            "congressional_code": "legal_entity_congressional",
-            "state_code": "legal_entity_state_code",
-            "zip4": "legal_entity_zip4"
-        }
-
-        place_of_performance_field_map = {
-            # not sure place_of_performance_locat maps exactly to city name
-            "city_name": "place_of_performance_locat",
-            "congressional_code": "place_of_performance_congr",
-            "state_code": "place_of_performance_state",
-            "zip4": "place_of_performance_zip4a",
-            "location_country_code": "place_of_perform_country_c"
-        }
-
-        contract_field_map = {
-            "type": "contract_award_type",
-            "description": "award_description"
-        }
-
-        for row in procurement_data:
-            legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
-
-            # Create the legal entity if it doesn't exist
-            try:
-                legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
-            except ObjectDoesNotExist:
-                legal_entity_value_map = {
-                    "location": legal_entity_location,
-                    "legal_entity_id": row['awardee_or_recipient_uniqu'],
-                }
-                legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
-
-            # Create the place of performance location
-            pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
-
-            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = Agency.objects \
-                .filter(
-                    toptier_agency__cgac_code=row['awarding_agency_code'],
-                    subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]) \
-                .first()
-            created, award = Award.get_or_create_summary_award(
-                awarding_agency=awarding_agency,
-                piid=row.get('piid'),
-                fain=row.get('fain'),
-                uri=row.get('uri'),
-                parent_award_id=row.get('parent_award_id'))
-            award.save()
-
-            AWARD_UPDATE_ID_LIST.append(award.id)
-            AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
-
-            parent_txn_value_map = {
-                "award": award,
-                "awarding_agency": awarding_agency,
-                "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
-                                                        subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
-                "recipient": legal_entity,
-                "place_of_performance": pop_location,
-                'submission': submission_attributes,
-                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                "action_date": format_date(row['action_date']),
-            }
-
-            transaction_instance = load_data_into_model(
-                Transaction(), row,
-                field_map=contract_field_map,
-                value_map=parent_txn_value_map,
-                as_dict=True)
-
-            transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
-
-            contract_value_map = {
-                'transaction': transaction_instance,
-                'submission': submission_attributes,
-                'reporting_period_start': submission_attributes.reporting_period_start,
-                'reporting_period_end': submission_attributes.reporting_period_end,
-                "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'])
-            }
-
-            contract_instance = load_data_into_model(
-                TransactionContract(), row,
-                field_map=contract_field_map,
-                value_map=contract_value_map,
-                save=True)
-
-        # Update awards for new linkages
-        update_awards(tuple(AWARD_UPDATE_ID_LIST))
-        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
-
-        # Update the descriptions TODO: If this is slow, add ID limiting as above
-        update_model_description_fields()
+        # Let's get File C information
+        # Note: we load File C last, because the D1 and D2 files have the awarding
+        # agency top tier (CGAC) and sub tier data needed to look up/create
+        # the most specific possible corresponding award. When looking up/
+        # creating awards for File C, we dont have sub-tier agency info, so
+        # we'll do our best to match them to the more specific award records
+        # already created by the D file load
+        db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
+        award_financial_data = dictfetchall(db_cursor)
+        logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
+        load_file_c(submission_attributes, award_financial_data, db_cursor)
 
 
 def format_date(date_string, pattern='%Y%m%d'):
@@ -764,6 +454,367 @@ def dictfetchall(cursor):
             dict(zip(columns, row))
             for row in cursor.fetchall()
         ]
+
+
+def load_file_a(submission_attributes, appropriation_data, db_cursor):
+    """
+    Process and load file A broker data (aka TAS balances,
+    aka appropriation account balances).
+    """
+    reverse = re.compile('gross_outlay_amount_by_tas_cpe')
+    # Create account objects
+    for row in appropriation_data:
+
+        # Check and see if there is an entry for this TAS
+        treasury_account = get_treasury_appropriation_account_tas_lookup(
+            row.get('tas_id'), db_cursor)
+        if treasury_account is None:
+            raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+
+        # Now that we have the account, we can load the appropriation balances
+        # TODO: Figure out how we want to determine what row is overriden by what row
+        # If we want to correlate, the following attributes are available in the
+        # data broker data that might be useful: appropriation_id, row_number
+        # appropriation_balances = somethingsomething get appropriation balances...
+        appropriation_balances = AppropriationAccountBalances()
+
+        value_map = {
+            'treasury_account_identifier': treasury_account,
+            'submission': submission_attributes,
+            'reporting_period_start': submission_attributes.reporting_period_start,
+            'reporting_period_end': submission_attributes.reporting_period_end
+        }
+
+        field_map = {}
+
+        load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True, reverse=reverse)
+
+    AppropriationAccountBalances.populate_final_of_fy()
+
+    # Insert File A quarterly numbers for this submission
+    AppropriationAccountBalancesQuarterly.insert_quarterly_numbers(
+        submission_attributes.submission_id)
+
+
+def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
+    """
+    Process and load file B broker data (aka TAS balances by program
+    activity and object class).
+    """
+    reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
+    for row in prg_act_obj_cls_data:
+        account_balances = None
+        try:
+            # Check and see if there is an entry for this TAS
+            treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
+            if treasury_account is None:
+                raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+            account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
+        except:
+            continue
+
+        financial_by_prg_act_obj_cls = FinancialAccountsByProgramActivityObjectClass()
+
+        value_map = {
+            'submission': submission_attributes,
+            'reporting_period_start': submission_attributes.reporting_period_start,
+            'reporting_period_end': submission_attributes.reporting_period_end,
+            'treasury_account': treasury_account,
+            'appropriation_account_balances': account_balances,
+            'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
+            'program_activity': get_or_create_program_activity(row, submission_attributes)
+        }
+
+        load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True, reverse=reverse)
+
+    # Insert File B quarterly numbers for this submission
+    TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(
+        submission_attributes.submission_id)
+
+
+def load_file_c(submission_attributes, award_financial_data, db_cursor):
+    """
+    Process and load file C broker data.
+    """
+    award_queue = {}
+    afd_queue = []
+    # this matches the file b reverse directive, but am repeating it here
+    # to ensure that we don't overwrite it as we change up the order of
+    # file loading
+    reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
+
+    for row in award_financial_data:
+        try:
+            # Check and see if there is an entry for this TAS
+            treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
+            if treasury_account is None:
+                raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            created, award = Award.get_or_create_summary_award(
+                piid=row.get('piid'),
+                fain=row.get('fain'),
+                uri=row.get('uri'),
+                parent_award_id=row.get('parent_award_id'),
+                use_cache=True)
+            award.latest_submission = submission_attributes
+            for aw in created:
+                award_queue[aw.manual_hash()] = aw
+        except:   # TODO: silently swallowing a bare exception is bad mojo
+            continue
+
+        award_financial_data = FinancialAccountsByAwards()
+
+        value_map = {
+            'award': award,
+            'submission': submission_attributes,
+            'reporting_period_start': submission_attributes.reporting_period_start,
+            'reporting_period_end': submission_attributes.reporting_period_end,
+            'treasury_account': treasury_account,
+            'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
+            'program_activity': get_or_create_program_activity(row, submission_attributes)
+        }
+
+        # Still using the cpe|fyb regex compiled above for reverse
+        afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False, reverse=reverse)
+        afd_queue.append(afd)
+
+    Award.objects.bulk_create(award_queue.values())
+    FinancialAccountsByAwards.objects.bulk_create(afd_queue)
+    awards_cache.clear()
+
+
+def load_file_d1(submission_attributes, procurement_data, db_cursor):
+    """
+    Process and load file D1 broker data (contract award txns).
+    """
+    legal_entity_location_field_map = {
+        "address_line1": "legal_entity_address_line1",
+        "address_line2": "legal_entity_address_line2",
+        "address_line3": "legal_entity_address_line3",
+        "location_country_code": "legal_entity_country_code",
+        "city_name": "legal_entity_city_name",
+        "congressional_code": "legal_entity_congressional",
+        "state_code": "legal_entity_state_code",
+        "zip4": "legal_entity_zip4"
+    }
+
+    place_of_performance_field_map = {
+        # not sure place_of_performance_locat maps exactly to city name
+        "city_name": "place_of_performance_locat",
+        "congressional_code": "place_of_performance_congr",
+        "state_code": "place_of_performance_state",
+        "zip4": "place_of_performance_zip4a",
+        "location_country_code": "place_of_perform_country_c"
+    }
+
+    place_of_performance_value_map = {
+        "place_of_performance_flag": True
+    }
+
+    legal_entity_location_value_map = {
+        "recipient_flag": True
+    }
+
+    contract_field_map = {
+        "type": "contract_award_type",
+        "description": "award_description"
+    }
+
+    for row in procurement_data:
+        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
+
+        # Create the legal entity if it doesn't exist
+        try:
+            legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
+        except ObjectDoesNotExist:
+            legal_entity_value_map = {
+                "location": legal_entity_location,
+                "legal_entity_id": row['awardee_or_recipient_uniqu'],
+            }
+            legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
+
+        # Create the place of performance location
+        pop_location, created = get_or_create_location(
+            place_of_performance_field_map, row, place_of_performance_value_map)
+
+        # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+        awarding_agency = Agency.objects \
+            .filter(
+                toptier_agency__cgac_code=row['awarding_agency_code'],
+                subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]) \
+            .first()
+        created, award = Award.get_or_create_summary_award(
+            awarding_agency=awarding_agency,
+            piid=row.get('piid'),
+            fain=row.get('fain'),
+            uri=row.get('uri'),
+            parent_award_id=row.get('parent_award_id'))
+        award.save()
+
+        AWARD_UPDATE_ID_LIST.append(award.id)
+        AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
+
+        parent_txn_value_map = {
+            "award": award,
+            "awarding_agency": awarding_agency,
+            "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
+                                                    subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
+            "recipient": legal_entity,
+            "place_of_performance": pop_location,
+            'submission': submission_attributes,
+            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+            "action_date": format_date(row['action_date']),
+        }
+
+        transaction_instance = load_data_into_model(
+            Transaction(), row,
+            field_map=contract_field_map,
+            value_map=parent_txn_value_map,
+            as_dict=True)
+
+        transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+
+        contract_value_map = {
+            'transaction': transaction_instance,
+            'submission': submission_attributes,
+            'reporting_period_start': submission_attributes.reporting_period_start,
+            'reporting_period_end': submission_attributes.reporting_period_end,
+            "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'])
+        }
+
+        contract_instance = load_data_into_model(
+            TransactionContract(), row,
+            field_map=contract_field_map,
+            value_map=contract_value_map,
+            save=True)
+
+    # Update awards for new linkages
+    update_awards(tuple(AWARD_UPDATE_ID_LIST))
+    update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+
+    # Update the descriptions TODO: If this is slow, add ID limiting as above
+    update_model_description_fields()
+
+
+def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor):
+    """
+    Process and load file D2 broker data (financial assistance award txns).
+    """
+    legal_entity_location_field_map = {
+        "address_line1": "legal_entity_address_line1",
+        "address_line2": "legal_entity_address_line2",
+        "address_line3": "legal_entity_address_line3",
+        "city_code": "legal_entity_city_code",
+        "city_name": "legal_entity_city_name",
+        "congressional_code": "legal_entity_congressional",
+        "county_code": "legal_entity_county_code",
+        "county_name": "legal_entity_county_name",
+        "foreign_city_name": "legal_entity_foreign_city",
+        "foreign_postal_code": "legal_entity_foreign_posta",
+        "foreign_province": "legal_entity_foreign_provi",
+        "state_code": "legal_entity_state_code",
+        "state_name": "legal_entity_state_name",
+        "zip5": "legal_entity_zip5",
+        "zip_last4": "legal_entity_zip_last4",
+        "location_country_code": "legal_entity_country_code"
+    }
+
+    place_of_performance_field_map = {
+        "city_name": "place_of_performance_city",
+        "performance_code": "place_of_performance_code",
+        "congressional_code": "place_of_performance_congr",
+        "county_name": "place_of_perform_county_na",
+        "foreign_location_description": "place_of_performance_forei",
+        "state_name": "place_of_perform_state_nam",
+        "zip4": "place_of_performance_zip4a",
+        "location_country_code": "place_of_perform_country_c"
+
+    }
+
+    legal_entity_location_value_map = {
+        "recipient_flag": True
+    }
+
+    place_of_performance_value_map = {
+        "place_of_performance_flag": True
+    }
+
+    fad_field_map = {
+        "type": "assistance_type",
+        "description": "award_description",
+    }
+
+    for row in award_financial_assistance_data:
+
+        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
+
+        # Create the legal entity if it doesn't exist
+        try:
+            legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
+        except ObjectDoesNotExist:
+            legal_entity_value_map = {
+                "location": legal_entity_location,
+                "legal_entity_id": row['awardee_or_recipient_uniqu']
+            }
+            legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
+
+        # Create the place of performance location
+        pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
+
+        # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+        awarding_agency = Agency.objects \
+            .filter(
+                toptier_agency__cgac_code=row['awarding_agency_code'],
+                subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]) \
+            .first()
+
+        created, award = Award.get_or_create_summary_award(
+            awarding_agency=awarding_agency,
+            piid=row.get('piid'),
+            fain=row.get('fain'),
+            uri=row.get('uri'),
+            parent_award_id=row.get('parent_award_id'))
+        award.save()
+
+        AWARD_UPDATE_ID_LIST.append(award.id)
+
+        parent_txn_value_map = {
+            "award": award,
+            "awarding_agency": awarding_agency,
+            "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
+                                                    subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
+            "recipient": legal_entity,
+            "place_of_performance": pop_location,
+            'submission': submission_attributes,
+            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+            "action_date": format_date(row['action_date']),
+        }
+
+        transaction_instance = load_data_into_model(
+            Transaction(), row,
+            field_map=fad_field_map,
+            value_map=parent_txn_value_map,
+            as_dict=True)
+
+        transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+
+        fad_value_map = {
+            "transaction": transaction_instance,
+            "submission": submission_attributes,
+            "cfda": CFDAProgram.objects.filter(program_number=row['cfda_number']).first(),
+            'reporting_period_start': submission_attributes.reporting_period_start,
+            'reporting_period_end': submission_attributes.reporting_period_end,
+            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+        }
+
+        financial_assistance_data = load_data_into_model(
+            TransactionAssistance(), row,
+            field_map=fad_field_map,
+            value_map=fad_value_map,
+            save=True)
 
 
 class PhonyCursor:
