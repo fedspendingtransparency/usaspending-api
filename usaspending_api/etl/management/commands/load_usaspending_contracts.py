@@ -67,6 +67,7 @@ class Command(BaseCommand):
                 "recipient": self.get_or_create_recipient(row),
                 "submission": subattr,
                 "type": evaluate_contract_award_type(row),
+                "action_type": h.up2colon(row['reasonformodification']),
                 "usaspending_unique_transaction_id": row["unique_transaction_id"]
             }
             txn = Transaction(**txn_dict)

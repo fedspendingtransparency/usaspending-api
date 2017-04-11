@@ -19,7 +19,10 @@ def test_contract_load():
                  os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                               'usaspending_treasury_contracts.csv'))
 
-    # @todo - should there be an assert here?
+    # Test that historic USAspending award/contract fields are being mapped
+    # correctly to DATA Act schema
+    # TODO: fill this out a bit
+    assert Transaction.objects.filter(action_type__isnull=False).count() > 0
 
 
 @pytest.mark.django_db(transaction=True)
