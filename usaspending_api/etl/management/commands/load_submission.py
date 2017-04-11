@@ -293,7 +293,14 @@ class Command(BaseCommand):
             pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            awarding_agency = Agency.objects \
+                .filter(
+                    toptier_agency__cgac_code=row['awarding_agency_code'],
+                    subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]) \
+                .first()
+
             created, award = Award.get_or_create_summary_award(
+                awarding_agency=awarding_agency,
                 piid=row.get('piid'),
                 fain=row.get('fain'),
                 uri=row.get('uri'),
@@ -304,8 +311,7 @@ class Command(BaseCommand):
 
             parent_txn_value_map = {
                 "award": award,
-                "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
-                                                         subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "awarding_agency": awarding_agency,
                 "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
                                                         subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "recipient": legal_entity,
@@ -387,7 +393,13 @@ class Command(BaseCommand):
             pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            awarding_agency = Agency.objects \
+                .filter(
+                    toptier_agency__cgac_code=row['awarding_agency_code'],
+                    subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]) \
+                .first()
             created, award = Award.get_or_create_summary_award(
+                awarding_agency=awarding_agency,
                 piid=row.get('piid'),
                 fain=row.get('fain'),
                 uri=row.get('uri'),
@@ -399,8 +411,7 @@ class Command(BaseCommand):
 
             parent_txn_value_map = {
                 "award": award,
-                "awarding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['awarding_agency_code'],
-                                                         subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]).first(),
+                "awarding_agency": awarding_agency,
                 "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
                                                         subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "recipient": legal_entity,
