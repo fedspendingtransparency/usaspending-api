@@ -536,8 +536,6 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
     """
     Process and load file C broker data.
     """
-    award_queue = {}
-    afd_queue = []
     # this matches the file b reverse directive, but am repeating it here
     # to ensure that we don't overwrite it as we change up the order of
     # file loading
@@ -555,10 +553,8 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
                 fain=row.get('fain'),
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'),
-                use_cache=True)
+                use_cache=False)
             award.latest_submission = submission_attributes
-            for aw in created:
-                award_queue[aw.manual_hash()] = aw
         except:   # TODO: silently swallowing a bare exception is bad mojo
             continue
 
@@ -575,11 +571,8 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
         }
 
         # Still using the cpe|fyb regex compiled above for reverse
-        afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False, reverse=reverse)
-        afd_queue.append(afd)
+        afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=True, reverse=reverse)
 
-    Award.objects.bulk_create(award_queue.values())
-    FinancialAccountsByAwards.objects.bulk_create(afd_queue)
     awards_cache.clear()
 
 
