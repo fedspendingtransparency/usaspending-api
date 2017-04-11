@@ -12,46 +12,6 @@ from django.core.cache import caches, CacheKeyWarning
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
-AWARD_TYPES = (
-    ('U', 'Unknown Type'),
-    ('02', 'Block Grant'),
-    ('03', 'Formula Grant'),
-    ('04', 'Project Grant'),
-    ('05', 'Cooperative Agreement'),
-    ('06', 'Direct Payment for Specified Use'),
-    ('07', 'Direct Loan'),
-    ('08', 'Guaranteed/Insured Loan'),
-    ('09', 'Insurance'),
-    ('10', 'Direct Payment unrestricted'),
-    ('11', 'Other'),
-    ('A', 'BPA Call'),
-    ('B', 'Purchase Order'),
-    ('C', 'Delivery Order'),
-    ('D', 'Definitive Contract')
-)
-
-AWARD_TYPES_D = dict(AWARD_TYPES)
-_UNKNOWN_TYPE = "Unknown Type"
-
-CONTRACT_PRICING_TYPES = (
-    ('A', 'Fixed Price Redetermination'),
-    ('B', 'Fixed Price Level of Effort'),
-    ('J', 'Firm Fixed Price'),
-    ('K', 'Fixed Price with Economic Price Adjustment'),
-    ('L', 'Fixed Price Incentive'),
-    ('M', 'Fixed Price Award Fee'),
-    ('R', 'Cost Plus Award Fee'),
-    ('S', 'Cost No Fee'),
-    ('T', 'Cost Sharing'),
-    ('U', 'Cost Plus Fixed Fee'),
-    ('V', 'Cost Plus Incentive Fee'),
-    ('Y', 'Time and Materials'),
-    ('Z', 'Labor Hours'),
-    ('UN', 'Unknown Type')
-)
-
-CONTRACT_PRICING_TYPES_D = dict(CONTRACT_PRICING_TYPES)
-
 
 class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
@@ -167,8 +127,8 @@ class Award(DataSourceTrackedModel):
     see ETL\award_helpers.py for details.
     """
 
-    type = models.CharField(max_length=5, db_index=True, choices=AWARD_TYPES, verbose_name="Award Type", default='U', null=True, help_text="	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.")
-    type_description = models.CharField(max_length=50, verbose_name="Award Type Description", default="Unknown Type", null=True, help_text="The plain text description of the type of the award")
+    type = models.CharField(max_length=5, db_index=True, verbose_name="Award Type", null=True, help_text="	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.")
+    type_description = models.TextField(verbose_name="Award Type Description", blank=True, null=True, help_text="The plain text description of the type of the award")
     piid = models.CharField(max_length=50, db_index=True, blank=True, null=True, help_text="Procurement Instrument Identifier - A unique identifier assigned to a federal contract, purchase order, basic ordering agreement, basic agreement, and blanket purchase agreement. It is used to track the contract, and any modifications or transactions related to it. After October 2017, it is between 13 and 17 digits, both letters and numbers.")
     parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True, help_text="The parent award, if applicable")
     fain = models.CharField(max_length=30, db_index=True, blank=True, null=True, help_text="An identification code assigned to each financial assistance award tracking purposes. The FAIN is tied to that award (and all future modifications to that award) throughout the award’s life. Each FAIN is assigned by an agency. Within an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN stands for Federal Award Identification Number, though the digits are letters, not numbers.")
@@ -230,7 +190,7 @@ class Award(DataSourceTrackedModel):
         ]
 
     def __str__(self):
-        return '%s piid: %s fain: %s uri: %s' % (self.get_type_display(), self.piid, self.fain, self.uri)
+        return '%s piid: %s fain: %s uri: %s' % (self.type_description, self.piid, self.fain, self.uri)
 
     @staticmethod
     def get_or_create_summary_award(piid=None, fain=None, uri=None, awarding_agency=None, parent_award_id=None, use_cache=False):
@@ -298,12 +258,13 @@ class Transaction(DataSourceTrackedModel):
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.CharField(max_length=256, blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
-    type = models.CharField(max_length=5, choices=AWARD_TYPES, verbose_name="Action Type", default='U', null=True, help_text="The type for this transaction. For example, A, B, C, D")
-    type_description = models.CharField(max_length=50, verbose_name="Action Type Description", default="Unknown Type", null=True, help_text="The plain text description of the transaction type")
+    type = models.CharField(max_length=5, verbose_name="Action Type", null=True, help_text="The type for this transaction. For example, A, B, C, D")
+    type_description = models.TextField(blank=True, verbose_name="Action Type Description", null=True, help_text="The plain text description of the transaction type")
     period_of_performance_start_date = models.DateField(max_length=10, verbose_name="Period of Performance Start Date", null=True, help_text="The period of performance start date")
     period_of_performance_current_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Current End Date", null=True, help_text="The current end date of the period of performance")
     action_date = models.DateField(max_length=10, verbose_name="Transaction Date", help_text="The date this transaction was actioned")
     action_type = models.CharField(max_length=1, blank=True, null=True, help_text="The type of transaction. For example, A, B, C, D")
+    action_type_description = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True, null=True, help_text="The obligation of the federal government for this transaction")
     modification_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Modification Number", help_text="The modification number for this transaction")
     awarding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_awarding_agency', null=True, help_text="The agency which awarded this transaction")
@@ -320,7 +281,7 @@ class Transaction(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this transaction was updated in the API")
 
     def __str__(self):
-        return '%s award: %s' % (AWARD_TYPES_D.get(self.type, _UNKNOWN_TYPE), self.award)
+        return '%s award: %s' % (self.type_description, self.award)
 
     @staticmethod
     def get_default_fields(path=None):
@@ -332,6 +293,7 @@ class Transaction(DataSourceTrackedModel):
             "period_of_performance_current_end_date",
             "action_date",
             "action_type",
+            "action_type_description",
             "action_date__fy",
             "federal_action_obligation",
             "modification_number",
@@ -357,8 +319,9 @@ class TransactionContract(DataSourceTrackedModel):
     piid = models.CharField(max_length=50, blank=True, help_text="The PIID of this transaction")
     parent_award_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="Parent Award ID", help_text="The parent award id for this transaction. This is generally the piid of an IDV")
     cost_or_pricing_data = models.CharField(max_length=1, blank=True, null=True, help_text="")
-    type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, choices=CONTRACT_PRICING_TYPES, verbose_name="Type of Contract Pricing", help_text="The type of contract pricing data, as a code")
-    type_of_contract_pricing_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Type of Contract Pricing Description", help_text="A plain text description of the type of contract pricing data")
+    cost_or_pricing_data_description = models.TextField(blank=True, null=True)
+    type_of_contract_pricing = models.CharField(max_length=2, default="UN", blank=True, null=True, verbose_name="Type of Contract Pricing", help_text="The type of contract pricing data, as a code")
+    type_of_contract_pricing_description = models.TextField(blank=True, null=True, verbose_name="Type of Contract Pricing Description", help_text="A plain text description of the type of contract pricing data")
     naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
     naics_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="NAICS Description", help_text="A plain text description of the NAICS code")
     period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True, help_text="The potential end date of the period of performance")
@@ -367,54 +330,81 @@ class TransactionContract(DataSourceTrackedModel):
     potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award", help_text="The potential total value of the award")
     referenced_idv_agency_identifier = models.CharField(max_length=4, blank=True, null=True, help_text="The agency identifier of the agency on the IDV")
     idv_type = models.CharField(max_length=1, blank=True, null=True, verbose_name="IDV Type", help_text="The IDV type code")
+    idv_type_description = models.TextField(null=True, blank=True)
     multiple_or_single_award_idv = models.CharField(max_length=1, blank=True, null=True, help_text="Specifies whether the IDV is a single more multiple award vehicle")
+    multiple_or_single_award_idv_description = models.TextField(null=True, blank=True)
     type_of_idc = models.CharField(max_length=1, blank=True, null=True, verbose_name="Type of IDC", help_text="Code representing the type of IDC")
+    type_of_idc_description = models.TextField(null=True, blank=True)
     a76_fair_act_action = models.CharField(max_length=1, blank=True, null=True, verbose_name="A-76 FAIR Act Action", help_text="A-76 FAIR act action")
     dod_claimant_program_code = models.CharField(max_length=3, blank=True, null=True)
     clinger_cohen_act_planning = models.CharField(max_length=1, blank=True, null=True)
     commercial_item_acquisition_procedures = models.CharField(max_length=1, blank=True, null=True)
+    commercial_item_acquisition_procedures_description = models.TextField(blank=True, null=True)
     commercial_item_test_program = models.CharField(max_length=1, blank=True, null=True)
     consolidated_contract = models.CharField(max_length=1, blank=True, null=True)
     contingency_humanitarian_or_peacekeeping_operation = models.CharField(max_length=1, blank=True, null=True)
+    contingency_humanitarian_or_peacekeeping_operation_description = models.TextField(blank=True, null=True)
     contract_bundling = models.CharField(max_length=1, blank=True, null=True)
+    contract_bundling_description = models.TextField(blank=True, null=True)
     contract_financing = models.CharField(max_length=1, blank=True, null=True)
+    contract_financing_description = models.TextField(blank=True, null=True)
     contracting_officers_determination_of_business_size = models.CharField(max_length=1, blank=True, null=True)
     cost_accounting_standards = models.CharField(max_length=1, blank=True, null=True)
+    cost_accounting_standards_description = models.TextField(blank=True, null=True)
     country_of_product_or_service_origin = models.CharField(max_length=3, blank=True, null=True)
     davis_bacon_act = models.CharField(max_length=1, blank=True, null=True)
+    davis_bacon_act_description = models.TextField(null=True, blank=True)
     evaluated_preference = models.CharField(max_length=6, blank=True, null=True)
+    evaluated_preference_description = models.TextField(null=True, blank=True)
     extent_competed = models.CharField(max_length=3, blank=True, null=True)
+    extent_competed_description = models.TextField(null=True, blank=True)
     fed_biz_opps = models.CharField(max_length=1, blank=True, null=True)
+    fed_biz_opps_description = models.TextField(null=True, blank=True)
     foreign_funding = models.CharField(max_length=1, blank=True, null=True)
+    foreign_funding_description = models.TextField(null=True, blank=True)
     gfe_gfp = models.CharField(max_length=1, blank=True, null=True)
     information_technology_commercial_item_category = models.CharField(max_length=1, blank=True, null=True)
+    information_technology_commercial_item_category_description = models.TextField(null=True, blank=True)
     interagency_contracting_authority = models.CharField(max_length=1, blank=True, null=True)
+    interagency_contracting_authority_description = models.TextField(null=True, blank=True)
     local_area_set_aside = models.CharField(max_length=1, blank=True, null=True)
     major_program = models.CharField(max_length=100, blank=True, null=True)
     purchase_card_as_payment_method = models.CharField(max_length=1, blank=True, null=True)
     multi_year_contract = models.CharField(max_length=1, blank=True, null=True)
-    national_interest_action = models.CharField(max_length=4, blank=True, null=True)
+    national_interest_action = models.CharField(max_length=20, blank=True, null=True)
+    national_interest_action_description = models.TextField(null=True, blank=True)
     number_of_actions = models.CharField(max_length=6, blank=True, null=True)
     number_of_offers_received = models.CharField(max_length=3, blank=True, null=True)
     other_statutory_authority = models.CharField(max_length=1000, blank=True, null=True)
     performance_based_service_acquisition = models.CharField(max_length=1, blank=True, null=True)
+    performance_based_service_acquisition_description = models.TextField(null=True, blank=True)
     place_of_manufacture = models.CharField(max_length=1, blank=True, null=True)
+    place_of_manufacture_description = models.TextField(null=True, blank=True)
     price_evaluation_adjustment_preference_percent_difference = models.DecimalField(max_digits=2, decimal_places=2, blank=True, null=True)
     product_or_service_code = models.CharField(max_length=4, blank=True, null=True)
     program_acronym = models.CharField(max_length=25, blank=True, null=True)
     other_than_full_and_open_competition = models.CharField(max_length=3, blank=True, null=True)
     recovered_materials_sustainability = models.CharField(max_length=1, blank=True, null=True)
+    recovered_materials_sustainability_description = models.TextField(null=True, blank=True)
     research = models.CharField(max_length=3, blank=True, null=True)
+    research_description = models.TextField(null=True, blank=True)
     sea_transportation = models.CharField(max_length=1, blank=True, null=True)
+    sea_transportation_description = models.TextField(null=True, blank=True)
     service_contract_act = models.CharField(max_length=1, blank=True, null=True)
+    service_contract_act_description = models.TextField(null=True, blank=True)
     small_business_competitiveness_demonstration_program = models.CharField(max_length=1, blank=True, null=True)
     solicitation_identifier = models.CharField(max_length=25, blank=True, null=True, verbose_name="Solicitation ID")
     solicitation_procedures = models.CharField(max_length=5, blank=True, null=True)
+    solicitation_procedures_description = models.TextField(null=True, blank=True)
     fair_opportunity_limited_sources = models.CharField(max_length=50, blank=True, null=True)
+    fair_opportunity_limited_sources_description = models.TextField(null=True, blank=True)
     subcontracting_plan = models.CharField(max_length=1, blank=True, null=True)
+    subcontracting_plan_description = models.TextField(null=True, blank=True)
     program_system_or_equipment_code = models.CharField(max_length=4, blank=True, null=True)
     type_set_aside = models.CharField(max_length=10, blank=True, null=True, verbose_name="Type Set Aside")
+    type_set_aside_description = models.TextField(null=True, blank=True)
     epa_designated_product = models.CharField(max_length=1, blank=True, null=True)
+    epa_designated_product_description = models.TextField(null=True, blank=True)
     walsh_healey_act = models.CharField(max_length=1, blank=True, null=True, help_text="Denotes whether this transaction is subject to the Walsh-Healey act")
     transaction_number = models.CharField(max_length=6, blank=True, null=True, help_text="The transaction number for this transaction")
     referenced_idv_modification_number = models.CharField(max_length=25, blank=True, null=True, help_text="The modification number for the referenced IDV")
@@ -463,12 +453,15 @@ class TransactionAssistance(DataSourceTrackedModel):
     cfda_title = models.CharField(max_length=250, blank=True, null=True, verbose_name="CFDA Title")
     cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
     business_funds_indicator = models.CharField(max_length=3)
+    business_funds_indicator_description = models.TextField(blank=True, null=True)
     non_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     total_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     original_loan_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     record_type = models.IntegerField()
+    record_type_description = models.TextField(null=True, blank=True)
     correction_late_delete_indicator = models.CharField(max_length=1, blank=True, null=True)
+    correction_late_delete_indicator_description = models.TextField(blank=True, null=True)
     fiscal_year_and_quarter_correction = models.CharField(max_length=5, blank=True, null=True)
     sai_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="SAI Number")
     drv_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)

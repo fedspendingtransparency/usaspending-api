@@ -3,9 +3,10 @@ from datetime import datetime
 
 from django.core.management.base import BaseCommand
 
-from usaspending_api.awards.models import Award, AWARD_TYPES, Transaction, TransactionAssistance
+from usaspending_api.awards.models import Award, Transaction, TransactionAssistance
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.csv_data_reader import CsvDataReader
+from usaspending_api.etl.helpers import update_model_description_fields
 import usaspending_api.etl.helpers as h
 from usaspending_api.references.models import Agency, LegalEntity
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -39,9 +40,6 @@ class Command(BaseCommand):
         txn_list = []
         txn_assistance_list = []
 
-        # Store some additional support data needed for the laod
-        award_type_dict = {a[0]: a[1] for a in AWARD_TYPES}
-
         for idx, row in enumerate(reader):
             if len(reader) % 1000 == 0:
                 self.logger.info("Read row {}".format(len(reader)))
@@ -66,7 +64,6 @@ class Command(BaseCommand):
                 "place_of_performance": h.get_or_create_location(row, location_mapper_fin_assistance_principal_place),
                 "recipient": self.get_or_create_recipient(row),
                 "type": h.up2colon(row['assistance_type']),
-                "type_description": award_type_dict.get(h.up2colon(row['assistance_type'])),
                 "usaspending_unique_transaction_id": row["unique_transaction_id"],
 
                 # ??"funding_agency_id":
@@ -120,6 +117,7 @@ class Command(BaseCommand):
         self.logger.info("Starting Awards update")
         count = update_awards(tuple(award_id_list))
         update_contract_awards(tuple(award_id_list))
+        update_model_description_fields()
         self.logger.info("Completed Awards update ({} records)".format(count))
 
     def get_or_create_award(self, row, awarding_agency):

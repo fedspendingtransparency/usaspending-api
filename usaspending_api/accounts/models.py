@@ -39,6 +39,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     beginning_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
     ending_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
     availability_type_code = models.CharField(max_length=1, blank=True, null=True)
+    availability_type_code_description = models.TextField(blank=True, null=True)
     main_account_code = models.CharField(max_length=4)
     sub_account_code = models.CharField(max_length=3)
     account_title = models.CharField(max_length=300, blank=True, null=True)
