@@ -493,7 +493,7 @@ daims_maps = {
         "O": "Other Transaction Order",
         "R": "Other Transaction Agreement",
         "S": "Funded Space Act Agreement",
-        "T": "Training Grant"
+        "T": "Training Grant",
         # End custom NASA types
 
         "_DEFAULT": "Unknown Type"
