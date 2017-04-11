@@ -222,7 +222,7 @@ daims_maps = {
         "B": "Indefinite Delivery Contract (IDC)",
         "C": "Federal Supply Schedule (FSS)",
         "D": "Basic Ordering Agreement (BOA)",
-        "E": "Blanket Purcchase Agreeement (BPA)",
+        "E": "Blanket Purchase Agreeement (BPA)",
     },
 
     "information_technology_commercial_item_category_map": {
@@ -486,6 +486,16 @@ daims_maps = {
         "B": "Purchase Order",
         "C": "Delivery Order",
         "D": "Definitive Contract",
+
+        # Custom NASA Types
+        "F": "Cooperative Agreement",
+        "G": "Grant for Research",
+        "O": "Other Transaction Order",
+        "R": "Other Transaction Agreement",
+        "S": "Funded Space Act Agreement",
+        "T": "Training Grant"
+        # End custom NASA types
+
         "_DEFAULT": "Unknown Type"
     },
 
