@@ -222,7 +222,7 @@ daims_maps = {
         "B": "Indefinite Delivery Contract (IDC)",
         "C": "Federal Supply Schedule (FSS)",
         "D": "Basic Ordering Agreement (BOA)",
-        "E": "Blanket Purchase Agreeement (BPA)",
+        "E": "Blanket Purchase Agreement (BPA)",
     },
 
     "information_technology_commercial_item_category_map": {
