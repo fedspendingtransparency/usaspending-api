@@ -21,6 +21,7 @@ raw = {
     'address_line3': 'suite\n22',
     'foreign_province': ' ontariO',
     'foreign_city_name': ' Däytön\n',
+    'place_of_perform_county_na': 'Montgomery',
 }
 
 desired = {
@@ -33,7 +34,8 @@ desired = {
     'foreign_city_name': 'DÄYTÖN',
     'foreign_province': 'ONTARIO',
     'state_code': 'oh',
-    'state_name': 'OHIO'
+    'state_name': 'OHIO',
+    'place_of_perform_county_na': 'MONTGOMERY',
 }
 
 

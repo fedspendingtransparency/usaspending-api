@@ -10,10 +10,10 @@ def canonicalize_string(val):
 
 
 canonicalizable = [
-    'address_line1', 'address_line2', 'address_line3', 'city_name',
-    'county_name', 'foreign_city_name', 'foreign_province',
-    'state_name'
+    'address_line', 'city_name', 'county_na', 'state_nam', 'place_of_performance_city',
 ]
+# Some field names like 'place_of_perform_county_na' are truncated
+
 
 
 def canonicalize_location_dict(dct):
@@ -21,9 +21,10 @@ def canonicalize_location_dict(dct):
     Canonicalize location-related values in `dct` according to the
     rules in `canonicalize_string`.
     """
-    for field in canonicalizable:
-        if field in dct:
-            dct[field] = canonicalize_string(dct[field])
+    for partial_field_name in canonicalizable:
+        for field in dct:
+            if partial_field_name in field:
+                dct[field] = canonicalize_string(dct[field])
     return dct
 
 
