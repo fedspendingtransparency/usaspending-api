@@ -222,7 +222,7 @@ daims_maps = {
         "B": "Indefinite Delivery Contract (IDC)",
         "C": "Federal Supply Schedule (FSS)",
         "D": "Basic Ordering Agreement (BOA)",
-        "E": "Blanket Purcchase Agreeement (BPA)",
+        "E": "Blanket Purchase Agreement (BPA)",
     },
 
     "information_technology_commercial_item_category_map": {
@@ -482,22 +482,20 @@ daims_maps = {
         "09": "Insurance",
         "10": "Direct Payment with Unrestricted Use",
         "11": "Other Financial Assistance",
-        "A": "Fixed Price Redetermination",
-        "B": "Fixed Price Level of Effort",
-        "J": "Firm Fixed Price",
-        "K": "Fixed Price with Economic Price Adjustment",
-        "L": "Fixed Price Incentive",
-        "M": "Fixed Price Award Fee",
-        "R": "Cost Plus Award Fee",
-        "S": "Cost No Fee",
-        "T": "Cost Sharing",
-        "U": "Cost Plus Fixed Fee",
-        "V": "Cost Plus Incentive Fee",
-        "Y": "Time and Materials",
-        "Z": "Labor Hours",
-        "1": "Order Dependent",
-        "2": "Combination",
-        "3": "Other",
+        "A": "BPA Call",
+        "B": "Purchase Order",
+        "C": "Delivery Order",
+        "D": "Definitive Contract",
+
+        # Custom NASA Types
+        "F": "Cooperative Agreement",
+        "G": "Grant for Research",
+        "O": "Other Transaction Order",
+        "R": "Other Transaction Agreement",
+        "S": "Funded Space Act Agreement",
+        "T": "Training Grant",
+        # End custom NASA types
+
         "_DEFAULT": "Unknown Type"
     },
 
