@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, OfficeAgency,
-    RefProgramActivity, SubtierAgency, ToptierAgency)
+    RefProgramActivity, SubtierAgency, ToptierAgency, LegalEntityOfficers)
 from usaspending_api.common.serializers import LimitableSerializer
 
 
@@ -62,6 +62,13 @@ class LocationSerializer(LimitableSerializer):
         fields = '__all__'
 
 
+class LegalEntityOfficersSerializer(LimitableSerializer):
+
+    class Meta:
+        model = LegalEntityOfficers
+        fields = '__all__'
+
+
 class LegalEntitySerializer(LimitableSerializer):
 
     class Meta:
@@ -72,6 +79,10 @@ class LegalEntitySerializer(LimitableSerializer):
                 "class": LocationSerializer,
                 "kwargs": {"read_only": True}
             },
+            "officers": {
+                "class": LegalEntityOfficersSerializer,
+                "kwargs": {"read_only": True}
+            }
         }
 
 
