@@ -535,6 +535,9 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
 def load_file_c(submission_attributes, award_financial_data, db_cursor):
     """
     Process and load file C broker data.
+    Note: this should run AFTER the D1 and D2 files are loaded because we try
+    to join to those records to retrieve some additional information
+    about the awarding sub-tier agency.
     """
     award_queue = {}
     afd_queue = []
