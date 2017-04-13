@@ -1,11 +1,11 @@
-# Changes to Imported Data
+# Reformatting Imported Data
 
 We load data from two primary sources:
 
 1. The current production [USAspending website](https://www.usaspending.gov) (aka, _legacy USAspending_). This provides us with historic data about contract and financial assistance spending.  
 2. The [DATA Broker](https://broker.usaspending.gov), which provides us with agency DATA Act submissions.
 
-Generally, data will be imported as-is. Below are the exceptions to that rule.
+Generally, data will be imported as-is. In some cases, however, we reformat the data to ensure that it's consistent and usable.
 
 ## Geographic Information
 
@@ -13,7 +13,7 @@ Making sure our location-related fields are as robust and accurate as possible p
 
 ### State Code and Foreign Province
 
-**Data Source:** DATA Broker  
+**Data Source:** USAspending history and DATA Broker  
 **Code:** `submissions/management/commands/load_submission.py`
 
 When loading information from the DATA Act broker, if the data has a state code but does not have a country code of `USA`, we load the state code as a foreign province.
@@ -34,6 +34,24 @@ For example, if a record has a state code but no state name, we'll pull in state
 **Code:** `etl/helpers.py`
 
 If a legacy USAspending record doesn't have a country code, we attempt to find one by matching the country name (if provided) against our existing country list.
+
+### Canonicalizing location text fields
+
+**Data Source:** USAspending history and DATA Broker  
+**Code:** `references/helpers.py`
+
+Text fields in location records are stored in a standard format to avoid
+false duplicates owing only to quirks of spacing or capitalization.
+Values are stored in UPPERCASE, with leading and trailing whitespace
+removed, and with any internal whitespace converted to a single space
+between words.
+
+The following fields are canonicalized this way:
+
+- _city_name_, _county_name_, _state_name_
+- _foreign_city_name_, _foreign_province_
+- Address (line 1, 2, and 3)
+
 
 ## Single Character Code Extracts
 
@@ -68,3 +86,14 @@ To make it easier for users to see the lifespan of an award, we create award rec
 Agencies submit financial information to the DATA Broker by Treasury Account Symbol (TAS). In addition to displaying financial data for each individual TAS, USAspending groups financial data by federal account. Each federal account contains multiple individual TAS.
 
 To create federal account records, we use a unique combination of TAS agency identifier (AID) and main account code. The title that we assign to each federal account is the title of its child TAS with the most recent ending period of availability.
+
+## Annual and Quarterly Balances
+
+**Data Source:** DATA Broker  
+**Code:** `accounts/models.py` and `financial_activities/models.py`
+
+Agencies submit financial data to the DATA Broker on a quarterly basis. These numbers (total outlays, for example) are cumulative for the fiscal year of the submission. In other words, quarter three numbers represent all financial activity for quarters one, two, and three.
+
+All annual financial data displayed on USAspending represents the latest set of numbers reported for the fiscal year. Tables and charts that show quarterly data represent activity during that period only. We derive quarterly numbers during the submission load process by taking the submission's numbers and subtracting the totals from the most recent previous submission in the same fiscal year.
+
+For example, if the total outlay reported for a Treasury Account Symbol (TAS) in quarter two is $1000 and the total quarter one outlay for that TAS in quarter one is $300, the quarterly data will show $300 for quarter one and $700 for quarter two.

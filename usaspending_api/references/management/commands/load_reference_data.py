@@ -25,6 +25,9 @@ class Command(BaseCommand):
         self.logger.info("Loading tas_list.csv")
         call_command('loadtas', 'usaspending_api/data/tas_list.csv')
 
+        self.logger.info("Loading program_activity.csv")
+        call_command('loadprogramactivity', 'usaspending_api/data/program_activity.csv')
+
         self.logger.info("Loading ref_city_county_code.csv")
         call_command('load_reference_csv', 'RefCityCountyCode', 'usaspending_api/data/ref_city_county_code.csv', 'Latin-1')
 
