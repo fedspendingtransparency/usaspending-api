@@ -1,18 +1,14 @@
 from rest_framework import serializers
 
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount
-from usaspending_api.financial_activities.serializers import FinancialAccountsByProgramActivityObjectClassSerializer
+from usaspending_api.accounts.models import (
+    AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount)
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass
+)
 from usaspending_api.common.serializers import LimitableSerializer
-from usaspending_api.references.serializers import RefProgramActivityBriefSerializer, ObjectClassBriefSerializer
-
-
-class AppropriationAccountBalancesSerializer(LimitableSerializer):
-
-    class Meta:
-
-        model = AppropriationAccountBalances
-        fields = '__all__'
+from usaspending_api.references.serializers import (
+    ProgramActivitySerializer, ObjectClassSerializer)
+from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 
 
 class FederalAccountSerializer(LimitableSerializer):
@@ -23,11 +19,7 @@ class FederalAccountSerializer(LimitableSerializer):
         fields = '__all__'
 
 
-class TreasuryAppropriationAccountSerializer(LimitableSerializer):
-
-    totals_program_activity = serializers.ListField()
-    totals_object_class = serializers.ListField()
-    totals = serializers.DictField()
+class TasSerializer(LimitableSerializer):
 
     class Meta:
 
@@ -37,21 +29,49 @@ class TreasuryAppropriationAccountSerializer(LimitableSerializer):
             "federal_account": {
                 "class": FederalAccountSerializer,
                 "kwargs": {"read_only": True}
+            }
+        }
+
+
+class AppropriationAccountBalancesSerializer(LimitableSerializer):
+
+    class Meta:
+
+        model = AppropriationAccountBalances
+        fields = '__all__'
+        nested_serializers = {
+            "treasury_account_identifier": {
+                "class": TasSerializer,
+                "kwargs": {"read_only": True}
             },
-            "account_balances": {
-                "class": AppropriationAccountBalancesSerializer,
-                "kwargs": {"read_only": True, "many": True}
+            "submission": {
+                "class": SubmissionAttributesSerializer,
+                "kwargs": {"read_only": True}
+            }
+        }
+
+
+class TasCategorySerializer(LimitableSerializer):
+
+    class Meta:
+
+        model = FinancialAccountsByProgramActivityObjectClass
+        fields = '__all__'
+        nested_serializers = {
+            "program_activity": {
+                "class": ProgramActivitySerializer,
+                "kwargs": {"read_only": True}
             },
-            "program_balances": {
-                "class": FinancialAccountsByProgramActivityObjectClassSerializer,
-                "kwargs": {"read_only": True, "many": True}
+            "object_class": {
+                "class": ObjectClassSerializer,
+                "kwargs": {"read_only": True}
             },
-            "program_activities": {
-                "class": RefProgramActivityBriefSerializer,
-                "kwargs": {"read_only": True, "many": True}
+            "treasury_account": {
+                "class": TasSerializer,
+                "kwargs": {"read_only": True}
             },
-            "object_classes": {
-                "class": ObjectClassBriefSerializer,
-                "kwargs": {"read_only": True, "many": True}
-            },
+            "submission": {
+                "class": SubmissionAttributesSerializer,
+                "kwargs": {"read_only": True}
+            }
         }

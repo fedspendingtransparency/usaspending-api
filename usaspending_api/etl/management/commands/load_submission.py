@@ -1,6 +1,8 @@
 from datetime import datetime
+from decimal import Decimal
 import logging
 import os
+import re
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
@@ -10,30 +12,33 @@ from django.db import connections
 from django.db.models import Q
 from django.core.cache import caches
 
-from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
+from usaspending_api.accounts.models import (
+    AppropriationAccountBalances, AppropriationAccountBalancesQuarterly,
+    TreasuryAppropriationAccount)
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
-    TransactionAssistance, TransactionContract, Transaction, AWARD_TYPES, CONTRACT_PRICING_TYPES)
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+    TransactionAssistance, TransactionContract, Transaction)
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
-from usaspending_api.etl.helpers import get_fiscal_quarter
+from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
+from usaspending_api.references.helpers import canonicalize_location_dict
+
+from usaspending_api.etl.helpers import update_model_description_fields
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
 TAS_ID_TO_ACCOUNT = {}
-
-# Store some additional support data needed for the type description matching
-award_type_dict = {a[0]: a[1] for a in AWARD_TYPES}
-contract_pricing_dict = {c[0]: c[1] for c in CONTRACT_PRICING_TYPES}
 
 # Lists to store for update_awards and update_contract_awards
 AWARD_UPDATE_ID_LIST = []
 AWARD_CONTRACT_UPDATE_ID_LIST = []
 
 awards_cache = caches['awards']
+logger = logging.getLogger('console')
 
 
 class Command(BaseCommand):
@@ -43,7 +48,6 @@ class Command(BaseCommand):
     by creating new django model instances for each object
     """
     help = "Loads a single submission from the configured data broker database"
-    logger = logging.getLogger('console')
 
     def add_arguments(self, parser):
         parser.add_argument('submission_id', nargs=1, help='the submission id to load', type=int)
@@ -74,8 +78,8 @@ class Command(BaseCommand):
                 db_conn = connections['data_broker']
                 db_cursor = db_conn.cursor()
             except Exception as err:
-                self.logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
-                self.logger.critical(print(err))
+                logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                logger.critical(print(err))
                 return
         else:
             options['delete'] = True
@@ -89,53 +93,27 @@ class Command(BaseCommand):
         submission_data = dictfetchall(db_cursor)
 
         if len(submission_data) == 0:
-            self.logger.error('Could not find submission with id ' + str(submission_id))
+            logger.error('Could not find submission with id ' + str(submission_id))
             return
         elif len(submission_data) > 1:
-            self.logger.error('Found multiple submissions with id ' + str(submission_id))
+            logger.error('Found multiple submissions with id ' + str(submission_id))
             return
 
         # We have a single submission, which is what we want
         submission_data = submission_data[0]
-
-        # First, check if we already have entries for this submission id
-        submission_attributes = None
-        try:
-            submission_attributes = SubmissionAttributes.objects.get(broker_submission_id=submission_id)
-            if options['delete']:
-                self.logger.info('Submission id ' + str(submission_id) + ' already exists. It will be deleted.')
-                submission_attributes.delete()
-                submission_attributes = SubmissionAttributes()
-            else:
-                self.logger.info('Submission id ' + str(submission_id) + ' already exists. Records will be updated.')
-        except ObjectDoesNotExist:
-            submission_attributes = SubmissionAttributes()
-
-        # Update and save submission attributes
-        field_map = {
-            'reporting_period_start': 'reporting_start_date',
-            'reporting_period_end': 'reporting_end_date',
-            'quarter_format_flag': 'is_quarter_format',
-        }
-
-        # Create our value map - specific data to load
-        value_map = {
-            'broker_submission_id': submission_id,
-            'reporting_fiscal_quarter': get_fiscal_quarter(
-                submission_data['reporting_fiscal_period'])
-        }
-
-        del submission_data["submission_id"]  # To avoid collisions with the newer PK system
-
-        load_data_into_model(submission_attributes, submission_data, field_map=field_map, value_map=value_map, save=True)
+        broker_submission_id = submission_data['submission_id']
+        del submission_data['submission_id']  # To avoid collisions with the newer PK system
+        submission_attributes = get_submission_attributes(broker_submission_id, submission_data, options['delete'])
 
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
+        logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
 
+        reverse = re.compile('gross_outlay_amount_by_tas_cpe')
         # Create account objects
         for row in appropriation_data:
+
             # Check and see if there is an entry for this TAS
             treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
@@ -157,15 +135,20 @@ class Command(BaseCommand):
 
             field_map = {}
 
-            load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True)
+            load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True, reverse=reverse)
 
         AppropriationAccountBalances.populate_final_of_fy()
+
+        # Insert File A quarterly numbers for this submission
+        AppropriationAccountBalancesQuarterly.insert_quarterly_numbers(
+            submission_attributes.submission_id)
 
         # Let's get File B information
         db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
         prg_act_obj_cls_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
+        logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
 
+        reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
         for row in prg_act_obj_cls_data:
             account_balances = None
             try:
@@ -185,16 +168,20 @@ class Command(BaseCommand):
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
                 'appropriation_account_balances': account_balances,
-                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], self.logger),
-                'program_activity_id': get_or_create_program_activity(row['program_activity_code'])
+                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
+                'program_activity': get_or_create_program_activity(row, submission_attributes)
             }
 
-            load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True)
+            load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True, reverse=reverse)
+
+        # Insert File B quarterly numbers for this submission
+        TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(
+            submission_attributes.submission_id)
 
         # Let's get File C information
         db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
         award_financial_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
+        logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
 
         award_queue = {}
         afd_queue = []
@@ -227,11 +214,12 @@ class Command(BaseCommand):
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 'treasury_account': treasury_account,
-                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], self.logger),
-                'program_activity_id': get_or_create_program_activity(row['program_activity_code'])
+                'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
+                'program_activity': get_or_create_program_activity(row, submission_attributes)
             }
 
-            afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False)
+            # Still using the cpe|fyb regex compiled above for reverse
+            afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=False, reverse=reverse)
             afd_queue.append(afd)
 
         Award.objects.bulk_create(award_queue.values())
@@ -241,7 +229,7 @@ class Command(BaseCommand):
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
         award_financial_assistance_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
+        logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -323,7 +311,6 @@ class Command(BaseCommand):
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 'submission': submission_attributes,
-                'type_description': award_type_dict.get(row['assistance_type']),
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
@@ -356,7 +343,7 @@ class Command(BaseCommand):
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
         procurement_data = dictfetchall(db_cursor)
-        self.logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
+        logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -417,7 +404,6 @@ class Command(BaseCommand):
                 "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
                                                         subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
                 "recipient": legal_entity,
-                'type_description': award_type_dict.get(row['contract_award_type']),
                 "place_of_performance": pop_location,
                 'submission': submission_attributes,
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
@@ -436,7 +422,6 @@ class Command(BaseCommand):
             contract_value_map = {
                 'transaction': transaction_instance,
                 'submission': submission_attributes,
-                'type_of_contract_pricing_description': contract_pricing_dict.get(row['type_of_contract_pricing']),
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
                 "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'])
@@ -451,6 +436,9 @@ class Command(BaseCommand):
         # Update awards for new linkages
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
         update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+
+        # Update the descriptions TODO: If this is slow, add ID limiting as above
+        update_model_description_fields()
 
 
 def format_date(date_string, pattern='%Y%m%d'):
@@ -514,12 +502,17 @@ def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger
     return obj_class
 
 
-def get_or_create_program_activity(program_activity_code):
+def get_or_create_program_activity(row, submission_attributes):
     # We do it this way rather than .get_or_create because we do not want to
     # duplicate existing pk's with null values
-    prg_activity = RefProgramActivity.objects.filter(program_activity_code=program_activity_code).first()
-    if prg_activity is None and program_activity_code is not None:
-        prg_activity = RefProgramActivity.objects.create(program_activity_code=program_activity_code)
+    filters = {'program_activity_code': row['program_activity_code'],
+               'budget_year': submission_attributes.reporting_fiscal_year,
+               'responsible_agency_id': row['agency_identifier'],
+               'main_account_code': row['main_account_code'], }
+    prg_activity = RefProgramActivity.objects.filter(**filters).first()
+    if prg_activity is None and row['program_activity_code'] is not None:
+        prg_activity = RefProgramActivity.objects.create(**filters)
+        logger.warning('Created missing program activity record for {}'.format(str(filters)))
     return prg_activity
 
 
@@ -565,21 +558,15 @@ def load_data_into_model(model_instance, data, **kwargs):
                     column is present in both value_map and field_map, value map takes
                     precedence over the other
         save - Defaults to False, but when set to true will save the model at the end
+        reverse -   Field names matching this regex should be reversed
+                    (multiplied by -1) before saving.
         as_dict - If true, returns the model as a dict instead of saving or altering
     """
-    field_map = None
-    value_map = None
-    save = False
-    as_dict = False
-
-    if 'field_map' in kwargs:
-        field_map = kwargs['field_map']
-    if 'value_map' in kwargs:
-        value_map = kwargs['value_map']
-    if 'save' in kwargs:
-        save = kwargs['save']
-    if 'as_dict' in kwargs:
-        as_dict = kwargs['as_dict']
+    field_map = kwargs.get('field_map')
+    value_map = kwargs.get('value_map')
+    save = kwargs.get('save')
+    as_dict = kwargs.get('as_dict', False)
+    reverse = kwargs.get('reverse')
 
     # Grab all the field names from the meta class of the model instance
     fields = [field.name for field in model_instance._meta.get_fields()]
@@ -591,7 +578,7 @@ def load_data_into_model(model_instance, data, **kwargs):
     for field in fields:
         # Let's handle the data source field here for all objects
         if field is 'data_source':
-            store_value(mod, field, 'DBR')
+            store_value(mod, field, 'DBR', reverse)
         broker_field = field
         # If our field is the 'long form' field, we need to get what it maps to
         # in the broker so we can map the data properly
@@ -600,22 +587,22 @@ def load_data_into_model(model_instance, data, **kwargs):
         sts = False
         if value_map:
             if broker_field in value_map:
-                store_value(mod, field, value_map[broker_field])
+                store_value(mod, field, value_map[broker_field], reverse)
                 sts = True
             elif field in value_map:
-                store_value(mod, field, value_map[field])
+                store_value(mod, field, value_map[field], reverse)
                 sts = True
         if field_map and not sts:
             if broker_field in field_map:
-                store_value(mod, field, data[field_map[broker_field]])
+                store_value(mod, field, data[field_map[broker_field]], reverse)
                 sts = True
             elif field in field_map:
-                store_value(mod, field, data[field_map[field]])
+                store_value(mod, field, data[field_map[field]], reverse)
                 sts = True
         if broker_field in data and not sts:
-            store_value(mod, field, data[broker_field])
+            store_value(mod, field, data[broker_field], reverse)
         elif field in data and not sts:
-            store_value(mod, field, data[field])
+            store_value(mod, field, data[field], reverse)
 
     if save:
         model_instance.save()
@@ -623,6 +610,69 @@ def load_data_into_model(model_instance, data, **kwargs):
         return mod
     else:
         return model_instance
+
+
+def get_submission_attributes(broker_submission_id, submission_data, delete=False):
+    """
+    For a specified broker submission, return the existing corresponding usaspending
+    submission record or create and return a new one.
+    """
+    # check if we already have an entry for this broker submission id; if not, create one
+    submission_attributes, created = SubmissionAttributes.objects.get_or_create(
+        broker_submission_id=broker_submission_id)
+
+    if created:
+        # this is the first time we're loading this broker submission
+        logger.info('Creating broker submission id {}'.format(broker_submission_id))
+
+    elif delete:
+        # we've already loaded this broker submission and are being asked to delete it.
+        # if there's another submission that references this one as a "previous submission"
+        # do not proceed.
+        # TODO: now that we're chaining submisisons together, get clarification on
+        # what should happen when a submission in the middle of the chain is deleted
+        downstream_submission = SubmissionAttributes.objects.filter(previous_submission=submission_attributes).first()
+        if downstream_submission is not None:
+            message = (
+                'Broker submission {} (API submission id = {}) has a downstream submission (id={}) and '
+                'cannot be deleted'.format(
+                    broker_submission_id,
+                    submission_attributes.submission_id,
+                    downstream_submission.submission_id)
+            )
+            raise ValueError(message)
+
+        logger.info('Broker bubmission id {} already exists. It will be deleted.'.format(broker_submission_id))
+        submission_attributes.delete()
+
+    else:
+        # broker submission has already been loaded, but delete flag was not passed
+        logger.info('Broker submission id {} already exists. Records will be updated.'.format(broker_submission_id))
+
+    # Find the previous submission for this CGAC and fiscal year (if there is one)
+    previous_submission = get_previous_submission(
+        submission_data['cgac_code'],
+        submission_data['reporting_fiscal_year'],
+        submission_data['reporting_fiscal_period'])
+
+    # Update and save submission attributes
+    field_map = {
+        'reporting_period_start': 'reporting_start_date',
+        'reporting_period_end': 'reporting_end_date',
+        'quarter_format_flag': 'is_quarter_format',
+    }
+
+    # Create our value map - specific data to load
+    value_map = {
+        'broker_submission_id': broker_submission_id,
+        'reporting_fiscal_quarter': get_fiscal_quarter(
+            submission_data['reporting_fiscal_period']),
+        'previous_submission': None if previous_submission is None else previous_submission
+    }
+
+    return load_data_into_model(
+        submission_attributes, submission_data,
+        field_map=field_map, value_map=value_map, save=True)
 
 
 def get_or_create_location(location_map, row, location_value_map={}):
@@ -660,6 +710,8 @@ def get_or_create_location(location_map, row, location_value_map={}):
             'country_name': None
         })
 
+    row = canonicalize_location_dict(row)
+
     location_data = load_data_into_model(
         Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
 
@@ -680,10 +732,11 @@ def get_or_create_location(location_map, row, location_value_map={}):
         return None, None
 
 
-def store_value(model_instance_or_dict, field, value):
+def store_value(model_instance_or_dict, field, value, reverse=None):
     if value is None:
         return
-    # print('Loading ' + str(field) + ' with ' + str(value))
+    if reverse and reverse.search(field):
+        value = -1 * Decimal(value)
     if isinstance(model_instance_or_dict, dict):
         model_instance_or_dict[field] = value
     else:
