@@ -23,7 +23,8 @@ from usaspending_api.financial_activities.models import (
 from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
+from usaspending_api.etl.award_helpers import (
+    get_award_financial_transaction, update_awards, update_contract_awards)
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 from usaspending_api.references.helpers import canonicalize_location_dict
 
@@ -545,21 +546,37 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
 
     for row in award_financial_data:
-        try:
-            # Check and see if there is an entry for this TAS
-            treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
-            if treasury_account is None:
-                raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
-            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            created, award = Award.get_or_create_summary_award(
-                piid=row.get('piid'),
-                fain=row.get('fain'),
-                uri=row.get('uri'),
-                parent_award_id=row.get('parent_award_id'),
-                use_cache=False)
-            award.latest_submission = submission_attributes
-        except:   # TODO: silently swallowing a bare exception is bad mojo
-            continue
+        # Check and see if there is an entry for this TAS
+        treasury_account = get_treasury_appropriation_account_tas_lookup(
+            row.get('tas_id'), db_cursor)
+        if treasury_account is None:
+            raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+
+        # Find a matching transaction record, so we can use its
+        # subtier agency information to match to (or create) an Award record
+        txn = get_award_financial_transaction(
+            row.get('agency_identifier'),  # cgac from the record's TAS
+            piid=row.get('pidd'),
+            parent_award_id=row.get('parent_award_id'),
+            fain=row.get('fain'),
+            uri=row.get('uri')
+        )
+        if txn is not None:
+            # We found a matching transaction, so grab its awarding agency
+            # info and pass it get_or_create_summary_award
+            awarding_agency = txn.awarding_agency
+        else:
+            awarding_agency = None
+
+        # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+        created, award = Award.get_or_create_summary_award(
+            awarding_agency=awarding_agency,
+            piid=row.get('piid'),
+            fain=row.get('fain'),
+            uri=row.get('uri'),
+            parent_award_id=row.get('parent_award_id'),
+            use_cache=False)
+        award.latest_submission = submission_attributes
 
         award_financial_data = FinancialAccountsByAwards()
 
