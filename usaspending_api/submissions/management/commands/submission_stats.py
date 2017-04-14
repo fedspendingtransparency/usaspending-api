@@ -61,8 +61,5 @@ def get_submission_stats(submission):
 
     stats = [(m._meta.model_name, m.objects.filter(
         submission=submission).count()) for m in models]
-    award_stats = (Award._meta.model_name, Award.objects.filter(
-        latest_submission=submission).count())
-    stats.append(award_stats)
     stats = OrderedDict(stats)
     return stats

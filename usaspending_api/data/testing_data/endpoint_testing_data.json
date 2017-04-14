@@ -611,7 +611,6 @@
             "funding_agency": null,
             "recipient": null,
             "place_of_performance": null,
-            "latest_submission": 12,
             "latest_transaction": null
         },
         "status_code": 200,

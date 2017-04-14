@@ -582,7 +582,6 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
             uri=row.get('uri'),
             parent_award_id=row.get('parent_award_id'),
             use_cache=False)
-        award.latest_submission = submission_attributes
 
         award_financial_data = FinancialAccountsByAwards()
 

@@ -19,8 +19,6 @@ SUBMISSION_MODELS = [AppropriationAccountBalances,
                      TransactionAssistance,
                      FinancialAccountsByProgramActivityObjectClass]
 
-LATEST_SUBMISSION_MODELS = [Award]
-
 
 @pytest.fixture
 def submission_data():
@@ -29,7 +27,6 @@ def submission_data():
 
     mommy.make("accounts.AppropriationAccountBalances", submission=submission_123, _quantity=10)
     mommy.make("awards.FinancialAccountsByAwards", submission=submission_123, _quantity=10)
-    mommy.make("awards.Award", latest_submission=submission_123, _quantity=10)
     # Making child transaction items creates the parent by default
     mommy.make("awards.TransactionContract", submission=submission_123, transaction__submission=submission_123, _quantity=10)
     mommy.make("awards.TransactionAssistance", submission=submission_123, transaction__submission=submission_123, _quantity=10)
@@ -37,7 +34,6 @@ def submission_data():
 
     mommy.make("accounts.AppropriationAccountBalances", submission=submission_456, _quantity=10)
     mommy.make("awards.FinancialAccountsByAwards", submission=submission_456, _quantity=10)
-    mommy.make("awards.Award", latest_submission=submission_456, _quantity=10)
     # Making child transaction items creates the parent by default
     mommy.make("awards.TransactionContract", submission=submission_456, transaction__submission=submission_456, _quantity=10)
     mommy.make("awards.TransactionAssistance", submission=submission_456, transaction__submission=submission_456, _quantity=10)
@@ -48,9 +44,7 @@ def submission_data():
 def test_verify_fixture(client, submission_data):
     # Verify our db is set up properly
     verify_zero_count(SUBMISSION_MODELS, 123, eq_zero=False)
-    verify_zero_count(LATEST_SUBMISSION_MODELS, 123, "latest_submission", eq_zero=False)
     verify_zero_count(SUBMISSION_MODELS, 456, eq_zero=False)
-    verify_zero_count(LATEST_SUBMISSION_MODELS, 456, "latest_submission", eq_zero=False)
 
 
 @pytest.mark.django_db
@@ -58,16 +52,13 @@ def test_rm_submission(client, submission_data):
     call_command("rm_submission", 123)
 
     verify_zero_count(SUBMISSION_MODELS, 123)
-    verify_zero_count(LATEST_SUBMISSION_MODELS, 123, "latest_submission")
 
     # Make sure we still have our other submission
     verify_zero_count(SUBMISSION_MODELS, 456, eq_zero=False)
-    verify_zero_count(LATEST_SUBMISSION_MODELS, 456, "latest_submission", eq_zero=False)
 
     call_command("rm_submission", 456)
 
     verify_zero_count(SUBMISSION_MODELS, 456)
-    verify_zero_count(LATEST_SUBMISSION_MODELS, 456, "latest_submission")
 
 
 def verify_zero_count(models, submission_id, field="submission", eq_zero=True):
