@@ -159,6 +159,7 @@ def test_get_or_create_summary_award():
     sta1 = mommy.make(SubtierAgency, subtier_code='1234', name='Bureau of Effective Unit Tests')
     tta1 = mommy.make(ToptierAgency, cgac_code='020', name='Department of Unit Tests')
     a1 = mommy.make(Agency, id=1, toptier_agency=tta1, subtier_agency=sta1)
+    a2 = mommy.make(Agency, id=2, toptier_agency=tta1)
 
     # match on awarding agency and piid
     m1 = mommy.make('awards.award', piid='DUT123', awarding_agency=a1)
@@ -176,14 +177,14 @@ def test_get_or_create_summary_award():
     t3 = Award.get_or_create_summary_award(fain='DUT789', awarding_agency=a1)[1]
     assert t3 == m3
 
-    # match on awarding agency and fain + uri (fain takes precedence)
-    m4 = mommy.make('awards.award', fain='DUT789', uri='123-abc-456', awarding_agency=a1)
-    t4 = Award.get_or_create_summary_award(fain='DUT789', uri='123-abc-456', awarding_agency=a1)[1]
+    # match on awarding agency and fain + uri (fain takes precedence, same uri)
+    m4 = mommy.make('awards.award', fain='DUT987', uri='123-abc-456', awarding_agency=a1)
+    t4 = Award.get_or_create_summary_award(fain='DUT987', uri='123-abc-456', awarding_agency=a1)[1]
     assert t4 == m4
 
-    # match on awarding agency and fain + uri (fain takes precedence)
-    m5 = mommy.make('awards.award', fain='DUT789', uri='123-abc-456', awarding_agency=a1)
-    t5 = Award.get_or_create_summary_award(fain='DUT789', uri='123-abc-456-a-different-uri', awarding_agency=a1)[1]
+    # match on awarding agency and fain + uri (fain takes precedence, different uri)
+    m5 = mommy.make('awards.award', fain='DUT123456', uri='123-abc-456', awarding_agency=a1)
+    t5 = Award.get_or_create_summary_award(fain='DUT123456', uri='123-abc-456-a-different-uri', awarding_agency=a1)[1]
     assert t5 == m5
 
     # match on awarding agency + uri
