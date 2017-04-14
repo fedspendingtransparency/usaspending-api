@@ -170,7 +170,6 @@ In this section you will find definitions for common terms used in the API. For 
 | certified_date | Date | The date this record was certified |
 | create_date | Datetime | The date this record was created in the API |
 | update_date | Datetime | The last time this record was updated in the API |
-| latest_submission | Nested Object | The <a href="#submission">submission</a> attribute object that created this award |
 | latest_transaction | Nested Object | The latest <a href="#transaction">transaction</a> by action_date associated with this award |
 
 #### Transaction Endpoints <a name="transaction"></a>

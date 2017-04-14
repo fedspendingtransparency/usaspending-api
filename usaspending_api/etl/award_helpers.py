@@ -63,7 +63,6 @@ def update_awards(award_tuple=None):
         'description = e.description, '
         'funding_agency_id = l.funding_agency_id, '
         'last_modified_date = l.last_modified_date, '
-        'latest_submission_id = l.submission_id, '
         'period_of_performance_current_end_date = l.period_of_performance_current_end_date, '
         'period_of_performance_start_date = e.period_of_performance_start_date, '
         'place_of_performance_id = l.place_of_performance_id, '
