@@ -386,10 +386,7 @@ class LegalEntity(DataSourceTrackedModel):
     def save(self, *args, **kwargs):
         super(LegalEntity, self).save(*args, **kwargs)
 
-        try:
-            self.officers.exists()
-        except LegalEntityOfficers.DoesNotExist:
-            LegalEntityOfficers.objects.create(legal_entity=self)
+        LegalEntityOfficers.objects.get_or_create(legal_entity=self)
 
     @staticmethod
     def get_default_fields(path=None):
