@@ -225,10 +225,10 @@ def test_get_or_create_summary_award():
     m12 = mommy.make('awards.award', piid='thing1', parent_award=pa12)
     t12 = Award.get_or_create_summary_award(piid='thing2', parent_award_id='thingmom')
     assert len(t12[0]) == 1
-    assert m12 != t12
+    assert m12 != t12[1]
 
     # matching piid + non-matching parent
     pa13 = mommy.make('awards.award', piid='piidthing')
     m13 = mommy.make('awards.award', piid='0005', parent_award=pa13)
-    t13 = Award.get_or_create_summary_award(piid='0005', parent_award_id='anotherpiidthing')
+    t13 = Award.get_or_create_summary_award(piid='0005', parent_award_id='anotherpiidthing')[1]
     assert t13 != m13
