@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.management.base import BaseCommand
 from django.core.serializers.json import json
 from django.db import connections
-from django.db.models import Q
+from django.db.models import F, Q
 from django.core.cache import caches
 
 from usaspending_api.accounts.models import (
@@ -554,9 +554,10 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
 
         # Find a matching transaction record, so we can use its
         # subtier agency information to match to (or create) an Award record
+        awarding_cgac = row.get('agency_identifier')  # cgac from record's TAS
         txn = get_award_financial_transaction(
-            row.get('agency_identifier'),  # cgac from the record's TAS
-            piid=row.get('pidd'),
+            awarding_cgac,
+            piid=row.get('piid'),
             parent_award_id=row.get('parent_award_id'),
             fain=row.get('fain'),
             uri=row.get('uri')
@@ -566,7 +567,12 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
             # info and pass it get_or_create_summary_award
             awarding_agency = txn.awarding_agency
         else:
-            awarding_agency = None
+            # No matching transaction found, so find/create Award by using
+            # topiter agency only, since CGAC code is the only piece of
+            # awarding agency info that we have.
+            awarding_agency = Agency.objects.filter(
+                toptier_agency__cgac_code=awarding_cgac,
+                subtier_agency__name=F('toptier_agency__name')).first()
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         created, award = Award.get_or_create_summary_award(
@@ -781,7 +787,6 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
                 toptier_agency__cgac_code=row['awarding_agency_code'],
                 subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]) \
             .first()
-
         created, award = Award.get_or_create_summary_award(
             awarding_agency=awarding_agency,
             piid=row.get('piid'),

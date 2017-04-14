@@ -140,7 +140,7 @@ def test_load_submission_command_program_activity_uniqueness(endpoint_data, part
 
     code_0001s = RefProgramActivity.objects.filter(program_activity_code='0001')
     assert code_0001s.count() == 3
-    assert not code_0001s.filter(responsible_agency_id=19).exists()
+    assert not code_0001s.filter(responsible_agency_id='019').exists()
     call_command('load_submission', '-1', '--delete', '--test')
     assert code_0001s.count() == 4
-    assert code_0001s.filter(responsible_agency_id=19).exists()
+    assert code_0001s.filter(responsible_agency_id='019').exists()
