@@ -6,6 +6,7 @@ import re
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.core.serializers.json import json
 from django.db import connections
@@ -44,29 +45,21 @@ logger = logging.getLogger('console')
 
 class Command(BaseCommand):
     """
-    This command will load a single submission from the data broker database into
-    the data store using SQL commands to pull the raw data from the broker and
-    by creating new django model instances for each object
+    This command will load a single submission from the DATA Act broker. If
+    we've already loaded the specified broker submisison, this command
+    will remove the existing records before loading them again.
     """
-    help = "Loads a single submission from the configured data broker database"
+    help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable must set so we can pull submission data from their db."
 
     def add_arguments(self, parser):
-        parser.add_argument('submission_id', nargs=1, help='the submission id to load', type=int)
-
-        parser.add_argument(
-            '--delete',
-            action='store_true',
-            dest='delete',
-            default=False,
-            help='Delete the submission if it exists instead of updating it',
-        )
+        parser.add_argument('submission_id', nargs=1, help='the data broker submission id to load', type=int)
 
         parser.add_argument(
             '--test',
             action='store_true',
             dest='test',
             default=False,
-            help='Runs the submission loader in test mode, sets the delete flag enabled, and uses stored data rather than pulling from a database'
+            help='Runs the submission loader in test mode and uses stored data rather than pulling from a database'
         )
 
     def handle(self, *args, **options):
@@ -83,7 +76,6 @@ class Command(BaseCommand):
                 logger.critical(print(err))
                 return
         else:
-            options['delete'] = True
             db_cursor = PhonyCursor()
 
         # Grab the submission id
@@ -104,7 +96,7 @@ class Command(BaseCommand):
         submission_data = submission_data[0]
         broker_submission_id = submission_data['submission_id']
         del submission_data['submission_id']  # To avoid collisions with the newer PK system
-        submission_attributes = get_submission_attributes(broker_submission_id, submission_data, options['delete'])
+        submission_attributes = get_submission_attributes(broker_submission_id, submission_data)
 
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
@@ -314,7 +306,7 @@ def load_data_into_model(model_instance, data, **kwargs):
         return model_instance
 
 
-def get_submission_attributes(broker_submission_id, submission_data, delete=False):
+def get_submission_attributes(broker_submission_id, submission_data):
     """
     For a specified broker submission, return the existing corresponding usaspending
     submission record or create and return a new one.
@@ -327,8 +319,8 @@ def get_submission_attributes(broker_submission_id, submission_data, delete=Fals
         # this is the first time we're loading this broker submission
         logger.info('Creating broker submission id {}'.format(broker_submission_id))
 
-    elif delete:
-        # we've already loaded this broker submission and are being asked to delete it.
+    else:
+        # we've already loaded this broker submission, so delete it before reloading
         # if there's another submission that references this one as a "previous submission"
         # do not proceed.
         # TODO: now that we're chaining submisisons together, get clarification on
@@ -345,11 +337,7 @@ def get_submission_attributes(broker_submission_id, submission_data, delete=Fals
             raise ValueError(message)
 
         logger.info('Broker bubmission id {} already exists. It will be deleted.'.format(broker_submission_id))
-        submission_attributes.delete()
-
-    else:
-        # broker submission has already been loaded, but delete flag was not passed
-        logger.info('Broker submission id {} already exists. Records will be updated.'.format(broker_submission_id))
+        call_command('rm_submission', broker_submission_id)
 
     # Find the previous submission for this CGAC and fiscal year (if there is one)
     previous_submission = get_previous_submission(
