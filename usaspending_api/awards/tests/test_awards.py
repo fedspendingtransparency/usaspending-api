@@ -150,3 +150,21 @@ def test_award_hash_ineq_fain():
     m1 = mommy.make('awards.award', fain='ABC', piid=None, uri=None, _fill_optional=True)
     m2 = mommy.make('awards.award', fain='XYZ', piid=None, uri=None, _fill_optional=True)
     assert m1.manual_hash() != m2.manual_hash()
+
+
+@pytest.mark.skip()
+@pytest.mark.django_db
+def test_get_or_create_summary_award():
+    """Test award record lookup."""
+
+    # match on awarding agency and piid (+ extra fain to make sure it's ignored)
+    # match on awarding agency and piid + parent award
+    # match on awarding agency and fain
+    # match on awarding agency and fain + uri (fain takes precedence)
+    # match on awarding agency + uri
+    # match on awarding toptier agency only
+    # match on no awarding agency
+    # non-match with piid creates new award record
+    # non-match with piid + non-matching parent award creates two new awards
+    # non-match with piid + matching parent award creates one new award
+    # matching piid + non-matching parent ???
