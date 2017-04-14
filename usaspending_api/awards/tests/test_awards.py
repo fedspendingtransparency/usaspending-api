@@ -6,6 +6,7 @@ from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.awards.models import Award
+from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
 @pytest.mark.django_db
@@ -152,15 +153,39 @@ def test_award_hash_ineq_fain():
     assert m1.manual_hash() != m2.manual_hash()
 
 
-@pytest.mark.skip()
 @pytest.mark.django_db
 def test_get_or_create_summary_award():
     """Test award record lookup."""
+    sta1 = mommy.make(SubtierAgency, subtier_code='1234', name='Bureau of Effective Unit Tests')
+    tta1 = mommy.make(ToptierAgency, cgac_code='020', name='Department of Unit Tests')
+    a1 = mommy.make(Agency, id=1, toptier_agency=tta1, subtier_agency=sta1)
 
-    # match on awarding agency and piid (+ extra fain to make sure it's ignored)
+    # match on awarding agency and piid
+    m1 = mommy.make('awards.award', piid='DUT123', awarding_agency=a1)
+    t1 = Award.get_or_create_summary_award(piid='DUT123', awarding_agency=a1)[1]
+    assert t1 == m1
+
     # match on awarding agency and piid + parent award
+    pa1 = mommy.make('awards.award', piid='IDVDUT456')
+    m2 = mommy.make('awards.award', piid='DUT456', parent_award=pa1, awarding_agency=a1)
+    t2 = Award.get_or_create_summary_award(piid='DUT456', parent_award_id='IDVDUT456', awarding_agency=a1)[1]
+    assert t2 == m2
+
     # match on awarding agency and fain
+    m3 = mommy.make('awards.award', fain='DUT789', awarding_agency=a1)
+    t3 = Award.get_or_create_summary_award(fain='DUT789', awarding_agency=a1)[1]
+    assert t3 == m3
+
     # match on awarding agency and fain + uri (fain takes precedence)
+    m4 = mommy.make('awards.award', fain='DUT789', uri='123-abc-456', awarding_agency=a1)
+    t4 = Award.get_or_create_summary_award(fain='DUT789', uri='123-abc-456', awarding_agency=a1)[1]
+    assert t4 == m4
+
+    # match on awarding agency and fain + uri (fain takes precedence)
+    m5 = mommy.make('awards.award', fain='DUT789', uri='123-abc-456', awarding_agency=a1)
+    t5 = Award.get_or_create_summary_award(fain='DUT789', uri='123-abc-456-a-different-uri', awarding_agency=a1)[1]
+    assert t5 == m5
+
     # match on awarding agency + uri
     # match on awarding toptier agency only
     # match on no awarding agency
