@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
-    Transaction, TransactionAssistance, TransactionContract)
+    Transaction, TransactionAssistance, TransactionContract, SubAward)
 from usaspending_api.accounts.serializers import TasSerializer
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import ProgramActivitySerializer, ObjectClassSerializer
@@ -90,6 +90,13 @@ class TransactionSerializer(LimitableSerializer):
         }
 
 
+class SubAwardSerializer(LimitableSerializer):
+
+    class Meta:
+        model = SubAward
+        fields = '__all__'
+
+
 class AwardSerializer(LimitableSerializer):
 
     class Meta:
@@ -117,6 +124,10 @@ class AwardSerializer(LimitableSerializer):
                 "class": TransactionSerializer,
                 "kwargs": {"read_only": True}
             },
+            "subawards": {
+                "class": SubAwardSerializer,
+                "kwargs": {"many": True, "read_only": True}
+            }
         }
 
     date_signed__fy = serializers.SerializerMethodField()
