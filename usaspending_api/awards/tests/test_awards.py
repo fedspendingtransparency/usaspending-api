@@ -188,9 +188,47 @@ def test_get_or_create_summary_award():
     assert t5 == m5
 
     # match on awarding agency + uri
+    m6 = mommy.make('awards.award', uri='abc-123-def', awarding_agency=a1)
+    t6 = Award.get_or_create_summary_award(uri='abc-123-def', awarding_agency=a1)[1]
+    assert t6 == m6
+
     # match on awarding toptier agency only
-    # match on no awarding agency
+    m7 = mommy.make('awards.award', uri='kkk-bbb-jjj', awarding_agency=a2)
+    t7 = Award.get_or_create_summary_award(uri='kkk-bbb-jjj', awarding_agency=a2)[1]
+    assert m7 == t7
+
+    # match on no awarding agency, uri
+    m8 = mommy.make('awards.award', uri='mmm-fff-ddd')
+    t8 = Award.get_or_create_summary_award(uri='mmm-fff-ddd')[1]
+    assert m8 == t8
+
+    # match on no awarding agency, fain
+    m9 = mommy.make('awards.award', fain='DUTDUTDUT')
+    t9 = Award.get_or_create_summary_award(fain='DUTDUTDUT')[1]
+    assert m9 == t9
+
     # non-match with piid creates new award record
+    m10 = mommy.make('awards.award', piid='imapiid')
+    t10 = Award.get_or_create_summary_award(piid='imadifferentpiid')
+    assert len(t10[0]) == 1
+    assert m10 != t10[1]
+
     # non-match with piid + non-matching parent award creates two new awards
+    pa11 = mommy.make('awards.award', piid='momofpiidsarefun')
+    m11 = mommy.make('awards.award', piid='piidsarefun', parent_award=pa11)
+    t11 = Award.get_or_create_summary_award(piid='piidsarefun', parent_award_id='dadofpiidsarefun')
+    assert len(t11[0]) == 2
+    assert m11 != t11[1]
+
     # non-match with piid + matching parent award creates one new award
-    # matching piid + non-matching parent ???
+    pa12 = mommy.make('awards.award', piid='thingmom')
+    m12 = mommy.make('awards.award', piid='thing1', parent_award=pa12)
+    t12 = Award.get_or_create_summary_award(piid='thing2', parent_award_id='thingmom')
+    assert len(t12[0]) == 1
+    assert m12 != t12
+
+    # matching piid + non-matching parent
+    pa13 = mommy.make('awards.award', piid='piidthing')
+    m13 = mommy.make('awards.award', piid='0005', parent_award=pa13)
+    t13 = Award.get_or_create_summary_award(piid='0005', parent_award_id='anotherpiidthing')
+    assert t13 != m13
