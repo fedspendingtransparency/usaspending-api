@@ -177,14 +177,14 @@ def test_get_or_create_summary_award():
     assert t3 == m3
 
     # match on awarding agency and fain + uri (fain takes precedence)
-    # m4 = mommy.make('awards.award', fain='DUT789', uri='123-abc-456', awarding_agency=a1)
-    # t4 = Award.get_or_create_summary_award(fain='DUT789', uri='123-abc-456', awarding_agency=a1)[1]
-    # assert t4 == m4
+    m4 = mommy.make('awards.award', fain='DUT789', uri='123-abc-456', awarding_agency=a1)
+    t4 = Award.get_or_create_summary_award(fain='DUT789', uri='123-abc-456', awarding_agency=a1)[1]
+    assert t4 == m4
 
     # match on awarding agency and fain + uri (fain takes precedence)
-    # m5 = mommy.make('awards.award', fain='DUT789', uri='123-abc-456', awarding_agency=a1)
-    # t5 = Award.get_or_create_summary_award(fain='DUT789', uri='123-abc-456-a-different-uri', awarding_agency=a1)[1]
-    # assert t5 == m5
+    m5 = mommy.make('awards.award', fain='DUT789', uri='123-abc-456', awarding_agency=a1)
+    t5 = Award.get_or_create_summary_award(fain='DUT789', uri='123-abc-456-a-different-uri', awarding_agency=a1)[1]
+    assert t5 == m5
 
     # match on awarding agency + uri
     # match on awarding toptier agency only
