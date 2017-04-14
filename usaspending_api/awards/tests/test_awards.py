@@ -157,9 +157,15 @@ def test_award_hash_ineq_fain():
 def test_get_or_create_summary_award():
     """Test award record lookup."""
     sta1 = mommy.make(SubtierAgency, subtier_code='1234', name='Bureau of Effective Unit Tests')
+    sta2 = mommy.make(SubtierAgency, subtier_code='5678', name='Bureau of Breaky Unit Tests')
+    sta3 = mommy.make(SubtierAgency, subtier_code='0509', name='Bureau of Testing Bureaucracy')
     tta1 = mommy.make(ToptierAgency, cgac_code='020', name='Department of Unit Tests')
+    tta2 = mommy.make(ToptierAgency, cgac_code='089', name='Department of Integrated Tests')
+
     a1 = mommy.make(Agency, id=1, toptier_agency=tta1, subtier_agency=sta1)
     a2 = mommy.make(Agency, id=2, toptier_agency=tta1)
+    a3 = mommy.make(Agency, id=3, toptier_agency=tta1, subtier_agency=sta2)
+    a4 = mommy.make(Agency, id=4, toptier_agency=tta2, subtier_agency=sta3)
 
     # match on awarding agency and piid
     m1 = mommy.make('awards.award', piid='DUT123', awarding_agency=a1)
@@ -232,3 +238,20 @@ def test_get_or_create_summary_award():
     m13 = mommy.make('awards.award', piid='0005', parent_award=pa13)
     t13 = Award.get_or_create_summary_award(piid='0005', parent_award_id='anotherpiidthing')[1]
     assert t13 != m13
+
+    # matching piid and parent award id but mismatched subtier agency, same top tier agency
+    pa14 = mommy.make('awards.award', piid='imalittlepiid', awarding_agency=a1)
+    m14 = mommy.make('awards.award', piid='shortandstout', parent_award=pa14, awarding_agency=a1)
+    t14 = Award.get_or_create_summary_award(piid='shortandstout', parent_award_id='imalittlepiid', awarding_agency=a3)[1]
+    assert t14 != m14
+
+    # matching fain but mismatched subtier agency, same top tier agency
+    m15 = mommy.make('awards.award', fain='imalittlefain', parent_award=pa14, awarding_agency=a1)
+    t15 = Award.get_or_create_summary_award(fain='imalittlefain', awarding_agency=a3)[1]
+    assert t15 != m15
+
+    # matching piid and parent award but mismatched subtier and toptier agency
+    pa16 = mommy.make('awards.Award', piid='imjustapiidparent', awarding_agency=a3)
+    m16 = mommy.make('awards.Award', piid='imjustapiidchild', awarding_agency=a3)
+    t16 = Award.get_or_create_summary_award(piid='imjustapiidchild', parent_award_id='imjustapiidparent', awarding_agency=a4)[1]
+    assert t16 != m16
