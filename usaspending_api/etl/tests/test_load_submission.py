@@ -41,7 +41,7 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     Test the submission loader to validate the ETL process
     """
     # Load the RefObjClass and ProgramActivityCode data
-    call_command('load_submission', '-1', '--delete', '--test')
+    call_command('load_submission', '-1', '--test')
     assert SubmissionAttributes.objects.count() == 1
     assert AppropriationAccountBalances.objects.count() == 1
     assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 10
@@ -67,7 +67,7 @@ def test_load_submission_command(endpoint_data, partially_flushed):
 
 
 @pytest.mark.django_db
-def test_get_get_submission_attributes():
+def test_get_submission_attributes():
     submission_data = {
         'cgac_code': 'ABC',
         'reporting_fiscal_year': 2016,
@@ -91,23 +91,17 @@ def test_get_get_submission_attributes():
     assert sub.reporting_period_end == date(2016, 6, 1)
     assert sub.previous_submission is None
 
-    # change submission data but don't send --delete directive
-    old_submission_id = sub.submission_id
+    # test re-running the submission
+    old_create_date = sub.create_date
     submission_data['cgac_code'] = 'XYZ'
-    get_submission_attributes(11111, submission_data)
-    sub = SubmissionAttributes.objects.get(broker_submission_id=11111)
-    # this is the same submission record we created previously
-    assert sub.submission_id == old_submission_id
-    # record should have the update cgac info
-    assert sub.cgac_code == 'XYZ'
-
-    # test the --delete directive
-    get_submission_attributes(11111, submission_data, True)
+    sub = get_submission_attributes(11111, submission_data)
     # there should only be one submission in the db right now
     assert SubmissionAttributes.objects.all().count() == 1
     # submission record has been deleted and replaced
     sub = SubmissionAttributes.objects.get(broker_submission_id=11111)
-    assert sub.submission_id != old_submission_id
+    assert sub.create_date > old_create_date
+    # record should have the updated cgac info
+    assert sub.cgac_code == 'XYZ'
 
     # insert a submission for the following quarter
     new_submission_data = {
@@ -118,17 +112,17 @@ def test_get_get_submission_attributes():
         'reporting_start_date': date(2016, 7, 1),
         'reporting_end_date': date(2016, 9, 1),
     }
-    get_submission_attributes(22222, new_submission_data, True)
+    get_submission_attributes(22222, new_submission_data)
 
     # there should now be two submissions in the db
     assert SubmissionAttributes.objects.all().count() == 2
     sub2 = SubmissionAttributes.objects.get(broker_submission_id=22222)
     # newer submission should recognize the first submission as it's previous sub
     assert sub2.previous_submission == sub
-    # trying to delete the first submission should fail now that it has
+    # trying to replace the first submission should fail now that it has
     # a "downstream" submission
     with pytest.raises(ValueError):
-        get_submission_attributes(11111, new_submission_data, True)
+        get_submission_attributes(11111, new_submission_data)
 
 
 @pytest.mark.django_db
@@ -141,6 +135,6 @@ def test_load_submission_command_program_activity_uniqueness(endpoint_data, part
     code_0001s = RefProgramActivity.objects.filter(program_activity_code='0001')
     assert code_0001s.count() == 3
     assert not code_0001s.filter(responsible_agency_id='019').exists()
-    call_command('load_submission', '-1', '--delete', '--test')
+    call_command('load_submission', '-1', '--test')
     assert code_0001s.count() == 4
     assert code_0001s.filter(responsible_agency_id='019').exists()
