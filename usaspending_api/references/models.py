@@ -29,15 +29,12 @@ class RefCityCountyCode(models.Model):
     def canonicalize(cls):
         """
         Transforms the values in `city_name` and `county_name`
-        to their canonicalized (uppercase) form.
+        to their canonicalized (uppercase, regulare spaced) form.
         """
-        cls.objects.update(city_name=canonicalize_string(F('city_name')),
-            county_name=canonicalize_string(F('county_name')))
-            
-        """
-        cls.objects.update(city_name=Upper(F('city_name')),
-            county_name=Upper(F('county_name')), )
-            """
+        for obj in cls.objects.all():
+            obj.city_name = canonicalize_string(obj.city_name)
+            obj.county_name = canonicalize_string(obj.county_name)
+            obj.save()
 
 
 class RefCountryCode(models.Model):
