@@ -151,6 +151,10 @@ class Award(DataSourceTrackedModel):
     latest_submission = models.ForeignKey(SubmissionAttributes, null=True, help_text="The submission attribute object that created this award")
     latest_transaction = models.ForeignKey("awards.Transaction", related_name="latest_for_award", null=True, help_text="The latest transaction by action_date associated with this award")
 
+    # Subaward aggregates
+    total_subaward_amount = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    subaward_count = models.IntegerField(default=0)
+
     objects = models.Manager()
     nonempty = AwardManager()
 
@@ -493,30 +497,28 @@ class TransactionAssistance(DataSourceTrackedModel):
         db_table = 'transaction_assistance'
 
 
-class SubAward(DataSourceTrackedModel):
-    sub_award_id = models.AutoField(primary_key=True, verbose_name="Sub-Award ID")
-    award = models.ForeignKey(Award, models.CASCADE)
-    legal_entity = models.ForeignKey(LegalEntity, models.CASCADE)
-    sub_recipient_unique_id = models.CharField(max_length=9, blank=True, null=True)
-    sub_recipient_ultimate_parent_unique_id = models.CharField(max_length=9, blank=True, null=True)
-    sub_recipient_ultimate_parent_name = models.CharField(max_length=120, blank=True, null=True)
-    subawardee_business_type = models.CharField(max_length=255, blank=True, null=True)
-    sub_recipient_name = models.CharField(max_length=120, blank=True, null=True)
-    subcontract_award_amount = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
-    cfda_number_and_title = models.CharField(max_length=255, blank=True, null=True)
-    prime_award_report_id = models.CharField(max_length=40, blank=True, null=True)
-    award_report_month = models.CharField(max_length=25, blank=True, null=True)
-    award_report_year = models.CharField(max_length=4, blank=True, null=True)
-    rec_model_question1 = models.CharField(max_length=1, blank=True, null=True)
-    rec_model_question2 = models.CharField(max_length=1, blank=True, null=True)
-    subaward_number = models.CharField(max_length=32, blank=True, null=True)
-    reporting_period_start = models.DateField(blank=True, null=True)
-    reporting_period_end = models.DateField(blank=True, null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
-    certified_date = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
+class Subaward(DataSourceTrackedModel):
+    # Foreign keys
+    award = models.ForeignKey(Award, models.CASCADE, related_name="subawards")
+    recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
+    funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, null=True)
+    place_of_performance = models.ForeignKey(Location, models.DO_NOTHING, null=True)
+
+    subaward_number = models.IntegerField(db_index=True)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    description = models.TextField(null=True, blank=True)
+
+    recovery_model_question1 = models.TextField(null=True, blank=True)
+    recovery_model_question2 = models.TextField(null=True, blank=True)
+
+    action_date = models.DateField(blank=True, null=True)
+    award_report_fy_month = models.IntegerField()  # If this is 1 it should indicate the first month of the FY
+    award_report_fy_year = models.IntegerField()
+
+    naics = models.TextField(blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
+    naics_description = models.TextField(blank=True, null=True, verbose_name="NAICS Description", help_text="A plain text description of the NAICS code")
 
     class Meta:
         managed = True
-        db_table = 'sub_award'
