@@ -123,10 +123,6 @@ class AwardSerializer(LimitableSerializer):
             "latest_transaction": {
                 "class": TransactionSerializer,
                 "kwargs": {"read_only": True}
-            },
-            "subawards": {
-                "class": SubawardSerializer,
-                "kwargs": {"many": True, "read_only": True}
             }
         }
 
