@@ -1,8 +1,10 @@
 import logging
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, F
 from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.references.helpers import canonicalize_string
+from django.db.models.functions import Length, Upper
 
 
 class RefCityCountyCode(models.Model):
@@ -22,6 +24,17 @@ class RefCityCountyCode(models.Model):
     class Meta:
         managed = True
         db_table = 'ref_city_county_code'
+
+    @classmethod
+    def canonicalize(cls):
+        """
+        Transforms the values in `city_name` and `county_name`
+        to their canonicalized (uppercase, regulare spaced) form.
+        """
+        for obj in cls.objects.all():
+            obj.city_name = canonicalize_string(obj.city_name)
+            obj.county_name = canonicalize_string(obj.county_name)
+            obj.save()
 
 
 class RefCountryCode(models.Model):

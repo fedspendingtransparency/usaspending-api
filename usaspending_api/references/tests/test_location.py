@@ -2,7 +2,7 @@ from model_mommy import mommy
 import pytest
 
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
-from usaspending_api.references.models import Location
+from usaspending_api.references.models import Location, RefCityCountyCode
 
 
 @pytest.mark.django_db
@@ -86,3 +86,12 @@ def test_geocomplete_usage_flag():
     assert Location.objects.filter(recipient_flag=True).count() == 3
     assert len(response_recipient) == 4
     assert len(response_pop) == 3
+
+
+@pytest.mark.django_db
+def test_canonicalize_city_county():
+    mommy.make('references.RefCityCountyCode', _fill_optional=True, _quantity=3)
+    RefCityCountyCode.canonicalize()
+    for cccode in RefCityCountyCode.objects.all():
+        assert cccode.city_name == cccode.city_name.upper().strip()
+        assert cccode.county_name == cccode.county_name.upper().strip()
