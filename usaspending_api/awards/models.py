@@ -497,7 +497,7 @@ class TransactionAssistance(DataSourceTrackedModel):
         db_table = 'transaction_assistance'
 
 
-class SubAward(DataSourceTrackedModel):
+class Subaward(DataSourceTrackedModel):
     # Foreign keys
     award = models.ForeignKey(Award, models.CASCADE, related_name="subawards")
     recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
@@ -510,14 +510,14 @@ class SubAward(DataSourceTrackedModel):
     amount = models.DecimalField(max_digits=20, decimal_places=2)
     description = models.TextField(null=True, blank=True)
 
-    recovery_model_question1 = models.CharField(max_length=1, null=True, blank=True)
-    recovery_model_question2 = models.CharField(max_length=1, null=True, blank=True)
+    recovery_model_question1 = models.TextField(null=True, blank=True)
+    recovery_model_question2 = models.TextField(null=True, blank=True)
 
     action_date = models.DateField(blank=True, null=True)
-    award_report_month = models.IntegerField()
-    award_report_year = models.IntegerField()
+    award_report_fy_month = models.IntegerField()  # If this is 1 it should indicate the first month of the FY
+    award_report_fy_year = models.IntegerField()
 
-    naics = models.CharField(max_length=6, blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
+    naics = models.TextField(blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
     naics_description = models.TextField(blank=True, null=True, verbose_name="NAICS Description", help_text="A plain text description of the NAICS code")
 
     class Meta:
