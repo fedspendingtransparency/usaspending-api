@@ -276,7 +276,6 @@ class Command(BaseCommand):
         }
 
         for row in award_financial_assistance_data:
-
             legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
             # Create the legal entity if it doesn't exist
@@ -684,6 +683,8 @@ def get_or_create_location(location_map, row, location_value_map={}):
             and value = corresponding field name on the current row of data
         - row: the row of data currently being loaded
     """
+    row = canonicalize_location_dict(row)
+
     location_country = RefCountryCode.objects.filter(
         country_code=row[location_map.get('location_country_code')]).first()
 
@@ -709,8 +710,6 @@ def get_or_create_location(location_map, row, location_value_map={}):
             'location_country_code': None,
             'country_name': None
         })
-
-    row = canonicalize_location_dict(row)
 
     location_data = load_data_into_model(
         Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
