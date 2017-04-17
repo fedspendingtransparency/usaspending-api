@@ -158,21 +158,13 @@ def get_award_financial_transaction(
     txn = Transaction.objects.filter(
         awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
         contract_data__piid=piid,
-        contract_data__parent_award_id=parent_award_id,
-        assistance_data__fain=fain,
-        assistance_data__uri=uri) \
-        .order_by('-action_date').first()
+        contract_data__parent_award_id=parent_award_id
+        ).order_by('-action_date')
 
-    if txn is None and incoming_fain is not None and incoming_uri is not None:
-        # we didn't find a match and both fain and uri were supplied
-        # as parameters, now try searching by uri
-        uri = incoming_uri
-        txn = Transaction.objects.filter(
-            awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
-            contract_data__piid=piid,
-            contract_data__parent_award_id=parent_award_id,
-            assistance_data__fain=None,
-            assistance_data__uri=uri) \
-            .order_by('-action_date').first()
+    # Filter by fain (preferentially) or uri, if either is present
+    if incoming_fain is not None:
+        txn = txn.filter(assistance_data__fain=incoming_fain)
+    elif incoming_uri is not None:
+        txn = txn.filter(assistance_data__uri=incoming_uri)
 
-    return txn
+    return txn.first()
