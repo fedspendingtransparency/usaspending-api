@@ -321,10 +321,9 @@ class Command(BaseCommand):
                 value_map=parent_txn_value_map,
                 as_dict=True)
 
-            transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+            transaction_assistance = TransactionAssistance.get_or_create(**transaction_instance)
 
             fad_value_map = {
-                "transaction": transaction_instance,
                 "submission": submission_attributes,
                 "cfda": CFDAProgram.objects.filter(program_number=row['cfda_number']).first(),
                 'reporting_period_start': submission_attributes.reporting_period_start,
@@ -334,7 +333,7 @@ class Command(BaseCommand):
             }
 
             financial_assistance_data = load_data_into_model(
-                TransactionAssistance(), row,
+                transaction_assistance, row,
                 field_map=fad_field_map,
                 value_map=fad_value_map,
                 save=True)

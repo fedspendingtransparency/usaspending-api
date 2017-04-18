@@ -310,6 +310,21 @@ class Transaction(DataSourceTrackedModel):
             "assistance_data"  # must match related_name in TransactionAssistance
         ]
 
+
+    @classmethod
+    def get_or_create(cls, **kwargs):
+        transaction = cls.objects.filter(
+            award=kwargs.get('award'),
+            awarding_agency=kwargs.get('awarding_agency'),
+            modification_number=kwarge.get('modification_number')
+        ).first()
+        if transaction:
+            transaction.update(**kwargs)
+            # what about fields that are null?  Could they overwrite non-null?
+            return transaction
+        return cls(**kwargs)
+
+
     class Meta:
         db_table = 'transaction'
         index_together = ['award', 'action_date']
@@ -441,6 +456,15 @@ class TransactionContract(DataSourceTrackedModel):
             "naics_description",
             "product_or_service_code"
         ]
+
+
+    @classmethod
+    def get_or_create(cls, **kwargs):
+        transaction = Transaction.get_or_create(**kwargs)
+        if not transaction.contract_data:
+            transaction.contract_data = cls(transaction=transaction)
+        return transaction.contract_data
+
 
     class Meta:
         db_table = 'transaction_contract'
