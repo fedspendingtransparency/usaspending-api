@@ -205,14 +205,11 @@ def get_or_create_program_activity(row, submission_attributes):
                'main_account_code': row['main_account_code'], }
     prg_activity = RefProgramActivity.objects.filter(**filters).first()
     if prg_activity is None and row['program_activity_code'] is not None:
-        prg_activity = RefProgramActivity.objects.create(**filters)
+        # If the PA has a blank name, create it with the value in the row.
+        # PA loader should overwrite the names for the unique PAs from the official
+        # domain values list if the title needs updating, but for now grab it from the submission
+        prg_activity = RefProgramActivity.objects.create(**filters, program_activity_name=row['program_activity_name'])
         logger.warning('Created missing program activity record for {}'.format(str(filters)))
-    # If the PA has a blank name, update it with the value in the row.
-    # PA loader should overwrite the names for the unique PAs from the official
-    # domain values list if the title needs updating, but for now grab it from the submission
-    if prg_activity and not prg_activity.program_activity_name:
-        prg_activity.program_activity_name = row['program_activity_name']
-        prg_activity.save()
 
     return prg_activity
 
