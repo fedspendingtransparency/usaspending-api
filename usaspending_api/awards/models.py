@@ -1,5 +1,6 @@
 import warnings
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import F, Q, Sum
 
@@ -310,20 +311,22 @@ class Transaction(DataSourceTrackedModel):
             "assistance_data"  # must match related_name in TransactionAssistance
         ]
 
-
     @classmethod
     def get_or_create(cls, **kwargs):
+        """Gets and updates, or creates, a Transaction
+
+        Transactions must be unique on Award, Awarding Agency, and Mod Number
+        """
         transaction = cls.objects.filter(
             award=kwargs.get('award'),
             awarding_agency=kwargs.get('awarding_agency'),
-            modification_number=kwarge.get('modification_number')
+            modification_number=kwargs.get('modification_number')
         ).first()
         if transaction:
-            transaction.update(**kwargs)
-            # what about fields that are null?  Could they overwrite non-null?
+            for (k, v) in kwargs.items():
+                setattr(transaction, k, v)
             return transaction
         return cls(**kwargs)
-
 
     class Meta:
         db_table = 'transaction'
@@ -457,14 +460,14 @@ class TransactionContract(DataSourceTrackedModel):
             "product_or_service_code"
         ]
 
-
     @classmethod
-    def get_or_create(cls, **kwargs):
-        transaction = Transaction.get_or_create(**kwargs)
-        if not transaction.contract_data:
-            transaction.contract_data = cls(transaction=transaction)
+    def get_or_create(cls, transaction, **kwargs):
+        try:
+            for (k, v) in kwargs.items():
+                setattr(transaction.contract_data, k, v)
+        except ObjectDoesNotExist:
+            transaction.contract_data = cls(**kwargs)
         return transaction.contract_data
-
 
     class Meta:
         db_table = 'transaction_contract'
@@ -516,6 +519,15 @@ class TransactionAssistance(DataSourceTrackedModel):
             "original_loan_subsidy_cost",
             "type"
         ]
+
+    @classmethod
+    def get_or_create(cls, transaction, **kwargs):
+        try:
+            for (k, v) in kwargs.items():
+                setattr(transaction.assistance_data, k, v)
+        except ObjectDoesNotExist:
+            transaction.assistance_data = cls(**kwargs)
+        return transaction.assistance_data
 
     class Meta:
         db_table = 'transaction_assistance'

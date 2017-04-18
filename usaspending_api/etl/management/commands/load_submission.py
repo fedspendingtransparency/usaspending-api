@@ -315,13 +315,15 @@ class Command(BaseCommand):
                 "action_date": format_date(row['action_date']),
             }
 
-            transaction_instance = load_data_into_model(
-                Transaction(), row,
+            transaction_dict = load_data_into_model(
+                Transaction(),  # thrown away
+                row,
                 field_map=fad_field_map,
                 value_map=parent_txn_value_map,
                 as_dict=True)
 
-            transaction_assistance = TransactionAssistance.get_or_create(**transaction_instance)
+            transaction = Transaction.get_or_create(**transaction_dict)
+            transaction.save()
 
             fad_value_map = {
                 "submission": submission_attributes,
@@ -333,10 +335,14 @@ class Command(BaseCommand):
             }
 
             financial_assistance_data = load_data_into_model(
-                transaction_assistance, row,
+                TransactionAssistance(),  # thrown away
+                row,
                 field_map=fad_field_map,
                 value_map=fad_value_map,
-                save=True)
+                as_dict=True)
+
+            transaction_assistance = TransactionAssistance.get_or_create(transaction=transaction, **financial_assistance_data)
+            transaction_assistance.save()
 
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
@@ -409,16 +415,17 @@ class Command(BaseCommand):
                 "action_date": format_date(row['action_date']),
             }
 
-            transaction_instance = load_data_into_model(
-                Transaction(), row,
+            transaction_dict = load_data_into_model(
+                Transaction(),  # thrown away
+                row,
                 field_map=contract_field_map,
                 value_map=parent_txn_value_map,
                 as_dict=True)
 
-            transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+            transaction = Transaction.get_or_create(**transaction_dict)
+            transaction.save()
 
             contract_value_map = {
-                'transaction': transaction_instance,
                 'submission': submission_attributes,
                 'reporting_period_start': submission_attributes.reporting_period_start,
                 'reporting_period_end': submission_attributes.reporting_period_end,
@@ -426,10 +433,14 @@ class Command(BaseCommand):
             }
 
             contract_instance = load_data_into_model(
-                TransactionContract(), row,
+                TransactionContract(),  # thrown away
+                row,
                 field_map=contract_field_map,
                 value_map=contract_value_map,
-                save=True)
+                as_dict=True)
+
+            transaction_contract = TransactionContract(transaction=transaction, **contract_instance)
+            transaction_contract.save()
 
         # Update awards for new linkages
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
