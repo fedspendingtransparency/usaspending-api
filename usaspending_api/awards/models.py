@@ -259,7 +259,24 @@ class Award(DataSourceTrackedModel):
         db_table = 'awards'
 
 
-class Transaction(DataSourceTrackedModel):
+class TransactionAgeComparisonMixin:
+
+    def newer_than(self, dct):
+        """Compares age of this instance to a dict
+
+        Compares (last_modified_date or certified_date) of each
+        Returns `False` if either side lacks a date completely
+        """
+
+        my_date = self.last_modified_date or self.certified_date
+        their_date = dct.get('last_modified_date') or dct.get('certified_date')
+        if my_date and their_date:
+            return my_date > their_date
+        else:
+            return False
+
+
+class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.CharField(max_length=256, blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
@@ -323,8 +340,9 @@ class Transaction(DataSourceTrackedModel):
             modification_number=kwargs.get('modification_number')
         ).first()
         if transaction:
-            for (k, v) in kwargs.items():
-                setattr(transaction, k, v)
+            if not transaction.newer_than(kwargs):
+                for (k, v) in kwargs.items():
+                    setattr(transaction, k, v)
             return transaction
         return cls(**kwargs)
 
@@ -463,8 +481,9 @@ class TransactionContract(DataSourceTrackedModel):
     @classmethod
     def get_or_create(cls, transaction, **kwargs):
         try:
-            for (k, v) in kwargs.items():
-                setattr(transaction.contract_data, k, v)
+            if not transaction.newer_than(kwargs):
+                for (k, v) in kwargs.items():
+                    setattr(transaction.contract_data, k, v)
         except ObjectDoesNotExist:
             transaction.contract_data = cls(**kwargs)
         return transaction.contract_data
@@ -523,8 +542,9 @@ class TransactionAssistance(DataSourceTrackedModel):
     @classmethod
     def get_or_create(cls, transaction, **kwargs):
         try:
-            for (k, v) in kwargs.items():
-                setattr(transaction.assistance_data, k, v)
+            if not transaction.newer_than(kwargs):
+                for (k, v) in kwargs.items():
+                    setattr(transaction.assistance_data, k, v)
         except ObjectDoesNotExist:
             transaction.assistance_data = cls(**kwargs)
         return transaction.assistance_data
