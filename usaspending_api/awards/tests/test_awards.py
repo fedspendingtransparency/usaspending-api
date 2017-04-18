@@ -166,14 +166,15 @@ def test_transaction_changes_logged():
 
     tc1 = mommy.make('awards.transactioncontract', transaction=t1, current_total_value_award=1000.00)
     assert tc1.history.count() == 1
-    tc2.current_total_value_award = 2000.00
-    tc2.save()
-    assert tc2.history.count() == 2
-    tc2.history.filter(current_total_value_award=1000.00).count() == 1
+    tc1.current_total_value_award = 2000.00
+    tc1.save()
+    assert tc1.history.count() == 2
+    tc1.history.filter(current_total_value_award=1000.00).count() == 1
 
     t2 = mommy.make('awards.transaction', description='doled out some dough', _fill_optional=True,)
-    ta2 = mommy.make('awards.transactionassistance', transaction=t3, total_funding_amount=100.00)
+    ta2 = mommy.make('awards.transactionassistance', transaction=t2, total_funding_amount=100.00)
     assert ta2.history.count() == 1
-    ta2.description = 'Distributed resources'
+    ta2.total_funding_amount = 300.00
+    ta2.save()
     assert ta2.history.count() == 2
-    ta2.history.filter(description='doled out some dough').count() == 1
+    ta2.history.filter(total_funding_amount=300.00).count() == 1
