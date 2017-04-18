@@ -134,6 +134,15 @@ class Command(BaseCommand):
         logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
         load_file_c(submission_attributes, award_financial_data, db_cursor)
 
+        # Once all the files have been processed, run any global
+        # cleanup/post-load tasks.
+        # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
+        update_model_description_fields()
+        # 2. Update awards to reflect their latest associated txn info
+        update_awards(tuple(AWARD_UPDATE_ID_LIST))
+        # 3. Update contract-specific award fields to reflect latest txn info
+        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+
 
 def format_date(date_string, pattern='%Y%m%d'):
     try:
@@ -694,13 +703,6 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
             field_map=contract_field_map,
             value_map=contract_value_map,
             save=True)
-
-    # Update awards for new linkages
-    update_awards(tuple(AWARD_UPDATE_ID_LIST))
-    update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
-
-    # Update the descriptions TODO: If this is slow, add ID limiting as above
-    update_model_description_fields()
 
 
 def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor):
