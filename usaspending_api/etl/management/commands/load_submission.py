@@ -26,6 +26,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
+from usaspending_api.etl.subaward_etl import load_subawards
 from usaspending_api.references.helpers import canonicalize_location_dict
 
 from usaspending_api.etl.helpers import update_model_description_fields
@@ -432,6 +433,8 @@ class Command(BaseCommand):
                 field_map=contract_field_map,
                 value_map=contract_value_map,
                 save=True)
+
+        load_subawards(submission_attributes, db_cursor)
 
         # Update awards for new linkages
         update_awards(tuple(AWARD_UPDATE_ID_LIST))

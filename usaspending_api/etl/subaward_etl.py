@@ -42,8 +42,17 @@ def load_subawards(submission_attributes, db_cursor):
     logger.info("Creating D1 F File Entries (Subcontracts): {}".format(len(d1_f_data)))
     d1_create_count = 0
     d1_update_count = 0
+    d1_empty_count = 0
 
     for row in d1_f_data:
+        if row['subcontract_num'] is None:
+            if row['id'] is not None and row['subcontract_amount'] is not None:
+                logger.warn("Subcontract of broker id {} has amount, but no number".format(row["id"]))
+                logger.warn("Failing row: {}".format(row))
+            else:
+                d1_empty_count += 1
+            continue
+
         # Find the award to attach this sub-contract to
         # We perform this lookup by finding the Award containing a transaction with
         # a matching parent award id, piid, and submission attributes
@@ -61,7 +70,7 @@ def load_subawards(submission_attributes, db_cursor):
         # Find the recipient by looking up by duns
         recipient = LegalEntity.objects.filter(recipient_unique_id=row['duns']).first()
 
-        if not recipient:
+        if not recipient and row['duns']:
             recipient, created = LegalEntity.objects.get_or_create(recipient_unique_id=row['duns'],
                                                                    parent_recipient_unique_id=row['parent_duns'],
                                                                    recipient_name=row["company_name"],
@@ -106,8 +115,17 @@ def load_subawards(submission_attributes, db_cursor):
     logger.info("Creating D2 F File Entries (Subawards): {}".format(len(d2_f_data)))
     d2_create_count = 0
     d2_update_count = 0
+    d2_empty_count = 0
 
     for row in d2_f_data:
+        if row['subaward_num'] is None:
+            if row['id'] is not None and row['subaward_amount'] is not None:
+                logger.warn("Subcontract of broker id {} has amount, but no number".format(row["id"]))
+                logger.warn("Failing row: {}".format(row))
+            else:
+                d2_empty_count += 1
+            continue
+
         # Find the award to attach this sub-award to
         # We perform this lookup by finding the Award containing a transaction with
         # a matching fain and submission. If this fails, try submission and uri
@@ -129,7 +147,7 @@ def load_subawards(submission_attributes, db_cursor):
         # Find the recipient by looking up by duns
         recipient = LegalEntity.objects.filter(recipient_unique_id=row['duns']).first()
 
-        if not recipient:
+        if not recipient and row['duns']:
             recipient, created = LegalEntity.objects.get_or_create(recipient_unique_id=row['duns'],
                                                                    parent_recipient_unique_id=row['parent_duns'],
                                                                    recipient_name=row["awardee_name"],
@@ -174,11 +192,20 @@ def load_subawards(submission_attributes, db_cursor):
     # Update Award objects with subaward aggregates
     update_award_subawards(tuple(award_ids_to_update))
 
-    logger.info("Submission {}\n\tSubawards created: {}\n\tSubawards updated: {}\n\tSubcontracts created: {}\n\tSubcontracts updated: {}".format(submission_attributes.broker_submission_id,
-                                                                                                                                                 d2_create_count,
-                                                                                                                                                 d2_update_count,
-                                                                                                                                                 d1_create_count,
-                                                                                                                                                 d1_update_count))
+    logger.info(
+        """Submission {}
+           Subcontracts created: {}
+           Subcontracts updated: {}
+           Empty subcontract rows: {}
+           Subawards created: {}
+           Subawards updated: {}
+           Empty subaward rows: {}""".format(submission_attributes.broker_submission_id,
+                                             d1_create_count,
+                                             d1_update_count,
+                                             d1_empty_count,
+                                             d2_create_count,
+                                             d2_update_count,
+                                             d2_empty_count))
 
 
 def location_d1_recipient_mapper(row):
