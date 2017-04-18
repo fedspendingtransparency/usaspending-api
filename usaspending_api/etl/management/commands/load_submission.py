@@ -25,6 +25,7 @@ from usaspending_api.references.models import (
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
+from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
 from usaspending_api.references.helpers import canonicalize_location_dict
 
 from usaspending_api.etl.helpers import update_model_description_fields
@@ -740,29 +741,3 @@ def store_value(model_instance_or_dict, field, value, reverse=None):
         model_instance_or_dict[field] = value
     else:
         setattr(model_instance_or_dict, field, value)
-
-
-def dictfetchall(cursor):
-    if isinstance(cursor, PhonyCursor):
-        return cursor.results
-    else:
-        "Return all rows from a cursor as a dict"
-        columns = [col[0] for col in cursor.description]
-        return [
-            dict(zip(columns, row))
-            for row in cursor.fetchall()
-        ]
-
-
-class PhonyCursor:
-    """Spoofs the db cursor responses."""
-
-    def __init__(self):
-        json_data = open(os.path.join(os.path.dirname(__file__), '../../tests/etl_test_data.json'))
-        self.db_responses = json.load(json_data)
-        json_data.close()
-
-        self.results = None
-
-    def execute(self, statement, parameters):
-        self.results = self.db_responses[statement]

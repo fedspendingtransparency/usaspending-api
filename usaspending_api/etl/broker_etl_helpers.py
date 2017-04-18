@@ -1,0 +1,28 @@
+import json
+import os
+
+
+def dictfetchall(cursor):
+    if isinstance(cursor, PhonyCursor):
+        return cursor.results
+    else:
+        "Return all rows from a cursor as a dict"
+        columns = [col[0] for col in cursor.description]
+        return [
+            dict(zip(columns, row))
+            for row in cursor.fetchall()
+        ]
+
+
+class PhonyCursor:
+    """Spoofs the db cursor responses."""
+
+    def __init__(self):
+        json_data = open(os.path.join(os.path.dirname(__file__), 'tests/etl_test_data.json'))
+        self.db_responses = json.load(json_data)
+        json_data.close()
+
+        self.results = None
+
+    def execute(self, statement, parameters):
+        self.results = self.db_responses[statement]
