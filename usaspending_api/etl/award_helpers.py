@@ -119,3 +119,35 @@ def update_contract_awards(award_tuple=None):
         rows = cursor.rowcount
 
     return rows
+
+
+def update_award_subawards(award_tuple=None):
+    """
+    Updates awards' subaward counts and totals
+    """
+    # Sum and count subaward_amounts
+    sql_sub_totals = (
+        'subaward_totals AS ('
+        'SELECT award_id, SUM(amount) AS total_subaward_amount, COUNT(*) AS subaward_count '
+        'FROM awards_subaward ')
+    if award_tuple:
+        sql_sub_totals += 'WHERE award_id IN %s '
+    sql_sub_totals += 'GROUP BY award_id) '
+
+    # Construct the SQL update
+    sql_update = 'WITH {}'.format(sql_sub_totals)
+    sql_update += (
+        'UPDATE awards '
+        'SET total_subaward_amount = subaward_totals.total_subaward_amount, '
+        'subaward_count = subaward_totals.subaward_count '
+        'FROM subaward_totals '
+        'WHERE subaward_totals.award_id = id'
+    )
+
+    with connection.cursor() as cursor:
+        # If another expression is added and includes %s, you must add the tuple
+        # for that string interpolation to this list (even if it uses the same one!)
+        cursor.execute(sql_update, [award_tuple])
+        rows = cursor.rowcount
+
+    return rows
