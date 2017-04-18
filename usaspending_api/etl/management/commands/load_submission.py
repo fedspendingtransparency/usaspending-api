@@ -500,16 +500,23 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     activity and object class).
     """
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
+    test_counter = 0
     for row in prg_act_obj_cls_data:
+        test_counter += 1
         account_balances = None
         try:
             # Check and see if there is an entry for this TAS
             treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
                 raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
-            account_balances = AppropriationAccountBalances.objects.get(treasury_account_identifier=treasury_account)
         except:
             continue
+
+        # the the corresponding account balances row (aka "File A" record)
+        account_balances = AppropriationAccountBalances.objects.get(
+            treasury_account_identifier=treasury_account,
+            submission_id=submission_attributes.submission_id
+        )
 
         financial_by_prg_act_obj_cls = FinancialAccountsByProgramActivityObjectClass()
 
