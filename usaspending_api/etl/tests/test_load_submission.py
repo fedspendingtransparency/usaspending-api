@@ -6,7 +6,7 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards, TransactionAssistance,
     TransactionContract, Transaction)
-from usaspending_api.etl.management.commands.load_submission import get_submission_attributes
+from usaspending_api.etl.management.commands.load_submission import get_submission_attributes, get_or_create_program_activity
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import LegalEntity, Location, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -138,3 +138,30 @@ def test_load_submission_command_program_activity_uniqueness(endpoint_data, part
     call_command('load_submission', '-1', '--test')
     assert code_0001s.count() == 4
     assert code_0001s.filter(responsible_agency_id='019').exists()
+
+
+@pytest.mark.django_db
+def test_get_or_create_program_activity_name():
+    """
+    Verify that program activities that aren't in our domain values will store
+    both a code and display name if it's present in the submission data
+    """
+    row_data = {
+        'budget_year': 2017,
+        'agency_identifier': '999',
+        'main_account_code': '9999',
+        'program_activity_code': '9999',
+        'program_activity_name': 'PA that is not in our list'
+    }
+    # insert a submission for the following quarter
+    new_submission_data = {
+        'cgac_code': '999',
+        'reporting_fiscal_year': 2017,
+        'reporting_fiscal_period': 2,
+        'is_quarter_format': True,
+        'reporting_start_date': date(2017, 7, 1),
+        'reporting_end_date': date(2017, 9, 1),
+    }
+    sa = get_submission_attributes(22222, new_submission_data)
+    pa = get_or_create_program_activity(row_data, sa)
+    assert pa.program_activity_name == 'PA that is not in our list'
