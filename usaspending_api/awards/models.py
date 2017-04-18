@@ -503,10 +503,11 @@ class Subaward(DataSourceTrackedModel):
     recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
-    funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, null=True)
+    awarding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="awarding_subawards", null=True)
+    funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="funding_subawards", null=True)
     place_of_performance = models.ForeignKey(Location, models.DO_NOTHING, null=True)
 
-    subaward_number = models.IntegerField(db_index=True)
+    subaward_number = models.TextField(db_index=True)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
     description = models.TextField(null=True, blank=True)
 
@@ -514,7 +515,7 @@ class Subaward(DataSourceTrackedModel):
     recovery_model_question2 = models.TextField(null=True, blank=True)
 
     action_date = models.DateField(blank=True, null=True)
-    award_report_fy_month = models.IntegerField()  # If this is 1 it should indicate the first month of the FY
+    award_report_fy_month = models.IntegerField()
     award_report_fy_year = models.IntegerField()
 
     naics = models.TextField(blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
@@ -522,3 +523,4 @@ class Subaward(DataSourceTrackedModel):
 
     class Meta:
         managed = True
+        unique_together = (('subaward_number', 'award'))
