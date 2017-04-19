@@ -1,7 +1,7 @@
 import logging
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
@@ -71,6 +71,54 @@ class Agency(models.Model):
             "subtier_agency",
             "office_agency"
         ]
+
+    @staticmethod
+    def get_by_toptier(toptier_cgac_code):
+        """
+        Get an agency record by toptier information only
+
+        Args:
+            toptier_cgac_code: a CGAC (aka department) code
+
+        Returns:
+            an Agency instance
+
+        """
+        return Agency.objects.filter(
+            toptier_agency__cgac_code=toptier_cgac_code,
+            subtier_agency__name=F('toptier_agency__name')).order_by('-update_date').first()
+
+    def get_by_subtier(subtier_code):
+        """
+        Get an agency record by subtier information only
+
+        Args:
+            subtier_code: subtier code
+
+        Returns:
+            an Agency instance
+
+        """
+        return Agency.objects.filter(
+            subtier_agency__subtier_code=subtier_code).order_by('-update_date').first()
+
+    @staticmethod
+    def get_by_toptier_subtier(toptier_cgac_code, subtier_code):
+        """
+        Lookup an Agency record by toptier cgac code and subtier code
+
+        Args:
+            toptier_cgac_code: a CGAC (aka department) code
+            subtier_code: an agency subtier code
+
+        Returns:
+            an Agency instance
+
+        """
+        return Agency.objects.filter(
+            toptier_agency__cgac_code=toptier_cgac_code,
+            subtier_agency__subtier_code=subtier_code
+        ).order_by('-update_date').first()
 
     class Meta:
         managed = True
@@ -167,7 +215,7 @@ class Location(DataSourceTrackedModel):
     foreign_location_description = models.CharField(max_length=100, blank=True, null=True)
     zip4 = models.CharField(max_length=10, blank=True, null=True, verbose_name="ZIP+4")
     zip_4a = models.CharField(max_length=10, blank=True, null=True)
-    congressional_code = models.CharField(max_length=2, blank=True, null=True,  verbose_name="Congressional District Code")
+    congressional_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="Congressional District Code")
     performance_code = models.CharField(max_length=9, blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
     zip_last4 = models.CharField(max_length=4, blank=True, null=True)
     zip5 = models.CharField(max_length=5, blank=True, null=True)
