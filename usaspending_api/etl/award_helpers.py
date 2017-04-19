@@ -1,5 +1,7 @@
 from django.db import connection
 
+from usaspending_api.awards.models import Transaction
+
 
 def update_awards(award_tuple=None):
     """
@@ -61,7 +63,6 @@ def update_awards(award_tuple=None):
         'description = e.description, '
         'funding_agency_id = l.funding_agency_id, '
         'last_modified_date = l.last_modified_date, '
-        'latest_submission_id = l.submission_id, '
         'period_of_performance_current_end_date = l.period_of_performance_current_end_date, '
         'period_of_performance_start_date = e.period_of_performance_start_date, '
         'place_of_performance_id = l.place_of_performance_id, '
@@ -119,3 +120,59 @@ def update_contract_awards(award_tuple=None):
         rows = cursor.rowcount
 
     return rows
+
+
+def get_award_financial_transaction(
+        toptier_agency_cgac, piid=None, parent_award_id=None, fain=None, uri=None):
+    """
+    For specified award financial (aka "File C") data, try to find a matching
+    transaction (aka "File D"). We sometimes need to do this  because File C
+    doesn't always have the level of award/transaction specificity that we
+    want, so we try to find a matching File D record to grab the additional
+    information.
+
+    For example, when trying to match award financial information to an
+    award record, we need the awarding subtier agency, which isn't supplied
+    on File C. Thus, we'll use this function to find a File D record and
+    use the subtier agency information supplied there.
+
+    If we find more than one match, return the record with this most
+    recent action date.
+
+    Args:
+        toptier_agency_cgac: top tier agency code (aka CGAC code) from File C
+        piid: piid from File C (contract awards only)
+        parent_award_id: parent award id from File C (contract awards only)
+        fain: fain from File C (assistance awards only)
+        uri: uri from File C (assistance awards only)
+
+    Returns:
+        A Transaction model instance
+    """
+    # if both fain and uri are supplied as paramaters, look up by fain first
+    incoming_fain = fain
+    incoming_uri = uri
+    if incoming_fain is not None and incoming_uri is not None:
+        uri = None
+
+    txn = Transaction.objects.filter(
+        awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
+        contract_data__piid=piid,
+        contract_data__parent_award_id=parent_award_id,
+        assistance_data__fain=fain,
+        assistance_data__uri=uri) \
+        .order_by('-action_date').first()
+
+    if txn is None and incoming_fain is not None and incoming_uri is not None:
+        # we didn't find a match and both fain and uri were supplied
+        # as parameters, now try searching by uri
+        uri = incoming_uri
+        txn = Transaction.objects.filter(
+            awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
+            contract_data__piid=piid,
+            contract_data__parent_award_id=parent_award_id,
+            assistance_data__fain=None,
+            assistance_data__uri=uri) \
+            .order_by('-action_date').first()
+
+    return txn

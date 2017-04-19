@@ -20,7 +20,7 @@ Assumptions:
 
 [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL) is an object-relational database management system (ORDBMS) with an emphasis on extensibility and standards-compliance.
 
-1. Download the correct PostgreSQL installer for your operating system from [EnterpriseDB](http://www.enterprisedb.com/products-services-training/pgdownload) (we recommend PostgreSQL 9.4.x).
+1. Download the correct PostgreSQL installer for your operating system from [EnterpriseDB](http://www.enterprisedb.com/products-services-training/pgdownload) (minimum PostgreSQL version supported is 9.4.x).
 2. Run the installer. As you proceed through the installation wizard, note your choices for port number, username, and password.
 3. Once PostgreSQL is installed, create the database you will use for this project.
 
