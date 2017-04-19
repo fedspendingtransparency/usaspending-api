@@ -262,10 +262,11 @@ class Award(DataSourceTrackedModel):
 class TransactionAgeComparisonMixin:
 
     def newer_than(self, dct):
-        """Compares age of this instance to a dict
+        """Compares age of this instance to a Python dictionary
 
-        Compares (last_modified_date or certified_date) of each
-        Returns `False` if either side lacks a date completely
+        Determines the age of each by last_modified_date, if set,
+        otherwise certified_date.
+        Returns `False` if either side lacks a date completely.
         """
 
         my_date = self.last_modified_date or self.certified_date
@@ -338,7 +339,7 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
             award=kwargs.get('award'),
             awarding_agency=kwargs.get('awarding_agency'),
             modification_number=kwargs.get('modification_number')
-        ).first()
+        ).order_by('-update_date').first()
         if transaction:
             if not transaction.newer_than(kwargs):
                 for (k, v) in kwargs.items():
