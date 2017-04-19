@@ -75,8 +75,7 @@ class Agency(models.Model):
     @staticmethod
     def get_by_toptier(toptier_cgac_code):
         """
-        Get a toptier agency record (i.e., we don't know the subtier info
-        but still need to retrieve and agency record).
+        Get an agency record by toptier information only
 
         Args:
             toptier_cgac_code: a CGAC (aka department) code
@@ -88,6 +87,20 @@ class Agency(models.Model):
         return Agency.objects.filter(
             toptier_agency__cgac_code=toptier_cgac_code,
             subtier_agency__name=F('toptier_agency__name')).order_by('-update_date').first()
+
+    def get_by_subtier(subtier_code):
+        """
+        Get an agency record by subtier information only
+
+        Args:
+            subtier_code: subtier code
+
+        Returns:
+            an Agency instance
+
+        """
+        return Agency.objects.filter(
+            subtier_agency__subtier_code=subtier_code).order_by('-update_date').first()
 
     @staticmethod
     def get_by_toptier_subtier(toptier_cgac_code, subtier_code):
