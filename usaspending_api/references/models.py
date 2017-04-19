@@ -1,7 +1,7 @@
 import logging
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
@@ -71,6 +71,23 @@ class Agency(models.Model):
             "subtier_agency",
             "office_agency"
         ]
+
+    @staticmethod
+    def get_by_toptier(toptier_cgac_code):
+        """
+        Get a toptier agency record (i.e., we don't know the subtier info
+        but still need to retrieve and agency record).
+
+        Args:
+            toptier_cgac_code: a CGAC (aka department) code
+
+        Returns:
+            an Agency instance
+
+        """
+        return Agency.objects.filter(
+            toptier_agency__cgac_code=toptier_cgac_code,
+            subtier_agency__name=F('toptier_agency__name')).first()
 
     class Meta:
         managed = True
@@ -167,7 +184,7 @@ class Location(DataSourceTrackedModel):
     foreign_location_description = models.CharField(max_length=100, blank=True, null=True)
     zip4 = models.CharField(max_length=10, blank=True, null=True, verbose_name="ZIP+4")
     zip_4a = models.CharField(max_length=10, blank=True, null=True)
-    congressional_code = models.CharField(max_length=2, blank=True, null=True,  verbose_name="Congressional District Code")
+    congressional_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="Congressional District Code")
     performance_code = models.CharField(max_length=9, blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
     zip_last4 = models.CharField(max_length=4, blank=True, null=True)
     zip5 = models.CharField(max_length=5, blank=True, null=True)

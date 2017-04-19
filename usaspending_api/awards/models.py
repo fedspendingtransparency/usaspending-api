@@ -238,9 +238,8 @@ class Award(DataSourceTrackedModel):
                     # awarding subtier agency. Relax the awarding agency
                     # critera to just the toptier agency instead of the subtier
                     # agency and try the search again.
-                    awarding_agency_toptier = Agency.objects.filter(
-                        toptier_agency__cgac_code=awarding_agency.toptier_agency.cgac_code,
-                        subtier_agency__name=F('toptier_agency__name'))
+                    awarding_agency_toptier = Agency.get_by_toptier(
+                        awarding_agency.toptier_agency.cgac_code)
                     summary_award = Award.objects \
                         .filter(Q(**q_kwargs)) \
                         .filter(awarding_agency=awarding_agency_toptier) \

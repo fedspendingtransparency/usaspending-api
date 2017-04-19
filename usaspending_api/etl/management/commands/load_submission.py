@@ -578,9 +578,7 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
             # No matching transaction found, so find/create Award by using
             # topiter agency only, since CGAC code is the only piece of
             # awarding agency info that we have.
-            awarding_agency = Agency.objects.filter(
-                toptier_agency__cgac_code=awarding_cgac,
-                subtier_agency__name=F('toptier_agency__name')).first()
+            awarding_agency = Agency.get_by_toptier(awarding_cgac)
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         created, award = Award.get_or_create_summary_award(
