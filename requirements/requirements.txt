@@ -28,3 +28,4 @@ six==1.10.0
 sqlparse==0.2.1
 urllib3==1.18
 uWSGI==2.0.14
+django-simple-history==1.8.2
