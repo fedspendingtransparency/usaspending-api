@@ -2,6 +2,7 @@ import warnings
 
 from django.db import models
 from django.db.models import F, Q, Sum
+from simple_history.models import HistoricalRecords
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -191,6 +192,8 @@ class Award(DataSourceTrackedModel):
             "funding_agency",
             "recipient",
             "date_signed__fy",
+            "subaward_count",
+            "total_subaward_amount"
         ]
 
     def __str__(self):
@@ -283,6 +286,7 @@ class Transaction(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was certified")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="The date this transaction was created in the API")
     update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this transaction was updated in the API")
+    history = HistoricalRecords()
 
     def __str__(self):
         return '%s award: %s' % (self.type_description, self.award)
@@ -426,6 +430,7 @@ class TransactionContract(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
     reporting_period_start = models.DateField(blank=True, null=True, help_text="The date marking the start of the reporting period")
     reporting_period_end = models.DateField(blank=True, null=True, help_text="The date marking the end of the reporting period")
+    history = HistoricalRecords()
 
     @staticmethod
     def get_default_fields(path=None):
@@ -479,6 +484,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
     period_of_performance_start_date = models.DateField(blank=True, null=True)
     period_of_performance_current_end_date = models.DateField(blank=True, null=True)
+    history = HistoricalRecords()
 
     @staticmethod
     def get_default_fields(path=None):
@@ -503,10 +509,11 @@ class Subaward(DataSourceTrackedModel):
     recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
-    funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, null=True)
+    awarding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="awarding_subawards", null=True)
+    funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="funding_subawards", null=True)
     place_of_performance = models.ForeignKey(Location, models.DO_NOTHING, null=True)
 
-    subaward_number = models.IntegerField(db_index=True)
+    subaward_number = models.TextField(db_index=True)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
     description = models.TextField(null=True, blank=True)
 
@@ -514,7 +521,7 @@ class Subaward(DataSourceTrackedModel):
     recovery_model_question2 = models.TextField(null=True, blank=True)
 
     action_date = models.DateField(blank=True, null=True)
-    award_report_fy_month = models.IntegerField()  # If this is 1 it should indicate the first month of the FY
+    award_report_fy_month = models.IntegerField()
     award_report_fy_year = models.IntegerField()
 
     naics = models.TextField(blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
@@ -522,3 +529,4 @@ class Subaward(DataSourceTrackedModel):
 
     class Meta:
         managed = True
+        unique_together = (('subaward_number', 'award'))

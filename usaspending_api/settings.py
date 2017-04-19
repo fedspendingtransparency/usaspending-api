@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'usaspending_api.financial_activities',
     'usaspending_api.api_docs',
     'django_spaghetti',
+    'simple_history',
 ]
 
 INTERNAL_IPS = ()
@@ -74,6 +75,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 ROOT_URLCONF = 'usaspending_api.urls'
@@ -145,6 +147,10 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_PAGINATION_CLASS': 'usaspending_api.common.pagination.UsaspendingPagination',
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'usaspending_api.common.renderers.BrowsableAPIRendererWithoutForms',
+    ),
 }
 
 # Internationalization
