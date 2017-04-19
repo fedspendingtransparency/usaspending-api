@@ -87,7 +87,25 @@ class Agency(models.Model):
         """
         return Agency.objects.filter(
             toptier_agency__cgac_code=toptier_cgac_code,
-            subtier_agency__name=F('toptier_agency__name')).first()
+            subtier_agency__name=F('toptier_agency__name')).order_by('-update_date').first()
+
+    @staticmethod
+    def get_by_toptier_subtier(toptier_cgac_code, subtier_code):
+        """
+        Lookup an Agency record by toptier cgac code and subtier code
+
+        Args:
+            toptier_cgac_code: a CGAC (aka department) code
+            subtier_code: an agency subtier code
+
+        Returns:
+            an Agency instance
+
+        """
+        return Agency.objects.filter(
+            toptier_agency__cgac_code=toptier_cgac_code,
+            subtier_agency__subtier_code=subtier_code
+        ).order_by('-update_date').first()
 
     class Meta:
         managed = True

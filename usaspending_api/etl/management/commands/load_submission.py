@@ -662,11 +662,10 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
             place_of_performance_field_map, row, place_of_performance_value_map)
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-        awarding_agency = Agency.objects \
-            .filter(
-                toptier_agency__cgac_code=row['awarding_agency_code'],
-                subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]) \
-            .first()
+        awarding_agency = Agency.get_by_toptier_subtier(
+            row['awarding_agency_code'],
+            row["awarding_sub_tier_agency_c"]
+        )
         created, award = Award.get_or_create_summary_award(
             awarding_agency=awarding_agency,
             piid=row.get('piid'),
@@ -681,8 +680,8 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
         parent_txn_value_map = {
             "award": award,
             "awarding_agency": awarding_agency,
-            "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
-                                                    subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
+            "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
+                                                            row["funding_sub_tier_agency_co"]),
             "recipient": legal_entity,
             "place_of_performance": pop_location,
             'submission': submission_attributes,
@@ -780,11 +779,10 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-        awarding_agency = Agency.objects \
-            .filter(
-                toptier_agency__cgac_code=row['awarding_agency_code'],
-                subtier_agency__subtier_code=row["awarding_sub_tier_agency_c"]) \
-            .first()
+        awarding_agency = Agency.get_by_toptier_subtier(
+            row['awarding_agency_code'],
+            row["awarding_sub_tier_agency_c"]
+        )
         created, award = Award.get_or_create_summary_award(
             awarding_agency=awarding_agency,
             piid=row.get('piid'),
@@ -798,8 +796,8 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         parent_txn_value_map = {
             "award": award,
             "awarding_agency": awarding_agency,
-            "funding_agency": Agency.objects.filter(toptier_agency__cgac_code=row['funding_agency_code'],
-                                                    subtier_agency__subtier_code=row["funding_sub_tier_agency_co"]).first(),
+            "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
+                                                            row["funding_sub_tier_agency_co"]),
             "recipient": legal_entity,
             "place_of_performance": pop_location,
             'submission': submission_attributes,
