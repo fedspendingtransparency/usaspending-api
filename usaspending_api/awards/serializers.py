@@ -95,6 +95,28 @@ class SubawardSerializer(LimitableSerializer):
     class Meta:
         model = Subaward
         fields = '__all__'
+        nested_serializers = {
+            "recipient": {
+                "class": LegalEntitySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "awarding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "funding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "place_of_performance": {
+                "class": LocationSerializer,
+                "kwargs": {"read_only": True}
+            },
+            "cfda": {
+                "class": CfdaSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
 
 
 class AwardSerializer(LimitableSerializer):
