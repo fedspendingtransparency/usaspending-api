@@ -3,6 +3,7 @@ import warnings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import F, Q, Sum
+from simple_history.models import HistoricalRecords
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -304,6 +305,7 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
     certified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was certified")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="The date this transaction was created in the API")
     update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this transaction was updated in the API")
+    history = HistoricalRecords()
 
     def __str__(self):
         return '%s award: %s' % (self.type_description, self.award)
@@ -465,6 +467,7 @@ class TransactionContract(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
     reporting_period_start = models.DateField(blank=True, null=True, help_text="The date marking the start of the reporting period")
     reporting_period_end = models.DateField(blank=True, null=True, help_text="The date marking the end of the reporting period")
+    history = HistoricalRecords()
 
     @staticmethod
     def get_default_fields(path=None):
@@ -528,6 +531,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
     period_of_performance_start_date = models.DateField(blank=True, null=True)
     period_of_performance_current_end_date = models.DateField(blank=True, null=True)
+    history = HistoricalRecords()
 
     @staticmethod
     def get_default_fields(path=None):
