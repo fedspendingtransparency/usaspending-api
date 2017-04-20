@@ -2155,7 +2155,7 @@
 "inter_municipal_local_gove": "0"
 }
 ],
-"SELECT * FROM fsrs_procurement LEFT OUTER JOIN award_procurement ON fsrs_procurement.contract_number = award_procurement.piid AND fsrs_procurement.idv_reference_number = award_procurement.parent_award_id LEFT OUTER JOIN fsrs_subcontract  ON fsrs_subcontract.parent_id = fsrs_procurement.id WHERE  award_procurement.submission_id = %s": [
+"SELECT * FROM fsrs_procurement LEFT OUTER JOIN award_procurement ON fsrs_procurement.contract_number = award_procurement.piid AND fsrs_procurement.idv_reference_number = award_procurement.parent_award_id LEFT OUTER JOIN fsrs_subcontract  ON fsrs_subcontract.parent_id = fsrs_procurement.id WHERE award_procurement.submission_id = %s AND award_procurement.piid IN %s": [
 {
 "us_government_entity": "0",
 "subcontract_amount": "42962.69",
@@ -2415,7 +2415,7 @@
 "top_paid_fullname_1": null
 }
 ],
-"SELECT * FROM fsrs_grant LEFT OUTER JOIN award_financial_assistance ON fsrs_grant.fain = award_financial_assistance.fain LEFT OUTER JOIN fsrs_subgrant ON fsrs_grant.id = fsrs_subgrant.parent_id WHERE  award_financial_assistance.submission_id = %s": [
+"SELECT * FROM fsrs_grant LEFT OUTER JOIN award_financial_assistance ON fsrs_grant.fain = award_financial_assistance.fain LEFT OUTER JOIN fsrs_subgrant ON fsrs_grant.id = fsrs_subgrant.parent_id WHERE  award_financial_assistance.submission_id = %s AND award_financial_assistance.fain IN %s": [
 {
 "record_type": "2",
 "parent_id": 12428,
