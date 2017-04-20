@@ -6,6 +6,16 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
+class FinancialAccountsByProgramActivityObjectClassManager(models.Manager):
+
+    def get_queryset(self):
+        '''
+        Get only records from the last submission per TAS per fiscal year.
+        '''
+
+        return super(FinancialAccountsByProgramActivityObjectClassManager, self).get_queryset().filter(final_of_fy=True)
+
+
 class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, null=True, db_index=True)
@@ -52,10 +62,33 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    final_of_fy = models.BooleanField(blank=False, null=False, default=False, db_index=True)
 
     class Meta:
         managed = True
         db_table = 'financial_accounts_by_program_activity_object_class'
+
+    objects = models.Manager()
+    final_objects = FinancialAccountsByProgramActivityObjectClassManager()
+
+    FINAL_OF_FY_SQL = """
+        UPDATE financial_accounts_by_program_activity_object_class
+        SET final_of_fy = submission_id in
+        ( SELECT DISTINCT ON
+            (fabpaoc.treasury_account_id,
+             FY(s.reporting_period_start))
+          s.submission_id
+          FROM submission_attributes s
+          JOIN financial_accounts_by_program_activity_object_class fabpaoc
+              ON (s.submission_id = fabpaoc.submission_id)
+          ORDER BY fabpaoc.treasury_account_id,
+                   FY(s.reporting_period_start),
+                   s.reporting_period_start DESC)"""
+
+    @classmethod
+    def populate_final_of_fy(cls):
+        with connection.cursor() as cursor:
+            cursor.execute(cls.FINAL_OF_FY_SQL)
 
     # TODO: is the self-joining SQL below do-able via the ORM?
     QUARTERLY_SQL = """

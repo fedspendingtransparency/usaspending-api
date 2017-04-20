@@ -180,6 +180,8 @@ class Command(BaseCommand):
         TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(
             submission_attributes.submission_id)
 
+        FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
+
         # Let's get File C information
         db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
         award_financial_data = dictfetchall(db_cursor)
