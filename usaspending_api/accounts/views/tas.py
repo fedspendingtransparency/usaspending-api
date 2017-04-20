@@ -98,7 +98,7 @@ class TASBalancesAggregate(SuperLoggingMixin,
 
     """Return aggregated award information."""
     def get_queryset(self):
-        queryset = AppropriationAccountBalances.objects.all()
+        queryset = AppropriationAccountBalances.final_objects.all()
         queryset = self.filter_records(self.request, queryset=queryset)
         queryset = self.aggregate(self.request, queryset=queryset)
         queryset = self.order_records(self.request, queryset=queryset)

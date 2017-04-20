@@ -187,6 +187,9 @@ def update_model_description_fields():
         if model._meta.app_label not in updatable_apps:
             continue
 
+        if model.__name__[:10] == "Historical":
+            continue
+
         model_fields = [f.name for f in model._meta.get_fields()]
 
         # This supports multi-case DAIMS
