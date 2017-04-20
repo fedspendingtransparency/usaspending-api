@@ -6,14 +6,15 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards, TransactionAssistance,
     TransactionContract, Transaction)
+from usaspending_api.etl.management.commands.load_submission import get_submission_attributes, get_or_create_program_activity
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.models import LegalEntity, Location
+from usaspending_api.references.models import LegalEntity, Location, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
 
 import pytest
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def endpoint_data():
     call_command('flush', '--noinput')
     call_command('loaddata', 'endpoint_fixture_db')
@@ -40,13 +41,13 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     Test the submission loader to validate the ETL process
     """
     # Load the RefObjClass and ProgramActivityCode data
-    call_command('load_submission', '-1', '--delete', '--test')
+    call_command('load_submission', '-1', '--test')
     assert SubmissionAttributes.objects.count() == 1
     assert AppropriationAccountBalances.objects.count() == 1
     assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 10
     assert FinancialAccountsByAwards.objects.count() == 11
     for account in FinancialAccountsByAwards.objects.all():
-        assert account.transaction_obligated_amount == 6500
+        assert account.transaction_obligated_amount == -6500
         # for testing, data pulled from etl_test_data.json
     assert Location.objects.count() == 4
     assert LegalEntity.objects.count() == 2
@@ -55,12 +56,112 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     assert TransactionContract.objects.count() == 1
     assert TransactionAssistance.objects.count() == 1
 
-    # Check specific submission attributes to make sure we're loading what
-    # we need from the data broker
-    sub = SubmissionAttributes.objects.all().first()
-    assert sub.broker_submission_id == -1
+    # Verify that sign has been reversed during load where appropriate
+    assert AppropriationAccountBalances.objects.filter(gross_outlay_amount_by_tas_cpe__lt=0).count() == 1
+    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_cpe__lt=0).count() == 10
+    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_fyb__lt=0).count() == 10
+    assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_cpe__lt=0).count() == 11
+    assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_fyb__lt=0).count() == 11
+    assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_fyb__lt=0).count() == 11
+    assert FinancialAccountsByAwards.objects.filter(transaction_obligated_amount__lt=0).count() == 11
+
+
+@pytest.mark.django_db
+def test_get_submission_attributes():
+    submission_data = {
+        'cgac_code': 'ABC',
+        'reporting_fiscal_year': 2016,
+        'reporting_fiscal_period': 9,
+        'is_quarter_format': True,
+        'reporting_start_date': date(2016, 4, 1),
+        'reporting_end_date': date(2016, 6, 1),
+    }
+
+    get_submission_attributes(11111, submission_data)
+    # there should only be one submission in the db right now
+    assert SubmissionAttributes.objects.all().count() == 1
+
+    # get the submission and make sure all fields populated correctly
+    sub = SubmissionAttributes.objects.get(broker_submission_id=11111)
+    assert sub.cgac_code == 'ABC'
     assert sub.reporting_fiscal_year == 2016
-    assert sub.reporting_fiscal_period == 3
-    assert sub.reporting_fiscal_quarter == 1
-    assert sub.reporting_period_start == date(2015, 10, 1)
-    assert sub.reporting_period_end == date(2015, 12, 31)
+    assert sub.reporting_fiscal_period == 9
+    assert sub.quarter_format_flag is True
+    assert sub.reporting_period_start == date(2016, 4, 1)
+    assert sub.reporting_period_end == date(2016, 6, 1)
+    assert sub.previous_submission is None
+
+    # test re-running the submission
+    old_create_date = sub.create_date
+    submission_data['cgac_code'] = 'XYZ'
+    sub = get_submission_attributes(11111, submission_data)
+    # there should only be one submission in the db right now
+    assert SubmissionAttributes.objects.all().count() == 1
+    # submission record has been deleted and replaced
+    sub = SubmissionAttributes.objects.get(broker_submission_id=11111)
+    assert sub.create_date > old_create_date
+    # record should have the updated cgac info
+    assert sub.cgac_code == 'XYZ'
+
+    # insert a submission for the following quarter
+    new_submission_data = {
+        'cgac_code': 'XYZ',
+        'reporting_fiscal_year': 2016,
+        'reporting_fiscal_period': 12,
+        'is_quarter_format': True,
+        'reporting_start_date': date(2016, 7, 1),
+        'reporting_end_date': date(2016, 9, 1),
+    }
+    get_submission_attributes(22222, new_submission_data)
+
+    # there should now be two submissions in the db
+    assert SubmissionAttributes.objects.all().count() == 2
+    sub2 = SubmissionAttributes.objects.get(broker_submission_id=22222)
+    # newer submission should recognize the first submission as it's previous sub
+    assert sub2.previous_submission == sub
+    # trying to replace the first submission should fail now that it has
+    # a "downstream" submission
+    with pytest.raises(ValueError):
+        get_submission_attributes(11111, new_submission_data)
+
+
+@pytest.mark.django_db
+def test_load_submission_command_program_activity_uniqueness(endpoint_data, partially_flushed):
+    """
+    Verify that loaded RefProgramActivities are unique across
+    agency as well as program_activity_code
+    """
+
+    code_0001s = RefProgramActivity.objects.filter(program_activity_code='0001')
+    assert code_0001s.count() == 3
+    assert not code_0001s.filter(responsible_agency_id='019').exists()
+    call_command('load_submission', '-1', '--test')
+    assert code_0001s.count() == 4
+    assert code_0001s.filter(responsible_agency_id='019').exists()
+
+
+@pytest.mark.django_db
+def test_get_or_create_program_activity_name():
+    """
+    Verify that program activities that aren't in our domain values will store
+    both a code and display name if it's present in the submission data
+    """
+    row_data = {
+        'budget_year': 2017,
+        'agency_identifier': '999',
+        'main_account_code': '9999',
+        'program_activity_code': '9999',
+        'program_activity_name': 'PA that is not in our list'
+    }
+    # insert a submission for the following quarter
+    new_submission_data = {
+        'cgac_code': '999',
+        'reporting_fiscal_year': 2017,
+        'reporting_fiscal_period': 2,
+        'is_quarter_format': True,
+        'reporting_start_date': date(2017, 7, 1),
+        'reporting_end_date': date(2017, 9, 1),
+    }
+    sa = get_submission_attributes(22222, new_submission_data)
+    pa = get_or_create_program_activity(row_data, sa)
+    assert pa.program_activity_name == 'PA that is not in our list'

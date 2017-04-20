@@ -1,6 +1,3 @@
-import os
-
-from django.conf import settings
 from model_mommy import mommy
 import pytest
 

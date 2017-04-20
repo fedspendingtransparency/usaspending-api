@@ -1,39 +1,8 @@
 import logging
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
 from usaspending_api.common.models import DataSourceTrackedModel
-
-
-LEGAL_ENTITY_BUSINESS_TYPES = (
-    ("A", "State government"),
-    ("B", "County Government"),
-    ("C", "City or township Government"),
-    ("D", "Special District Government"),
-    ("E", "Regional Organization"),
-    ("F", "U.S. Territory or Possession"),
-    ("G", "Independent School District"),
-    ("H", "Public/State Controlled Institution of Higher Education"),
-    ("I", "Indian/Native American Tribal Government (Federally Recognized)"),
-    ("J", "Indian/Native American Tribal Government (Other than Federally Recognized)"),
-    ("K", "Indian/Native American Tribal Designated Organization"),
-    ("L", "Public/Indian Housing Authority"),
-    ("M", "Nonprofit with 501C3 IRS Status (Other then Institution of Higher Education)"),
-    ("N", "Nonprofit without 501C3 IRS Status (Other then Institution of Higher Education)"),
-    ("O", "Private Institution of Higher Education"),
-    ("P", "Individual"),
-    ("Q", "For-Profit Organization (Other than Small Business)"),
-    ("R", "Small Business"),
-    ("S", "Hispanic-serving Institution"),
-    ("T", "Historically Black Colleges and Universities (HBCUs)"),
-    ("U", "Tribally Controlled Colleges and Universities (TCCUs)"),
-    ("V", "Alaska Native and Native Hawaiian Serving Institutions"),
-    ("W", "Non-domestic (non-US) Entity"),
-    ("X", "Other"),
-    ("UN", "Unknown Business Type")
-)
-
-LEGAL_ENTITY_BUSINESS_TYPES_D = dict(LEGAL_ENTITY_BUSINESS_TYPES)
 
 
 class RefCityCountyCode(models.Model):
@@ -102,6 +71,54 @@ class Agency(models.Model):
             "subtier_agency",
             "office_agency"
         ]
+
+    @staticmethod
+    def get_by_toptier(toptier_cgac_code):
+        """
+        Get an agency record by toptier information only
+
+        Args:
+            toptier_cgac_code: a CGAC (aka department) code
+
+        Returns:
+            an Agency instance
+
+        """
+        return Agency.objects.filter(
+            toptier_agency__cgac_code=toptier_cgac_code,
+            subtier_agency__name=F('toptier_agency__name')).order_by('-update_date').first()
+
+    def get_by_subtier(subtier_code):
+        """
+        Get an agency record by subtier information only
+
+        Args:
+            subtier_code: subtier code
+
+        Returns:
+            an Agency instance
+
+        """
+        return Agency.objects.filter(
+            subtier_agency__subtier_code=subtier_code).order_by('-update_date').first()
+
+    @staticmethod
+    def get_by_toptier_subtier(toptier_cgac_code, subtier_code):
+        """
+        Lookup an Agency record by toptier cgac code and subtier code
+
+        Args:
+            toptier_cgac_code: a CGAC (aka department) code
+            subtier_code: an agency subtier code
+
+        Returns:
+            an Agency instance
+
+        """
+        return Agency.objects.filter(
+            toptier_agency__cgac_code=toptier_cgac_code,
+            subtier_agency__subtier_code=subtier_code
+        ).order_by('-update_date').first()
 
     class Meta:
         managed = True
@@ -198,7 +215,7 @@ class Location(DataSourceTrackedModel):
     foreign_location_description = models.CharField(max_length=100, blank=True, null=True)
     zip4 = models.CharField(max_length=10, blank=True, null=True, verbose_name="ZIP+4")
     zip_4a = models.CharField(max_length=10, blank=True, null=True)
-    congressional_code = models.CharField(max_length=2, blank=True, null=True,  verbose_name="Congressional District Code")
+    congressional_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="Congressional District Code")
     performance_code = models.CharField(max_length=9, blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
     zip_last4 = models.CharField(max_length=4, blank=True, null=True)
     zip5 = models.CharField(max_length=5, blank=True, null=True)
@@ -305,8 +322,8 @@ class LegalEntity(DataSourceTrackedModel):
     vendor_doing_as_business_name = models.CharField(max_length=400, blank=True, null=True)
     vendor_phone_number = models.CharField(max_length=30, blank=True, null=True)
     vendor_fax_number = models.CharField(max_length=30, blank=True, null=True)
-    business_types = models.CharField(max_length=3, blank=True, null=True, choices=LEGAL_ENTITY_BUSINESS_TYPES, default="UN")
-    business_types_description = models.CharField(max_length=150, blank=True, null=True, default="Unknown Business Type")
+    business_types = models.CharField(max_length=3, blank=True, null=True)
+    business_types_description = models.CharField(max_length=150, blank=True, null=True)
     recipient_unique_id = models.CharField(max_length=9, blank=True, null=True, verbose_name="DUNS Number")
     limited_liability_corporation = models.CharField(max_length=1, blank=True, null=True)
     sole_proprietorship = models.CharField(max_length=1, blank=True, null=True)
@@ -397,6 +414,7 @@ class LegalEntity(DataSourceTrackedModel):
     us_local_government = models.CharField(max_length=1, blank=True, null=True)
     undefinitized_action = models.CharField(max_length=1, blank=True, null=True)
     domestic_or_foreign_entity = models.CharField(max_length=1, blank=True, null=True)
+    domestic_or_foreign_entity_description = models.TextField(null=True, blank=True)
     division_name = models.CharField(max_length=100, blank=True, null=True)
     division_number = models.CharField(max_length=100, blank=True, null=True)
     last_modified_date = models.DateField(blank=True, null=True)
@@ -410,11 +428,8 @@ class LegalEntity(DataSourceTrackedModel):
     city_township_government = models.CharField(max_length=1, blank=True, null=True)
     special_district_government = models.CharField(max_length=1, blank=True, null=True)
     small_business = models.CharField(max_length=1, blank=True, null=True)
+    small_business_description = models.TextField(blank=True, null=True)
     individual = models.CharField(max_length=1, blank=True, null=True)
-
-    def save(self, *args, **kwargs):
-        self.business_types_description = LEGAL_ENTITY_BUSINESS_TYPES_D.get(self.business_types, "Uknown Business Type")
-        super(LegalEntity, self).save(*args, **kwargs)
 
     @staticmethod
     def get_default_fields(path=None):
@@ -450,7 +465,7 @@ class ObjectClass(models.Model):
 
 
 class RefProgramActivity(models.Model):
-    ref_program_activity_id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     program_activity_code = models.CharField(max_length=4)
     program_activity_name = models.CharField(max_length=164)
     budget_year = models.CharField(max_length=4, blank=True, null=True)

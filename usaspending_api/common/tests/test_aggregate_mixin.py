@@ -15,7 +15,7 @@ from usaspending_api.common.models import RequestCatalog
 @pytest.fixture()
 def aggregate_models():
     """Set up data for testing aggregate functions."""
-    award_uri = [None, None, 'yo']
+    award_uri = [None, 'yo', 'yo', 'yo']
     award_fain = [None, None, '123']
     award_piid = ['abc', 'def', None]
 
@@ -72,11 +72,12 @@ def test_agg_fields(monkeypatch, aggregate_models):
     # Test number of returned recrods
     assert agg.count() == 3
 
-    # Query should return two field names: 'item' and 'aggregate'
+    # Query should return three field names: 'item' - legacy and deprecated, 'aggregate', and 'type'
     fields = agg.first().keys()
-    assert len(fields) == 2
+    assert len(fields) == 3
     assert 'aggregate' in fields
     assert 'item' in fields
+    assert 'type' in fields
 
 
 @pytest.mark.django_db
@@ -85,15 +86,19 @@ def test_agg_fields(monkeypatch, aggregate_models):
     'group': 'period_of_performance_start_date'
 }, [{
     'item': datetime.date(2017, 1, 1),
+    'period_of_performance_start_date': datetime.date(2017, 1, 1),
     'aggregate': Decimal('2000.00')
 }, {
     'item': datetime.date(2018, 6, 1),
+    'period_of_performance_start_date': datetime.date(2018, 6, 1),
     'aggregate': None
 }, {
     'item': datetime.date(2018, 1, 1),
+    'period_of_performance_start_date': datetime.date(2018, 1, 1),
     'aggregate': Decimal('4000.02')
 }, {
     'item': datetime.date(2016, 7, 13),
+    'period_of_performance_start_date': datetime.date(2016, 7, 13),
     'aggregate': Decimal('1000.01')
 }]), (Award, {
     'field': 'total_obligation',
@@ -153,12 +158,15 @@ def test_aggregate(monkeypatch, aggregate_models, model, request_data, result):
 
 _expected_fy_aggregated = [{
     'item': 2016,
+    'period_of_performance_start_date__fy': 2016,
     'aggregate': Decimal('1000.01')
 }, {
     'item': 2017,
+    'period_of_performance_start_date__fy': 2017,
     'aggregate': Decimal('2000.00')
 }, {
     'item': 2018,
+    'period_of_performance_start_date__fy': 2018,
     'aggregate': Decimal('4000.02')
 }]
 
@@ -188,18 +196,91 @@ def test_aggregate_fy(monkeypatch, aggregate_models, model, request_data,
     assert agg_list == expected
 
 
-_expected_parent_fy_aggregated = [{
-    'aggregate': Decimal('1000.01'),
-    'item': None
-}, {
-    'aggregate': Decimal('2000.00'),
-    'item': 2016
-}, {
-    'aggregate': Decimal('4000.02'),
-    'item': 2017
+_expected_fy_type_aggregated = [{
+    'item': 2016,
+    'period_of_performance_start_date__fy': 2016,
+    'type': 'U',
+    'aggregate': Decimal('1000.01')
 }, {
     'aggregate': None,
+    'period_of_performance_start_date__fy': 2018,
+    'type': '05',
     'item': 2018
+}, {
+    'item': 2017,
+    'period_of_performance_start_date__fy': 2017,
+    'type': 'B',
+    'aggregate': Decimal('2000.00')
+}, {
+    'item': 2018,
+    'period_of_performance_start_date__fy': 2018,
+    'type': 'B',
+    'aggregate': Decimal('4000.02')
+}]
+
+_expected_type_pop_day_aggregated = [{
+    'item': None,
+    'uri': None,
+    'type': 'U',
+    'aggregate': Decimal('1000.01')
+}, {
+    'aggregate': None,
+    'uri': 'yo',
+    'type': '05',
+    'item': 'yo'
+}, {
+    'item': 'yo',
+    'uri': 'yo',
+    'type': 'B',
+    'aggregate': Decimal('6000.02')
+}]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('model, request_data, expected', [(Award, {
+    'field': 'total_obligation',
+    'group': ['period_of_performance_start_date__fy', 'type']
+}, _expected_fy_type_aggregated),
+    (Award, {
+        'field': 'total_obligation',
+        'group': ['uri', 'type']
+    }, _expected_type_pop_day_aggregated)])
+def test_aggregate_fy_and_type(monkeypatch, aggregate_models, model, request_data,
+                               expected):
+    request = Mock()
+    request.query_params = {}
+    request.data = request_data
+    a = AggregateQuerysetMixin()
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=model.objects.all())
+
+    agg_list = [a for a in agg]
+    if 'order' not in request_data:
+        # this isn't an 'order by' request, (i.e., we're not testing
+        # the result order), so sort the actual and expected results
+        # to ensure a good comparison
+        agg_list.sort(key=itemgetter('type'))
+        expected.sort(key=itemgetter('type'))
+
+    assert agg_list == expected
+
+
+_expected_parent_fy_aggregated = [{
+    'item': None,
+    'parent_award__period_of_performance_start_date__fy': None,
+    'aggregate': Decimal('1000.01'),
+}, {
+    'item': 2016,
+    'parent_award__period_of_performance_start_date__fy': 2016,
+    'aggregate': Decimal('2000.00')
+}, {
+    'item': 2017,
+    'parent_award__period_of_performance_start_date__fy': 2017,
+    'aggregate': Decimal('4000.02')
+}, {
+    'item': 2018,
+    'parent_award__period_of_performance_start_date__fy': 2018,
+    'aggregate': None
 }]
 
 
