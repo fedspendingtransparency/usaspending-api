@@ -15,7 +15,7 @@ def test_subaward_etl_fixture():
     test_piid = "DTFAWA11D00051CALL0002"
     test_parent_award_id = "DTFAWA11D00051"
     test_fain = "333SBGP0132011"
-    test_uri = None
+    test_uri = "abcd"
 
     submission = mommy.make(SubmissionAttributes, broker_submission_id=test_submission_id)
     prime_award_1 = mommy.make(Award, description="prime_award_1")
@@ -27,7 +27,9 @@ def test_subaward_etl_fixture():
 
     # Transaction with subaward, by FAIN
     txn2 = mommy.make(Transaction, award=prime_award_2, submission=submission)
-    mommy.make(TransactionAssistance, transaction=txn2, fain=test_fain, uri=test_uri)
+    txn3 = mommy.make(Transaction, award=prime_award_2, submission=submission)
+    mommy.make(TransactionAssistance, transaction=txn2, fain=test_fain, uri=None)
+    mommy.make(TransactionAssistance, transaction=txn3, fain=None, uri=test_uri)
 
 
 @pytest.mark.django_db
@@ -36,20 +38,25 @@ def test_subaward_etl_award_linkages(test_subaward_etl_fixture):
     call_command("load_subawards", "-s", "2727", "--test")
 
     # Make sure we have the right number of subawards
-    assert Subaward.objects.count() == 2
+    assert Subaward.objects.count() == 3
 
     # Check that we have our subcontract
     subcontract = Subaward.objects.filter(subaward_number="33118").first()
-    prime_award_1 = Award.objects.filter(description="prime_award_1").first()
+    prime_award_1 = Award.objects.filter(description="prime_award_1").first()  
     assert subcontract is not None
     assert subcontract.award == prime_award_1
     assert prime_award_1.subaward_count == 1
     assert prime_award_1.total_subaward_amount == subcontract.amount
 
     # Check out subaward
-    subaward2 = Subaward.objects.filter(subaward_number="SBG-02-04-2011").first()
+    # This one matches on FAIN
+    subaward1 = Subaward.objects.filter(subaward_number="SBG-02-04-2011").first()
+    # This one matches on URI
+    subaward2 = Subaward.objects.filter(subaward_number="SBG-02-04-2011-2").first()
     prime_award_2 = Award.objects.filter(description="prime_award_2").first()
+    assert subaward1 is not None
     assert subaward2 is not None
+    assert subaward1.award == prime_award_2
     assert subaward2.award == prime_award_2
-    assert prime_award_2.subaward_count == 1
-    assert prime_award_2.total_subaward_amount == subaward2.amount
+    assert prime_award_2.subaward_count == 2
+    assert prime_award_2.total_subaward_amount == (subaward1.amount + subaward2.amount)

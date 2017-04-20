@@ -27,7 +27,7 @@ FROM   fsrs_grant
        LEFT OUTER JOIN award_financial_assistance ON fsrs_grant.fain = award_financial_assistance.fain
        LEFT OUTER JOIN fsrs_subgrant ON fsrs_grant.id = fsrs_subgrant.parent_id
 WHERE  award_financial_assistance.submission_id = %s
-       AND award_financial_assistance.fain IN %s
+       AND (award_financial_assistance.fain IN %s OR award_financial_assistance.fain IS NULL)
 """
 
 
@@ -42,9 +42,6 @@ def load_subawards(submission_attributes, db_cursor):
     awards_for_sub = Award.objects.filter(transaction__submission=submission_attributes).distinct()
     piids = list(awards_for_sub.values_list("piid", flat=True))
     fains = list(awards_for_sub.values_list("fain", flat=True))
-
-    piids.append(None)
-    fains.append(None)
 
     # D1 File F
     db_cursor.execute(D1_FILE_F_QUERY, [submission_attributes.broker_submission_id, tuple(piids)])
@@ -68,6 +65,7 @@ def load_subawards(submission_attributes, db_cursor):
         # a matching parent award id, piid, and submission attributes
         award = Award.objects.filter(transaction__submission=submission_attributes,
                                      transaction__contract_data__piid=row['piid'],
+                                     transaction__contract_data__isnull=False,
                                      transaction__contract_data__parent_award_id=row['parent_award_id']).distinct().first()
 
         # We don't have a matching award for this subcontract, log a warning and continue to the next row
@@ -140,12 +138,15 @@ def load_subawards(submission_attributes, db_cursor):
         # Find the award to attach this sub-award to
         # We perform this lookup by finding the Award containing a transaction with
         # a matching fain and submission. If this fails, try submission and uri
-        award = Award.objects.filter(transaction__submission=submission_attributes,
-                                     transaction__assistance_data__fain=row['fain']).distinct().first()
+        if row['fain'] and len(row['fain']) > 0:
+            award = Award.objects.filter(transaction__submission=submission_attributes,
+                                         transaction__assistance_data__isnull=False,
+                                         transaction__assistance_data__fain=row['fain']).distinct().first()
 
         # Couldn't find a match on FAIN, try URI if it exists
         if not award and row['uri'] and len(row['uri']) > 0:
             award = Award.objects.filter(transaction__submission=submission_attributes,
+                                         transaction__assistance_data__isnull=False,
                                          transaction__assistance_data__uri=row['uri']).distinct().first()
 
         # We don't have a matching award for this subcontract, log a warning and continue to the next row
