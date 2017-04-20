@@ -62,6 +62,15 @@ Codes and descriptions in legacy Usaspending data are often stored in the same f
 
 In these cases, we extract the code to use in our data load. We then use that code to look up the description against a canonical data source. Using a single, central source for code descriptions ensures data consistency.
 
+## Awarding and Funding Agencies
+
+**Data Source:** DATA Broker  
+**Code:** `etl/management/commands/load_submission.py`
+
+In most cases, records about award transactions contain the CGAC code of the awarding and funding agencies (_i.e._, the code that identifies the high-level, top tier agency, sometimes called _department_). These records also contain the _subtier code_ of the awarding and funding agencies.
+
+In the event that our upstream data sources haven't supplied the high-level agency information for a transaction, we look it up by using the transaction's subtier agency and add it to the record.
+
 ## Award Type
 
 **Data Source:** USAspending history  

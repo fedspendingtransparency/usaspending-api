@@ -226,7 +226,7 @@ def update_model_description_fields():
 
             # Validate we have the source field
             if source_field not in model_fields:
-                logger.warn("Tried to update '{}' on model '{}', but source field '{}' does not exist.".format(destination_field, model.__name__, source_field))
+                logger.debug("Tried to update '{}' on model '{}', but source field '{}' does not exist.".format(destination_field, model.__name__, source_field))
                 continue
 
             # Validate we have a map
@@ -282,7 +282,7 @@ def update_model_description_fields():
         for filter_tuple in model_filtered_update_case_map:
             # For each filter tuple, check if the dictionary has any entries
             if len(filter_tuple[1].keys()) > 0:
-                logger.info("Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".format(model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())))
+                logger.debug("Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".format(model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())))
                 try:
                     model.objects.filter(filter_tuple[0]).update(**filter_tuple[1])
                 except django.db.utils.ProgrammingError as e:
