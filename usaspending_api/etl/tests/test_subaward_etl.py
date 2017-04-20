@@ -42,7 +42,7 @@ def test_subaward_etl_award_linkages(test_subaward_etl_fixture):
 
     # Check that we have our subcontract
     subcontract = Subaward.objects.filter(subaward_number="33118").first()
-    prime_award_1 = Award.objects.filter(description="prime_award_1").first()  
+    prime_award_1 = Award.objects.filter(description="prime_award_1").first()
     assert subcontract is not None
     assert subcontract.award == prime_award_1
     assert prime_award_1.subaward_count == 1
