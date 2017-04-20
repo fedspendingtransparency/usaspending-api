@@ -43,6 +43,10 @@ def load_subawards(submission_attributes, db_cursor):
     piids = list(awards_for_sub.values_list("piid", flat=True))
     fains = list(awards_for_sub.values_list("fain", flat=True))
 
+    # This allows us to handle an empty list in the SQL without changing the query
+    piids.append(None)
+    fains.append(None)
+
     # D1 File F
     db_cursor.execute(D1_FILE_F_QUERY, [submission_attributes.broker_submission_id, tuple(piids)])
     d1_f_data = dictfetchall(db_cursor)

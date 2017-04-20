@@ -10,6 +10,7 @@ from usaspending_api.etl.subaward_etl import load_subawards
 from usaspending_api.submissions.models import SubmissionAttributes
 
 logger = logging.getLogger('console')
+exception_logger = logging.getLogger("exceptions")
 
 
 class Command(BaseCommand):
@@ -25,6 +26,7 @@ class Command(BaseCommand):
             '-s',
             '--submission',
             dest="submission_id",
+            nargs='+',
             type=int,
             help="Submission id to load subawards for"
         )
@@ -60,17 +62,22 @@ class Command(BaseCommand):
         else:
             db_cursor = PhonyCursor()
 
-        submission_ids_to_update = []
+        submissions_to_update = []
 
         if options["update_all"]:
             submissions_to_update = SubmissionAttributes.objects.exclude(broker_submission_id__isnull=True)
         else:
-            submission = SubmissionAttributes.objects.filter(broker_submission_id=options['submission_id']).first()
-            if not submission:
-                logger.critical("Submission {} not found in datastore".format(options['submission_id']))
-                return
-            submissions_to_update = [submission]
+            for submission_id in options['submission_id']:
+                sub = SubmissionAttributes.objects.filter(broker_submission_id=submission_id).first()
+                if not sub:
+                    logger.critical("Submissions not found in datastore".format(options['submission_id']))
+                else:
+                    submissions_to_update.append(sub)
 
         for submission in submissions_to_update:
-            logger.info("Loading subaward data for submission {}".format(submission.broker_submission_id))
-            load_subawards(submission, db_cursor)
+            try:
+                logger.info("Loading subaward data for submission {}".format(submission.broker_submission_id))
+                load_subawards(submission, db_cursor)
+            except Exception as e:
+                exception_logger.exception(e)
+                logger.error("Loading subawards for submission {} failed. Exception has been logged.".format(submission.broker_submission_id))
