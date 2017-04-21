@@ -120,6 +120,7 @@ def test_txn_get_or_create(agencies):
     }
     txn = Transaction.get_or_create(**txn_dict)
     txn.save()
+    # expecting an update, not an insert, so txn count should be unchanged
     assert Transaction.objects.all().count() == 4
     assert txn.id == txn1_id
     assert txn.description == 'new description'
@@ -138,16 +139,102 @@ def test_txn_get_or_create(agencies):
     }
     txn = Transaction.get_or_create(**txn_dict)
     txn.save()
+    # expecting an update, not an insert, so txn count should be unchanged
     assert Transaction.objects.all().count() == 4
     assert txn.description == 'new description'
     assert txn.last_modified_date == date(2013, 7, 13)
 
-    # if the txn already exists, does not have a last modified date and its
-    # action date < the incoming action date, update
+    # if the txn already exists and its certified date
+    # is < the incoming certified date, update
     # the existing txn
+    sub2 = mommy.make(
+        'submissions.SubmissionAttributes', certified_date=date(2015, 7, 13))
+    sub3 = mommy.make(
+        'submissions.SubmissionAttributes', certified_date=date(2016, 7, 13))
+    txn2 = mommy.make(
+        'awards.Transaction',
+        award=awd1,
+        modification_number='5',
+        awarding_agency=agency1,
+        submission=sub2
+    )
+    txn2_id = txn2.id
+    txn_dict = {
+        'submission': sub3,  # same txn attributes, but use a more recent certified date
+        'award': awd1,
+        'modification_number': '5',
+        'awarding_agency': agency1,
+        'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
+        'description': 'new description'
+    }
+    txn = Transaction.get_or_create(**txn_dict)
+    txn.save()
+    # there should now be one more txn in the table, and it should reflect
+    # the most recent updates
+    assert Transaction.objects.all().count() == 5
+    assert txn.id == txn2_id
+    assert txn.description == 'new description'
+    assert txn.submission.certified_date == sub3.certified_date
 
-    # if the txn already exists, does not have a last modified date and its
-    # action date > the incoming action date, do nothing
+    # if the txn already exists and its certified date is >
+    # the incoming certified date, do nothing
+    sub4 = mommy.make(
+        'submissions.SubmissionAttributes', certified_date=date(2015, 1, 1))
+    txn_dict['submission'] = sub4
+    txn_dict['description'] = 'older description'
+    txn = Transaction.get_or_create(**txn_dict)
+    txn.save()
+    # there should be no change in number of txn records
+    assert Transaction.objects.all().count() == 5
+    # attributes of txn should be unchanged
+    assert txn.id == txn2_id
+    assert txn.description == 'new description'
+
+    # if the txn already exists and its certified date is < the
+    # incoming last modified date, update it
+    txn_dict = {
+        'submission': sub,  # this submission has a null certified date
+        'award': awd1,
+        'modification_number': '5',
+        'awarding_agency': agency1,
+        'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
+        'last_modified_date': date(2020, 2, 1),
+        'description': 'even newer description'
+    }
+    txn = Transaction.get_or_create(**txn_dict)
+    txn.save()
+    # there should be no change in number of txn records
+    assert Transaction.objects.all().count() == 5
+    # txn id should be unchanged
+    assert txn.id == txn2_id
+    # txn attributes should be updated
+    assert txn.description == 'even newer description'
+    assert txn.last_modified_date == date(2020, 2, 1)
+    assert txn.submission.certified_date is None
+
+    # if the txn alread exists and its last modified date is <
+    # the incoming certified date, update it
+    sub5 = mommy.make(
+        'submissions.SubmissionAttributes', certified_date=date(2020, 7, 13))
+    txn_dict = {
+        'submission': sub5,
+        'award': awd1,
+        'modification_number': '5',
+        'awarding_agency': agency1,
+        'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
+        'last_modified_date': None,
+        'description': 'txn from the future!'
+    }
+    txn = Transaction.get_or_create(**txn_dict)
+    txn.save()
+    # there should be no change in number of txn records
+    assert Transaction.objects.all().count() == 5
+    # txn id should be unchanged
+    assert txn.id == txn2_id
+    # txn attributes should be updated
+    assert txn.description == 'txn from the future!'
+    assert txn.last_modified_date is None
+    assert txn.submission.certified_date == sub5.certified_date
 
 
 @pytest.mark.django_db
