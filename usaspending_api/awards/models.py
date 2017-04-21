@@ -370,7 +370,6 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
         """
         transaction = cls.objects.filter(
             award=kwargs.get('award'),
-            awarding_agency=kwargs.get('awarding_agency'),
             modification_number=kwargs.get('modification_number')
         ).order_by('-update_date').first()
         if transaction:
