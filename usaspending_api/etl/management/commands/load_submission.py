@@ -534,6 +534,8 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(
         submission_attributes.submission_id)
 
+    FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
+
 
 def load_file_c(submission_attributes, award_financial_data, db_cursor):
     """
