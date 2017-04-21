@@ -9,11 +9,11 @@ from usaspending_api.references.models import Agency
 
 
 @pytest.mark.django_db
-def test_award_update_from_latest_transaction(agencies):
+def test_award_update_from_latest_transaction():
     """Test awards fields that should be updated with most recent transaction info."""
 
-    agency1 = Agency.objects.get(id=1)
-    agency2 = Agency.objects.get(id=2)
+    agency1 = mommy.make('references.Agency')
+    agency2 = mommy.make('references.Agency')
 
     award = mommy.make(
         'awards.Award',
@@ -137,7 +137,7 @@ def test_award_update_obligated_amt():
 
 
 @pytest.mark.django_db
-def test_award_update_with_list(agencies):
+def test_award_update_with_list():
     """Test optional parameter to update specific awards with txn data."""
     awards = mommy.make('awards.Award', total_obligation=0, _quantity=10)
     test_award = awards[3]
@@ -211,7 +211,7 @@ def test_award_update_from_contract_transaction():
 
 
 @pytest.mark.django_db
-def test_award_update_contract_txn_with_list(agencies):
+def test_award_update_contract_txn_with_list():
     """Test optional parameter to update specific awards from txn contract."""
 
     awards = mommy.make('awards.Award', _quantity=5)
@@ -260,7 +260,7 @@ def test_deleted_transactions():
 
 
 @pytest.mark.django_db
-def test_get_award_financial_transaction(agencies):
+def test_get_award_financial_transaction():
     """Test looking up txn records ("D File") for an award financial ("C File") record"""
 
     cgac = '1111'

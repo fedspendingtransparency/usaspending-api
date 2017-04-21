@@ -1,5 +1,6 @@
 import warnings
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import F, Q, Sum
 from simple_history.models import HistoricalRecords
@@ -290,7 +291,25 @@ class Award(DataSourceTrackedModel):
         db_table = 'awards'
 
 
-class Transaction(DataSourceTrackedModel):
+class TransactionAgeComparisonMixin:
+
+    def newer_than(self, dct):
+        """Compares age of this instance to a Python dictionary
+
+        Determines the age of each by last_modified_date, if set,
+        otherwise action_date.
+        Returns `False` if either side lacks a date completely.
+        """
+
+        my_date = self.last_modified_date or self.submission.certified_date
+        their_date = dct.get('last_modified_date') or dct.get('submission').certified_date
+        if my_date and their_date:
+            return my_date > their_date
+        else:
+            return False
+
+
+class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.CharField(max_length=256, blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
@@ -342,6 +361,23 @@ class Transaction(DataSourceTrackedModel):
             "contract_data",  # must match related_name in TransactionContract
             "assistance_data"  # must match related_name in TransactionAssistance
         ]
+
+    @classmethod
+    def get_or_create_transaction(cls, **kwargs):
+        """Gets and updates, or creates, a Transaction
+
+        Transactions must be unique on Award, Awarding Agency, and Mod Number
+        """
+        transaction = cls.objects.filter(
+            award=kwargs.get('award'),
+            modification_number=kwargs.get('modification_number')
+        ).order_by('-update_date').first()
+        if transaction:
+            if not transaction.newer_than(kwargs):
+                for (k, v) in kwargs.items():
+                    setattr(transaction, k, v)
+            return transaction
+        return cls(**kwargs)
 
     class Meta:
         db_table = 'transaction'
@@ -476,6 +512,16 @@ class TransactionContract(DataSourceTrackedModel):
             "product_or_service_code"
         ]
 
+    @classmethod
+    def get_or_create(cls, transaction, **kwargs):
+        try:
+            if not transaction.newer_than(kwargs):
+                for (k, v) in kwargs.items():
+                    setattr(transaction.contract_data, k, v)
+        except ObjectDoesNotExist:
+            transaction.contract_data = cls(**kwargs)
+        return transaction.contract_data
+
     class Meta:
         db_table = 'transaction_contract'
 
@@ -527,6 +573,16 @@ class TransactionAssistance(DataSourceTrackedModel):
             "original_loan_subsidy_cost",
             "type"
         ]
+
+    @classmethod
+    def get_or_create(cls, transaction, **kwargs):
+        try:
+            if not transaction.newer_than(kwargs):
+                for (k, v) in kwargs.items():
+                    setattr(transaction.assistance_data, k, v)
+        except ObjectDoesNotExist:
+            transaction.assistance_data = cls(**kwargs)
+        return transaction.assistance_data
 
     class Meta:
         db_table = 'transaction_assistance'
