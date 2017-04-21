@@ -54,8 +54,8 @@ def test_tas_balances_total(account_models, client):
     """
 
     response_tas_sums = {
-        "ABC": "20.00",
-        "XYZ": "30.00"
+        "ABC": "10.00",
+        "XYZ": "10.00"
     }
 
     resp = client.post(
@@ -242,8 +242,8 @@ def test_tas_balances_quarter_total(account_models, client):
     """
 
     response_tas_sums = {
-        "ABC": "20.00",
-        "XYZ": "30.00"
+        "ABC": "10.00",
+        "XYZ": "10.00"
     }
 
     resp = client.post(

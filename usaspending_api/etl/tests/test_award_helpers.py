@@ -3,7 +3,8 @@ import datetime
 from model_mommy import mommy
 import pytest
 
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
+from usaspending_api.etl.award_helpers import (
+    get_award_financial_transaction, update_awards, update_contract_awards)
 from usaspending_api.references.models import Agency
 
 
@@ -256,3 +257,74 @@ def test_deleted_transactions():
     # when transactions are deleted. since the Transaction model's delete()
     # method may not fire during a bulk deletion, we may want to use a signal
     # rather than override delete()
+
+
+@pytest.mark.django_db
+def test_get_award_financial_transaction(agencies):
+    """Test looking up txn records ("D File") for an award financial ("C File") record"""
+
+    cgac = '1111'
+    toptier = mommy.make('references.ToptierAgency', cgac_code=cgac)
+    agency = mommy.make('references.Agency', toptier_agency=toptier)
+
+    txn1 = mommy.make('awards.Transaction', awarding_agency=agency)
+    mommy.make(
+        'awards.TransactionContract', transaction=txn1, piid='abc')
+
+    txn2 = mommy.make(
+        'awards.Transaction',
+        awarding_agency=agency,
+        action_date=datetime.date(2017, 5, 1))
+    mommy.make(
+        'awards.TransactionContract',
+        transaction=txn2,
+        piid='abc',
+        parent_award_id='def'
+    )
+
+    txn3 = mommy.make('awards.Transaction', awarding_agency=agency)
+    mommy.make(
+        'awards.TransactionAssistance', transaction=txn3, fain='123')
+
+    txn4 = mommy.make('awards.Transaction', awarding_agency=agency)
+    mommy.make(
+        'awards.TransactionAssistance', transaction=txn4, uri='456')
+
+    # match on piid
+    txn = get_award_financial_transaction(cgac, piid='abc')
+    assert txn == txn1
+
+    # match on piid + parent award id
+    txn = get_award_financial_transaction(cgac, piid='abc', parent_award_id='def')
+    assert txn == txn2
+
+    # match on fain
+    txn = get_award_financial_transaction(cgac, fain='123')
+    assert txn == txn3
+
+    # if there's not match on fain/uri combo, we should match on fain by itself
+    txn = get_award_financial_transaction(cgac, fain='123', uri='fakeuri')
+    assert txn == txn3
+
+    # match on uri alone
+    txn = get_award_financial_transaction(cgac, uri='456')
+    assert txn == txn4
+
+    # should not match on award id fields for a different cgac
+    txn = get_award_financial_transaction('999', piid='abc')
+    assert txn is None
+
+    # if there is more than one txn match, we should get the one with
+    # the most recent action date
+    txn5 = mommy.make(
+        'awards.Transaction',
+        awarding_agency=agency,
+        action_date=datetime.date(2017, 5, 8))
+    mommy.make(
+        'awards.TransactionContract',
+        transaction=txn5,
+        piid='abc',
+        parent_award_id='def'
+    )
+    txn = get_award_financial_transaction(cgac, piid='abc', parent_award_id='def')
+    assert txn == txn5

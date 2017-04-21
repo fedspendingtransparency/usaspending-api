@@ -47,6 +47,6 @@ Agency DATA Act submissions from the data broker.
 
 Run the following Django management command to load a single submission from the DATA Act broker into the USASpending API.
 
-**Note:** The submission load process does updates as well as inserts and is safe to re-run.
+**Note:** If the specified submission has already been loaded, this command will delete the existing records first. Thus, the `load_submission` command is safe to re-run.
 
     `python manage.py load_submission [broker submission_id]`
