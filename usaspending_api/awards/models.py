@@ -301,8 +301,8 @@ class TransactionAgeComparisonMixin:
         Returns `False` if either side lacks a date completely.
         """
 
-        my_date = self.last_modified_date or self.action_date
-        their_date = dct.get('last_modified_date') or dct.get('action_date')
+        my_date = self.last_modified_date or self.submission.certified_date
+        their_date = dct.get('last_modified_date') or dct.get('submission').certified_date
         if my_date and their_date:
             return my_date > their_date
         else:

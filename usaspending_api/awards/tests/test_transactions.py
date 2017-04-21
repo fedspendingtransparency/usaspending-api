@@ -63,7 +63,6 @@ def test_txn_get_or_create(agencies):
         modification_number='1',
         awarding_agency=agency1,
         submission=sub,
-        action_date=date(2012, 3, 1),
         last_modified_date=date(2012, 7, 13)
     )
     txn1_id = txn1.id
@@ -75,7 +74,8 @@ def test_txn_get_or_create(agencies):
         'award': awd1,
         'modification_number': '2',
         'awarding_agency': agency1,
-        'action_date': date(2012, 3, 1)
+        'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
+        'last_modified_date': date(2012, 3, 1)
     }
     txn = Transaction.get_or_create(**txn_dict)
     txn.save()
@@ -87,7 +87,8 @@ def test_txn_get_or_create(agencies):
         'award': mommy.make('awards.Award'),
         'modification_number': '1',
         'awarding_agency': agency1,
-        'action_date': date(2012, 3, 1)
+        'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
+        'last_modified_date': date(2012, 3, 1)
     }
     txn = Transaction.get_or_create(**txn_dict)
     txn.save()
@@ -99,7 +100,8 @@ def test_txn_get_or_create(agencies):
         'award': mommy.make('awards.Award'),
         'modification_number': '99',
         'awarding_agency': agencies[1],
-        'action_date': date(2012, 3, 1)
+        'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
+        'last_modified_date': date(2012, 3, 1)
     }
     txn = Transaction.get_or_create(**txn_dict)
     txn.save()
@@ -112,6 +114,7 @@ def test_txn_get_or_create(agencies):
         'award': awd1,
         'modification_number': '1',
         'awarding_agency': agency1,
+        'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
         'last_modified_date': date(2013, 7, 13),
         'description': 'new description'
     }
@@ -129,6 +132,7 @@ def test_txn_get_or_create(agencies):
         'award': awd1,
         'modification_number': '1',
         'awarding_agency': agency1,
+        'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
         'last_modified_date': date(2013, 3, 1),
         'description': 'an older txn'
     }
@@ -159,7 +163,7 @@ def test_txn_assistance_get_or_create():
         modification_number='1',
         awarding_agency=agency1,
         submission=sub,
-        action_date=date(2012, 3, 1),
+        last_modified_date=date(2012, 3, 1),
     )
     mommy.make(
         'awards.TransactionAssistance',
@@ -212,7 +216,7 @@ def test_txn_contract_get_or_create():
         modification_number='1',
         awarding_agency=agency1,
         submission=sub,
-        action_date=date(2012, 3, 1),
+        last_modified_date=date(2012, 3, 1),
     )
     mommy.make(
         'awards.TransactionContract',
