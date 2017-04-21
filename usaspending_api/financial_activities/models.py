@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, connection
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.references.models import ObjectClass, RefProgramActivity

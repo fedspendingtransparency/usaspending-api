@@ -112,7 +112,7 @@ class TASCategoryList(SuperLoggingMixin,
     serializer_class = TasCategorySerializer
 
     def get_queryset(self):
-        queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
+        queryset = FinancialAccountsByProgramActivityObjectClass.final_objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
@@ -128,7 +128,7 @@ class TASCategoryAggregate(SuperLoggingMixin,
 
     """Return aggregated award information."""
     def get_queryset(self):
-        queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
+        queryset = FinancialAccountsByProgramActivityObjectClass.final_objects.all()
         queryset = self.filter_records(self.request, queryset=queryset)
         queryset = self.aggregate(self.request, queryset=queryset)
         queryset = self.order_records(self.request, queryset=queryset)
