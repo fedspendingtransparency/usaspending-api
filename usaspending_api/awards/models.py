@@ -297,12 +297,12 @@ class TransactionAgeComparisonMixin:
         """Compares age of this instance to a Python dictionary
 
         Determines the age of each by last_modified_date, if set,
-        otherwise certified_date.
+        otherwise action_date.
         Returns `False` if either side lacks a date completely.
         """
 
-        my_date = self.last_modified_date or self.certified_date
-        their_date = dct.get('last_modified_date') or dct.get('certified_date')
+        my_date = self.last_modified_date or self.action_date
+        their_date = dct.get('last_modified_date') or dct.get('action_date')
         if my_date and their_date:
             return my_date > their_date
         else:

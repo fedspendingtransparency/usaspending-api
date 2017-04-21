@@ -51,15 +51,15 @@ def test_txn_get_or_create():
 
     # if txn doesn't exist yet, create it
 
-    # if txn already exists but has an action date < the incoming
+    # if txn already exists and has a last modified date < the incoming
     # last modified date, update the existing txn
 
-    # if the txn already exists but has an action date > the incoming
+    # if the txn already exists but has a last modified date > the incoming
     # last modified date, do nothing
 
-    # if the txn already exists, does not have an action date and its
-    # certified date < the incoming ???action or certified??? date, update
+    # if the txn already exists, does not have a last modified date and its
+    # action date < the incoming action date, update
     # the existing txn
 
-    # if the txn already exists, does not have an action date and its
-    # certified date > the incoming ???action or certified??? date, do nothing
+    # if the txn already exists, does not have a last modified date and its
+    # action date > the incoming action date, do nothing
