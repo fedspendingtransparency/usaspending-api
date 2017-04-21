@@ -1,4 +1,4 @@
-from datetime import date
+import datetime
 
 from django.core.management import call_command
 
@@ -73,8 +73,9 @@ def test_get_submission_attributes():
         'reporting_fiscal_year': 2016,
         'reporting_fiscal_period': 9,
         'is_quarter_format': True,
-        'reporting_start_date': date(2016, 4, 1),
-        'reporting_end_date': date(2016, 6, 1),
+        'reporting_start_date': datetime.date(2016, 4, 1),
+        'reporting_end_date': datetime.date(2016, 6, 1),
+        'updated_at': datetime.datetime(2017, 4, 20, 16, 49, 28, 915209)
     }
 
     get_submission_attributes(11111, submission_data)
@@ -87,9 +88,10 @@ def test_get_submission_attributes():
     assert sub.reporting_fiscal_year == 2016
     assert sub.reporting_fiscal_period == 9
     assert sub.quarter_format_flag is True
-    assert sub.reporting_period_start == date(2016, 4, 1)
-    assert sub.reporting_period_end == date(2016, 6, 1)
+    assert sub.reporting_period_start == datetime.date(2016, 4, 1)
+    assert sub.reporting_period_end == datetime.date(2016, 6, 1)
     assert sub.previous_submission is None
+    assert sub.certified_date == datetime.date(2017, 4, 20)
 
     # test re-running the submission
     old_create_date = sub.create_date
@@ -109,8 +111,9 @@ def test_get_submission_attributes():
         'reporting_fiscal_year': 2016,
         'reporting_fiscal_period': 12,
         'is_quarter_format': True,
-        'reporting_start_date': date(2016, 7, 1),
-        'reporting_end_date': date(2016, 9, 1),
+        'reporting_start_date': datetime.date(2016, 7, 1),
+        'reporting_end_date': datetime.date(2016, 9, 1),
+        'updated_at': datetime.datetime(2017, 4, 20, 16, 49, 28, 915209)
     }
     get_submission_attributes(22222, new_submission_data)
 
@@ -159,8 +162,9 @@ def test_get_or_create_program_activity_name(transaction=True):
         'reporting_fiscal_year': 2017,
         'reporting_fiscal_period': 2,
         'is_quarter_format': True,
-        'reporting_start_date': date(2017, 7, 1),
-        'reporting_end_date': date(2017, 9, 1),
+        'reporting_start_date': datetime.date(2017, 7, 1),
+        'reporting_end_date': datetime.date(2017, 9, 1),
+        'updated_at': datetime.datetime(2017, 4, 20, 16, 49, 28, 915209),
     }
     sa = get_submission_attributes(22222, new_submission_data)
     pa = get_or_create_program_activity(row_data, sa)
