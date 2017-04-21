@@ -74,10 +74,17 @@ class Command(BaseCommand):
                 else:
                     submissions_to_update.append(sub)
 
+        failed_submissions = []
+        success_submissions = []
         for submission in submissions_to_update:
             try:
                 logger.info("Loading subaward data for submission {}".format(submission.broker_submission_id))
                 load_subawards(submission, db_cursor)
+                success_submissions.append(submission.broker_submission_id)
             except Exception as e:
                 exception_logger.exception(e)
+                failed_submissions.append(failed_submissions)
                 logger.error("Loading subawards for submission {} failed. Exception has been logged.".format(submission.broker_submission_id))
+
+        logger.info("Successfully loaded: {}".format(", ".join(success_submissions)))
+        logger.info("Failed to load: {}".format(", ".join(failed_submissions)))

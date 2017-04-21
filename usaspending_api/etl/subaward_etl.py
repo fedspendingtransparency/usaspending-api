@@ -68,7 +68,7 @@ def load_subawards(submission_attributes, db_cursor):
         agency = get_valid_awarding_agency(row)
 
         if not agency:
-            logger.warn("Subaward number {} cannot find matching agency with toptier code {} and subtier code {}".format(row['subaward_num'], row['awarding_agency_code'], row['awarding_sub_tier_agency_c']))
+            logger.warn("Subaward number {} cannot find matching agency with toptier code {} and subtier code {}".format(row['subcontract_num'], row['awarding_agency_code'], row['awarding_sub_tier_agency_c']))
             continue
 
         # Find the award to attach this sub-contract to

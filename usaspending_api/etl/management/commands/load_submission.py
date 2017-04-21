@@ -139,7 +139,10 @@ class Command(BaseCommand):
         # Once all the files have been processed, run any global
         # cleanup/post-load tasks.
         # 1. Load subawards
-        load_subawards(submission_attributes, db_cursor)
+        try:
+            load_subawards(submission_attributes, db_cursor)
+        except:
+            logger.warn("Error loading subawards for this submission")
         # 2. Update the descriptions TODO: If this is slow, add ID limiting as above
         update_model_description_fields()
         # 3. Update awards to reflect their latest associated txn info
