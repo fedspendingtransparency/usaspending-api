@@ -702,7 +702,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
             value_map=parent_txn_value_map,
             as_dict=True)
 
-        transaction = Transaction.get_or_create(**transaction_dict)
+        transaction = Transaction.get_or_create_transaction(**transaction_dict)
         transaction.save()
 
         contract_value_map = {
@@ -832,7 +832,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             value_map=parent_txn_value_map,
             as_dict=True)
 
-        transaction = Transaction.get_or_create(**transaction_dict)
+        transaction = Transaction.get_or_create_transaction(**transaction_dict)
         transaction.save()
 
         fad_value_map = {

@@ -363,7 +363,7 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
         ]
 
     @classmethod
-    def get_or_create(cls, **kwargs):
+    def get_or_create_transaction(cls, **kwargs):
         """Gets and updates, or creates, a Transaction
 
         Transactions must be unique on Award, Awarding Agency, and Mod Number

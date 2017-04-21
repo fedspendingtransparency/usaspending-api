@@ -52,7 +52,7 @@ def test_txn_total_grouped(client):
 
 @pytest.mark.django_db
 def test_txn_get_or_create():
-    """Test Transaction.get_or_create method."""
+    """Test Transaction.get_or_create_transaction method."""
 
     agency1 = mommy.make('references.Agency')
     agency2 = mommy.make('references.Agency')
@@ -78,7 +78,7 @@ def test_txn_get_or_create():
         'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
         'last_modified_date': date(2012, 3, 1)
     }
-    txn = Transaction.get_or_create(**txn_dict)
+    txn = Transaction.get_or_create_transaction(**txn_dict)
     txn.save()
     assert Transaction.objects.all().count() == 2
 
@@ -91,7 +91,7 @@ def test_txn_get_or_create():
         'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
         'last_modified_date': date(2012, 3, 1)
     }
-    txn = Transaction.get_or_create(**txn_dict)
+    txn = Transaction.get_or_create_transaction(**txn_dict)
     txn.save()
     assert Transaction.objects.all().count() == 3
 
@@ -104,7 +104,7 @@ def test_txn_get_or_create():
         'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
         'last_modified_date': date(2012, 3, 1)
     }
-    txn = Transaction.get_or_create(**txn_dict)
+    txn = Transaction.get_or_create_transaction(**txn_dict)
     txn.save()
     assert Transaction.objects.all().count() == 4
 
@@ -119,7 +119,7 @@ def test_txn_get_or_create():
         'last_modified_date': date(2013, 7, 13),
         'description': 'new description'
     }
-    txn = Transaction.get_or_create(**txn_dict)
+    txn = Transaction.get_or_create_transaction(**txn_dict)
     txn.save()
     # expecting an update, not an insert, so txn count should be unchanged
     assert Transaction.objects.all().count() == 4
@@ -138,7 +138,7 @@ def test_txn_get_or_create():
         'last_modified_date': date(2013, 3, 1),
         'description': 'an older txn'
     }
-    txn = Transaction.get_or_create(**txn_dict)
+    txn = Transaction.get_or_create_transaction(**txn_dict)
     txn.save()
     # expecting an update, not an insert, so txn count should be unchanged
     assert Transaction.objects.all().count() == 4
@@ -168,7 +168,7 @@ def test_txn_get_or_create():
         'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
         'description': 'new description'
     }
-    txn = Transaction.get_or_create(**txn_dict)
+    txn = Transaction.get_or_create_transaction(**txn_dict)
     txn.save()
     # there should now be one more txn in the table, and it should reflect
     # the most recent updates
@@ -183,7 +183,7 @@ def test_txn_get_or_create():
         'submissions.SubmissionAttributes', certified_date=date(2015, 1, 1))
     txn_dict['submission'] = sub4
     txn_dict['description'] = 'older description'
-    txn = Transaction.get_or_create(**txn_dict)
+    txn = Transaction.get_or_create_transaction(**txn_dict)
     txn.save()
     # there should be no change in number of txn records
     assert Transaction.objects.all().count() == 5
@@ -202,7 +202,7 @@ def test_txn_get_or_create():
         'last_modified_date': date(2020, 2, 1),
         'description': 'even newer description'
     }
-    txn = Transaction.get_or_create(**txn_dict)
+    txn = Transaction.get_or_create_transaction(**txn_dict)
     txn.save()
     # there should be no change in number of txn records
     assert Transaction.objects.all().count() == 5
@@ -226,7 +226,7 @@ def test_txn_get_or_create():
         'last_modified_date': None,
         'description': 'txn from the future!'
     }
-    txn = Transaction.get_or_create(**txn_dict)
+    txn = Transaction.get_or_create_transaction(**txn_dict)
     txn.save()
     # there should be no change in number of txn records
     assert Transaction.objects.all().count() == 5
