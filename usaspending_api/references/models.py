@@ -111,9 +111,11 @@ class Agency(models.Model):
         Returns:
             an Agency instance
 
+        If called with None / empty subtier code, returns None
         """
-        return Agency.objects.filter(
-            subtier_agency__subtier_code=subtier_code).order_by('-update_date').first()
+        if subtier_code:
+            return Agency.objects.filter(
+                subtier_agency__subtier_code=subtier_code).order_by('-update_date').first()
 
     @staticmethod
     def get_by_toptier_subtier(toptier_cgac_code, subtier_code):
