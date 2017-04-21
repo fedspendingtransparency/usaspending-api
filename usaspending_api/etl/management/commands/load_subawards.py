@@ -86,5 +86,5 @@ class Command(BaseCommand):
                 failed_submissions.append(failed_submissions)
                 logger.error("Loading subawards for submission {} failed. Exception has been logged.".format(submission.broker_submission_id))
 
-        logger.info("Successfully loaded: {}".format(", ".join(success_submissions)))
-        logger.info("Failed to load: {}".format(", ".join(failed_submissions)))
+        logger.info("Successfully loaded: {}".format(success_submissions))
+        logger.info("Failed to load: {}".format(failed_submissions))
