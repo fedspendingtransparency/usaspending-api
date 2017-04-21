@@ -51,10 +51,11 @@ def test_txn_total_grouped(client):
 
 
 @pytest.mark.django_db
-def test_txn_get_or_create(agencies):
+def test_txn_get_or_create():
     """Test Transaction.get_or_create method."""
 
-    agency1 = agencies[0]
+    agency1 = mommy.make('references.Agency')
+    agency2 = mommy.make('references.Agency')
     sub = mommy.make('submissions.SubmissionAttributes')
     awd1 = mommy.make('awards.Award', awarding_agency=agency1)
     txn1 = mommy.make(
@@ -99,7 +100,7 @@ def test_txn_get_or_create(agencies):
         'submission': sub,
         'award': mommy.make('awards.Award'),
         'modification_number': '99',
-        'awarding_agency': agencies[1],
+        'awarding_agency': agency2,
         'action_date': date(1999, 12, 31),  # irrelevant, but required txn field
         'last_modified_date': date(2012, 3, 1)
     }
