@@ -695,16 +695,17 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
             "action_date": format_date(row['action_date']),
         }
 
-        transaction_instance = load_data_into_model(
-            Transaction(), row,
+        transaction_dict = load_data_into_model(
+            Transaction(),  # thrown away
+            row,
             field_map=contract_field_map,
             value_map=parent_txn_value_map,
             as_dict=True)
 
-        transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+        transaction = Transaction.get_or_create_transaction(**transaction_dict)
+        transaction.save()
 
         contract_value_map = {
-            'transaction': transaction_instance,
             'submission': submission_attributes,
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
@@ -712,10 +713,14 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
         }
 
         contract_instance = load_data_into_model(
-            TransactionContract(), row,
+            TransactionContract(),  # thrown away
+            row,
             field_map=contract_field_map,
             value_map=contract_value_map,
-            save=True)
+            as_dict=True)
+
+        transaction_contract = TransactionContract(transaction=transaction, **contract_instance)
+        transaction_contract.save()
 
 
 def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor):
@@ -820,16 +825,17 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             "action_date": format_date(row['action_date']),
         }
 
-        transaction_instance = load_data_into_model(
-            Transaction(), row,
+        transaction_dict = load_data_into_model(
+            Transaction(),  # thrown away
+            row,
             field_map=fad_field_map,
             value_map=parent_txn_value_map,
             as_dict=True)
 
-        transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+        transaction = Transaction.get_or_create_transaction(**transaction_dict)
+        transaction.save()
 
         fad_value_map = {
-            "transaction": transaction_instance,
             "submission": submission_attributes,
             "cfda": CFDAProgram.objects.filter(program_number=row['cfda_number']).first(),
             'reporting_period_start': submission_attributes.reporting_period_start,
@@ -839,7 +845,11 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         }
 
         financial_assistance_data = load_data_into_model(
-            TransactionAssistance(), row,
+            TransactionAssistance(),  # thrown away
+            row,
             field_map=fad_field_map,
             value_map=fad_value_map,
-            save=True)
+            as_dict=True)
+
+        transaction_assistance = TransactionAssistance.get_or_create(transaction=transaction, **financial_assistance_data)
+        transaction_assistance.save()
