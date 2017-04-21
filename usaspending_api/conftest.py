@@ -23,8 +23,9 @@ def agencies():
     o = mommy.make(OfficeAgency, aac_code='aac1', name='The Office')
     s = mommy.make(SubtierAgency, subtier_code='sub1', name='Subtiers of a Clown')
     t = mommy.make(ToptierAgency, cgac_code='cgac1', name='Department of Test Data Naming')
-    mommy.make(Agency, id=1, toptier_agency=t, subtier_agency=s, office_agency=o)
+    agency1 = mommy.make(Agency, id=1, toptier_agency=t, subtier_agency=s, office_agency=o)
     o = mommy.make(OfficeAgency, aac_code='aac2', name='Office Space')
     s = mommy.make(SubtierAgency, subtier_code='sub2', name='Subtiers in my Beers')
     t = mommy.make(ToptierAgency, cgac_code='cgac2', name='Department of Bureacracy')
-    mommy.make(Agency, id=2, toptier_agency=t, subtier_agency=s, office_agency=o)
+    agency2 = mommy.make(Agency, id=2, toptier_agency=t, subtier_agency=s, office_agency=o)
+    return agency1, agency2
