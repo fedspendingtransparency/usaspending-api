@@ -3,7 +3,7 @@ import logging
 from django.db.models import Count, Sum, F
 
 from usaspending_api.awards.models import Award, Subaward
-from usaspending_api.references.models import LegalEntity, Location, CFDAProgram
+from usaspending_api.references.models import LegalEntity, Location, CFDAProgram, Agency
 from usaspending_api.etl.helpers import get_or_create_location
 from usaspending_api.etl.award_helpers import update_award_subawards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
@@ -64,10 +64,18 @@ def load_subawards(submission_attributes, db_cursor):
                 d1_empty_count += 1
             continue
 
+        # Get the agency
+        agency = get_valid_awarding_agency(row)
+
+        if not agency:
+            logger.warn("Subaward number {} cannot find matching agency with toptier code {} and subtier code {}".format(row['subaward_num'], row['awarding_agency_code'], row['awarding_sub_tier_agency_c']))
+            continue
+
         # Find the award to attach this sub-contract to
         # We perform this lookup by finding the Award containing a transaction with
         # a matching parent award id, piid, and submission attributes
-        award = Award.objects.filter(transaction__submission=submission_attributes,
+        award = Award.objects.filter(awarding_agency=agency,
+                                     transaction__submission=submission_attributes,
                                      transaction__contract_data__piid=row['piid'],
                                      transaction__contract_data__isnull=False,
                                      transaction__contract_data__parent_award_id=row['parent_award_id']).distinct().first()
@@ -139,17 +147,25 @@ def load_subawards(submission_attributes, db_cursor):
                 d2_empty_count += 1
             continue
 
+        agency = get_valid_awarding_agency(row)
+
+        if not agency:
+            logger.warn("Subaward number {} cannot find matching agency with toptier code {} and subtier code {}".format(row['subaward_num'], row['awarding_agency_code'], row['awarding_sub_tier_agency_c']))
+            continue
+
         # Find the award to attach this sub-award to
         # We perform this lookup by finding the Award containing a transaction with
         # a matching fain and submission. If this fails, try submission and uri
         if row['fain'] and len(row['fain']) > 0:
-            award = Award.objects.filter(transaction__submission=submission_attributes,
+            award = Award.objects.filter(awarding_agency=agency,
+                                         transaction__submission=submission_attributes,
                                          transaction__assistance_data__isnull=False,
                                          transaction__assistance_data__fain=row['fain']).distinct().first()
 
         # Couldn't find a match on FAIN, try URI if it exists
         if not award and row['uri'] and len(row['uri']) > 0:
-            award = Award.objects.filter(transaction__submission=submission_attributes,
+            award = Award.objects.filter(awarding_agency=agency,
+                                         transaction__submission=submission_attributes,
                                          transaction__assistance_data__isnull=False,
                                          transaction__assistance_data__uri=row['uri']).distinct().first()
 
@@ -223,6 +239,32 @@ def load_subawards(submission_attributes, db_cursor):
                                              d2_create_count,
                                              d2_update_count,
                                              d2_empty_count))
+
+
+def get_valid_awarding_agency(row):
+    agency = None
+
+    agency_subtier_code = row['awarding_sub_tier_agency_c']
+    agency_toptier_code = row['awarding_agency_code']
+    valid_subtier_code = (agency_subtier_code and len(agency_subtier_code) > 0)
+    valid_toptier_code = (agency_toptier_code and len(agency_toptier_code) > 0)
+
+    if not valid_toptier_code and not valid_subtier_code:
+        return None
+
+    agency = None
+    # Get the awarding agency
+    if valid_subtier_code and valid_toptier_code:
+        agency = Agency.get_by_toptier_subtier(row['awarding_agency_code'],
+                                               row['awarding_sub_tier_agency_c'])
+
+    if not agency and valid_subtier_code:
+        agency = Agency.get_by_subtier(row['awarding_sub_tier_agency_c'])
+
+    if not agency and valid_toptier_code:
+        agency = Agency.get_by_toptier(row['awarding_agency_code'])
+
+    return agency
 
 
 def location_d1_recipient_mapper(row):
