@@ -230,7 +230,7 @@ class Location(DataSourceTrackedModel):
     zip_4a = models.CharField(max_length=10, blank=True, null=True)
     congressional_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="Congressional District Code")
     performance_code = models.CharField(max_length=9, blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
-    zip_last4 = models.CharField(max_length=4, blank=True, null=True)
+    zip_last4 = models.CharField(max_length=10, blank=True, null=True)
     zip5 = models.CharField(max_length=5, blank=True, null=True)
     foreign_postal_code = models.CharField(max_length=50, blank=True, null=True)
     foreign_province = models.CharField(max_length=25, blank=True, null=True)

@@ -80,7 +80,7 @@ def get_or_create_location(row, mapper):
     if country_code and country_code.country_code == "USA":
         location_dict.update(
             zip5=location_dict["location_zip"][:5],
-            zip_last4=location_dict["location_zip"][5:9])
+            zip_last4=location_dict["location_zip"][5:])
         location_dict.pop("location_zip")
     else:
         location_dict.update(
