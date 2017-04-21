@@ -374,7 +374,9 @@ def get_submission_attributes(broker_submission_id, submission_data):
         'broker_submission_id': broker_submission_id,
         'reporting_fiscal_quarter': get_fiscal_quarter(
             submission_data['reporting_fiscal_period']),
-        'previous_submission': None if previous_submission is None else previous_submission
+        'previous_submission': None if previous_submission is None else previous_submission,
+        # pull in broker's last update date to use as certified date
+        'certified_date': submission_data['updated_at'].date() if type(submission_data['updated_at']) == datetime else None,
     }
 
     return load_data_into_model(
