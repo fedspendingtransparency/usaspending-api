@@ -12,7 +12,7 @@ logger = logging.getLogger("console")
 
 # These queries are directly from the broker
 D1_FILE_F_QUERY = """
-SELECT *
+SELECT DISTINCT ON (subcontract_num, fsrs_procurement.contract_number, fsrs_procurement.idv_reference_number) *
 FROM   fsrs_procurement
        LEFT OUTER JOIN award_procurement ON fsrs_procurement.contract_number = award_procurement.piid
                                          AND fsrs_procurement.idv_reference_number = award_procurement.parent_award_id
@@ -22,7 +22,7 @@ WHERE  award_procurement.submission_id = %s
 """
 
 D2_FILE_F_QUERY = """
-SELECT *
+SELECT DISTINCT ON (subaward_num, award_financial_assistance.fain, award_financial_assistance.uri) *
 FROM   fsrs_grant
        LEFT OUTER JOIN award_financial_assistance ON fsrs_grant.fain = award_financial_assistance.fain
        LEFT OUTER JOIN fsrs_subgrant ON fsrs_grant.id = fsrs_subgrant.parent_id
