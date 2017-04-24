@@ -24,7 +24,7 @@ def load_executive_compensation(db_cursor, duns_list=None):
     Loads File E from the broker. db_cursor should be the db_cursor for Broker
     """
     if duns_list is None:
-        duns_list = list(set(LegalEntity.objects.all().values_list("recipient_unique_id", flat=True)))
+        duns_list = list(set(LegalEntity.objects.all().exclude(recipient_unique_id__isnull=True).values_list("recipient_unique_id", flat=True)))
 
     duns_list = [str(x) for x in duns_list]
 
