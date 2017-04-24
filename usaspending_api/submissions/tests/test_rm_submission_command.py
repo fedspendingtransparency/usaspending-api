@@ -17,7 +17,8 @@ SUBMISSION_MODELS = [AppropriationAccountBalances,
                      Transaction,
                      TransactionContract,
                      TransactionAssistance,
-                     FinancialAccountsByProgramActivityObjectClass]
+                     FinancialAccountsByProgramActivityObjectClass,
+                     TasProgramActivityObjectClassQuarterly,]
 
 
 @pytest.fixture
