@@ -184,8 +184,7 @@ def load_subawards(submission_attributes, db_cursor):
             if recipient_name is None:
                 recipient_name = row['awardee_or_recipient_legal']
             if recipient_name is None:
-                logger.warn("Subaward number {} has no recipient name; skipping...".format(row['subaward_num']))
-                continue
+                recipient_name = ""
 
             recipient, created = LegalEntity.objects.get_or_create(recipient_unique_id=row['duns'],
                                                                    parent_recipient_unique_id=row['parent_duns'],
