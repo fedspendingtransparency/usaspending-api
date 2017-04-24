@@ -78,7 +78,7 @@ def load_subawards(submission_attributes, db_cursor):
                                      transaction__submission=submission_attributes,
                                      transaction__contract_data__piid=row['piid'],
                                      transaction__contract_data__isnull=False,
-                                     transaction__contract_data__parent_award_id=row['parent_award_id']).distinct().first()
+                                     transaction__contract_data__parent_award_id=row['parent_award_id']).distinct().order_by("-date_signed").first()
 
         # We don't have a matching award for this subcontract, log a warning and continue to the next row
         if not award:
@@ -160,7 +160,7 @@ def load_subawards(submission_attributes, db_cursor):
             award = Award.objects.filter(awarding_agency=agency,
                                          transaction__submission=submission_attributes,
                                          transaction__assistance_data__isnull=False,
-                                         transaction__assistance_data__fain=row['fain']).distinct().first()
+                                         transaction__assistance_data__fain=row['fain']).distinct().order_by("-date_signed").first()
 
         # Couldn't find a match on FAIN, try URI if it exists
         if not award and row['uri'] and len(row['uri']) > 0:
