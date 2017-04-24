@@ -7,7 +7,7 @@ logger = logging.getLogger("console")
 
 # Broker SQL query
 FILE_E_QUERY = """
-SELECT *
+SELECT DISTINCT ON (awardee_or_recipient_uniqu) *
 FROM executive_compensation e
 INNER JOIN (
     SELECT awardee_or_recipient_uniqu, max(created_at) as MaxDate

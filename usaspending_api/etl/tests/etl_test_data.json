@@ -2639,7 +2639,7 @@
 "top_paid_fullname_1": null
 }
 ],
-"SELECT * FROM executive_compensation e INNER JOIN (SELECT awardee_or_recipient_uniqu, max(created_at) as MaxDate FROM executive_compensation ex GROUP BY awardee_or_recipient_uniqu) ex ON e.awardee_or_recipient_uniqu = ex.awardee_or_recipient_uniqu AND e.created_at = ex.MaxDate WHERE e.awardee_or_recipient_uniqu IN %s": [
+"SELECT DISTINCT ON (awardee_or_recipient_uniqu) * FROM executive_compensation e INNER JOIN (SELECT awardee_or_recipient_uniqu, max(created_at) as MaxDate FROM executive_compensation ex GROUP BY awardee_or_recipient_uniqu) ex ON e.awardee_or_recipient_uniqu = ex.awardee_or_recipient_uniqu AND e.created_at = ex.MaxDate WHERE e.awardee_or_recipient_uniqu IN %s": [
 {
 	"high_comp_officer3_full_na": "",
 	"maxdate": "2017-04-21T02:17:23.815",

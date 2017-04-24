@@ -14,6 +14,8 @@ def test_exec_etl_fixture():
     mommy.make('references.LegalEntity', recipient_unique_id="966833766")
 
 
+# This checks that data loaded from etl_test_data.json via the PhonyCursor
+# matches what is stored in the database after a call to load_executive_compensation
 @pytest.mark.django_db
 def test_exec_compensation_all_duns(test_exec_etl_fixture):
     # First, run the command
