@@ -88,14 +88,13 @@ def load_subawards(submission_attributes, db_cursor):
         award_ids_to_update.add(award.id)
 
         # Find the recipient by looking up by duns
-        recipient = LegalEntity.objects.filter(recipient_unique_id=row['duns']).first()
+        recipient, created = LegalEntity.get_or_create_by_duns(duns=row['duns'])
 
-        if not recipient and row['duns']:
-            recipient, created = LegalEntity.objects.get_or_create(recipient_unique_id=row['duns'],
-                                                                   parent_recipient_unique_id=row['parent_duns'],
-                                                                   recipient_name=row["company_name"],
-                                                                   location=get_or_create_location(row, location_d1_recipient_mapper)
-                                                                   )
+        if created:
+            recipient.parent_recipient_unique_id = row['parent_duns']
+            recipient.recipient_name = row['company_name']
+            recipient.location = get_or_create_location(row, location_d1_recipient_mapper)
+            recipient.save()
 
         # Get or create POP
         place_of_performance = get_or_create_location(row, pop_mapper)
@@ -177,20 +176,19 @@ def load_subawards(submission_attributes, db_cursor):
         award_ids_to_update.add(award.id)
 
         # Find the recipient by looking up by duns
-        recipient = LegalEntity.objects.filter(recipient_unique_id=row['duns']).first()
+        recipient, created = LegalEntity.get_or_create_by_duns(duns=row['duns'])
 
-        if not recipient and row['duns']:
+        if created:
             recipient_name = row['awardee_name']
             if recipient_name is None:
                 recipient_name = row['awardee_or_recipient_legal']
             if recipient_name is None:
                 recipient_name = ""
 
-            recipient, created = LegalEntity.objects.get_or_create(recipient_unique_id=row['duns'],
-                                                                   parent_recipient_unique_id=row['parent_duns'],
-                                                                   recipient_name=recipient_name,
-                                                                   location=get_or_create_location(row, location_d2_recipient_mapper)
-                                                                   )
+            recipient.recipient_name = recipient_name
+            recipient.parent_recipient_unique_id = row['parent_duns']
+            recipient.location = get_or_create_location(row, location_d2_recipient_mapper)
+            recipient.save()
 
         # Get or create POP
         place_of_performance = get_or_create_location(row, pop_mapper)

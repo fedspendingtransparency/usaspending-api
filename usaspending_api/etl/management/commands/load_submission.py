@@ -783,8 +783,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
         # Create the legal entity if it doesn't exist
-        try:
-            legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
+        legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
         if created:
             legal_entity_value_map = {
                 "location": legal_entity_location,
