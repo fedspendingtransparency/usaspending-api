@@ -59,4 +59,9 @@ class Command(BaseCommand):
         else:
             db_cursor = PhonyCursor()
 
-        load_executive_compensation(db_cursor, options["duns"])
+        # Require users to explicitly call -a to use the "All" case so that
+        # it is not accidentally triggered by omitting an option
+        if options["duns"] is None and options["update_all"]:
+            load_executive_compensation(db_cursor, None)
+        elif options["duns"] is not None:
+            load_executive_compensation(db_cursor, options["duns"])
