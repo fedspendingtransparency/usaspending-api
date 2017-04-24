@@ -65,3 +65,5 @@ class Command(BaseCommand):
             load_executive_compensation(db_cursor, None)
         elif options["duns"] is not None:
             load_executive_compensation(db_cursor, options["duns"])
+        else:
+            logger.info("Please specify either a list of DUNS (using the --duns) flag, or set to update all mode using the (--all) flag.")
