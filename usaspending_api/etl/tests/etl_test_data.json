@@ -2638,5 +2638,62 @@
 "top_paid_fullname_4": null,
 "top_paid_fullname_1": null
 }
+],
+"SELECT DISTINCT ON (e.awardee_or_recipient_uniqu) * FROM executive_compensation e INNER JOIN (SELECT awardee_or_recipient_uniqu, max(created_at) as MaxDate FROM executive_compensation ex GROUP BY awardee_or_recipient_uniqu) ex ON e.awardee_or_recipient_uniqu = ex.awardee_or_recipient_uniqu AND e.created_at = ex.MaxDate WHERE e.awardee_or_recipient_uniqu IN %s": [
+{
+	"high_comp_officer3_full_na": "",
+	"maxdate": "2017-04-21T02:17:23.815",
+	"high_comp_officer2_amount": "",
+	"high_comp_officer5_full_na": "",
+	"high_comp_officer5_amount": "",
+	"high_comp_officer2_full_na": "",
+	"awardee_or_recipient_uniqu": "061530416",
+	"high_comp_officer4_amount": "",
+	"high_comp_officer4_full_na": "",
+	"executive_compensation_id": 1391,
+	"high_comp_officer3_amount": "",
+	"created_at": "2017-04-21T02:17:23.815",
+	"ultimate_parent_unique_ide": "061530416",
+	"updated_at": "2017-04-21T02:17:23.816",
+	"high_comp_officer1_full_na": "Test Name",
+	"ultimate_parent_legal_enti": "Re/Spec Inc.",
+	"high_comp_officer1_amount": "3.50"
+}, {
+	"high_comp_officer3_full_na": "Wayne M Polster",
+	"maxdate": "2017-04-21T02:17:25.620",
+	"high_comp_officer2_amount": "680404",
+	"high_comp_officer5_full_na": "Robert W Larrick, Jr.",
+	"high_comp_officer5_amount": "367354",
+	"high_comp_officer2_full_na": "John C Mutarelli",
+	"awardee_or_recipient_uniqu": "555498187",
+	"high_comp_officer4_amount": "485441",
+	"high_comp_officer4_full_na": "William O Maxwell",
+	"executive_compensation_id": 1800,
+	"high_comp_officer3_amount": "532304",
+	"created_at": "2017-04-21T02:17:25.620",
+	"ultimate_parent_unique_ide": "555498187",
+	"updated_at": "2017-04-21T02:17:25.620",
+	"high_comp_officer1_full_na": "Joseph A Martore",
+	"ultimate_parent_legal_enti": "Calibre Systems, Inc.",
+	"high_comp_officer1_amount": "842224"
+}, {
+	"high_comp_officer3_full_na": "John  McNeely",
+	"maxdate": "2017-04-21T02:17:27.743",
+	"high_comp_officer2_amount": "206000",
+	"high_comp_officer5_full_na": "William F Cobb",
+	"high_comp_officer5_amount": "148000",
+	"high_comp_officer2_full_na": "Boy  Hoy",
+	"awardee_or_recipient_uniqu": "966833766",
+	"high_comp_officer4_amount": "173000",
+	"high_comp_officer4_full_na": "James K Bryson",
+	"executive_compensation_id": 2270,
+	"high_comp_officer3_amount": "192000",
+	"created_at": "2017-04-21T02:17:27.743",
+	"ultimate_parent_unique_ide": "966833766",
+	"updated_at": "2017-04-21T02:17:27.743",
+	"high_comp_officer1_full_na": "Will  Henderson",
+	"ultimate_parent_legal_enti": "SWORD & SHIELD ENTERPRISE SECURITY, INC.",
+	"high_comp_officer1_amount": "217000"
+}
 ]
 }
