@@ -176,7 +176,7 @@ class Command(BaseCommand):
         le, created = LegalEntity.get_or_create_by_duns(duns=row['duns_no'])
         if created:
             # Update from our recipient dictionary
-            for attr, value in recipient_dict.iteritems():
+            for attr, value in recipient_dict.items():
                 setattr(le, attr, value)
             le.save()
 
