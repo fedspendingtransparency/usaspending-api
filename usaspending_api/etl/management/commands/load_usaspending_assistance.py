@@ -168,16 +168,17 @@ class Command(BaseCommand):
                 row,
                 mapper=location_mapper_fin_assistance_recipient).location_id,
             "recipient_name": row['recipient_name'],
-            "recipient_unique_id": row['duns_no'],
         }
 
         recipient_type = row.get("recipient_type", ":").split(":")[1].strip()
         recipient_dict.update(self.recipient_flags_by_type(recipient_type))
 
-        le = LegalEntity.objects.filter(
-            recipient_unique_id=row['duns_no']).first()
-        if not le:
-            le = LegalEntity.objects.create(**recipient_dict)
+        le, created = LegalEntity.get_or_create_by_duns(duns=row['duns_no'])
+        if created:
+            # Update from our recipient dictionary
+            for attr, value in recipient_dict.iteritems():
+                setattr(le, attr, value)
+            le.save()
 
         return le
 
