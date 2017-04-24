@@ -181,7 +181,6 @@ class Command(BaseCommand):
             "recipient_name": row['vendorname'],
             "vendor_phone_number": row['phoneno'],
             "vendor_fax_number": row['faxno'],
-            "recipient_unique_id": row['dunsnumber'],
             "parent_recipient_unique_id": row['parentdunsnumber'],
             "city_local_government": self.parse_first_character(row['iscitylocalgovernment']),
             "county_local_government": self.parse_first_character(row['iscountylocalgovernment']),
@@ -262,13 +261,12 @@ class Command(BaseCommand):
             "nonprofit_organization": self.parse_first_character(row['nonprofitorganizationflag']),
         }
 
-        le = LegalEntity.objects.filter(recipient_unique_id=row['dunsnumber']).first()
-        if not le:
-            le = LegalEntity.objects.create(**recipient_dict)
-        else:
-            LegalEntity.objects.filter(legal_entity_id=le.legal_entity_id).update(**recipient_dict)
-
-        return le
+        le, created = LegalEntity.get_or_create_by_duns(duns=row['dunsnumber'])
+        if created:
+            # Update from our recipient dictionary
+            for attr, value in recipient_dict.iteritems():
+                setattr(le, attr, value)
+            le.save()
 
     def get_or_create_award(self, row, awarding_agency_id):
         piid = row.get("piid", None)
