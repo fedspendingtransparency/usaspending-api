@@ -660,14 +660,20 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
         pop_location, created = get_or_create_location(
             place_of_performance_field_map, row, place_of_performance_value_map)
 
-        # If awarding/funding toptier agency code (aka CGAC) is not supplied on the D1 record,
-        # use the sub tier code to look it up
-        if row['awarding_agency_code'] is None:
+        # If awarding toptier agency code (aka CGAC) is not supplied on the D1 record,
+        # use the sub tier code to look it up. This code assumes that all incoming
+        # records will supply an awarding subtier agency code
+        if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
             row['awarding_agency_code'] = Agency.get_by_subtier(
                 row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
-        if row['funding_agency_code'] is None:
-            row['funding_agency_code'] = Agency.get_by_subtier(
-                row["funding_sub_tier_agency_co"]).toptier_agency.cgac_code
+        # If funding toptier agency code (aka CGAC) is empty, try using the sub
+        # tier funding code to look it up. Unlike the awarding agency, we can't
+        # assume that the funding agency subtier code will always be present.
+        if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+            funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
+            row['funding_agency_code'] = (
+                funding_agency.toptier_agency.cgac_code if funding_agency is not None
+                else None)
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         awarding_agency = Agency.get_by_toptier_subtier(
@@ -791,14 +797,20 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         # Create the place of performance location
         pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
-        # If toptier agency code (aka CGAC) is not supplied on the D2 record,
-        # use the sub tier code to look it up
-        if row['awarding_agency_code'] is None:
+        # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
+        # use the sub tier code to look it up. This code assumes that all incoming
+        # records will supply an awarding subtier agency code
+        if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
             row['awarding_agency_code'] = Agency.get_by_subtier(
                 row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
-        if row['funding_agency_code'] is None:
-            row['funding_agency_code'] = Agency.get_by_subtier(
-                row["funding_sub_tier_agency_co"]).toptier_agency.cgac_code
+        # If funding toptier agency code (aka CGAC) is empty, try using the sub
+        # tier funding code to look it up. Unlike the awarding agency, we can't
+        # assume that the funding agency subtier code will always be present.
+        if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+            funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
+            row['funding_agency_code'] = (
+                funding_agency.toptier_agency.cgac_code if funding_agency is not None
+                else None)
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         awarding_agency = Agency.get_by_toptier_subtier(
