@@ -47,10 +47,13 @@ def test_get_or_create_location_non_usa():
         location_country_code=ref,
         zip5='12345',
         zip_last4='6789',
-        # @todo: city_name has a different length than foreign_city_name, so
-        # we can't use the random value
-        city_name='AAAAAAAA',
-        _fill_optional=True)
+        # @todo: can't use _fill_optional on this model because data
+        # will exceed allowable index length
+        address_line1='line one of address',
+        address_line2='line two of address',
+        address_line3='line thre of address',
+        state_code='GG',
+        city_name='AAAAAAAA')
 
     row = dict(
         vendorcountrycode='UAE',

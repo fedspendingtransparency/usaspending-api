@@ -14,9 +14,9 @@ class FederalAccount(models.Model):
     multiple Treasury Account Symbols (TAS), represented by
     :model:`accounts.TreasuryAppropriationAccount`.
     """
-    agency_identifier = models.CharField(max_length=3, db_index=True)
-    main_account_code = models.CharField(max_length=4, db_index=True)
-    account_title = account_title = models.CharField(max_length=300)
+    agency_identifier = models.TextField(db_index=True)
+    main_account_code = models.TextField(db_index=True)
+    account_title = account_title = models.TextField()
 
     class Meta:
         managed = True
@@ -28,34 +28,34 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     """Represents a single Treasury Account Symbol (TAS)."""
     treasury_account_identifier = models.AutoField(primary_key=True)
     federal_account = models.ForeignKey('FederalAccount', models.DO_NOTHING, null=True)
-    tas_rendering_label = models.CharField(max_length=50, blank=True, null=True)
-    allocation_transfer_agency_id = models.CharField(max_length=3, blank=True, null=True)
+    tas_rendering_label = models.TextField(blank=True, null=True)
+    allocation_transfer_agency_id = models.TextField(blank=True, null=True)
     # todo: update the agency details to match FederalAccounts. Is there a way that we can
     # retain the text-based agency TAS components (since those are attributes of TAS
     # while still having a convenient FK that links to our agency tables using Django's
     # default fk naming standard? Something like agency_identifier for the 3 digit TAS
     # component and agency_id for the FK?)
-    agency_id = models.CharField(max_length=3)
-    beginning_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
-    ending_period_of_availability = models.CharField(max_length=4, blank=True, null=True)
-    availability_type_code = models.CharField(max_length=1, blank=True, null=True)
+    agency_id = models.TextField()
+    beginning_period_of_availability = models.TextField(blank=True, null=True)
+    ending_period_of_availability = models.TextField(blank=True, null=True)
+    availability_type_code = models.TextField(blank=True, null=True)
     availability_type_code_description = models.TextField(blank=True, null=True)
-    main_account_code = models.CharField(max_length=4)
-    sub_account_code = models.CharField(max_length=3)
-    account_title = models.CharField(max_length=300, blank=True, null=True)
-    reporting_agency_id = models.CharField(max_length=3, blank=True, null=True)
-    reporting_agency_name = models.CharField(max_length=100, blank=True, null=True)
-    budget_bureau_code = models.CharField(max_length=6, blank=True, null=True)
-    budget_bureau_name = models.CharField(max_length=100, blank=True, null=True)
-    fr_entity_code = models.CharField(max_length=4, blank=True, null=True)
-    fr_entity_description = models.CharField(max_length=100, blank=True, null=True)
-    budget_function_code = models.CharField(max_length=3, blank=True, null=True)
-    budget_function_title = models.CharField(max_length=100, blank=True, null=True)
-    budget_subfunction_code = models.CharField(max_length=3, blank=True, null=True)
-    budget_subfunction_title = models.CharField(max_length=100, blank=True, null=True)
+    main_account_code = models.TextField()
+    sub_account_code = models.TextField()
+    account_title = models.TextField(blank=True, null=True)
+    reporting_agency_id = models.TextField(blank=True, null=True)
+    reporting_agency_name = models.TextField(blank=True, null=True)
+    budget_bureau_code = models.TextField(blank=True, null=True)
+    budget_bureau_name = models.TextField(blank=True, null=True)
+    fr_entity_code = models.TextField(blank=True, null=True)
+    fr_entity_description = models.TextField(blank=True, null=True)
+    budget_function_code = models.TextField(blank=True, null=True)
+    budget_function_title = models.TextField(blank=True, null=True)
+    budget_subfunction_code = models.TextField(blank=True, null=True)
+    budget_subfunction_title = models.TextField(blank=True, null=True)
     drv_appropriation_availability_period_start_date = models.DateField(blank=True, null=True)
     drv_appropriation_availability_period_end_date = models.DateField(blank=True, null=True)
-    drv_appropriation_account_expired_status = models.CharField(max_length=10, blank=True, null=True)
+    drv_appropriation_account_expired_status = models.TextField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
@@ -268,7 +268,7 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     obligations_incurred_total_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     drv_appropriation_availability_period_start_date = models.DateField(blank=True, null=True)
     drv_appropriation_availability_period_end_date = models.DateField(blank=True, null=True)
-    drv_appropriation_account_expired_status = models.CharField(max_length=10, blank=True, null=True)
+    drv_appropriation_account_expired_status = models.TextField(blank=True, null=True)
     drv_obligations_unpaid_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     drv_other_obligated_amount = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
