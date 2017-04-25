@@ -446,7 +446,7 @@ class TransactionContract(DataSourceTrackedModel):
     multi_year_contract = models.CharField(max_length=1, blank=True, null=True)
     national_interest_action = models.CharField(max_length=20, blank=True, null=True)
     national_interest_action_description = models.TextField(null=True, blank=True)
-    number_of_actions = models.CharField(max_length=6, blank=True, null=True)
+    number_of_actions = models.CharField(max_length=10, blank=True, null=True)
     number_of_offers_received = models.CharField(max_length=3, blank=True, null=True)
     other_statutory_authority = models.CharField(max_length=1000, blank=True, null=True)
     performance_based_service_acquisition = models.CharField(max_length=1, blank=True, null=True)
