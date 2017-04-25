@@ -1,14 +1,18 @@
 <ul class="nav nav-stacked" id="sidebar">
-  <li><a href="#introduction">Introduction</a></li>
-  <li><a href="#status-codes">Status Codes</a></li>
-  <li><a href="#data-endpoints">Data Endpoints</a></li>
-  <li><a href="#endpoints-and-methods">Endpoints and Methods</a></li>
-  <li><a href="#summary-endpoints-and-methods">Summary Endpoints & Methods</a></li>
-  <li><a href="#pagination">Pagination</a></li>
-  <li><a href="#get-requests">GET Requests</a></li>
-  <li><a href="#post-requests">POST Requests</a></li>
-  <li><a href="#autocomplete-queries">Autocomplete Queries</a></li>
-  <li><a href="#geographical-hierarchy-queries">Geographical Hierarchy Queries</a></li>
+  <li><a href="/docs/intro-tutorial">Introductory Tutorial</a></li>
+  <li><a href="/docs/using-the-api">Using this API</a>
+  <!--<ul>
+    <li><a href="#get-requests">GET Requests</a></li>
+    <li><a href="#post-requests">POST Requests</a></li>
+    <li><a href="#summary-endpoints-and-methods">Summary Endpoints & Methods</a></li>
+    <li><a href="#pagination">Pagination</a></li>
+    <li><a href="#autocomplete-queries">Autocomplete Queries</a></li>
+    <li><a href="#geographical-hierarchy-queries">Geographical Hierarchy Queries</a></li>
+  </ul>-->
+  </li>
+  <li><a href="/docs/endpoints">Endpoints</a></li>
+  <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
+  <li><a href="/docs/recipes">Request Recipes</a></li>
 </ul>
 [//]: # (Begin Content)
 
@@ -18,222 +22,11 @@ The USAspending API allows the public to access data published via the DATA Act 
 
 This guide is intended for users who are already familiar with APIs. If you're not sure what "endpoint" means, and what `GET` and `POST` requests are, you'll probably find the [introductory tutorial](/docs/intro-tutorial) more useful.
 
-## DATA Act Data Store Endpoint Documentation
-
 While the API is under development, we are gradually increasing the amount of available data, which is currently limited to a few Data Broker submissions and small slices of USAspending history.
 
-Endpoints do not currently require any authorization.
-
-### Status Codes <a name="status-codes"></a>
-In general, status codes returned are as follows:
-
-* 200 if successful
-* 400 if the request is malformed
-* 500 for server-side errors
-
-### Data Endpoints <a name="data-endpoints"></a>
-
-Data endpoints are split by payload into POST and GET methods. In general, the format of a request and response will remain the same among endpoints.
-
-#### Endpoints and Methods <a name="endpoints-and-methods"></a>
-The currently available endpoints are listed below. Our [data dictionary](/docs/data-dictionary) provides more comprehensive definitions of the technical terms and government-specific language we use in the API.
-
-To reduce unnecessary data transfer, most endpoints return a default set of information about the items being requested. To override the default field list, use the `fields`, `exclude`, and `verbose` options (see [POST Requests](#post-requests) for more information).
-
-  * **[/v1/accounts/](https://spending-api.us/api/v1/accounts/)**
-    - _Description_: Provides financial information by appropriations account. Financial information is data such as total budget authority, outlays, obligations, and unobligated balance. _Note_: This endpoint is due for a rework in the near future.
-    - _Methods_: GET, POST
 
 
-  * **[/v1/accounts/tas/](https://spending-api.us/api/v1/accounts/tas/)**
-    - _Description_: Returns a list of appropriations accounts, including the account name, Treasury Account Symbol (TAS) components, the associated budget function, and the corresponding agency information. _Note_: This endpoint is due for a rework in the near future.
-    - _Methods_: GET, POST
 
-
-  * **/v1/accounts/tas/autocomplete/**
-    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the TAS endpoint.
-    - _Methods_: POST
-
-
-  * **[/v1/awards/](https://spending-api.us/api/v1/awards/)**
-    - _Description_: Provides a list of awards. Award data pertains to grants, loans, direct payments to individuals, and contracts.
-    - _Methods_: GET, POST
-
-
-  * **/v1/awards/{pk}**
-    - _Description_: Provides information about a single award. Unlike the awards list endpoint (`/awards`), this one returns all available fields instead of the default set. The value for `{pk}` is the `id` field returned in the `/awards/` response.
-    - _Methods_: GET, POST
-
-
-  * **/v1/awards/autocomplete/**
-      - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the awards endpoint.
-    - _Methods_: POST
-
-
-  * **[/v1/transactions/](https://spending-api.us/api/v1/transactions/)**
-    - _Description_: Provides award transactions data. Awards transaction represent specific actions that apply to an award, such as a purchase order.
-    - _Methods_: GET, POST
-
-
-  * **/v1/transactions/{pk}**
-    - _Description_: Provides information about a single transaction. Unlike the transaction list endpoint (`/transactions`), this one returns all available fields instead of the default set.
-    - _Methods_: GET, POST
-
-
-  * **/v1/references/locations/**
-    - _Description_: Returns a list of locations. If a location's `recipient_flag` is set to true, it represents the location of award recipients like grantees and contractors. If its `place_of_performance_flag` is true, the location represents the place an award was executed. A single location can represent both a recipient and a place of performance.
-    - _Methods_: POST
-
-
-  * **/v1/references/locations/geocomplete/**
-    - _Description_: A structured hierarchy geographical autocomplete. See [Geographical Hierarchy Queries](#geographical-hierarchy-queries) for more information.
-    - _Methods_: POST
-
-
-  * **[/v1/references/agency/](https://spending-api.us/api/v1/references/agency/)**
-    - _Description_: Returns a list of agencies.
-    - _Methods_: GET, POST
-
-
-  * **[/v1/references/agency/autocomplete/](https://spending-api.us/api/v1/references/agency/autocomplete/)**
-    - _Description_: Provides a fast endpoint for evaluating autocomplete queries against the agency endpoint.
-    - _Methods_: POST
-
-
-  * **[/v1/references/cfda/](https://spending-api.us/api/v1/references/cfda/)**
-    - _Description_: Returns a list of CFDA programs
-    - _Methods_: GET, POST
-
-
-  * **/v1/references/cfda/{CFDA Program Code}**
-    - _Description_: Provides information about a single CFDA Program. Unlike the CFDA list endpoint (`/references/cfda`), this one returns all available fields instead of the default set.
-    - _Methods_: GET, POST
-
-
-  * **[/v1/submissions/](https://spending-api.us/api/v1/submissions/)**
-    - _Description_: Returns metadata about submissions loaded from the DATA Act broker. _Note_: This endpoint is due for a rework in the near future.
-    - _Methods_: GET, POST
-
-
-#### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
-Summarized data is available for some of the endpoints listed above:
-
-* **/v1/awards/total/**
-* **/v1/transactions/total/**
-* more coming soon
-
-You can get summarized data via a `POST` request that specifies:
-
-* `field`: the field to be summarized (this supports Django's foreign key traversal; for more details on this see `field` in [POST Requests](#post-requests)).
-* `aggregate`: the aggregate function to use when summarizing the data (defaults to `sum`; `avg`, `count`, `min`, and `max` are also supported)
-* `group`: the field to group by (optional; if not specified, data will be summarized across all objects)
-* `date_part`: applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
-
-Requests to the summary endpoints can also contain the `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
-
-The `results` portion of the response will contain:
-
-* `item`: the value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
-* `aggregate`: the summarized data
-
-To order the response by the items being returned via the `group` parameter, you can specify an `order` in the request: `"order": ["item"]`. To order the response by the aggregate values themselves, add `"order": ["aggregate]` to the request.
-
-For example, to request the yearly sum of obligated dollars across transactions for award types "B" and "C" (_i.e._, purchase orders and delivery orders) and to ensure that the response is ordered by year:
-
-POST request to `/transactions/total`:
-
-```json
-{
-    "field": "federal_action_obligation",
-    "group": "action_date",
-    "date_part": "year",
-    "aggregate": "sum",
-    "order": ["item"],
-    "filters": [
-        {
-            "field": "type",
-            "operation": "in",
-            "value": ["A", "B", "C", "D"]
-        }
-     ]
-}
-```
-
-Response:
-
-```json
-{
-  "page_metadata": {
-   "page": 1,
-   "has_next_page": false,
-   "next": null,
-   "previous": null
-  },
-  "results": [
-    {
-      "item": "2015",
-      "aggregate": "44948.00"
-    },
-    {
-      "item": "2016",
-      "aggregate": "1621763.83"
-    }
-  ]
-}
-```
-
-To summarize a field using a foreign key and to order the response by the summarized values from highest to lowest:
-
-POST request to `/awards/total`:
-
-```json
-{
-    "field": "total_obligation",
-    "group": "place_of_performance__state_code",
-    "aggregate": "sum",
-    "order": ["-aggregate"]
-}
-```
-Response:
-
-```json
-{
-  "page_metadata": {
-   "page": 1,
-   "has_next_page": false,
-   "next": null,
-   "previous": null
-  },
-  "results": [
-    {
-      "item": "MO",
-      "aggregate": "500000.00"
-    },
-    {
-      "item": "DC",
-      "aggregate": "485795.43"
-    },
-    {
-      "item": "UT",
-      "aggregate": "0.00"
-    },
-    {
-      "item": "HI",
-      "aggregate": "-2891.33"
-    }
-  ],
-}
-```
-
-#### Pagination <a name="pagination"></a>
-To control the number of items returned on a single "page" of a request or to request a specific page number, use the following URL parameters:
-
-* `page` - specifies the page of results to return. The default is 1.
-* `limit` - specifies the maximum number of items to return in a response page. The default is 100.
-
-For example, the following request will limit the awards on a single page to 20 and will return page 5 of the results:
-
-`/v1/awards/?page=5&limit=20`
 
 #### GET Requests <a name="get-requests"></a>
 GET requests support simple equality filters for fields in the underlying data model. These can be specified by attaching field value pairs to the endpoint as URL parameters:
@@ -547,6 +340,125 @@ The response has three functional parts:
   * `req` - The special code corresponding to this POST request. See [Post request preservation]("#post-requests-preservation") for how to use this
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
+### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
+  Summarized data is available for some of the endpoints listed above:
+
+  * **/v1/awards/total/**
+  * **/v1/transactions/total/**
+  * more coming soon
+
+  You can get summarized data via a `POST` request that specifies:
+
+  * `field`: the field to be summarized (this supports Django's foreign key traversal; for more details on this see `field` in [POST Requests](#post-requests)).
+  * `aggregate`: the aggregate function to use when summarizing the data (defaults to `sum`; `avg`, `count`, `min`, and `max` are also supported)
+  * `group`: the field to group by (optional; if not specified, data will be summarized across all objects)
+  * `date_part`: applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
+
+  Requests to the summary endpoints can also contain the `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
+
+  The `results` portion of the response will contain:
+
+  * `item`: the value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
+  * `aggregate`: the summarized data
+
+  To order the response by the items being returned via the `group` parameter, you can specify an `order` in the request: `"order": ["item"]`. To order the response by the aggregate values themselves, add `"order": ["aggregate]` to the request.
+
+  For example, to request the yearly sum of obligated dollars across transactions for award types "B" and "C" (_i.e._, purchase orders and delivery orders) and to ensure that the response is ordered by year:
+
+  POST request to `/transactions/total`:
+
+  ```json
+  {
+      "field": "federal_action_obligation",
+      "group": "action_date",
+      "date_part": "year",
+      "aggregate": "sum",
+      "order": ["item"],
+      "filters": [
+          {
+              "field": "type",
+              "operation": "in",
+              "value": ["A", "B", "C", "D"]
+          }
+       ]
+  }
+  ```
+
+  Response:
+
+  ```json
+  {
+    "page_metadata": {
+     "page": 1,
+     "has_next_page": false,
+     "next": null,
+     "previous": null
+    },
+    "results": [
+      {
+        "item": "2015",
+        "aggregate": "44948.00"
+      },
+      {
+        "item": "2016",
+        "aggregate": "1621763.83"
+      }
+    ]
+  }
+  ```
+
+  To summarize a field using a foreign key and to order the response by the summarized values from highest to lowest:
+
+  POST request to `/awards/total`:
+
+  ```json
+  {
+      "field": "total_obligation",
+      "group": "place_of_performance__state_code",
+      "aggregate": "sum",
+      "order": ["-aggregate"]
+  }
+  ```
+  Response:
+
+  ```json
+  {
+    "page_metadata": {
+     "page": 1,
+     "has_next_page": false,
+     "next": null,
+     "previous": null
+    },
+    "results": [
+      {
+        "item": "MO",
+        "aggregate": "500000.00"
+      },
+      {
+        "item": "DC",
+        "aggregate": "485795.43"
+      },
+      {
+        "item": "UT",
+        "aggregate": "0.00"
+      },
+      {
+        "item": "HI",
+        "aggregate": "-2891.33"
+      }
+    ],
+  }
+  ```
+
+### Pagination <a name="pagination"></a>
+  To control the number of items returned on a single "page" of a request or to request a specific page number, use the following URL parameters:
+
+  * `page` - specifies the page of results to return. The default is 1.
+  * `limit` - specifies the maximum number of items to return in a response page. The default is 100.
+
+  For example, the following request will limit the awards on a single page to 20 and will return page 5 of the results:
+
+  `/v1/awards/?page=5&limit=20`
 
 ### Autocomplete Queries <a name="autocomplete-queries"></a>
 
