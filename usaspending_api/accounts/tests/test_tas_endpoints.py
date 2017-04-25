@@ -1,13 +1,20 @@
+from datetime import date
+
 import pytest
 
 from model_mommy import mommy
 import json
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
 @pytest.fixture
 def account_models():
+    subm_2015_1 = mommy.make('submissions.SubmissionAttributes', reporting_period_start=date(2014, 10, 1))
+    subm_2015_2 = mommy.make('submissions.SubmissionAttributes', reporting_period_start=date(2015, 8, 1))
+    subm_2016_1 = mommy.make('submissions.SubmissionAttributes', reporting_period_start=date(2016, 1, 1))
+    subm_2016_2 = mommy.make('submissions.SubmissionAttributes', reporting_period_start=date(2016, 6, 1))
     obj_clas_1 = mommy.make('references.ObjectClass', object_class=1)
     obj_clas_2 = mommy.make('references.ObjectClass', object_class=2)
     prg_atvy_1 = mommy.make('references.RefProgramActivity', id=1)
@@ -19,9 +26,12 @@ def account_models():
     AppropriationAccountBalances.populate_final_of_fy()
     mommy.make('accounts.AppropriationAccountBalancesQuarterly', treasury_account_identifier=tas_1, budget_authority_unobligated_balance_brought_forward_fyb=10, _fill_optional=True)
     mommy.make('accounts.AppropriationAccountBalancesQuarterly', treasury_account_identifier=tas_2, budget_authority_unobligated_balance_brought_forward_fyb=10, _fill_optional=True)
-    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_1, program_activity=prg_atvy_1, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=1000, _quantity=2, _fill_optional=True)
-    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_2, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=2000, _quantity=2, _fill_optional=True)
-    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_1, treasury_account=tas_1, obligations_undelivered_orders_unpaid_total_cpe=50, _fill_optional=True),
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_1, program_activity=prg_atvy_1, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=8000, _quantity=2, _fill_optional=True, submission=subm_2015_1)  # ignored, superseded by the next submission in the FY
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_1, program_activity=prg_atvy_1, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=1000, _quantity=2, _fill_optional=True, submission=subm_2015_2)
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_2, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=9000, _quantity=2, _fill_optional=True, submission=subm_2016_1)  # ignored, superseded by the next submission in the FY
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_2, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=2000, _quantity=2, _fill_optional=True, submission=subm_2016_2)
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=obj_clas_2, program_activity=prg_atvy_1, treasury_account=tas_1, obligations_undelivered_orders_unpaid_total_cpe=50, _fill_optional=True, submission=subm_2016_2)
+    FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
     mommy.make('financial_activities.TasProgramActivityObjectClassQuarterly', object_class=obj_clas_1, program_activity=prg_atvy_1, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=5000, _quantity=2, _fill_optional=True)
     mommy.make('financial_activities.TasProgramActivityObjectClassQuarterly', object_class=obj_clas_2, program_activity=prg_atvy_2, treasury_account=tas_2, obligations_undelivered_orders_unpaid_total_cpe=3000, _quantity=2, _fill_optional=True)
     mommy.make('financial_activities.TasProgramActivityObjectClassQuarterly', object_class=obj_clas_2, program_activity=prg_atvy_1, treasury_account=tas_1, obligations_undelivered_orders_unpaid_total_cpe=100, _fill_optional=True)
@@ -44,8 +54,8 @@ def test_tas_balances_total(account_models, client):
     """
 
     response_tas_sums = {
-        "ABC": "20.00",
-        "XYZ": "30.00"
+        "ABC": "10.00",
+        "XYZ": "10.00"
     }
 
     resp = client.post(
@@ -232,8 +242,8 @@ def test_tas_balances_quarter_total(account_models, client):
     """
 
     response_tas_sums = {
-        "ABC": "20.00",
-        "XYZ": "30.00"
+        "ABC": "10.00",
+        "XYZ": "10.00"
     }
 
     resp = client.post(

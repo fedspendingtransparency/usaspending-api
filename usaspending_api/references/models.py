@@ -3,6 +3,8 @@ import logging
 from django.db import models
 from django.db.models import F, Q
 from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.references.helpers import canonicalize_string
+from django.db.models.functions import Length, Upper
 
 
 class RefCityCountyCode(models.Model):
@@ -22,6 +24,17 @@ class RefCityCountyCode(models.Model):
     class Meta:
         managed = True
         db_table = 'ref_city_county_code'
+
+    @classmethod
+    def canonicalize(cls):
+        """
+        Transforms the values in `city_name` and `county_name`
+        to their canonicalized (uppercase, regulare spaced) form.
+        """
+        for obj in cls.objects.all():
+            obj.city_name = canonicalize_string(obj.city_name)
+            obj.county_name = canonicalize_string(obj.county_name)
+            obj.save()
 
 
 class RefCountryCode(models.Model):
@@ -98,9 +111,11 @@ class Agency(models.Model):
         Returns:
             an Agency instance
 
+        If called with None / empty subtier code, returns None
         """
-        return Agency.objects.filter(
-            subtier_agency__subtier_code=subtier_code).order_by('-update_date').first()
+        if subtier_code:
+            return Agency.objects.filter(
+                subtier_agency__subtier_code=subtier_code).order_by('-update_date').first()
 
     @staticmethod
     def get_by_toptier_subtier(toptier_cgac_code, subtier_code):
@@ -217,7 +232,7 @@ class Location(DataSourceTrackedModel):
     zip_4a = models.CharField(max_length=10, blank=True, null=True)
     congressional_code = models.CharField(max_length=2, blank=True, null=True, verbose_name="Congressional District Code")
     performance_code = models.CharField(max_length=9, blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
-    zip_last4 = models.CharField(max_length=4, blank=True, null=True)
+    zip_last4 = models.CharField(max_length=10, blank=True, null=True)
     zip5 = models.CharField(max_length=5, blank=True, null=True)
     foreign_postal_code = models.CharField(max_length=50, blank=True, null=True)
     foreign_province = models.CharField(max_length=25, blank=True, null=True)
@@ -431,6 +446,11 @@ class LegalEntity(DataSourceTrackedModel):
     small_business_description = models.TextField(blank=True, null=True)
     individual = models.CharField(max_length=1, blank=True, null=True)
 
+    def save(self, *args, **kwargs):
+        super(LegalEntity, self).save(*args, **kwargs)
+
+        LegalEntityOfficers.objects.get_or_create(legal_entity=self)
+
     @staticmethod
     def get_default_fields(path=None):
         return [
@@ -446,6 +466,43 @@ class LegalEntity(DataSourceTrackedModel):
         managed = True
         db_table = 'legal_entity'
         unique_together = (('recipient_unique_id'),)
+
+
+class LegalEntityOfficers(models.Model):
+    legal_entity = models.OneToOneField(
+        LegalEntity, on_delete=models.CASCADE,
+        primary_key=True, related_name='officers')
+
+    officer_1_name = models.TextField(null=True, blank=True)
+    officer_1_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_2_name = models.TextField(null=True, blank=True)
+    officer_2_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_3_name = models.TextField(null=True, blank=True)
+    officer_3_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_4_name = models.TextField(null=True, blank=True)
+    officer_4_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_5_name = models.TextField(null=True, blank=True)
+    officer_5_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+
+    update_date = models.DateField(auto_now_add=True, blank=True, null=True)
+
+    @staticmethod
+    def get_default_fields(path=None):
+        return [
+            "officer_1_name",
+            "officer_1_amount",
+            "officer_2_name",
+            "officer_2_amount",
+            "officer_3_name",
+            "officer_3_amount",
+            "officer_4_name",
+            "officer_4_amount",
+            "officer_5_name",
+            "officer_5_amount",
+        ]
+
+    class Meta:
+        managed = True
 
 
 class ObjectClass(models.Model):

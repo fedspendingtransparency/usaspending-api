@@ -83,6 +83,9 @@ def test_get_by_subtier():
     assert Agency.get_by_subtier('abc') == agency1
     # if there's no match, we should get none
     assert Agency.get_by_subtier('nope') is None
+    # if called with an empty argument, we should get None
+    assert Agency.get_by_subtier('') is None
+    assert Agency.get_by_subtier(None) is None
 
 
 @pytest.mark.django_db

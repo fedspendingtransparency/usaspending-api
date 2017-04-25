@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
-    Transaction, TransactionAssistance, TransactionContract)
+    Transaction, TransactionAssistance, TransactionContract, Subaward)
 from usaspending_api.accounts.serializers import TasSerializer
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import ProgramActivitySerializer, ObjectClassSerializer
@@ -90,6 +90,35 @@ class TransactionSerializer(LimitableSerializer):
         }
 
 
+class SubawardSerializer(LimitableSerializer):
+
+    class Meta:
+        model = Subaward
+        fields = '__all__'
+        nested_serializers = {
+            "recipient": {
+                "class": LegalEntitySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "awarding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "funding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "place_of_performance": {
+                "class": LocationSerializer,
+                "kwargs": {"read_only": True}
+            },
+            "cfda": {
+                "class": CfdaSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
+
+
 class AwardSerializer(LimitableSerializer):
 
     class Meta:
@@ -116,7 +145,7 @@ class AwardSerializer(LimitableSerializer):
             "latest_transaction": {
                 "class": TransactionSerializer,
                 "kwargs": {"read_only": True}
-            },
+            }
         }
 
     date_signed__fy = serializers.SerializerMethodField()

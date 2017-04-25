@@ -1,7 +1,9 @@
 import warnings
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import F, Q, Sum
+from simple_history.models import HistoricalRecords
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -150,6 +152,10 @@ class Award(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this record was updated in the API")
     latest_transaction = models.ForeignKey("awards.Transaction", related_name="latest_for_award", null=True, help_text="The latest transaction by action_date associated with this award")
 
+    # Subaward aggregates
+    total_subaward_amount = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    subaward_count = models.IntegerField(default=0)
+
     objects = models.Manager()
     nonempty = AwardManager()
 
@@ -186,6 +192,8 @@ class Award(DataSourceTrackedModel):
             "funding_agency",
             "recipient",
             "date_signed__fy",
+            "subaward_count",
+            "total_subaward_amount"
         ]
 
     def __str__(self):
@@ -283,7 +291,25 @@ class Award(DataSourceTrackedModel):
         db_table = 'awards'
 
 
-class Transaction(DataSourceTrackedModel):
+class TransactionAgeComparisonMixin:
+
+    def newer_than(self, dct):
+        """Compares age of this instance to a Python dictionary
+
+        Determines the age of each by last_modified_date, if set,
+        otherwise action_date.
+        Returns `False` if either side lacks a date completely.
+        """
+
+        my_date = self.last_modified_date or self.submission.certified_date
+        their_date = dct.get('last_modified_date') or dct.get('submission').certified_date
+        if my_date and their_date:
+            return my_date > their_date
+        else:
+            return False
+
+
+class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.CharField(max_length=256, blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
@@ -308,6 +334,7 @@ class Transaction(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was certified")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="The date this transaction was created in the API")
     update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this transaction was updated in the API")
+    history = HistoricalRecords()
 
     def __str__(self):
         return '%s award: %s' % (self.type_description, self.award)
@@ -334,6 +361,23 @@ class Transaction(DataSourceTrackedModel):
             "contract_data",  # must match related_name in TransactionContract
             "assistance_data"  # must match related_name in TransactionAssistance
         ]
+
+    @classmethod
+    def get_or_create_transaction(cls, **kwargs):
+        """Gets and updates, or creates, a Transaction
+
+        Transactions must be unique on Award, Awarding Agency, and Mod Number
+        """
+        transaction = cls.objects.filter(
+            award=kwargs.get('award'),
+            modification_number=kwargs.get('modification_number')
+        ).order_by('-update_date').first()
+        if transaction:
+            if not transaction.newer_than(kwargs):
+                for (k, v) in kwargs.items():
+                    setattr(transaction, k, v)
+            return transaction
+        return cls(**kwargs)
 
     class Meta:
         db_table = 'transaction'
@@ -451,6 +495,7 @@ class TransactionContract(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
     reporting_period_start = models.DateField(blank=True, null=True, help_text="The date marking the start of the reporting period")
     reporting_period_end = models.DateField(blank=True, null=True, help_text="The date marking the end of the reporting period")
+    history = HistoricalRecords()
 
     @staticmethod
     def get_default_fields(path=None):
@@ -466,6 +511,16 @@ class TransactionContract(DataSourceTrackedModel):
             "naics_description",
             "product_or_service_code"
         ]
+
+    @classmethod
+    def get_or_create(cls, transaction, **kwargs):
+        try:
+            if not transaction.newer_than(kwargs):
+                for (k, v) in kwargs.items():
+                    setattr(transaction.contract_data, k, v)
+        except ObjectDoesNotExist:
+            transaction.contract_data = cls(**kwargs)
+        return transaction.contract_data
 
     class Meta:
         db_table = 'transaction_contract'
@@ -504,6 +559,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
     period_of_performance_start_date = models.DateField(blank=True, null=True)
     period_of_performance_current_end_date = models.DateField(blank=True, null=True)
+    history = HistoricalRecords()
 
     @staticmethod
     def get_default_fields(path=None):
@@ -518,34 +574,44 @@ class TransactionAssistance(DataSourceTrackedModel):
             "type"
         ]
 
+    @classmethod
+    def get_or_create(cls, transaction, **kwargs):
+        try:
+            if not transaction.newer_than(kwargs):
+                for (k, v) in kwargs.items():
+                    setattr(transaction.assistance_data, k, v)
+        except ObjectDoesNotExist:
+            transaction.assistance_data = cls(**kwargs)
+        return transaction.assistance_data
+
     class Meta:
         db_table = 'transaction_assistance'
 
 
-class SubAward(DataSourceTrackedModel):
-    sub_award_id = models.AutoField(primary_key=True, verbose_name="Sub-Award ID")
-    award = models.ForeignKey(Award, models.CASCADE)
-    legal_entity = models.ForeignKey(LegalEntity, models.CASCADE)
-    sub_recipient_unique_id = models.CharField(max_length=9, blank=True, null=True)
-    sub_recipient_ultimate_parent_unique_id = models.CharField(max_length=9, blank=True, null=True)
-    sub_recipient_ultimate_parent_name = models.CharField(max_length=120, blank=True, null=True)
-    subawardee_business_type = models.CharField(max_length=255, blank=True, null=True)
-    sub_recipient_name = models.CharField(max_length=120, blank=True, null=True)
-    subcontract_award_amount = models.DecimalField(max_digits=20, decimal_places=0, blank=True, null=True)
-    cfda_number_and_title = models.CharField(max_length=255, blank=True, null=True)
-    prime_award_report_id = models.CharField(max_length=40, blank=True, null=True)
-    award_report_month = models.CharField(max_length=25, blank=True, null=True)
-    award_report_year = models.CharField(max_length=4, blank=True, null=True)
-    rec_model_question1 = models.CharField(max_length=1, blank=True, null=True)
-    rec_model_question2 = models.CharField(max_length=1, blank=True, null=True)
-    subaward_number = models.CharField(max_length=32, blank=True, null=True)
-    reporting_period_start = models.DateField(blank=True, null=True)
-    reporting_period_end = models.DateField(blank=True, null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
-    certified_date = models.DateField(blank=True, null=True)
-    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
+class Subaward(DataSourceTrackedModel):
+    # Foreign keys
+    award = models.ForeignKey(Award, models.CASCADE, related_name="subawards")
+    recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
+    awarding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="awarding_subawards", null=True)
+    funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="funding_subawards", null=True)
+    place_of_performance = models.ForeignKey(Location, models.DO_NOTHING, null=True)
+
+    subaward_number = models.TextField(db_index=True)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    description = models.TextField(null=True, blank=True)
+
+    recovery_model_question1 = models.TextField(null=True, blank=True)
+    recovery_model_question2 = models.TextField(null=True, blank=True)
+
+    action_date = models.DateField(blank=True, null=True)
+    award_report_fy_month = models.IntegerField()
+    award_report_fy_year = models.IntegerField()
+
+    naics = models.TextField(blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
+    naics_description = models.TextField(blank=True, null=True, verbose_name="NAICS Description", help_text="A plain text description of the NAICS code")
 
     class Meta:
         managed = True
-        db_table = 'sub_award'
+        unique_together = (('subaward_number', 'award'))
