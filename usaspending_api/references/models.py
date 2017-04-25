@@ -450,6 +450,20 @@ class LegalEntity(DataSourceTrackedModel):
 
         LegalEntityOfficers.objects.get_or_create(legal_entity=self)
 
+    @classmethod
+    def get_or_create_by_duns(cls, duns):
+        """
+        Finds a legal entity with the matching duns, or creates it if it does
+        not exist. If the duns is null, will always create a new instance.
+
+        Returns a single legal entity instance, and a boolean indicating if the
+        record was created or retrieved (i.e. mimicing the return of get_or_create)
+        """
+        if duns is None or len(duns) == 0:
+            return cls.objects.create(), True
+        else:
+            return cls.objects.get_or_create(recipient_unique_id=duns)
+
     @staticmethod
     def get_default_fields(path=None):
         return [
@@ -464,7 +478,6 @@ class LegalEntity(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'legal_entity'
-        unique_together = (('recipient_unique_id'),)
 
 
 class LegalEntityOfficers(models.Model):
