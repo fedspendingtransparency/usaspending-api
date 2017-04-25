@@ -1088,20 +1088,20 @@ caption { padding-top: 8px; padding-bottom: 8px; color: #777777; text-align: lef
 
 th { text-align: left; }
 
-.table { width: 100%; max-width: 100%; margin-bottom: 20px; }
-.table > thead > tr > th, .table > thead > tr > td, .table > tbody > tr > th, .table > tbody > tr > td, .table > tfoot > tr > th, .table > tfoot > tr > td { padding: 8px; line-height: 1.42857; vertical-align: top; border-top: 1px solid #ddd; }
-.table > thead > tr > th { vertical-align: bottom; border-bottom: 2px solid #ddd; }
-.table > caption + thead > tr:first-child > th, .table > caption + thead > tr:first-child > td, .table > colgroup + thead > tr:first-child > th, .table > colgroup + thead > tr:first-child > td, .table > thead:first-child > tr:first-child > th, .table > thead:first-child > tr:first-child > td { border-top: 0; }
-.table > tbody + tbody { border-top: 2px solid #ddd; }
-.table .table { background-color: #fff; }
+table { width: 100%; max-width: 100%; margin-bottom: 20px; }
+table > thead > tr > th, .table > thead > tr > td, .table > tbody > tr > th, .table > tbody > tr > td, .table > tfoot > tr > th, .table > tfoot > tr > td { padding: 8px; line-height: 1.42857; vertical-align: top; border-top: 1px solid #ddd; }
+table > thead > tr > th { vertical-align: bottom; border-bottom: 2px solid #ddd; }
+table > caption + thead > tr:first-child > th, .table > caption + thead > tr:first-child > td, .table > colgroup + thead > tr:first-child > th, .table > colgroup + thead > tr:first-child > td, .table > thead:first-child > tr:first-child > th, .table > thead:first-child > tr:first-child > td { border-top: 0; }
+table > tbody + tbody { border-top: 2px solid #ddd; }
+table { background-color: #fff; }
 
 .table-condensed > thead > tr > th, .table-condensed > thead > tr > td, .table-condensed > tbody > tr > th, .table-condensed > tbody > tr > td, .table-condensed > tfoot > tr > th, .table-condensed > tfoot > tr > td { padding: 5px; }
 
-.table-bordered { border: 1px solid #ddd; }
-.table-bordered > thead > tr > th, .table-bordered > thead > tr > td, .table-bordered > tbody > tr > th, .table-bordered > tbody > tr > td, .table-bordered > tfoot > tr > th, .table-bordered > tfoot > tr > td { border: 1px solid #ddd; }
-.table-bordered > thead > tr > th, .table-bordered > thead > tr > td { border-bottom-width: 2px; }
+table { border: 1px solid #ddd; }
+table > thead > tr > th, .table-bordered > thead > tr > td, .table-bordered > tbody > tr > th, .table-bordered > tbody > tr > td, .table-bordered > tfoot > tr > th, .table-bordered > tfoot > tr > td { border: 1px solid #ddd; }
+table > thead > tr > th, .table-bordered > thead > tr > td { border-bottom-width: 2px; }
 
-.table-striped > tbody > tr:nth-of-type(odd) { background-color: #f9f9f9; }
+table > tbody > tr:nth-of-type(odd) { background-color: #f9f9f9; }
 
 .table-hover > tbody > tr:hover { background-color: #f5f5f5; }
 
@@ -2365,23 +2365,23 @@ ul.no-bullet li { margin: 0 !important; }
 
 .panel-heading h3 { margin: 0; font-weight: 700; font-size: 2.0rem; line-height: 2.8rem; color: #555; }
 
-.navbar { margin-bottom: 0; }
+.navbar { margin-bottom: 10px; }
 
 .modal-sm { width: 400px; }
 @media screen and (max-width: 767px) { .modal-sm { width: 98%; } }
 
 /***** TABLE STYLES *****/
-table.table, table.table-bordered { width: 100%; }
-table.table thead, table.table-bordered thead { font-size: 1.4rem; font-weight: 700; }
-table.table thead tr th, table.table-bordered thead tr th { padding: 15px; border-bottom: none; }
-table.table tbody tr td, table.table-bordered tbody tr td { padding: 15px; font-size: 1.4rem; color: #5b616b; }
+table, table.table-bordered { width: 100%; }
+table thead, table.table-bordered thead { font-size: 1.4rem; font-weight: 700; }
+table thead tr th, table.table-bordered thead tr th { padding: 15px; border-bottom: none; }
+table tbody tr td, table.table-bordered tbody tr td { padding: 15px; font-size: 1.4rem; color: #5b616b; }
 
-table.table-bordered thead { color: #ffffff; background: #5b616b; }
+table thead { color: #ffffff; background: #5b616b; }
 
-table.table thead { color: #212121; background: #f1f1f1; }
-table.table thead tr th { border-bottom: none; vertical-align: middle; }
-table.table tbody tr:last-child { border-bottom: 1px solid #ddd; }
-table.table tbody tr td { vertical-align: middle; }
+/* table thead { color: #212121; background: #f1f1f1; }*/
+table thead tr th { border-bottom: none; vertical-align: middle; }
+table tbody tr:last-child { border-bottom: 1px solid #ddd; }
+table tbody tr td { vertical-align: middle; }
 
 .list-group-item { padding: 15px; }
 .list-group-item:first-child { border-top-right-radius: 0; border-top-left-radius: 0; }
@@ -2525,7 +2525,7 @@ a.list-group-item { color: #0071bc; }
 .mb-60 { margin-bottom: 60px; }
 
 .usa-da-header { margin: 0; }
-.usa-da-header .usa-da-header-container h1 { font-size: 3.1rem; font-weight: 700; color: #5b616b; line-height: 2.9rem; margin: 30px auto 30px 0; }
+.usa-da-header .usa-da-header-container h1 { font-size: 3.1rem; font-weight: 700; color: #5b616b; line-height: 2.9rem; margin: 10px auto 1px 0; }
 .usa-da-header .usa-da-header-container h1 a { color: #f1f1f1; }
 
 .nav-row { display: none; }
@@ -2596,7 +2596,7 @@ html, body { background: #f6f6f6; }
 
 #sidebar li a:focus { background: none; }
 
-#sidebar li li.active { background: red; }
+#sidebar li li.active { background: #eee; }
 
 section.wrap { border: 1px solid #ddd; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.025); background: #fff; padding: 20px 20px; margin: 30px 0; }
 
@@ -2733,7 +2733,7 @@ h2.styleguide-only { border-bottom: 1px solid #ccc; padding: 0 0 10px; }
 .code-block-toggle-html:before { content: 'View Code'; }
 .code-block-toggle-html[aria-expanded="true"]:before { content: 'Hide Code'; }
 
-pre { display: block; padding: 0; margin: 0 0 10px; font-size: 13px; line-height: 1.42857; word-break: break-all; word-wrap: break-word; color: #333333; background-color: transparent; border: none; border-radius: 0; }
+pre { display: block; padding: 0; margin: 0 0 30px; font-size: 13px; line-height: 1.42857; word-break: break-all; word-wrap: break-word; color: #333333; background-color: transparent; border: none; border-radius: 0; }
 
 .hljs { padding: 1.4em; font-size: 1.2rem; }
 
