@@ -2525,7 +2525,7 @@ a.list-group-item { color: #0071bc; }
 .mb-60 { margin-bottom: 60px; }
 
 .usa-da-header { margin: 0; }
-.usa-da-header .usa-da-header-container h1 { font-size: 3.1rem; font-weight: 700; color: #5b616b; line-height: 2.9rem; margin: 30px auto 30px 0; }
+.usa-da-header .usa-da-header-container h1 { font-size: 3.1rem; font-weight: 700; color: #5b616b; line-height: 2.9rem; margin: 10px auto 1px 0; }
 .usa-da-header .usa-da-header-container h1 a { color: #f1f1f1; }
 
 .nav-row { display: none; }
@@ -2733,7 +2733,7 @@ h2.styleguide-only { border-bottom: 1px solid #ccc; padding: 0 0 10px; }
 .code-block-toggle-html:before { content: 'View Code'; }
 .code-block-toggle-html[aria-expanded="true"]:before { content: 'Hide Code'; }
 
-pre { display: block; padding: 0; margin: 0 0 10px; font-size: 13px; line-height: 1.42857; word-break: break-all; word-wrap: break-word; color: #333333; background-color: transparent; border: none; border-radius: 0; }
+pre { display: block; padding: 0; margin: 0 0 30px; font-size: 13px; line-height: 1.42857; word-break: break-all; word-wrap: break-word; color: #333333; background-color: transparent; border: none; border-radius: 0; }
 
 .hljs { padding: 1.4em; font-size: 1.2rem; }
 

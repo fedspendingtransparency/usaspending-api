@@ -1,16 +1,26 @@
 <ul class="nav nav-stacked" id="sidebar">
-  <li><a href="#introduction">Introduction</a></li>
-  <li><a href="#whats-an-api">What's an API?</a></li>
-  <li><a href="#using-the-api">Using the API</a></li>
-  <li><a href="#endpoint-overview">Endpoint Overview</a></li>
-  <li><a href="#data-endpoints">Data Endpoints</a></li>
-  <li><a href="#get-vs-post">GET vs POST Requests</a></li>
-  <li><a href="#filtering">Filtering</a></li>
-  <li><a href="#ordering">Ordering Responses</a></li>
-  <li><a href="#pagination">Pagination</a></li>
-  <li><a href="#aggregation">Aggregation</a></li>
-  <li><a href="#other">Other Information</a></li>
+  <li><a href="/docs/intro-tutorial">Introductory Tutorial</a>
+  <!--<ul class="">
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#whats-an-api">What's an API?</a></li>
+    <li><a href="#using-the-api">Using the API</a></li>
+    <li><a href="#endpoint-overview">Endpoint Overview</a></li>
+    <li><a href="#data-endpoints">Data Endpoints</a></li>
+    <li><a href="#get-vs-post">GET vs POST Requests</a></li>
+    <li><a href="#filtering">Filtering</a></li>
+    <li><a href="#ordering">Ordering Responses</a></li>
+    <li><a href="#pagination">Pagination</a></li>
+    <li><a href="#aggregation">Aggregation</a></li>
+    <li><a href="#other">Other Information</a></li>
+  </ul>-->
+  </li>
+  <li><a href="/docs/using-the-api">Using this API</a></li>
+  <li><a href="/docs/endpoints">Endpoints</a></li>
+  <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
+  <li><a href="/docs/recipes">Request Recipes</a></li>
+
 </ul>
+
 [//]: # (Begin Content)
 
 # Introductory Tutorial <a name="introduction"></a>
@@ -23,7 +33,7 @@ Welcome to the introductory USASpending API tutorial. This tutorial is designed 
 
 If you're looking for federal spending data that's designed to be read by humans instead of computer programs, you should head to <a href="https://www.usaspending.gov/Pages/Default.aspx">usaspending.gov</a>, or visit <a href="https://openbeta.usaspending.gov">openbeta.usaspending.gov</a> for information on the updated version of the site that's currently in development.
 
-## Using the API <a name="using-the-api"></a> 
+## Using the API <a name="using-the-api"></a>
 
 Over the next few sections, we will discuss the different methods for accessing the API, how to filter the data, how to use autocomplete endpoints, and how to find more information.
 
@@ -33,7 +43,7 @@ You do not need to complete this tutorial in its entirety to get started. Feel f
 
 When you type a url into your browser, it usually returns a web page: a document that your browser knows how to display for you to read. APIs use urls, too--but instead of returning formated web pages, API urls return data structured to be easy for computers to parse. API urls are called "endpoints." Just as many webpages make up a web site, many endpoints make up an API.
 
-The USASpending API supports a number of endpoints. For example `/api/v1/awards/` is our awards endpoint. 
+The USASpending API supports a number of endpoints. For example `/api/v1/awards/` is our awards endpoint.
 
 Our endpoints are broken into a few groups:
 
@@ -71,7 +81,7 @@ For more information on the record objects for each endpoint, check out the [dat
 
 #### GET vs POST requests <a name="get-vs-post"></a>
 
-Most endpoints support both GET and POST methods for making a request. 
+Most endpoints support both GET and POST methods for making a request.
 
 Requests for a specific record where the <span title="This is a numerical identifier referencing the specific item">identifier<sup>?</sup></span> is known are done via a GET request. For example, a request to `/api/v1/awards/1234` would retreive the award with identifier `1234`.
 
@@ -324,7 +334,7 @@ You can combine these POST parameters with any other POST parameter or filters.
 
 Aggregation endpoints allow you to perform simple aggregations on the data. For example, let's say you want to get the sum of all <span title="The amount of money obligated by the federal government">total obligations<sup>?</sup></span> for each award record, summed up by fiscal year. Sure, you could query the data, gather it all up, and process it - or we can use an aggregation endpoint.
 
-Currently, they only support POST requests. 
+Currently, they only support POST requests.
 
 Let's try it with `/api/v1/awards/total`.
 
