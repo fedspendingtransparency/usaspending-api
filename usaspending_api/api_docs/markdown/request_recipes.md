@@ -4,10 +4,10 @@
   <li><a href="/docs/endpoints">Endpoints</a></li>
   <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
   <li><a href="/docs/recipes">Request Recipes</a>
-  <ul>
+  <!--<ul>
     <li><a href="#award-recipes">Award Recipes</a></li>
     <li><a href="#postman">Postman Collection</a></li>
-  </ul>
+  </ul>-->
   </li>
 
 </ul>
@@ -97,4 +97,4 @@ POST
 
 # Postman Collections <a name="postman"></a>
 
-[Postman](https://www.getpostman.com/) is a free app for making easy API requests. You can also use it to import and inspect a collection of pre-generated API requests. [Here is a postman collection](https://raw.githubusercontent.com/fedspendingtransparency/usaspending-api/doc-styles/usaspending_api/static_doc_files/docs/usaspending_searchpage_postmancollection.json) you can use to see how we generate the visualizations on [the prototype search page](https://spendingdata.us/#/search/).
+[Postman](https://www.getpostman.com/) is a free app for making easy API requests. You can also use it to import and inspect a collection of pre-generated API requests. [Here is a postman collection](https://raw.githubusercontent.com/fedspendingtransparency/usaspending-api/master/usaspending_api/static_doc_files/docs/usaspending_searchpage_postmancollection.json) you can use to see how we generate the visualizations on [the prototype search page](https://spendingdata.us/#/search/).
