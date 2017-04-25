@@ -40,12 +40,12 @@ The currently available endpoints are listed below. Our [data dictionary](/docs/
 
 To reduce unnecessary data transfer, most endpoints return a default set of information about the items being requested. To override the default field list, use the `fields`, `exclude`, and `verbose` options (see [POST Requests](#post-requests) for more information).
 
-  * **[/v1/accounts/](https://spending-api.us/api/v1/accounts/)**
-    - _Description_: Provides financial information by appropriations account. Financial information is data such as total budget authority, outlays, obligations, and unobligated balance. _Note_: This endpoint is due for a rework in the near future.
+  * **[/v1/federal_accounts/](https://spending-api.us/api/v1/federal_accounts/)**
+    - _Description_: Provides financial information by federal account. Financial information is data such as total budget authority, outlays, obligations, and unobligated balance. _Note_: This endpoint is due for a rework in the near future.
     - _Methods_: GET, POST
 
 
-  * **[/v1/accounts/tas/](https://spending-api.us/api/v1/accounts/tas/)**
+  * **[/v1/tas/](https://spending-api.us/api/v1/tas/)**
     - _Description_: Returns a list of appropriations accounts, including the account name, Treasury Account Symbol (TAS) components, the associated budget function, and the corresponding agency information. _Note_: This endpoint is due for a rework in the near future.
     - _Methods_: GET, POST
 
