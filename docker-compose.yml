@@ -1,0 +1,26 @@
+version: '2'
+services:
+  app:
+    build: .
+    volumes:
+      - .:/dockermount
+    ports:
+      - 8000:8000
+    entrypoint: ["python", "/dockermount/docker_django_management.py"]
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    links:
+      - db
+    environment:
+      - DDM_IS_RUNNING_IN_DOCKER=yup
+      - DATABASE_URL=postgres://usaspender@db/usaspending
+      - DDM_HOST_USER=usaspender
+      - PYTHONUNBUFFERED=yup
+  db:
+    image: postgres:9.5.4
+    volumes:
+      - pgdata:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=usaspending
+      - POSTGRES_USER=usaspender
+volumes:
+  pgdata:
