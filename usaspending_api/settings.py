@@ -145,6 +145,10 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_PAGINATION_CLASS': 'usaspending_api.common.pagination.UsaspendingPagination',
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'usaspending_api.common.renderers.BrowsableAPIRendererWithoutForms',
+    ),
 }
 
 # Internationalization
