@@ -181,30 +181,29 @@ def get_award_financial_transaction(
     Returns:
         A Transaction model instance
     """
-    # if both fain and uri are supplied as paramaters, look up by fain first
-    incoming_fain = fain
-    incoming_uri = uri
-    if incoming_fain is not None and incoming_uri is not None:
-        uri = None
+    # @todo: refactor this into methods on the TransactionAssistance
+    # and TransactionContract models
 
-    txn = Transaction.objects.filter(
-        awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
-        contract_data__piid=piid,
-        contract_data__parent_award_id=parent_award_id,
-        assistance_data__fain=fain,
-        assistance_data__uri=uri) \
-        .order_by('-action_date').first()
+    if fain is not None:
+        # this is an assistance award id'd by fain
+        txn = Transaction.objects.filter(
+            awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
+            assistance_data__fain=fain) \
+            .order_by('-action_date').first()
 
-    if txn is None and incoming_fain is not None and incoming_uri is not None:
-        # we didn't find a match and both fain and uri were supplied
-        # as parameters, now try searching by uri
-        uri = incoming_uri
+    elif uri is not None:
+        # this is an assistance award id'd by uri
+        txn = Transaction.objects.filter(
+            awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
+            assistance_data__uri=uri) \
+            .order_by('-action_date').first()
+
+    else:
+        # this is a contract award
         txn = Transaction.objects.filter(
             awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
             contract_data__piid=piid,
-            contract_data__parent_award_id=parent_award_id,
-            assistance_data__fain=None,
-            assistance_data__uri=uri) \
+            contract_data__parent_award_id=parent_award_id) \
             .order_by('-action_date').first()
 
     return txn
