@@ -259,8 +259,8 @@ def test_aggregate_fy_and_type(monkeypatch, aggregate_models, model, request_dat
         # this isn't an 'order by' request, (i.e., we're not testing
         # the result order), so sort the actual and expected results
         # to ensure a good comparison
-        agg_list.sort(key=itemgetter('type'))
-        expected.sort(key=itemgetter('type'))
+        agg_list.sort(key=itemgetter('type', 'item'))
+        expected.sort(key=itemgetter('type', 'item'))
 
     assert agg_list == expected
 

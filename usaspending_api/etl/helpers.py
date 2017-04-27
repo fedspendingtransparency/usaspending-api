@@ -187,6 +187,9 @@ def update_model_description_fields():
         if model._meta.app_label not in updatable_apps:
             continue
 
+        if model.__name__[:10] == "Historical":
+            continue
+
         model_fields = [f.name for f in model._meta.get_fields()]
 
         # This supports multi-case DAIMS
@@ -280,7 +283,12 @@ def update_model_description_fields():
             # For each filter tuple, check if the dictionary has any entries
             if len(filter_tuple[1].keys()) > 0:
                 logger.debug("Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".format(model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())))
-                model.objects.filter(filter_tuple[0]).update(**filter_tuple[1])
+                try:
+                    model.objects.filter(filter_tuple[0]).update(**filter_tuple[1])
+                except django.db.utils.ProgrammingError as e:
+                    logger.warn(str(e))
+                    logger.warn("(OK if invoked from a migration,\n"
+                                "when the table may not yet have been created)")
 
 
 # Utility method for update_model_description_fields, creates the Case object
