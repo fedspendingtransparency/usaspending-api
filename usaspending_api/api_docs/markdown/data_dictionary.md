@@ -1,131 +1,27 @@
 <ul class="nav nav-stacked" id="sidebar">
-  <li><a href="#lexicon">Lexicon</a></li>
-  <li><a href="#endpoint-index">Endpoint Index</a></li>
-  <li><a href="#endpoint-details">Endpoint Details</a></li>
-  <li>
-    <ul>
-      <li><a href="#type-description">Type Descriptions</a></li>
-      <li><a href="#award">Award Endpoints</a></li>
-      <li><a href="#transaction">Transaction Endpoints</a></li>
-      <li><a href="#accounts">Accounts Endpoints</a></li>
-      <li><a href="#references">Reference Endpoints</a></li>
-      <li><a href="#submission">Submission Endpoint</a></li>
-    </ul>
+  <li><a href="/docs/intro-tutorial">Introductory Tutorial</a></li>
+  <li><a href="/docs/using-the-api">Using this API</a></li>
+  <li><a href="/docs/endpoints">Endpoints</a></li>
+  <li><a href="/docs/data-dictionary">Data Dictionary</a>
+  <!--<ul>
+    <li><a href="#datadictionary">Data Dictionary</a>
+    <li><a href="#type-description">Type Descriptions</a>
+    <li><a href="#award">Award Endpoints</a>
+    <li><a href="#transaction">Transaction Endpoints</a>
+    <li><a href="#accounts">Accounts Endpoints</a>
+    <li><a href="#references">Reference Endpoints</a>
+  </ul>-->
   </li>
+  <li><a href="/docs/recipes">Request Recipes</a></li>
 </ul>
+
 [//]: # (Begin Content)
-
 **Please note, the data dictionary is under heavy development. As a result, some information may be missing**
+## Data Dictionary <a name="datadictionary"></a>
 
-## Lexicon <a name="lexicon"></a>
+Federal spending has a vocabulary all its own. This page is under construction, but will strive to help you understand the most commonly requested endpoints and fields returned.
 
-In this section you will find definitions for common terms used in the API. For detailed explanations of specific fields, please see that endpoint's entry in the Endpoint Details section.
-
-| Term | Explanation |
-| ----- | ----- |
-|Agency|	On this website we use the term agency to mean any federal department, agency, office, or other U.S. government entity.|
-|Agency Identifier|	Identifies the agency responsible for a Treasury account. This is a 1-3 digit number that is a part of a Treasury Account Symbol (TAS).|
-|Allocation Transfer Agency (ATA) Identifier|	Identifies an agency that receives funds through an allocation (non-expenditure) transfer. This is a 1-3 digit number that is a part of a Treasury Account Symbol (TAS).|
-|Appropriation Account|	When Congress passes a law, it often gives an agency authority to carry out a project. When this happens, Congress may set aside money for the project. An appropriation account tracks the money, much like a bank account.|
-|Availability Type Code|	Within a Treasury Account Symbol (TAS), the code will have an "X" in it if there is an unlimited period to incur new obligations. The &ldquo;X&rdquo; is called the Availability Type Code.|
-|Award|	Money the federal government has promised to pay a recipient. Funding may be awarded to a company, organization, or individual. It may be obligated (promised) in the form of a contract, grant, loan, or direct payment.|
-|Award Amount|	The amount that the federal government has promised to pay a recipient, either now or in the future. An award amount includes option years which have not yet been exercised. For example, if a recipient is promised a $10M on a base contract with 3 option years at $1M each, the award amount is $13M.|
-|Award Ceiling|	The maximum amount of money that the government may pay a recipient. For a contract, this total includes the base amount plus the amounts of all possible options.|
-|Award ID|	A unique identification number for each individual award. An award may be a contract, grant, loan, direct payment, purchase order, or blanket purchase agreement.|
-|Award Type|	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.|
-|Awarding Agency|	An Awarding Agency is the agency who agrees to pay a recipient. This agency usually pays for the funding out of its own budget. In rare cases, the money is financed by another agency, called the Funding Agency.|
-|Basic Ordering Agreement (BOA)|	A BOA is a type of Indefinite Delivery Vehicle. It is not a contract; it is a written understanding between government and contractor. It details the supplies or services offered. It also details pricing and delivery for future orders. This agreement can speed contracting when requirements are uncertain. For instance, when specifications, quantities, and prices are not yet known. These agreements can also help the government achieve economies of scale for part orders. For the contractor, they can lessen lead-time, enable a larger inventory investment, and lessen old inventory.|
-|Beginning Period of Availability|	Identifies the first year that an appropriation account may incur new obligations. This is for annual and multi-year funds only. This is a 2-digit number representing the year. For example, &ldquo;17&rdquo; means 2017. It is a part of a Treasury Account Symbol (TAS).|
-|Blanket Purchase Agreement (BPA)|	A BPA is a method federal agencies use to make repeat purchases of supplies or services. A type of Indirect Delivery Vehicle, a BPA operates by essentially setting up a &ldquo;charge account&rdquo; with trusted vendors. Both agencies and vendors like BPAs because they help trim the red tape associated with repetitive purchasing. Once a BPA is set up, repeat purchases are easy for both sides. A BPA is an agreement with an individual agency, meaning only a handful of offices can place orders on a BPA. A BPA can be awarded to a set of vendors, who will then be able to bid on upcoming orders. A BPA can be set up with or without GSA schedules. Without GSA schedules, orders are capped at the Simplified Acquisition Threshold (SAT) of $100,000. <br/>Examples of BPAs: <br/>- Agency A establishes a BPA with a computer manufacturer for repeat laptop purchases<br/>- Agency B establishes a BPA with a graphic design agency for design of brochures and event signage
-|
-|Budget Function|	The federal budget is divided into 19 categories known as budget functions. These categories organize federal spending into topics based on the major purpose the spending serves (e.g., National Defense, Transportation, Health). These are further broken down into budget subfunctions.|
-|Budget Subfunction| The federal budget is divided into functions and subfunctions. These categories organize federal spending into topics based on the major purpose the spending serves. There are 19 major functions (e.g., National Defense, Transportation, Health). Most of these functions are further divided into subfunctions. For example, the budget function for Health (500) is divided into subfunctions for Health care services (551), Health research and training (552), and Consumer and occupational health and safety (554).|
-|Clinger-Cohen Act|	The Clinger-Cohen Act (CCA) of 1996 is a federal law designed to improve the way the federal government acquires, uses, and disposes of IT. It strives to make IT purchases more strategic.|
-|CFDA Program|	The Catalog of Federal Domestic Assistance (CFDA) provides a full listing of federal programs that are available to organizations, government agencies (state, local, tribal), U.S. territories, and individuals who are authorized to do business with the government. A CFDA program can be a project, service, or activity. Each CFDA program has a unique, 5-digit number in the form of XX.XXX. The first two digits represent the funding agency. The last three digits represent the program.|
-|Contractor|	A company, organization, agency, or individual who receives funding and/or performs work on a contract. A contractor may be a corporation, small business, university, non-profit, individual, or other entity. When a company has a contract with the U.S. government, they may hire another company to perform part of the work. When this happens, the company who received the award is called the prime contractor. The company hired by the prime is called the sub-contractor.|
-|Cooperative Agreement|	Grant awarded to provide assistance. It is characterized by extended involvement between recipient and agency. It requires substantial oversight by the agency, and includes reporting requirements.|
-|Davis-Bacon Act|	This act applies to construction, alteration, or repair (including painting and decorating) of public buildings or public works. Contractors and subcontractors on federal contracts over $2,000 must pay laborers and mechanics no less than the locally prevailing wages and fringe benefits for corresponding work on similar projects in the area. The Department of Labor determines wage rates.|
-|Delivery Order Contract|	An Indefinite Quantity Contract for supplies (not services) is sometimes referred to as a Delivery Order Contract. With this type of contract, the government promises to buy supplies over a period of time from a vendor. But instead of an exact amount, it sets a quantity range with a min and max.|
-|DOD Claimant Program Code|	Designates a grouping of supplies, construction, or other services. Each code has letters and numbers.|
-|DUNS (9-Digit Number)|	A unique identification number assigned to a company or organization by Dun & Bradstreet, Inc. A DUNS is required to register in the System for Award Management (SAM). An organization must be registered in SAM (and thus must first obtain a DUNS) in order to do business with the federal government. A DUNS number is 9 digits. There is a separate DUNS number for each business location in the Dun & Bradstreet database. The DUNS number is random, and specific digits have no significance.|
-|Ending Period of Availability|	Identifies the last year that an appropriation account may incur new obligations. This is for annual and multi-year funds only. This is a 2-digit number representing the year. For example, &ldquo;18&rdquo; means 2018. It is a part of a Treasury Account Symbol (TAS).|
-|Extent Competed|	A code that represents the competitive nature of the contract. Values include:<br/>- Full and open competition (competitive proposal, no sources excluded)<br/>- Not available for competition<br/>- Not competed<br/>- Full and open competition after exclusion of sources<br/>- Follow-on to competed action (a follow-on to an existing competed contract)<br/>- Competed under Simplified Acquisition Threshold (SAP)<br/>- Not competed under Simplified Acquisition Threshold (SAP)|
-|FAIN|	An identification code assigned to each financial assistance award tracking purposes. The FAIN is tied to that award (and all future modifications to that award) throughout the award&rsquo;s life. Each FAIN is assigned by an agency. Within an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN stands for Federal Award Identification Number, though the digits are letters, not numbers.|
-|Fund Family|	[definition to come]|
-|Federal Supply Schedule (FSS)|	A listing of contractors that have been awarded a contract by GSA that can be used by all Federal agencies. This is also known as a Multiple Award Schedule (MAS).|
-|Federal Assistance|	A federal program, service, or activity that directly aids organizations, individuals, or state/local/tribal governments. Sectors include education, health, public safety and public welfare - to name a few. It can be in the form of a grant, loan, or insurance.|
-|Fiscal Year (FY)|	The fiscal year is an accounting period that spans 12 months. For the federal government, it runs from October 1 to September 30. For example, Fiscal Year 2017 (FY 2017) starts October 1, 2016 and ends September 30, 2017. A fiscal year may be broken down into quarters. For the federal government, these quarters are:<br/>Q1: October - December<br/>Q2: January - March<br/>Q3: April - June<br/>Q4: July - September|"
-|Funding Agency|	A Funding Agency pays for the majority of funds for an award out of its budget. Typically, the Funding Agency is the same as the Awarding Agency. In some cases, one agency will present an award (Awarding Agency) and another agency will pay for it (Funding Agency).|
-|Governmentwide Acquisition Contract (GWAC)|	This is a multi-agency contract. It offers Information Technology (IT) services to agencies across the government. It is an Indefinite Delivery Vehicle for certain types of IT work:<br/>- Systems design<br/>- Software engineering<br/>- Information assurance<br/>- Enterprise architecture<br/>Vendors compete for the initial contracts. Once selected, they are eligible to compete further for agency-specific tasks.|"
-|Indefinite Delivery Contract|	"Facilitates the delivery of supply and service orders during a set timeframe. This type of contract can be awarded to one or more vendors.<br/>Types of Indefinite Delivery Contracts Include:<br/>- Indefinite Delivery, Definite Quantity Contract<br/>- Indefinite Delivery, Requirements Contract<br/>- Indefinite Delivery, Indefinite Quantity (IDIQ) Contract
-|
-|Indefinite Delivery, Indefinite Quantity (IDIQ) Contract|	An Indefinite Quantity Contract is a type of Indefinite Delivery Contract (IDC). Sometimes the government contracts to buy supplies or services from a vendor over a period of time. But the government may not know the exact quantity it will need. In this case, an Indefinite Quantity Contract sets a quantity range with a min and max. It does not specify an exact number. For services, this is often called a Task Order Contract. For supplies, this is often called a Delivery Order Contract.|
-|Indirect Delivery Vehicle (IDV)|	Vehicle to facilitate the delivery of supply and service orders. IDV Types include:<br/>- Blanket Purchase Agreement (BPA)<br/>- Basic Ordering Agreement (BOA)<br/>- Government-Wide Acquisition Contract (GWAC)<br/>- Multi-Agency Contract<br/>- Indefinite Delivery Contract (IDC)<br/>- Federal Supply Schedule (FSS)<br/>- Other Transaction (OT) Indirect Delivery Vehicle (IDV)
-|
-|Multiple Award Schedule (MAS)|	A listing of contractors that have been awarded a contract by GSA that can be used by all Federal agencies. This is also known as a Federal Supply Schedule (FSS).|
-|McNamara-O&rsquo;Hara Service Contract Act (SCA)|	This act applies to federal service contracts over $2,000. Contractors and subcontractors must pay service employees no less than local prevailing wages and fringe benefits. The Department of Labor determines wage rates.|
-|NAICS (6-Digit Code)|	"This code tells you what industry the work falls into. Each contract record has a NAICS code. That means you can look up how much money the U.S. government spent in a specific industry. NAICS stands for the North American Industrial Classification System. Codes are 6 digits, all numbers. The list of industries and codes is updated every 5 years.|
-|Object Class|	An object class is a category within an appropriation account. An object class groups obligations by the types of items or services purchased by the federal government. Examples: government employee salaries, or equipment.|
-|Obligation|	When awarding funding, the U.S. government enters a binding agreement called an obligation. The government promises to spend the money, either immediately or in the future.|
-|Other Transaction (OT) Indirect Delivery Vehicle (IDV)|	A transaction other than a procurement contract, grant, or cooperative agreement. Since this transaction is defined in the negative, it could take unlimited potential forms.<br/>This term is often used to refer to transactions designed to:<br/>- Support research & development for homeland security;<br/>- Advance the development, testing, and deployment of critical homeland security technologies;<br/>- Speed up prototyping and deployment of technologies addressing homeland security vulnerabilities.<br/>The Department of Homeland Security (DHS) often splits its use of Other Transactions into OT's for Research and OT's for Prototype Projects. |
-|Outlay|	An outlay occurs when federal money is actually paid out, not just obligated.|
-|Pricing Type|	Payment model for a contract. Each has a different way of accounting for costs, fees, and profits.<br/>Pricing types include:<br/>Fixed Price Redetermination<br/>Fixed Price Level of Effort<br/>Firm Fixed Price<br/>Fixed Price with Economic Price Adjustment<br/>Fixed Price Incentive<br/>Fixed Price Award Fee<br/>Cost Plus Award Fee<br/>Cost No Fee<br/>Cost Sharing<br/>Cost Plus<br/>Fixed Fee<br/>Cost Plus Incentive Fee<br/>Time and Materials<br/>Labor Hours
-|
-|Primary Place of Performance|	The principal place of business, where the majority of the work is performed. For example, in a manufacturing contract, this would be the main plant where items are produced.|
-|Prime Contractor|	A company, organization, or agency who receives a contract with the federal government. A prime contractor may be a corporation, small business, university, non-profit, or other entity. A prime contractor may be able to hire a sub-contractor to perform work on the contract.|
-|Procurement Instrument Identifier (PIID)|	A unique identifier assigned to a federal contract, purchase order, basic ordering agreement, basic agreement, and blanket purchase agreement. It is used to track the contract, and any modifications or transactions related to it. After October 2017, it is between 13 and 17 digits, both letters and numbers.|
-|Program Activity|	A program activity is a category within an appropriation account. A program activity is a specific activity or project, as listed in the program and financing schedules of the annual budget of the U.S. government.|
-|Program, System, and Equipment Code|	A system-generated Department of Defense (DoD) code, also known as the Acquisition Program (AP) Code. This code identifies the DoD program, weapons system, or equipment being acquired. It can be categorized as a Major Defense Acquisition Program (MDAP) or a Major Automated Information System (MAIS).|
-|PSC (4-Digit Code)|	A Product Service Code (PSC) identifies the type of product or service purchased. While NAICS codes identify industry, PSCs tell you the type of product or service. PSCs start with 3 categories: Services, Products, and R&D. They then break down into 100+ classes. PSCs are 4 digits with numbers and letters. They are more granular than NAICS codes: there are twice as many.|
-|Recipient|	A company, non-profit, individual, or other agency (including state, local, tribal) that receives funding from the U.S. government.|
-|Recipient Location|	Legal business address of the recipient.|
-|Recipient Name|	A recipient is a company, organization, individual, or agency (including state, local, tribal) that is awarded funding by the U.S. government. The recipient name is the same as what's registered in the System for Award Management (SAM.gov). This is usually the official name of the business.|
-|Recipient Type|	"A recipient is a company, organization, individual, or agency (including state, local, tribal) that is awarded funding by the U.S. government. The government categorizes recipients by:<br/>- Structure (e.g., LLC, Sole Proprietorship, Non-Profit)<br/>- Entity (e.g., Federal Agency, State Government, Township)<br/>- Educational (e.g., Educational Institution, Tribal College, HBCU)<br/>- Business Ownership (e.g., Woman Owned, Veteran Owned)<br/>- Special Status (e.g., 8a, Domestic Shelter, Community Developed Corporation)<br/>These are all different kinds of recipient types that you can search by on this site.<br/>|<br/>|Set Aside|	"A tool used to award contracts to specific types of businesses. Most set asides reserve contracts for small businesses. Others are more specific, to support small businesses with specific designations:<br/>- 8(a) Business Development<br/>- HUBZone<br/>- Native American<br/>- Women Owned (includes Economically Disadvantaged Women Owned)<br/>- SBIR/STTR<br/>- Service Disabled Veteran Owned<br/>- Veteran Owned<br/>- Small Disadvantaged Business|
-|Simplified Acquisition Threshold (SAT)|	For certain types of government purchases between $3,000 and $150,000. These purchases may require less approval and less documentation.|
-|Solicitation|	When an agency needs work done, it can ask for information or bids on the work. These requests are called solicitations. They often come as a RFI (Request for Information) or RFP (Request for Proposal).|
-|Sub-account Code|	Identifies a sub-division of the Treasury Account Symbol (TAS). This is a 3-digit number. It cannot be blank. A sub-account code of "000" means that the TAS is the parent account.|
-|Sub-agency|	A component of a larger department or agency. Also known as a sub-tier agency. For example, Bureau of Indian Affairs is a sub-agency of Department of Interior.|
-|Sub-contractor|	When a company has a contract with the U.S. government, they may hire another company to perform work on the contract. When this happens, the company who received the contract is called the prime contractor. The company hired by the prime is called the sub-contractor.|
-|Task Order Contract|	An Indefinite Quantity Contract for services (not supplies) is sometimes referred to as a Task Order Contract. With this type of contract, the government promises to buy services over a period of time from a vendor. But instead of an exact amount, it sets a range with a min and max.|
-|Treasury Account Symbol (TAS)|	Treasury and OMB assign a code to each appropriation, receipt, or fund account. This code is similar to a bank account number. It helps identify financial transactions in the federal government. It also aids in reporting accuracy.<br/>7 components make up the TAS:<br/>- Allocation Transfer Agency Identifier<br/>- Agency Identifier<br/>- Beginning Period of Availability<br/>- Ending Period of Availability<br/>- Availability Type Code<br/>- Fund Family<br/>- Sub-Account Code<br/>|
-|Walsh Healy Act|	Law that applies to federal contracts over $10,000 for the manufacture or furnishing of goods. It establishes minimum wage, maximum hours, and safety and health standards.|
-
-## Endpoint Index <a name="endpoint-index"></a>
-
-| Endpoint | Methods | Response Object | Data
-| -------- | ---: | ------ | ------ |
-| [/api/v1/awards/](/api/v1/awards/) | GET, POST | <a href="#award">Awards</a> | Returns a list of award records |
-| /api/v1/awards/:id | GET, POST | <a href="#award">Award</a> | Returns a single award records with all fields |
-| [/api/v1/awards/autocomplete/](/api/v1/awards/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on award records |
-| [/api/v1/awards/total/](/api/v1/awards/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on award records |
-| [/api/v1/federal_accounts/](/api/v1/federal_accounts/) | GET, POST | <a href="#federal-account">Federal Account</a> | Returns a list of federal accounts |
-| [/api/v1/federal_accounts/autocomplete/](/api/v1/federal_accounts/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on federal account records |
-| [/api/v1/tas/balances/](/api/v1/tas/balances/) | GET, POST | <a href="#appropriation-account">Yearly Appropriation Account Balances</a> | Returns a list of appropriation account balances by fiscal year |
-| [/api/v1/tas/balances/total/](/api/v1/tas/balances/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on appropriation account records |
-| [/api/v1/tas/balances/quarters/](/api/v1/tas/balances/quarters/) | GET, POST | <a href="#appropriation-account-balances-quarterly">Quarterly Appropriation Account Balances</a> | Returns a list of appropriation account balances by fiscal quarter|
-| [/api/v1/tas/balances/quarters/total/](/api/v1/tas/balances/quarters/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on quarterly appropriation account records |
-| [/api/v1/tas/categories/](/api/v1/tas/categories/) | GET, POST | <a href="#accounts-prg-obj">Yearly Appropriation Account Balances (by Category)</a> | Returns a list of appropriation account balances by fiscal year broken up by program activities and object class |
-| [/api/v1/tas/categories/total/](/api/v1/tas/categories/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on appropriation account (by category) records |
-| [/api/v1/tas/categories/quarters/](/api/v1/tas/categories/quarters/) | GET, POST | <a href="#accounts-prg-obj-quarterly">Quarterly Appropriation Account Balances (by Category)</a> | Returns a list of appropriation account balances by fiscal quarter broken up by program activities and object class |
-| [/api/v1/tas/categories/quarters/total/](/api/v1/tas/categories/quarters/total/) | POST |  Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on quarterly appropriation account (by category) records |
-| [/api/v1/tas/](/api/v1/tas/) | GET, POST | <a href="#tas">Treasury Appropriation Account</a> | Returns a list of treasury appropriation accounts, by TAS |
-| [/api/v1/tas/autocomplete/](/api/v1/tas/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on TAS records |
-| [/api/v1/accounts/awards/](/api/v1/accounts/awards/) | GET, POST | <a href="#accounts-by-award">Financial Accounts (by Award)</a> | Returns a list of financial account data grouped by TAS and broken up by Program Activity and Object Class codes |
-| /api/v1/accounts/awards/:id | GET, POST | <a href="#accounts-by-award">Financial Account (by Award)</a> | Returns a single financial account record, grouped by TAS, with all fields |
-| [/api/v1/transactions/](/api/v1/transactions/) | GET, POST | <a href="#transaction">Transaction</a> | Returns a list of transactions - contracts, grants, loans, etc. |
-| /api/v1/transactions/:id | GET, POST | <a href="#transaction">Transaction</a> | Returns a single transaction record with all fields |
-| [/api/v1/transactions/total/](/api/v1/transactions/total/) | POST | Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on transaction records |
-| [/api/v1/references/locations/](/api/v1/references/locations/) | POST | <a href="#locations">Location</a> | Returns a list of locations - places of performance or vendor locations |
-| [/api/v1/references/locations/geocomplete/](/api/v1/references/locations/geocomplete/) | POST | Location Hierarchy (see [Using the API](/docs/using-the-api)) | Supports geocomplete queries, see [Using the API](/docs/using-the-api) |
-| [/api/v1/references/agency/](/api/v1/references/agency/) | GET, POST | <a href="#agencies">Agency</a> | Returns a list of agency records |
-| [/api/v1/references/agency/autocomplete/](/api/v1/references/agency/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api)) | Supports autocomplete on agency records |
-| [/api/v1/references/cfda/](/api/v1/references/cfda/) | GET, POST | <a href="#cfda-programs">CFDA Programs</a> | Returns a list of CFDA Programs |
-| /api/v1/references/cfda/:id | GET, POST | <a href="#cfda-programs">CFDA Program</a> | Returns a single CFDA program, with all fields |
-| [/api/v1/references/recipients/autocomplete/](/api/v1/references/recipients/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api)) | Supports autocomplete on recipient records |
-| [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | <a href="#submissions">SubmissionAttributes</a> | Returns a list of submissions |
-
-
-## Endpoint Details <a name="endpoint-details"></a>
+You can also visit our [online spreadsheet](https://docs.google.com/spreadsheets/d/1KbP55qhrcrxtwyDXBfXnWAFhokAH2Gx4R_U0rYOyJVg/edit#gid=0) for additional term descriptions and references.
 
 #### Type Descriptions <a name="type-description"></a>
 

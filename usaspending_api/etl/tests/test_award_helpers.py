@@ -290,6 +290,10 @@ def test_get_award_financial_transaction():
     mommy.make(
         'awards.TransactionAssistance', transaction=txn4, uri='456')
 
+    txn5 = mommy.make('awards.Transaction', awarding_agency=agency)
+    mommy.make(
+        'awards.TransactionAssistance', transaction=txn5, fain='789', uri='nah')
+
     # match on piid
     txn = get_award_financial_transaction(cgac, piid='abc')
     assert txn == txn1
@@ -310,21 +314,30 @@ def test_get_award_financial_transaction():
     txn = get_award_financial_transaction(cgac, uri='456')
     assert txn == txn4
 
+    # if there's an unmatched fain, we should not find a txn match,
+    # even if there's a match on the URI
+    txn = get_award_financial_transaction(cgac, fain='fakefain', uri='456')
+    assert txn is None
+
+    # match on fain alone, even when there's no uri = Null record in the txn table
+    txn = get_award_financial_transaction(cgac, fain='789')
+    assert txn == txn5
+
     # should not match on award id fields for a different cgac
     txn = get_award_financial_transaction('999', piid='abc')
     assert txn is None
 
     # if there is more than one txn match, we should get the one with
     # the most recent action date
-    txn5 = mommy.make(
+    txn6 = mommy.make(
         'awards.Transaction',
         awarding_agency=agency,
         action_date=datetime.date(2017, 5, 8))
     mommy.make(
         'awards.TransactionContract',
-        transaction=txn5,
+        transaction=txn6,
         piid='abc',
         parent_award_id='def'
     )
     txn = get_award_financial_transaction(cgac, piid='abc', parent_award_id='def')
-    assert txn == txn5
+    assert txn == txn6

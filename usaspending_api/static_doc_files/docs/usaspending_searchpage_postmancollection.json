@@ -1,0 +1,337 @@
+{
+	"variables": [],
+	"info": {
+		"name": "DATA Act Frontend",
+		"_postman_id": "e8e6c1e2-7070-e23d-d3cb-3f233a0d8ad3",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Search Page - Visualizations",
+			"description": "",
+			"item": [
+				{
+					"name": "Spending Over Time - Unfiltered",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/tas/categories/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"obligations_incurred_by_program_object_class_cpe\",\n\t\"group\": \"submission__reporting_fiscal_year\",\n\t\"order\": [\"submission__reporting_fiscal_year\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": []\n}"
+						},
+						"description": "**Rationale:** Spending over time by default should show all spending, including non-award spending, both of which are aggregated within `/tas/categories/total/`."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending Over Time - Budget Filters",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/tas/categories/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"obligations_incurred_by_program_object_class_cpe\",\n\t\"group\": \"submission__reporting_fiscal_year\",\n\t\"order\": [\"submission__reporting_fiscal_year\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [{\n\t\t\"combine_method\": \"OR\",\n\t\t\"filters\": [{\n\t\t\t\"field\": [\"reporting_period_start\", \"reporting_period_end\"],\n\t\t\t\"operation\": \"range_intersect\",\n\t\t\t\"value\": \"2017\",\n\t\t\t\"value_format\": \"fy\"\n\t\t}]\n\t}, {\n\t\t\"combine_method\": \"OR\",\n\t\t\"filters\": [{\n\t\t\t\"field\": \"treasury_account__budget_function_title\",\n\t\t\t\"operation\": \"in\",\n\t\t\t\"value\": []\n\t\t}, {\n\t\t\t\"field\": \"treasury_account__budget_subfunction_title\",\n\t\t\t\"operation\": \"in\",\n\t\t\t\"value\": [\"Other income security\"]\n\t\t}]\n\t}, {\n\t\t\"field\": \"object_class__major_object_class\",\n\t\t\"operation\": \"in\",\n\t\t\"value\": [\"10\"]\n\t}]\n}"
+						},
+						"description": "**Rationale:** This endpoint utilizes File C linkage to apply budget filters to spending data. We use `/tas/categories/total/` because we want to search within both award and non-award spending.\n\n*Note:* Budget filters are:\n* Time Period (FY only)\n* Object class\n* Budget function\n* Federal account\n* Funding agency"
+					},
+					"response": []
+				},
+				{
+					"name": "Spending Over Time - Award Filters",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/transactions/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"federal_action_obligation\",\n\t\"group\": \"action_date__fy\",\n\t\"order\": [\"action_date__fy\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [{\n\t\t\"combine_method\": \"OR\",\n\t\t\"filters\": [{\n\t\t\t\"field\": \"federal_action_obligation\",\n\t\t\t\"operation\": \"range\",\n\t\t\t\"value\": [1000000, 25000000]\n\t\t}]\n\t}]\n}"
+						},
+						"description": "**Rationale:** Once award filters (anything that is not a budget filter) are applied, we can only search within awards, since that is the only place where the filter data exists. This requires an endpoint change to `/transactions/total/`. It is safe to use `/transactions/total/` because we are not grouping on a File C field, so there is no risk of multiple aggregations occurring."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending Over Time - Both",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/transactions/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"federal_action_obligation\",\n\t\"group\": \"submission__reporting_fiscal_year\",\n\t\"order\": [\"submission__reporting_fiscal_year\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [{\n\t\t\"combine_method\": \"OR\",\n\t\t\"filters\": [{\n\t\t\t\"field\": [\"period_of_performance_start_date\", \"period_of_performance_current_end_date\"],\n\t\t\t\"operation\": \"range_intersect\",\n\t\t\t\"value\": \"2017\",\n\t\t\t\"value_format\": \"fy\"\n\t\t}]\n\t}, {\n\t\t\"combine_method\": \"OR\",\n\t\t\"filters\": [{\n\t\t\t\"field\": \"award__financial_set__treasury_account__budget_function_title\",\n\t\t\t\"operation\": \"in\",\n\t\t\t\"value\": []\n\t\t}, {\n\t\t\t\"field\": \"award__financial_set__treasury_account__budget_subfunction_title\",\n\t\t\t\"operation\": \"in\",\n\t\t\t\"value\": [\"Other income security\"]\n\t\t}]\n\t}]\n}"
+						},
+						"description": "**Rationale:** Because award filters are included, we can only search within awards, which requires us to use `/transactions/total`.  It is safe to use `/transactions/total/` because we are not grouping on a File C field, so there is no risk of multiple aggregations occurring.\n\n*Note:* File C fields are prepended with `awards__financial_set__`"
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Budget Category - Unfiltered",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/tas/categories/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"obligations_incurred_by_program_object_class_cpe\",\n\t\"group\": [\"treasury_account__budget_function_title\"],\n\t\"order\": [\"-aggregate\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [],\n\t\"limit\": 5,\n\t\"page\": 1\n}"
+						},
+						"description": "**Rationale:** This visualization by default should group all spending (both award and non-award) by their budget function titles. We are using `/tas/categories/total/` because we want both award and non-award spending."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Budget Category - Budget Filters",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/tas/categories/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"obligations_incurred_by_program_object_class_cpe\",\n\t\"group\": [\"treasury_account__budget_function_title\"],\n\t\"order\": [\"-aggregate\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [\n\t\t{\n\t\t\t\"field\": \"object_class__major_object_class\",\n\t\t\t\"operation\": \"in\",\n\t\t\t\"value\": [\"10\"]\n\t\t}\n\t],\n\t\"limit\": 5,\n\t\"page\": 1\n}"
+						},
+						"description": "**Rationale:** We use `/tas/categories/total/` because we want to return spending for both award and non-award spending."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Budget Category - Award Filters",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/accounts/awards/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"transaction_obligated_amount\",\n\t\"group\": [\"treasury_account__budget_function_title\"],\n\t\"order\": [\"-aggregate\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [{\n\t\t\"combine_method\": \"OR\",\n\t\t\"filters\": [{\n\t\t\t\"field\": \"award__awarding_agency__toptier_agency__name\",\n\t\t\t\"operation\": \"in\",\n\t\t\t\"value\": [\"Department of Health and Human Services\"]\n\t\t}]\n\t}],\n\t\"limit\": 5,\n\t\"page\": 1\n}"
+						},
+						"description": "**Rationale:** We use `/accounts/awards/total` because this endpoint provides linkage via File C to award-only spending, grouped by budget function. We are only searching within awards because award filters can only be applied to awards. We cannot use `/transactions/total/` because we are grouping on a File C field, which has the risk of multiple aggregations occurring in the `/transactions/total` endpoint but not on `/accounts/awards/total/`."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Budget Category - Both",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/accounts/awards/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"transaction_obligated_amount\",\n\t\"group\": [\"treasury_account__budget_function_title\"],\n\t\"order\": [\"-aggregate\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [{\n\t\t\"combine_method\": \"OR\",\n\t\t\"filters\": [{\n\t\t\t\"combine_method\": \"AND\",\n\t\t\t\"filters\": [{\n\t\t\t\t\"field\": \"award__date_signed\",\n\t\t\t\t\"operation\": \"greater_than_or_equal\",\n\t\t\t\t\"value\": \"2016-10-01\"\n\t\t\t}, {\n\t\t\t\t\"field\": \"award__date_signed\",\n\t\t\t\t\"operation\": \"less_than_or_equal\",\n\t\t\t\t\"value\": \"2017-09-30\"\n\t\t\t}]\n\t\t}]\n\t}, {\n\t\t\"field\": \"award__financial_set__object_class__major_object_class\",\n\t\t\"operation\": \"in\",\n\t\t\"value\": [\"10\"]\n\t}],\n\t\"limit\": 5,\n\t\"page\": 1\n}"
+						},
+						"description": "**Rationale:** We can only search within awards because award filters are included in this query (and we can only apply award filters to award spending). As a result, we will use `/accounts/awards/total/` just like in the Awards Filter query. We cannot use `/transactions/total/` because we are grouping on a File C field, which has the risk of multiple aggregations occurring in the `/transactions/total` endpoint but not on `/accounts/awards/total/`."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Awarding Agency - Unfiltered",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/transactions/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"federal_action_obligation\",\n\t\"group\": \"awarding_agency__toptier_agency__name\",\n\t\"order\": [\"-aggregate\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [],\n\t\"limit\": 5,\n\t\"page\": 1\n}"
+						},
+						"description": "**Rationale:** This visualization returns only award spending, grouped by Awarding Agency. It does not return non-award spending because Awarding Agency is an award filter - which can only be applied to awards. Awarding Agency is not a File C field and we are not applying File C filters, so we can safely use `/transactions/total/` without risk of multiple aggregations occurring."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Awarding Agency - Budget Filters",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/accounts/awards/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"transaction_obligated_amount\",\n\t\"group\": \"award__awarding_agency__toptier_agency__name\",\n\t\"order\": [\"-aggregate\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [{\n\t\t\"field\": \"object_class__major_object_class\",\n\t\t\"operation\": \"in\",\n\t\t\"value\": [\"40\"]\n\t}],\n\t\"limit\": 5,\n\t\"page\": 1\n}"
+						},
+						"description": "**Rationale:** This query utilizes the `/accounts/awards/total/` endpoint to take advantage of the endpoint's File C linkage in order to query using budget filters. We cannot use `/transactions/total/` because we are applying a File C filter, which may result in duplicate values being aggregated."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Awarding Agency - Award Filters",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/transactions/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"federal_action_obligation\",\n\t\"group\": \"awarding_agency__toptier_agency__name\",\n\t\"order\": [\"-aggregate\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [{\n\t\t\"combine_method\": \"OR\",\n\t\t\"filters\": [{\n\t\t\t\"field\": \"federal_action_obligation\",\n\t\t\t\"operation\": \"range\",\n\t\t\t\"value\": [1000000, 25000000]\n\t\t}]\n\t}],\n\t\"limit\": 5,\n\t\"page\": 1\n}"
+						},
+						"description": "**Rationale:** This query utilizes `/transactions/total/` because it only needs award spending. This is because Awarding Agency is an award filter - which can only be applied to awards. Awarding Agency is not a File C field and we are not applying File C filters, so we can safely use `/transactions/total/` without risk of multiple aggregations occurring."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Awarding Agency - Both",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/accounts/awards/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"transaction_obligated_amount\",\n\t\"group\": \"award__awarding_agency__toptier_agency__name\",\n\t\"order\": [\"-aggregate\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [\n\t\t{\n\t\t\t\"combine_method\": \"OR\",\n\t\t\t\"filters\": [{\n\t\t\t\t\"field\": \"transaction_obligated_amount\",\n\t\t\t\t\"operation\": \"less_than_or_equal\",\n\t\t\t\t\"value\": 1000000\n\t\t\t}]\n\t\t},\n\t\t{\n\t\t\t\"field\"\t: \"award__type\",\n\t\t\t\"operation\": \"in\",\n\t\t\t\"value\": [\"A\", \"B\", \"C\", \"D\"]\n\t\t},\n\t\t{\n\t\t\"field\": \"object_class__major_object_class\",\n\t\t\"operation\": \"in\",\n\t\t\"value\": [\"40\"]\n\t}],\n\t\"limit\": 5,\n\t\"page\": 1\n}"
+						},
+						"description": "**Rationale:** Because budget filters are included the query, we use the `/accounts/awards/total` endpoint. We cannot use `/transactions/total/` because we are applying a File C filter, which may result in duplicate values being aggregated.\n\n*Note:* Most award parameters will require an `award__` prefix, with the exception of award parameters that begin with `award__financial_set__`, which can be queried without any prefix (because the prefix represents File C, which this endpoint also represents)."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Geography - Unfiltered",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/transactions/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"federal_action_obligation\",\n\t\"group\": \"place_of_performance__state_code\",\n\t\"order\": [\"item\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [],\n\t\"limit\": 60\n}"
+						},
+						"description": "**Rationale:** This visualization populates the map by returning award spending data, grouped by state code. This query only returns award data because place of performance and recipient location are award filters, which can only be applied to awards."
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Geography - Budget Filters",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/transactions/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"federal_action_obligation\",\n\t\"group\": \"place_of_performance__state_code\",\n\t\"order\": [\"item\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [{\n\t\t\"field\": \"award__financial_set__object_class__major_object_class\",\n\t\t\"operation\": \"in\",\n\t\t\"value\": [\"10\"]\n\t}],\n\t\"limit\": 60\n}"
+						},
+						"description": "**Rationale:** This query returns award-only spending, with budget filters applied. It is safe to use `/transactions/total` because we are grouping only by place of performance or recipient location (which are not File C fields and thus won't be aggregated multiple times.)\n\n*Note:* File C fields are prepended with `awards__financial_set__`"
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Geography - Award Filters",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/transactions/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"federal_action_obligation\",\n\t\"group\": \"place_of_performance__state_code\",\n\t\"order\": [\"item\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [{\n\t\t\"combine_method\": \"OR\",\n\t\t\"filters\": [{\n\t\t\t\"field\": \"federal_action_obligation\",\n\t\t\t\"operation\": \"less_than_or_equal\",\n\t\t\t\"value\": 1000000\n\t\t}]\n\t}],\n\t\"limit\": 60\n}"
+						},
+						"description": "**Rationale:** This query returns award-only spending, with budget filters applied. It is safe to use `/transactions/total` because we are grouping only by place of performance or recipient location (which are not File C fields and thus won't be aggregated multiple times.)"
+					},
+					"response": []
+				},
+				{
+					"name": "Spending by Geography - Both",
+					"request": {
+						"url": "https://spending-api-dev.us/api/v1/transactions/total/",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"field\": \"federal_action_obligation\",\n\t\"group\": \"place_of_performance__state_code\",\n\t\"order\": [\"item\"],\n\t\"aggregate\": \"sum\",\n\t\"filters\": [\n\t\t{\n\t\t\t\"field\": \"award__financial_set__object_class__major_object_class\",\n\t\t\t\"operation\": \"in\",\n\t\t\t\"value\": [\"10\"]\n\t\t},\n\t\t{\n\t\t\t\"field\": \"federal_action_obligation\",\n\t\t\t\"operation\": \"less_than_or_equal\",\n\t\t\t\"value\": 1000000\n\t\t}\n\t],\n\t\"limit\": 60\n}"
+						},
+						"description": "**Rationale:** This query returns award-only spending, with budget filters applied. It is safe to use `/transactions/total` because we are grouping only by place of performance or recipient location (which are not File C fields and thus won't be aggregated multiple times.)"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

@@ -3,7 +3,7 @@ autoenv==1.0.0
 codeclimate-test-reporter==0.1.2
 coverage==4.2
 dj-database-url==0.4.1
-Django==1.10.1
+Django==1.10.7
 django-cors-headers==1.2.2
 django-debug-toolbar==1.7
 django-extensions==1.7.5

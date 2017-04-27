@@ -18,6 +18,10 @@ def recipients_data(db):
         LegalEntity,
         recipient_name="Cerean Mineral Extraction Corp.",
         recipient_unique_id="CMEC")
+    mommy.make(
+        LegalEntity,
+        recipient_name="LOOK NO DUNS.",
+        recipient_unique_id=None)
 
 
 @pytest.mark.parametrize("fields,value,expected", [
@@ -47,3 +51,12 @@ def test_bad_recipients_autocomplete_request(client):
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_recipient_autocomplete_null_duns_exclusion(client, recipients_data):
+    resp = client.post(
+        '/api/v1/references/recipients/autocomplete/',
+        content_type='application/json',
+        data=json.dumps({"fields": ["recipient_name"], "value": "LOOK NO DUNS"}))
+    assert len(resp.data["results"]["recipient_name"]) == 0
