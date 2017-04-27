@@ -1,3 +1,4 @@
+from copy import copy
 import pytest
 
 from usaspending_api.references import helpers as h
@@ -21,6 +22,7 @@ raw = {
     'address_line3': 'suite\n22',
     'foreign_province': ' ontariO',
     'foreign_city_name': ' Däytön\n',
+    'place_of_perform_county_na': 'Montgomery',
 }
 
 desired = {
@@ -33,8 +35,12 @@ desired = {
     'foreign_city_name': 'DÄYTÖN',
     'foreign_province': 'ONTARIO',
     'state_code': 'oh',
-    'state_name': 'OHIO'
+    'state_name': 'OHIO',
+    'place_of_perform_county_na': 'MONTGOMERY',
 }
+
+desired_actual_field_names = copy(desired)
+desired_actual_field_names.pop('place_of_perform_county_na')
 
 
 def test_canonicalize_location_dict():
@@ -43,9 +49,11 @@ def test_canonicalize_location_dict():
 
 @pytest.mark.django_db
 def test_canonicalize_location_inst():
-    loc = Location(**raw)
+    field_names = [f.name for f in Location._meta.fields]
+    valid_fields = {k: raw[k] for k in raw if k in field_names}
+    loc = Location(**valid_fields)
     h.canonicalize_location_instance(loc)
     loc.save()
     actual = set(loc.__dict__.items())
-    desired_set = set(desired.items())
+    desired_set = set(desired_actual_field_names.items())
     assert not (desired_set - actual)

@@ -9,15 +9,17 @@ from django.db.models import Q
 
 from usaspending_api.awards.models import Transaction, TransactionContract, TransactionAssistance
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
-from usaspending_api.accounts.models import AppropriationAccountBalances
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.accounts.models import AppropriationAccountBalances, AppropriationAccountBalancesQuarterly
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly
 
 SUBMISSION_MODELS = [AppropriationAccountBalances,
                      FinancialAccountsByAwards,
                      Transaction,
                      TransactionContract,
                      TransactionAssistance,
-                     FinancialAccountsByProgramActivityObjectClass]
+                     FinancialAccountsByProgramActivityObjectClass,
+                     TasProgramActivityObjectClassQuarterly,
+                     AppropriationAccountBalancesQuarterly, ]
 
 
 @pytest.fixture
@@ -31,6 +33,8 @@ def submission_data():
     mommy.make("awards.TransactionContract", submission=submission_123, transaction__submission=submission_123, _quantity=10)
     mommy.make("awards.TransactionAssistance", submission=submission_123, transaction__submission=submission_123, _quantity=10)
     mommy.make("financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_123, _quantity=10)
+    mommy.make("financial_activities.TasProgramActivityObjectClassQuarterly", submission=submission_123, _quantity=10)
+    mommy.make("accounts.AppropriationAccountBalancesQuarterly", submission=submission_123, _quantity=10)
 
     mommy.make("accounts.AppropriationAccountBalances", submission=submission_456, _quantity=10)
     mommy.make("awards.FinancialAccountsByAwards", submission=submission_456, _quantity=10)
@@ -38,6 +42,8 @@ def submission_data():
     mommy.make("awards.TransactionContract", submission=submission_456, transaction__submission=submission_456, _quantity=10)
     mommy.make("awards.TransactionAssistance", submission=submission_456, transaction__submission=submission_456, _quantity=10)
     mommy.make("financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_456, _quantity=10)
+    mommy.make("financial_activities.TasProgramActivityObjectClassQuarterly", submission=submission_456, _quantity=10)
+    mommy.make("accounts.AppropriationAccountBalancesQuarterly", submission=submission_456, _quantity=10)
 
 
 @pytest.mark.django_db

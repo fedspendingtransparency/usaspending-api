@@ -9,11 +9,11 @@ from usaspending_api.references.models import Agency
 
 
 @pytest.mark.django_db
-def test_award_update_from_latest_transaction(agencies):
+def test_award_update_from_latest_transaction():
     """Test awards fields that should be updated with most recent transaction info."""
 
-    agency1 = Agency.objects.get(id=1)
-    agency2 = Agency.objects.get(id=2)
+    agency1 = mommy.make('references.Agency')
+    agency2 = mommy.make('references.Agency')
 
     award = mommy.make(
         'awards.Award',
@@ -137,7 +137,7 @@ def test_award_update_obligated_amt():
 
 
 @pytest.mark.django_db
-def test_award_update_with_list(agencies):
+def test_award_update_with_list():
     """Test optional parameter to update specific awards with txn data."""
     awards = mommy.make('awards.Award', total_obligation=0, _quantity=10)
     test_award = awards[3]
@@ -211,7 +211,7 @@ def test_award_update_from_contract_transaction():
 
 
 @pytest.mark.django_db
-def test_award_update_contract_txn_with_list(agencies):
+def test_award_update_contract_txn_with_list():
     """Test optional parameter to update specific awards from txn contract."""
 
     awards = mommy.make('awards.Award', _quantity=5)
@@ -260,7 +260,7 @@ def test_deleted_transactions():
 
 
 @pytest.mark.django_db
-def test_get_award_financial_transaction(agencies):
+def test_get_award_financial_transaction():
     """Test looking up txn records ("D File") for an award financial ("C File") record"""
 
     cgac = '1111'
@@ -290,6 +290,10 @@ def test_get_award_financial_transaction(agencies):
     mommy.make(
         'awards.TransactionAssistance', transaction=txn4, uri='456')
 
+    txn5 = mommy.make('awards.Transaction', awarding_agency=agency)
+    mommy.make(
+        'awards.TransactionAssistance', transaction=txn5, fain='789', uri='nah')
+
     # match on piid
     txn = get_award_financial_transaction(cgac, piid='abc')
     assert txn == txn1
@@ -310,21 +314,30 @@ def test_get_award_financial_transaction(agencies):
     txn = get_award_financial_transaction(cgac, uri='456')
     assert txn == txn4
 
+    # if there's an unmatched fain, we should not find a txn match,
+    # even if there's a match on the URI
+    txn = get_award_financial_transaction(cgac, fain='fakefain', uri='456')
+    assert txn is None
+
+    # match on fain alone, even when there's no uri = Null record in the txn table
+    txn = get_award_financial_transaction(cgac, fain='789')
+    assert txn == txn5
+
     # should not match on award id fields for a different cgac
     txn = get_award_financial_transaction('999', piid='abc')
     assert txn is None
 
     # if there is more than one txn match, we should get the one with
     # the most recent action date
-    txn5 = mommy.make(
+    txn6 = mommy.make(
         'awards.Transaction',
         awarding_agency=agency,
         action_date=datetime.date(2017, 5, 8))
     mommy.make(
         'awards.TransactionContract',
-        transaction=txn5,
+        transaction=txn6,
         piid='abc',
         parent_award_id='def'
     )
     txn = get_award_financial_transaction(cgac, piid='abc', parent_award_id='def')
-    assert txn == txn5
+    assert txn == txn6

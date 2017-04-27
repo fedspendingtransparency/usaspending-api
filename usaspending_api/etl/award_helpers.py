@@ -122,6 +122,38 @@ def update_contract_awards(award_tuple=None):
     return rows
 
 
+def update_award_subawards(award_tuple=None):
+    """
+    Updates awards' subaward counts and totals
+    """
+    # Sum and count subaward_amounts
+    sql_sub_totals = (
+        'subaward_totals AS ('
+        'SELECT award_id, SUM(amount) AS total_subaward_amount, COUNT(*) AS subaward_count '
+        'FROM awards_subaward ')
+    if award_tuple:
+        sql_sub_totals += 'WHERE award_id IN %s '
+    sql_sub_totals += 'GROUP BY award_id) '
+
+    # Construct the SQL update
+    sql_update = 'WITH {}'.format(sql_sub_totals)
+    sql_update += (
+        'UPDATE awards '
+        'SET total_subaward_amount = subaward_totals.total_subaward_amount, '
+        'subaward_count = subaward_totals.subaward_count '
+        'FROM subaward_totals '
+        'WHERE subaward_totals.award_id = id'
+    )
+
+    with connection.cursor() as cursor:
+        # If another expression is added and includes %s, you must add the tuple
+        # for that string interpolation to this list (even if it uses the same one!)
+        cursor.execute(sql_update, [award_tuple])
+        rows = cursor.rowcount
+
+    return rows
+
+
 def get_award_financial_transaction(
         toptier_agency_cgac, piid=None, parent_award_id=None, fain=None, uri=None):
     """
@@ -149,30 +181,29 @@ def get_award_financial_transaction(
     Returns:
         A Transaction model instance
     """
-    # if both fain and uri are supplied as paramaters, look up by fain first
-    incoming_fain = fain
-    incoming_uri = uri
-    if incoming_fain is not None and incoming_uri is not None:
-        uri = None
+    # @todo: refactor this into methods on the TransactionAssistance
+    # and TransactionContract models
 
-    txn = Transaction.objects.filter(
-        awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
-        contract_data__piid=piid,
-        contract_data__parent_award_id=parent_award_id,
-        assistance_data__fain=fain,
-        assistance_data__uri=uri) \
-        .order_by('-action_date').first()
+    if fain is not None:
+        # this is an assistance award id'd by fain
+        txn = Transaction.objects.filter(
+            awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
+            assistance_data__fain=fain) \
+            .order_by('-action_date').first()
 
-    if txn is None and incoming_fain is not None and incoming_uri is not None:
-        # we didn't find a match and both fain and uri were supplied
-        # as parameters, now try searching by uri
-        uri = incoming_uri
+    elif uri is not None:
+        # this is an assistance award id'd by uri
+        txn = Transaction.objects.filter(
+            awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
+            assistance_data__uri=uri) \
+            .order_by('-action_date').first()
+
+    else:
+        # this is a contract award
         txn = Transaction.objects.filter(
             awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
             contract_data__piid=piid,
-            contract_data__parent_award_id=parent_award_id,
-            assistance_data__fain=None,
-            assistance_data__uri=uri) \
+            contract_data__parent_award_id=parent_award_id) \
             .order_by('-action_date').first()
 
     return txn
