@@ -548,12 +548,13 @@ def get_file_b(submission_attributes, db_cursor):
             'beginning_period_of_availa, '
             'ending_period_of_availabil, '
             'main_account_code, '
-            'object_class, '
+            'RIGHT(object_class, 3) AS object_class, '
+            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, '
+            'tas, '
+            'tas_id, '
             'program_activity_code, '
             'program_activity_name, '
             'sub_account_code, '
-            'tas, '
-            'tas_id, '
             'SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, '
             'SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, '
             'SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, '
@@ -597,12 +598,13 @@ def get_file_b(submission_attributes, db_cursor):
             'beginning_period_of_availa, '
             'ending_period_of_availabil, '
             'main_account_code, '
-            'object_class, '
+            'RIGHT(object_class, 3), '
+            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' ELSE by_direct_reimbursable_fun END, '
             'program_activity_code, '
             'program_activity_name, '
             'sub_account_code, '
             'tas, '
-            'tas_id '
+            'tas_id'
         )
         logger.info(
             'Found {} duplicated File B 4 digit object codes in submission {}. '
@@ -611,7 +613,8 @@ def get_file_b(submission_attributes, db_cursor):
         # aggregate the financial values togther
         db_cursor.execute(combine_dupe_oc, [submission_id])
 
-    return dictfetchall(db_cursor)
+    data = dictfetchall(db_cursor)
+    return data
 
 
 def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):

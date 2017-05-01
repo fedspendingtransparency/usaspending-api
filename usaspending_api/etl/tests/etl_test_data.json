@@ -2696,9 +2696,8 @@
 	"high_comp_officer1_amount": "217000"
 }
 ],
-"SELECT submission_id, job_id, agency_identifier, allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, object_class, program_activity_code, program_activity_name, sub_account_code, tas, tas_id, SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, SUM(gross_outlays_delivered_or_cpe) AS gross_outlays_delivered_or_cpe, SUM(gross_outlays_delivered_or_fyb) AS gross_outlays_delivered_or_fyb, SUM(gross_outlays_undelivered_cpe) AS gross_outlays_undelivered_cpe, SUM(gross_outlays_undelivered_fyb) AS gross_outlays_undelivered_fyb, SUM(obligations_delivered_orde_cpe) AS obligations_delivered_orde_cpe, SUM(obligations_delivered_orde_fyb) AS obligations_delivered_orde_fyb, SUM(obligations_incurred_by_pr_cpe) AS obligations_incurred_by_pr_cpe, SUM(obligations_undelivered_or_cpe) AS obligations_undelivered_or_cpe, SUM(obligations_undelivered_or_fyb) AS obligations_undelivered_or_fyb, SUM(ussgl480100_undelivered_or_cpe) AS ussgl480100_undelivered_or_cpe, SUM(ussgl480100_undelivered_or_fyb) AS ussgl480100_undelivered_or_fyb, SUM(ussgl480200_undelivered_or_cpe) AS ussgl480200_undelivered_or_cpe, SUM(ussgl480200_undelivered_or_fyb) AS ussgl480200_undelivered_or_fyb, SUM(ussgl483100_undelivered_or_cpe) AS ussgl483100_undelivered_or_cpe, SUM(ussgl483200_undelivered_or_cpe) AS ussgl483200_undelivered_or_cpe, SUM(ussgl487100_downward_adjus_cpe) AS ussgl487100_downward_adjus_cpe, SUM(ussgl487200_downward_adjus_cpe) AS ussgl487200_downward_adjus_cpe, SUM(ussgl488100_upward_adjustm_cpe) AS ussgl488100_upward_adjustm_cpe, SUM(ussgl488200_upward_adjustm_cpe) AS ussgl488200_upward_adjustm_cpe, SUM(ussgl490100_delivered_orde_cpe) AS ussgl490100_delivered_orde_cpe, SUM(ussgl490100_delivered_orde_fyb) AS ussgl490100_delivered_orde_fyb, SUM(ussgl490200_delivered_orde_cpe) AS ussgl490200_delivered_orde_cpe, SUM(ussgl490800_authority_outl_cpe) AS ussgl490800_authority_outl_cpe, SUM(ussgl490800_authority_outl_fyb) AS ussgl490800_authority_outl_fyb, SUM(ussgl493100_delivered_orde_cpe) AS ussgl493100_delivered_orde_cpe, SUM(ussgl497100_downward_adjus_cpe) AS ussgl497100_downward_adjus_cpe, SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe FROM object_class_program_activity WHERE submission_id = %s GROUP BY submission_id, job_id, agency_identifier, allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, object_class, program_activity_code, program_activity_name, sub_account_code, tas, tas_id": [
+"SELECT submission_id, job_id, agency_identifier,allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, RIGHT(object_class, 3) AS object_class, CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'd' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'r' ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, tas, tas_id, program_activity_code, program_activity_name, sub_account_code, SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, SUM(gross_outlays_delivered_or_cpe) AS gross_outlays_delivered_or_cpe, SUM(gross_outlays_delivered_or_fyb) AS gross_outlays_delivered_or_fyb, SUM(gross_outlays_undelivered_cpe) AS gross_outlays_undelivered_cpe, SUM(gross_outlays_undelivered_fyb) AS gross_outlays_undelivered_fyb, SUM(obligations_delivered_orde_cpe) AS obligations_delivered_orde_cpe, SUM(obligations_delivered_orde_fyb) AS obligations_delivered_orde_fyb, SUM(obligations_incurred_by_pr_cpe) AS obligations_incurred_by_pr_cpe, SUM(obligations_undelivered_or_cpe) AS obligations_undelivered_or_cpe, SUM(obligations_undelivered_or_fyb) AS obligations_undelivered_or_fyb, SUM(ussgl480100_undelivered_or_cpe) AS ussgl480100_undelivered_or_cpe, SUM(ussgl480100_undelivered_or_fyb) AS ussgl480100_undelivered_or_fyb, SUM(ussgl480200_undelivered_or_cpe) AS ussgl480200_undelivered_or_cpe, SUM(ussgl480200_undelivered_or_fyb) AS ussgl480200_undelivered_or_fyb, SUM(ussgl483100_undelivered_or_cpe) AS ussgl483100_undelivered_or_cpe, SUM(ussgl483200_undelivered_or_cpe) AS ussgl483200_undelivered_or_cpe, SUM(ussgl487100_downward_adjus_cpe) AS ussgl487100_downward_adjus_cpe, SUM(ussgl487200_downward_adjus_cpe) AS ussgl487200_downward_adjus_cpe, SUM(ussgl488100_upward_adjustm_cpe) AS ussgl488100_upward_adjustm_cpe, SUM(ussgl488200_upward_adjustm_cpe) AS ussgl488200_upward_adjustm_cpe, SUM(ussgl490100_delivered_orde_cpe) AS ussgl490100_delivered_orde_cpe, SUM(ussgl490100_delivered_orde_fyb) AS ussgl490100_delivered_orde_fyb, SUM(ussgl490200_delivered_orde_cpe) AS ussgl490200_delivered_orde_cpe, SUM(ussgl490800_authority_outl_cpe) AS ussgl490800_authority_outl_cpe, SUM(ussgl490800_authority_outl_fyb) AS ussgl490800_authority_outl_fyb, SUM(ussgl493100_delivered_orde_cpe) AS ussgl493100_delivered_orde_cpe, SUM(ussgl497100_downward_adjus_cpe) AS ussgl497100_downward_adjus_cpe, SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe FROM object_class_program_activity WHERE submission_id = %s GROUP BY submission_id, job_id, agency_identifier, allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, RIGHT(object_class, 3), CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'd' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'r' ELSE by_direct_reimbursable_fun END, program_activity_code, program_activity_name, sub_account_code, tas, tas_id": [
 {
-"object_class_program_activity_id": 10,
 "obligations_undelivered_or_fyb": "3333",
 "ussgl487100_downward_adjus_cpe": "0",
 "gross_outlays_undelivered_fyb": "1000",
@@ -2708,10 +2707,9 @@
 "ussgl490800_authority_outl_fyb": "3500",
 "sub_account_code": "0",
 "ussgl490200_delivered_orde_cpe": "1000",
-"object_class": "2255",
+"object_class": "255",
 "ussgl483100_undelivered_or_cpe": "1000",
 "ussgl490100_delivered_orde_fyb": "4500",
-"created_at": "2016-06-27T12:08:46.901",
 "obligations_incurred_by_pr_cpe": "4500",
 "ussgl490100_delivered_orde_cpe": "1500",
 "ussgl493100_delivered_orde_cpe": "1000",
@@ -2723,8 +2721,6 @@
 "ussgl480200_undelivered_or_cpe": "400",
 "ussgl483200_undelivered_or_cpe": "300",
 "program_activity_name": "Yellow Brick Construction",
-"row_number": 11,
-"updated_at": "2016-06-27T12:08:46.901",
 "obligations_delivered_orde_cpe": "4500",
 "ussgl480100_undelivered_or_cpe": "1500",
 "ussgl497200_downward_adjus_cpe": "1000",
@@ -2752,7 +2748,6 @@
 "gross_outlays_delivered_or_cpe": "3500"
 },
 {
-"object_class_program_activity_id": 8,
 "obligations_undelivered_or_fyb": "4500",
 "ussgl487100_downward_adjus_cpe": "1000",
 "gross_outlays_undelivered_fyb": "1000",
@@ -2765,7 +2760,6 @@
 "object_class": "1255",
 "ussgl483100_undelivered_or_cpe": "1000",
 "ussgl490100_delivered_orde_fyb": "4500",
-"created_at": "2016-06-27T12:08:44.597",
 "obligations_incurred_by_pr_cpe": "4500",
 "ussgl490100_delivered_orde_cpe": "1500",
 "ussgl493100_delivered_orde_cpe": "1000",
@@ -2777,8 +2771,6 @@
 "ussgl480200_undelivered_or_cpe": "400",
 "ussgl483200_undelivered_or_cpe": "300",
 "program_activity_name": "Yellow Brick Construction",
-"row_number": 9,
-"updated_at": "2016-06-27T12:08:44.597",
 "obligations_delivered_orde_cpe": "4500",
 "ussgl480100_undelivered_or_cpe": "1500",
 "ussgl497200_downward_adjus_cpe": "1000",
@@ -2806,7 +2798,6 @@
 "gross_outlays_delivered_or_cpe": "3500"
 },
 {
-"object_class_program_activity_id": 7,
 "obligations_undelivered_or_fyb": "4500",
 "ussgl487100_downward_adjus_cpe": "1000",
 "gross_outlays_undelivered_fyb": "1000",
@@ -2831,8 +2822,6 @@
 "ussgl480200_undelivered_or_cpe": "400",
 "ussgl483200_undelivered_or_cpe": "300",
 "program_activity_name": "Vandelay Industries",
-"row_number": 8,
-"updated_at": "2016-06-27T12:08:43.518",
 "obligations_delivered_orde_cpe": "4500",
 "ussgl480100_undelivered_or_cpe": "1500",
 "ussgl497200_downward_adjus_cpe": "1000",
@@ -2860,7 +2849,6 @@
 "gross_outlays_delivered_or_cpe": "3500"
 },
 {
-"object_class_program_activity_id": 6,
 "obligations_undelivered_or_fyb": "4500",
 "ussgl487100_downward_adjus_cpe": "1000",
 "gross_outlays_undelivered_fyb": "1000",
@@ -2873,7 +2861,6 @@
 "object_class": "1255",
 "ussgl483100_undelivered_or_cpe": "1000",
 "ussgl490100_delivered_orde_fyb": "4500",
-"created_at": "2016-06-27T12:08:42.239",
 "obligations_incurred_by_pr_cpe": "4500",
 "ussgl490100_delivered_orde_cpe": "1500",
 "ussgl493100_delivered_orde_cpe": "1000",
@@ -2885,8 +2872,6 @@
 "ussgl480200_undelivered_or_cpe": "400",
 "ussgl483200_undelivered_or_cpe": "300",
 "program_activity_name": "Arachnid Removal Services",
-"row_number": 7,
-"updated_at": "2016-06-27T12:08:42.239",
 "obligations_delivered_orde_cpe": "4500",
 "ussgl480100_undelivered_or_cpe": "1500",
 "ussgl497200_downward_adjus_cpe": "1000",
@@ -2914,7 +2899,6 @@
 "gross_outlays_delivered_or_cpe": "3500"
 },
 {
-"object_class_program_activity_id": 5,
 "obligations_undelivered_or_fyb": "4500",
 "ussgl487100_downward_adjus_cpe": "1000",
 "gross_outlays_undelivered_fyb": "1000",
@@ -2927,7 +2911,6 @@
 "object_class": "1255",
 "ussgl483100_undelivered_or_cpe": "1000",
 "ussgl490100_delivered_orde_fyb": "4500",
-"created_at": "2016-06-27T12:08:40.959",
 "obligations_incurred_by_pr_cpe": "4500",
 "ussgl490100_delivered_orde_cpe": "1500",
 "ussgl493100_delivered_orde_cpe": "1000",
@@ -2939,8 +2922,6 @@
 "ussgl480200_undelivered_or_cpe": "400",
 "ussgl483200_undelivered_or_cpe": "300",
 "program_activity_name": "Coral Reef Preservation",
-"row_number": 6,
-"updated_at": "2016-06-27T12:08:40.959",
 "obligations_delivered_orde_cpe": "4500",
 "ussgl480100_undelivered_or_cpe": "1500",
 "ussgl497200_downward_adjus_cpe": "1000",
@@ -2968,7 +2949,6 @@
 "gross_outlays_delivered_or_cpe": "3500"
 },
 {
-"object_class_program_activity_id": 4,
 "obligations_undelivered_or_fyb": "4500",
 "ussgl487100_downward_adjus_cpe": "1000",
 "gross_outlays_undelivered_fyb": "1000",
@@ -2981,7 +2961,6 @@
 "object_class": "1255",
 "ussgl483100_undelivered_or_cpe": "1000",
 "ussgl490100_delivered_orde_fyb": "4500",
-"created_at": "2016-06-27T12:08:39.852",
 "obligations_incurred_by_pr_cpe": "4500",
 "ussgl490100_delivered_orde_cpe": "1500",
 "ussgl493100_delivered_orde_cpe": "1000",
@@ -2993,8 +2972,6 @@
 "ussgl480200_undelivered_or_cpe": "400",
 "ussgl483200_undelivered_or_cpe": "300",
 "program_activity_name": "Basket Weaving",
-"row_number": 5,
-"updated_at": "2016-06-27T12:08:39.852",
 "obligations_delivered_orde_cpe": "4500",
 "ussgl480100_undelivered_or_cpe": "1500",
 "ussgl497200_downward_adjus_cpe": "1000",
@@ -3022,7 +2999,6 @@
 "gross_outlays_delivered_or_cpe": "3500"
 },
 {
-"object_class_program_activity_id": 3,
 "obligations_undelivered_or_fyb": "4500",
 "ussgl487100_downward_adjus_cpe": "1000",
 "gross_outlays_undelivered_fyb": "1000",
@@ -3035,7 +3011,6 @@
 "object_class": "1255",
 "ussgl483100_undelivered_or_cpe": "1000",
 "ussgl490100_delivered_orde_fyb": "4500",
-"created_at": "2016-06-27T12:08:38.351",
 "obligations_incurred_by_pr_cpe": "4500",
 "ussgl490100_delivered_orde_cpe": "1500",
 "ussgl493100_delivered_orde_cpe": "1000",
@@ -3047,8 +3022,6 @@
 "ussgl480200_undelivered_or_cpe": "400",
 "ussgl483200_undelivered_or_cpe": "300",
 "program_activity_name": "More Yellow Brick Construction",
-"row_number": 4,
-"updated_at": "2016-06-27T12:08:38.351",
 "obligations_delivered_orde_cpe": "4500",
 "ussgl480100_undelivered_or_cpe": "1500",
 "ussgl497200_downward_adjus_cpe": "1000",
@@ -3076,7 +3049,6 @@
 "gross_outlays_delivered_or_cpe": "3500"
 },
 {
-"object_class_program_activity_id": 2,
 "obligations_undelivered_or_fyb": "4500",
 "ussgl487100_downward_adjus_cpe": "1000",
 "gross_outlays_undelivered_fyb": "1000",
@@ -3089,7 +3061,6 @@
 "object_class": "1255",
 "ussgl483100_undelivered_or_cpe": "1000",
 "ussgl490100_delivered_orde_fyb": "4500",
-"created_at": "2016-06-27T12:08:36.588",
 "obligations_incurred_by_pr_cpe": "4500",
 "ussgl490100_delivered_orde_cpe": "1500",
 "ussgl493100_delivered_orde_cpe": "1000",
@@ -3101,8 +3072,6 @@
 "ussgl480200_undelivered_or_cpe": "400",
 "ussgl483200_undelivered_or_cpe": "300",
 "program_activity_name": "Even More Yellow Brick Construction",
-"row_number": 3,
-"updated_at": "2016-06-27T12:08:36.588",
 "obligations_delivered_orde_cpe": "4500",
 "ussgl480100_undelivered_or_cpe": "1500",
 "ussgl497200_downward_adjus_cpe": "1000",
@@ -3130,7 +3099,6 @@
 "gross_outlays_delivered_or_cpe": "3500"
 },
 {
-"object_class_program_activity_id": 1,
 "obligations_undelivered_or_fyb": "4500",
 "ussgl487100_downward_adjus_cpe": "1000",
 "gross_outlays_undelivered_fyb": "1000",
@@ -3143,7 +3111,6 @@
 "object_class": "111",
 "ussgl483100_undelivered_or_cpe": "1000",
 "ussgl490100_delivered_orde_fyb": "4500",
-"created_at": "2016-06-27T12:08:34.847",
 "obligations_incurred_by_pr_cpe": "4500",
 "ussgl490100_delivered_orde_cpe": "1500",
 "ussgl493100_delivered_orde_cpe": "1000",
@@ -3155,8 +3122,6 @@
 "ussgl480200_undelivered_or_cpe": "400",
 "ussgl483200_undelivered_or_cpe": "300",
 "program_activity_name": "Yellow Brick Construction",
-"row_number": 2,
-"updated_at": "2016-06-27T12:08:34.847",
 "obligations_delivered_orde_cpe": "4500",
 "ussgl480100_undelivered_or_cpe": "1500",
 "ussgl497200_downward_adjus_cpe": "1000",
@@ -3182,6 +3147,11 @@
 "tas_id": 0,
 "job_id": 878,
 "gross_outlays_delivered_or_cpe": "3500"
+}
+],
+"SELECT count(*) FROM object_class_program_activity WHERE submission_id = %s AND length(object_class) = 4 GROUP BY tas_id, program_activity_code, object_class HAVING COUNT(*) > 1": [
+{
+"count": 1
 }
 ]
 }
