@@ -50,3 +50,11 @@ Run the following Django management command to load a single submission from the
 **Note:** If the specified submission has already been loaded, this command will delete the existing records first. Thus, the `load_submission` command is safe to re-run.
 
     `python manage.py load_submission [broker submission_id]`
+    
+### Other data loading related commands
+
+* `python manage.py update_location_usage_flags` - Updates all locations to have proper usage flags. This should be run after any set of submission loads to ensure the flags are properly set.
+
+* `python manage.py load_executive_compensation --all` - Loads executive compensation data for any currently loaded submissions. For more information on other options for this command, reference the command's help text.
+
+* `python manage.py load_subawards --all` - Loads subwards for any currently loaded submissions. For more information on other options for this command, reference the command's help text.
