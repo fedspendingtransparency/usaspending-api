@@ -57,4 +57,4 @@ Run the following Django management command to load a single submission from the
 
 * `python manage.py load_executive_compensation --all` - Loads executive compensation data for any currently loaded submissions. For more information on other options for this command, reference the command's help text.
 
-* `python manage.py load_subawards --all` - Loads subwards for any currently loaded submissions. For more information on other options for this command, reference the command's help text.
+* `python manage.py load_subawards --all` - Loads subwards for any currently loaded submissions. For more information on other options for this command, reference the command's help text. Note that this command only needs to be run when subaward data has been updated after the original submission has been loaded; during the normal submission loading process the current set of subawards will be loaded.
