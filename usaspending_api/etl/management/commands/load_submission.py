@@ -107,8 +107,7 @@ class Command(BaseCommand):
         load_file_a(submission_attributes, appropriation_data, db_cursor)
 
         # Let's get File B information
-        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
-        prg_act_obj_cls_data = dictfetchall(db_cursor)
+        prg_act_obj_cls_data = get_file_b(submission_attributes, db_cursor)
         logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
         load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor)
 
@@ -495,6 +494,129 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
         submission_attributes.submission_id)
 
 
+def get_file_b(submission_attributes, db_cursor):
+    """
+    Get broker File B data for a specific submission.
+    This function was added as a workaround for the fact that a few agencies
+    (two, as of April, 2017: DOI and ACHP) submit multiple File B records
+    for the same object class. These "dupes", come in as the same 4 digit object
+    class code but with one of the direct reimbursable flags set to NULL.
+
+    From our perspective, this is a duplicate, because we get our D/R info from
+    the 1st digit of the object class when it's four digits.
+
+    Thus, this function examines the File B data for a given submission. If
+    it has the issue of "duplicate" object classes, it will squash the
+    offending records together so that all financial totals are reporting
+    as a single object class/program activity/TAS record as expected.
+
+    If the broker validations change to prohibit this pattern in the data,
+    this intervening function will no longer be necessary, we can go back to
+    selecting * from the broker's File B data.
+
+    Args:
+        submission_attrbitues: submission object currently being loaded
+        db_cursor: db connection info
+    """
+    submission_id = submission_attributes.broker_submission_id
+
+    # does this file B have the dupe object class edge case?
+    check_dupe_oc = (
+        'SELECT count(*) '
+        'FROM object_class_program_activity '
+        'WHERE submission_id = %s '
+        'AND length(object_class) = 4 '
+        'GROUP BY tas_id, program_activity_code, object_class '
+        'HAVING COUNT(*) > 1'
+    )
+    db_cursor.execute(check_dupe_oc, [submission_id])
+    dupe_oc_count = len(dictfetchall(db_cursor))
+
+    if dupe_oc_count == 0:
+        # there are no object class duplicates, so proceed as usual
+        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
+    else:
+        # file b contains at least one case of duplicate 4 digit object classes
+        # for the same program activity/tas, so combine the records in question
+        combine_dupe_oc = (
+            'SELECT  '
+            'submission_id, '
+            'job_id, '
+            'agency_identifier, '
+            'allocation_transfer_agency, '
+            'availability_type_code, '
+            'beginning_period_of_availa, '
+            'ending_period_of_availabil, '
+            'main_account_code, '
+            'RIGHT(object_class, 3) AS object_class, '
+            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, '
+            'tas, '
+            'tas_id, '
+            'program_activity_code, '
+            'program_activity_name, '
+            'sub_account_code, '
+            'SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, '
+            'SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, '
+            'SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, '
+            'SUM(gross_outlays_delivered_or_cpe) AS gross_outlays_delivered_or_cpe, '
+            'SUM(gross_outlays_delivered_or_fyb) AS gross_outlays_delivered_or_fyb, '
+            'SUM(gross_outlays_undelivered_cpe) AS gross_outlays_undelivered_cpe, '
+            'SUM(gross_outlays_undelivered_fyb) AS gross_outlays_undelivered_fyb, '
+            'SUM(obligations_delivered_orde_cpe) AS obligations_delivered_orde_cpe, '
+            'SUM(obligations_delivered_orde_fyb) AS obligations_delivered_orde_fyb, '
+            'SUM(obligations_incurred_by_pr_cpe) AS obligations_incurred_by_pr_cpe, '
+            'SUM(obligations_undelivered_or_cpe) AS obligations_undelivered_or_cpe, '
+            'SUM(obligations_undelivered_or_fyb) AS obligations_undelivered_or_fyb, '
+            'SUM(ussgl480100_undelivered_or_cpe) AS ussgl480100_undelivered_or_cpe, '
+            'SUM(ussgl480100_undelivered_or_fyb) AS ussgl480100_undelivered_or_fyb, '
+            'SUM(ussgl480200_undelivered_or_cpe) AS ussgl480200_undelivered_or_cpe, '
+            'SUM(ussgl480200_undelivered_or_fyb) AS ussgl480200_undelivered_or_fyb, '
+            'SUM(ussgl483100_undelivered_or_cpe) AS ussgl483100_undelivered_or_cpe, '
+            'SUM(ussgl483200_undelivered_or_cpe) AS ussgl483200_undelivered_or_cpe, '
+            'SUM(ussgl487100_downward_adjus_cpe) AS ussgl487100_downward_adjus_cpe, '
+            'SUM(ussgl487200_downward_adjus_cpe) AS ussgl487200_downward_adjus_cpe, '
+            'SUM(ussgl488100_upward_adjustm_cpe) AS ussgl488100_upward_adjustm_cpe, '
+            'SUM(ussgl488200_upward_adjustm_cpe) AS ussgl488200_upward_adjustm_cpe, '
+            'SUM(ussgl490100_delivered_orde_cpe) AS ussgl490100_delivered_orde_cpe, '
+            'SUM(ussgl490100_delivered_orde_fyb) AS ussgl490100_delivered_orde_fyb, '
+            'SUM(ussgl490200_delivered_orde_cpe) AS ussgl490200_delivered_orde_cpe, '
+            'SUM(ussgl490800_authority_outl_cpe) AS ussgl490800_authority_outl_cpe, '
+            'SUM(ussgl490800_authority_outl_fyb) AS ussgl490800_authority_outl_fyb, '
+            'SUM(ussgl493100_delivered_orde_cpe) AS ussgl493100_delivered_orde_cpe, '
+            'SUM(ussgl497100_downward_adjus_cpe) AS ussgl497100_downward_adjus_cpe, '
+            'SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, '
+            'SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, '
+            'SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe '
+            'FROM object_class_program_activity '
+            'WHERE submission_id = %s '
+            'GROUP BY  '
+            'submission_id, '
+            'job_id, '
+            'agency_identifier, '
+            'allocation_transfer_agency, '
+            'availability_type_code, '
+            'beginning_period_of_availa, '
+            'ending_period_of_availabil, '
+            'main_account_code, '
+            'RIGHT(object_class, 3), '
+            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' ELSE by_direct_reimbursable_fun END, '
+            'program_activity_code, '
+            'program_activity_name, '
+            'sub_account_code, '
+            'tas, '
+            'tas_id'
+        )
+        logger.info(
+            'Found {} duplicated File B 4 digit object codes in submission {}. '
+            'Aggregating financial values.'.format(dupe_oc_count, submission_id))
+        # we have at least one instance of duplicated 4 digit object classes so
+        # aggregate the financial values togther
+        db_cursor.execute(combine_dupe_oc, [submission_id])
+
+    data = dictfetchall(db_cursor)
+    return data
+
+
 def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     """
     Process and load file B broker data (aka TAS balances by program
@@ -513,7 +635,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
         except:
             continue
 
-        # the the corresponding account balances row (aka "File A" record)
+        # get the corresponding account balances row (aka "File A" record)
         account_balances = AppropriationAccountBalances.objects.get(
             treasury_account_identifier=treasury_account,
             submission_id=submission_attributes.submission_id
