@@ -1,6 +1,5 @@
 from usaspending_api.references.models import CFDAProgram
 from usaspending_api.references.management.commands.loadcfda import load_cfda
-from django.core.management import call_command
 import os
 import pytest
 from django.conf import settings
