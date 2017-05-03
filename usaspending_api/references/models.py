@@ -75,13 +75,18 @@ class Agency(models.Model):
     subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True)
     office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
 
+    # 1182 This flag is true if toptier agency name and subtier agency name are equal.
+    # This means the award is at the department level.
+    toptier_flag = models.BooleanField(default=False)
+
     @staticmethod
     def get_default_fields(path=None):
         return [
             "id",
             "toptier_agency",
             "subtier_agency",
-            "office_agency"
+            "office_agency",
+            "toptier_flag"
         ]
 
     @staticmethod

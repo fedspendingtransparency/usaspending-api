@@ -19,6 +19,18 @@ def agency_data(db):
         Agency,
         toptier_agency__name="Cerean Mineral Extraction Corp.",
         toptier_agency__cgac_code="CMEC",
+        _fill_optional=True),
+    mommy.make(
+        Agency,
+        toptier_agency__name="Department of Transportation",
+        subtier_agency__name="Department of Transportation",
+        toptier_flag=True,
+        _fill_optional=True)
+    mommy.make(
+        Agency,
+        toptier_agency__name="Department of Defence",
+        subtier_agency__name="Department of the Army",
+        toptier_flag=False,
         _fill_optional=True)
 
 
@@ -49,3 +61,15 @@ def test_bad_agency_autocomplete_request(client):
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_agency_autocomplete_sorting(client, agency_data):
+    """Verify error on bad autocomplete request for recipients."""
+
+    resp = client.post(
+        '/api/v1/references/agency/autocomplete/',
+        content_type='application/json',
+        data=json.dumps({"fields":["subtier_agency__name"], "matched_objects": True, "value": "Department", "order": ["-toptier_flag"]}))
+    assert resp.data["matched_objects"]["subtier_agency__name"][0]["toptier_flag"]
+    assert not resp.data["matched_objects"]["subtier_agency__name"][1]["toptier_flag"]
