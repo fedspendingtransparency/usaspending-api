@@ -1,5 +1,5 @@
 import datetime
-
+from decimal import Decimal
 from django.core.management import call_command
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
@@ -44,7 +44,7 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     call_command('load_submission', '-1', '--test')
     assert SubmissionAttributes.objects.count() == 1
     assert AppropriationAccountBalances.objects.count() == 1
-    assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 10
+    assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 9
     assert FinancialAccountsByAwards.objects.count() == 11
     for account in FinancialAccountsByAwards.objects.all():
         assert account.transaction_obligated_amount == -6500
@@ -58,12 +58,24 @@ def test_load_submission_command(endpoint_data, partially_flushed):
 
     # Verify that sign has been reversed during load where appropriate
     assert AppropriationAccountBalances.objects.filter(gross_outlay_amount_by_tas_cpe__lt=0).count() == 1
-    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_cpe__lt=0).count() == 10
-    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_fyb__lt=0).count() == 10
+    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_cpe__lt=0).count() == 9
+    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_fyb__lt=0).count() == 9
     assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_cpe__lt=0).count() == 11
     assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_fyb__lt=0).count() == 11
     assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_fyb__lt=0).count() == 11
     assert FinancialAccountsByAwards.objects.filter(transaction_obligated_amount__lt=0).count() == 11
+
+    # Verify that duplicate 4 digit object class rows in File B have been combined
+    combined_b = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+        object_class__object_class='255',
+        object_class__direct_reimbursable='2',
+        program_activity__program_activity_code='0001'
+    )
+    assert combined_b.count() == 1
+    combined_b = combined_b.first()
+    assert combined_b.obligations_undelivered_orders_unpaid_total_fyb == Decimal('-3333.00')
+    assert combined_b.ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe == Decimal('0.00')
+    assert combined_b.deobligations_recoveries_refund_pri_program_object_class_cpe == Decimal('-3200.00')
 
 
 @pytest.mark.django_db

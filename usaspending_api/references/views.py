@@ -90,7 +90,7 @@ class RecipientAutocomplete(FilterQuerysetMixin,
 
     def get_queryset(self):
         """Return the view's queryset."""
-        queryset = LegalEntity.objects.all()
+        queryset = LegalEntity.objects.all().exclude(recipient_unique_id__isnull=True)
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         return filtered_queryset
