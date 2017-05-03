@@ -25,6 +25,7 @@ class PhonyCursor:
         self.results = None
 
     def execute(self, statement, parameters):
+        self.results = None
         for key in self.db_responses.keys():
             if "".join(key.split()) == "".join(statement.split()):  # Ignore whitespace in the query
                 self.results = self.db_responses[key]
