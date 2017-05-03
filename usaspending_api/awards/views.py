@@ -5,8 +5,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from usaspending_api.awards.models import Award, Transaction
-from usaspending_api.awards.serializers import AwardSerializer, TransactionSerializer
+from usaspending_api.awards.models import Award, Transaction, Subaward
+from usaspending_api.awards.serializers import AwardSerializer, TransactionSerializer, SubawardSerializer
 from usaspending_api.common.api_request_utils import AutoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin, AggregateQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
@@ -96,6 +96,57 @@ class TransactionAggregateViewSet(SuperLoggingMixin,
     """Return aggregated transaction information."""
     def get_queryset(self):
         queryset = Transaction.objects.all()
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.aggregate(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
+
+
+class SubawardViewSet(SuperLoggingMixin,
+                      FilterQuerysetMixin,
+                      DetailViewSet):
+    """
+    ## Spending data by Subaward
+
+    This endpoint allows you to search and filter by almost any attribute of a subaward object.
+
+    """
+
+    serializer_class = SubawardSerializer
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = Subaward.objects.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
+
+
+class SubawardAutocomplete(FilterQuerysetMixin,
+                           AutocompleteView):
+    """Autocomplete support for subaward objects."""
+    # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
+    serializer_class = SubawardSerializer
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = Subaward.objects.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        return filtered_queryset
+
+
+class SubawardAggregateViewSet(SuperLoggingMixin,
+                               FilterQuerysetMixin,
+                               AggregateQuerysetMixin,
+                               DetailViewSet):
+
+    serializer_class = AggregateSerializer
+
+    """Return aggregated award information."""
+    def get_queryset(self):
+        queryset = Subaward.objects.all()
         queryset = self.filter_records(self.request, queryset=queryset)
         queryset = self.aggregate(self.request, queryset=queryset)
         queryset = self.order_records(self.request, queryset=queryset)

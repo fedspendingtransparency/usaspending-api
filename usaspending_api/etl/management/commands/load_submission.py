@@ -27,6 +27,8 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import (
     get_award_financial_transaction, update_awards, update_contract_awards)
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
+from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
+from usaspending_api.etl.subaward_etl import load_subawards
 from usaspending_api.references.helpers import canonicalize_location_dict
 
 from usaspending_api.etl.helpers import update_model_description_fields
@@ -105,8 +107,7 @@ class Command(BaseCommand):
         load_file_a(submission_attributes, appropriation_data, db_cursor)
 
         # Let's get File B information
-        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
-        prg_act_obj_cls_data = dictfetchall(db_cursor)
+        prg_act_obj_cls_data = get_file_b(submission_attributes, db_cursor)
         logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
         load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor)
 
@@ -136,11 +137,16 @@ class Command(BaseCommand):
 
         # Once all the files have been processed, run any global
         # cleanup/post-load tasks.
-        # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
+        # 1. Load subawards
+        try:
+            load_subawards(submission_attributes, db_cursor)
+        except:
+            logger.warn("Error loading subawards for this submission")
+        # 2. Update the descriptions TODO: If this is slow, add ID limiting as above
         update_model_description_fields()
-        # 2. Update awards to reflect their latest associated txn info
+        # 3. Update awards to reflect their latest associated txn info
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
-        # 3. Update contract-specific award fields to reflect latest txn info
+        # 4. Update contract-specific award fields to reflect latest txn info
         update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
 
 
@@ -370,7 +376,9 @@ def get_submission_attributes(broker_submission_id, submission_data):
         'broker_submission_id': broker_submission_id,
         'reporting_fiscal_quarter': get_fiscal_quarter(
             submission_data['reporting_fiscal_period']),
-        'previous_submission': None if previous_submission is None else previous_submission
+        'previous_submission': None if previous_submission is None else previous_submission,
+        # pull in broker's last update date to use as certified date
+        'certified_date': submission_data['updated_at'].date() if type(submission_data['updated_at']) == datetime else None,
     }
 
     return load_data_into_model(
@@ -387,6 +395,8 @@ def get_or_create_location(location_map, row, location_value_map={}):
             and value = corresponding field name on the current row of data
         - row: the row of data currently being loaded
     """
+    row = canonicalize_location_dict(row)
+
     location_country = RefCountryCode.objects.filter(
         country_code=row[location_map.get('location_country_code')]).first()
 
@@ -412,8 +422,6 @@ def get_or_create_location(location_map, row, location_value_map={}):
             'location_country_code': None,
             'country_name': None
         })
-
-    row = canonicalize_location_dict(row)
 
     location_data = load_data_into_model(
         Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
@@ -444,18 +452,6 @@ def store_value(model_instance_or_dict, field, value, reverse=None):
         model_instance_or_dict[field] = value
     else:
         setattr(model_instance_or_dict, field, value)
-
-
-def dictfetchall(cursor):
-    if isinstance(cursor, PhonyCursor):
-        return cursor.results
-    else:
-        "Return all rows from a cursor as a dict"
-        columns = [col[0] for col in cursor.description]
-        return [
-            dict(zip(columns, row))
-            for row in cursor.fetchall()
-        ]
 
 
 def load_file_a(submission_attributes, appropriation_data, db_cursor):
@@ -498,6 +494,129 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
         submission_attributes.submission_id)
 
 
+def get_file_b(submission_attributes, db_cursor):
+    """
+    Get broker File B data for a specific submission.
+    This function was added as a workaround for the fact that a few agencies
+    (two, as of April, 2017: DOI and ACHP) submit multiple File B records
+    for the same object class. These "dupes", come in as the same 4 digit object
+    class code but with one of the direct reimbursable flags set to NULL.
+
+    From our perspective, this is a duplicate, because we get our D/R info from
+    the 1st digit of the object class when it's four digits.
+
+    Thus, this function examines the File B data for a given submission. If
+    it has the issue of "duplicate" object classes, it will squash the
+    offending records together so that all financial totals are reporting
+    as a single object class/program activity/TAS record as expected.
+
+    If the broker validations change to prohibit this pattern in the data,
+    this intervening function will no longer be necessary, we can go back to
+    selecting * from the broker's File B data.
+
+    Args:
+        submission_attrbitues: submission object currently being loaded
+        db_cursor: db connection info
+    """
+    submission_id = submission_attributes.broker_submission_id
+
+    # does this file B have the dupe object class edge case?
+    check_dupe_oc = (
+        'SELECT count(*) '
+        'FROM object_class_program_activity '
+        'WHERE submission_id = %s '
+        'AND length(object_class) = 4 '
+        'GROUP BY tas_id, program_activity_code, object_class '
+        'HAVING COUNT(*) > 1'
+    )
+    db_cursor.execute(check_dupe_oc, [submission_id])
+    dupe_oc_count = len(dictfetchall(db_cursor))
+
+    if dupe_oc_count == 0:
+        # there are no object class duplicates, so proceed as usual
+        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
+    else:
+        # file b contains at least one case of duplicate 4 digit object classes
+        # for the same program activity/tas, so combine the records in question
+        combine_dupe_oc = (
+            'SELECT  '
+            'submission_id, '
+            'job_id, '
+            'agency_identifier, '
+            'allocation_transfer_agency, '
+            'availability_type_code, '
+            'beginning_period_of_availa, '
+            'ending_period_of_availabil, '
+            'main_account_code, '
+            'RIGHT(object_class, 3) AS object_class, '
+            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, '
+            'tas, '
+            'tas_id, '
+            'program_activity_code, '
+            'program_activity_name, '
+            'sub_account_code, '
+            'SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, '
+            'SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, '
+            'SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, '
+            'SUM(gross_outlays_delivered_or_cpe) AS gross_outlays_delivered_or_cpe, '
+            'SUM(gross_outlays_delivered_or_fyb) AS gross_outlays_delivered_or_fyb, '
+            'SUM(gross_outlays_undelivered_cpe) AS gross_outlays_undelivered_cpe, '
+            'SUM(gross_outlays_undelivered_fyb) AS gross_outlays_undelivered_fyb, '
+            'SUM(obligations_delivered_orde_cpe) AS obligations_delivered_orde_cpe, '
+            'SUM(obligations_delivered_orde_fyb) AS obligations_delivered_orde_fyb, '
+            'SUM(obligations_incurred_by_pr_cpe) AS obligations_incurred_by_pr_cpe, '
+            'SUM(obligations_undelivered_or_cpe) AS obligations_undelivered_or_cpe, '
+            'SUM(obligations_undelivered_or_fyb) AS obligations_undelivered_or_fyb, '
+            'SUM(ussgl480100_undelivered_or_cpe) AS ussgl480100_undelivered_or_cpe, '
+            'SUM(ussgl480100_undelivered_or_fyb) AS ussgl480100_undelivered_or_fyb, '
+            'SUM(ussgl480200_undelivered_or_cpe) AS ussgl480200_undelivered_or_cpe, '
+            'SUM(ussgl480200_undelivered_or_fyb) AS ussgl480200_undelivered_or_fyb, '
+            'SUM(ussgl483100_undelivered_or_cpe) AS ussgl483100_undelivered_or_cpe, '
+            'SUM(ussgl483200_undelivered_or_cpe) AS ussgl483200_undelivered_or_cpe, '
+            'SUM(ussgl487100_downward_adjus_cpe) AS ussgl487100_downward_adjus_cpe, '
+            'SUM(ussgl487200_downward_adjus_cpe) AS ussgl487200_downward_adjus_cpe, '
+            'SUM(ussgl488100_upward_adjustm_cpe) AS ussgl488100_upward_adjustm_cpe, '
+            'SUM(ussgl488200_upward_adjustm_cpe) AS ussgl488200_upward_adjustm_cpe, '
+            'SUM(ussgl490100_delivered_orde_cpe) AS ussgl490100_delivered_orde_cpe, '
+            'SUM(ussgl490100_delivered_orde_fyb) AS ussgl490100_delivered_orde_fyb, '
+            'SUM(ussgl490200_delivered_orde_cpe) AS ussgl490200_delivered_orde_cpe, '
+            'SUM(ussgl490800_authority_outl_cpe) AS ussgl490800_authority_outl_cpe, '
+            'SUM(ussgl490800_authority_outl_fyb) AS ussgl490800_authority_outl_fyb, '
+            'SUM(ussgl493100_delivered_orde_cpe) AS ussgl493100_delivered_orde_cpe, '
+            'SUM(ussgl497100_downward_adjus_cpe) AS ussgl497100_downward_adjus_cpe, '
+            'SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, '
+            'SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, '
+            'SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe '
+            'FROM object_class_program_activity '
+            'WHERE submission_id = %s '
+            'GROUP BY  '
+            'submission_id, '
+            'job_id, '
+            'agency_identifier, '
+            'allocation_transfer_agency, '
+            'availability_type_code, '
+            'beginning_period_of_availa, '
+            'ending_period_of_availabil, '
+            'main_account_code, '
+            'RIGHT(object_class, 3), '
+            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' ELSE by_direct_reimbursable_fun END, '
+            'program_activity_code, '
+            'program_activity_name, '
+            'sub_account_code, '
+            'tas, '
+            'tas_id'
+        )
+        logger.info(
+            'Found {} duplicated File B 4 digit object codes in submission {}. '
+            'Aggregating financial values.'.format(dupe_oc_count, submission_id))
+        # we have at least one instance of duplicated 4 digit object classes so
+        # aggregate the financial values togther
+        db_cursor.execute(combine_dupe_oc, [submission_id])
+
+    data = dictfetchall(db_cursor)
+    return data
+
+
 def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     """
     Process and load file B broker data (aka TAS balances by program
@@ -516,7 +635,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
         except:
             continue
 
-        # the the corresponding account balances row (aka "File A" record)
+        # get the corresponding account balances row (aka "File A" record)
         account_balances = AppropriationAccountBalances.objects.get(
             treasury_account_identifier=treasury_account,
             submission_id=submission_attributes.submission_id
@@ -539,6 +658,8 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     # Insert File B quarterly numbers for this submission
     TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(
         submission_attributes.submission_id)
+
+    FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 
 
 def load_file_c(submission_attributes, award_financial_data, db_cursor):
@@ -648,27 +769,31 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
         legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
         # Create the legal entity if it doesn't exist
-        try:
-            legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
-        except ObjectDoesNotExist:
+        legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
+        if created:
             legal_entity_value_map = {
                 "location": legal_entity_location,
-                "legal_entity_id": row['awardee_or_recipient_uniqu'],
             }
-            legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
+            legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
         # Create the place of performance location
         pop_location, created = get_or_create_location(
             place_of_performance_field_map, row, place_of_performance_value_map)
 
-        # If awarding/funding toptier agency code (aka CGAC) is not supplied on the D1 record,
-        # use the sub tier code to look it up
-        if row['awarding_agency_code'] is None:
+        # If awarding toptier agency code (aka CGAC) is not supplied on the D1 record,
+        # use the sub tier code to look it up. This code assumes that all incoming
+        # records will supply an awarding subtier agency code
+        if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
             row['awarding_agency_code'] = Agency.get_by_subtier(
                 row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
-        if row['funding_agency_code'] is None:
-            row['funding_agency_code'] = Agency.get_by_subtier(
-                row["funding_sub_tier_agency_co"]).toptier_agency.cgac_code
+        # If funding toptier agency code (aka CGAC) is empty, try using the sub
+        # tier funding code to look it up. Unlike the awarding agency, we can't
+        # assume that the funding agency subtier code will always be present.
+        if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+            funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
+            row['funding_agency_code'] = (
+                funding_agency.toptier_agency.cgac_code if funding_agency is not None
+                else None)
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         awarding_agency = Agency.get_by_toptier_subtier(
@@ -699,16 +824,17 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
             "action_date": format_date(row['action_date']),
         }
 
-        transaction_instance = load_data_into_model(
-            Transaction(), row,
+        transaction_dict = load_data_into_model(
+            Transaction(),  # thrown away
+            row,
             field_map=contract_field_map,
             value_map=parent_txn_value_map,
             as_dict=True)
 
-        transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+        transaction = Transaction.get_or_create_transaction(**transaction_dict)
+        transaction.save()
 
         contract_value_map = {
-            'transaction': transaction_instance,
             'submission': submission_attributes,
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
@@ -716,10 +842,14 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
         }
 
         contract_instance = load_data_into_model(
-            TransactionContract(), row,
+            TransactionContract(),  # thrown away
+            row,
             field_map=contract_field_map,
             value_map=contract_value_map,
-            save=True)
+            as_dict=True)
+
+        transaction_contract = TransactionContract(transaction=transaction, **contract_instance)
+        transaction_contract.save()
 
 
 def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor):
@@ -775,26 +905,30 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
         # Create the legal entity if it doesn't exist
-        try:
-            legal_entity = LegalEntity.objects.get(recipient_unique_id=row['awardee_or_recipient_uniqu'])
-        except ObjectDoesNotExist:
+        legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
+        if created:
             legal_entity_value_map = {
                 "location": legal_entity_location,
-                "legal_entity_id": row['awardee_or_recipient_uniqu']
             }
-            legal_entity = load_data_into_model(LegalEntity(), row, value_map=legal_entity_value_map, save=True)
+            legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
         # Create the place of performance location
         pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
-        # If toptier agency code (aka CGAC) is not supplied on the D2 record,
-        # use the sub tier code to look it up
-        if row['awarding_agency_code'] is None:
+        # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
+        # use the sub tier code to look it up. This code assumes that all incoming
+        # records will supply an awarding subtier agency code
+        if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
             row['awarding_agency_code'] = Agency.get_by_subtier(
                 row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
-        if row['funding_agency_code'] is None:
-            row['funding_agency_code'] = Agency.get_by_subtier(
-                row["funding_sub_tier_agency_co"]).toptier_agency.cgac_code
+        # If funding toptier agency code (aka CGAC) is empty, try using the sub
+        # tier funding code to look it up. Unlike the awarding agency, we can't
+        # assume that the funding agency subtier code will always be present.
+        if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+            funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
+            row['funding_agency_code'] = (
+                funding_agency.toptier_agency.cgac_code if funding_agency is not None
+                else None)
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         awarding_agency = Agency.get_by_toptier_subtier(
@@ -824,16 +958,17 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             "action_date": format_date(row['action_date']),
         }
 
-        transaction_instance = load_data_into_model(
-            Transaction(), row,
+        transaction_dict = load_data_into_model(
+            Transaction(),  # thrown away
+            row,
             field_map=fad_field_map,
             value_map=parent_txn_value_map,
             as_dict=True)
 
-        transaction_instance, created = Transaction.objects.get_or_create(**transaction_instance)
+        transaction = Transaction.get_or_create_transaction(**transaction_dict)
+        transaction.save()
 
         fad_value_map = {
-            "transaction": transaction_instance,
             "submission": submission_attributes,
             "cfda": CFDAProgram.objects.filter(program_number=row['cfda_number']).first(),
             'reporting_period_start': submission_attributes.reporting_period_start,
@@ -843,21 +978,11 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         }
 
         financial_assistance_data = load_data_into_model(
-            TransactionAssistance(), row,
+            TransactionAssistance(),  # thrown away
+            row,
             field_map=fad_field_map,
             value_map=fad_value_map,
-            save=True)
+            as_dict=True)
 
-
-class PhonyCursor:
-    """Spoofs the db cursor responses."""
-
-    def __init__(self):
-        json_data = open(os.path.join(os.path.dirname(__file__), '../../tests/etl_test_data.json'))
-        self.db_responses = json.load(json_data)
-        json_data.close()
-
-        self.results = None
-
-    def execute(self, statement, parameters):
-        self.results = self.db_responses[statement]
+        transaction_assistance = TransactionAssistance.get_or_create(transaction=transaction, **financial_assistance_data)
+        transaction_assistance.save()

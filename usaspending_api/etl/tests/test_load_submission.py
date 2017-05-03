@@ -1,5 +1,5 @@
-from datetime import date
-
+import datetime
+from decimal import Decimal
 from django.core.management import call_command
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
@@ -44,7 +44,7 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     call_command('load_submission', '-1', '--test')
     assert SubmissionAttributes.objects.count() == 1
     assert AppropriationAccountBalances.objects.count() == 1
-    assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 10
+    assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 9
     assert FinancialAccountsByAwards.objects.count() == 11
     for account in FinancialAccountsByAwards.objects.all():
         assert account.transaction_obligated_amount == -6500
@@ -58,12 +58,24 @@ def test_load_submission_command(endpoint_data, partially_flushed):
 
     # Verify that sign has been reversed during load where appropriate
     assert AppropriationAccountBalances.objects.filter(gross_outlay_amount_by_tas_cpe__lt=0).count() == 1
-    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_cpe__lt=0).count() == 10
-    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_fyb__lt=0).count() == 10
+    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_cpe__lt=0).count() == 9
+    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_fyb__lt=0).count() == 9
     assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_cpe__lt=0).count() == 11
     assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_fyb__lt=0).count() == 11
     assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_fyb__lt=0).count() == 11
     assert FinancialAccountsByAwards.objects.filter(transaction_obligated_amount__lt=0).count() == 11
+
+    # Verify that duplicate 4 digit object class rows in File B have been combined
+    combined_b = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+        object_class__object_class='255',
+        object_class__direct_reimbursable='2',
+        program_activity__program_activity_code='0001'
+    )
+    assert combined_b.count() == 1
+    combined_b = combined_b.first()
+    assert combined_b.obligations_undelivered_orders_unpaid_total_fyb == Decimal('-3333.00')
+    assert combined_b.ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe == Decimal('0.00')
+    assert combined_b.deobligations_recoveries_refund_pri_program_object_class_cpe == Decimal('-3200.00')
 
 
 @pytest.mark.django_db
@@ -73,8 +85,9 @@ def test_get_submission_attributes():
         'reporting_fiscal_year': 2016,
         'reporting_fiscal_period': 9,
         'is_quarter_format': True,
-        'reporting_start_date': date(2016, 4, 1),
-        'reporting_end_date': date(2016, 6, 1),
+        'reporting_start_date': datetime.date(2016, 4, 1),
+        'reporting_end_date': datetime.date(2016, 6, 1),
+        'updated_at': datetime.datetime(2017, 4, 20, 16, 49, 28, 915209)
     }
 
     get_submission_attributes(11111, submission_data)
@@ -87,9 +100,10 @@ def test_get_submission_attributes():
     assert sub.reporting_fiscal_year == 2016
     assert sub.reporting_fiscal_period == 9
     assert sub.quarter_format_flag is True
-    assert sub.reporting_period_start == date(2016, 4, 1)
-    assert sub.reporting_period_end == date(2016, 6, 1)
+    assert sub.reporting_period_start == datetime.date(2016, 4, 1)
+    assert sub.reporting_period_end == datetime.date(2016, 6, 1)
     assert sub.previous_submission is None
+    assert sub.certified_date == datetime.date(2017, 4, 20)
 
     # test re-running the submission
     old_create_date = sub.create_date
@@ -109,8 +123,9 @@ def test_get_submission_attributes():
         'reporting_fiscal_year': 2016,
         'reporting_fiscal_period': 12,
         'is_quarter_format': True,
-        'reporting_start_date': date(2016, 7, 1),
-        'reporting_end_date': date(2016, 9, 1),
+        'reporting_start_date': datetime.date(2016, 7, 1),
+        'reporting_end_date': datetime.date(2016, 9, 1),
+        'updated_at': datetime.datetime(2017, 4, 20, 16, 49, 28, 915209)
     }
     get_submission_attributes(22222, new_submission_data)
 
@@ -141,7 +156,7 @@ def test_load_submission_command_program_activity_uniqueness(endpoint_data, part
 
 
 @pytest.mark.django_db
-def test_get_or_create_program_activity_name():
+def test_get_or_create_program_activity_name(transaction=True):
     """
     Verify that program activities that aren't in our domain values will store
     both a code and display name if it's present in the submission data
@@ -159,8 +174,9 @@ def test_get_or_create_program_activity_name():
         'reporting_fiscal_year': 2017,
         'reporting_fiscal_period': 2,
         'is_quarter_format': True,
-        'reporting_start_date': date(2017, 7, 1),
-        'reporting_end_date': date(2017, 9, 1),
+        'reporting_start_date': datetime.date(2017, 7, 1),
+        'reporting_end_date': datetime.date(2017, 9, 1),
+        'updated_at': datetime.datetime(2017, 4, 20, 16, 49, 28, 915209),
     }
     sa = get_submission_attributes(22222, new_submission_data)
     pa = get_or_create_program_activity(row_data, sa)
