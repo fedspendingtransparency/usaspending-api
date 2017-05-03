@@ -2,6 +2,7 @@ import logging
 
 from django.db import models
 from django.db.models import F, Q
+from django.utils.text import slugify
 from usaspending_api.common.models import DataSourceTrackedModel
 from usaspending_api.references.helpers import canonicalize_string
 
@@ -623,7 +624,12 @@ class Definition(models.Model):
     data_act_term = models.TextField(blank=True, null=True)
     plain = models.TextField(unique=True)
     official = models.TextField(blank=True, null=True)
+    slug = models.SlugField(max_length=500, null=True)
     
+    def save(self, *arg, **kwarg):
+        self.slug = slugify(self.term)
+        return super(Definition, self).save(*arg, **kwarg)
+        
     
 class DefinitionResource(models.Model):
     id = models.AutoField(primary_key=True)

@@ -102,7 +102,7 @@ class GuideViewSet(FilterQuerysetMixin, DetailViewSet):
     """
     queryset = Definition.objects.all()
     serializer_class = DefinitionSerializer    
-    lookup_field = 'term'    
+    lookup_field = 'slug'    
     
     def get_queryset(self):
         """Return the view's queryset."""

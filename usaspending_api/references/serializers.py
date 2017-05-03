@@ -117,4 +117,4 @@ class DefinitionSerializer(LimitableSerializer):
     class Meta:
 
         model = Definition
-        fields = ['term', 'data_act_term', 'plain', 'official', 'resources']
+        fields = ['term', 'slug', 'data_act_term', 'plain', 'official', 'resources']

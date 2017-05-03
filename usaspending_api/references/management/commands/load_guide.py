@@ -53,15 +53,13 @@ class Command(BaseCommand):
 
         field_names = ('term', 'plain', 'data_act_term', 'official')
         row_count = 0
-        definitions = []
-        resources = []
         for row in rows:
             if not row[0].value:
                 break
             definition = Definition()
             for (i, field_name) in enumerate(field_names):
                 setattr(definition, field_name, row[i].value)
-            definitions.append(definition)
+            definition.save()
             row_count += 1
             rsrc_cell = row[4]
             if rsrc_cell.value:
@@ -69,10 +67,6 @@ class Command(BaseCommand):
                     definition=definition, title=rsrc_cell.value)
                 if rsrc_cell.hyperlink:
                     resource.url = rsrc_cell.hyperlink.target
-                resources.append(resource)
-        Definition.objects.bulk_create(definitions)
-        for resource in resources:
-            resource.definition_id = resource.definition.id
-        DefinitionResource.objects.bulk_create(resources)
+                resource.save()
         self.logger.info('{} definitions loaded from {}'.format(
             row_count, options['path']))
