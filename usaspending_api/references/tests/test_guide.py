@@ -37,13 +37,3 @@ def test_guide_endpoint(client, guide_data):
     assert len(resp.data['results']) > 0
     for itm in resp.data['results']:
         assert 'congress' in itm['plain'].lower()
-
-    # case-insensitivity fail?
-    """
-    resp = client.get('/api/v1/references/guide/?plain__contains=congress')
-    assert resp.status_code == 200
-    assert len(resp.data['results']) > 0
-    for itm in resp.data['results']:
-        assert 'congress' in itm['plain'].lower()
-
-    """

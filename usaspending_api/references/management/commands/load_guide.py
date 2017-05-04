@@ -13,15 +13,16 @@ class Command(BaseCommand):
 
     logger = logging.getLogger('console')
 
+    path = 'usaspending_api/data/USAspendingGuide.xlsx'
+    path = os.path.normpath(path)
+    default_path = os.path.join(settings.BASE_DIR, path)
+
     def add_arguments(self, parser):
-        path = 'usaspending_api/data/USAspendingGuide.xlsx'
-        path = os.path.normpath(path)
-        default = os.path.join(settings.BASE_DIR, path)
         parser.add_argument(
             '-p',
             '--path',
             help='the path to the Excel spreadsheet to load',
-            default=default)
+            default=self.default_path)
         parser.add_argument(
             '-a',
             '--append',
@@ -31,35 +32,42 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        wb = load_workbook(filename=options['path'])
-        ws = wb.active
-        rows = ws.rows
+        load_guide(path=options['path'], append=options['append'])
 
-        headers = [c.value for c in next(rows)[:6]]
-        expected_headers = [
-            'Term', 'Plain Language Descriptions', 'DATA Act Schema Term',
-            'DATA Act Schema Definition', 'More Resources', 'Markdown for More Resources'
-        ]
-        if headers != expected_headers:
-            raise Exception('Expected headers of {} in {}'.format(
-                expected_headers, options['path']))
 
-        if options['append']:
-            logging.info('Appending definitions to existing guide')
-        else:
-            logging.info('Deleting existing definitions from guide')
-            Definition.objects.all().delete()
+def load_guide(path, append):
 
-        field_names = ('term', 'plain', 'data_act_term', 'official', None, 'resources')
-        row_count = 0
-        for row in rows:
-            if not row[0].value:
-                break  # Reads file only until a line with blank `term`
-            definition = Definition()
-            for (i, field_name) in enumerate(field_names):
-                if field_name:
-                    setattr(definition, field_name, row[i].value)
-            definition.save()
-            row_count += 1
-        self.logger.info('{} definitions loaded from {}'.format(
-            row_count, options['path']))
+    logger = logging.getLogger('console')
+
+    wb = load_workbook(filename=path)
+    ws = wb.active
+    rows = ws.rows
+
+    headers = [c.value for c in next(rows)[:6]]
+    expected_headers = [
+        'Term', 'Plain Language Descriptions', 'DATA Act Schema Term',
+        'DATA Act Schema Definition', 'More Resources', 'Markdown for More Resources'
+    ]
+    if headers != expected_headers:
+        raise Exception('Expected headers of {} in {}'.format(
+            expected_headers, path))
+
+    if append:
+        logging.info('Appending definitions to existing guide')
+    else:
+        logging.info('Deleting existing definitions from guide')
+        Definition.objects.all().delete()
+
+    field_names = ('term', 'plain', 'data_act_term', 'official', None, 'resources')
+    row_count = 0
+    for row in rows:
+        if not row[0].value:
+            break  # Reads file only until a line with blank `term`
+        definition = Definition()
+        for (i, field_name) in enumerate(field_names):
+            if field_name:
+                setattr(definition, field_name, row[i].value)
+        definition.save()
+        row_count += 1
+    logger.info('{} definitions loaded from {}'.format(
+        row_count, path))
