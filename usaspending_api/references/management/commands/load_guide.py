@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from openpyxl import load_workbook
 
-from usaspending_api.references.models import Definition, DefinitionResource
+from usaspending_api.references.models import Definition
 
 
 class Command(BaseCommand):
@@ -48,25 +48,18 @@ class Command(BaseCommand):
             logging.info('Appending definitions to existing guide')
         else:
             logging.info('Deleting existing definitions from guide')
-            DefinitionResource.objects.all().delete()
             Definition.objects.all().delete()
 
-        field_names = ('term', 'plain', 'data_act_term', 'official')
+        field_names = ('term', 'plain', 'data_act_term', 'official', None, 'resources')
         row_count = 0
         for row in rows:
             if not row[0].value:
                 break  # Reads file only until a line with blank `term`
             definition = Definition()
             for (i, field_name) in enumerate(field_names):
-                setattr(definition, field_name, row[i].value)
+                if field_name:
+                    setattr(definition, field_name, row[i].value)
             definition.save()
             row_count += 1
-            rsrc_cell = row[5]
-            if rsrc_cell.value:
-                resource = DefinitionResource(
-                    definition=definition, title=rsrc_cell.value)
-                if rsrc_cell.hyperlink:
-                    resource.url = rsrc_cell.hyperlink.target
-                resource.save()
         self.logger.info('{} definitions loaded from {}'.format(
             row_count, options['path']))

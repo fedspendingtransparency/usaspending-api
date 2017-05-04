@@ -630,18 +630,8 @@ class Definition(models.Model):
     plain = models.TextField(unique=True)
     official = models.TextField(blank=True, null=True)
     slug = models.SlugField(max_length=500, null=True)
+    resources = models.TextField(blank=True, null=True)
 
     def save(self, *arg, **kwarg):
         self.slug = slugify(self.term)
         return super(Definition, self).save(*arg, **kwarg)
-
-
-class DefinitionResource(models.Model):
-    id = models.AutoField(primary_key=True)
-    title = models.TextField()
-    url = models.TextField(null=False, blank=False)
-    definition = models.ForeignKey(Definition, related_name='references')
-
-    class Meta:
-        managed = True
-        db_table = 'definition_resource'

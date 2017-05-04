@@ -18,7 +18,7 @@ def test_guide_endpoint(client, guide_data):
     assert len(resp.data["results"]) > 70
 
     resp = client.get(
-        'http://localhost:8000/api/v1/references/guide/agency-identifier/')
+        '/api/v1/references/guide/agency-identifier/')
     assert resp.status_code == 200
     assert resp.data['term'] == 'Agency Identifier'
 

@@ -36,8 +36,4 @@ class Migration(migrations.Migration):
                 'db_table': 'definition_resource',
             },
         ),
-        migrations.AlterUniqueTogether(
-            name='legalentity',
-            unique_together=set([]),
-        ),
     ]
