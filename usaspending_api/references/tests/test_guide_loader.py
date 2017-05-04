@@ -1,19 +1,7 @@
 from usaspending_api.references.models import Definition
 from usaspending_api.references.management.commands.load_guide import load_guide, Command
-import os
 import pytest
-from django.conf import settings
 from django.db.utils import IntegrityError
-
-
-# Scoping to module would save time, but db object is function-scoped
-@pytest.fixture(scope='function')
-def cfda_data(db):
-    "Load from small test CSV to test database"
-    path = 'usaspending_api/references/management/commands/programs-01pct-usaspending.csv'
-    path = os.path.normpath(path)
-    fullpath = os.path.join(settings.BASE_DIR, path)
-    load_cfda(fullpath)
 
 
 def test_guide_load(db):
