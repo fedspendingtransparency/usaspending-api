@@ -164,6 +164,9 @@ USE_L10N = True
 
 USE_TZ = True
 
+# URL for the S3 bucket that will contain CSV downloads
+# This must contain the trailing slash
+S3_BUCKET_URL = ""
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/

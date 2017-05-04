@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.csv_helpers import resolve_path_to_view, create_filename_from_options, format_path
 from enum import Enum
 import hashlib
 import pickle
@@ -49,6 +50,15 @@ class CSVdownloadableResponse(models.Model):
     # The status of the file generation
     status_code = models.IntegerField(default=0)
     status_description = models.TextField(default="This file has been requested, and is awaiting queueing")
+
+    @staticmethod
+    def get_or_create_from_parameters(request_path, request_catalog):
+        request_path = format_path(request_path)
+        print(request_path)
+        filename = create_filename_from_options(request_path, request_catalog.checksum)
+        return CSVdownloadableResponse.objects.get_or_create(request=request_catalog,
+                                                             request_path=request_path,
+                                                             file_name=filename)
 
 
 class RequestCatalog(models.Model):
