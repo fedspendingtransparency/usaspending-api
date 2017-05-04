@@ -49,7 +49,8 @@ class AgencyAutocomplete(FilterQuerysetMixin,
         queryset = Agency.objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        return filtered_queryset
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
 
 
 class AgencyEndpoint(SuperLoggingMixin,
@@ -93,7 +94,8 @@ class RecipientAutocomplete(FilterQuerysetMixin,
         queryset = LegalEntity.objects.all().exclude(recipient_unique_id__isnull=True)
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        return filtered_queryset
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
 
 
 class GuideViewSet(FilterQuerysetMixin, DetailViewSet):
@@ -108,5 +110,3 @@ class GuideViewSet(FilterQuerysetMixin, DetailViewSet):
         """Return the view's queryset."""
         queryset = Definition.objects.all()
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
-        return ordered_queryset
