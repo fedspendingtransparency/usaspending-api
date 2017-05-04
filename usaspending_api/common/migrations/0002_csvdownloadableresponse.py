@@ -10,7 +10,7 @@ import usaspending_api.common.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('common', '0002_auto_20170324_1927'),
+        ('common', '0001_initial'),
     ]
 
     operations = [
