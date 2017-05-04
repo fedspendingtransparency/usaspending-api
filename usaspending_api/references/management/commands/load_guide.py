@@ -35,15 +35,15 @@ class Command(BaseCommand):
         ws = wb.active
         rows = ws.rows
 
-        headers = [c.value for c in next(rows)[:5]]
+        headers = [c.value for c in next(rows)[:6]]
         expected_headers = [
-            'Term', 'Plain Language', 'DATA Act Schema Term',
-            'DATA Act Schema Definition', 'More Resources'
+            'Term', 'Plain Language Descriptions', 'DATA Act Schema Term',
+            'DATA Act Schema Definition', 'More Resources', 'Markdown for More Resources'
         ]
         if headers != expected_headers:
             raise Exception('Expected headers of {} in {}'.format(
                 expected_headers, options['path']))
-       
+
         if options['append']:
             logging.info('Appending definitions to existing guide')
         else:
@@ -55,13 +55,13 @@ class Command(BaseCommand):
         row_count = 0
         for row in rows:
             if not row[0].value:
-                break
+                break  # Reads file only until a line with blank `term`
             definition = Definition()
             for (i, field_name) in enumerate(field_names):
                 setattr(definition, field_name, row[i].value)
             definition.save()
             row_count += 1
-            rsrc_cell = row[4]
+            rsrc_cell = row[5]
             if rsrc_cell.value:
                 resource = DefinitionResource(
                     definition=definition, title=rsrc_cell.value)

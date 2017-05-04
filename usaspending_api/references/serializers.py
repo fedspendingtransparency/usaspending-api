@@ -102,18 +102,18 @@ class ObjectClassSerializer(LimitableSerializer):
         fields = (
             'id', 'major_object_class', 'major_object_class_name',
             'object_class', 'object_class_name')
-        
-        
+
+
 class DefinitionResourceSerializer(serializers.Serializer):
-    
+
     class Meta:
         model = DefinitionResource
-        
-        
+
+
 class DefinitionSerializer(LimitableSerializer):
 
     resources = DefinitionResourceSerializer(many=True, read_only=True)
-    
+
     class Meta:
 
         model = Definition

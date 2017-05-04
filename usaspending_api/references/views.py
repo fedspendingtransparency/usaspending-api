@@ -101,9 +101,9 @@ class GuideViewSet(FilterQuerysetMixin, DetailViewSet):
     This viewset automatically provides `list` and `detail` actions.
     """
     queryset = Definition.objects.all()
-    serializer_class = DefinitionSerializer    
-    lookup_field = 'slug'    
-    
+    serializer_class = DefinitionSerializer
+    lookup_field = 'slug'
+
     def get_queryset(self):
         """Return the view's queryset."""
         queryset = Definition.objects.all()
