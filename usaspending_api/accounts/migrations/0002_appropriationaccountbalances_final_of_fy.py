@@ -11,15 +11,10 @@ from usaspending_api.common.helpers import FY_PG_FUNCTION_DEF
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0018_auto_20170322_2024'),
+        ('accounts', '0001_initial'),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='appropriationaccountbalances',
-            name='final_of_fy',
-            field=models.BooleanField(db_index=True, default=False),
-        ),
         migrations.RunSQL(FY_PG_FUNCTION_DEF),
         migrations.RunSQL(AppropriationAccountBalances.FINAL_OF_FY_SQL),
     ]
