@@ -46,6 +46,7 @@ class CSVdownloadableResponse(models.Model):
 
     # The file name that will be used to store the file
     file_name = models.TextField(null=False)
+    download_location = models.TextField(null=True)
 
     # The status of the file generation
     status_code = models.IntegerField(default=0)

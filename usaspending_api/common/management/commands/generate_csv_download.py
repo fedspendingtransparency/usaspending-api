@@ -19,9 +19,18 @@ class Command(BaseCommand):
         parser.add_argument('request_path', nargs=1, help='The API path of the request, e.g. /api/v1/awards/')
         parser.add_argument('request_checksum', nargs=1, help='The request checksum, for looking up via RequestCatalog')
 
+        parser.add_argument(
+            '-l',
+            '--location',
+            dest="file_location",
+            type=str,
+            help="Overrides the location record for this file with the specified parameter"
+        )
+
     def handle(self, *args, **options):
         request_path = options['request_path'][0]
         request_checksum = options['request_checksum'][0]
+        file_location_override = options.get('file_location', None)
 
         # Check if we have a request for that checksum
         request_catalog = RequestCatalog.objects.filter(checksum=request_checksum).first()
@@ -35,7 +44,7 @@ class Command(BaseCommand):
         # If we didn't create this request, AND it's also not requested (via URL), something else is handling it so we exit
         # If it is in an error'd state, we can retry.
         if not created and csv_downloadable_response.status_code != CSVdownloadableResponse.STATUS.REQUESTED_CODE.value and csv_downloadable_response.status_code != CSVdownloadableResponse.STATUS.ERROR_CODE.value:
-            self.logger.info("Status of file: {}\nFilename: {}".format(csv_downloadable_response.status_description, csv_downloadable_response.file_name))
+            self.logger.info("Status of file: {}\nFilename: {}\nLocation: {}".format(csv_downloadable_response.status_description, csv_downloadable_response.file_name, csv_downloadable_response.download_location))
             return
 
         try:
@@ -82,10 +91,17 @@ class Command(BaseCommand):
 
             csv_downloadable_response.status_code = CSVdownloadableResponse.STATUS.READY_CODE.value
             csv_downloadable_response.status_description = CSVdownloadableResponse.STATUS.READY_DESCRIPTION.value
+
+            if file_location_override:
+                csv_downloadable_response.download_location = file_location_override
+            else:
+                csv_downloadable_response.download_location = csv_downloadable_response.file_name
+
             csv_downloadable_response.save()
 
             self.logger.info("Output complete.")
-        except:
+        except Exception as e:
+            self.logger.exception(e)
             # Any error here should flag the response as "errored"
             csv_downloadable_response.status_code = CSVdownloadableResponse.STATUS.ERROR_CODE.value
             csv_downloadable_response.status_description = CSVdownloadableResponse.STATUS.ERROR_DESCRIPTION.value

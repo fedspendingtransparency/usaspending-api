@@ -1,7 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.conf import settings
 
 from usaspending_api.common.models import RequestCatalog, CSVdownloadableResponse
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -22,7 +21,7 @@ class CSVdownloadView(APIView):
                 "request_path": csv_download.request_path,
                 "status": csv_download.status_description,
                 "status_code": csv_download.status_code,
-                "location": settings.S3_BUCKET_URL + csv_download.file_name
+                "location": csv_download.download_location
             }
             status_code = status.HTTP_200_OK
         except InvalidParameterException as e:
