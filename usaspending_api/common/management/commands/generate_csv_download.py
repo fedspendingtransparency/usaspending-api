@@ -54,7 +54,7 @@ class Command(BaseCommand):
             if not view:
                 self.logger.info("Path does not resolve to a currently supported CSV bulk view")
                 csv_downloadable_response.status_code = CSVdownloadableResponse.STATUS.ERROR_CODE.value
-                csv_downloadable_response.status_description = CSVdownloadableResponse.STATUS.ERROR_DESCRIPTION.value
+                csv_downloadable_response.status_description = "Path is not a currently supported CSV bulk path"
                 csv_downloadable_response.save()
                 return
 

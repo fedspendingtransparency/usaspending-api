@@ -54,7 +54,6 @@ class CSVdownloadableResponse(models.Model):
     @staticmethod
     def get_or_create_from_parameters(request_path, request_catalog):
         request_path = format_path(request_path)
-        print(request_path)
         filename = create_filename_from_options(request_path, request_catalog.checksum)
         return CSVdownloadableResponse.objects.get_or_create(request=request_catalog,
                                                              request_path=request_path,
@@ -163,17 +162,16 @@ class RequestCatalog(models.Model):
 
         checksumable_request = {
             "data": {},
-            "query_params": {}
+            "query_params": query_params
         }
+
+        print(query_params)
 
         for item in storable_parameters:
             d_ins = data.get(item, None)
-            q_ins = query_params.get(item, None)
 
-            # Prefer taking post parameters over get parameters
-            for ins in [(d_ins, checksumable_request["data"]), (q_ins, checksumable_request["query_params"])]:
-                if ins[0]:
-                    ins[1][item] = ins[0]
+            if d_ins:
+                checksumable_request["data"][item] = d_ins
 
         return checksumable_request
 
