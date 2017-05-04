@@ -110,3 +110,4 @@ class GuideViewSet(FilterQuerysetMixin, DetailViewSet):
         """Return the view's queryset."""
         queryset = Definition.objects.all()
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        return filtered_queryset
