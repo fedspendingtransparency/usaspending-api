@@ -20,7 +20,7 @@ class CSVdownloadView(APIView):
 
             response = {
                 "request_checksum": self.req.checksum,
-                "request_path": format_path(request_path),
+                "request_path": format_path(path),
                 "status": "",
                 "location": None
             }
