@@ -1,9 +1,10 @@
 from django.core.management.base import BaseCommand, CommandError
-from usaspending_api.common.models import RequestCatalog, CSVdownloadableResponse
+from usaspending_api.common.models import RequestCatalog
 
 from djqscsv import write_csv
 
 import logging
+import sys
 
 from usaspending_api.common.csv_helpers import resolve_path_to_view, create_filename_from_options, format_path
 
@@ -19,58 +20,34 @@ class Command(BaseCommand):
         parser.add_argument('request_path', nargs=1, help='The API path of the request, e.g. /api/v1/awards/')
         parser.add_argument('request_checksum', nargs=1, help='The request checksum, for looking up via RequestCatalog')
 
-        parser.add_argument(
-            '-l',
-            '--location',
-            dest="file_location",
-            type=str,
-            help="Overrides the location record for this file with the specified parameter"
-        )
-
     def handle(self, *args, **options):
-        request_path = options['request_path'][0]
+        request_path = format_path(options['request_path'][0])
         request_checksum = options['request_checksum'][0]
-        file_location_override = options.get('file_location', None)
 
         # Check if we have a request for that checksum
         request_catalog = RequestCatalog.objects.filter(checksum=request_checksum).first()
+        file_name = create_filename_from_options(request_path, request_checksum)
 
         if not request_catalog:
             self.logger.critical("No request catalog found for checksum: {}, aborting...".format(request_checksum))
-            return
-
-        csv_downloadable_response, created = CSVdownloadableResponse.get_or_create_from_parameters(request_path, request_catalog)
-
-        # If we didn't create this request, AND it's also not requested (via URL), something else is handling it so we exit
-        # If it is in an error'd state, we can retry.
-        if not created and csv_downloadable_response.status_code != CSVdownloadableResponse.STATUS.REQUESTED_CODE.value and csv_downloadable_response.status_code != CSVdownloadableResponse.STATUS.ERROR_CODE.value:
-            self.logger.info("Status of file: {}\nFilename: {}\nLocation: {}".format(csv_downloadable_response.status_description, csv_downloadable_response.file_name, csv_downloadable_response.download_location))
-            return
+            sys.exit(0)
 
         try:
-            self.logger.info("No CSV file record found, beginning generation...")
-            self.logger.info("Destination filename: {}".format(csv_downloadable_response.file_name))
-            # We have a valid request, but our csv_downloadable_response was created. Therefore we need to generate the file now
-            # Set that CSV to the generating status
-            csv_downloadable_response.status_code = CSVdownloadableResponse.STATUS.GENERATING_CODE.value
-            csv_downloadable_response.status_description = CSVdownloadableResponse.STATUS.GENERATING_DESCRIPTION.value
-            csv_downloadable_response.save()
+            self.logger.info("Beginning generation...")
+            self.logger.info("Destination filename: {}".format(file_name))
 
-            self.logger.info("Resolving path: {}".format(csv_downloadable_response.request_path))
+            self.logger.info("Resolving path: {}".format(request_path))
 
             view = resolve_path_to_view(request_path)
 
             if not view:
                 self.logger.info("Path does not resolve to a currently supported CSV bulk view")
-                csv_downloadable_response.status_code = CSVdownloadableResponse.STATUS.ERROR_CODE.value
-                csv_downloadable_response.status_description = "Path is not a currently supported CSV bulk path"
-                csv_downloadable_response.save()
-                return
+                sys.exit(0)
 
             self.logger.info("Path resolved to view {}".format(view))
 
-            view.req = csv_downloadable_response.request
-            view.request = csv_downloadable_response.request.request
+            view.req = request_catalog
+            view.request = request_catalog.request
 
             # Get the queryset
             query_set = view.get_queryset()
@@ -86,23 +63,11 @@ class Command(BaseCommand):
             else:
                 self.logger.info("No specific fields requested, will render all fields.")
 
-            with open('/'.join([self.CSV_DOWNLOAD_FOLDER_LOCATION, csv_downloadable_response.file_name]), 'wb') as csv_file:
+            with open('/'.join([self.CSV_DOWNLOAD_FOLDER_LOCATION, file_name]), 'wb') as csv_file:
                 write_csv(query_set, csv_file)
 
-            csv_downloadable_response.status_code = CSVdownloadableResponse.STATUS.READY_CODE.value
-            csv_downloadable_response.status_description = CSVdownloadableResponse.STATUS.READY_DESCRIPTION.value
-
-            if file_location_override:
-                csv_downloadable_response.download_location = file_location_override
-            else:
-                csv_downloadable_response.download_location = csv_downloadable_response.file_name
-
-            csv_downloadable_response.save()
-
             self.logger.info("Output complete.")
+            sys.exit(1)
         except Exception as e:
             self.logger.exception(e)
-            # Any error here should flag the response as "errored"
-            csv_downloadable_response.status_code = CSVdownloadableResponse.STATUS.ERROR_CODE.value
-            csv_downloadable_response.status_description = CSVdownloadableResponse.STATUS.ERROR_DESCRIPTION.value
-            csv_downloadable_response.save()
+            sys.exit(0)

@@ -356,14 +356,12 @@ Response
   "location": s3://someURL,
   "status": "This file has been requested, and is awaiting queueing",
   "request_checksum": "e78f4722f85",
-  "status_code": 0,
   "request_path": "/api/v1/awards/"
 }
 ```
 
 * location - The URL where the file can be accessed (once it has been generated)
 * status - A plain english description of the current status of the file generation
-* status_code - A code representing the current status of the file generation
 * request_checksum - The checksum of the request, which can be used to check the status
 * request_path - The path of the CSV request
 

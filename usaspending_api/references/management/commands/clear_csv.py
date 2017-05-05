@@ -4,7 +4,8 @@ import os
 from django.core.management.base import BaseCommand
 from django.core.exceptions import ObjectDoesNotExist
 
-from usaspending_api.common.models import CSVdownloadableResponse
+from usaspending_api.common.csv_helpers import s3_empty_bucket
+from django.conf import settings
 
 
 class Command(BaseCommand):
@@ -16,10 +17,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # This will throw an exception and exit the command if the id doesn't exist
-        deleted = CSVdownloadableResponse.objects.all().delete()
-
-        statistics = "Statistics:\n  Total objects Removed: " + str(deleted[0])
-        for model in deleted[1].keys():
-            statistics = statistics + "\n  " + model + ": " + str(deleted[1][model])
-
-        self.logger.info(statistics)
+        try:
+            emptied = s3_empty_bucket()
+            if emptied:
+                self.logger.info("S3 Bucket {} has been emptied".format(settings.CSV_S3_BUCKET))
+        except Exception as e:
+            self.logger.exception(e)

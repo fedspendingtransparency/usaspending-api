@@ -2,8 +2,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from usaspending_api.common.models import RequestCatalog, CSVdownloadableResponse
+from django.conf import settings
+
+from usaspending_api.common.models import RequestCatalog
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.csv_helpers import format_path, s3_get_url, sqs_add_to_queue, create_filename_from_options
 
 import logging
 
@@ -14,16 +17,36 @@ class CSVdownloadView(APIView):
     def process_csv_download(self, path, request):
         try:
             created, self.req = RequestCatalog.get_or_create_from_request(request)
-            csv_download, created = CSVdownloadableResponse.get_or_create_from_parameters(path, self.req)
 
             response = {
                 "request_checksum": self.req.checksum,
-                "request_path": csv_download.request_path,
-                "status": csv_download.status_description,
-                "status_code": csv_download.status_code,
-                "location": csv_download.download_location
+                "request_path": format_path(request_path),
+                "status": "",
+                "location": None
             }
-            status_code = status.HTTP_200_OK
+
+            location = None
+            try:
+                # Get URL location from S3
+                location = s3_get_url(path, self.req.checksum)
+
+                if not location:
+                    try:
+                        sqs_add_to_queue(path, self.req.checksum)
+                        response["status"] = "File has been queued for generation."
+                        status_code = status.HTTP_200_OK
+                    except Exception as e:
+                        # We couldn't connect to SQS
+                        response["status"] = "Error queueing file: {}".format(str(e))
+                        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                else:
+                    response["status"] = "File is ready for download."
+                    response["location"] = location
+                    status_code = status.HTTP_200_OK
+            except Exception as e:
+                # We couldn't connect to S3
+                response["status"] = "Error finding file: {}".format(str(e))
+                status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         except InvalidParameterException as e:
             response = {"message": str(e)}
             status_code = status.HTTP_400_BAD_REQUEST

@@ -28,6 +28,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# S3 Bucket location for CSV files
+CSV_S3_BUCKET = ""
+SQS_QUEUE_NAME = ""
+
 # Application definition
 
 INSTALLED_APPS = [

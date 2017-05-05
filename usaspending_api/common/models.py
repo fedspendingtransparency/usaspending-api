@@ -25,42 +25,6 @@ class DataSourceTrackedModel(models.Model):
         abstract = True
 
 
-class CSVdownloadableResponse(models.Model):
-    class STATUS(Enum):
-        REQUESTED_CODE = 0
-        QUEUED_CODE = 1
-        GENERATING_CODE = 2
-        READY_CODE = 3
-        ERROR_CODE = 4
-
-        REQUESTED_DESCRIPTION = "This file has been requested, and is awaiting queueing"
-        QUEUED_DESCRIPTION = "This file has been queued, and will be generated soon"
-        GENERATING_DESCRIPTION = "This file is currently being generated"
-        READY_DESCRIPTION = "This file is ready for download"
-        ERROR_DESCRIPTION = "This file failed to generate"
-
-    # Every CSV download must be associated with a specific request
-    request = models.ForeignKey("common.RequestCatalog", models.CASCADE, related_name="csv_files", null=False)
-    # Every CSV Download must be associate with a request path
-    request_path = models.TextField(null=False)
-
-    # The file name that will be used to store the file
-    file_name = models.TextField(null=False)
-    download_location = models.TextField(null=True)
-
-    # The status of the file generation
-    status_code = models.IntegerField(default=0)
-    status_description = models.TextField(default="This file has been requested, and is awaiting queueing")
-
-    @staticmethod
-    def get_or_create_from_parameters(request_path, request_catalog):
-        request_path = format_path(request_path)
-        filename = create_filename_from_options(request_path, request_catalog.checksum)
-        return CSVdownloadableResponse.objects.get_or_create(request=request_catalog,
-                                                             request_path=request_path,
-                                                             file_name=filename)
-
-
 class RequestCatalog(models.Model):
     """Stores a POST request and generates a string identifier (checksum), allowing it to be re-run via a GET request"""
 
@@ -165,8 +129,6 @@ class RequestCatalog(models.Model):
             "data": {},
             "query_params": query_params
         }
-
-        print(query_params)
 
         for item in storable_parameters:
             d_ins = data.get(item, None)
