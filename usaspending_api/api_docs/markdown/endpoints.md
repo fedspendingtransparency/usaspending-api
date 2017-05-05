@@ -70,3 +70,5 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | /api/v1/references/cfda/:id | GET, POST | <a href="#cfda-programs">CFDA Program</a> | Returns a single CFDA program, with all fields |
 | [/api/v1/references/recipients/autocomplete/](/api/v1/references/recipients/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api)) | Supports autocomplete on recipient records |
 | [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | <a href="#submissions">SubmissionAttributes</a> | Returns a list of submissions |
+| [/api/v1/guide/](/api/v1/guide/) | GET, POST | <a href="#definitions">Definition</a> | Returns descriptions of commonly used terms |
+| /api/v1/guide/:term/ | GET, POST | <a href="#definitions">Definition</a> | Returns a single description of a commonly used term |
