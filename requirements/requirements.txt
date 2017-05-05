@@ -1,5 +1,7 @@
 appdirs==1.4.3
 autoenv==1.0.0
+boto3==1.4.4
+botocore==1.5.46
 codeclimate-test-reporter==0.1.2
 coverage==4.2
 dj-database-url==0.4.1
