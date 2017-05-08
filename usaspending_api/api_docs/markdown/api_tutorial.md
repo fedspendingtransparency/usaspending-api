@@ -25,13 +25,13 @@
 
 # Introductory Tutorial <a name="introduction"></a>
 
-Welcome to the introductory USASpending API tutorial. This tutorial is designed for people who aren't familiar with APIs and how to use them. If you already know what an "endpoint" is and the difference between GET and POST, you'll want to visit [Using the API](/docs/using-the-api), or jump right into the data with some [request recipes](/docs/recipes/).
+Welcome to the introductory USASpending API tutorial. This tutorial is designed for people who aren't familiar with APIs and how to use them. If you already know what an _endpoint_ is and the difference between `GET` and `POST`, you'll want to visit [Using the API](/docs/using-the-api) or jump right into the data with some [request recipes](/docs/recipes/).
 
 ## What's an API? <a name="whats-an-api"></a>
 
-"API" stands for "Application Programmer Interface." APIs make it easy for computer programs to request and recieve information in a format they can understand.
+_API_ stands for _Application Programmer Interface_. APIs make it easy for computer programs to request and receive information in a format they can understand.
 
-If you're looking for federal spending data that's designed to be read by humans instead of computer programs, you should head to <a href="https://www.usaspending.gov/Pages/Default.aspx">usaspending.gov</a>, or visit <a href="https://openbeta.usaspending.gov">openbeta.usaspending.gov</a> for information on the updated version of the site that's currently in development.
+If you're looking for federal spending data that's designed to be read by humans instead of computers, you should head to <a href="https://beta.usaspending.gov">our website</a>.
 
 ## Using the API <a name="using-the-api"></a>
 
@@ -41,7 +41,7 @@ You do not need to complete this tutorial in its entirety to get started. Feel f
 
 ## Endpoint Overview <a name="endpoint-overview"></a>
 
-When you type a url into your browser, it usually returns a web page: a document that your browser knows how to display for you to read. APIs use urls, too--but instead of returning formated web pages, API urls return data structured to be easy for computers to parse. API urls are called "endpoints." Just as many webpages make up a web site, many endpoints make up an API.
+When you type a url into your browser, it usually returns a web page: a document that your browser knows how to display for you to read. APIs use urls, too--but instead of returning formatted web pages, API urls return data structured to be easy for computers to parse. API urls are called _endpoints_. Just as many webpages make up a web site, many endpoints make up an API.
 
 The USASpending API supports a number of endpoints. For example `/api/v1/awards/` is our awards endpoint.
 
@@ -61,7 +61,7 @@ For a comprehensive list of endpoints and their data, please see the [USASpendin
 
 #### Responses
 
-Responses for data endpoints are json objects and follow the same structure, generally speaking:
+Responses for data endpoints are JSON objects and follow the same structure, generally speaking:
 
 ```
 {
@@ -101,7 +101,7 @@ This GET request would return awards where the <span title="A code identifying t
 
 ##### POST Filtering
 
-Complex filters can be constructed using POST requests. Let's construct a json object we can POST to search for awards with signing dates between June 1st 2016 and June 1st 2017. First, let's take a look at an empty post request.
+Complex filters can be constructed using POST requests. Let's construct a JSON object we can POST to search for awards with signing dates between June 1st 2016 and June 1st 2017. First, let's take a look at an empty post request.
 
 ```
 {
@@ -345,7 +345,7 @@ Let's try it with `/api/v1/awards/total`.
 }
 ```
 
-Here we specify the `field` as `total_obligation` and that we're grouping by each record's signing date's fiscal year. The response we recieve looks something like this:
+Here we specify the `field` as `total_obligation` and that we're grouping by each record's signing date's fiscal year. The response we receive looks something like this:
 
 ```
 {

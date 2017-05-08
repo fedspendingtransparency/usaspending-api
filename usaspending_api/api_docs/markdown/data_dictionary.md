@@ -16,7 +16,6 @@
 </ul>
 
 [//]: # (Begin Content)
-**Please note, the data dictionary is under heavy development. As a result, some information may be missing**
 ## Data Dictionary <a name="datadictionary"></a>
 
 Federal spending has a vocabulary all its own. This page is under construction, but will strive to help you understand the most commonly requested endpoints and fields returned.
