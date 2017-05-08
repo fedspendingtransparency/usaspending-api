@@ -57,6 +57,7 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/tas/autocomplete/](/api/v1/tas/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api))| Supports autocomplete on TAS records |
 | [/api/v1/accounts/awards/](/api/v1/accounts/awards/) | GET, POST | <a href="#accounts-by-award">Financial Accounts (by Award)</a> | Returns a list of financial account data grouped by TAS and broken up by Program Activity and Object Class codes |
 | /api/v1/accounts/awards/:id | GET, POST | <a href="#accounts-by-award">Financial Account (by Award)</a> | Returns a single financial account record, grouped by TAS, with all fields |
+| [/api/v1/accounts/awards/total/](/api/v1/accounts/awards/total/) | POST | Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on financial account awards records |
 | [/api/v1/transactions/](/api/v1/transactions/) | GET, POST | <a href="#transaction">Transaction</a> | Returns a list of transactions - contracts, grants, loans, etc. |
 | /api/v1/transactions/:id | GET, POST | <a href="#transaction">Transaction</a> | Returns a single transaction record with all fields |
 | [/api/v1/transactions/total/](/api/v1/transactions/total/) | POST | Aggregate (see [Using the API](/docs/using-the-api)) | Supports aggregation on transaction records |
@@ -67,4 +68,7 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/references/cfda/](/api/v1/references/cfda/) | GET, POST | <a href="#cfda-programs">CFDA Programs</a> | Returns a list of CFDA Programs |
 | /api/v1/references/cfda/:id | GET, POST | <a href="#cfda-programs">CFDA Program</a> | Returns a single CFDA program, with all fields |
 | [/api/v1/references/recipients/autocomplete/](/api/v1/references/recipients/autocomplete/) | POST | Autocomplete (see [Using the API](/docs/using-the-api)) | Supports autocomplete on recipient records |
+| [/api/v1/subawards/](/api/v1/subawards/) | GET, POST | Subawards | Returns information about subawards |
+| [/api/v1/subawards/autocomplete/](/api/v1/subawards/autocomplete/) | POST | Subawards Autocomplete | Supports autocomplete on subawards |
+| [/api/v1/subawards/total/](/api/v1/subawards/total/) | POST | Subawards Aggregation | Supports aggregation on subawards |
 | [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | <a href="#submissions">SubmissionAttributes</a> | Returns a list of submissions |
