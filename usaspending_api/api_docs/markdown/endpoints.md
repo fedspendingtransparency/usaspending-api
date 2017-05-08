@@ -18,9 +18,7 @@
 
 # API Endpoints
 
-This page is intended for users who are already familiar with APIs. If you're not sure what "endpoint" means, and what GET and POST requests are, you may find the [introductory tutorial](/docs/intro-tutorial) more useful to start.
-
-While the API is under development, we are gradually increasing the amount of available data, which is currently limited to a few federal agency submissions and small slices of USAspending.gov historical data.
+This page is intended for users who are already familiar with APIs. If you're not sure what _endpoint_ means, and what `GET` and `POST` requests are, you may find the [introductory tutorial](/docs/intro-tutorial) more useful to start.
 
 Endpoints do not currently require any authorization.
 
