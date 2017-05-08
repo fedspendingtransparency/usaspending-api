@@ -39,12 +39,19 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 
 | Endpoint | Methods | Description |
 | -------- | ------- | ----------- |
+| [/api/v1/accounts/awards/](/api/v1/accounts/awards/) | GET, POST | Returns a list of financial account data by treasury account symbol, program activity, object class, and award |
+| /api/v1/accounts/awards/:id | GET, POST | Returns a single treasury account symbol/program activity/object class/award record with all fields |
+| [/api/v1/accounts/awards/total/](/api/v1/accounts/awards/total/) | POST | Supports aggregation on treasury account symbol/program activity/object class/award records |
 | [/api/v1/awards/](/api/v1/awards/) | GET, POST | Returns a list of award records |
-| /api/v1/awards/:id | GET, POST | Returns a single award records with all fields |
+| /api/v1/awards/:id | GET, POST | Returns a single award record with all fields |
 | [/api/v1/awards/autocomplete/](/api/v1/awards/autocomplete/) | POST | Supports autocomplete on award records |
 | [/api/v1/awards/total/](/api/v1/awards/total/) | POST | Supports aggregation on award records |
 | [/api/v1/federal_accounts/](/api/v1/federal_accounts/) | GET, POST | Returns a list of federal accounts |
+| /api/v1/federal_accounts/:id | GET, POST | Returns a single federal account record with all fields |
 | [/api/v1/federal_accounts/autocomplete/](/api/v1/federal_accounts/autocomplete/) | POST | Supports autocomplete on federal account records |
+| [/api/v1/tas/](/api/v1/tas/) | GET, POST | Returns a list of treasury appropriation accounts (TAS) |
+| /api/v1/tas/:id | GET, POST | Returns a single treasury appropriation account record with all fields |
+| [/api/v1/tas/autocomplete/](/api/v1/tas/autocomplete/) | POST | Supports autocomplete on TAS records |
 | [/api/v1/tas/balances/](/api/v1/tas/balances/) | GET, POST | Returns a list of appropriation account balances by fiscal year |
 | [/api/v1/tas/balances/total/](/api/v1/tas/balances/total/) | POST | Supports aggregation on appropriation account records |
 | [/api/v1/tas/balances/quarters/](/api/v1/tas/balances/quarters/) | GET, POST | Returns a list of appropriation account balances by fiscal quarter|
@@ -53,22 +60,18 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/tas/categories/total/](/api/v1/tas/categories/total/) | POST | Supports aggregation on appropriation account (by category) records |
 | [/api/v1/tas/categories/quarters/](/api/v1/tas/categories/quarters/) | GET, POST | Returns a list of appropriation account balances by fiscal quarter broken up by program activities and object class |
 | [/api/v1/tas/categories/quarters/total/](/api/v1/tas/categories/quarters/total/) | POST | Supports aggregation on quarterly appropriation account (by category) records |
-| [/api/v1/tas/](/api/v1/tas/) | GET, POST | Returns a list of treasury appropriation accounts, by TAS |
-| [/api/v1/tas/autocomplete/](/api/v1/tas/autocomplete/) | POST | Supports autocomplete on TAS records |
-| [/api/v1/accounts/awards/](/api/v1/accounts/awards/) | GET, POST | Returns a list of financial account data grouped by TAS and broken up by Program Activity and Object Class codes |
-| /api/v1/accounts/awards/:id | GET, POST | Returns a single financial account record, grouped by TAS, with all fields |
-| [/api/v1/accounts/awards/total/](/api/v1/accounts/awards/total/) | POST | Supports aggregation on financial account awards records |
+| [/api/v1/subawards/](/api/v1/subawards/) | GET, POST | Returns a list of subaward records |
+| /api/v1/subawards/:id | GET, POST | Returns a single subaward record with all fields |
+| [/api/v1/subawards/autocomplete/](/api/v1/subawards/autocomplete/) | POST | Supports autocomplete on subawards |
+| [/api/v1/subawards/total/](/api/v1/subawards/total/) | POST | Supports aggregation on subawards |
 | [/api/v1/transactions/](/api/v1/transactions/) | GET, POST | Returns a list of transactions - contracts, grants, loans, etc. |
 | /api/v1/transactions/:id | GET, POST | Returns a single transaction record with all fields |
 | [/api/v1/transactions/total/](/api/v1/transactions/total/) | POST | Supports aggregation on transaction records |
-| [/api/v1/references/locations/](/api/v1/references/locations/) | POST | Returns a list of locations - places of performance or vendor locations |
-| [/api/v1/references/locations/geocomplete/](/api/v1/references/locations/geocomplete/) | POST | Supports geocomplete queries, see [Using the API](/docs/using-the-api) |
 | [/api/v1/references/agency/](/api/v1/references/agency/) | GET, POST | Returns a list of agency records |
 | [/api/v1/references/agency/autocomplete/](/api/v1/references/agency/autocomplete/) | POST | Supports autocomplete on agency records |
 | [/api/v1/references/cfda/](/api/v1/references/cfda/) | GET, POST | Returns a list of CFDA Programs |
 | /api/v1/references/cfda/:id | GET, POST | Returns a single CFDA program, with all fields |
+| [/api/v1/references/locations/](/api/v1/references/locations/) | POST | Returns a list of locations - places of performance or vendor locations |
+| [/api/v1/references/locations/geocomplete/](/api/v1/references/locations/geocomplete/) | POST | Supports geocomplete queries, see [Using the API](/docs/using-the-api) |
 | [/api/v1/references/recipients/autocomplete/](/api/v1/references/recipients/autocomplete/) | POST | Supports autocomplete on recipient records |
-| [/api/v1/subawards/](/api/v1/subawards/) | GET, POST | Returns information about subawards |
-| [/api/v1/subawards/autocomplete/](/api/v1/subawards/autocomplete/) | POST | Supports autocomplete on subawards |
-| [/api/v1/subawards/total/](/api/v1/subawards/total/) | POST | Supports aggregation on subawards |
 | [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | Returns a list of submissions |
