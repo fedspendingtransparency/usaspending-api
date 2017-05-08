@@ -50,9 +50,9 @@ def sqs_add_to_queue(path, checksum):
     '''
     Adds a request to generate a CSV file to the SQS queue
     '''
-    sqs = boto3.resource('sqs')
+    sqs = boto3.client('sqs', region_name=settings.SQS_REGION)
 
-    queue.send_message(QueueURL=settings.SQS_QUEUE_URL, MessageBody=json.dumps({
+    sqs.send_message(QueueUrl=settings.SQS_QUEUE_URL, MessageBody=json.dumps({
         "request_checksum": checksum,
         "request_path": format_path(path),
     }))
