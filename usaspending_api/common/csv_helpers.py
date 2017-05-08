@@ -16,18 +16,22 @@ def s3_get_url(path, checksum):
     filename = create_filename_from_options(path, checksum)
 
     bucket = s3.Bucket(settings.CSV_S3_BUCKET)
-    objs = list(bucket.objects.filter(Prefix=filename))
-    if len(objs) > 0 and objs[0].filename == filename:
-        url = s3.generate_presigned_url(
-            ClientMethod='get_object',
-            Params={
-                'Bucket': settings.CSV_S3_BUCKET,
-                'Key': filename
-            }
-        )
+    try:
+        obj = bucket.Object(key=filename)
+        if obj:
+            url = s3.generate_presigned_url(
+                ClientMethod='get_object',
+                Params={
+                    'Bucket': settings.CSV_S3_BUCKET,
+                    'Key': filename
+                }
+            )
 
-        return url
-    else:
+            return url
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] != "404":
+            raise
+    finally:
         return None
 
 
