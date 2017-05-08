@@ -12,7 +12,7 @@ def s3_get_url(path, checksum):
     '''
     Returns a pre-signed S3 URL for the CSV file, or None if the file does not exist
     '''
-    s3 = boto3.client('s3')
+    s3 = boto3.resource('s3')
     filename = create_filename_from_options(path, checksum)
 
     try:
@@ -38,7 +38,7 @@ def s3_empty_bucket():
     '''
     Deletes all keys in the S3 bucket
     '''
-    s3 = boto3.client('s3')
+    s3 = boto3.resource('s3')
     bucket = s3.Bucket(settings.CSV_S3_BUCKET)
     s3.meta.client.head_bucket(Bucket=settings.CSV_S3_BUCKET)
     for key in bucket.objects.all():
@@ -50,11 +50,9 @@ def sqs_add_to_queue(path, checksum):
     '''
     Adds a request to generate a CSV file to the SQS queue
     '''
-    sqs = boto3.client('sqs')
+    sqs = boto3.resource('sqs')
 
-    queue = sqs.get_queue_by_name(QueueName=settings.SQS_QUEUE_NAME)
-
-    queue.send_message(MessageBody=json.dumps({
+    queue.send_message(QueueURL=settings.SQS_QUEUE_URL, MessageBody=json.dumps({
         "request_checksum": checksum,
         "request_path": format_path(path),
     }))
