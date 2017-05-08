@@ -6,7 +6,7 @@ from django.conf import settings
 
 from usaspending_api.common.models import RequestCatalog
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.csv_helpers import format_path, s3_get_url, sqs_add_to_queue, create_filename_from_options
+from usaspending_api.common.csv_helpers import format_path, s3_get_url, sqs_add_to_queue, resolve_path_to_view
 
 import logging
 
@@ -32,9 +32,16 @@ class CSVdownloadView(APIView):
 
                 if not location:
                     try:
-                        sqs_add_to_queue(path, self.req.checksum)
-                        response["status"] = "File has been queued for generation."
-                        status_code = status.HTTP_200_OK
+                        # Make sure the View they want is supported
+                        view = resolve_path_to_view(format_path(path))
+
+                        if not view:
+                            response["status"] = "Requested path is not currently supported by CSV bulk download"
+                            status_code = status.HTTP_400_BAD_REQUEST
+                        else:
+                            sqs_add_to_queue(path, self.req.checksum)
+                            response["status"] = "File has been queued for generation."
+                            status_code = status.HTTP_200_OK
                     except Exception as e:
                         # We couldn't connect to SQS
                         response["status"] = "Error queueing file: {}".format(str(e))
