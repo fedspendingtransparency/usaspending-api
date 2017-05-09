@@ -5,6 +5,7 @@ from djqscsv import write_csv
 
 import logging
 import sys
+import os
 
 from usaspending_api.common.csv_helpers import resolve_path_to_view, create_filename_from_options, format_path
 
@@ -41,7 +42,7 @@ class Command(BaseCommand):
             view = resolve_path_to_view(request_path)
 
             if not view:
-                self.logger.info("Path does not resolve to a currently supported CSV bulk view")
+                self.logger.error("Path does not resolve to a currently supported CSV bulk view")
                 sys.exit(0)
 
             self.logger.info("Path resolved to view {}".format(view))
@@ -63,7 +64,7 @@ class Command(BaseCommand):
             else:
                 self.logger.info("No specific fields requested, will render all fields.")
 
-            with open('/'.join([self.CSV_DOWNLOAD_FOLDER_LOCATION, file_name]), 'wb') as csv_file:
+            with open(os.path.join(self.CSV_DOWNLOAD_FOLDER_LOCATION, file_name), 'wb') as csv_file:
                 write_csv(query_set, csv_file)
 
             self.logger.info("Output complete.")

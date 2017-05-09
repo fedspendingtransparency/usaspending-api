@@ -126,15 +126,9 @@ class RequestCatalog(models.Model):
         ]
 
         checksumable_request = {
-            "data": {},
+            "data": {k: v for (k, v) in data.items() if k in storable_parameters},
             "query_params": query_params
         }
-
-        for item in storable_parameters:
-            d_ins = data.get(item, None)
-
-            if d_ins:
-                checksumable_request["data"][item] = d_ins
 
         return checksumable_request
 

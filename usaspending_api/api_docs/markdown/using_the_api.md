@@ -344,6 +344,8 @@ The response has three functional parts:
 
 Bulk CSV downloads are available via the `/api/v1/download/` endpoint. This supports any data endpoint via POST or GET. Because these CSV files can take some time to generate, the response of this endpoint contains the status of file generation and the location of the file once it is complete.
 
+In the following examples, 'request checksum' refers to the string returned by the `req` variable from the section on [POST request preservation](#post-requests-preservation).
+
 Examples
 * To get a CSV of all Awards, you would access `/api/v1/download/awards/`
 * To get a CSV of all Awards with a particular set of filters, you can pass the request checksum, `/api/v1/download/awards/?req=CHECKSUM` or POST the request object to the endpoint
@@ -353,10 +355,11 @@ Response
 
 ```
 {
-  "location": s3://someURL,
+  "location": http://path_to_csv_file/something.csv,
   "status": "This file has been requested, and is awaiting queueing",
   "request_checksum": "e78f4722f85",
-  "request_path": "/api/v1/awards/"
+  "request_path": "/api/v1/awards/",
+  "retry_url": "http://api_location/api/v1/awards/?req=e78f4722f85"
 }
 ```
 
@@ -364,6 +367,12 @@ Response
 * status - A plain english description of the current status of the file generation
 * request_checksum - The checksum of the request, which can be used to check the status
 * request_path - The path of the CSV request
+* retry_url - An easy to use URL to retry your download request, and check if it has been generated yet
+
+Expected response status codes:
+* 200 - The file is ready for download, and `location` contains the URL
+* 202 - The request has been queued for generation, and `location` is null
+* 400 - The endpoint or request checksum that was specified is not currently supported by CSV bulk downloads
 
 ### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
   Summarized data is available for some of the endpoints listed above:

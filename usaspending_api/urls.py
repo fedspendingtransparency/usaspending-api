@@ -18,7 +18,7 @@ from django.conf.urls import url, include
 from usaspending_api import views as views
 from django.views.generic import TemplateView
 from usaspending_api.common.views import MarkdownView
-from usaspending_api.common.csv_views import CSVdownloadView
+from usaspending_api.common.csv_views import CsvDownloadView
 from django.conf.urls.static import static
 
 
@@ -32,7 +32,7 @@ urlpatterns = [
     url(r'^api/v1/federal_accounts/', include('usaspending_api.accounts.urls_federal_account')),
     url(r'^api/v1/tas/', include('usaspending_api.accounts.urls_tas')),
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
-    url(r'^api/v1/download/(?P<path>.*)', CSVdownloadView.as_view()),
+    url(r'^api/v1/download/(?P<path>.*)', CsvDownloadView.as_view()),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^docs/', include('usaspending_api.api_docs.urls')),
     url(r'^$', MarkdownView.as_view(markdown='landing_page.md')),

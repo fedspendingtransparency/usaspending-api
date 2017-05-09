@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.utils.urls import replace_query_param
 
 from django.conf import settings
 
@@ -11,17 +12,17 @@ from usaspending_api.common.csv_helpers import format_path, s3_get_url, sqs_add_
 import logging
 
 
-class CSVdownloadView(APIView):
+class CsvDownloadView(APIView):
     exception_logger = logging.getLogger("exceptions")
 
     def process_csv_download(self, path, request):
         try:
             created, self.req = RequestCatalog.get_or_create_from_request(request)
-
             response = {
                 "request_checksum": self.req.checksum,
                 "request_path": format_path(path),
                 "status": "",
+                "retry_url": replace_query_param(request.build_absolute_uri().split("?")[0], "req", self.req.checksum),
                 "location": None
             }
 
@@ -33,7 +34,12 @@ class CSVdownloadView(APIView):
                 if not location:
                     try:
                         # Make sure the View they want is supported
-                        view = resolve_path_to_view(format_path(path))
+                        view = None
+                        try:
+                            view = resolve_path_to_view(format_path(path))
+                        except:
+                            # It's fine to catch-all exceptions here because we only care about the valid case
+                            view = None
 
                         if not view:
                             response["status"] = "Requested path is not currently supported by CSV bulk download"
@@ -41,7 +47,7 @@ class CSVdownloadView(APIView):
                         else:
                             sqs_add_to_queue(path, self.req.checksum)
                             response["status"] = "File has been queued for generation."
-                            status_code = status.HTTP_200_OK
+                            status_code = status.HTTP_202_ACCEPTED
                     except Exception as e:
                         # We couldn't connect to SQS
                         response["status"] = "Error queueing file: {}".format(str(e))
