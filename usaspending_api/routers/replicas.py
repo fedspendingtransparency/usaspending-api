@@ -6,6 +6,11 @@ import random
 class ReadReplicaRouter(object):
 
     def db_for_read(self, model, **hints):
+        # RequestCatalog needs to always read from the writable database
+        # This can be removed when the RequestCatalog object is hitting
+        # its own database
+        if model.__name__ == "RequestCatalog":
+            return 'db_source'
         return random.choice(['db_source', 'db_r1'])
 
     def db_for_write(self, model, **hints):
