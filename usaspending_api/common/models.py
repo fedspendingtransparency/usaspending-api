@@ -55,8 +55,10 @@ class RequestCatalog(models.Model):
         if checksum:
             try:
                 request_catalog = RequestCatalog.objects.get(checksum=checksum)
-                request_catalog.last_accessed = datetime.datetime.now()
-                request_catalog.save()
+                # For now, disable last_accessed time updating as it is not currently used
+                # and the extra writes are not playing nice with the read replicas currently
+                # request_catalog.last_accessed = datetime.datetime.now()
+                # request_catalog.save()
                 return False, request_catalog
             except ObjectDoesNotExist:
                 # The checksum they sent doesn't exist
