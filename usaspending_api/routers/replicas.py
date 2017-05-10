@@ -6,9 +6,9 @@ import random
 class ReadReplicaRouter(object):
 
     def db_for_read(self, model, **hints):
-        # RequestCatalog needs to always read from the writable database
-        # This can be removed when the RequestCatalog object is hitting
-        # its own database
+        # RequestCatalog needs to always read from the writable database.
+        # This can be changed to return 'db_catalog' or something so the 
+        # RequestCatalog object is hitting its own database
         if model.__name__ == "RequestCatalog":
             return 'db_source'
         return random.choice(['db_source', 'db_r1'])
@@ -17,6 +17,7 @@ class ReadReplicaRouter(object):
         """"
         write to source db only (bc read replicas)
         """
+        # This will change to 'db_catalog'
         return 'db_source'
 
     def allow_relation(self, obj1, obj2, **hints):
@@ -26,4 +27,7 @@ class ReadReplicaRouter(object):
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
+        # Don't allow a migrate attempt on a read replica
+        if db = 'db_r1':
+            return False
         return True
