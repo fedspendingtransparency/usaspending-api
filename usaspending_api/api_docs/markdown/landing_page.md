@@ -12,17 +12,15 @@
 
 The USAspending API (Application Programming Interface) allows the public to access comprehensive U.S. government spending data.
 
-The data include spending on "awards" (e.g.,who received federal contracts or grants, amounts, geographic breakdowns, agency breakdowns, and much more). The data also include non-award at the account level, like federal employee compensation, You can learn more about the data and the federal law that requires it to be publicly accessible (the DATA Act) at http://fedspendingtransparency.github.io.
-
-_NOTE:  While this API is under development, we are gradually increasing the amount of available data and the capabilities of the API. Data in the current API comes from a selection of agency submissions and the current USASpending.gov._
+The data include spending on _awards_ (_e.g._, who received federal contracts or grants, geographic breakdowns, agency breakdowns, and much more). The data also include account-level, non-award spending such as federal employee compensation. You can learn more about the data and the federal law that requires it to be publicly accessible (the DATA Act) at http://fedspendingtransparency.github.io.
 
 ## Getting Started <a name="getting-started"></a>
 
-**New to APIs?** Check out our [introductory tutorial](/docs/intro-tutorial) on the API to learn the ropes
+**New to APIs?** Check out our [introductory tutorial](/docs/intro-tutorial) on the API to learn the ropes.
 
-**Familiar with APIs?** Familiar with APIs? See the [Using this API](/docs/using-the-api) section for how to request specific sets of data, and examples of filters. OR jump right into the data with our [list of available Endpoints](/docs/endpoints).
+**Familiar with APIs?** Familiar with APIs? See the [Using this API](/docs/using-the-api) section for how to request specific sets of data and examples of filters. OR jump right into the data with our [list of available Endpoints](/docs/endpoints).
 
-**New to government financial data?** Check out our [data dictionary](/docs/data-dictionary) to learn to navigate it
+**New to government financial data?** Check out our [data dictionary](/docs/data-dictionary) to learn to navigate it.
 
 ## Background <a name="background"></a>
 
