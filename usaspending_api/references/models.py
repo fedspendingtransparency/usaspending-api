@@ -2,6 +2,7 @@ import logging
 
 from django.db import models
 from django.db.models import F, Q
+from django.utils.text import slugify
 from usaspending_api.common.models import DataSourceTrackedModel
 from usaspending_api.references.helpers import canonicalize_string
 
@@ -75,13 +76,18 @@ class Agency(models.Model):
     subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True)
     office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
 
+    # 1182 This flag is true if toptier agency name and subtier agency name are equal.
+    # This means the award is at the department level.
+    toptier_flag = models.BooleanField(default=False)
+
     @staticmethod
     def get_default_fields(path=None):
         return [
             "id",
             "toptier_agency",
             "subtier_agency",
-            "office_agency"
+            "office_agency",
+            "toptier_flag"
         ]
 
     @staticmethod
@@ -615,3 +621,17 @@ class CFDAProgram(DataSourceTrackedModel):
             "website_address",
             "objectives",
         ]
+
+
+class Definition(models.Model):
+    id = models.AutoField(primary_key=True)
+    term = models.TextField(unique=True, db_index=True, blank=False, null=False)
+    data_act_term = models.TextField(blank=True, null=True)
+    plain = models.TextField()
+    official = models.TextField(blank=True, null=True)
+    slug = models.SlugField(max_length=500, null=True)
+    resources = models.TextField(blank=True, null=True)
+
+    def save(self, *arg, **kwarg):
+        self.slug = slugify(self.term)
+        return super(Definition, self).save(*arg, **kwarg)
