@@ -56,7 +56,7 @@ class LimitableSerializer(serializers.ModelSerializer):
                 include_fields = include_fields + self.identify_missing_children(self.Meta.model, include_fields)
 
         # Create and initialize the child serializers
-        try:
+        if hasattr(self.Meta, "nested_serializers"):
             # Initialize the child serializers
             children = self.Meta.nested_serializers
             for field in children.keys():
@@ -84,11 +84,8 @@ class LimitableSerializer(serializers.ModelSerializer):
                     "context": {**self.context, 'verbose': False},  # Do not verbos-ify child objects
                     "fields": child_include_fields,
                     "exclude": child_exclude_fields
-                }  # The child tag should be removed when child field limiting is implemented
+                }
                 self.fields[field] = children[field]["class"](**child_args)
-        except AttributeError:
-            # We don't have any nested serializers
-            pass
 
         # Now we alter our own field sets
         # We must exclude before include to avoid conflicts from user error
