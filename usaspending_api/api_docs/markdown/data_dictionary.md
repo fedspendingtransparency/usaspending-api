@@ -758,3 +758,13 @@ You can also visit our [online spreadsheet](https://docs.google.com/spreadsheets
 | certified_date | Date |  |
 | create_date | Datetime |  |
 | update_date | Datetime |  |
+
+#### Definition <a name="definitions"></a>
+
+| Field | Type | Description |
+| ----- | ----- | ----- |
+| id | Integer | Internal primary key. Guaranteed to be unique. |
+| term | String| The word or phrase in question |
+| data_act_term | String| The word or phrase as cited in the DATA Act Schema |
+| plain | String| A plain-language definition |
+| official | String| Definition from the DATA Act Schema |

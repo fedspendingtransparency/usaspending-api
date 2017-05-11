@@ -1,10 +1,9 @@
-from django.shortcuts import render
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from usaspending_api.common.api_request_utils import GeoCompleteHandler, AutoCompleteHandler
-from usaspending_api.references.models import Location, Agency, LegalEntity, CFDAProgram
-from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, CfdaSerializer
+from usaspending_api.common.api_request_utils import GeoCompleteHandler
+from usaspending_api.references.models import Location, Agency, LegalEntity, CFDAProgram, Definition
+from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, CfdaSerializer, DefinitionSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
 import json
@@ -49,7 +48,8 @@ class AgencyAutocomplete(FilterQuerysetMixin,
         queryset = Agency.objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        return filtered_queryset
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
 
 
 class AgencyEndpoint(SuperLoggingMixin,
@@ -92,5 +92,21 @@ class RecipientAutocomplete(FilterQuerysetMixin,
         """Return the view's queryset."""
         queryset = LegalEntity.objects.all().exclude(recipient_unique_id__isnull=True)
         queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
+
+
+class GuideViewSet(FilterQuerysetMixin, DetailViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = Definition.objects.all()
+    serializer_class = DefinitionSerializer
+    lookup_field = 'slug'
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = Definition.objects.all()
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         return filtered_queryset
