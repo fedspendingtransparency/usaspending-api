@@ -81,16 +81,6 @@ class Agency(models.Model):
     toptier_flag = models.BooleanField(default=False)
 
     @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "id",
-            "toptier_agency",
-            "subtier_agency",
-            "office_agency",
-            "toptier_flag"
-        ]
-
-    @staticmethod
     def get_by_toptier(toptier_cgac_code):
         """
         Get an agency record by toptier information only
@@ -164,15 +154,6 @@ class ToptierAgency(models.Model):
     abbreviation = models.TextField(blank=True, null=True, verbose_name="Agency Abbreviation")
     name = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Name")
 
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "cgac_code",
-            "fpds_code",
-            "name",
-            "abbreviation"
-        ]
-
     class Meta:
         managed = True
         db_table = 'toptier_agency'
@@ -186,14 +167,6 @@ class SubtierAgency(models.Model):
     abbreviation = models.TextField(blank=True, null=True, verbose_name="Agency Abbreviation")
     name = models.TextField(blank=True, null=True, verbose_name="Sub-Tier Agency Name")
 
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "subtier_code",
-            "name",
-            "abbreviation"
-        ]
-
     class Meta:
         managed = True
         db_table = 'subtier_agency'
@@ -205,13 +178,6 @@ class OfficeAgency(models.Model):
     update_date = models.DateTimeField(auto_now=True, null=True)
     aac_code = models.TextField(blank=True, null=True, verbose_name="Office Code")
     name = models.TextField(blank=True, null=True, verbose_name="Office Name")
-
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "aac_code",
-            "name"
-        ]
 
     class Meta:
         managed = True
@@ -253,23 +219,6 @@ class Location(DataSourceTrackedModel):
     # location, or both
     place_of_performance_flag = models.BooleanField(default=False, verbose_name="Location used as place of performance")
     recipient_flag = models.BooleanField(default=False, verbose_name="Location used as recipient location")
-
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "address_line1",
-            "address_line2",
-            "address_line3",
-            "city_name",
-            "state_name",
-            "country_name",
-            "state_code",
-            "location_country_code",
-            "zip5",
-            "foreign_province",
-            "foreign_city_name",
-            "foreign_postal_code"
-        ]
 
     def save(self, *args, **kwargs):
         self.load_country_data()
@@ -470,17 +419,6 @@ class LegalEntity(DataSourceTrackedModel):
         else:
             return cls.objects.get_or_create(recipient_unique_id=duns)
 
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "legal_entity_id",
-            "parent_recipient_unique_id",
-            "recipient_name",
-            "business_types",
-            "business_types_description",
-            "location"
-        ]
-
     class Meta:
         managed = True
         db_table = 'legal_entity'
@@ -503,21 +441,6 @@ class LegalEntityOfficers(models.Model):
     officer_5_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
 
     update_date = models.DateField(auto_now_add=True, blank=True, null=True)
-
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "officer_1_name",
-            "officer_1_amount",
-            "officer_2_name",
-            "officer_2_amount",
-            "officer_3_name",
-            "officer_3_amount",
-            "officer_4_name",
-            "officer_4_amount",
-            "officer_5_name",
-            "officer_5_amount",
-        ]
 
     class Meta:
         managed = True
@@ -611,16 +534,6 @@ class CFDAProgram(DataSourceTrackedModel):
 
     def __str__(self):
         return "%s" % (self.program_title)
-
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "program_number",
-            "program_title",
-            "popular_name",
-            "website_address",
-            "objectives",
-        ]
 
 
 class Definition(models.Model):
