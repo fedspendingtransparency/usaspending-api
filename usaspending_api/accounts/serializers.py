@@ -7,7 +7,7 @@ from usaspending_api.financial_activities.models import (
 )
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import (
-    ProgramActivitySerializer, ObjectClassSerializer)
+    ProgramActivitySerializer, ObjectClassSerializer, ToptierAgencySerializer)
 from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 
 
@@ -29,7 +29,15 @@ class TasSerializer(LimitableSerializer):
             "federal_account": {
                 "class": FederalAccountSerializer,
                 "kwargs": {"read_only": True}
-            }
+            },
+            "awarding_toptier_agency": {
+                "class": ToptierAgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "funding_toptier_agency": {
+                "class": ToptierAgencySerializer,
+                "kwargs": {"read_only": True}
+            },
         }
 
 
