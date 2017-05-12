@@ -8,7 +8,7 @@ def get_params_from_req_or_request(request=None, req=None):
     Uses requests and req to return a single param dictionary combining query params and data
     Prefers the data from req, if available
     """
-    params = None
+    params = {}
     if request:
         params = dict(request.query_params)
         params.update(dict(request.data))
