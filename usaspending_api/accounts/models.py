@@ -66,7 +66,6 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     def update_agency_linkages(self):
         self.awarding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.allocation_transfer_agency_id).first()
         self.funding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.agency_id).first()
-        self.save()
 
     @staticmethod
     def generate_tas_rendering_label(ATA, AID, TYPECODE, BPOA, EPOA, MAC, SUB):
