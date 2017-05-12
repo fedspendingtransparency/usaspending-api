@@ -20,9 +20,8 @@
 
 The USAspending API allows the public to access data published via the DATA Act Data Broker or via USAspending.
 
-This guide is intended for users who are already familiar with APIs. If you're not sure what "endpoint" means, and what `GET` and `POST` requests are, you'll probably find the [introductory tutorial](/docs/intro-tutorial) more useful.
+This guide is intended for users who are already familiar with APIs. If you're not sure what _endpoint_ means, and what `GET` and `POST` requests are, you'll probably find the [introductory tutorial](/docs/intro-tutorial) more useful.
 
-While the API is under development, we are gradually increasing the amount of available data, which is currently limited to a few Data Broker submissions and small slices of USAspending history.
 
 
 
