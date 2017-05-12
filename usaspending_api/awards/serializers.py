@@ -41,7 +41,9 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
                         "account_title",
                         "reporting_agency_id",
                         "reporting_agency_name",
-                        "federal_account"
+                        "federal_account",
+                        "funding_toptier_agency",
+                        "awarding_toptier_agency"
                     ]
                 }
             },
