@@ -7,8 +7,10 @@ from django.db import migrations
 
 def forwards_func(apps, schema_editor):
     tases = apps.get_model("accounts", "TreasuryAppropriationAccount")
+    ToptierAgency = apps.get_model("references", "ToptierAgency")
     for tas in tases.objects.all():
-        tas.update_agency_linkages()
+        tas.awarding_toptier_agency = ToptierAgency.objects.filter(cgac_code=tas.allocation_transfer_agency_id).first()
+        tas.funding_toptier_agency = ToptierAgency.objects.filter(cgac_code=tas.agency_id).first()
         tas.save()
 
 
