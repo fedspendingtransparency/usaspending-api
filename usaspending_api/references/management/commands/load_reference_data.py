@@ -23,6 +23,7 @@ class Command(BaseCommand):
         self.logger.info("Loading agency list")
         call_command('loadagencies')
 
+        # TAS's should only be loaded after agencies to ensure they can properly link to agencies
         self.logger.info("Loading tas_list.csv")
         call_command('loadtas', 'usaspending_api/data/tas_list.csv')
 
