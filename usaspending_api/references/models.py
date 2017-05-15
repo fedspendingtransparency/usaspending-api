@@ -130,6 +130,32 @@ class Agency(models.Model):
             subtier_agency__subtier_code=subtier_code
         ).order_by('-update_date').first()
 
+    @staticmethod
+    def find_agency(
+        toptier_agency_cgac, piid=None, parent_award_id=None, fain=None, uri=None):
+        """Replaces award_helpers.get_award_financial_transaction"""
+
+        if fain is not None:
+            # this is an assistance award id'd by fain
+            agency = AgencyByFain.objects.filter(
+                agency_cgac=toptier_agency_cgac, fain=fain).first()
+
+        elif uri is not None:
+            # this is an assistance award id'd by uri
+            agency = AgencyByUri.objects.filter(
+                agency_cgac=toptier_agency_cgac, uri=uri).first()
+
+        else:
+            # this is a contract award
+            agency = AgencyByPiid.objects.filter(
+                agency_cgac=toptier_agency_cgac, piid=piid, parent_award_id=parent_award_id).first()
+
+        if not agency:
+            agency = AgencyByToptier.objects.filter(agency_cgac=toptier_agency_cgac).first()
+
+        return agency
+
+
     class Meta:
         managed = True
         db_table = 'agency'
@@ -548,3 +574,170 @@ class Definition(models.Model):
     def save(self, *arg, **kwarg):
         self.slug = slugify(self.term)
         return super(Definition, self).save(*arg, **kwarg)
+
+# Models for materialized views
+
+class AgencyByFain(models.Model):
+
+    awarding_agency = models.ForeignKey(Agency)
+    cgac_code = models.TextField()
+    fain = models.TextField()
+
+    creation_sql = """
+        CREATE SEQUENCE agency_by_fain_seq;
+
+        CREATE MATERIALIZED VIEW agency_by_fain AS
+        SELECT NEXTVAL('agency_by_fain_seq') AS id,
+               ranked.*
+        FROM (
+            SELECT    t.awarding_agency_id,
+                      tta.cgac_code,
+                      ta.fain,
+                      RANK() OVER (PARTITION BY tta.cgac_code, ta.fain ORDER BY t.action_date DESC)
+                          AS date_order
+            FROM      transaction t
+            JOIN      agency a ON (t.awarding_agency_id = a.id)
+            JOIN      toptier_agency tta ON (tta.toptier_agency_id = a.toptier_agency_id)
+            JOIN      transaction_assistance ta ON (ta.transaction_id = t.id)
+            WHERE     ta.fain IS NOT NULL
+            ) ranked
+        WHERE ranked.date_order = 1;
+
+        CREATE INDEX ON agency_by_fain (awarding_agency_id);
+
+        CREATE INDEX ON agency_by_fain (cgac_code, fain)"""
+
+    drop_sql = "DROP MATERIALIZED VIEW agency_by_fain; DROP SEQUENCE agency_by_fain_seq"
+
+    @classmethod
+    def refresh(cls):
+        cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_fain")
+
+    class Meta:
+        managed = False
+        db_table = 'agency_by_fain'
+
+
+class AgencyByUri(models.Model):
+
+    awarding_agency = models.ForeignKey(Agency)
+    cgac_code = models.TextField()
+    uri = models.TextField()
+
+    creation_sql = """
+        CREATE SEQUENCE agency_by_uri_seq;
+
+        CREATE MATERIALIZED VIEW agency_by_uri AS
+        SELECT NEXTVAL('agency_by_uri_seq') AS id,
+               ranked.*
+        FROM (
+            SELECT    t.awarding_agency_id,
+                      tta.cgac_code,
+                      ta.uri,
+                      RANK() OVER (PARTITION BY tta.cgac_code, ta.uri ORDER BY t.action_date DESC)
+                          AS date_order
+            FROM      transaction t
+            JOIN      agency a ON (t.awarding_agency_id = a.id)
+            JOIN      toptier_agency tta ON (tta.toptier_agency_id = a.toptier_agency_id)
+            JOIN      transaction_assistance ta ON (ta.transaction_id = t.id)
+            WHERE     ta.uri IS NOT NULL
+            ) ranked
+        WHERE ranked.date_order = 1;
+
+        CREATE INDEX ON agency_by_uri (awarding_agency_id);
+
+        CREATE INDEX ON agency_by_uri (cgac_code, uri)"""
+
+    drop_sql = "DROP MATERIALIZED VIEW agency_by_uri; DROP SEQUENCE agency_by_uri_seq"
+
+    @classmethod
+    def refresh(cls):
+        cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_uri")
+
+    class Meta:
+        managed = False
+        db_table = 'agency_by_uri'
+
+
+class AgencyByPiid(models.Model):
+
+    awarding_agency = models.ForeignKey(Agency)
+    cgac_code = models.TextField()
+    piid = models.TextField()
+    parent_award_id = models.IntegerField()
+
+
+    creation_sql = """
+        CREATE SEQUENCE agency_by_piid_seq;
+
+        CREATE MATERIALIZED VIEW agency_by_piid AS
+        SELECT NEXTVAL('agency_by_piid_seq') AS id,
+               ranked.*
+        FROM (
+            SELECT    t.awarding_agency_id,
+                      tta.cgac_code,
+                      tc.piid,
+                      tc.parent_award_id,
+                      RANK() OVER (PARTITION BY tta.cgac_code, tc.piid, tc.parent_award_id ORDER BY t.action_date DESC)
+                          AS date_order
+            FROM      transaction t
+            JOIN      agency a ON (t.awarding_agency_id = a.id)
+            JOIN      toptier_agency tta ON (tta.toptier_agency_id = a.toptier_agency_id)
+            JOIN      transaction_contract tc ON (tc.transaction_id = t.id)
+            WHERE     tc.piid IS NOT NULL
+            ) ranked
+        WHERE ranked.date_order = 1;
+
+        CREATE INDEX ON agency_by_piid (awarding_agency_id);
+
+        CREATE INDEX ON agency_by_piid (cgac_code, piid, parent_award_id)"""
+
+    drop_sql = "DROP MATERIALIZED VIEW agency_by_piid; DROP SEQUENCE agency_by_piid_seq"
+
+    @classmethod
+    def refresh(cls):
+        cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_piid")
+
+    class Meta:
+        managed = False
+        db_table = 'agency_by_piid'
+
+
+class AgencyByToptier(models.Model):
+
+    agency = models.ForeignKey(Agency)
+    cgac_code = models.TextField()
+    uri = models.TextField()
+
+    creation_sql = """
+        CREATE SEQUENCE agency_by_toptier_seq;
+
+        CREATE MATERIALIZED VIEW agency_by_toptier AS
+        SELECT NEXTVAL('agency_by_toptier_seq') AS id,
+               ranked.*
+        FROM (
+            SELECT    a.id AS agency_id,
+                      tta.cgac_code,
+                      RANK() OVER (PARTITION BY tta.cgac_code ORDER BY a.update_date DESC)
+                          AS date_order
+            FROM      AGENCY a
+            JOIN      toptier_agency tta ON (tta.toptier_agency_id = a.toptier_agency_id)
+            JOIN      subtier_agency sta ON (sta.subtier_agency_id = a.subtier_agency_id)
+            WHERE     sta.name = tta.name
+            ) ranked
+        WHERE ranked.date_order = 1;
+
+        CREATE INDEX ON agency_by_toptier (agency_id);
+
+        CREATE INDEX ON agency_by_toptier (cgac_code)"""
+
+    drop_sql = "DROP MATERIALIZED VIEW agency_by_toptier; DROP SEQUENCE agency_by_toptier_seq"
+
+    @classmethod
+    def refresh(cls):
+        cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_toptier")
+
+    class Meta:
+        managed = False
+        db_table = 'agency_by_toptier'
+
