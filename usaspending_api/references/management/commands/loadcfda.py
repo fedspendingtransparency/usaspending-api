@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from usaspending_api.references.models import CFDAProgram
+from usaspending_api.references.models import CFDA
 from datetime import datetime
 import os
 import csv
@@ -32,14 +32,14 @@ class Command(BaseCommand):
 
 def load_cfda(fullpath):
     """
-    Create CFDAProgram records from a CSV of historical data.
+    Create CFDA Program records from a CSV of historical data.
     """
     try:
         with open(fullpath, errors='backslashreplace') as csvfile:
 
             reader = csv.DictReader(csvfile, delimiter=',', quotechar='"', skipinitialspace='true')
             for row in reader:
-                cfda_program, created = CFDAProgram.objects.get_or_create(
+                cfda_program, created = CFDA.objects.get_or_create(
                                 program_number=row['Program Number'])
 
                 cfda_program.data_source = "USA"
