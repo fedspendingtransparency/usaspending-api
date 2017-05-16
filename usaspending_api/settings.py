@@ -28,10 +28,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-# S3 Bucket location for CSV files
-CSV_S3_BUCKET = ""
-SQS_QUEUE_URL = ""
-SQS_REGION = ""
+# AWS locations for CSV files
+CSV_S3_BUCKET_NAME = ""
+CSV_SQS_QUEUE_NAME = ""
+CSV_AWS_REGION = ""
 
 # Application definition
 

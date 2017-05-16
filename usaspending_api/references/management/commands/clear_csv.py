@@ -20,6 +20,6 @@ class Command(BaseCommand):
         try:
             emptied = s3_empty_bucket()
             if emptied:
-                self.logger.info("S3 Bucket {} has been emptied".format(settings.CSV_S3_BUCKET))
+                self.logger.info("S3 Bucket {} has been emptied".format(settings.CSV_S3_BUCKET_NAME))
         except Exception as e:
             self.logger.exception(e)
