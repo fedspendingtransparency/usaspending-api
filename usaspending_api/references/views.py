@@ -113,7 +113,7 @@ class GuideViewSet(FilterQuerysetMixin, DetailViewSet):
 
 
 class GuideAutocomplete(FilterQuerysetMixin,
-                            AutocompleteView):
+                        AutocompleteView):
     """Autocomplete support for legal entity (recipient) objects."""
     serializer_class = DefinitionSerializer
 
