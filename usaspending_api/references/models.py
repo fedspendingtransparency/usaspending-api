@@ -1,6 +1,6 @@
 import logging
 
-from django.db import models
+from django.db import models, connection
 from django.db.models import F, Q
 from django.utils.text import slugify
 from usaspending_api.common.models import DataSourceTrackedModel
@@ -131,30 +131,28 @@ class Agency(models.Model):
         ).order_by('-update_date').first()
 
     @staticmethod
-    def find_agency(
-        toptier_agency_cgac, piid=None, parent_award_id=None, fain=None, uri=None):
+    def find_agency(toptier_agency_cgac, piid=None, parent_award_id=None, fain=None, uri=None):
         """Replaces award_helpers.get_award_financial_transaction"""
 
         if fain is not None:
             # this is an assistance award id'd by fain
             agency = AgencyByFain.objects.filter(
-                agency_cgac=toptier_agency_cgac, fain=fain).first()
+                cgac_code=toptier_agency_cgac, fain=fain).first()
 
         elif uri is not None:
             # this is an assistance award id'd by uri
             agency = AgencyByUri.objects.filter(
-                agency_cgac=toptier_agency_cgac, uri=uri).first()
+                cgac_code=toptier_agency_cgac, uri=uri).first()
 
         else:
             # this is a contract award
             agency = AgencyByPiid.objects.filter(
-                agency_cgac=toptier_agency_cgac, piid=piid, parent_award_id=parent_award_id).first()
+                cgac_code=toptier_agency_cgac, piid=piid, parent_award_id=parent_award_id).first()
 
         if not agency:
-            agency = AgencyByToptier.objects.filter(agency_cgac=toptier_agency_cgac).first()
+            agency = AgencyByToptier.objects.filter(cgac_code=toptier_agency_cgac).first()
 
-        return agency
-
+        return agency.awarding_agency
 
     class Meta:
         managed = True
@@ -577,6 +575,7 @@ class Definition(models.Model):
 
 # Models for materialized views
 
+
 class AgencyByFain(models.Model):
 
     awarding_agency = models.ForeignKey(Agency)
@@ -611,7 +610,8 @@ class AgencyByFain(models.Model):
 
     @classmethod
     def refresh(cls):
-        cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_fain")
+        with connection.cursor() as cursor:
+            cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_fain")
 
     class Meta:
         managed = False
@@ -652,7 +652,8 @@ class AgencyByUri(models.Model):
 
     @classmethod
     def refresh(cls):
-        cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_uri")
+        with connection.cursor() as cursor:
+            cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_uri")
 
     class Meta:
         managed = False
@@ -665,7 +666,6 @@ class AgencyByPiid(models.Model):
     cgac_code = models.TextField()
     piid = models.TextField()
     parent_award_id = models.IntegerField()
-
 
     creation_sql = """
         CREATE SEQUENCE agency_by_piid_seq;
@@ -696,7 +696,8 @@ class AgencyByPiid(models.Model):
 
     @classmethod
     def refresh(cls):
-        cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_piid")
+        with connection.cursor() as cursor:
+            cursor.execute("REFRESH MATERIALIZED VIEW agency_by_piid")
 
     class Meta:
         managed = False
@@ -705,9 +706,8 @@ class AgencyByPiid(models.Model):
 
 class AgencyByToptier(models.Model):
 
-    agency = models.ForeignKey(Agency)
+    awarding_agency = models.ForeignKey(Agency)
     cgac_code = models.TextField()
-    uri = models.TextField()
 
     creation_sql = """
         CREATE SEQUENCE agency_by_toptier_seq;
@@ -716,7 +716,7 @@ class AgencyByToptier(models.Model):
         SELECT NEXTVAL('agency_by_toptier_seq') AS id,
                ranked.*
         FROM (
-            SELECT    a.id AS agency_id,
+            SELECT    a.id AS awarding_agency_id,
                       tta.cgac_code,
                       RANK() OVER (PARTITION BY tta.cgac_code ORDER BY a.update_date DESC)
                           AS date_order
@@ -727,7 +727,7 @@ class AgencyByToptier(models.Model):
             ) ranked
         WHERE ranked.date_order = 1;
 
-        CREATE INDEX ON agency_by_toptier (agency_id);
+        CREATE INDEX ON agency_by_toptier (awarding_agency_id);
 
         CREATE INDEX ON agency_by_toptier (cgac_code)"""
 
@@ -735,9 +735,9 @@ class AgencyByToptier(models.Model):
 
     @classmethod
     def refresh(cls):
-        cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_toptier")
+        with connection.cursor() as cursor:
+            cls.objects.raw("REFRESH MATERIALIZED VIEW agency_by_toptier")
 
     class Meta:
         managed = False
         db_table = 'agency_by_toptier'
-

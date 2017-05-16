@@ -22,7 +22,8 @@ from usaspending_api.awards.models import (
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
-    Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
+    Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity,
+    AgencyByFain, AgencyByUri, AgencyByPiid, AgencyByToptier)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import (
     get_award_financial_transaction, update_awards, update_contract_awards)
@@ -669,6 +670,12 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
     to join to those records to retrieve some additional information
     about the awarding sub-tier agency.
     """
+
+    AgencyByFain.refresh()
+    AgencyByUri.refresh()
+    AgencyByPiid.refresh()
+    AgencyByToptier.refresh()
+
     # this matches the file b reverse directive, but am repeating it here
     # to ensure that we don't overwrite it as we change up the order of
     # file loading
@@ -681,25 +688,10 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
         if treasury_account is None:
             raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
 
-        # Find a matching transaction record, so we can use its
-        # subtier agency information to match to (or create) an Award record
-        awarding_cgac = row.get('agency_identifier')  # cgac from record's TAS
-        txn = get_award_financial_transaction(
-            awarding_cgac,
-            piid=row.get('piid'),
-            parent_award_id=row.get('parent_award_id'),
-            fain=row.get('fain'),
-            uri=row.get('uri')
-        )
-        if txn is not None:
-            # We found a matching transaction, so grab its awarding agency
-            # info and pass it get_or_create_summary_award
-            awarding_agency = txn.awarding_agency
-        else:
-            # No matching transaction found, so find/create Award by using
-            # topiter agency only, since CGAC code is the only piece of
-            # awarding agency info that we have.
-            awarding_agency = Agency.get_by_toptier(awarding_cgac)
+        awarding_agency = Agency.find_agency(toptier_agency_cgac=row.get('agency_identifier'),
+                                             piid=row.get('piid'),
+                                             parent_award_id=row.get('parent_award_id'),
+                                             fain=row.get('fain'), uri=row.get('uri'))
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         created, award = Award.get_or_create_summary_award(
