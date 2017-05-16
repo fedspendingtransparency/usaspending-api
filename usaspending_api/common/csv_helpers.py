@@ -12,7 +12,7 @@ def s3_get_url(path, checksum):
     '''
     Returns a pre-signed S3 URL for the CSV file, or None if the file does not exist
     '''
-    s3 = boto3.resource('s3')
+    s3 = boto3.resource('s3', region_name=settings.CSV_AWS_REGION)
     filename = create_filename_from_options(path, checksum)
 
     bucket = s3.Bucket(settings.CSV_S3_BUCKET_NAME)
@@ -20,7 +20,7 @@ def s3_get_url(path, checksum):
         obj = bucket.Object(key=filename)
         obj.load()
         if obj:
-            client = boto3.client('s3')
+            client = boto3.client('s3', region_name=settings.CSV_AWS_REGION)
             url = '{}/{}/{}'.format(client.meta.endpoint_url, obj.bucket_name, obj.key)
             return url
     except botocore.exceptions.ClientError as e:
@@ -33,7 +33,7 @@ def s3_empty_bucket():
     '''
     Deletes all keys in the S3 bucket
     '''
-    s3 = boto3.resource('s3')
+    s3 = boto3.resource('s3', region_name=settings.CSV_AWS_REGION)
     bucket = s3.Bucket(settings.CSV_S3_BUCKET_NAME)
     s3.meta.client.head_bucket(Bucket=settings.CSV_S3_BUCKET_NAME)
     for key in bucket.objects.all():
