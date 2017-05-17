@@ -162,7 +162,7 @@ def format_date(date_string, pattern='%Y%m%d'):
         return None
 
 
-def get_or_create_object_class(row, logger):
+def get_or_create_object_class_rw(row, logger):
     """Lookup an object class record.
 
         Args:
@@ -215,6 +215,13 @@ def get_or_create_object_class(row, logger):
         logger.warning('Created missing object_class record for {}'.format(object_class))
 
     return obj_class
+
+
+def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
+    row = Object()
+    row.object_class = row_object_class
+    row.direct_reimbursable = row_direct_reimbursable
+    return get_or_create_object_class_rw(row, logger)
 
 
 def get_or_create_program_activity(row, submission_attributes):
@@ -662,7 +669,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 
 
-@profile
+# @profile
 def load_file_c(submission_attributes, award_financial_data, db_cursor, award_financial_frame):
     """
     Process and load file C broker data.
@@ -677,7 +684,7 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor, award_fi
 
     award_financial_frame['txn'] = award_financial_frame.apply(get_award_financial_transaction, axis=1)
     award_financial_frame['awarding_agency'] = award_financial_frame.apply(get_awarding_agency, axis=1)
-    award_financial_frame['object_class'] = award_financial_frame.apply(get_or_create_object_class, axis=1, logger=logger)
+    award_financial_frame['object_class'] = award_financial_frame.apply(get_or_create_object_class_rw, axis=1, logger=logger)
     award_financial_frame['program_activity'] = award_financial_frame.apply(get_or_create_program_activity, axis=1, submission_attributes=submission_attributes)
 
     # for row in award_financial_data:
