@@ -8,7 +8,7 @@ from simple_history.models import HistoricalRecords
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import (
-    Agency, CFDA, LegalEntity, Location, ObjectClass, RefProgramActivity)
+    Agency, Cfda, LegalEntity, Location, ObjectClass, RefProgramActivity)
 from usaspending_api.common.models import DataSourceTrackedModel
 from django.core.cache import caches, CacheKeyWarning
 
@@ -455,7 +455,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     uri = models.TextField(blank=True, null=True)
     cfda_number = models.TextField(blank=True, null=True, verbose_name="CFDA Number")
     cfda_title = models.TextField(blank=True, null=True, verbose_name="CFDA Title")
-    cfda = models.ForeignKey(CFDA, models.DO_NOTHING, related_name="related_assistance", null=True)
+    cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_assistance", null=True)
     business_funds_indicator = models.TextField()
     business_funds_indicator_description = models.TextField(blank=True, null=True)
     non_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -500,7 +500,7 @@ class Subaward(DataSourceTrackedModel):
     award = models.ForeignKey(Award, models.CASCADE, related_name="subawards")
     recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    cfda = models.ForeignKey(CFDA, models.DO_NOTHING, related_name="related_subawards", null=True)
+    cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_subawards", null=True)
     awarding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="awarding_subawards", null=True)
     funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="funding_subawards", null=True)
     place_of_performance = models.ForeignKey(Location, models.DO_NOTHING, null=True)

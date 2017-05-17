@@ -22,7 +22,7 @@ from usaspending_api.awards.models import (
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
-    Agency, LegalEntity, Location, ObjectClass, RefCountryCode, CFDA, RefProgramActivity)
+    Agency, LegalEntity, Location, ObjectClass, RefCountryCode, Cfda, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import (
     get_award_financial_transaction, update_awards, update_contract_awards)
@@ -964,7 +964,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
 
         fad_value_map = {
             "submission": submission_attributes,
-            "cfda": CFDA.objects.filter(program_number=row['cfda_number']).first(),
+            "cfda": Cfda.objects.filter(program_number=row['cfda_number']).first(),
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
             "period_of_performance_start_date": format_date(row['period_of_performance_star']),

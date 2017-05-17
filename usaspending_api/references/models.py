@@ -482,7 +482,7 @@ class RefProgramActivity(models.Model):
         unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
 
 
-class CFDA(DataSourceTrackedModel):
+class Cfda(DataSourceTrackedModel):
     program_number = models.TextField(null=False)
     program_title = models.TextField(blank=True, null=True)
     popular_name = models.TextField(blank=True, null=True)

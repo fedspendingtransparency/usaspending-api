@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
-from usaspending_api.references.models import Location, Agency, LegalEntity, CFDA, Definition
+from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition
 from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, CfdaSerializer, DefinitionSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
@@ -76,7 +76,7 @@ class CfdaEndpoint(SuperLoggingMixin,
 
     def get_queryset(self):
         """Return the view's queryset."""
-        queryset = CFDA.objects.all()
+        queryset = Cfda.objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)

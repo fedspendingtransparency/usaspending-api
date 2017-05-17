@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from usaspending_api.references.models import CFDA
+from usaspending_api.references.models import Cfda
 from datetime import datetime
 import os
 import csv
@@ -39,7 +39,7 @@ def load_cfda(fullpath):
 
             reader = csv.DictReader(csvfile, delimiter=',', quotechar='"', skipinitialspace='true')
             for row in reader:
-                cfda_program, created = CFDA.objects.get_or_create(
+                cfda_program, created = Cfda.objects.get_or_create(
                                 program_number=row['Program Number'])
 
                 cfda_program.data_source = "USA"

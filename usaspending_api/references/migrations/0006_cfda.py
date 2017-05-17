@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='CFDA',
+            name='Cfda',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('data_source', models.CharField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', max_length=3, null=True)),

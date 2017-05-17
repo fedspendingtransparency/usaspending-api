@@ -8,7 +8,7 @@ from usaspending_api.etl.award_helpers import update_awards, update_contract_awa
 from usaspending_api.etl.csv_data_reader import CsvDataReader
 from usaspending_api.etl.helpers import update_model_description_fields
 import usaspending_api.etl.helpers as h
-from usaspending_api.references.models import Agency, LegalEntity, CFDA
+from usaspending_api.references.models import Agency, LegalEntity, Cfda
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -80,7 +80,7 @@ class Command(BaseCommand):
                 "uri": row["uri"],
                 "cfda_number": row["cfda_program_num"],
                 "cfda_title": row["cfda_program_title"],
-                "cfda": CFDA.objects.filter(program_number=row["cfda_program_num"]).first(),
+                "cfda": Cfda.objects.filter(program_number=row["cfda_program_num"]).first(),
                 "correction_late_delete_indicator": h.up2colon(row['correction_late_ind']),
                 "face_value_loan_guarantee": row["face_loan_guran"],
                 "fiscal_year_and_quarter_correction": row["fyq_correction"],

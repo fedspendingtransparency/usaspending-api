@@ -17,16 +17,16 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='historicaltransactionassistance',
             name='cfda_new',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='references.CFDA'),
+            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='references.Cfda'),
         ),
         migrations.AddField(
             model_name='subaward',
             name='cfda_new',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='related_subawards', to='references.CFDA'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='related_subawards', to='references.Cfda'),
         ),
         migrations.AddField(
             model_name='transactionassistance',
             name='cfda_new',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='related_assistance', to='references.CFDA'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='related_assistance', to='references.Cfda'),
         ),
     ]

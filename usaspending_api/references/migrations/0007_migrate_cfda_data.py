@@ -6,7 +6,7 @@ from django.db import migrations
 
 
 def forwards_func(apps, schema_editor):
-    cfda_new = apps.get_model("references", "CFDA")
+    cfda_new = apps.get_model("references", "Cfda")
     cfda_old = apps.get_model("references", "CFDAProgram")
     subaward = apps.get_model("awards", "Subaward")
     transaction_assistance = apps.get_model("awards", "TransactionAssistance")
@@ -61,7 +61,7 @@ def forwards_func(apps, schema_editor):
 
 
 def reverse_func(apps, schema_editor):
-    cfda_new = apps.get_model("references", "CFDA")
+    cfda_new = apps.get_model("references", "Cfda")
     subaward = apps.get_model("awards", "Subaward")
     transaction_assistance = apps.get_model("awards", "TransactionAssistance")
 
