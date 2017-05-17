@@ -25,7 +25,7 @@ from usaspending_api.references.models import (
     Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import (
-    get_award_financial_transaction, update_awards, update_contract_awards)
+    get_award_financial_transaction, update_awards, update_contract_awards , update_award_categories)
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
 from usaspending_api.etl.subaward_etl import load_subawards
@@ -148,6 +148,8 @@ class Command(BaseCommand):
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
         # 4. Update contract-specific award fields to reflect latest txn info
         update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+        # 5. Update the category variable
+        update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
 
 def format_date(date_string, pattern='%Y%m%d'):
