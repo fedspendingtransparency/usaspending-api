@@ -162,30 +162,31 @@ def format_date(date_string, pattern='%Y%m%d'):
         return None
 
 
-def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
+def get_or_create_object_class(row, logger):
     """Lookup an object class record.
 
         Args:
-            row_object_class: object class from the broker
-            row_direct_reimbursable: direct/reimbursable flag from the broker
+            row.object_class: object class from the broker
+            row.by_direct_reimbursable_fun: direct/reimbursable flag from the broker
                 (used only when the object_class is 3 digits instead of 4)
     """
-    if len(row_object_class) == 4:
+
+    if len(row.object_class) == 4:
         # this is a 4 digit object class, 1st digit = direct/reimbursable information
-        direct_reimbursable = row_object_class[:1]
-        object_class = row_object_class[1:]
+        direct_reimbursable = row.object_class[:1]
+        object_class = row.object_class[1:]
     else:
         # the object class field is the 3 digit version, so grab direct/reimbursable
         # information from a separate field
-        if row_direct_reimbursable is None:
+        if row.by_direct_reimbursable_fun is None:
             direct_reimbursable = None
-        elif row_direct_reimbursable.lower() == 'd':
+        elif row.by_direct_reimbursable_fun.lower() == 'd':
             direct_reimbursable = 1
-        elif row_direct_reimbursable.lower() == 'r':
+        elif row.by_direct_reimbursable_fun.lower() == 'r':
             direct_reimbursable = 2
         else:
             direct_reimbursable = None
-        object_class = row_object_class
+        object_class = row.object_class
 
     # set major object class; note that we shouldn't have to do this
     # once we have a complete list of object classes loaded to ObjectClass
@@ -676,6 +677,8 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor, award_fi
 
     award_financial_frame['txn'] = award_financial_frame.apply(get_award_financial_transaction, axis=1)
     award_financial_frame['awarding_agency'] = award_financial_frame.apply(get_awarding_agency, axis=1)
+    award_financial_frame['object_class'] = award_financial_frame.apply(get_or_create_object_class, axis=1, logger=logger)
+    award_financial_frame['program_activity'] = award_financial_frame.apply(get_or_create_program_activity, axis=1, submission_attributes=submission_attributes)
 
     # for row in award_financial_data:
     for row in award_financial_frame.to_dict('results'):
@@ -705,8 +708,8 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor, award_fi
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
             'treasury_account': treasury_account,
-            'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
-            'program_activity': get_or_create_program_activity(row, submission_attributes)
+            'object_class': row.get('object_class'),
+            'program_activity': row.get('program_activity'),
         }
 
         # Still using the cpe|fyb regex compiled above for reverse
