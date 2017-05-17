@@ -294,6 +294,75 @@ class LegalEntity(DataSourceTrackedModel):
     business_types = models.TextField(blank=True, null=True)
     business_types_description = models.TextField(blank=True, null=True)
     recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="DUNS Number")
+
+    # Business Type Categories
+    # These "aggregate" the many business type flags into buckets
+    category_business = models.BooleanField(default=False)
+    category_small_business = models.BooleanField(default=False)
+    category_other_than_small_business = models.BooleanField(default=False)
+
+    category_minority_owned_business = models.BooleanField(default=False)
+    category_alaskan_native_owned_business = models.BooleanField(default=False)
+    category_american_indian_owned_business = models.BooleanField(default=False)
+    category_asian_pacific_american_owned_business = models.BooleanField(default=False)
+    category_black_american_owned_business = models.BooleanField(default=False)
+    category_hispanic_american_owned_business = models.BooleanField(default=False)
+    category_native_american_owned_business = models.BooleanField(default=False)
+    category_native_hawaiian_owned_business = models.BooleanField(default=False)
+    category_subcontinent_asian_indian_american_owned_business = models.BooleanField(default=False)
+    category_tribally_owned_business = models.BooleanField(default=False)
+    category_other_minority_owned_business = models.BooleanField(default=False)
+
+    category_woman_owned_business = models.BooleanField(default=False)
+    category_women_owned_business = models.BooleanField(default=False)
+    category_women_owned_small_business = models.BooleanField(default=False)
+    category_economically_disadvantaged_women_owned_small_business = models.BooleanField(default=False)
+    category_joint_venture_women_owned_small_business = models.BooleanField(default=False)
+    category_joint_venture_economically_disadvantaged_women_owned_small_business = models.BooleanField(default=False, db_column="category_jvwosb")
+
+    category_veteran_owned_business = models.BooleanField(default=False)
+    category_service_disabled_veteran_owned_business = models.BooleanField(default=False)
+
+    category_special_designations = models.BooleanField(default=False)
+    category_8a_program_participant = models.BooleanField(default=False)
+    category_ability_one_program = models.BooleanField(default=False)
+    category_dot_certified_disadvantaged_business_enterprise = models.BooleanField(default=False)
+    category_emerging_small_business = models.BooleanField(default=False)
+    category_federally_funded_research_and_development_corp = models.BooleanField(default=False)
+    category_historically_underutilized_business_firm = models.BooleanField(default=False)
+    category_labor_surplus_area_firm = models.BooleanField(default=False)
+    category_sba_certified_8a_joint_venture = models.BooleanField(default=False)
+    category_self_certified_small_disadvanted_business = models.BooleanField(default=False)
+    category_small_agricultural_cooperative = models.BooleanField(default=False)
+    category_small_disadvantaged_business = models.BooleanField(default=False)
+    category_community_developed_corporation_owned_firm = models.BooleanField(default=False)
+    category_us_owned_business = models.BooleanField(default=False)
+    category_foreign_owned_and_us_located_business = models.BooleanField(default=False)
+    category_foreign_owned_and_located_business = models.BooleanField(default=False)
+    category_foreign_government = models.BooleanField(default=False)
+    category_international_organization = models.BooleanField(default=False)
+
+    category_nonprofit = models.BooleanField(default=False)
+    category_foundation = models.BooleanField(default=False)
+    category_community_development_corporations = models.BooleanField(default=False)
+
+    category_higher_education = models.BooleanField(default=False)
+    category_public_institution_of_higher_education = models.BooleanField(default=False)
+    category_private_institution_of_higher_education = models.BooleanField(default=False)
+    category_minority_serving_institution_of_higher_education = models.BooleanField(default=False)
+
+    category_government = models.BooleanField(default=False)
+    category_national_government = models.BooleanField(default=False)
+    category_regional_and_state_government = models.BooleanField(default=False)
+    category_us_territory_or_possession = models.BooleanField(default=False)
+    category_local_government = models.BooleanField(default=False)
+    category_indian_native_american_tribal_government = models.BooleanField(default=False)
+    category_authorities_and_commissions = models.BooleanField(default=False)
+
+    category_individuals = models.BooleanField(default=False)
+
+    # Business Type Flags
+    contracting_officers_determination_of_business_size = models.TextField(blank=True, null=True)
     limited_liability_corporation = models.TextField(blank=True, null=True)
     sole_proprietorship = models.TextField(blank=True, null=True)
     partnership_or_limited_liability_partnership = models.TextField(blank=True, null=True)
@@ -401,9 +470,302 @@ class LegalEntity(DataSourceTrackedModel):
     individual = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
+        LegalEntity.update_business_type_categories(self)
         super(LegalEntity, self).save(*args, **kwargs)
 
         LegalEntityOfficers.objects.get_or_create(legal_entity=self)
+
+    @staticmethod
+    def update_business_type_categories(le):
+        # Business Category
+        le.category_small_business = (
+            le.small_business == "1" or
+
+            le.business_types == "R"  # For-Profit Organization (Other than Small Business)
+        )
+        le.category_other_than_small_business = (
+            le.business_types == "Q"  # For-Profit Organization (Other than Small Business)
+        )
+        le.category_business = (
+            le.for_profit_organization == "1" or
+
+            le.category_small_business or
+            le.category_other_than_small_business
+        )
+        # End Business Category
+
+        # Minority Owned Business Category
+        le.category_alaskan_native_owned_business = (
+            le.alaskan_native_owned_corporation_or_firm == "1"
+        )
+        le.category_american_indian_owned_business = (
+            le.american_indian_owned_business == "1"
+        )
+        le.category_asian_pacific_american_owned_business = (
+            le.asian_pacific_american_owned_business == "1"
+        )
+        le.category_black_american_owned_business = (
+            le.black_american_owned_business == "1"
+        )
+        le.category_hispanic_american_owned_business = (
+            le.hispanic_american_owned_business == "1"
+        )
+        le.category_native_american_owned_business = (
+            le.native_american_owned_business == "1"
+        )
+        le.category_native_hawaiian_owned_business = (
+            le.native_hawaiian_owned_business == "1"
+        )
+        le.category_subcontinent_asian_indian_american_owned_business = (
+            le.subcontinent_asian_asian_indian_american_owned_business == "1"
+        )
+        le.category_tribally_owned_business = (
+            le.tribally_owned_business == "1"
+        )
+        le.category_other_minority_owned_business = (
+            le.other_minority_owned_business == "1"
+        )
+        le.category_minority_owned_business = (
+            le.minority_owned_business == "1" or
+
+            le.category_alaskan_native_owned_business or
+            le.category_american_indian_owned_business or
+            le.category_asian_pacific_american_owned_business or
+            le.category_black_american_owned_business or
+            le.category_hispanic_american_owned_business or
+            le.category_native_american_owned_business or
+            le.category_native_hawaiian_owned_business or
+            le.category_subcontinent_asian_indian_american_owned_business or
+            le.category_tribally_owned_business or
+            le.category_other_minority_owned_business
+        )
+        # End Minority Owned Business Category
+
+        # Woman Owned Business Category
+        le.category_women_owned_small_business = (
+            le.women_owned_small_business == "1"
+        )
+        le.category_economically_disadvantaged_women_owned_small_business = (
+            le.economically_disadvantaged_women_owned_small_business == "1"
+        )
+        le.category_joint_venture_women_owned_small_business = (
+            le.joint_venture_women_owned_small_business == "1"
+        )
+        le.category_joint_venture_economically_disadvantaged_women_owned_small_business = (
+            le.joint_venture_economic_disadvantaged_women_owned_small_bus == "1"
+        )
+        le.category_woman_owned_business = (
+            le.woman_owned_business == "1" or
+
+            le.category_women_owned_small_business or
+            le.category_economically_disadvantaged_women_owned_small_business or
+            le.category_joint_venture_women_owned_small_business or
+            le.category_joint_venture_economically_disadvantaged_women_owned_small_business
+        )
+
+        # Veteran Owned Business Category
+        le.category_service_disabled_veteran_owned_business = (
+            le.service_disabled_veteran_owned_business == "1"
+        )
+        le.category_veteran_owned_business = (
+            le.veteran_owned_business == "1" or
+
+            le.category_service_disabled_veteran_owned_business
+        )
+        # End Veteran Owned Business
+
+        # Special Designations Category
+        le.category_8a_program_participant = (
+            le.c8a_program_participant == "1"
+        )
+        le.category_ability_one_program = (
+            le.the_ability_one_program == "1"
+        )
+        le.category_dot_certified_disadvantaged_business_enterprise = (
+            le.dot_certified_disadvantage == "1"
+        )
+        le.category_emerging_small_business = (
+            le.emerging_small_business == "1"
+        )
+        le.category_federally_funded_research_and_development_corp = (
+            le.federally_funded_research_and_development_corp == "1"
+        )
+        le.category_historically_underutilized_business_firm = (
+            le.historically_underutilized_business_zone == "1"
+        )
+        le.category_labor_surplus_area_firm = (
+            le.labor_surplus_area_firm == "1"
+        )
+        le.category_sba_certified_8a_joint_venture = (
+            le.sba_certified_8a_joint_venture == "1"
+        )
+        le.category_self_certified_small_disadvanted_business = (
+            le.self_certified_small_disadvantaged_business == "1"
+        )
+        le.category_small_agricultural_cooperative = (
+            le.small_agricultural_cooperative == "1"
+        )
+        le.category_small_disadvantaged_business = (
+            le.small_disadvantaged_business == "1"
+        )
+        le.category_community_developed_corporation_owned_firm = (
+            le.community_developed_corporation_owned_firm == "1"
+        )
+        le.category_us_owned_business = (
+            le.domestic_or_foreign_entity == "A"  # U.S. Owned Business
+        )
+        le.category_foreign_owned_and_us_located_business = (
+            le.domestic_or_foreign_entity == "C"  # Foreign-Owned Business Incorporated in the U.S.
+        )
+        le.category_foreign_owned_and_located_business = (
+            le.domestic_or_foreign_entity == "D" or  # Foreign-Owned Business Not Incorporated in the U.S.
+
+            le.foreign_owned_and_located == "1"
+        )
+        le.category_foreign_government = (
+            le.foreign_government == "1"
+        )
+        le.category_international_organization = (
+            le.international_organization == "1"
+        )
+        le.category_special_designations = (
+            le.category_8a_program_participant or
+            le.category_ability_one_program or
+            le.category_dot_certified_disadvantaged_business_enterprise or
+            le.category_emerging_small_business or
+            le.category_federally_funded_research_and_development_corp or
+            le.category_historically_underutilized_business_firm or
+            le.category_labor_surplus_area_firm or
+            le.category_sba_certified_8a_joint_venture or
+            le.category_self_certified_small_disadvanted_business or
+            le.category_small_agricultural_cooperative or
+            le.category_small_disadvantaged_business or
+            le.category_community_developed_corporation_owned_firm or
+            le.category_us_owned_business or
+            le.category_foreign_owned_and_us_located_business or
+            le.category_foreign_owned_and_located_business or
+            le.category_foreign_government or
+            le.category_international_organization
+        )
+        # End Special Designations
+
+        # Non-profit category
+        le.category_foundation = (
+            le.foundation == "1"
+        )
+        le.category_community_development_corporations = (
+            le.community_developed_corporation_owned_firm == "1"
+        )
+        le.category_nonprofit = (
+            le.business_types == "M" or  # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
+            le.business_types == "N" or  # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
+
+            le.nonprofit_organization == "1" or
+            le.other_not_for_profit_organization == "1" or
+
+            le.category_foundation or
+            le.category_community_development_corporations
+        )
+        # End Non-profit category
+
+        # Higher Education Category
+        le.category_public_institution_of_higher_education = (
+            le.business_types == "H" or  # Public/State Controlled Institution of Higher Education
+
+            le.state_controlled_institution_of_higher_learning == "1" or
+            le.c1862_land_grant_college == "1" or
+            le.c1890_land_grant_college == "1" or
+            le.c1994_land_grant_college == "1"
+        )
+        le.category_private_institution_of_higher_education = (
+            le.business_types == "O" or  # Private Institution of Higher Education
+
+            le.private_university_or_college == "1"
+        )
+        le.category_minority_serving_institution_of_higher_education = (
+            le.business_types == "T" or  # Historically Black Colleges and Universities (HBCUs)
+            le.business_types == "U" or  # Tribally Controlled Colleges and Universities (TCCUs)
+            le.business_types == "V" or  # Alaska Native and Native Hawaiian Serving Institutions
+            le.business_types == "S" or  # Hispanic-serving Institution
+
+            le.minority_institution == "1" or
+            le.historically_black_college == "1" or
+            le.tribal_college == "1" or
+            le.alaskan_native_servicing_institution == "1" or
+            le.native_hawaiian_servicing_institution == "1" or
+            le.hispanic_servicing_institution == "1"
+        )
+        le.category_higher_education = (
+            le.category_public_institution_of_higher_education or
+            le.category_private_institution_of_higher_education or
+            le.category_minority_serving_institution_of_higher_education
+        )
+        # End Higher Education Category
+
+        # Government Category
+        le.category_national_government = (
+            le.us_federal_government == "1" or
+            le.federal_agency == "1" or
+            le.us_government_entity == "1" or
+            le.interstate_entity == "1"
+        )
+        le.category_regional_and_state_government = (
+            le.business_types == "A" or  # State government
+            le.business_types == "E" or  # Regional Organization
+
+            le.us_state_government == "1" or
+            le.council_of_governments == "1"
+        )
+        le.category_us_territory_or_possession = (
+            le.business_types == "F"  # U.S. Territory or Possession
+        )
+        le.category_local_government = (
+            le.business_types == "C" or  # City or Township Government
+            le.business_types == "B" or  # County Government
+            le.business_types == "D" or  # Special District Government
+            le.business_types == "G" or  # Independent School District
+
+            le.city_local_government == "1" or
+            le.county_local_government == "1" or
+            le.inter_municipal_local_government == "1" or
+            le.municipality_local_government == "1" or
+            le.township_local_government == "1" or
+            le.us_local_government == "1" or
+            le.local_government_owned == "1" or
+            le.school_district_local_government == "1"
+        )
+        le.category_indian_native_american_tribal_government = (
+            le.business_types == "I" or  # Indian/Native American Tribal Government (Federally Recognized)
+            le.business_types == "J" or  # Indian/Native American Tribal Government (Other than Federally Recognized)
+
+            le.us_tribal_government == "1" or
+            le.indian_tribe_federally_recognized == "1"
+        )
+        le.category_authorities_and_commissions = (
+            le.business_types == "L" or  # Public/Indian Housing Authority
+
+            le.housing_authorities_public_tribal == "1" or
+            le.airport_authority == "1" or
+            le.port_authority == "1" or
+            le.transit_authority == "1" or
+            le.planning_commission == "1"
+        )
+        le.category_government = (
+            le.category_national_government or
+            le.category_regional_and_state_government or
+            le.category_us_territory_or_possession or
+            le.category_local_government or
+            le.category_indian_native_american_tribal_government or
+            le.category_authorities_and_commissions
+        )
+        # End Government Category
+
+        # Individuals Category
+        le.category_individuals = (
+            le.individual == "1" or
+            le.business_types == "P"  # Individual
+        )
+        # End Individuals category
 
     @classmethod
     def get_or_create_by_duns(cls, duns):

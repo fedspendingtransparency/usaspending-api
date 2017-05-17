@@ -135,7 +135,16 @@ class LegalEntitySerializer(LimitableSerializer):
             "recipient_name",
             "business_types",
             "business_types_description",
-            "location"
+            "location",
+            "category_business",
+            "category_minority_owned_business",
+            "category_woman_owned_business",
+            "category_veteran_owned_business",
+            "category_special_designations",
+            "category_nonprofit",
+            "category_higher_education",
+            "category_government",
+            "category_individuals"
         ]
         nested_serializers = {
             "location": {
