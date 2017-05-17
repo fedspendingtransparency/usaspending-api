@@ -110,3 +110,17 @@ class GuideViewSet(FilterQuerysetMixin, DetailViewSet):
         queryset = Definition.objects.all()
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         return filtered_queryset
+
+
+class GuideAutocomplete(FilterQuerysetMixin,
+                        AutocompleteView):
+    """Autocomplete support for legal entity (recipient) objects."""
+    serializer_class = DefinitionSerializer
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = Definition.objects.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
