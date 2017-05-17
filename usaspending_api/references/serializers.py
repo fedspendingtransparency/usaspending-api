@@ -75,6 +75,7 @@ class CfdaSerializer(LimitableSerializer):
         model = Cfda
         fields = '__all__'
         default_fields = [
+            "id",
             "program_number",
             "program_title",
             "popular_name",
