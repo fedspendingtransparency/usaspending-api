@@ -29,18 +29,6 @@ def s3_get_url(path, checksum):
     return None
 
 
-def s3_empty_bucket():
-    '''
-    Deletes all keys in the S3 bucket
-    '''
-    s3 = boto3.resource('s3', region_name=settings.CSV_AWS_REGION)
-    bucket = s3.Bucket(settings.CSV_S3_BUCKET_NAME)
-    s3.meta.client.head_bucket(Bucket=settings.CSV_S3_BUCKET_NAME)
-    for key in bucket.objects.all():
-        key.delete()
-    return True
-
-
 def sqs_add_to_queue(path, checksum):
     '''
     Adds a request to generate a CSV file to the SQS queue
