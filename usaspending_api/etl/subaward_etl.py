@@ -3,7 +3,7 @@ import logging
 from django.db.models import Count, Sum, F
 
 from usaspending_api.awards.models import Award, Subaward
-from usaspending_api.references.models import LegalEntity, Location, CFDAProgram, Agency
+from usaspending_api.references.models import LegalEntity, Location, Cfda, Agency
 from usaspending_api.etl.helpers import get_or_create_location
 from usaspending_api.etl.award_helpers import update_award_subawards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
@@ -193,8 +193,8 @@ def load_subawards(submission_attributes, db_cursor):
         # Get or create POP
         place_of_performance = get_or_create_location(row, pop_mapper)
 
-        # Get CFDAProgram
-        cfda = CFDAProgram.objects.filter(program_number=row['cfda_number']).first()
+        # Get CFDA Program
+        cfda = Cfda.objects.filter(program_number=row['cfda_number']).first()
 
         d2_f_dict = {
             'award': award,
