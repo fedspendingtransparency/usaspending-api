@@ -8,6 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('references', '0007_migrate_cfda_data'),
         ('awards', '0003_auto_20170515_1807'),
     ]
 
