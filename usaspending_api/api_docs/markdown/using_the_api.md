@@ -339,6 +339,33 @@ The response has three functional parts:
   * `req` - The special code corresponding to this POST request. See [Post request preservation]("#post-requests-preservation") for how to use this
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
+### CSV Bulk Downloads
+
+Bulk CSV downloads are available via the `/api/v1/download/` endpoint. This supports any data endpoint via POST or GET. Because these CSV files can take some time to generate, the response of this endpoint contains the status of file generation and the location of the file once it is complete.
+
+Examples
+* To get a CSV of all Awards, you would access `/api/v1/download/awards/`
+* To get a CSV of all Awards with a particular set of filters, you can pass the request checksum, `/api/v1/download/awards/?req=CHECKSUM` or POST the request object to the endpoint
+* To check the status of a CSV download, make note of the `request_checksum` and return to the url, with `req=CHECKSUM` attached. For example, `/api/v1/download/awards/?req=CHECKSUM`
+
+Response
+
+```
+{
+  "location": s3://someURL,
+  "status": "This file has been requested, and is awaiting queueing",
+  "request_checksum": "e78f4722f85",
+  "status_code": 0,
+  "request_path": "/api/v1/awards/"
+}
+```
+
+* location - The URL where the file can be accessed (once it has been generated)
+* status - A plain english description of the current status of the file generation
+* status_code - A code representing the current status of the file generation
+* request_checksum - The checksum of the request, which can be used to check the status
+* request_path - The path of the CSV request
+
 ### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
   Summarized data is available for some of the endpoints listed above:
 

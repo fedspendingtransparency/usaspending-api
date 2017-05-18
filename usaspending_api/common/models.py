@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.csv_helpers import resolve_path_to_view, create_filename_from_options, format_path
+from enum import Enum
 import hashlib
 import pickle
 import datetime
@@ -21,6 +23,42 @@ class DataSourceTrackedModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class CSVdownloadableResponse(models.Model):
+    class STATUS(Enum):
+        REQUESTED_CODE = 0
+        QUEUED_CODE = 1
+        GENERATING_CODE = 2
+        READY_CODE = 3
+        ERROR_CODE = 4
+
+        REQUESTED_DESCRIPTION = "This file has been requested, and is awaiting queueing"
+        QUEUED_DESCRIPTION = "This file has been queued, and will be generated soon"
+        GENERATING_DESCRIPTION = "This file is currently being generated"
+        READY_DESCRIPTION = "This file is ready for download"
+        ERROR_DESCRIPTION = "This file failed to generate"
+
+    # Every CSV download must be associated with a specific request
+    request = models.ForeignKey("common.RequestCatalog", models.CASCADE, related_name="csv_files", null=False)
+    # Every CSV Download must be associate with a request path
+    request_path = models.TextField(null=False)
+
+    # The file name that will be used to store the file
+    file_name = models.TextField(null=False)
+    download_location = models.TextField(null=True)
+
+    # The status of the file generation
+    status_code = models.IntegerField(default=0)
+    status_description = models.TextField(default="This file has been requested, and is awaiting queueing")
+
+    @staticmethod
+    def get_or_create_from_parameters(request_path, request_catalog):
+        request_path = format_path(request_path)
+        filename = create_filename_from_options(request_path, request_catalog.checksum)
+        return CSVdownloadableResponse.objects.get_or_create(request=request_catalog,
+                                                             request_path=request_path,
+                                                             file_name=filename)
 
 
 class RequestCatalog(models.Model):
@@ -71,7 +109,7 @@ class RequestCatalog(models.Model):
             if query_params.get(item, None):
                 del query_params[item]
 
-        json_request = {"data": data, "query_params": query_params}
+        json_request = RequestCatalog.get_checksumable_request(data, query_params)
 
         # See if the request exists, and return that catalog. Otherwise, create it
         created = False
@@ -99,6 +137,46 @@ class RequestCatalog(models.Model):
             created = True
 
         return created, request_catalog
+
+    @staticmethod
+    def get_checksumable_request(data, query_params):
+        '''
+        Constructs a checksummable request with specific set of fields
+        '''
+
+        # Set of request parameters to save, so we don't store page/limit and we also
+        # don't store any garbage that gets passed in
+        storable_parameters = [
+            "exclude",
+            "fields",
+            "order",
+            "verbose",
+            "filters",
+            "field",
+            "aggregate",
+            "group",
+            "date_part",
+            "value",
+            "mode",
+            "matched_objects",
+            "scope",
+            "usage"
+        ]
+
+        checksumable_request = {
+            "data": {},
+            "query_params": query_params
+        }
+
+        print(query_params)
+
+        for item in storable_parameters:
+            d_ins = data.get(item, None)
+
+            if d_ins:
+                checksumable_request["data"][item] = d_ins
+
+        return checksumable_request
 
     class Meta:
         managed = True
