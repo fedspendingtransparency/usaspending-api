@@ -133,9 +133,11 @@ class LegalEntitySerializer(LimitableSerializer):
         default_fields = [
             "legal_entity_id",
             "parent_recipient_unique_id",
+            "recipient_unique_id",
             "recipient_name",
             "business_types",
             "business_types_description",
+            "business_categories",
             "location"
         ]
         nested_serializers = {

@@ -83,6 +83,24 @@ class CfdaEndpoint(SuperLoggingMixin,
         return ordered_queryset
 
 
+class RecipientViewSet(SuperLoggingMixin,
+                       FilterQuerysetMixin,
+                       DetailViewSet):
+    """
+    Returns information about award recipients and vendors
+    """
+
+    serializer_class = LegalEntitySerializer
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = LegalEntity.objects.all().exclude(recipient_unique_id__isnull=True)
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
+
+
 class RecipientAutocomplete(FilterQuerysetMixin,
                             AutocompleteView):
     """Autocomplete support for legal entity (recipient) objects."""
