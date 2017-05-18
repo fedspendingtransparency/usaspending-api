@@ -453,8 +453,6 @@ class TransactionAssistance(DataSourceTrackedModel):
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     fain = models.TextField(blank=True, null=True)
     uri = models.TextField(blank=True, null=True)
-    cfda_number = models.TextField(blank=True, null=True, verbose_name="CFDA Number")
-    cfda_title = models.TextField(blank=True, null=True, verbose_name="CFDA Title")
     cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_assistance", null=True)
     business_funds_indicator = models.TextField()
     business_funds_indicator_description = models.TextField(blank=True, null=True)
