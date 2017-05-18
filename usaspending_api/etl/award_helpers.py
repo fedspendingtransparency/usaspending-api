@@ -193,7 +193,7 @@ def get_award_financial_transaction(row):
     elif row.uri is not None:
         # this is an assistance award id'd by uri
         txn = Transaction.objects.filter(
-            awarding_agency__toptier_agency__cgac_code=trow.agency_identifier,
+            awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
             assistance_data__uri=row.uri) \
             .order_by('-action_date').first()
 

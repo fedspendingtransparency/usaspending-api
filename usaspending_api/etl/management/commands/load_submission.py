@@ -13,6 +13,7 @@ from django.db import connections
 from django.db.models import F, Q
 from django.core.cache import caches
 import pandas as pd
+import numpy as np
 
 from usaspending_api.accounts.models import (
     AppropriationAccountBalances, AppropriationAccountBalancesQuarterly,
@@ -133,12 +134,15 @@ class Command(BaseCommand):
         # we'll do our best to match them to the more specific award records
         # already created by the D file load
 
-        award_financial_frame = pd.read_sql('SELECT * FROM award_financial WHERE submission_id = %s' % submission_id,
-                                            os.environ.get('DATA_BROKER_DATABASE_URL'))
-        db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
-        award_financial_data = dictfetchall(db_cursor)
-        logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
-        load_file_c(submission_attributes, award_financial_data, db_cursor, award_financial_frame)
+        award_financial_query = 'SELECT * FROM award_financial WHERE submission_id = %s'
+        if isinstance(db_cursor, PhonyCursor):  # spoofed data for test
+            award_financial_frame = pd.DataFrame(db_cursor.db_responses[award_financial_query])
+        else:  # real data
+            award_financial_frame = pd.read_sql(award_financial_query % submission_id,
+                                                os.environ.get('DATA_BROKER_DATABASE_URL'))
+        logger.info('Acquired award financial data for {}, there are {} rows.'
+                    .format(submission_id, award_financial_frame.shape[0]))
+        load_file_c(submission_attributes, db_cursor, award_financial_frame)
 
         # Once all the files have been processed, run any global
         # cleanup/post-load tasks.
@@ -217,10 +221,13 @@ def get_or_create_object_class_rw(row, logger):
     return obj_class
 
 
+class Bunch:
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+
 def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
-    row = Object()
-    row.object_class = row_object_class
-    row.direct_reimbursable = row_direct_reimbursable
+    row = Bunch(object_class=row_object_class, by_direct_reimbursable_fun=row_direct_reimbursable)
     return get_or_create_object_class_rw(row, logger)
 
 
@@ -669,8 +676,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 
 
-# @profile
-def load_file_c(submission_attributes, award_financial_data, db_cursor, award_financial_frame):
+def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     """
     Process and load file C broker data.
     Note: this should run AFTER the D1 and D2 files are loaded because we try
@@ -688,7 +694,7 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor, award_fi
     award_financial_frame['program_activity'] = award_financial_frame.apply(get_or_create_program_activity, axis=1, submission_attributes=submission_attributes)
 
     # for row in award_financial_data:
-    for row in award_financial_frame.to_dict('results'):
+    for row in award_financial_frame.replace({np.nan: None}).to_dict(orient='records'):
         # Check and see if there is an entry for this TAS
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
