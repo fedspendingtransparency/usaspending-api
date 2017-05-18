@@ -483,7 +483,7 @@ class RefProgramActivity(models.Model):
 
 
 class Cfda(DataSourceTrackedModel):
-    program_number = models.TextField(null=False, db_index=True)
+    program_number = models.TextField(null=False, unique=True)
     program_title = models.TextField(blank=True, null=True)
     popular_name = models.TextField(blank=True, null=True)
     federal_agency = models.TextField(blank=True, null=True)
