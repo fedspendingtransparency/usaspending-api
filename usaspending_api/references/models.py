@@ -907,8 +907,8 @@ class RefProgramActivity(models.Model):
         unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
 
 
-class CFDAProgram(DataSourceTrackedModel):
-    program_number = models.TextField(primary_key=True, max_length=7)
+class Cfda(DataSourceTrackedModel):
+    program_number = models.TextField(null=False, unique=True)
     program_title = models.TextField(blank=True, null=True)
     popular_name = models.TextField(blank=True, null=True)
     federal_agency = models.TextField(blank=True, null=True)
@@ -946,8 +946,6 @@ class CFDAProgram(DataSourceTrackedModel):
     recovery = models.TextField(blank=True, null=True)
     omb_agency_code = models.TextField(blank=True, null=True)
     omb_bureau_code = models.TextField(blank=True, null=True)
-    # published_date = models.DateTimeField(blank=True, null=True)
-    # archived_date = models.DateTimeField(blank=True, null=True)
     published_date = models.TextField(blank=True, null=True)
     archived_date = models.TextField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -955,7 +953,6 @@ class CFDAProgram(DataSourceTrackedModel):
 
     class Meta:
         managed = True
-        db_table = 'cfda_program'
 
     def __str__(self):
         return "%s" % (self.program_title)
