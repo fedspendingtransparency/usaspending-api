@@ -63,7 +63,8 @@ def aggregate_models():
 @pytest.fixture
 def aggregate_models_with_nulls():
     mommy.make("awards.TransactionContract", transaction__federal_action_obligation=10, naics="ABCD", _quantity=3)
-    mommy.make("awards.TransactionAssistance", transaction__federal_action_obligation=10, cfda__cfda__program_number=10)
+    mommy.make("awards.TransactionContract", transaction__federal_action_obligation=None, naics="WXYZ")
+    mommy.make("awards.TransactionAssistance", transaction__federal_action_obligation=10, cfda__program_number="10.001")
 
 
 @pytest.mark.django_db
@@ -71,7 +72,7 @@ def test_agg_fields(monkeypatch, aggregate_models):
     """Test length and field names of aggregate query result."""
     request = Mock()
     request.query_params = {}
-    request.data = {'field': 'total_obligation', 'group': 'type'}
+    request.data = {'field': 'total_obligation', 'group': 'type', 'show_nulls': True}
     a = AggregateQuerysetMixin()
     created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=Award.objects.all())
@@ -90,7 +91,8 @@ def test_agg_fields(monkeypatch, aggregate_models):
 @pytest.mark.django_db
 @pytest.mark.parametrize('model, request_data, result', [(Award, {
     'field': 'total_obligation',
-    'group': 'period_of_performance_start_date'
+    'group': 'period_of_performance_start_date',
+    'show_nulls': True
 }, [{
     'item': datetime.date(2017, 1, 1),
     'period_of_performance_start_date': datetime.date(2017, 1, 1),
@@ -110,7 +112,8 @@ def test_agg_fields(monkeypatch, aggregate_models):
 }]), (Award, {
     'field': 'total_obligation',
     'group': 'period_of_performance_start_date',
-    'date_part': 'year'
+    'date_part': 'year',
+    'show_nulls': True
 }, [{
     'item': 2016,
     'aggregate': Decimal('1000.01')
@@ -123,7 +126,8 @@ def test_agg_fields(monkeypatch, aggregate_models):
 }]), (Award, {
     'field': 'total_obligation',
     'group': 'period_of_performance_start_date',
-    'date_part': 'month'
+    'date_part': 'month',
+    'show_nulls': True
 }, [{
     'item': 1,
     'aggregate': Decimal('6000.02')
@@ -136,7 +140,8 @@ def test_agg_fields(monkeypatch, aggregate_models):
 }]), (Award, {
     'field': 'total_obligation',
     'group': 'period_of_performance_start_date',
-    'date_part': 'day'
+    'date_part': 'day',
+    'show_nulls': True
 }, [{
     'item': 1,
     'aggregate': Decimal('6000.02')
@@ -246,11 +251,13 @@ _expected_type_pop_day_aggregated = [{
 @pytest.mark.django_db
 @pytest.mark.parametrize('model, request_data, expected', [(Award, {
     'field': 'total_obligation',
-    'group': ['period_of_performance_start_date__fy', 'type']
+    'group': ['period_of_performance_start_date__fy', 'type'],
+    'show_nulls': True
 }, _expected_fy_type_aggregated),
     (Award, {
         'field': 'total_obligation',
-        'group': ['uri', 'type']
+        'group': ['uri', 'type'],
+        'show_nulls': True
     }, _expected_type_pop_day_aggregated)])
 def test_aggregate_fy_and_type(monkeypatch, aggregate_models, model, request_data,
                                expected):
@@ -326,6 +333,13 @@ def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model,
 
 @pytest.mark.django_db
 def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
+    def itemsorter(a):
+        if a['aggregate'] is None:
+            return 0
+        return a['aggregate']
+
+    assert Transaction.objects.count() == 5
+
     # Ensure defaults don't return values where all group fields are null
     request = Mock()
     request.query_params = {}
@@ -336,21 +350,61 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     agg_list = [a for a in agg]
 
     assert len(agg_list) == 1
+    assert agg_list[0]["aggregate"] == 10.0
 
-    request = Mock()
-    request.query_params = {}
     request.data = {"field": "federal_action_obligation", "group": ["assistance_data__cfda__program_number", "contract_data__naics"]}
     created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=Transaction.objects.all())
     agg_list = [a for a in agg]
+    agg_list.sort(key=itemsorter)
 
     assert len(agg_list) == 2
+    assert agg_list[0]["aggregate"] == 10.0
+    assert agg_list[1]["aggregate"] == 30.0
 
-    request = Mock()
-    request.query_params = {}
-    request.data = {"field": "federal_action_obligation", "group": "assistance_data__cfda__program_number", "show_nulls": True}
+    # Allow null aggregate fileds
+    request.data = {"field": "federal_action_obligation", "group": ["assistance_data__cfda__program_number", "contract_data__naics"], "show_null_aggregates": True}
     created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=Transaction.objects.all())
     agg_list = [a for a in agg]
+    agg_list.sort(key=itemsorter)
+
+    assert len(agg_list) == 3
+    assert agg_list[0]["aggregate"] is None
+    assert agg_list[1]["aggregate"] == 10.0
+    assert agg_list[2]["aggregate"] == 30.0
+
+    # Allow null groups fields
+    request.data = {"field": "federal_action_obligation", "group": "assistance_data__cfda__program_number", "show_null_groups": True}
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=Transaction.objects.all())
+    agg_list = [a for a in agg]
+    agg_list.sort(key=itemsorter)
 
     assert len(agg_list) == 2
+    assert agg_list[0]["aggregate"] == 10.0
+    assert agg_list[1]["aggregate"] == 30.0
+
+    # Allow null aggregate fields and null groups
+    request.data = {"field": "federal_action_obligation", "group": "contract_data__naics", "show_null_aggregates": True, "show_null_groups": True}
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=Transaction.objects.all())
+    agg_list = [a for a in agg]
+    agg_list.sort(key=itemsorter)
+
+    assert len(agg_list) == 3
+    assert agg_list[0]["aggregate"] is None
+    assert agg_list[1]["aggregate"] == 10.0
+    assert agg_list[2]["aggregate"] == 30.0
+
+    # Allow null aggregate fields and groups (using show_nulls to trigger both)
+    request.data = {"field": "federal_action_obligation", "group": "contract_data__naics", "show_nulls": True}
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=Transaction.objects.all())
+    agg_list = [a for a in agg]
+    agg_list.sort(key=itemsorter)
+
+    assert len(agg_list) == 3
+    assert agg_list[0]["aggregate"] is None
+    assert agg_list[1]["aggregate"] == 10.0
+    assert agg_list[2]["aggregate"] == 30.0
