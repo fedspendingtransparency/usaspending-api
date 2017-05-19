@@ -171,11 +171,13 @@ def get_award_financial_transaction(row):
     recent action date.
 
     Args:
-        toptier_agency_cgac: top tier agency code (aka CGAC code) from File C
-        piid: piid from File C (contract awards only)
-        parent_award_id: parent award id from File C (contract awards only)
-        fain: fain from File C (assistance awards only)
-        uri: uri from File C (assistance awards only)
+        row: an object containing these attributes:
+
+        row.toptier_agency_cgac: top tier agency code (aka CGAC code) from File C
+        row.piid: piid from File C (contract awards only)
+        row.parent_award_id: parent award id from File C (contract awards only)
+        row.fain: fain from File C (assistance awards only)
+        row.uri: uri from File C (assistance awards only)
 
     Returns:
         A Transaction model instance

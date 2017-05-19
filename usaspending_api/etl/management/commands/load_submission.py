@@ -166,8 +166,30 @@ def format_date(date_string, pattern='%Y%m%d'):
         return None
 
 
+def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
+    """Lookup an object class record.
+
+        Args:
+            row_object_class: object class from the broker
+            row_by_direct_reimbursable_fun: direct/reimbursable flag from the broker
+                (used only when the object_class is 3 digits instead of 4)
+    """
+
+    row = Bunch(object_class=row_object_class, by_direct_reimbursable_fun=row_direct_reimbursable)
+    return get_or_create_object_class_rw(row, logger)
+
+
+class Bunch:
+    'Generic class to hold a group of attributes.'
+
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+
 def get_or_create_object_class_rw(row, logger):
     """Lookup an object class record.
+
+       (As ``get_or_create_object_class``, but arguments are bunched into a ``row`` object.)
 
         Args:
             row.object_class: object class from the broker
@@ -219,16 +241,6 @@ def get_or_create_object_class_rw(row, logger):
         logger.warning('Created missing object_class record for {}'.format(object_class))
 
     return obj_class
-
-
-class Bunch:
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
-
-
-def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
-    row = Bunch(object_class=row_object_class, by_direct_reimbursable_fun=row_direct_reimbursable)
-    return get_or_create_object_class_rw(row, logger)
 
 
 def get_or_create_program_activity(row, submission_attributes):
