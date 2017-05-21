@@ -83,6 +83,9 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             response = {"message": str(e)}
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
             self.exception_logger.exception(e)
+            if 'req' in self.__dict__:
+                # If we've made a request catalog, but the request is bad, we need to delete it
+                self.req.delete()
             return Response(response, status=status_code)
 
     @cache_response()
