@@ -637,6 +637,7 @@ You can also visit our [online spreadsheet](https://docs.google.com/spreadsheets
 | vendor_fax_number | String |  |
 | business_types | String |  |
 | business_types_description | String |  |
+| business_categories | Array | An array of strings representing the high level categorization of the recipient. |
 | recipient_unique_id | String |  |
 | limited_liability_corporation | String |  |
 | sole_proprietorship | String |  |

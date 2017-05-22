@@ -6,6 +6,7 @@
 .DS_Store
 
 log/*
+csv_downloads/*
 usaspending_api/logs/*
 usaspending_api/.idea/*
 usaspending_api/references/.idea/*

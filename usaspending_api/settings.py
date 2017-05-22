@@ -28,6 +28,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# AWS locations for CSV files
+CSV_S3_BUCKET_NAME = ""
+CSV_SQS_QUEUE_NAME = ""
+CSV_AWS_REGION = ""
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -163,7 +168,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
