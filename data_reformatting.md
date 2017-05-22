@@ -11,14 +11,6 @@ Generally, data will be imported as-is. In some cases, however, we reformat the 
 
 Making sure our location-related fields are as robust and accurate as possible powers the geographic filters used by our website and API.
 
-### State Code and Foreign Province
-
-**Data Source:** USAspending history and DATA Broker  
-**Code:** `submissions/management/commands/load_submission.py`
-
-When loading information from the DATA Act broker, if the data has a state code but does not have a country code of `USA`, we load the state code as a foreign province.
-
-
 ### State, County, and City
 
 **Data Source:** USAspending history and DATA Broker  
@@ -101,8 +93,14 @@ To create federal account records, we use a unique combination of TAS agency ide
 **Data Source:** DATA Broker  
 **Code:** `accounts/models.py` and `financial_activities/models.py`
 
-Agencies submit financial data to the DATA Broker on a quarterly basis. These numbers (total outlays, for example) are cumulative for the fiscal year of the submission. In other words, quarter three numbers represent all financial activity for quarters one, two, and three.
+Agencies submit financial data to the data broker on a quarterly basis. These numbers (total outlays, for example) are cumulative for the fiscal year of the submission. In other words, quarter three numbers represent all financial activity for quarters one, two, and three.
 
 All annual financial data displayed on USAspending represents the latest set of numbers reported for the fiscal year. Tables and charts that show quarterly data represent activity during that period only. We derive quarterly numbers during the submission load process by taking the submission's numbers and subtracting the totals from the most recent previous submission in the same fiscal year.
 
 For example, if the total outlay reported for a Treasury Account Symbol (TAS) in quarter two is $1000 and the total quarter one outlay for that TAS in quarter one is $300, the quarterly data will show $300 for quarter one and $700 for quarter two.
+
+Additionally, raw data submitted to the broker often has different signage (_i.e._, positive vs. negative) than what may be user-friendly, because of federal accounting standards. We change the signs for the amounts reported for _Gross Outlays by TAS_ in File A, all of the USSGL and subtotal elements in Files B and C, and the _Transaction Obligated Amount_ in File C.
+
+For instance, an obligation may be reported as -100 for Obligations Incurred in File B and File C, and -100 in Transaction Obligated Amount in File C, to the broker. The website will show that same obligation as $100. This makes it easier to compare to the award transaction detail reported from the Federal Procurement Data System (FPDS) or the Award Submission Portal (ASP).
+
+Similarly, de-obligations are also reversed so that obligations are appropriately reduced on the website.

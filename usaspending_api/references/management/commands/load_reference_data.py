@@ -23,6 +23,7 @@ class Command(BaseCommand):
         self.logger.info("Loading agency list")
         call_command('loadagencies')
 
+        # TAS's should only be loaded after agencies to ensure they can properly link to agencies
         self.logger.info("Loading tas_list.csv")
         call_command('loadtas', 'usaspending_api/data/tas_list.csv')
 
@@ -35,5 +36,8 @@ class Command(BaseCommand):
 
         self.logger.info("Loading CFDA data")
         call_command('loadcfda')
+
+        self.logger.info("Loading descriptions of commonly used terms")
+        call_command('load_guide')
 
         self.logger.info("Reference data loaded.")

@@ -51,9 +51,13 @@ class Command(BaseCommand):
                         subtier_agency.abbreviation = subtier_abbr
                         subtier_agency.save()
 
+                    toptier_flag = (subtier_name == department_name)
                     # Create new summary agency object
+                    # Top tier flag is set after to insure variable is idempotent.
                     agency, created = Agency.objects.get_or_create(toptier_agency=toptier_agency,
                                                                    subtier_agency=subtier_agency)
+                    agency.toptier_flag = toptier_flag
+                    agency.save()
 
         except IOError:
             self.logger.log("Could not open file to load from")

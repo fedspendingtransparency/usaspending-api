@@ -8,7 +8,7 @@ from simple_history.models import HistoricalRecords
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import (
-    Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefProgramActivity)
+    Agency, Cfda, LegalEntity, Location, ObjectClass, RefProgramActivity)
 from usaspending_api.common.models import DataSourceTrackedModel
 from django.core.cache import caches, CacheKeyWarning
 
@@ -68,24 +68,6 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
-
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "financial_accounts_by_awards_id",
-            "award",
-            "treasury_account",
-            "transaction_obligated_amount",
-            "object_class",
-            "program_activity",
-            "piid",
-            "fain",
-            "uri",
-            "gross_outlay_amount_by_award_cpe",
-            "gross_outlay_amount_by_award_fyb",
-            "certified_date",
-            "last_modified_date"
-        ]
 
     class Meta:
         managed = True
@@ -171,31 +153,6 @@ class Award(DataSourceTrackedModel):
                      (self.parent_award.piid,
                       self.parent_award.fain,
                       self.parent_award.uri))))
-
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "id",
-            "type",
-            "type_description",
-            "total_obligation",
-            "total_outlay",
-            "date_signed",
-            "description",
-            "piid",
-            "fain",
-            "uri",
-            "period_of_performance_start_date",
-            "period_of_performance_current_end_date",
-            "potential_total_value_of_award",
-            "place_of_performance",
-            "awarding_agency",
-            "funding_agency",
-            "recipient",
-            "date_signed__fy",
-            "subaward_count",
-            "total_subaward_amount"
-        ]
 
     def __str__(self):
         return '%s piid: %s fain: %s uri: %s' % (self.type_description, self.piid, self.fain, self.uri)
@@ -340,29 +297,6 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
     def __str__(self):
         return '%s award: %s' % (self.type_description, self.award)
 
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "id",
-            "type",
-            "type_description",
-            "period_of_performance_start_date",
-            "period_of_performance_current_end_date",
-            "action_date",
-            "action_type",
-            "action_type_description",
-            "action_date__fy",
-            "federal_action_obligation",
-            "modification_number",
-            "awarding_agency",
-            "funding_agency",
-            "recipient",
-            "description",
-            "place_of_performance",
-            "contract_data",  # must match related_name in TransactionContract
-            "assistance_data"  # must match related_name in TransactionAssistance
-        ]
-
     @classmethod
     def get_or_create_transaction(cls, **kwargs):
         """Gets and updates, or creates, a Transaction
@@ -498,21 +432,6 @@ class TransactionContract(DataSourceTrackedModel):
     reporting_period_end = models.DateField(blank=True, null=True, help_text="The date marking the end of the reporting period")
     history = HistoricalRecords()
 
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "piid",
-            "parent_award_id",
-            "type",
-            "type_description",
-            "cost_or_pricing_data",
-            "type_of_contract_pricing",
-            "type_of_contract_pricing_description",
-            "naics",
-            "naics_description",
-            "product_or_service_code"
-        ]
-
     @classmethod
     def get_or_create(cls, transaction, **kwargs):
         try:
@@ -534,9 +453,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     fain = models.TextField(blank=True, null=True)
     uri = models.TextField(blank=True, null=True)
-    cfda_number = models.TextField(blank=True, null=True, verbose_name="CFDA Number")
-    cfda_title = models.TextField(blank=True, null=True, verbose_name="CFDA Title")
-    cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
+    cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_assistance", null=True)
     business_funds_indicator = models.TextField()
     business_funds_indicator_description = models.TextField(blank=True, null=True)
     non_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -562,19 +479,6 @@ class TransactionAssistance(DataSourceTrackedModel):
     period_of_performance_current_end_date = models.DateField(blank=True, null=True)
     history = HistoricalRecords()
 
-    @staticmethod
-    def get_default_fields(path=None):
-        return [
-            "fain",
-            "uri",
-            "cfda",
-            "cfda_number",
-            "cfda_title",
-            "face_value_loan_guarantee",
-            "original_loan_subsidy_cost",
-            "type"
-        ]
-
     @classmethod
     def get_or_create(cls, transaction, **kwargs):
         try:
@@ -594,7 +498,7 @@ class Subaward(DataSourceTrackedModel):
     award = models.ForeignKey(Award, models.CASCADE, related_name="subawards")
     recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
+    cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_subawards", null=True)
     awarding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="awarding_subawards", null=True)
     funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="funding_subawards", null=True)
     place_of_performance = models.ForeignKey(Location, models.DO_NOTHING, null=True)

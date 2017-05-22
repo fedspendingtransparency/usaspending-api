@@ -71,7 +71,7 @@ class FilterGenerator():
     def __init__(self, model, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
         self.model = model
-        self.ignored_parameters = ['page', 'limit', 'last', 'req'] + ignored_parameters
+        self.ignored_parameters = ['page', 'limit', 'last', 'req', 'verbose'] + ignored_parameters
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
 
@@ -212,6 +212,11 @@ class FilterGenerator():
                 else:
                     # Otherwise, use built in django in
                     operation = "__in"
+            if operation is '__icontains' and isinstance(value, list):
+                # In cases where we have a list of contains (e.g. ArrayField searches)
+                # we need to not do this case insensitive, as ArrayField's don't have
+                # icontains implemented like contains
+                operation = "__contains"
             if operation is '' and self.is_string_field(field):
                 # If we're doing a simple comparison, we need to use iexact for
                 # string fields

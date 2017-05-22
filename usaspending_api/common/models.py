@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.csv_helpers import resolve_path_to_view, create_filename_from_options, format_path
+from enum import Enum
 import hashlib
 import pickle
 import datetime
@@ -55,8 +57,10 @@ class RequestCatalog(models.Model):
         if checksum:
             try:
                 request_catalog = RequestCatalog.objects.get(checksum=checksum)
-                request_catalog.last_accessed = datetime.datetime.now()
-                request_catalog.save()
+                # For now, disable last_accessed time updating as it is not currently used
+                # and the extra writes are not playing nice with the read replicas currently
+                # request_catalog.last_accessed = datetime.datetime.now()
+                # request_catalog.save()
                 return False, request_catalog
             except ObjectDoesNotExist:
                 # The checksum they sent doesn't exist
@@ -69,7 +73,7 @@ class RequestCatalog(models.Model):
             if query_params.get(item, None):
                 del query_params[item]
 
-        json_request = {"data": data, "query_params": query_params}
+        json_request = RequestCatalog.get_checksumable_request(data, query_params)
 
         # See if the request exists, and return that catalog. Otherwise, create it
         created = False
@@ -97,6 +101,38 @@ class RequestCatalog(models.Model):
             created = True
 
         return created, request_catalog
+
+    @staticmethod
+    def get_checksumable_request(data, query_params):
+        '''
+        Constructs a checksummable request with specific set of fields
+        '''
+
+        # Set of request parameters to save, so we don't store page/limit and we also
+        # don't store any garbage that gets passed in
+        storable_parameters = [
+            "exclude",
+            "fields",
+            "order",
+            "verbose",
+            "filters",
+            "field",
+            "aggregate",
+            "group",
+            "date_part",
+            "value",
+            "mode",
+            "matched_objects",
+            "scope",
+            "usage"
+        ]
+
+        checksumable_request = {
+            "data": {k: v for (k, v) in data.items() if k in storable_parameters},
+            "query_params": query_params
+        }
+
+        return checksumable_request
 
     class Meta:
         managed = True

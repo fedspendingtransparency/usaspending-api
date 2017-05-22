@@ -12,6 +12,8 @@ from django.core.serializers.json import json
 from django.db import connections
 from django.db.models import F, Q
 from django.core.cache import caches
+import pandas as pd
+import numpy as np
 
 from usaspending_api.accounts.models import (
     AppropriationAccountBalances, AppropriationAccountBalancesQuarterly,
@@ -22,10 +24,11 @@ from usaspending_api.awards.models import (
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
-    Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
+    Agency, LegalEntity, Location, ObjectClass, RefCountryCode, Cfda, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import (
-    get_award_financial_transaction, update_awards, update_contract_awards)
+    update_awards, update_contract_awards,
+    get_award_financial_transaction, get_awarding_agency)
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
 from usaspending_api.etl.subaward_etl import load_subawards
@@ -107,8 +110,7 @@ class Command(BaseCommand):
         load_file_a(submission_attributes, appropriation_data, db_cursor)
 
         # Let's get File B information
-        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
-        prg_act_obj_cls_data = dictfetchall(db_cursor)
+        prg_act_obj_cls_data = get_file_b(submission_attributes, db_cursor)
         logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
         load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor)
 
@@ -131,10 +133,16 @@ class Command(BaseCommand):
         # creating awards for File C, we dont have sub-tier agency info, so
         # we'll do our best to match them to the more specific award records
         # already created by the D file load
-        db_cursor.execute('SELECT * FROM award_financial WHERE submission_id = %s', [submission_id])
-        award_financial_data = dictfetchall(db_cursor)
-        logger.info('Acquired award financial data for ' + str(submission_id) + ', there are ' + str(len(award_financial_data)) + ' rows.')
-        load_file_c(submission_attributes, award_financial_data, db_cursor)
+
+        award_financial_query = 'SELECT * FROM award_financial WHERE submission_id = %s'
+        if isinstance(db_cursor, PhonyCursor):  # spoofed data for test
+            award_financial_frame = pd.DataFrame(db_cursor.db_responses[award_financial_query])
+        else:  # real data
+            award_financial_frame = pd.read_sql(award_financial_query % submission_id,
+                                                connections['data_broker'])
+        logger.info('Acquired award financial data for {}, there are {} rows.'
+                    .format(submission_id, award_financial_frame.shape[0]))
+        load_file_c(submission_attributes, db_cursor, award_financial_frame)
 
         # Once all the files have been processed, run any global
         # cleanup/post-load tasks.
@@ -163,25 +171,48 @@ def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger
 
         Args:
             row_object_class: object class from the broker
-            row_direct_reimbursable: direct/reimbursable flag from the broker
+            row_by_direct_reimbursable_fun: direct/reimbursable flag from the broker
                 (used only when the object_class is 3 digits instead of 4)
     """
-    if len(row_object_class) == 4:
+
+    row = Bunch(object_class=row_object_class, by_direct_reimbursable_fun=row_direct_reimbursable)
+    return get_or_create_object_class_rw(row, logger)
+
+
+class Bunch:
+    'Generic class to hold a group of attributes.'
+
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+
+def get_or_create_object_class_rw(row, logger):
+    """Lookup an object class record.
+
+       (As ``get_or_create_object_class``, but arguments are bunched into a ``row`` object.)
+
+        Args:
+            row.object_class: object class from the broker
+            row.by_direct_reimbursable_fun: direct/reimbursable flag from the broker
+                (used only when the object_class is 3 digits instead of 4)
+    """
+
+    if len(row.object_class) == 4:
         # this is a 4 digit object class, 1st digit = direct/reimbursable information
-        direct_reimbursable = row_object_class[:1]
-        object_class = row_object_class[1:]
+        direct_reimbursable = row.object_class[:1]
+        object_class = row.object_class[1:]
     else:
         # the object class field is the 3 digit version, so grab direct/reimbursable
         # information from a separate field
-        if row_direct_reimbursable is None:
+        if row.by_direct_reimbursable_fun is None:
             direct_reimbursable = None
-        elif row_direct_reimbursable.lower() == 'd':
+        elif row.by_direct_reimbursable_fun.lower() == 'd':
             direct_reimbursable = 1
-        elif row_direct_reimbursable.lower() == 'r':
+        elif row.by_direct_reimbursable_fun.lower() == 'r':
             direct_reimbursable = 2
         else:
             direct_reimbursable = None
-        object_class = row_object_class
+        object_class = row.object_class
 
     # set major object class; note that we shouldn't have to do this
     # once we have a complete list of object classes loaded to ObjectClass
@@ -401,16 +432,10 @@ def get_or_create_location(location_map, row, location_value_map={}):
     location_country = RefCountryCode.objects.filter(
         country_code=row[location_map.get('location_country_code')]).first()
 
-    # temporary fix until broker is patched: remove later
     state_code = row.get(location_map.get('state_code'))
     if state_code is not None:
-        # Fix for procurement data foreign provinces stored as state_code
-        if location_country and location_country.country_code != "USA":
-            location_value_map.update({'foreign_province': state_code})
-            location_value_map.update({'state_code': None})
-        else:
-            location_value_map.update({'state_code': state_code.replace('.', '')})
-    # end of temporary fix
+        # Remove . in state names (i.e. D.C.)
+        location_value_map.update({'state_code': state_code.replace('.', '')})
 
     if location_country:
         location_value_map.update({
@@ -495,6 +520,129 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
         submission_attributes.submission_id)
 
 
+def get_file_b(submission_attributes, db_cursor):
+    """
+    Get broker File B data for a specific submission.
+    This function was added as a workaround for the fact that a few agencies
+    (two, as of April, 2017: DOI and ACHP) submit multiple File B records
+    for the same object class. These "dupes", come in as the same 4 digit object
+    class code but with one of the direct reimbursable flags set to NULL.
+
+    From our perspective, this is a duplicate, because we get our D/R info from
+    the 1st digit of the object class when it's four digits.
+
+    Thus, this function examines the File B data for a given submission. If
+    it has the issue of "duplicate" object classes, it will squash the
+    offending records together so that all financial totals are reporting
+    as a single object class/program activity/TAS record as expected.
+
+    If the broker validations change to prohibit this pattern in the data,
+    this intervening function will no longer be necessary, we can go back to
+    selecting * from the broker's File B data.
+
+    Args:
+        submission_attrbitues: submission object currently being loaded
+        db_cursor: db connection info
+    """
+    submission_id = submission_attributes.broker_submission_id
+
+    # does this file B have the dupe object class edge case?
+    check_dupe_oc = (
+        'SELECT count(*) '
+        'FROM object_class_program_activity '
+        'WHERE submission_id = %s '
+        'AND length(object_class) = 4 '
+        'GROUP BY tas_id, program_activity_code, object_class '
+        'HAVING COUNT(*) > 1'
+    )
+    db_cursor.execute(check_dupe_oc, [submission_id])
+    dupe_oc_count = len(dictfetchall(db_cursor))
+
+    if dupe_oc_count == 0:
+        # there are no object class duplicates, so proceed as usual
+        db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
+    else:
+        # file b contains at least one case of duplicate 4 digit object classes
+        # for the same program activity/tas, so combine the records in question
+        combine_dupe_oc = (
+            'SELECT  '
+            'submission_id, '
+            'job_id, '
+            'agency_identifier, '
+            'allocation_transfer_agency, '
+            'availability_type_code, '
+            'beginning_period_of_availa, '
+            'ending_period_of_availabil, '
+            'main_account_code, '
+            'RIGHT(object_class, 3) AS object_class, '
+            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, '
+            'tas, '
+            'tas_id, '
+            'program_activity_code, '
+            'program_activity_name, '
+            'sub_account_code, '
+            'SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, '
+            'SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, '
+            'SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, '
+            'SUM(gross_outlays_delivered_or_cpe) AS gross_outlays_delivered_or_cpe, '
+            'SUM(gross_outlays_delivered_or_fyb) AS gross_outlays_delivered_or_fyb, '
+            'SUM(gross_outlays_undelivered_cpe) AS gross_outlays_undelivered_cpe, '
+            'SUM(gross_outlays_undelivered_fyb) AS gross_outlays_undelivered_fyb, '
+            'SUM(obligations_delivered_orde_cpe) AS obligations_delivered_orde_cpe, '
+            'SUM(obligations_delivered_orde_fyb) AS obligations_delivered_orde_fyb, '
+            'SUM(obligations_incurred_by_pr_cpe) AS obligations_incurred_by_pr_cpe, '
+            'SUM(obligations_undelivered_or_cpe) AS obligations_undelivered_or_cpe, '
+            'SUM(obligations_undelivered_or_fyb) AS obligations_undelivered_or_fyb, '
+            'SUM(ussgl480100_undelivered_or_cpe) AS ussgl480100_undelivered_or_cpe, '
+            'SUM(ussgl480100_undelivered_or_fyb) AS ussgl480100_undelivered_or_fyb, '
+            'SUM(ussgl480200_undelivered_or_cpe) AS ussgl480200_undelivered_or_cpe, '
+            'SUM(ussgl480200_undelivered_or_fyb) AS ussgl480200_undelivered_or_fyb, '
+            'SUM(ussgl483100_undelivered_or_cpe) AS ussgl483100_undelivered_or_cpe, '
+            'SUM(ussgl483200_undelivered_or_cpe) AS ussgl483200_undelivered_or_cpe, '
+            'SUM(ussgl487100_downward_adjus_cpe) AS ussgl487100_downward_adjus_cpe, '
+            'SUM(ussgl487200_downward_adjus_cpe) AS ussgl487200_downward_adjus_cpe, '
+            'SUM(ussgl488100_upward_adjustm_cpe) AS ussgl488100_upward_adjustm_cpe, '
+            'SUM(ussgl488200_upward_adjustm_cpe) AS ussgl488200_upward_adjustm_cpe, '
+            'SUM(ussgl490100_delivered_orde_cpe) AS ussgl490100_delivered_orde_cpe, '
+            'SUM(ussgl490100_delivered_orde_fyb) AS ussgl490100_delivered_orde_fyb, '
+            'SUM(ussgl490200_delivered_orde_cpe) AS ussgl490200_delivered_orde_cpe, '
+            'SUM(ussgl490800_authority_outl_cpe) AS ussgl490800_authority_outl_cpe, '
+            'SUM(ussgl490800_authority_outl_fyb) AS ussgl490800_authority_outl_fyb, '
+            'SUM(ussgl493100_delivered_orde_cpe) AS ussgl493100_delivered_orde_cpe, '
+            'SUM(ussgl497100_downward_adjus_cpe) AS ussgl497100_downward_adjus_cpe, '
+            'SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, '
+            'SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, '
+            'SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe '
+            'FROM object_class_program_activity '
+            'WHERE submission_id = %s '
+            'GROUP BY  '
+            'submission_id, '
+            'job_id, '
+            'agency_identifier, '
+            'allocation_transfer_agency, '
+            'availability_type_code, '
+            'beginning_period_of_availa, '
+            'ending_period_of_availabil, '
+            'main_account_code, '
+            'RIGHT(object_class, 3), '
+            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' ELSE by_direct_reimbursable_fun END, '
+            'program_activity_code, '
+            'program_activity_name, '
+            'sub_account_code, '
+            'tas, '
+            'tas_id'
+        )
+        logger.info(
+            'Found {} duplicated File B 4 digit object codes in submission {}. '
+            'Aggregating financial values.'.format(dupe_oc_count, submission_id))
+        # we have at least one instance of duplicated 4 digit object classes so
+        # aggregate the financial values togther
+        db_cursor.execute(combine_dupe_oc, [submission_id])
+
+    data = dictfetchall(db_cursor)
+    return data
+
+
 def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     """
     Process and load file B broker data (aka TAS balances by program
@@ -513,7 +661,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
         except:
             continue
 
-        # the the corresponding account balances row (aka "File A" record)
+        # get the corresponding account balances row (aka "File A" record)
         account_balances = AppropriationAccountBalances.objects.get(
             treasury_account_identifier=treasury_account,
             submission_id=submission_attributes.submission_id
@@ -540,7 +688,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 
 
-def load_file_c(submission_attributes, award_financial_data, db_cursor):
+def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     """
     Process and load file C broker data.
     Note: this should run AFTER the D1 and D2 files are loaded because we try
@@ -552,7 +700,13 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
     # file loading
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
 
-    for row in award_financial_data:
+    award_financial_frame['txn'] = award_financial_frame.apply(get_award_financial_transaction, axis=1)
+    award_financial_frame['awarding_agency'] = award_financial_frame.apply(get_awarding_agency, axis=1)
+    award_financial_frame['object_class'] = award_financial_frame.apply(get_or_create_object_class_rw, axis=1, logger=logger)
+    award_financial_frame['program_activity'] = award_financial_frame.apply(get_or_create_program_activity, axis=1, submission_attributes=submission_attributes)
+
+    # for row in award_financial_data:
+    for row in award_financial_frame.replace({np.nan: None}).to_dict(orient='records'):
         # Check and see if there is an entry for this TAS
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
@@ -561,27 +715,10 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
 
         # Find a matching transaction record, so we can use its
         # subtier agency information to match to (or create) an Award record
-        awarding_cgac = row.get('agency_identifier')  # cgac from record's TAS
-        txn = get_award_financial_transaction(
-            awarding_cgac,
-            piid=row.get('piid'),
-            parent_award_id=row.get('parent_award_id'),
-            fain=row.get('fain'),
-            uri=row.get('uri')
-        )
-        if txn is not None:
-            # We found a matching transaction, so grab its awarding agency
-            # info and pass it get_or_create_summary_award
-            awarding_agency = txn.awarding_agency
-        else:
-            # No matching transaction found, so find/create Award by using
-            # topiter agency only, since CGAC code is the only piece of
-            # awarding agency info that we have.
-            awarding_agency = Agency.get_by_toptier(awarding_cgac)
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         created, award = Award.get_or_create_summary_award(
-            awarding_agency=awarding_agency,
+            awarding_agency=row['awarding_agency'],
             piid=row.get('piid'),
             fain=row.get('fain'),
             uri=row.get('uri'),
@@ -596,8 +733,8 @@ def load_file_c(submission_attributes, award_financial_data, db_cursor):
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
             'treasury_account': treasury_account,
-            'object_class': get_or_create_object_class(row['object_class'], row['by_direct_reimbursable_fun'], logger),
-            'program_activity': get_or_create_program_activity(row, submission_attributes)
+            'object_class': row.get('object_class'),
+            'program_activity': row.get('program_activity'),
         }
 
         # Still using the cpe|fyb regex compiled above for reverse
@@ -848,7 +985,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
 
         fad_value_map = {
             "submission": submission_attributes,
-            "cfda": CFDAProgram.objects.filter(program_number=row['cfda_number']).first(),
+            "cfda": Cfda.objects.filter(program_number=row['cfda_number']).first(),
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
             "period_of_performance_start_date": format_date(row['period_of_performance_star']),
