@@ -139,7 +139,7 @@ class Command(BaseCommand):
             award_financial_frame = pd.DataFrame(db_cursor.db_responses[award_financial_query])
         else:  # real data
             award_financial_frame = pd.read_sql(award_financial_query % submission_id,
-                                                os.environ.get('DATA_BROKER_DATABASE_URL'))
+                                                connections['data_broker'])
         logger.info('Acquired award financial data for {}, there are {} rows.'
                     .format(submission_id, award_financial_frame.shape[0]))
         load_file_c(submission_attributes, db_cursor, award_financial_frame)
