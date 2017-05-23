@@ -1,6 +1,7 @@
 from django.db import connection
 
-from usaspending_api.awards.models import Transaction
+from usaspending_api.awards.models import Transaction, Award, Agency
+from django.db.models import Case, Value, When, TextField
 
 
 def update_awards(award_tuple=None):
@@ -154,8 +155,28 @@ def update_award_subawards(award_tuple=None):
     return rows
 
 
-def get_award_financial_transaction(
-        toptier_agency_cgac, piid=None, parent_award_id=None, fain=None, uri=None):
+def update_award_categories(award_tuple=None):
+    """
+    This sets the category variable for an award.
+    """
+    awards = Award.objects.all()
+    if award_tuple:
+        awards = awards.filter(id__in=list(award_tuple))
+    awards.update(
+        category=Case(
+            When(type__in=['A', 'B', 'C', 'D'], then=Value('contract')),
+            When(type__in=['02', '03', '04', '05'], then=Value('grant')),
+            When(type__in=['06', '10'], then=Value('direct payment')),
+            When(type__in=['07', '08'], then=Value('loans')),
+            When(type__in=['09'], then=Value('insurance')),
+            When(type__in=['11'], then=Value('other')),
+            default=None,
+            output_field=TextField()
+        )
+    )
+
+
+def get_award_financial_transaction(row):
     """
     For specified award financial (aka "File C") data, try to find a matching
     transaction (aka "File D"). We sometimes need to do this  because File C
@@ -172,11 +193,13 @@ def get_award_financial_transaction(
     recent action date.
 
     Args:
-        toptier_agency_cgac: top tier agency code (aka CGAC code) from File C
-        piid: piid from File C (contract awards only)
-        parent_award_id: parent award id from File C (contract awards only)
-        fain: fain from File C (assistance awards only)
-        uri: uri from File C (assistance awards only)
+        row: an object containing these attributes:
+
+        row.toptier_agency_cgac: top tier agency code (aka CGAC code) from File C
+        row.piid: piid from File C (contract awards only)
+        row.parent_award_id: parent award id from File C (contract awards only)
+        row.fain: fain from File C (assistance awards only)
+        row.uri: uri from File C (assistance awards only)
 
     Returns:
         A Transaction model instance
@@ -184,26 +207,38 @@ def get_award_financial_transaction(
     # @todo: refactor this into methods on the TransactionAssistance
     # and TransactionContract models
 
-    if fain is not None:
+    if row.fain is not None:
         # this is an assistance award id'd by fain
         txn = Transaction.objects.filter(
-            awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
-            assistance_data__fain=fain) \
+            awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
+            assistance_data__fain=row.fain) \
             .order_by('-action_date').first()
 
-    elif uri is not None:
+    elif row.uri is not None:
         # this is an assistance award id'd by uri
         txn = Transaction.objects.filter(
-            awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
-            assistance_data__uri=uri) \
+            awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
+            assistance_data__uri=row.uri) \
             .order_by('-action_date').first()
 
     else:
         # this is a contract award
         txn = Transaction.objects.filter(
-            awarding_agency__toptier_agency__cgac_code=toptier_agency_cgac,
-            contract_data__piid=piid,
-            contract_data__parent_award_id=parent_award_id) \
+            awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
+            contract_data__piid=row.piid,
+            contract_data__parent_award_id=row.parent_award_id) \
             .order_by('-action_date').first()
 
     return txn
+
+
+def get_awarding_agency(row):
+    if row.txn:
+        # We found a matching transaction, so grab its awarding agency
+        # info and pass it get_or_create_summary_award
+        return row.txn.awarding_agency
+    else:
+        # No matching transaction found, so find/create Award by using
+        # topiter agency only, since CGAC code is the only piece of
+        # awarding agency info that we have.
+        return Agency.get_by_toptier(row.agency_identifier)

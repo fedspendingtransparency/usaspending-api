@@ -196,6 +196,7 @@ class AwardSerializer(LimitableSerializer):
             "id",
             "type",
             "type_description",
+            "category",
             "total_obligation",
             "total_outlay",
             "date_signed",
