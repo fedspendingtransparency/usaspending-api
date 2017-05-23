@@ -154,6 +154,7 @@ def update_award_subawards(award_tuple=None):
 
     return rows
 
+
 def update_award_categories(award_tuple=None):
     """
     This sets the category variable for an award.
@@ -173,6 +174,7 @@ def update_award_categories(award_tuple=None):
             output_field=TextField()
         )
     )
+
 
 def get_award_financial_transaction(row):
     """

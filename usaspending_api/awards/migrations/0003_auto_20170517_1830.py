@@ -5,8 +5,10 @@ from __future__ import unicode_literals
 from django.db import migrations
 from usaspending_api.etl.award_helpers import update_award_categories
 
+
 def forwards_func(apps, schema_editor):
     update_award_categories()
+
 
 class Migration(migrations.Migration):
 
