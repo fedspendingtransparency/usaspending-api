@@ -3,6 +3,7 @@ import logging
 from django.db import models
 from django.db.models import F, Q
 from django.utils.text import slugify
+from django.contrib.postgres.fields import ArrayField
 from usaspending_api.common.models import DataSourceTrackedModel
 from usaspending_api.references.helpers import canonicalize_string
 
@@ -293,6 +294,78 @@ class LegalEntity(DataSourceTrackedModel):
     vendor_fax_number = models.TextField(blank=True, null=True)
     business_types = models.TextField(blank=True, null=True)
     business_types_description = models.TextField(blank=True, null=True)
+
+    '''
+    Business Type Categories
+    Make sure to leave default as 'list', as [] would share across instances
+
+    Possible entries:
+
+    business
+    - small_business
+    - other_than_small_business
+
+    minority_owned_business
+    - alaskan_native_owned_business
+    - american_indian_owned_business
+    - asian_pacific_american_owned_business
+    - black_american_owned_business
+    - hispanic_american_owned_business
+    - native_american_owned_business
+    - native_hawaiian_owned_business
+    - subcontinent_asian_indian_american_owned_business
+    - tribally_owned_business
+    - other_minority_owned_business
+
+    women_owned_business
+    - women_owned_small_business
+    - economically_disadvantaged_women_owned_small_business
+    - joint_venture_women_owned_small_business
+    - joint_venture_economically_disadvantaged_women_owned_small_business
+
+    veteran_owned_business
+    - service_disabled_veteran_owned_business
+
+    special_designations
+    - 8a_program_participant
+    - ability_one_program
+    - dot_certified_disadvantaged_business_enterprise
+    - emerging_small_business
+    - federally_funded_research_and_development_corp
+    - historically_underutilized_business_firm
+    - labor_surplus_area_firm
+    - sba_certified_8a_joint_venture
+    - self_certified_small_disadvanted_business
+    - small_agricultural_cooperative
+    - small_disadvantaged_business
+    - community_developed_corporation_owned_firm
+    - us_owned_business
+    - foreign_owned_and_us_located_business
+    - foreign_owned_and_located_business
+    - foreign_government
+    - international_organization
+
+    nonprofit
+    - foundation
+    - community_development_corporations
+
+    higher_education
+    - public_institution_of_higher_education
+    - private_institution_of_higher_education
+    - minority_serving_institution_of_higher_education
+
+    government
+    - national_government
+    - regional_and_state_government
+    - us_territory_or_possession
+    - local_government
+    - indian_native_american_tribal_government
+    - authorities_and_commissions
+
+    individuals
+    '''
+    business_categories = ArrayField(models.TextField(), default=list)
+
     recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="DUNS Number")
     limited_liability_corporation = models.TextField(blank=True, null=True)
     sole_proprietorship = models.TextField(blank=True, null=True)
@@ -401,9 +474,361 @@ class LegalEntity(DataSourceTrackedModel):
     individual = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
+        LegalEntity.update_business_type_categories(self)
         super(LegalEntity, self).save(*args, **kwargs)
 
         LegalEntityOfficers.objects.get_or_create(legal_entity=self)
+
+    @staticmethod
+    def update_business_type_categories(le):
+        # Create a new list of categories
+        categories = []
+
+        # Start adding categories to the list
+        # Business Category
+        if (
+            le.small_business == "1" or
+
+            le.business_types == "R"  # For-Profit Organization (Other than Small Business)
+        ):
+            categories.append("small_business")
+
+        if (
+            le.business_types == "Q"  # For-Profit Organization (Other than Small Business)
+        ):
+            categories.append("other_than_small_business")
+
+        if (
+            le.for_profit_organization == "1" or
+
+            "small_business" in categories or
+            "other_than_small_business" in categories
+        ):
+            categories.append("category_business")
+        # End Business Category
+
+        # Minority Owned Business Category
+        if (
+            le.alaskan_native_owned_corporation_or_firm == "1"
+        ):
+            categories.append("alaskan_native_owned_business")
+        if (
+            le.american_indian_owned_business == "1"
+        ):
+            categories.append("american_indian_owned_business")
+        if (
+            le.asian_pacific_american_owned_business == "1"
+        ):
+            categories.append("asian_pacific_american_owned_business")
+        if (
+            le.black_american_owned_business == "1"
+        ):
+            categories.append("black_american_owned_business")
+        if (
+            le.hispanic_american_owned_business == "1"
+        ):
+            categories.append("hispanic_american_owned_business")
+        if (
+            le.native_american_owned_business == "1"
+        ):
+            categories.append("native_american_owned_business")
+        if (
+            le.native_hawaiian_owned_business == "1"
+        ):
+            categories.append("native_hawaiian_owned_business")
+        if (
+            le.subcontinent_asian_asian_indian_american_owned_business == "1"
+        ):
+            categories.append("subcontinent_asian_indian_american_owned_business")
+        if (
+            le.tribally_owned_business == "1"
+        ):
+            categories.append("tribally_owned_business")
+        if (
+            le.other_minority_owned_business == "1"
+        ):
+            categories.append("other_minority_owned_business")
+        if (
+            le.minority_owned_business == "1" or
+            "alaskan_native_owned_business" in categories or
+            "american_indian_owned_business" in categories or
+            "asian_pacific_american_owned_business" in categories or
+            "black_american_owned_business" in categories or
+            "hispanic_american_owned_business" in categories or
+            "native_american_owned_business" in categories or
+            "native_hawaiian_owned_business" in categories or
+            "subcontinent_asian_indian_american_owned_business" in categories or
+            "tribally_owned_business" in categories or
+            "other_minority_owned_business" in categories
+        ):
+            categories.append("minority_owned_business")
+        # End Minority Owned Business Category
+
+        # Woman Owned Business Category
+        if (
+            le.women_owned_small_business == "1"
+        ):
+            categories.append("women_owned_small_business")
+        if (
+            le.economically_disadvantaged_women_owned_small_business == "1"
+        ):
+            categories.append("economically_disadvantaged_women_owned_small_business")
+        if (
+            le.joint_venture_women_owned_small_business == "1"
+        ):
+            categories.append("joint_venture_women_owned_small_business")
+        if (
+            le.joint_venture_economic_disadvantaged_women_owned_small_bus == "1"
+        ):
+            categories.append("joint_venture_economically_disadvantaged_women_owned_small_business")
+        if (
+            le.woman_owned_business == "1" or
+            "women_owned_small_business" in categories or
+            "economically_disadvantaged_women_owned_small_business" in categories or
+            "joint_venture_women_owned_small_business" in categories or
+            "joint_venture_economically_disadvantaged_women_owned_small_business" in categories
+        ):
+            categories.append("woman_owned_business")
+
+        # Veteran Owned Business Category
+        if (
+            le.service_disabled_veteran_owned_business == "1"
+        ):
+            categories.append("service_disabled_veteran_owned_business")
+        if (
+            le.veteran_owned_business == "1" or
+
+            "service_disabled_veteran_owned_business" in categories
+        ):
+            categories.append("veteran_owned_business")
+        # End Veteran Owned Business
+
+        # Special Designations Category
+        if (
+            le.c8a_program_participant == "1"
+        ):
+            categories.append("8a_program_participant")
+        if (
+            le.the_ability_one_program == "1"
+        ):
+            categories.append("ability_one_program")
+        if (
+            le.dot_certified_disadvantage == "1"
+        ):
+            categories.append("dot_certified_disadvantaged_business_enterprise")
+        if (
+            le.emerging_small_business == "1"
+        ):
+            categories.append("emerging_small_business")
+        if (
+            le.federally_funded_research_and_development_corp == "1"
+        ):
+            categories.append("federally_funded_research_and_development_corp")
+        if (
+            le.historically_underutilized_business_zone == "1"
+        ):
+            categories.append("historically_underutilized_business_firm")
+        if (
+            le.labor_surplus_area_firm == "1"
+        ):
+            categories.append("labor_surplus_area_firm")
+        if (
+            le.sba_certified_8a_joint_venture == "1"
+        ):
+            categories.append("sba_certified_8a_joint_venture")
+        if (
+            le.self_certified_small_disadvantaged_business == "1"
+        ):
+            categories.append("self_certified_small_disadvanted_business")
+        if (
+            le.small_agricultural_cooperative == "1"
+        ):
+            categories.append("small_agricultural_cooperative")
+        if (
+            le.small_disadvantaged_business == "1"
+        ):
+            categories.append("small_disadvantaged_business")
+        if (
+            le.community_developed_corporation_owned_firm == "1"
+        ):
+            categories.append("community_developed_corporation_owned_firm")
+        if (
+            le.domestic_or_foreign_entity == "A"  # U.S. Owned Business
+        ):
+            categories.append("us_owned_business")
+        if (
+            le.domestic_or_foreign_entity == "C"  # Foreign-Owned Business Incorporated in the U.S.
+        ):
+            categories.append("foreign_owned_and_us_located_business")
+        if (
+            le.domestic_or_foreign_entity == "D" or  # Foreign-Owned Business Not Incorporated in the U.S.
+
+            le.foreign_owned_and_located == "1"
+        ):
+            categories.append("foreign_owned_and_located_business")
+        if (
+            le.foreign_government == "1"
+        ):
+            categories.append("foreign_government")
+        if (
+            le.international_organization == "1"
+        ):
+            categories.append("international_organization")
+        if (
+            "8a_program_participant" in categories or
+            "ability_one_program" in categories or
+            "dot_certified_disadvantaged_business_enterprise" in categories or
+            "emerging_small_business" in categories or
+            "federally_funded_research_and_development_corp" in categories or
+            "historically_underutilized_business_firm" in categories or
+            "labor_surplus_area_firm" in categories or
+            "sba_certified_8a_joint_venture" in categories or
+            "self_certified_small_disadvanted_business" in categories or
+            "small_agricultural_cooperative" in categories or
+            "small_disadvantaged_business" in categories or
+            "community_developed_corporation_owned_firm" in categories or
+            "us_owned_business" in categories or
+            "foreign_owned_and_us_located_business" in categories or
+            "foreign_owned_and_located_business" in categories or
+            "foreign_government" in categories or
+            "international_organization" in categories
+        ):
+            categories.append("special_designations")
+        # End Special Designations
+
+        # Non-profit category
+        if (
+            le.foundation == "1"
+        ):
+            categories.append("foundation")
+        if (
+            le.community_developed_corporation_owned_firm == "1"
+        ):
+            categories.append("community_development_corporations")
+        if (
+            le.business_types == "M" or  # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
+            le.business_types == "N" or  # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
+
+            le.nonprofit_organization == "1" or
+            le.other_not_for_profit_organization == "1" or
+            "foundation" in categories or
+            "community_development_corporations" in categories
+        ):
+            categories.append("nonprofit")
+        # End Non-profit category
+
+        # Higher Education Category
+        if (
+            le.business_types == "H" or  # Public/State Controlled Institution of Higher Education
+
+            le.state_controlled_institution_of_higher_learning == "1" or
+            le.c1862_land_grant_college == "1" or
+            le.c1890_land_grant_college == "1" or
+            le.c1994_land_grant_college == "1"
+        ):
+            categories.append("public_institution_of_higher_education")
+        if (
+            le.business_types == "O" or  # Private Institution of Higher Education
+
+            le.private_university_or_college == "1"
+        ):
+            categories.append("private_institution_of_higher_education")
+        if (
+            le.business_types == "T" or  # Historically Black Colleges and Universities (HBCUs)
+            le.business_types == "U" or  # Tribally Controlled Colleges and Universities (TCCUs)
+            le.business_types == "V" or  # Alaska Native and Native Hawaiian Serving Institutions
+            le.business_types == "S" or  # Hispanic-serving Institution
+
+            le.minority_institution == "1" or
+            le.historically_black_college == "1" or
+            le.tribal_college == "1" or
+            le.alaskan_native_servicing_institution == "1" or
+            le.native_hawaiian_servicing_institution == "1" or
+            le.hispanic_servicing_institution == "1"
+        ):
+            categories.append("minority_serving_institution_of_higher_education")
+        if (
+            "public_institution_of_higher_education" in categories or
+            "private_institution_of_higher_education" in categories or
+            "minority_serving_institution_of_higher_education" in categories
+        ):
+            categories.append("higher_education")
+        # End Higher Education Category
+
+        # Government Category
+        if (
+            le.us_federal_government == "1" or
+            le.federal_agency == "1" or
+            le.us_government_entity == "1" or
+            le.interstate_entity == "1"
+        ):
+            categories.append("national_government")
+        if (
+            le.business_types == "A" or  # State government
+            le.business_types == "E" or  # Regional Organization
+
+            le.us_state_government == "1" or
+            le.council_of_governments == "1"
+        ):
+            categories.append("regional_and_state_government")
+        if (
+            le.business_types == "F"  # U.S. Territory or Possession
+        ):
+            categories.append("us_territory_or_possession")
+        if (
+            le.business_types == "C" or  # City or Township Government
+            le.business_types == "B" or  # County Government
+            le.business_types == "D" or  # Special District Government
+            le.business_types == "G" or  # Independent School District
+
+            le.city_local_government == "1" or
+            le.county_local_government == "1" or
+            le.inter_municipal_local_government == "1" or
+            le.municipality_local_government == "1" or
+            le.township_local_government == "1" or
+            le.us_local_government == "1" or
+            le.local_government_owned == "1" or
+            le.school_district_local_government == "1"
+        ):
+            categories.append("local_government")
+        if (
+            le.business_types == "I" or  # Indian/Native American Tribal Government (Federally Recognized)
+            le.business_types == "J" or  # Indian/Native American Tribal Government (Other than Federally Recognized)
+
+            le.us_tribal_government == "1" or
+            le.indian_tribe_federally_recognized == "1"
+        ):
+            categories.append("indian_native_american_tribal_government")
+        if (
+            le.business_types == "L" or  # Public/Indian Housing Authority
+
+            le.housing_authorities_public_tribal == "1" or
+            le.airport_authority == "1" or
+            le.port_authority == "1" or
+            le.transit_authority == "1" or
+            le.planning_commission == "1"
+        ):
+            categories.append("authorities_and_commissions")
+        if (
+            "national_government" in categories or
+            "regional_and_state_government" in categories or
+            "us_territory_or_possession" in categories or
+            "local_government" in categories or
+            "indian_native_american_tribal_government" in categories or
+            "authorities_and_commissions" in categories
+        ):
+            categories.append("government")
+        # End Government Category
+
+        # Individuals Category
+        if (
+            le.individual == "1" or
+            le.business_types == "P"  # Individual
+        ):
+            categories.append("individuals")
+        # End Individuals category
+
+        le.business_categories = categories
 
     @classmethod
     def get_or_create_by_duns(cls, duns):
@@ -482,8 +907,8 @@ class RefProgramActivity(models.Model):
         unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
 
 
-class CFDAProgram(DataSourceTrackedModel):
-    program_number = models.TextField(primary_key=True, max_length=7)
+class Cfda(DataSourceTrackedModel):
+    program_number = models.TextField(null=False, unique=True)
     program_title = models.TextField(blank=True, null=True)
     popular_name = models.TextField(blank=True, null=True)
     federal_agency = models.TextField(blank=True, null=True)
@@ -521,8 +946,6 @@ class CFDAProgram(DataSourceTrackedModel):
     recovery = models.TextField(blank=True, null=True)
     omb_agency_code = models.TextField(blank=True, null=True)
     omb_bureau_code = models.TextField(blank=True, null=True)
-    # published_date = models.DateTimeField(blank=True, null=True)
-    # archived_date = models.DateTimeField(blank=True, null=True)
     published_date = models.TextField(blank=True, null=True)
     archived_date = models.TextField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -530,7 +953,6 @@ class CFDAProgram(DataSourceTrackedModel):
 
     class Meta:
         managed = True
-        db_table = 'cfda_program'
 
     def __str__(self):
         return "%s" % (self.program_title)

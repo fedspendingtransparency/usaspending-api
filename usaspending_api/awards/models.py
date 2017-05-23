@@ -8,7 +8,7 @@ from simple_history.models import HistoricalRecords
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import (
-    Agency, CFDAProgram, LegalEntity, Location, ObjectClass, RefProgramActivity)
+    Agency, Cfda, LegalEntity, Location, ObjectClass, RefProgramActivity)
 from usaspending_api.common.models import DataSourceTrackedModel
 from django.core.cache import caches, CacheKeyWarning
 
@@ -114,6 +114,7 @@ class Award(DataSourceTrackedModel):
 
     type = models.TextField(db_index=True, verbose_name="Award Type", null=True, help_text="	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.")
     type_description = models.TextField(verbose_name="Award Type Description", blank=True, null=True, help_text="The plain text description of the type of the award")
+    category = models.TextField(verbose_name="Category", null=True, help_text=" A field that generalizes the award's type.")
     piid = models.TextField(db_index=True, blank=True, null=True, help_text="Procurement Instrument Identifier - A unique identifier assigned to a federal contract, purchase order, basic ordering agreement, basic agreement, and blanket purchase agreement. It is used to track the contract, and any modifications or transactions related to it. After October 2017, it is between 13 and 17 digits, both letters and numbers.")
     parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True, help_text="The parent award, if applicable")
     fain = models.TextField(db_index=True, blank=True, null=True, help_text="An identification code assigned to each financial assistance award tracking purposes. The FAIN is tied to that award (and all future modifications to that award) throughout the award’s life. Each FAIN is assigned by an agency. Within an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN stands for Federal Award Identification Number, though the digits are letters, not numbers.")
@@ -453,9 +454,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     fain = models.TextField(blank=True, null=True)
     uri = models.TextField(blank=True, null=True)
-    cfda_number = models.TextField(blank=True, null=True, verbose_name="CFDA Number")
-    cfda_title = models.TextField(blank=True, null=True, verbose_name="CFDA Title")
-    cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
+    cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_assistance", null=True)
     business_funds_indicator = models.TextField()
     business_funds_indicator_description = models.TextField(blank=True, null=True)
     non_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -500,7 +499,7 @@ class Subaward(DataSourceTrackedModel):
     award = models.ForeignKey(Award, models.CASCADE, related_name="subawards")
     recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    cfda = models.ForeignKey(CFDAProgram, models.DO_NOTHING, null=True)
+    cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_subawards", null=True)
     awarding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="awarding_subawards", null=True)
     funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="funding_subawards", null=True)
     place_of_performance = models.ForeignKey(Location, models.DO_NOTHING, null=True)

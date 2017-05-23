@@ -74,5 +74,7 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/references/guide/autocomplete/](/api/v1/references/guide/autocomplete/) | POST | Supports autocomplete on recipient records |
 | [/api/v1/references/locations/](/api/v1/references/locations/) | POST | Returns a list of locations - places of performance or vendor locations |
 | [/api/v1/references/locations/geocomplete/](/api/v1/references/locations/geocomplete/) | POST | Supports geocomplete queries, see [Using the API](/docs/using-the-api) |
+| [/api/v1/references/recipients/](/api/v1/references/recipients/) | GET, POST | Returns a list of recipient records |
+| [/api/v1/references/recipients/:id](/api/v1/references/recipients/) | GET, POST | Returns a specific, detailed recipient record |
 | [/api/v1/references/recipients/autocomplete/](/api/v1/references/recipients/autocomplete/) | POST | Supports autocomplete on recipient records |
 | [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | Returns a list of submissions |
