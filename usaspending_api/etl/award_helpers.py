@@ -1,11 +1,7 @@
 from django.db import connection
 
-<<<<<<< HEAD
-from usaspending_api.awards.models import Transaction, Award
+from usaspending_api.awards.models import Transaction, Award, Agency
 from django.db.models import Case, Value, When, TextField
-=======
-from usaspending_api.awards.models import Transaction, Agency
->>>>>>> dev
 
 
 def update_awards(award_tuple=None):
