@@ -164,6 +164,30 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": "BOEING"
     }
     ```
+    * `contained_by` - A special operation for array fields, matches where the value of the field is entirely contained by the specified array.
+    ```
+    {
+      "field": "business_categories",
+      "operation": "contained_by",
+      "value": ["local_government", "woman_owned_business"]
+    }
+    ```
+    * `overlap` - A special operation for array fields, matches where the value of the field has any overlap with the specified array.
+    ```
+    {
+      "field": "business_categories",
+      "operation": "overlap",
+      "value": ["local_government"]
+    }
+    ```
+    * `length_greater_than` and `length_less_than` - A special operation for array fields. As `less_than` and `greater_than`, but on the length of the data in the ArrayField.
+    ```
+    {
+      "field": "business_categories",
+      "operation": "length_greater_than",
+      "value": "0"
+    }
+    ```
     * `is_null` - Evaluates if the field is null or not null. `value` must be either `true` or `false`.
     ```
     {
