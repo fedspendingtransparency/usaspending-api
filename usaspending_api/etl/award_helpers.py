@@ -1,6 +1,7 @@
 from django.db import connection
 
-from usaspending_api.awards.models import Transaction, Agency
+from usaspending_api.awards.models import Transaction, Award, Agency
+from django.db.models import Case, Value, When, TextField
 
 
 def update_awards(award_tuple=None):
@@ -152,6 +153,27 @@ def update_award_subawards(award_tuple=None):
         rows = cursor.rowcount
 
     return rows
+
+
+def update_award_categories(award_tuple=None):
+    """
+    This sets the category variable for an award.
+    """
+    awards = Award.objects.all()
+    if award_tuple:
+        awards = awards.filter(id__in=list(award_tuple))
+    awards.update(
+        category=Case(
+            When(type__in=['A', 'B', 'C', 'D'], then=Value('contract')),
+            When(type__in=['02', '03', '04', '05'], then=Value('grant')),
+            When(type__in=['06', '10'], then=Value('direct payment')),
+            When(type__in=['07', '08'], then=Value('loans')),
+            When(type__in=['09'], then=Value('insurance')),
+            When(type__in=['11'], then=Value('other')),
+            default=None,
+            output_field=TextField()
+        )
+    )
 
 
 def get_award_financial_transaction(row):
