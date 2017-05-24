@@ -36,30 +36,26 @@
 
       to:
 
+          from docker_django_management import execute_from_command_line
+
           # If your Django container isn't called "app", change this line:
           os.environ.setdefault("DDM_CONTAINER_NAME", "app")
 
-          from docker_django_management import execute_from_command_line
 
-    * Merge the following into the configuration for your Django container
-      in your docker-compose.yml:
+    If you plan to load USAspending submissions, you will need to set
+        - DATA_BROKER_DATABASE_URL=<this>
+    in your docker-compose.yml.
 
-          volumes:
-            - .:/app
-          working_dir: /app
-          entrypoint: python /app/docker_django_management.py
-          environment:
-            - DDM_IS_RUNNING_IN_DOCKER=yup
-            - PYTHONUNBUFFERED=yup
-          command: python manage.py runserver 0.0.0.0:8000
-          ports:
-            - "8000:8000"
+    Once everything is set up, developers can start the USAspending API
+    via `docker-compose up`.
 
-    You'll also want to make sure your docker-compose.yml configures
-    your database and any other services properly, of course.
+    First time setup, you should also run:
+    1. docker-compose run app python manage.py migrate
+    2. docker-compose run app python manage.py load_reference_data
 
-    Once everything is set up, developers can start your Django
-    project via `docker-compose up`.
+    To initialize your postgres container. Now you can load in submissions with:
+       docker-compose run app python manage.py load_submission <submission_id>
+
 '''
 
 import os
