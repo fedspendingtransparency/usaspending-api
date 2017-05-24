@@ -46,12 +46,16 @@
         - DATA_BROKER_DATABASE_URL=<this>
     in your docker-compose.yml.
 
+    If you are on MacOS, you'll have to add this folder to your list of
+        mountable folders. You can configure shared paths from 
+        Docker -> Preferences... -> File Sharing.
+
     Once everything is set up, developers can start the USAspending API
-    via `docker-compose up`.
+        via `docker-compose up`.
 
     First time setup, you should also run:
-    1. docker-compose run app python manage.py migrate
-    2. docker-compose run app python manage.py load_reference_data
+        1. docker-compose run app python manage.py migrate
+        2. docker-compose run app python manage.py load_reference_data
 
     To initialize your postgres container. Now you can load in submissions with:
        docker-compose run app python manage.py load_submission <submission_id>
