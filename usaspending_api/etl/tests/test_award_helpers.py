@@ -259,6 +259,17 @@ def test_deleted_transactions():
     # rather than override delete()
 
 
+class FakeRow:
+    'Simulated row of financial transaction data'
+
+    def __init__(self, **kwargs):
+        self.fain = None
+        self.piid = None
+        self.uri = None
+        self.parent_award_id = None
+        self.__dict__.update(**kwargs)
+
+
 @pytest.mark.django_db
 def test_get_award_financial_transaction():
     """Test looking up txn records ("D File") for an award financial ("C File") record"""
@@ -295,36 +306,36 @@ def test_get_award_financial_transaction():
         'awards.TransactionAssistance', transaction=txn5, fain='789', uri='nah')
 
     # match on piid
-    txn = get_award_financial_transaction(cgac, piid='abc')
+    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid='abc'))
     assert txn == txn1
 
     # match on piid + parent award id
-    txn = get_award_financial_transaction(cgac, piid='abc', parent_award_id='def')
+    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid='abc', parent_award_id='def'))
     assert txn == txn2
 
     # match on fain
-    txn = get_award_financial_transaction(cgac, fain='123')
+    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain='123'))
     assert txn == txn3
 
     # if there's not match on fain/uri combo, we should match on fain by itself
-    txn = get_award_financial_transaction(cgac, fain='123', uri='fakeuri')
+    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain='123', uri='fakeuri'))
     assert txn == txn3
 
     # match on uri alone
-    txn = get_award_financial_transaction(cgac, uri='456')
+    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, uri='456'))
     assert txn == txn4
 
     # if there's an unmatched fain, we should not find a txn match,
     # even if there's a match on the URI
-    txn = get_award_financial_transaction(cgac, fain='fakefain', uri='456')
+    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain='fakefain', uri='456'))
     assert txn is None
 
     # match on fain alone, even when there's no uri = Null record in the txn table
-    txn = get_award_financial_transaction(cgac, fain='789')
+    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain='789'))
     assert txn == txn5
 
     # should not match on award id fields for a different cgac
-    txn = get_award_financial_transaction('999', piid='abc')
+    txn = get_award_financial_transaction(FakeRow(agency_identifier='999', piid='abc'))
     assert txn is None
 
     # if there is more than one txn match, we should get the one with
@@ -339,5 +350,5 @@ def test_get_award_financial_transaction():
         piid='abc',
         parent_award_id='def'
     )
-    txn = get_award_financial_transaction(cgac, piid='abc', parent_award_id='def')
+    txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid='abc', parent_award_id='def'))
     assert txn == txn6
