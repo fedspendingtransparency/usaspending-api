@@ -54,6 +54,12 @@ class FilterGenerator():
         'is_null': '__isnull',
         'search': '__search',
 
+        # ArrayField operations
+        'overlap': '__overlap',
+        'contained_by': '__contained_by',
+        'length_greater_than': '__len__gt',
+        'length_less_than': '__len__lt',
+
         # Special operations follow
         'in': 'in',
         'fy': 'fy',
@@ -71,7 +77,7 @@ class FilterGenerator():
     def __init__(self, model, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
         self.model = model
-        self.ignored_parameters = ['page', 'limit', 'last', 'req'] + ignored_parameters
+        self.ignored_parameters = ['page', 'limit', 'last', 'req', 'verbose'] + ignored_parameters
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
 
@@ -212,6 +218,11 @@ class FilterGenerator():
                 else:
                     # Otherwise, use built in django in
                     operation = "__in"
+            if operation is '__icontains' and isinstance(value, list):
+                # In cases where we have a list of contains (e.g. ArrayField searches)
+                # we need to not do this case insensitive, as ArrayField's don't have
+                # icontains implemented like contains
+                operation = "__contains"
             if operation is '' and self.is_string_field(field):
                 # If we're doing a simple comparison, we need to use iexact for
                 # string fields
@@ -253,6 +264,8 @@ class FilterGenerator():
                                 raise InvalidParameterException("Invalid field, operation 'range_intersect' requires an array of length 2 for field")
                             if (not isinstance(filt['value'], list) or len(filt['value']) != 2) and 'value_format' not in filt:
                                 raise InvalidParameterException("Invalid value, operation 'range_intersect' requires an array value of length 2, or a single value with value_format set to a ranged format (such as fy)")
+                        if filt['operation'] in ["overlap", "contained_by"] and not isinstance(filt['value'], list):
+                            raise InvalidParameterException("Invalid value. When using operation {}, value must be an array of strings.".format(filt["operation"]))
                         if filt['operation'] == 'search':
                             if not isinstance(filt['field'], list) and not self.is_string_field(filt['field']):
                                 raise InvalidParameterException("Invalid field: '" + filt['field'] + "', operation 'search' requires a text-field for searching")

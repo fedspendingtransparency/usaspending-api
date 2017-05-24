@@ -169,10 +169,10 @@ class DataLoaderThread(Process):
             else:
                 model_instance = collision_instance
 
-            if self.references["pre_row_function"] is not None:
-                self.references["pre_row_function"](row=row, instance=model_instance)
-
             try:
+                if self.references["pre_row_function"] is not None:
+                    self.references["pre_row_function"](row=row, instance=model_instance)
+
                 processed_row = self.load_data_into_model(model_instance,
                                                           self.references["fields"],
                                                           self.field_map,
@@ -185,9 +185,10 @@ class DataLoaderThread(Process):
                     self.references["post_row_function"](row=row, instance=model_instance)
 
                 model_instance.save()
+            except SkipRowException as e:
+                self.references["logger"].info(e)
             except Exception as e:
                 self.references["logger"].error(e)
-                self.references["logger"].error(json.dumps(row))
 
             self.data_queue.task_done()
 
@@ -248,3 +249,7 @@ def cleanse_values(row):
     row = {k: v.strip() for (k, v) in row.items()}
     row = {k: (None if v.lower() == 'null' else v) for (k, v) in row.items()}
     return row
+
+
+class SkipRowException(Exception):
+    pass

@@ -2,9 +2,11 @@ from collections import defaultdict
 from decimal import Decimal
 
 from django.db import models, connection
+from django.db.models import F
 
 from usaspending_api.common.helpers import fy
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.references.models import ToptierAgency
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
@@ -30,12 +32,14 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     federal_account = models.ForeignKey('FederalAccount', models.DO_NOTHING, null=True)
     tas_rendering_label = models.TextField(blank=True, null=True)
     allocation_transfer_agency_id = models.TextField(blank=True, null=True)
+    awarding_toptier_agency = models.ForeignKey('references.ToptierAgency', models.DO_NOTHING, null=True, related_name="tas_ata", help_text="The toptier agency object associated with the ATA")
     # todo: update the agency details to match FederalAccounts. Is there a way that we can
     # retain the text-based agency TAS components (since those are attributes of TAS
     # while still having a convenient FK that links to our agency tables using Django's
     # default fk naming standard? Something like agency_identifier for the 3 digit TAS
     # component and agency_id for the FK?)
     agency_id = models.TextField()
+    funding_toptier_agency = models.ForeignKey('references.ToptierAgency', models.DO_NOTHING, null=True, related_name="tas_aid", help_text="The toptier agency object associated with the AID")
     beginning_period_of_availability = models.TextField(blank=True, null=True)
     ending_period_of_availability = models.TextField(blank=True, null=True)
     availability_type_code = models.TextField(blank=True, null=True)
@@ -58,6 +62,10 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     drv_appropriation_account_expired_status = models.TextField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    def update_agency_linkages(self):
+        self.awarding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.allocation_transfer_agency_id).order_by("fpds_code").first()
+        self.funding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.agency_id).order_by("fpds_code").first()
 
     @staticmethod
     def generate_tas_rendering_label(ATA, AID, TYPECODE, BPOA, EPOA, MAC, SUB):
@@ -88,49 +96,6 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
 
         concatenated_tas = ATA + AID + TYPECODE + POAPHRASE + ACCTPHRASE
         return concatenated_tas
-
-    @staticmethod
-    def get_default_fields(path=None):
-        if "awards" in path:
-            return [
-                "treasury_account_identifier",
-                "tas_rendering_label",
-                "account_title",
-                "reporting_agency_id",
-                "reporting_agency_name",
-                "federal_account"
-            ]
-
-        return [
-            "treasury_account_identifier",
-            "tas_rendering_label",
-            "federal_account",
-            "allocation_transfer_agency_id",
-            "agency_id",
-            "beginning_period_of_availability",
-            "ending_period_of_availability",
-            "availability_type_code",
-            "main_account_code",
-            "sub_account_code",
-            "account_title",
-            "reporting_agency_id",
-            "reporting_agency_name",
-            "budget_bureau_code",
-            "budget_bureau_name",
-            "fr_entity_code",
-            "fr_entity_description",
-            "budget_function_code",
-            "budget_function_title",
-            "budget_subfunction_code",
-            "budget_subfunction_title",
-            "account_balances",
-            "program_balances",
-            "program_activities",
-            "object_classes",
-            "totals_program_activity",
-            "totals_object_class",
-            "totals",
-        ]
 
     @property
     def program_activities(self):
