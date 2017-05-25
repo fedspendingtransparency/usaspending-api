@@ -3,7 +3,8 @@ import logging
 from django.core.management.base import BaseCommand
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
+from usaspending_api.references.models import ToptierAgency
+from usaspending_api.common.threaded_data_loader import ThreadedDataLoader, SkipRowException
 from usaspending_api.references.reference_helpers import insert_federal_accounts, update_federal_accounts
 
 
@@ -40,10 +41,12 @@ class Command(BaseCommand):
             "ending_period_of_availability": lambda row: row["EPOA"].strip(),
             "availability_type_code": lambda row: row["A"].strip(),
             "main_account_code": lambda row: row["MAIN"].strip(),
-            "sub_account_code": lambda row: row["SUB"].strip()
+            "sub_account_code": lambda row: row["SUB"].strip(),
+            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["ATA"].strip()).order_by("fpds_code").first(),
+            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["AID"].strip()).order_by("fpds_code").first()
         }
 
-        loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map, collision_field='treasury_account_identifier', collision_behavior='update')
+        loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map, collision_field='treasury_account_identifier', collision_behavior='update', pre_row_function=self.skip_and_remove_financing_tas)
         loader.load_from_file(options['file'][0])
 
         # update TAS fk relationships to federal accounts
@@ -58,3 +61,11 @@ class Command(BaseCommand):
                                                                          row["EPOA"],
                                                                          row["MAIN"],
                                                                          row["SUB"])
+
+    def skip_and_remove_financing_tas(self, row, instance):
+        if row["Financial Indicator Type2"] == "F":
+            # If the instance already exists in the db, delete the instance.
+            if instance.treasury_account_identifier:
+                instance.delete()
+            # If the row indicates the TAS is a financing account, skip that row by throwing an Exception.
+            raise SkipRowException("Row contains Financing TAS, Skipping...")

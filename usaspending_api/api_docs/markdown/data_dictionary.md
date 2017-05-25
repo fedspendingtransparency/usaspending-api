@@ -16,7 +16,6 @@
 </ul>
 
 [//]: # (Begin Content)
-**Please note, the data dictionary is under heavy development. As a result, some information may be missing**
 ## Data Dictionary <a name="datadictionary"></a>
 
 Federal spending has a vocabulary all its own. This page is under construction, but will strive to help you understand the most commonly requested endpoints and fields returned.
@@ -638,6 +637,7 @@ You can also visit our [online spreadsheet](https://docs.google.com/spreadsheets
 | vendor_fax_number | String |  |
 | business_types | String |  |
 | business_types_description | String |  |
+| business_categories | Array | An array of strings representing the high level categorization of the recipient. |
 | recipient_unique_id | String |  |
 | limited_liability_corporation | String |  |
 | sole_proprietorship | String |  |

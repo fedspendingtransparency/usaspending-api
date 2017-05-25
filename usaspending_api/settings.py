@@ -28,6 +28,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# AWS locations for CSV files
+CSV_S3_BUCKET_NAME = ""
+CSV_SQS_QUEUE_NAME = ""
+CSV_AWS_REGION = ""
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -163,7 +168,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
@@ -346,7 +350,7 @@ TERSE_TO_LONG_LABELS = {
     "naics_description": "naics_description",
     "awardee_or_recipient_uniqu": "recipient_unique_id",
     "ultimate_parent_legal_enti": "ultimate_parent_name",
-    "ultimate_parent_unique_ide": "ultimate_parent_unique_id",
+    "ultimate_parent_unique_ide": "parent_recipient_unique_id",
     "award_description": "award_description",
     "place_of_performance_zip4a": "primary_place_of_performance_zip4a",
     "place_of_performance_congr": "primary_place_of_performance_congressional_district",
@@ -651,7 +655,7 @@ LONG_TO_TERSE_LABELS = {
     "naics_description": "naics_description",
     "recipient_unique_id": "awardee_or_recipient_uniqu",
     "ultimate_parent_name": "ultimate_parent_legal_enti",
-    "ultimate_parent_unique_id": "ultimate_parent_unique_ide",
+    "parent_recipient_unique_id": "ultimate_parent_unique_ide",
     "award_description": "award_description",
     "primary_place_of_performance_zip4a": "place_of_performance_zip4a",
     "primary_place_of_performance_congressional_district": "place_of_performance_congr",

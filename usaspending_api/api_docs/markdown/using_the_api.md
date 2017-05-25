@@ -20,9 +20,8 @@
 
 The USAspending API allows the public to access data published via the DATA Act Data Broker or via USAspending.
 
-This guide is intended for users who are already familiar with APIs. If you're not sure what "endpoint" means, and what `GET` and `POST` requests are, you'll probably find the [introductory tutorial](/docs/intro-tutorial) more useful.
+This guide is intended for users who are already familiar with APIs. If you're not sure what _endpoint_ means, and what `GET` and `POST` requests are, you'll probably find the [introductory tutorial](/docs/intro-tutorial) more useful.
 
-While the API is under development, we are gradually increasing the amount of available data, which is currently limited to a few Data Broker submissions and small slices of USAspending history.
 
 
 
@@ -163,6 +162,30 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "field": "recipient__name",
       "operation": "contains",
       "value": "BOEING"
+    }
+    ```
+    * `contained_by` - A special operation for array fields, matches where the value of the field is entirely contained by the specified array.
+    ```
+    {
+      "field": "business_categories",
+      "operation": "contained_by",
+      "value": ["local_government", "woman_owned_business"]
+    }
+    ```
+    * `overlap` - A special operation for array fields, matches where the value of the field has any overlap with the specified array.
+    ```
+    {
+      "field": "business_categories",
+      "operation": "overlap",
+      "value": ["local_government"]
+    }
+    ```
+    * `length_greater_than` and `length_less_than` - A special operation for array fields. As `less_than` and `greater_than`, but on the length of the data in the ArrayField.
+    ```
+    {
+      "field": "business_categories",
+      "operation": "length_greater_than",
+      "value": "0"
     }
     ```
     * `is_null` - Evaluates if the field is null or not null. `value` must be either `true` or `false`.
@@ -339,6 +362,40 @@ The response has three functional parts:
     * `previous` - The link to the previous page of this response, if applicable.
   * `req` - The special code corresponding to this POST request. See [Post request preservation]("#post-requests-preservation") for how to use this
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
+
+### CSV Bulk Downloads
+
+Bulk CSV downloads are available via the `/api/v1/download/` endpoint. This supports any data endpoint via POST or GET. Because these CSV files can take some time to generate, the response of this endpoint contains the status of file generation and the location of the file once it is complete.
+
+In the following examples, 'request checksum' refers to the string returned by the `req` variable from the section on [POST request preservation](#post-requests-preservation).
+
+Examples
+* To get a CSV of all Awards, you would access `/api/v1/download/awards/`
+* To get a CSV of all Awards with a particular set of filters, you can pass the request checksum, `/api/v1/download/awards/?req=CHECKSUM` or POST the request object to the endpoint
+* To check the status of a CSV download, make note of the `request_checksum` and return to the url, with `req=CHECKSUM` attached. For example, `/api/v1/download/awards/?req=CHECKSUM`
+
+Response
+
+```
+{
+  "location": http://path_to_csv_file/something.csv,
+  "status": "This file has been requested, and is awaiting queueing",
+  "request_checksum": "e78f4722f85",
+  "request_path": "/api/v1/awards/",
+  "retry_url": "http://api_location/api/v1/awards/?req=e78f4722f85"
+}
+```
+
+* location - The URL where the file can be accessed (once it has been generated)
+* status - A plain english description of the current status of the file generation
+* request_checksum - The checksum of the request, which can be used to check the status
+* request_path - The path of the CSV request
+* retry_url - An easy to use URL to retry your download request, and check if it has been generated yet
+
+Expected response status codes:
+* 200 - The file is ready for download, and `location` contains the URL
+* 202 - The request has been queued for generation, and `location` is null
+* 400 - The endpoint or request checksum that was specified is not currently supported by CSV bulk downloads
 
 ### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
   Summarized data is available for some of the endpoints listed above:
