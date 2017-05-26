@@ -157,6 +157,13 @@ class TransactionSerializer(LimitableSerializer):
         }
 
 
+class SubagencyAwardSpending(serializers.Serializer):
+
+    subagency = serializers.CharField()
+    # TODO: Confirm this should come back as a string like in the example
+    amount_awarded = serializers.CharField()
+
+
 class SubawardSerializer(LimitableSerializer):
 
     class Meta:

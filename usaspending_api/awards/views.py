@@ -6,7 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import Award, Transaction, Subaward
-from usaspending_api.awards.serializers import AwardSerializer, TransactionSerializer, SubawardSerializer
+from usaspending_api.awards.serializers import AwardSerializer, TransactionSerializer, SubagencyAwardSpending, \
+    SubawardSerializer
 from usaspending_api.common.api_request_utils import AutoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin, AggregateQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
@@ -103,9 +104,31 @@ class TransactionAggregateViewSet(SuperLoggingMixin,
         return queryset
 
 
-class SubawardViewSet(SuperLoggingMixin,
-                      FilterQuerysetMixin,
-                      DetailViewSet):
+class SubagencyAwardSpending(DetailViewSet):
+
+    serializer_class = SubagencyAwardSpending
+
+    """Return all subagency award spending information."""
+    def get_queryset(self):
+        # retrieve post request payload
+        json_request = self.request["data"]
+
+        # retrieving get request payload = self.request["query_params"]
+
+        # retrieve fiscal_year & agency_id from request
+        fiscal_year = json_request['fiscal_year']
+        agency_id = json_request['agency_id']
+
+        queryset = Award.objects.all()
+        # queryset = queryset.filter(fiscal_year=fiscal_year, agency_id=agency_id)
+        # TODO: investigate request payload retrieval
+        # serializer will limit what columns get returned in the response
+        # one serializer per viewset
+        # Model.filter(Model.fiscal_year==2017, Model.agency==agency_id)
+        return queryset
+
+
+class SubawardViewSet(DetailViewSet):
     """
     ## Spending data by Subaward
 

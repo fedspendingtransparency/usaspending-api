@@ -25,6 +25,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     url(r'^status/', views.StatusView.as_view()),
     url(r'^api/v1/awards/', include('usaspending_api.awards.urls_awards')),
+    url(r'^api/v1/award_spending/', include('usaspending_api.awards.urls_award_spending')),
     url(r'^api/v1/subawards/', include('usaspending_api.awards.urls_subawards')),
     url(r'^api/v1/transactions/', include('usaspending_api.awards.urls_transactions')),
     url(r'^api/v1/submissions/', include('usaspending_api.submissions.urls')),
