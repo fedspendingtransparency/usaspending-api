@@ -34,6 +34,13 @@ class AggregateQuerysetMixin(object):
         # validate request parameters
         agg_field, group_fields, date_part = self.validate_request(params, queryset)
 
+        # Check for null opt-in, and filter instances where all group fields are null
+        if not params.get("show_nulls", False):
+            q_object = Q()
+            for field in group_fields:
+                q_object = q_object | Q(**{"{}__isnull".format(field): False})
+            queryset = queryset.filter(q_object)
+
         # get the aggregate function to use (default is Sum)
         agg_map = {
             'avg': Avg,

@@ -410,6 +410,7 @@ Expected response status codes:
   * `aggregate`: the aggregate function to use when summarizing the data (defaults to `sum`; `avg`, `count`, `min`, and `max` are also supported)
   * `group`: the field to group by (optional; if not specified, data will be summarized across all objects)
   * `date_part`: applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
+  * `show_nulls`: Whether to display results where the `group` data is all null. Defaults to false.
 
   Requests to the summary endpoints can also contain the `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
 

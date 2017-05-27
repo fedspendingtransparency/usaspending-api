@@ -6,8 +6,9 @@ from unittest.mock import Mock
 
 import pytest
 from model_mommy.recipe import Recipe
+from model_mommy import mommy
 
-from usaspending_api.awards.models import Award
+from usaspending_api.awards.models import Award, Transaction
 from usaspending_api.common.mixins import AggregateQuerysetMixin
 from usaspending_api.common.models import RequestCatalog
 
@@ -57,6 +58,12 @@ def aggregate_models():
         award.parent_award = parent
         award.save()
         parent = award
+
+
+@pytest.fixture
+def aggregate_models_with_nulls():
+    mommy.make("awards.TransactionContract", transaction__federal_action_obligation=10, naics="ABCD", _quantity=3)
+    mommy.make("awards.TransactionAssistance", transaction__federal_action_obligation=10, cfda__cfda__program_number=10)
 
 
 @pytest.mark.django_db
@@ -287,7 +294,8 @@ _expected_parent_fy_aggregated = [{
 @pytest.mark.django_db
 @pytest.mark.parametrize('model, request_data, expected', [(Award, {
     'field': 'total_obligation',
-    'group': 'parent_award__period_of_performance_start_date__fy'
+    'group': 'parent_award__period_of_performance_start_date__fy',
+    'show_nulls': True
 }, _expected_parent_fy_aggregated)])
 def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model,
                                      request_data, expected):
@@ -314,3 +322,35 @@ def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model,
         # expected.sort(key=itemgetter('item'))
         #
     assert agg_list == expected
+
+
+@pytest.mark.django_db
+def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
+    # Ensure defaults don't return values where all group fields are null
+    request = Mock()
+    request.query_params = {}
+    request.data = {"field": "federal_action_obligation", "group": "assistance_data__cfda__program_number"}
+    a = AggregateQuerysetMixin()
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=Transaction.objects.all())
+    agg_list = [a for a in agg]
+
+    assert len(agg_list) == 1
+
+    request = Mock()
+    request.query_params = {}
+    request.data = {"field": "federal_action_obligation", "group": ["assistance_data__cfda__program_number", "contract_data__naics"]}
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=Transaction.objects.all())
+    agg_list = [a for a in agg]
+
+    assert len(agg_list) == 2
+
+    request = Mock()
+    request.query_params = {}
+    request.data = {"field": "federal_action_obligation", "group": "assistance_data__cfda__program_number", "show_nulls": True}
+    created, a.req = RequestCatalog.get_or_create_from_request(request)
+    agg = a.aggregate(request=request, queryset=Transaction.objects.all())
+    agg_list = [a for a in agg]
+
+    assert len(agg_list) == 2
