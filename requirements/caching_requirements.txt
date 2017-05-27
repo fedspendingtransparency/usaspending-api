@@ -1,4 +1,4 @@
-django-elasticache==1.0.1
+-e git://github.com/adepue/django-elasticache.git#egg=django-elasticache
 pylibmc==1.5.2
 pyparsing==2.2.0
 packaging==16.8
