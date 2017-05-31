@@ -7,83 +7,127 @@ class LimitableSerializer(serializers.ModelSerializer):
 
     """Extends the model serializer to support field limiting."""
     def __init__(self, *args, **kwargs):
-        # next two lines are deprecated and will be removed
-        # once all views inherit from a generic class or are
-        # refactored into viewsets (i.e., once the serializer
-        # consistently has direct access to the request)
-        include_fields = kwargs.pop('fields', None)
-        exclude_fields = kwargs.pop('exclude', None)
+        # Grab any kwargs include and exclude fields, these are typically
+        # passed in by a parent serializer to the child serializer
+        kwargs_has_include = 'fields' in kwargs
+        kwargs_has_exclude = 'exclude' in kwargs
+        kwargs_include_fields = kwargs.pop('fields', [])
+        kwargs_exclude_fields = kwargs.pop('exclude', [])
+
+        # Intialize now that kwargs have been cleared
         super(LimitableSerializer, self).__init__(*args, **kwargs)
 
+        # Get params from our request or req object
+        req = self.context.get('req', None)
+        request = self.context.get('request', None)
+        current_viewset = self.context.get('view')
+        params = get_params_from_req_or_request(request=request, req=req)
+
+        param_exclude_fields = []
+        param_include_fields = []
+
+        # If no kwargs excludes, check the request
+        if not kwargs_has_exclude:
+            param_exclude_fields = params.get('exclude', [])
+
+        if not kwargs_has_include:
+            param_include_fields = params.get('fields', [])
+
+        exclude_fields = []
+        include_fields = []
+
+        # Allow excluded and included fields if we are not verbose
+        if not self.context.get('verbose', True) or not params.get("verbose", False):
+            # Otherwise, use the fields from the lists
+            exclude_fields = param_exclude_fields + kwargs_exclude_fields
+
+            if len(exclude_fields) == 0 and hasattr(self.Meta, "default_exclude"):
+                exclude_fields = self.Meta.default_exclude
+
+            # If we're not in a detail view, we can use the include lists
+            if not current_viewset or current_viewset.action != "retrieve":
+                include_fields = param_include_fields + kwargs_include_fields
+
+                if len(include_fields) == 0 and hasattr(self.Meta, "default_fields"):
+                    include_fields = self.Meta.default_fields
+
+                # For the include list, we need to include the parent field of
+                # any nested fields
+                include_fields = include_fields + self.identify_missing_children(self.Meta.model, include_fields)
+
         # Create and initialize the child serializers
-        try:
+        if hasattr(self.Meta, "nested_serializers"):
             # Initialize the child serializers
             children = self.Meta.nested_serializers
             for field in children.keys():
+                # Get child kwargs
+                kwargs = children[field].get("kwargs", {})
+
+                # Pop the default fields from the child serializer kwargs
+                default_fields = kwargs.pop("default_fields", [])
+                default_exclude = kwargs.pop("default_exclude", [])
+
+                child_include_fields, matched_include = self.get_child_fields(field, include_fields)
+                child_exclude_fields, matched_exclude = self.get_child_fields(field, exclude_fields)
+
+                # If the excluded field belongs to a child, we cannot include it in the parent
+                # exclusion, otherwise we would run into a KeyError
+                exclude_fields = [x for x in exclude_fields if x not in matched_exclude]
+
+                if len(child_include_fields) == 0:
+                    child_include_fields = default_fields
+                if len(child_exclude_fields) == 0:
+                    child_exclude_fields = default_exclude
+
                 child_args = {
-                    **children[field].get("kwargs", {}),
-                    "context": {**self.context, "child": True}
-                }  # The child tag should be removed when child field limiting is implemented
+                    **kwargs,
+                    "context": {**self.context, 'verbose': False},  # Do not verbos-ify child objects
+                    "fields": child_include_fields,
+                    "exclude": child_exclude_fields
+                }
                 self.fields[field] = children[field]["class"](**child_args)
-        except AttributeError:
-            # We don't have any nested serializers
-            pass
 
-        req = self.context.get('req')
-        request = self.context.get('request')
+        # Now we alter our own field sets
+        # We must exclude before include to avoid conflicts from user error
+        for field_name in exclude_fields:
+            self.fields.pop(field_name)
 
-        if request:
-            params = get_params_from_req_or_request(request=request, req=req)
+        if len(include_fields) > 0:
+            allowed = set(include_fields)
+            existing = set(self.fields.keys())
+            for field_name in existing - allowed:
+                # If we have a coded field, always include its description
+                if field_name.split("_")[-1] == "description" and "_".join(field_name.split("_")[:-1]) not in allowed:
+                    continue
+                self.fields.pop(field_name)
 
-            exclude_fields = params.get('exclude')
-            include_fields = params.get('fields')
-            current_viewset = self.context.get('view')
+    # Returns a list of child names for fields in the field list
+    # This is necessary so that if a user requests "recipient__recipient_name"
+    # we also include "recipient" so that it is serialized
+    def identify_missing_children(self, model, fields):
+        children = []
+        model_fields = [f.name for f in model._meta.get_fields()]
+        for field in fields:
+            split = field.split("__")
+            if len(split) > 0 and split[0] in model_fields and split[0] not in fields:
+                children.append(split[0])
 
-            if params.get('verbose', False):
-                # We have a request for verbose, so we return here so that we
-                # return all fields
-                return
+        return children
 
-            # We must exclude before include to avoid conflicts from user error
-            if exclude_fields is not None and not self.context.get("child", False):  # the child check should be removed when child field limiting is implemented
-                for field_name in exclude_fields:
-                    try:
-                        self.fields.pop(field_name)
-                    except KeyError:
-                        # Because we're not currently handling nested serializer field
-                        # limiting pass-down, this can happen due to the context pass down
-                        pass
+    # Takes a child's name and a list of fields, and returns a set of fields
+    # that belong to that child
+    def get_child_fields(self, child, fields):
+        # An included field is a child's field if the field begins with that
+        # child's name and two underscores
+        pattern = "{}__".format(child)
 
-            if include_fields is not None and not self.context.get("child", False):  # the child check should be removed when child field limiting is implemented
-                allowed = set(include_fields)
-                existing = set(self.fields.keys())
-                for field_name in existing - allowed:
-                    try:
-                        # If we have a coded field, always include its description
-                        if field_name.split("_")[-1] == "description" and "_".join(field_name.split("_")[:-1]) not in allowed:
-                            continue
-                        self.fields.pop(field_name)
-                    except KeyError:
-                        # Because we're not currently handling nested serializer field
-                        # limiting pass-down, this can happen due to the context pass down
-                        pass
-
-            elif current_viewset and current_viewset.action == 'retrieve':
-                # The view has specifically asked that all fields should
-                # be returned (for example, when the request url follows
-                # the item/{pk} pattern)
-                return
-
-            else:
-                try:
-                    include_fields = self.Meta.model.get_default_fields(path=request._request.path_info)
-                    allowed = set(include_fields)
-                    existing = set(self.fields.keys())
-                    for field_name in existing - allowed:
-                        self.fields.pop(field_name)
-                except AttributeError:
-                    # We don't have get default fields available
-                    pass
+        matched = []
+        child_fields = []
+        for field in fields:
+            if field[:len(pattern)] == pattern:
+                child_fields.append(field[len(pattern):])
+                matched.append(field)
+        return child_fields, matched
 
     @classmethod
     def setup_eager_loading(cls, queryset, prefix=""):

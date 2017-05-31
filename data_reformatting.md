@@ -11,14 +11,6 @@ Generally, data will be imported as-is. In some cases, however, we reformat the 
 
 Making sure our location-related fields are as robust and accurate as possible powers the geographic filters used by our website and API.
 
-### State Code and Foreign Province
-
-**Data Source:** USAspending history and DATA Broker  
-**Code:** `submissions/management/commands/load_submission.py`
-
-When loading information from the DATA Act broker, if the data has a state code but does not have a country code of `USA`, we load the state code as a foreign province.
-
-
 ### State, County, and City
 
 **Data Source:** USAspending history and DATA Broker  
