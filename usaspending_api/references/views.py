@@ -2,11 +2,70 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
-from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition
-from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, CfdaSerializer, DefinitionSerializer
+from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition, FilterHash
+from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, \
+    CfdaSerializer, DefinitionSerializer, FilterSerializer, HashSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
 import json
+import hashlib
+from django.http import HttpResponseBadRequest
+from django.core import serializers
+
+
+class FilterEndpoint(APIView):
+    serializer_class = FilterSerializer
+
+    def post(self, request, format=None):
+        """return the hash for a json"""
+        # get json
+        # TODO: Drill down to the actual filter  (json_req['filters'])
+        json_req = request.body
+        # TODO: validate json
+        # create hash
+        json_str = json_req.decode('utf8')
+        json_dict = json.dumps(json_str)
+        m = hashlib.md5()
+        m.update(json_req)
+        hash = m.hexdigest().encode('utf8')
+        # check for hash in db, store if not in db
+        # global fh
+        # fh = FilterHash.objects.all()
+        try:
+            fh = FilterHash.objects.get(hash=hash)
+        except FilterHash.DoesNotExist:
+            # store in DB
+            try:
+                json_dict = json.loads(json_dict)
+                fh = FilterHash(hash=hash, filter=json_dict)
+                fh.save()
+            except ValueError:
+                return HttpResponseBadRequest("The DB object could not be saved. Value Error Thrown.")
+            # added as a catch all. Should never be hit
+            except Exception:
+                return HttpResponseBadRequest("The DB object could not be saved. Exception Thrown.")
+    # # return hash
+        return Response({'hash': hash})
+
+
+class HashEndpoint(APIView):
+    serializer_class = HashSerializer
+
+    def post(self, request, format=None):
+        """return the hash for a json"""
+        # get hash
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+        hash = body["hash"]
+        # check for hash in db, if not in db
+        try:
+            fh = FilterHash.objects.get(hash=hash)
+            json_dict = json.loads(fh.filter)
+            # return filter json
+            return Response({'filter': json_dict})
+        except FilterHash.DoesNotExist:
+            return HttpResponseBadRequest(
+                "The FilterHash Object with that has does not exist. DoesNotExist Error Thrown.")
 
 
 class LocationEndpoint(SuperLoggingMixin,

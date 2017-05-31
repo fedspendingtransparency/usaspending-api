@@ -3,7 +3,8 @@ import logging
 from django.db import models
 from django.db.models import F, Q
 from django.utils.text import slugify
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField, JSONField
+
 from usaspending_api.common.models import DataSourceTrackedModel
 from usaspending_api.references.helpers import canonicalize_string
 
@@ -183,6 +184,18 @@ class OfficeAgency(models.Model):
     class Meta:
         managed = True
         db_table = 'office_agency'
+
+
+class FilterHash(models.Model):
+    filter_hash_id = models.AutoField(primary_key=True)
+    create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+    filter = JSONField(blank=True, null=True, verbose_name="JSON of Filter")
+    hash = models.TextField(blank=False, unique=True, verbose_name="Hash of JSON Filter")
+
+    class Meta:
+        managed = True
+        db_table = 'filter_hash'
 
 
 class Location(DataSourceTrackedModel):
