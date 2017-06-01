@@ -2,6 +2,7 @@ from collections import namedtuple
 import json
 
 from rest_framework import status
+from rest_framework.exceptions import ParseError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -13,6 +14,7 @@ from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
 from django.db.models import F, Sum
+from django.db import Error
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
@@ -58,18 +60,24 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
         json_request = self.request.query_params
 
         # retrieve fiscal_year & agency_id from request
-        # TODO: Add validation for presence of request params
-        fiscal_year = json_request['fiscal_year']
-        agency_id = json_request['agency_id']
+        fiscal_year = json_request.get('fiscal_year', None)
+        agency_id = json_request.get('agency_id', None)
 
-        # TODO: Add error handling for model queries
-        queryset = Transaction.objects.all()
-        # Filter based on fiscal year and agency id
-        queryset = queryset.filter(submission__reporting_fiscal_year=fiscal_year, awarding_agency=agency_id)
-        # alias awards.category to be award_type
-        queryset = queryset.annotate(award_type=F('award__category'))
-        # sum obligations for each category type
-        queryset = queryset.values('award_type').annotate(amount_awarded=Sum('federal_action_obligation'))
+        # required query parameters were not provided
+        if not (fiscal_year and agency_id):
+            raise ParseError('Missing one or more required query parameters: fiscal_year, agency_id')
+
+        try:
+            queryset = Transaction.objects.all()
+            # Filter based on fiscal year and agency id
+            queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=agency_id)
+            # alias awards.category to be award_type
+            queryset = queryset.annotate(award_type=F('award__category'))
+            # sum obligations for each category type
+            queryset = queryset.values('award_type').annotate(amount_awarded=Sum('federal_action_obligation'))
+        except Error:
+            raise Exception('An unknown error occurred during execution of data retrieval')
+
         return queryset
 
 
