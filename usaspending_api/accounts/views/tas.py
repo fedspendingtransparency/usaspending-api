@@ -10,12 +10,10 @@ from usaspending_api.financial_activities.models import (
     TasProgramActivityObjectClassQuarterly)
 from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
-from usaspending_api.common.mixins import SuperLoggingMixin
 from usaspending_api.common.serializers import AggregateSerializer
 
 
-class TASBalancesAggregate(SuperLoggingMixin,
-                           FilterQuerysetMixin,
+class TASBalancesAggregate(FilterQuerysetMixin,
                            AggregateQuerysetMixin,
                            DetailViewSet):
 
@@ -30,8 +28,7 @@ class TASBalancesAggregate(SuperLoggingMixin,
         return queryset
 
 
-class TASBalancesQuarterAggregate(SuperLoggingMixin,
-                                  FilterQuerysetMixin,
+class TASBalancesQuarterAggregate(FilterQuerysetMixin,
                                   AggregateQuerysetMixin,
                                   DetailViewSet):
 
@@ -46,8 +43,7 @@ class TASBalancesQuarterAggregate(SuperLoggingMixin,
         return queryset
 
 
-class TASBalancesQuarterList(SuperLoggingMixin,
-                             FilterQuerysetMixin,
+class TASBalancesQuarterList(FilterQuerysetMixin,
                              DetailViewSet):
     """
     Handle requests for quarterly financial data by appropriationappropriation
@@ -63,8 +59,7 @@ class TASBalancesQuarterList(SuperLoggingMixin,
         return ordered_queryset
 
 
-class TASCategoryAggregate(SuperLoggingMixin,
-                           FilterQuerysetMixin,
+class TASCategoryAggregate(FilterQuerysetMixin,
                            AggregateQuerysetMixin,
                            DetailViewSet):
 
@@ -79,8 +74,7 @@ class TASCategoryAggregate(SuperLoggingMixin,
         return queryset
 
 
-class TASCategoryList(SuperLoggingMixin,
-                      FilterQuerysetMixin,
+class TASCategoryList(FilterQuerysetMixin,
                       DetailViewSet):
     """Handle requests for appropriation account balance information."""
     serializer_class = TasCategorySerializer
@@ -93,8 +87,7 @@ class TASCategoryList(SuperLoggingMixin,
         return ordered_queryset
 
 
-class TASCategoryQuarterAggregate(SuperLoggingMixin,
-                                  FilterQuerysetMixin,
+class TASCategoryQuarterAggregate(FilterQuerysetMixin,
                                   AggregateQuerysetMixin,
                                   DetailViewSet):
     """
@@ -111,8 +104,7 @@ class TASCategoryQuarterAggregate(SuperLoggingMixin,
         return queryset
 
 
-class TASCategoryQuarterList(SuperLoggingMixin,
-                             FilterQuerysetMixin,
+class TASCategoryQuarterList(FilterQuerysetMixin,
                              DetailViewSet):
     """
     Handle requests for quarterly financial data by appropriationappropriation
@@ -142,8 +134,7 @@ class TreasuryAppropriationAccountAutocomplete(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class TreasuryAppropriationAccountBalancesViewSet(SuperLoggingMixin,
-                                                  FilterQuerysetMixin,
+class TreasuryAppropriationAccountBalancesViewSet(FilterQuerysetMixin,
                                                   DetailViewSet):
     """Handle requests for appropriation account balance information."""
     serializer_class = AppropriationAccountBalancesSerializer
@@ -156,8 +147,7 @@ class TreasuryAppropriationAccountBalancesViewSet(SuperLoggingMixin,
         return ordered_queryset
 
 
-class TreasuryAppropriationAccountViewSet(SuperLoggingMixin,
-                                          FilterQuerysetMixin,
+class TreasuryAppropriationAccountViewSet(FilterQuerysetMixin,
                                           DetailViewSet):
     """Handle requests for appropriation account (i.e., TAS) information."""
     serializer_class = TasSerializer
