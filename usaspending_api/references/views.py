@@ -31,7 +31,7 @@ class FilterEndpoint(APIView):
         except FilterHash.DoesNotExist:
             # store in DB
             try:
-                #request.data is used because we want json as input
+                # request.data is used because we want json as input
                 fh = FilterHash(hash=hash, filter=request.data)
                 fh.save()
             except ValueError:
