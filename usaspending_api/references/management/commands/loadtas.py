@@ -6,7 +6,7 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.common.threaded_data_loader import ThreadedDataLoader, SkipRowException
 from usaspending_api.references.reference_helpers import insert_federal_accounts, update_federal_accounts, \
-    remove_federal_accounts
+    remove_empty_federal_accounts
 
 
 class Command(BaseCommand):
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         loader.load_from_file(options['file'][0])
 
         # update TAS fk relationships to federal accounts
-        remove_federal_accounts()
+        remove_empty_federal_accounts()
         update_federal_accounts()
         insert_federal_accounts()
 

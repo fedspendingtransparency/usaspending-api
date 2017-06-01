@@ -5,7 +5,10 @@ from django.db.models import Value
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 
 
-def remove_federal_accounts(tas_tuple=None):
+def remove_empty_federal_accounts(tas_tuple=None):
+    """
+    Removes federal accounts who are no longer attached to a TAS
+    """
     FederalAccount.objects.filter(treasuryappropriationaccount__isnull=True).distinct().delete()
 
 
