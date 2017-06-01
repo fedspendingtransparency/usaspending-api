@@ -5,10 +5,9 @@ from usaspending_api.common.views import DetailViewSet, AutocompleteView
 from usaspending_api.common.mixins import SuperLoggingMixin
 
 
-class FederalAccountViewSet(SuperLoggingMixin,
-                            FilterQuerysetMixin,
-                            DetailViewSet):
-    """Handle requests for federal account information."""
+class FederalAccountAutocomplete(FilterQuerysetMixin,
+                                 AutocompleteView):
+    """Handle autocomplete requests for federal account information."""
     serializer_class = FederalAccountSerializer
 
     def get_queryset(self):
@@ -20,9 +19,10 @@ class FederalAccountViewSet(SuperLoggingMixin,
         return ordered_queryset
 
 
-class FederalAccountAutocomplete(FilterQuerysetMixin,
-                                 AutocompleteView):
-    """Handle autocomplete requests for federal account information."""
+class FederalAccountViewSet(SuperLoggingMixin,
+                            FilterQuerysetMixin,
+                            DetailViewSet):
+    """Handle requests for federal account information."""
     serializer_class = FederalAccountSerializer
 
     def get_queryset(self):
