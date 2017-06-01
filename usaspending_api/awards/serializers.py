@@ -157,10 +157,9 @@ class TransactionSerializer(LimitableSerializer):
         }
 
 
-class SubagencyAwardSpending(serializers.Serializer):
+class AwardTypeAwardSpendingSerializer(serializers.Serializer):
 
-    subagency = serializers.CharField()
-    # TODO: Confirm this should come back as a string like in the example
+    award_type = serializers.CharField()
     amount_awarded = serializers.CharField()
 
 

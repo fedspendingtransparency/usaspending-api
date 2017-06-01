@@ -55,7 +55,7 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
 
     def get_queryset(self):
         # retrieve post request payload
-        json_request = self.request.data
+        json_request = self.request.query_params
 
         # retrieve fiscal_year & agency_id from request
         # TODO: Add validation for presence of request params

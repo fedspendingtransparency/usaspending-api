@@ -11,6 +11,8 @@ import usaspending_api.etl.helpers as h
 from usaspending_api.references.models import Agency, LegalEntity, Cfda
 from usaspending_api.submissions.models import SubmissionAttributes
 
+from usaspending_api.common.helpers import fy
+
 
 class Command(BaseCommand):
     help = "Loads awards from a usaspending financial assistance download. \
@@ -71,6 +73,7 @@ class Command(BaseCommand):
 
             }
             txn = Transaction(**txn_dict)
+            txn.fiscal_year = fy(txn.action_date)
             txn_list.append(txn)
 
             # Create the transaction contract object for this row

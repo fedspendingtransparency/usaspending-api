@@ -10,6 +10,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import (
     Agency, Cfda, LegalEntity, Location, ObjectClass, RefProgramActivity)
 from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.common.helpers import fy
 from django.core.cache import caches, CacheKeyWarning
 
 warnings.simplefilter("ignore", CacheKeyWarning)
@@ -293,6 +294,7 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
     certified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was certified")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="The date this transaction was created in the API")
     update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this transaction was updated in the API")
+    # fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
     history = HistoricalRecords()
 
     def __str__(self):
@@ -314,6 +316,10 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
                     setattr(transaction, k, v)
             return transaction
         return cls(**kwargs)
+
+    def save(self, *args, **kwargs):
+        self.fiscal_year = fy(self.action_date)
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'transaction'
