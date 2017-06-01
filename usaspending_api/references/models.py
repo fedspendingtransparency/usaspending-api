@@ -187,7 +187,6 @@ class OfficeAgency(models.Model):
 
 
 class FilterHash(models.Model):
-    filter_hash_id = models.AutoField(primary_key=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     filter = JSONField(blank=True, null=True, verbose_name="JSON of Filter")

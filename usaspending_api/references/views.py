@@ -19,25 +19,20 @@ class FilterEndpoint(APIView):
     def post(self, request, format=None):
         """return the hash for a json"""
         # get json
-        # TODO: Drill down to the actual filter  (json_req['filters'])
+        # request.body is used because we want unicode as hash input
         json_req = request.body
-        # TODO: validate json
         # create hash
-        json_str = json_req.decode('utf8')
-        json_dict = json.dumps(json_str)
         m = hashlib.md5()
         m.update(json_req)
         hash = m.hexdigest().encode('utf8')
         # check for hash in db, store if not in db
-        # global fh
-        # fh = FilterHash.objects.all()
         try:
             fh = FilterHash.objects.get(hash=hash)
         except FilterHash.DoesNotExist:
             # store in DB
             try:
-                json_dict = json.loads(json_dict)
-                fh = FilterHash(hash=hash, filter=json_dict)
+                #request.data is used because we want json as input
+                fh = FilterHash(hash=hash, filter=request.data)
                 fh.save()
             except ValueError:
                 return HttpResponseBadRequest("The DB object could not be saved. Value Error Thrown.")
@@ -60,9 +55,8 @@ class HashEndpoint(APIView):
         # check for hash in db, if not in db
         try:
             fh = FilterHash.objects.get(hash=hash)
-            json_dict = json.loads(fh.filter)
             # return filter json
-            return Response({'filter': json_dict})
+            return Response({'filter': fh.filter})
         except FilterHash.DoesNotExist:
             return HttpResponseBadRequest(
                 "The FilterHash Object with that has does not exist. DoesNotExist Error Thrown.")
