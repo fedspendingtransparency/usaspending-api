@@ -115,3 +115,10 @@ class TasCategorySerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             }
         }
+
+
+class ObjectClassFinancialSpendingSerializer(serializers.Serializer):
+
+    object_class_code = serializers.CharField()
+    object_class_name = serializers.CharField()
+    obligated_amount = serializers.DecimalField(21, 2)
