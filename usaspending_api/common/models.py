@@ -124,7 +124,10 @@ class RequestCatalog(models.Model):
             "mode",
             "matched_objects",
             "scope",
-            "usage"
+            "usage",
+            "show_nulls",
+            "show_null_groups",
+            "show_null_aggregates"
         ]
 
         checksumable_request = {

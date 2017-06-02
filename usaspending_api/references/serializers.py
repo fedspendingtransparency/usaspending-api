@@ -176,3 +176,13 @@ class DefinitionSerializer(LimitableSerializer):
 
         model = Definition
         fields = ['term', 'slug', 'data_act_term', 'plain', 'official', 'resources']
+
+
+class FilterSerializer(serializers.Serializer):
+
+    hash = serializers.CharField()
+
+
+class HashSerializer(serializers.Serializer):
+
+    json_str = serializers.CharField()
