@@ -62,10 +62,10 @@ class ObjectClassFinancialSpendingViewSet(DetailViewSet):
         # TODO: should we alias fields below as major_object_class_name
         # and major_object_class_code instead?
         queryset = queryset.annotate(
-            object_class_name=F('object_class__major_object_class_name'),
-            object_class_code=F('object_class__major_object_class'))
+            major_object_class_name=F('object_class__major_object_class_name'),
+            major_object_class_code=F('object_class__major_object_class'))
         # sum obligated_mount by object class
-        queryset = queryset.values('object_class_name', 'object_class_code').annotate(
+        queryset = queryset.values('major_object_class_name', 'major_object_class_code').annotate(
             obligated_amount=Sum('obligations_incurred_by_program_object_class_cpe'))
 
         return queryset

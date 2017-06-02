@@ -119,6 +119,6 @@ class TasCategorySerializer(LimitableSerializer):
 
 class ObjectClassFinancialSpendingSerializer(serializers.Serializer):
 
-    object_class_code = serializers.CharField()
-    object_class_name = serializers.CharField()
+    major_object_class_code = serializers.CharField()
+    major_object_class_name = serializers.CharField()
     obligated_amount = serializers.DecimalField(21, 2)
