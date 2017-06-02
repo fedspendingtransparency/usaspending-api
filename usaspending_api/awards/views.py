@@ -2,7 +2,6 @@ from collections import namedtuple
 import json
 
 from rest_framework import status
-from rest_framework.exceptions import ParseError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -13,6 +12,7 @@ from usaspending_api.common.api_request_utils import AutoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin, AggregateQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
+from usaspending_api.common.exceptions import InvalidParameterException
 from django.db.models import F, Sum
 from django.db import Error
 
@@ -65,7 +65,7 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
 
         # required query parameters were not provided
         if not (fiscal_year and agency_id):
-            raise ParseError('Missing one or more required query parameters: fiscal_year, agency_id')
+            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, agency_id')
 
         try:
             queryset = Transaction.objects.all()
@@ -122,7 +122,7 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
 
         # required query parameters were not provided
         if not (fiscal_year and agency_id):
-            raise ParseError('Missing one or more required query parameters: fiscal_year, agency_id')
+            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, agency_id')
 
         try:
             queryset = Transaction.objects.all()
@@ -132,7 +132,8 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
             queryset = queryset.annotate(recipient_name=F('recipient__recipient_name'))
             queryset = queryset.annotate(recipient_id=F('recipient__legal_entity_id'))
             # sum obligations for each recipient
-            queryset = queryset.values('recipient_id', 'recipient_name').annotate(obligated_amount=Sum('federal_action_obligation'))
+            queryset = queryset.values('recipient_id', 'recipient_name').\
+                annotate(obligated_amount=Sum('federal_action_obligation'))
         except Error:
             raise Exception('An unknown error occurred during execution of data retrieval')
 
