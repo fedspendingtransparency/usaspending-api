@@ -160,7 +160,14 @@ class TransactionSerializer(LimitableSerializer):
 class AwardTypeAwardSpendingSerializer(serializers.Serializer):
 
     award_type = serializers.CharField()
-    amount_awarded = serializers.CharField()
+    obligated_amount = serializers.CharField()
+
+
+class RecipientAwardSpendingSerializer(serializers.Serializer):
+
+    recipient_id = serializers.IntegerField()
+    recipient_name = serializers.CharField()
+    obligated_amount = serializers.CharField()
 
 
 class SubawardSerializer(LimitableSerializer):

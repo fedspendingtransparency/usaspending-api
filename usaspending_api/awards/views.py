@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from usaspending_api.awards.models import Award, Transaction, Subaward
 from usaspending_api.awards.serializers import AwardSerializer, AwardTypeAwardSpendingSerializer, \
-    TransactionSerializer, SubawardSerializer
+    RecipientAwardSpendingSerializer, SubawardSerializer, TransactionSerializer
 from usaspending_api.common.api_request_utils import AutoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin, AggregateQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
@@ -74,7 +74,7 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
             # alias awards.category to be award_type
             queryset = queryset.annotate(award_type=F('award__category'))
             # sum obligations for each category type
-            queryset = queryset.values('award_type').annotate(amount_awarded=Sum('federal_action_obligation'))
+            queryset = queryset.values('award_type').annotate(obligated_amount=Sum('federal_action_obligation'))
         except Error:
             raise Exception('An unknown error occurred during execution of data retrieval')
 
@@ -108,7 +108,35 @@ class AwardViewSet(SuperLoggingMixin,
 
 
 class RecipientAwardSpendingViewSet(DetailViewSet):
-    pass
+    """Return all award spending by recipient for a given fiscal year and agency id"""
+
+    serializer_class = RecipientAwardSpendingSerializer
+
+    def get_queryset(self):
+        # retrieve post request payload
+        json_request = self.request.query_params
+
+        # retrieve fiscal_year & agency_id from request
+        fiscal_year = json_request.get('fiscal_year', None)
+        agency_id = json_request.get('agency_id', None)
+
+        # required query parameters were not provided
+        if not (fiscal_year and agency_id):
+            raise ParseError('Missing one or more required query parameters: fiscal_year, agency_id')
+
+        try:
+            queryset = Transaction.objects.all()
+            # Filter based on fiscal year and agency id
+            queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=agency_id)
+            # alias recipient column names
+            queryset = queryset.annotate(recipient_name=F('recipient__recipient_name'))
+            queryset = queryset.annotate(recipient_id=F('recipient__legal_entity_id'))
+            # sum obligations for each recipient
+            queryset = queryset.values('recipient_id', 'recipient_name').annotate(obligated_amount=Sum('federal_action_obligation'))
+        except Error:
+            raise Exception('An unknown error occurred during execution of data retrieval')
+
+        return queryset
 
 
 class SubawardAggregateViewSet(SuperLoggingMixin,
