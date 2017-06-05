@@ -45,10 +45,10 @@ def financial_spending_data(db):
 def test_award_type_endpoint(client, financial_spending_data):
     """Test the award_type endpoint."""
 
-    resp = client.get('/api/v1/financial_spending/object_class/?fiscal_year=2017&funding_agency_id=1')
+    resp = client.get('/api/v2/financial_spending/object_class/?fiscal_year=2017&funding_agency_id=1')
     print(resp.data)
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) > 0
 
-    resp = client.get('/api/v1/financial_spending/object_class/')
+    resp = client.get('/api/v2/financial_spending/object_class/')
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
