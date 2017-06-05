@@ -10,64 +10,6 @@ from usaspending_api.references.serializers import AgencySerializer, LegalEntity
 from usaspending_api.common.helpers import fy
 
 
-class AwardSerializer(LimitableSerializer):
-
-    class Meta:
-
-        model = Award
-        fields = '__all__'
-        default_fields = [
-            "id",
-            "type",
-            "type_description",
-            "category",
-            "total_obligation",
-            "total_outlay",
-            "date_signed",
-            "description",
-            "piid",
-            "fain",
-            "uri",
-            "period_of_performance_start_date",
-            "period_of_performance_current_end_date",
-            "potential_total_value_of_award",
-            "place_of_performance",
-            "awarding_agency",
-            "funding_agency",
-            "recipient",
-            "date_signed__fy",
-            "subaward_count",
-            "total_subaward_amount"
-        ]
-        nested_serializers = {
-            "recipient": {
-                "class": LegalEntitySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "awarding_agency": {
-                "class": AgencySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "funding_agency": {
-                "class": AgencySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "place_of_performance": {
-                "class": LocationSerializer,
-                "kwargs": {"read_only": True}
-            },
-            "latest_transaction": {
-                "class": TransactionSerializer,
-                "kwargs": {"read_only": True}
-            }
-        }
-
-    date_signed__fy = serializers.SerializerMethodField()
-
-    def get_date_signed__fy(self, obj):
-        return fy(obj.date_signed)
-
-
 class AwardTypeAwardSpendingSerializer(serializers.Serializer):
 
     award_type = serializers.CharField()
@@ -255,3 +197,61 @@ class TransactionSerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             }
         }
+
+
+class AwardSerializer(LimitableSerializer):
+
+    class Meta:
+
+        model = Award
+        fields = '__all__'
+        default_fields = [
+            "id",
+            "type",
+            "type_description",
+            "category",
+            "total_obligation",
+            "total_outlay",
+            "date_signed",
+            "description",
+            "piid",
+            "fain",
+            "uri",
+            "period_of_performance_start_date",
+            "period_of_performance_current_end_date",
+            "potential_total_value_of_award",
+            "place_of_performance",
+            "awarding_agency",
+            "funding_agency",
+            "recipient",
+            "date_signed__fy",
+            "subaward_count",
+            "total_subaward_amount"
+        ]
+        nested_serializers = {
+            "recipient": {
+                "class": LegalEntitySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "awarding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "funding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "place_of_performance": {
+                "class": LocationSerializer,
+                "kwargs": {"read_only": True}
+            },
+            "latest_transaction": {
+                "class": TransactionSerializer,
+                "kwargs": {"read_only": True}
+            }
+        }
+
+    date_signed__fy = serializers.SerializerMethodField()
+
+    def get_date_signed__fy(self, obj):
+        return fy(obj.date_signed)
