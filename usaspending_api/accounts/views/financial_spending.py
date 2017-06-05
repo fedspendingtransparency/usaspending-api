@@ -6,7 +6,6 @@ from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass)
 from usaspending_api.references.models import Agency
 from usaspending_api.common.views import DetailViewSet
-from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class ObjectClassFinancialSpendingViewSet(DetailViewSet):
@@ -24,7 +23,7 @@ class ObjectClassFinancialSpendingViewSet(DetailViewSet):
 
         # required query parameters were not provided
         if not (fiscal_year and agency_id):
-            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, agency_id')
+            raise ParseError('Missing one or more required query parameters: fiscal_year, agency_id')
 
         # using final_objects below ensures that we're only pulling the latest
         # set of financial information for each fiscal year
