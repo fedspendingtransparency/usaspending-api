@@ -64,10 +64,14 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
         }
 
 
-class RecipientAwardSpendingSerializer(serializers.Serializer):
-
+class RecipientSeriallizer(serializers.Serializer):
     recipient_id = serializers.IntegerField()
     recipient_name = serializers.CharField()
+
+
+class RecipientAwardSpendingSerializer(serializers.Serializer):
+
+    recipient = RecipientSeriallizer(source='*')
     obligated_amount = serializers.CharField()
 
 
