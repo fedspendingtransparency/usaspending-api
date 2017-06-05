@@ -34,12 +34,10 @@ class ObjectClassFinancialSpendingViewSet(DetailViewSet):
         # (used filter() instead of get() b/c we likely don't want to raise an
         # error on a bad agency id)
         toptier_agency = Agency.objects.filter(id=funding_agency_id).first().toptier_agency
-        print(queryset)
         queryset = queryset.filter(
             submission__reporting_fiscal_year=fiscal_year,
             treasury_account__funding_toptier_agency=toptier_agency
         )
-        print(queryset)
         queryset = queryset.annotate(
             major_object_class_name=F('object_class__major_object_class_name'),
             major_object_class_code=F('object_class__major_object_class'))
