@@ -30,7 +30,7 @@ def award_spending_data(db):
 def test_award_type_endpoint(client, award_spending_data):
     """Test the award_type endpoint."""
 
-    resp = client.get('/api/v2/award_spending/award_type/?fiscal_year=2017&agency_id=111')
+    resp = client.get('/api/v2/award_spending/award_type/?fiscal_year=2017&awarding_agency_id=111')
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) > 0
 
@@ -45,7 +45,7 @@ def test_award_type_endpoint(client, award_spending_data):
 def test_recipient_endpoint(client, award_spending_data):
     """Test the award_type endpoint."""
 
-    resp = client.get('/api/v2/award_spending/recipient/?fiscal_year=2017&agency_id=111')
+    resp = client.get('/api/v2/award_spending/recipient/?fiscal_year=2017&awarding_agency_id=111')
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) > 0
 
