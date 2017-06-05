@@ -59,18 +59,18 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
         # retrieve post request payload
         json_request = self.request.query_params
 
-        # retrieve fiscal_year & agency_id from request
+        # retrieve fiscal_year & awarding_agency_id from request
         fiscal_year = json_request.get('fiscal_year', None)
-        agency_id = json_request.get('agency_id', None)
+        awarding_agency_id = json_request.get('awarding_agency_id', None)
 
         # required query parameters were not provided
-        if not (fiscal_year and agency_id):
-            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, agency_id')
+        if not (fiscal_year and awarding_agency_id):
+            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, awarding_agency_id')
 
         try:
             queryset = Transaction.objects.all()
             # Filter based on fiscal year and agency id
-            queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=agency_id)
+            queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=awarding_agency_id)
             # alias awards.category to be award_type
             queryset = queryset.annotate(award_type=F('award__category'))
             # sum obligations for each category type
@@ -116,18 +116,18 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
         # retrieve post request payload
         json_request = self.request.query_params
 
-        # retrieve fiscal_year & agency_id from request
+        # retrieve fiscal_year & awarding_agency_id from request
         fiscal_year = json_request.get('fiscal_year', None)
-        agency_id = json_request.get('agency_id', None)
+        awarding_agency_id = json_request.get('awarding_agency_id', None)
 
         # required query parameters were not provided
-        if not (fiscal_year and agency_id):
-            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, agency_id')
+        if not (fiscal_year and awarding_agency_id):
+            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, awarding_agency_id')
 
         try:
             queryset = Transaction.objects.all()
             # Filter based on fiscal year and agency id
-            queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=agency_id)
+            queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=awarding_agency_id)
             # alias recipient column names
             queryset = queryset.annotate(recipient_name=F('recipient__recipient_name'))
             queryset = queryset.annotate(recipient_id=F('recipient__legal_entity_id'))
