@@ -49,6 +49,7 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/federal_accounts/](/api/v1/federal_accounts/) | GET, POST | Returns a list of federal accounts |
 | /api/v1/federal_accounts/:id | GET, POST | Returns a single federal account record with all fields |
 | [/api/v1/federal_accounts/autocomplete/](/api/v1/federal_accounts/autocomplete/) | POST | Supports autocomplete on federal account records |
+| [/api/v2/financial_balances/agencies/](/api/v2/financial_balances/agencies/) | GET | Returns financial balance information for a specified fiscal year and funding agency |
 | [/api/v1/tas/](/api/v1/tas/) | GET, POST | Returns a list of treasury appropriation accounts (TAS) |
 | /api/v1/tas/:id | GET, POST | Returns a single treasury appropriation account record with all fields |
 | [/api/v1/tas/autocomplete/](/api/v1/tas/autocomplete/) | POST | Supports autocomplete on TAS records |
