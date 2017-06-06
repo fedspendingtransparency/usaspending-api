@@ -9,18 +9,6 @@ from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
-# @pytest.fixture
-# def award_spending_data(db):
-#     agency1 = mommy.make('references.Agency', id=111)
-#     awd1 = mommy.make('awards.Award', category='grants', awarding_agency=agency1)
-#     mommy.make(
-#         'awards.Transaction',
-#         award=awd1,
-#         awarding_agency=agency1,
-#         federal_action_obligation=10,
-#         fiscal_year=2017
-#     )
-
 @pytest.fixture
 def financial_spending_data(db):
     # agency w/ tt agency
@@ -29,16 +17,13 @@ def financial_spending_data(db):
     # TAS w/ same ttagency
     tas1 = mommy.make('accounts.TreasuryAppropriationAccount', awarding_toptier_agency=ttagency1, funding_toptier_agency=ttagency1)
 
-
     # Financial Account with Object class and submission
-    object_class_1 = mommy.make('references.ObjectClass',major_object_class="mocCode",
+    object_class_1 = mommy.make('references.ObjectClass', major_object_class="mocCode",
                                 major_object_class_name="mocName", object_class="ocCode", object_class_name="ocName")
     submission_1 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2017, cgac_code="cgac_code")
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=object_class_1,
                obligations_incurred_by_program_object_class_cpe=1000, submission=submission_1, treasury_account=tas1,
                final_of_fy=True)
-
-
 
 
 @pytest.mark.django_db
