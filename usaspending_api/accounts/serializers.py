@@ -117,6 +117,7 @@ class TasCategorySerializer(LimitableSerializer):
         }
 
 
+
 class ObjectClassFinancialSpendingSerializer(serializers.Serializer):
 
     major_object_class_code = serializers.CharField()
