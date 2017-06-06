@@ -14,7 +14,7 @@ from usaspending_api.common.views import DetailViewSet, AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.exceptions import InvalidParameterException
 from django.db.models import F, Sum
-from django.db import Error
+
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
@@ -67,16 +67,13 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
         if not (fiscal_year and awarding_agency_id):
             raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, awarding_agency_id')
 
-        try:
-            queryset = Transaction.objects.all()
-            # Filter based on fiscal year and agency id
-            queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=awarding_agency_id)
-            # alias awards.category to be award_type
-            queryset = queryset.annotate(award_type=F('award__category'))
-            # sum obligations for each category type
-            queryset = queryset.values('award_type').annotate(obligated_amount=Sum('federal_action_obligation'))
-        except Error:
-            raise Exception('An unknown error occurred during execution of data retrieval')
+        queryset = Transaction.objects.all()
+        # Filter based on fiscal year and agency id
+        queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=awarding_agency_id)
+        # alias awards.category to be award_type
+        queryset = queryset.annotate(award_type=F('award__category'))
+        # sum obligations for each category type
+        queryset = queryset.values('award_type').annotate(obligated_amount=Sum('federal_action_obligation'))
 
         return queryset
 
@@ -124,18 +121,15 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
         if not (fiscal_year and awarding_agency_id):
             raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, awarding_agency_id')
 
-        try:
-            queryset = Transaction.objects.all()
-            # Filter based on fiscal year and agency id
-            queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=awarding_agency_id)
-            # alias recipient column names
-            queryset = queryset.annotate(recipient_name=F('recipient__recipient_name'))
-            queryset = queryset.annotate(recipient_id=F('recipient__legal_entity_id'))
-            # sum obligations for each recipient
-            queryset = queryset.values('recipient_id', 'recipient_name').\
-                annotate(obligated_amount=Sum('federal_action_obligation'))
-        except Error:
-            raise Exception('An unknown error occurred during execution of data retrieval')
+        queryset = Transaction.objects.all()
+        # Filter based on fiscal year and agency id
+        queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=awarding_agency_id)
+        # alias recipient column names
+        queryset = queryset.annotate(recipient_name=F('recipient__recipient_name'))
+        queryset = queryset.annotate(recipient_id=F('recipient__legal_entity_id'))
+        # sum obligations for each recipient
+        queryset = queryset.values('recipient_id', 'recipient_name').\
+            annotate(obligated_amount=Sum('federal_action_obligation'))
 
         return queryset
 
