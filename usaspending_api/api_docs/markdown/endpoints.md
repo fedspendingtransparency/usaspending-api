@@ -42,8 +42,6 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/accounts/awards/](/api/v1/accounts/awards/) | GET, POST | Returns a list of financial account data by treasury account symbol, program activity, object class, and award |
 | /api/v1/accounts/awards/:id | GET, POST | Returns a single treasury account symbol/program activity/object class/award record with all fields |
 | [/api/v1/accounts/awards/total/](/api/v1/accounts/awards/total/) | POST | Supports aggregation on treasury account symbol/program activity/object class/award records |
-| [/api/v2/award_spending/award_type/](/api/v1/award_spending/award_type/) | GET | Returns a list of total obligations by award_type |
-| [/api/v2/award_spending/recipient/](/api/v1/award_spending/recipient/) | GET | Returns a list of total obligations by recipient |
 | [/api/v1/awards/](/api/v1/awards/) | GET, POST | Returns a list of award records |
 | /api/v1/awards/:id | GET, POST | Returns a single award record with all fields |
 | [/api/v1/awards/autocomplete/](/api/v1/awards/autocomplete/) | POST | Supports autocomplete on award records |
@@ -83,5 +81,7 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | Returns a list of submissions |
 | [/api/v1/filter/](/api/v1/filter/) | POST | Returns a hash of the json body |
 | [/api/v1/hash/](/api/v1/hash/) | POST | Returns a previously input json body |
+| [/api/v2/award_spending/award_type/](/api/v1/award_spending/award_type/) | GET | Returns a list of total obligations by award_type |
+| [/api/v2/award_spending/recipient/](/api/v1/award_spending/recipient/) | GET | Returns a list of total obligations by recipient |
 | [/api/v2/financial_spending/object_class/](financial_spending/object_class/) | GET | takes fiscal year and funding agency id as input, and returns that agencies obligated amounts to specific major object classes  |
 
