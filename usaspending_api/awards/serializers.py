@@ -13,7 +13,7 @@ from usaspending_api.common.helpers import fy
 class AwardTypeAwardSpendingSerializer(serializers.Serializer):
 
     award_type = serializers.CharField()
-    obligated_amount = serializers.CharField()
+    obligated_amount = serializers.DecimalField(None, 2)
 
 
 class FinancialAccountsByAwardsSerializer(LimitableSerializer):
@@ -72,7 +72,7 @@ class RecipientSeriallizer(serializers.Serializer):
 class RecipientAwardSpendingSerializer(serializers.Serializer):
 
     recipient = RecipientSeriallizer(source='*')
-    obligated_amount = serializers.CharField()
+    obligated_amount = serializers.DecimalField(None, 2)
 
 
 class SubawardSerializer(LimitableSerializer):
