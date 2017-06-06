@@ -79,3 +79,4 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/references/recipients/:id](/api/v1/references/recipients/) | GET, POST | Returns a specific, detailed recipient record |
 | [/api/v1/references/recipients/autocomplete/](/api/v1/references/recipients/autocomplete/) | POST | Supports autocomplete on recipient records |
 | [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | Returns a list of submissions |
+| [/api/v2/financial_spending/object_class/](/api/v2/financial_spending/object_class/) | GET | Returns a list of an agencies financial obligations distinguished by major object class|
