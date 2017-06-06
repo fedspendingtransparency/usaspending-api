@@ -47,7 +47,7 @@ def test_load_historical_command(endpoint_data, partially_flushed):
     call_command('load_historical', '--test',
                  '--action_date_begin', '2017-05-01',
                  '--action_date_end', '2017-05-02',
-                 '--awarding_agency_code', '015')
+                 '--cgac', '015')
     assert Award.objects.count() == 9
     assert TransactionContract.objects.count() == 10
     assert LegalEntity.objects.count() == 9
@@ -57,7 +57,7 @@ def test_load_historical_command(endpoint_data, partially_flushed):
     call_command('load_historical', '--test',
                  '--action_date_begin', '2017-05-01',
                  '--action_date_end', '2017-05-02',
-                 '--awarding_agency_code', '015')
+                 '--cgac', '015')
     assert Award.objects.count() == 9
     assert TransactionContract.objects.count() == 10
     assert LegalEntity.objects.count() == 9

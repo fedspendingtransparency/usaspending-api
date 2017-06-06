@@ -24,8 +24,7 @@ class Command(load_base.Command):
         super(Command, self).add_arguments(parser)
         parser.add_argument('--action_date_begin', type=to_date, default=None, help='First action_date to get - YYYY-MM-DD')
         parser.add_argument('--action_date_end', type=to_date, default=None, help='Last action_date to get - YYYY-MM-DD')
-        parser.add_argument('--awarding_agency_code', default=None)
-        parser.add_argument('--awarding_agency_name', type=str.lower, default=None)
+        parser.add_argument('--cgac', default=None, help='awarding toptier agency code')
 
     def handle_loading(self, db_cursor, *args, **options):
 
@@ -38,8 +37,7 @@ class Command(load_base.Command):
         for (column, filter) in (
                 ('action_date_begin', ' AND CAST(action_date AS DATE) >= %s'),  # what a performance-killer!
                 ('action_date_end', ' AND CAST(action_date AS DATE) <= %s'),
-                ('awarding_agency_code', ' AND awarding_agency_code = %s'),
-                ('awarding_agency_name', ' AND LOWER(awarding_agency_code) = %s'), ):
+                ('cgac', ' AND awarding_agency_code = %s')):
             if options[column]:
                 sql += filter
                 filter_values.append(options[column])
