@@ -26,13 +26,17 @@ def financial_spending_data(db):
                obligations_incurred_by_program_object_class_cpe=1000, submission=submission_1, treasury_account=tas1,
                final_of_fy=True)
 
-    # Object 2
+    # Object 2 (contains 2 fabpaoc s)
     object_class_2 = mommy.make('references.ObjectClass', major_object_class="mocCode2",
                                 major_object_class_name="mocName2", object_class="ocCode2", object_class_name="ocName2")
     submission_2 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2017)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=object_class_2,
                obligations_incurred_by_program_object_class_cpe=1000, submission=submission_2, treasury_account=tas1,
                final_of_fy=True)
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=object_class_2,
+               obligations_incurred_by_program_object_class_cpe=2000, submission=submission_2, treasury_account=tas1,
+               final_of_fy=True)
+
 
     # not reported by api Object
     tas3 = mommy.make('accounts.TreasuryAppropriationAccount', funding_toptier_agency=ttagency1)
@@ -50,6 +54,9 @@ def test_award_type_endpoint(client, financial_spending_data):
     print(resp.data)
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 2
+
+    # make sure resp.data['results'] contains a 3000 value
+    assert resp.data['results'][1]['obligated_amount'] == "3000.00"
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/financial_spending/object_class/')
