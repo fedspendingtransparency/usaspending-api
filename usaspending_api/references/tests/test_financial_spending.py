@@ -37,7 +37,6 @@ def financial_spending_data(db):
                obligations_incurred_by_program_object_class_cpe=2000, submission=submission_2, treasury_account=tas1,
                final_of_fy=True)
 
-
     # not reported by api Object
     tas3 = mommy.make('accounts.TreasuryAppropriationAccount', funding_toptier_agency=ttagency1)
     submission_3 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2018)
