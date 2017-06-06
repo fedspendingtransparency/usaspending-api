@@ -120,6 +120,6 @@ class TasCategorySerializer(LimitableSerializer):
 class AgenciesFinancialBalancesSerializer(serializers.Serializer):
 
     fiscal_year = serializers.IntegerField()
-    budget_authority_amount = serializers.DecimalField(21, 2)
-    obligated_amount = serializers.DecimalField(21, 2)
-    outlay_amount = serializers.DecimalField(21, 2)
+    budget_authority_amount = serializers.DecimalField(None, 2)
+    obligated_amount = serializers.DecimalField(None, 2)
+    outlay_amount = serializers.DecimalField(None, 2)
