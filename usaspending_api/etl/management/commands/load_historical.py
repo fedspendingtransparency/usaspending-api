@@ -7,7 +7,7 @@ import re
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.core.serializers.json import json
 from django.db import connections
 from django.db.models import F, Q
@@ -58,28 +58,44 @@ class Command(load_base.Command):
     def add_arguments(self, parser):
 
         super(Command, self).add_arguments(parser)
+        parser.add_argument('--contracts', action='store_true', help='Load contracts')
+        parser.add_argument('--financial_assistance', action='store_true', help='Load ')
         parser.add_argument('--action_date_begin', type=to_date, default=None, help='First action_date to get - YYYY-MM-DD')
         parser.add_argument('--action_date_end', type=to_date, default=None, help='Last action_date to get - YYYY-MM-DD')
         parser.add_argument('--awarding_agency_code', default=None)
-        parser.add_argument('--awarding_agency_name', type=str.lower, default=None)
 
     def handle_loading(self, db_cursor, *args, **options):
 
         submission_attributes = SubmissionAttributes()
         submission_attributes.save()
 
-        # File D1
-        sql = 'SELECT * FROM detached_award_procurement WHERE true'
+        if not options['contracts'] and not options['financial_assistance']:
+            raise CommandError('Please specify --contracts, --financial_assistance, or both.')
+
+        if options['contracts']:
+            procurement_data = self.main_query(db_cursor, 'detached_award_procurement', options)
+            load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, date_pattern='%Y-%m-%d %H:%M:%S')
+
+        if options['financial_assistance']:
+            assistance_data = self.main_query(db_cursor, 'detached_award_financial_assistance', options)
+            load_base.load_file_d2(submission_attributes, assistance_data, db_cursor)
+
+    def main_query(self, db_cursor, table_name, options):
+        sql = 'SELECT * FROM {} WHERE true'.format(table_name)
         filter_values = []
         for (column, filter) in (
-                ('action_date_begin', ' AND CAST(action_date AS DATE) >= %s'),  # what a performance-killer!
-                ('action_date_end', ' AND CAST(action_date AS DATE) <= %s'),
-                ('awarding_agency_code', ' AND awarding_agency_code = %s'),
-                ('awarding_agency_name', ' AND LOWER(awarding_agency_code) = %s'), ):
+                ('action_date_begin', ' AND action_date >= %s'),
+                ('action_date_end', ' AND action_date <= %s'),
+                ('awarding_agency_code', ' AND awarding_agency_code = %s'), ):
             if options[column]:
                 sql += filter
-                filter_values.append(options[column])
+                filter_values.append(str(options[column]))
+                if table_name == 'detached_award_procurement':
+                    # detached_award_financial_assistance stores dates in YYYYMMDD format
+                    filter_values[-1] = filter_values[-1].replace('-', '')
+
         db_cursor.execute(sql, filter_values)
-        procurement_data = dictfetchall(db_cursor)
-        logger.info('Acquired award procurement data for detached, there are ' + str(len(procurement_data)) + ' rows.')
-        load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, date_pattern='%Y-%m-%d %H:%M:%S')
+        data = dictfetchall(db_cursor)
+        logger.info('Acquired {}, there are {} rows.'.format(table_name, len(data)))
+        return data
+

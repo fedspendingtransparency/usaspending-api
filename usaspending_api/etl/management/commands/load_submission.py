@@ -99,7 +99,7 @@ class Command(load_base.Command):
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
         award_financial_assistance_data = dictfetchall(db_cursor)
         logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
-        load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor)
+        load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor)
 
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
