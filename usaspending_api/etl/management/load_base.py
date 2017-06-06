@@ -1,3 +1,7 @@
+"""
+Code for loaders in management/commands to inherit from or share.
+"""
+
 from datetime import datetime
 from decimal import Decimal
 import logging

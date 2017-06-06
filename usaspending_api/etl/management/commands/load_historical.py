@@ -29,6 +29,7 @@ class Command(load_base.Command):
     def handle_loading(self, db_cursor, *args, **options):
 
         submission_attributes = SubmissionAttributes()
+        submission_attributes.usaspending_update = datetime.now()
         submission_attributes.save()
 
         # File D1
