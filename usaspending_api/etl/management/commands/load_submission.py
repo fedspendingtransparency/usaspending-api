@@ -389,7 +389,7 @@ def get_submission_attributes(broker_submission_id, submission_data):
             )
             raise ValueError(message)
 
-        logger.info('Broker bubmission id {} already exists. It will be deleted.'.format(broker_submission_id))
+        logger.info('Broker submission id {} already exists. It will be deleted.'.format(broker_submission_id))
         call_command('rm_submission', broker_submission_id)
 
     # Find the previous submission for this CGAC and fiscal year (if there is one)
