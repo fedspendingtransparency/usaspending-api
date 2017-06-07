@@ -334,7 +334,7 @@ class TransactionContract(DataSourceTrackedModel):
     naics = models.TextField(blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
     naics_description = models.TextField(blank=True, null=True, verbose_name="NAICS Description", help_text="A plain text description of the NAICS code")
     period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True, help_text="The potential end date of the period of performance")
-    ordering_period_end_date = models.TextField(blank=True, null=True, help_text="The end date for the ordering period")  # If we aren't converting it to a date, do we even really want it?
+    ordering_period_end_date = models.DateField(blank=True, null=True, help_text="The end date for the ordering period")
     current_total_value_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, help_text="The current value of the award")
     potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award", help_text="The potential total value of the award")
     referenced_idv_agency_identifier = models.TextField(blank=True, null=True, help_text="The agency identifier of the agency on the IDV")
