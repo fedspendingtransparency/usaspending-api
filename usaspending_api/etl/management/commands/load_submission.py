@@ -924,7 +924,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
 
     for row in award_financial_assistance_data:
 
-        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
+        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, copy(legal_entity_location_value_map))
 
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
@@ -935,7 +935,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
         # Create the place of performance location
-        pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
+        pop_location, created = get_or_create_location(place_of_performance_field_map, row, copy(place_of_performance_value_map))
 
         # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
         # use the sub tier code to look it up. This code assumes that all incoming
