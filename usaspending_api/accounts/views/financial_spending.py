@@ -74,12 +74,17 @@ class MinorObjectClassFinancialSpendingViewSet(DetailViewSet):
         # need to filter on
         # (used filter() instead of get() b/c we likely don't want to raise an
         # error on a bad agency id)
-        toptier_agency = Agency.objects.filter(id=funding_agency_id).first().toptier_agency
-        queryset = queryset.filter(
-            submission__reporting_fiscal_year=fiscal_year,
-            treasury_account__funding_toptier_agency=toptier_agency,
-            object_class__major_object_class=major_object_class_code
-        )
+        agency = Agency.objects.filter(id=funding_agency_id).first()
+        if agency is None:
+            queryset = queryset.filter(
+                financial_accounts_by_program_activity_object_class_id=None)
+        else:
+            toptier_agency = agency.toptier_agency
+            queryset = queryset.filter(
+                submission__reporting_fiscal_year=fiscal_year,
+                treasury_account__funding_toptier_agency=toptier_agency,
+                object_class__major_object_class=major_object_class_code
+            )
         queryset = queryset.annotate(
             object_class_name=F('object_class__object_class_name'),
             object_class_code=F('object_class__object_class'))
