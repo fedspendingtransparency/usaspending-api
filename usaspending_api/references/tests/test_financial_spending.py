@@ -55,7 +55,7 @@ def test_award_type_endpoint(client, financial_spending_data):
     assert len(resp.data['results']) == 2
 
     # make sure resp.data['results'] contains a 3000 value
-    assert resp.data['results'][1]['obligated_amount'] == "3000.00"
+    assert (resp.data['results'][1]['obligated_amount'] == "3000.00" or resp.data['results'][0]['obligated_amount'] == "3000.00")
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/financial_spending/object_class/')
@@ -67,7 +67,7 @@ def test_award_type_endpoint(client, financial_spending_data):
     assert len(resp.data['results']) == 2
 
     # make sure resp.data['results'] contains a 3000 value
-    assert resp.data['results'][1]['obligated_amount'] == "3000.00"
+    assert (resp.data['results'][1]['obligated_amount'] == "3000.00" or resp.data['results'][0]['obligated_amount'] == "3000.00")
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/financial_spending/object_class/')
