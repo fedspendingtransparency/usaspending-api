@@ -133,7 +133,6 @@ class ObjectClassFinancialSpendingSerializer(serializers.Serializer):
 
 class AgenciesFinancialBalancesSerializer(serializers.Serializer):
 
-    fiscal_year = serializers.IntegerField()
     budget_authority_amount = serializers.DecimalField(None, 2)
     obligated_amount = serializers.DecimalField(None, 2)
     outlay_amount = serializers.DecimalField(None, 2)
