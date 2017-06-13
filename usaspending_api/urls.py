@@ -35,6 +35,7 @@ urlpatterns = [
     url(r'^api/v2/financial_balances/', include('usaspending_api.accounts.urls_financial_balances')),
     url(r'^api/v1/tas/', include('usaspending_api.accounts.urls_tas')),
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
+    url(r'^api/v2/references/', include('usaspending_api.references.urls_v2')),
     url(r'^api/v1/download/(?P<path>.*)', CsvDownloadView.as_view()),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^docs/', include('usaspending_api.api_docs.urls')),

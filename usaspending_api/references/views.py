@@ -109,7 +109,6 @@ class AgencyEndpoint(SuperLoggingMixin,
                      FilterQuerysetMixin,
                      DetailViewSet):
     """Return an agency"""
-    serializer_class = AgencySerializer
 
     def get_queryset(self):
         """Return the view's queryset."""
