@@ -12,7 +12,7 @@ from usaspending_api.awards.models import (
     Award,
     TransactionAssistance, TransactionContract, Transaction)
 from usaspending_api.references.models import (
-    Agency, LegalEntity, Location, RefCountryCode, )
+    Agency, LegalEntity, Cfda, Location, RefCountryCode, )
 from usaspending_api.etl.award_helpers import (
     update_awards, update_contract_awards,
     update_award_categories, )
@@ -401,8 +401,11 @@ def load_data_into_model(model_instance, data, **kwargs):
                 sts = True
         if field_map and not sts:
             if broker_field in field_map:
-                store_value(mod, field, data[field_map[broker_field]], reverse)
-                sts = True
+                try:
+                    store_value(mod, field, data[field_map[broker_field]], reverse)
+                    sts = True
+                except KeyError:
+                    print('column {} missing from data'.format(field_map[broker_field]))
             elif field in field_map:
                 store_value(mod, field, data[field_map[field]], reverse)
                 sts = True

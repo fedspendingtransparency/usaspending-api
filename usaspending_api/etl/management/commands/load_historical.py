@@ -24,7 +24,7 @@ from usaspending_api.awards.models import (
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
-    Agency, LegalEntity, Location, ObjectClass, RefCountryCode, Cfda, RefProgramActivity)
+    Agency, LegalEntity, Location, ObjectClass, RefCountryCode, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import (
     get_award_financial_transaction, update_awards, update_contract_awards,
@@ -45,8 +45,13 @@ awards_cache = caches['awards']
 logger = logging.getLogger('console')
 
 
-def to_date(date_str):
-    return datetime.strptime(date_str, '%Y-%m-%d').date()
+def yyyymmdd(date_str):
+    """Convert a YYYY-MM-DD date to YYYYMMDD
+
+    Action_date in the broker is stored as a YYYYMMDD string,
+    but we ask user for a more legible YYYY-MM-DD"""
+
+    return str(datetime.strptime(date_str, '%Y-%m-%d').date()).replace('-', '')
 
 
 class Command(load_base.Command):
@@ -58,10 +63,10 @@ class Command(load_base.Command):
     def add_arguments(self, parser):
 
         super(Command, self).add_arguments(parser)
-        parser.add_argument('--contracts', action='store_true', help='Load contracts')
-        parser.add_argument('--financial_assistance', action='store_true', help='Load ')
-        parser.add_argument('--action_date_begin', type=to_date, default=None, help='First action_date to get - YYYY-MM-DD')
-        parser.add_argument('--action_date_end', type=to_date, default=None, help='Last action_date to get - YYYY-MM-DD')
+        parser.add_argument('--contracts', action='store_true', help='Load contracts (not FA')
+        parser.add_argument('--financial_assistance', action='store_true', help='Load financial assistance (not contracts)')
+        parser.add_argument('--action_date_begin', type=yyyymmdd, default=None, help='First action_date to get - YYYY-MM-DD')
+        parser.add_argument('--action_date_end', type=yyyymmdd, default=None, help='Last action_date to get - YYYY-MM-DD')
         parser.add_argument('--awarding_agency_code', default=None)
 
     def handle_loading(self, db_cursor, *args, **options):
@@ -69,33 +74,31 @@ class Command(load_base.Command):
         submission_attributes = SubmissionAttributes()
         submission_attributes.save()
 
-        if not options['contracts'] and not options['financial_assistance']:
-            raise CommandError('Please specify --contracts, --financial_assistance, or both.')
+        if options['contracts'] and options['financial_assistance']:
+            raise CommandError('Default is to load both contracts and financial_assistance')
 
-        if options['contracts']:
-            procurement_data = self.main_query(db_cursor, 'detached_award_procurement', options)
+        if not options['financial_assistance']:
+            procurement_data = self.broker_data(db_cursor, 'detached_award_procurement', options)
             load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, date_pattern='%Y-%m-%d %H:%M:%S')
 
-        if options['financial_assistance']:
-            assistance_data = self.main_query(db_cursor, 'detached_award_financial_assistance', options)
+        if not options['contracts']:
+            assistance_data = self.broker_data(db_cursor, 'published_award_financial_assistance', options)
             load_base.load_file_d2(submission_attributes, assistance_data, db_cursor)
 
-    def main_query(self, db_cursor, table_name, options):
-        sql = 'SELECT * FROM {} WHERE true'.format(table_name)
+    def broker_data(self, db_cursor, table_name, options):
+        filter_sql = []
         filter_values = []
         for (column, filter) in (
                 ('action_date_begin', ' AND action_date >= %s'),
                 ('action_date_end', ' AND action_date <= %s'),
                 ('awarding_agency_code', ' AND awarding_agency_code = %s'), ):
             if options[column]:
-                sql += filter
-                filter_values.append(str(options[column]))
-                if table_name == 'detached_award_procurement':
-                    # detached_award_financial_assistance stores dates in YYYYMMDD format
-                    filter_values[-1] = filter_values[-1].replace('-', '')
+                filter_sql.append(filter)
+                filter_values.append(options[column])
+        filter_sql = "\n".join(filter_sql)
 
+        sql = 'SELECT * FROM {} WHERE true {}'.format(table_name, filter_sql)
         db_cursor.execute(sql, filter_values)
-        data = dictfetchall(db_cursor)
-        logger.info('Acquired {}, there are {} rows.'.format(table_name, len(data)))
-        return data
-
+        results = dictfetchall(db_cursor)
+        logger.info('Acquired {}, there are {} rows.'.format(table_name, len(results)))
+        return results
