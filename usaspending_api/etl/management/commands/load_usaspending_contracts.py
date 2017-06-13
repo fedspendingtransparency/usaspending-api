@@ -11,6 +11,7 @@ from usaspending_api.etl.csv_data_reader import CsvDataReader
 import usaspending_api.etl.helpers as h
 from usaspending_api.references.models import Agency, LegalEntity
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.common.helpers import fy
 
 
 class Command(BaseCommand):
@@ -71,6 +72,7 @@ class Command(BaseCommand):
                 "usaspending_unique_transaction_id": row["unique_transaction_id"]
             }
             txn = Transaction(**txn_dict)
+            txn.fiscal_year = fy(txn.action_date)
             txn_list.append(txn)
 
             # Create the transaction contract object for this row
