@@ -50,7 +50,6 @@ def test_award_type_endpoint(client, financial_spending_data):
     """Test the award_type endpoint."""
 
     resp = client.get('/api/v2/financial_spending/major_object_class/?fiscal_year=2017&funding_agency_id=1')
-    print(resp.data)
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 2
 
@@ -62,7 +61,6 @@ def test_award_type_endpoint(client, financial_spending_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
     resp = client.get('/api/v2/financial_spending/object_class/?fiscal_year=2017&funding_agency_id=1&major_object_class_code=10')
-    print(resp.data)
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 2
 

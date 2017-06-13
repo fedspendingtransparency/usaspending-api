@@ -76,8 +76,7 @@ class MinorObjectClassFinancialSpendingViewSet(DetailViewSet):
         # error on a bad agency id)
         agency = Agency.objects.filter(id=funding_agency_id).first()
         if agency is None:
-            queryset = queryset.filter(
-                financial_accounts_by_program_activity_object_class_id=None)
+            return Agency.objects.none()
         else:
             toptier_agency = agency.toptier_agency
             queryset = queryset.filter(
