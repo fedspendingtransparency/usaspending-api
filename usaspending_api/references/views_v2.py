@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 
-class AgencyEndpoint(APIView):
+class AgencyViewSet(APIView):
     """Return an agency name and active fy"""
     def get(self, request, pk, format=None):
         """Return the view's queryset."""

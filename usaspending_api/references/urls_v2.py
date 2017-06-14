@@ -10,5 +10,5 @@ mode_detail = {'get': 'retrieve', 'post': 'retrieve'}
 
 
 urlpatterns = [
-    url(r'^agency/(?P<pk>[0-9]+)/$', views_v2.AgencyEndpoint.as_view())
+    url(r'^agency/(?P<pk>[0-9]+)/$', views_v2.AgencyViewSet.as_view())
 ]
