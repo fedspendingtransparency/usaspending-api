@@ -9,13 +9,15 @@ class AgencyEndpoint(APIView):
     """Return an agency name and active fy"""
     def get(self, request, pk, format=None):
         """Return the view's queryset."""
+        response = {'results': {}}
+
         # get id from url
         agency_id = int(pk)
         # get agency cgac code
         agency = Agency.objects.filter(id=agency_id).first()
 
         if agency is None:
-            return Response({'results': {}})
+            return Response(response)
 
         toptier_agency = agency.toptier_agency
         # get corresponding submissions through cgac code
@@ -29,10 +31,10 @@ class AgencyEndpoint(APIView):
         )
         submission = queryset.first()
         if submission is None:
-            return Response({'results': {}})
+            return Response(response)
         active_fiscal_year = submission.fiscal_year
 
         # craft response
-        agency_name = toptier_agency.name
-        active_fiscal_year = active_fiscal_year
-        return Response({'results': {'agency_name': agency_name, 'active_fiscal_year': str(active_fiscal_year)}})
+        response['results']['agency_name'] = toptier_agency.name
+        response['results']['active_fiscal_year'] = str(active_fiscal_year)
+        return Response(response)
