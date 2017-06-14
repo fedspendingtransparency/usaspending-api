@@ -36,5 +36,5 @@ class AgencyEndpoint(APIView):
 
         # craft response
         response['results']['agency_name'] = toptier_agency.name
-        response['results']['active_fiscal_year'] = str(active_fiscal_year)
+        response['results']['active_fy'] = str(active_fiscal_year)
         return Response(response)
