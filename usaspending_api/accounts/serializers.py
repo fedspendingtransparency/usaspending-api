@@ -115,3 +115,18 @@ class TasCategorySerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             }
         }
+
+
+class ObjectClassFinancialSpendingSerializer(serializers.Serializer):
+
+    major_object_class_code = serializers.CharField()
+    major_object_class_name = serializers.CharField()
+    obligated_amount = serializers.DecimalField(None, 2)
+
+
+class AgenciesFinancialBalancesSerializer(serializers.Serializer):
+
+    fiscal_year = serializers.IntegerField()
+    budget_authority_amount = serializers.DecimalField(None, 2)
+    obligated_amount = serializers.DecimalField(None, 2)
+    outlay_amount = serializers.DecimalField(None, 2)

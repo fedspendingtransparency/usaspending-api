@@ -49,6 +49,7 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/federal_accounts/](/api/v1/federal_accounts/) | GET, POST | Returns a list of federal accounts |
 | /api/v1/federal_accounts/:id | GET, POST | Returns a single federal account record with all fields |
 | [/api/v1/federal_accounts/autocomplete/](/api/v1/federal_accounts/autocomplete/) | POST | Supports autocomplete on federal account records |
+| [/api/v2/financial_balances/agencies/](/api/v2/financial_balances/agencies/) | GET | Returns financial balance information for a specified fiscal year and funding agency |
 | [/api/v1/tas/](/api/v1/tas/) | GET, POST | Returns a list of treasury appropriation accounts (TAS) |
 | /api/v1/tas/:id | GET, POST | Returns a single treasury appropriation account record with all fields |
 | [/api/v1/tas/autocomplete/](/api/v1/tas/autocomplete/) | POST | Supports autocomplete on TAS records |
@@ -78,3 +79,8 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/references/recipients/:id](/api/v1/references/recipients/) | GET, POST | Returns a specific, detailed recipient record |
 | [/api/v1/references/recipients/autocomplete/](/api/v1/references/recipients/autocomplete/) | POST | Supports autocomplete on recipient records |
 | [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | Returns a list of submissions |
+| [/api/v1/filter/](/api/v1/filter/) | POST | Returns a hash of the json body |
+| [/api/v1/hash/](/api/v1/hash/) | POST | Returns a previously input json body |
+| [/api/v2/award_spending/award_type/](/api/v1/award_spending/award_type/) | GET | Returns a list of total obligations by award_type |
+| [/api/v2/award_spending/recipient/](/api/v1/award_spending/recipient/) | GET | Returns a list of total obligations by recipient |
+| [/api/v2/financial_spending/object_class/](/api/v2/financial_spending/object_class/) | GET | takes fiscal year and funding agency id as input, and returns that agencies obligated amounts to specific major object classes  |
