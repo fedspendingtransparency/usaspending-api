@@ -1,4 +1,4 @@
-from django.conf.urls import url, include
+from django.conf.urls import url
 from usaspending_api.references import views, views_v2
 from rest_framework.routers import DefaultRouter
 
