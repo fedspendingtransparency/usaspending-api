@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 
-class AgencyEndpoint(APIView):
+class AgencyViewSet(APIView):
     """Return an agency name and active fy"""
     def get(self, request, pk, format=None):
         """Return the view's queryset."""
@@ -36,5 +36,5 @@ class AgencyEndpoint(APIView):
 
         # craft response
         response['results']['agency_name'] = toptier_agency.name
-        response['results']['active_fiscal_year'] = str(active_fiscal_year)
+        response['results']['active_fy'] = str(active_fiscal_year)
         return Response(response)

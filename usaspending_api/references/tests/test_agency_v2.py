@@ -28,7 +28,7 @@ def test_award_type_endpoint(client, financial_spending_data):
 
     resp = client.get('/api/v2/references/agency/1/')
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == {'results': {'agency_name': 'tta_name', 'active_fiscal_year': '2017'}}
+    assert resp.data == {'results': {'agency_name': 'tta_name', 'active_fy': '2017'}}
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/references/agency/4/')
