@@ -19,6 +19,63 @@ def test_location_reference_fill():
 
 
 @pytest.mark.django_db
+def test_location_country_fill():
+    "Test populating missing country name for US"
+    loc = mommy.make('references.Location',
+                     state_code='MN', _fill_optional=False)
+    loc.save()
+    assert loc.country_name == 'UNITED STATES'
+
+    loc = mommy.make('references.Location',
+                     state_name='MINNESOTA', _fill_optional=False)
+    loc.save()
+    assert loc.country_name == 'UNITED STATES'
+
+    # do not correct if not a US state
+    loc = mommy.make('references.Location', _fill_optional=False)
+    loc.save()
+    assert not loc.country_name
+
+    loc = mommy.make('references.Location',
+                     state_name='ONTARIO', _fill_optional=False)
+    loc.save()
+    assert not loc.country_name
+
+
+@pytest.mark.django_db
+def test_location_state_fill():
+    "Test populating missing state info"
+
+    # Correct where one or the other is missing
+    loc = mommy.make('references.Location', state_code='MN',
+                     country_name='UNITED STATES', _fill_optional=False)
+    loc.save()
+    assert loc.state_name == 'MINNESOTA'
+
+    loc = mommy.make('references.Location', state_name='MINNESOTA',
+                     country_name='UNITED STATES', _fill_optional=False)
+    loc.save()
+    assert loc.state_code == 'MN'
+
+    # Do not correct if both are full, even if it's wrong
+    loc = mommy.make('references.Location', state_name='OHIO',
+                     state_code='OK', country_name='UNITED STATES', _fill_optional=False)
+    loc.save()
+    assert loc.state_name == 'OHIO'
+    assert loc.state_code == 'OK'
+
+    # Do not correct if not clearly a US state
+    loc = mommy.make('references.Location', state_name='OHAYOU',
+                     country_name='UNITED STATES', _fill_optional=False)
+    loc.save()
+    assert not loc.state_code
+
+    # Do not correct if not US
+    loc = mommy.make('references.Location', state_name='MINNESOTA',
+                     country_name='CANADA', _fill_optional=False)
+    loc.save()
+    assert not loc.state_code
+@pytest.mark.django_db
 def test_geocomplete_scope():
     usa_code = mommy.make('references.RefCountryCode', country_code="USA", country_name="United States", _fill_optional=True)
     can_code = mommy.make('references.RefCountryCode', country_code="CAN", country_name="Canada", _fill_optional=True)
