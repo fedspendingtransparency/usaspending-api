@@ -6,6 +6,7 @@ from django.utils.text import slugify
 from django.contrib.postgres.fields import ArrayField, JSONField
 
 from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.references.abbreviations import code_to_state, state_to_code
 from usaspending_api.references.helpers import canonicalize_string
 
 
@@ -236,7 +237,44 @@ class Location(DataSourceTrackedModel):
     def save(self, *args, **kwargs):
         self.load_country_data()
         self.load_city_county_data()
+        self.fill_missing_country()
+        self.fill_missing_state_data()
         super(Location, self).save(*args, **kwargs)
+
+    def state_name_mismatch(self):
+        "True if state_name and state_code not in agreement"
+
+        if (not self.state_name) or (not self.state_code):
+            return False
+        return (self.state_name != code_to_state.get(self.state_code))
+
+    def is_us_state(self):
+        "Is this unambiguously a US state?"
+
+        if self.state_name_mismatch():
+            return False
+
+        if (self.state_code in code_to_state) or (self.state_name in state_to_code):
+            return True
+
+    def fill_missing_country(self):
+        """When country is blank but state info indicates US, fill"""
+
+        if (not self.country_name) and self.is_us_state():
+            self.country_name = 'UNITED STATES'
+
+    def fill_missing_state_data(self):
+        """Fills in blank US state names or codes from its counterpart"""
+
+        if self.state_code and self.state_name:
+            return
+        if self.state_name_mismatch():
+            return
+        if self.country_name == 'UNITED STATES':
+            if (not self.state_code):
+                self.state_code = state_to_code.get(self.state_name)
+            elif (not self.state_name):
+                self.state_name = code_to_state.get(self.state_code)
 
     def load_country_data(self):
         if self.location_country_code:
