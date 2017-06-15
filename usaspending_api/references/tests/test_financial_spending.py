@@ -19,7 +19,7 @@ def financial_spending_data(db):
     # Object 1
     tas1 = mommy.make('accounts.TreasuryAppropriationAccount', funding_toptier_agency=ttagency1)
     # Financial Account with Object class and submission
-    object_class_1 = mommy.make('references.ObjectClass', major_object_class="mocCode",
+    object_class_1 = mommy.make('references.ObjectClass', major_object_class="10",
                                 major_object_class_name="mocName", object_class="ocCode", object_class_name="ocName")
     submission_1 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2017)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=object_class_1,
@@ -27,7 +27,7 @@ def financial_spending_data(db):
                final_of_fy=True)
 
     # Object 2 (contains 2 fabpaoc s)
-    object_class_2 = mommy.make('references.ObjectClass', major_object_class="mocCode2",
+    object_class_2 = mommy.make('references.ObjectClass', major_object_class="10",
                                 major_object_class_name="mocName2", object_class="ocCode2", object_class_name="ocName2")
     submission_2 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2017)
     mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=object_class_2,
@@ -49,13 +49,23 @@ def financial_spending_data(db):
 def test_award_type_endpoint(client, financial_spending_data):
     """Test the award_type endpoint."""
 
-    resp = client.get('/api/v2/financial_spending/object_class/?fiscal_year=2017&funding_agency_id=1')
-    print(resp.data)
+    resp = client.get('/api/v2/financial_spending/major_object_class/?fiscal_year=2017&funding_agency_id=1')
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 2
 
     # make sure resp.data['results'] contains a 3000 value
-    assert resp.data['results'][1]['obligated_amount'] == "3000.00"
+    assert (resp.data['results'][1]['obligated_amount'] == "3000.00" or resp.data['results'][0]['obligated_amount'] == "3000.00")
+
+    # check for bad request due to missing params
+    resp = client.get('/api/v2/financial_spending/object_class/')
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+    resp = client.get('/api/v2/financial_spending/object_class/?fiscal_year=2017&funding_agency_id=1&major_object_class_code=10')
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data['results']) == 2
+
+    # make sure resp.data['results'] contains a 3000 value
+    assert (resp.data['results'][1]['obligated_amount'] == "3000.00" or resp.data['results'][0]['obligated_amount'] == "3000.00")
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/financial_spending/object_class/')

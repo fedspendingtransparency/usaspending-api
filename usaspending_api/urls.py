@@ -39,6 +39,7 @@ urlpatterns = [
     url(r'^api/v2/award_spending/', include('usaspending_api.awards.urls_award_spending')),
     url(r'^api/v2/financial_balances/', include('usaspending_api.accounts.urls_financial_balances')),
     url(r'^api/v2/financial_spending/', include('usaspending_api.accounts.urls_financial_spending')),
+    url(r'^api/v2/references/', include('usaspending_api.references.urls_v2')),
     url(r'^docs/', include('usaspending_api.api_docs.urls')),
     url(r'^status/', views.StatusView.as_view())
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
