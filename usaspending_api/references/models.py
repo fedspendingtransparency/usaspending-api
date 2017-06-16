@@ -237,7 +237,6 @@ class Location(DataSourceTrackedModel):
     def save(self, *args, **kwargs):
         self.load_country_data()
         self.load_city_county_data()
-        self.fill_missing_country()
         self.fill_missing_state_data()
         super(Location, self).save(*args, **kwargs)
 
@@ -256,12 +255,6 @@ class Location(DataSourceTrackedModel):
 
         if (self.state_code in code_to_state) or (self.state_name in state_to_code):
             return True
-
-    def fill_missing_country(self):
-        """When country is blank but state info indicates US, fill"""
-
-        if (not self.country_name) and self.is_us_state():
-            self.country_name = 'UNITED STATES'
 
     def fill_missing_state_data(self):
         """Fills in blank US state names or codes from its counterpart"""
