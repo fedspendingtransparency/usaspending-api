@@ -1,18 +1,13 @@
 from collections import namedtuple
-import json
-
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
 
 from usaspending_api.awards.models import Award, Transaction, Subaward
 from usaspending_api.awards.serializers import AwardSerializer, AwardTypeAwardSpendingSerializer, \
     RecipientAwardSpendingSerializer, SubawardSerializer, TransactionSerializer
-from usaspending_api.common.api_request_utils import AutoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin, AggregateQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers import check_valid_toptier_agency
 from django.db.models import F, Sum
 
 
@@ -67,6 +62,9 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
         if not (fiscal_year and awarding_agency_id):
             raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, awarding_agency_id')
 
+        if not check_valid_toptier_agency(awarding_agency_id):
+            raise InvalidParameterException('Awarding Agency ID provided must correspond to a toptier agency')
+
         queryset = Transaction.objects.all()
         # Filter based on fiscal year and agency id
         queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=awarding_agency_id)
@@ -120,6 +118,9 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
         # required query parameters were not provided
         if not (fiscal_year and awarding_agency_id):
             raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, awarding_agency_id')
+
+        if not check_valid_toptier_agency(awarding_agency_id):
+            raise InvalidParameterException('Awarding Agency ID provided must correspond to a toptier agency')
 
         queryset = Transaction.objects.all()
         # Filter based on fiscal year and agency id
