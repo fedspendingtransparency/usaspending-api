@@ -12,6 +12,7 @@ from django.core.serializers.json import json
 from django.db import connections
 from django.db.models import F, Q
 from django.core.cache import caches
+from django.utils.dateparse import parse_date
 import pandas as pd
 import numpy as np
 
@@ -65,8 +66,8 @@ class Command(load_base.Command):
         super(Command, self).add_arguments(parser)
         parser.add_argument('--contracts', action='store_true', help='Load contracts (not FA')
         parser.add_argument('--financial_assistance', action='store_true', help='Load financial assistance (not contracts)')
-        parser.add_argument('--action_date_begin', type=yyyymmdd, default=None, help='First action_date to get - YYYY-MM-DD')
-        parser.add_argument('--action_date_end', type=yyyymmdd, default=None, help='Last action_date to get - YYYY-MM-DD')
+        parser.add_argument('--action_date_begin', type=parse_date, default=None, help='First action_date to get - YYYY-MM-DD')
+        parser.add_argument('--action_date_end', type=parse_date, default=None, help='Last action_date to get - YYYY-MM-DD')
         parser.add_argument('--awarding_agency_code', default=None)
 
     def handle_loading(self, db_cursor, *args, **options):
@@ -89,8 +90,8 @@ class Command(load_base.Command):
         filter_sql = []
         filter_values = []
         for (column, filter) in (
-                ('action_date_begin', ' AND action_date >= %s'),
-                ('action_date_end', ' AND action_date <= %s'),
+                ('action_date_begin', ' AND (action_date IS NOT NULL) AND CAST(action_date AS DATE) >= %s'),
+                ('action_date_end', ' AND (action_date IS NOT NULL) AND CAST(action_date AS DATE) <= %s'),
                 ('awarding_agency_code', ' AND awarding_agency_code = %s'), ):
             if options[column]:
                 filter_sql.append(filter)
