@@ -1,3 +1,4 @@
+from usaspending_api.common.models import RequestCatalog
 import random
 
 # Simple router to randomly choose between reading from the source or read replicas
@@ -6,6 +7,8 @@ import random
 class ReadReplicaRouter(object):
 
     def db_for_read(self, model, **hints):
+        if model is RequestCatalog:
+            return 'db_source'
         return random.choice(['db_source', 'db_r1'])
 
     def db_for_write(self, model, **hints):
