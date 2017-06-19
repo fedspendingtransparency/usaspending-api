@@ -247,15 +247,6 @@ class Location(DataSourceTrackedModel):
             return False
         return (self.state_name != code_to_state.get(self.state_code))
 
-    def is_us_state(self):
-        "Is this unambiguously a US state?"
-
-        if self.state_name_mismatch():
-            return False
-
-        if (self.state_code in code_to_state) or (self.state_name in state_to_code):
-            return True
-
     def fill_missing_state_data(self):
         """Fills in blank US state names or codes from its counterpart"""
 
