@@ -7,7 +7,7 @@ import random
 class ReadReplicaRouter(object):
 
     def db_for_read(self, model, **hints):
-        if model is RequestCatalog:
+        if model is 'RequestCatalog':
             return 'db_source'
         return random.choice(['db_source', 'db_r1'])
 
