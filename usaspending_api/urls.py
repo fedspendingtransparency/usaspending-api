@@ -16,7 +16,6 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls import url, include
 from usaspending_api import views as views
-from django.views.generic import TemplateView
 from usaspending_api.common.views import MarkdownView
 from usaspending_api.common.csv_views import CsvDownloadView
 from django.conf.urls.static import static
@@ -24,15 +23,21 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     url(r'^status/', views.StatusView.as_view()),
+    url(r'^api/v1/federal_accounts/', include('usaspending_api.accounts.urls_federal_account')),
+    url(r'^api/v2/financial_spending/', include('usaspending_api.accounts.urls_financial_spending')),
+    url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
     url(r'^api/v1/awards/', include('usaspending_api.awards.urls_awards')),
+    url(r'^api/v2/award_spending/', include('usaspending_api.awards.urls_award_spending')),
     url(r'^api/v1/subawards/', include('usaspending_api.awards.urls_subawards')),
     url(r'^api/v1/transactions/', include('usaspending_api.awards.urls_transactions')),
     url(r'^api/v1/submissions/', include('usaspending_api.submissions.urls')),
     url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
     url(r'^api/v1/federal_accounts/', include('usaspending_api.accounts.urls_federal_account')),
+    url(r'^api/v2/financial_balances/', include('usaspending_api.accounts.urls_financial_balances')),
     url(r'^api/v1/tas/', include('usaspending_api.accounts.urls_tas')),
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api/v1/download/(?P<path>.*)', CsvDownloadView.as_view()),
+    url(r'^api/v2/references/', include('usaspending_api.references.urls_v2')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^docs/', include('usaspending_api.api_docs.urls')),
     url(r'^$', MarkdownView.as_view(markdown='landing_page.md')),

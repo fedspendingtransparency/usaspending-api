@@ -1,16 +1,12 @@
 from datetime import datetime
+from copy import copy
 from decimal import Decimal
 import logging
-import os
 import re
 
-from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
-from django.core.serializers.json import json
 from django.db import connections
-from django.db.models import F, Q
+from django.db.models import Q
 from django.core.cache import caches
 import pandas as pd
 import numpy as np
@@ -20,21 +16,18 @@ from usaspending_api.accounts.models import (
     TreasuryAppropriationAccount)
 from usaspending_api.awards.models import (
     Award, FinancialAccountsByAwards,
-    TransactionAssistance, TransactionContract, Transaction)
+    TransactionAssistance, Transaction)
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
-    Agency, LegalEntity, Location, ObjectClass, RefCountryCode, Cfda, RefProgramActivity)
+    Agency, LegalEntity, ObjectClass, Cfda, RefProgramActivity)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import (
-    get_award_financial_transaction, update_awards, update_contract_awards,
-    update_award_categories, get_awarding_agency)
+    get_award_financial_transaction, get_awarding_agency)
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
 from usaspending_api.etl.subaward_etl import load_subawards
-from usaspending_api.references.helpers import canonicalize_location_dict
 
-from usaspending_api.etl.helpers import update_model_description_fields
 from usaspending_api.etl.management import load_base
 from usaspending_api.etl.management.load_base import format_date, load_data_into_model
 
@@ -44,7 +37,6 @@ TAS_ID_TO_ACCOUNT = {}
 
 # Lists to store for update_awards and update_contract_awards
 AWARD_UPDATE_ID_LIST = []
-AWARD_CONTRACT_UPDATE_ID_LIST = []
 
 awards_cache = caches['awards']
 logger = logging.getLogger('console')
@@ -576,5 +568,3 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=True, reverse=reverse)
 
     awards_cache.clear()
-
-

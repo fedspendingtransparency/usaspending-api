@@ -1,3 +1,8 @@
+"""
+Code for loaders in management/commands to inherit from or share.
+"""
+
+from copy import copy
 from datetime import datetime
 from decimal import Decimal
 import logging
@@ -7,6 +12,7 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
 from django.db import connections
 from django.core.cache import caches
+from django.utils.dateparse import parse_datetime
 
 from usaspending_api.awards.models import (
     Award,
@@ -117,7 +123,8 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, date_patter
     }
 
     for row in procurement_data:
-        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
+
+        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, copy(legal_entity_location_value_map))
 
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
@@ -129,7 +136,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, date_patter
 
         # Create the place of performance location
         pop_location, created = get_or_create_location(
-            place_of_performance_field_map, row, place_of_performance_value_map)
+            place_of_performance_field_map, row, copy(place_of_performance_value_map))
 
         # If awarding toptier agency code (aka CGAC) is not supplied on the D1 record,
         # use the sub tier code to look it up. This code assumes that all incoming
@@ -422,7 +429,7 @@ def load_data_into_model(model_instance, data, **kwargs):
         return model_instance
 
 
-def get_or_create_location(location_map, row, location_value_map={}):
+def get_or_create_location(location_map, row, location_value_map=None):
     """
     Retrieve or create a location object
 
@@ -431,6 +438,9 @@ def get_or_create_location(location_map, row, location_value_map={}):
             and value = corresponding field name on the current row of data
         - row: the row of data currently being loaded
     """
+    if location_value_map is None:
+        location_value_map = {}
+
     row = canonicalize_location_dict(row)
 
     location_country = RefCountryCode.objects.filter(
@@ -476,6 +486,12 @@ def get_or_create_location(location_map, row, location_value_map={}):
 def store_value(model_instance_or_dict, field, value, reverse=None):
     if value is None:
         return
+    if field.endswith('date'):  # turn datetimes into dates
+        if isinstance(value, str):
+            try:
+                value = parse_datetime(value).date() or value
+            except TypeError:
+                pass  # was not a datetime in string form after all
     if reverse and reverse.search(field):
         value = -1 * Decimal(value)
     if isinstance(model_instance_or_dict, dict):

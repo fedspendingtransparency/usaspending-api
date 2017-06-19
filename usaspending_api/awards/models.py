@@ -10,6 +10,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import (
     Agency, Cfda, LegalEntity, Location, ObjectClass, RefProgramActivity)
 from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.common.helpers import fy
 from django.core.cache import caches, CacheKeyWarning
 
 warnings.simplefilter("ignore", CacheKeyWarning)
@@ -293,6 +294,7 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
     certified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was certified")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="The date this transaction was created in the API")
     update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this transaction was updated in the API")
+    fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
     history = HistoricalRecords()
 
     def __str__(self):
@@ -315,6 +317,10 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
             return transaction
         return cls(**kwargs)
 
+    def save(self, *args, **kwargs):
+        self.fiscal_year = fy(self.action_date)
+        super().save(*args, **kwargs)
+
     class Meta:
         db_table = 'transaction'
         index_together = ['award', 'action_date']
@@ -334,7 +340,7 @@ class TransactionContract(DataSourceTrackedModel):
     naics = models.TextField(blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
     naics_description = models.TextField(blank=True, null=True, verbose_name="NAICS Description", help_text="A plain text description of the NAICS code")
     period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True, help_text="The potential end date of the period of performance")
-    ordering_period_end_date = models.TextField(blank=True, null=True, help_text="The end date for the ordering period")  # If we aren't converting it to a date, do we even really want it?
+    ordering_period_end_date = models.DateField(blank=True, null=True, help_text="The end date for the ordering period")
     current_total_value_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, help_text="The current value of the award")
     potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award", help_text="The potential total value of the award")
     referenced_idv_agency_identifier = models.TextField(blank=True, null=True, help_text="The agency identifier of the agency on the IDV")
