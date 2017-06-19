@@ -1,6 +1,14 @@
 import datetime
 
 from django.utils.dateparse import parse_date
+from usaspending_api.references.models import Agency
+
+
+def check_valid_toptier_agency(agency_id):
+    """ Check if the ID provided (corresponding to Agency.id) is a valid toptier agency """
+
+    agency = Agency.objects.filter(id=agency_id, toptier_flag=True).first()
+    return agency is not None
 
 
 def get_params_from_req_or_request(request=None, req=None):
