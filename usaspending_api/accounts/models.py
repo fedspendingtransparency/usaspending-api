@@ -19,6 +19,8 @@ class FederalAccount(models.Model):
     agency_identifier = models.TextField(db_index=True)
     main_account_code = models.TextField(db_index=True)
     account_title = account_title = models.TextField()
+    # agency_identifier + '-' + main_account_code + ' - ' + account_title
+    federal_account_code = models.TextField(null=True)
 
     class Meta:
         managed = True
