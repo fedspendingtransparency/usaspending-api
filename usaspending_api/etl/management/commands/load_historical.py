@@ -11,6 +11,19 @@ from usaspending_api.etl.management import load_base
 logger = logging.getLogger('console')
 
 
+def before_colon(txt):
+
+    return txt.split(':', 1)[0].strip()
+
+
+def preprocess_historical_d2_row(row):
+    "Change values `code: full description` to simply `code` for certain row keys"
+
+    for key in ('awarding_sub_tier_agency_c', 'business_types', 'action_type', 'assistance_type'):
+        row[key] = before_colon(row[key])
+    return row
+
+
 class Command(load_base.Command):
     """
     This command will load detached submissions from the DATA Act broker.
@@ -37,11 +50,11 @@ class Command(load_base.Command):
 
         if not options['financial_assistance']:
             procurement_data = self.broker_data(db_cursor, 'detached_award_procurement', options)
-            load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, date_pattern='%Y-%m-%d %H:%M:%S')
+            load_base.load_file_d1(submission_attributes, procurement_data, db_cursor)
 
         if not options['contracts']:
             assistance_data = self.broker_data(db_cursor, 'published_award_financial_assistance', options)
-            load_base.load_file_d2(submission_attributes, assistance_data, db_cursor)
+            load_base.load_file_d2(submission_attributes, assistance_data, db_cursor, row_preprocessor=preprocess_historical_d2_row)
 
     def broker_data(self, db_cursor, table_name, options):
         filter_sql = []

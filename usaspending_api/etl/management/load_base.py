@@ -7,6 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 import logging
 
+import dateutil
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
@@ -85,7 +86,7 @@ class Command(BaseCommand):
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
 
-def load_file_d1(submission_attributes, procurement_data, db_cursor, date_pattern='%Y%m%d'):
+def load_file_d1(submission_attributes, procurement_data, db_cursor):
     """
     Process and load file D1 broker data (contract award txns).
     """
@@ -177,9 +178,9 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, date_patter
             "recipient": legal_entity,
             "place_of_performance": pop_location,
             'submission': submission_attributes,
-            "period_of_performance_start_date": format_date(row['period_of_performance_star'], date_pattern),
-            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr'], date_pattern),
-            "action_date": format_date(row['action_date'], date_pattern),
+            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+            "action_date": format_date(row['action_date']),
         }
 
         transaction_dict = load_data_into_model(
@@ -196,7 +197,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, date_patter
             'submission': submission_attributes,
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
-            "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'], date_pattern)
+            "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'])
         }
 
         contract_instance = load_data_into_model(
@@ -210,7 +211,13 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, date_patter
         transaction_contract.save()
 
 
-def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor):
+def no_preprocessing(row):
+    "For data whose rows require no preprocessing."
+
+    return row
+
+
+def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, row_preprocessor=no_preprocessing):
     """
     Process and load file D2 broker data (financial assistance award txns).
     """
@@ -259,6 +266,8 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
     }
 
     for row in award_financial_assistance_data:
+
+        row = row_preprocessor(row)
 
         legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
@@ -346,10 +355,10 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         transaction_assistance.save()
 
 
-def format_date(date_string, pattern='%Y%m%d'):
+def format_date(date_string):
     try:
-        return datetime.strptime(date_string, pattern)
-    except TypeError:
+        return dateutil.parser.parse(date_string).date()
+    except (TypeError, ValueError):
         return None
 
 
