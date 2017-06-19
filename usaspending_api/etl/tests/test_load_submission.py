@@ -36,20 +36,6 @@ def partially_flushed():
 
 
 @pytest.mark.django_db
-def test_load_historical_command_without_target_raises():
-    """
-    If user specifies neither --contracts nor --financial_assistance, throw error
-     the submission loader to validate the ETL process
-    """
-    with pytest.raises(CommandError):
-        call_command('load_historical', '--test',
-                     '--action_date_begin', '2017-05-01',
-                     '--action_date_end', '2017-05-02',
-                     '--awarding_agency_code', '015')
-
-# TODO: date formats incompatible with storage
-
-@pytest.mark.django_db
 def test_load_historical_command_contracts(endpoint_data, partially_flushed):
     """
     Test historical loader for contracts
@@ -94,7 +80,7 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     Test the submission loader to validate the ETL process
     """
     # Load the RefObjClass and ProgramActivityCode data
-    call_command('load_submission', '-1', '--test', '--contracts')
+    call_command('load_submission', '-1', '--test')
     assert SubmissionAttributes.objects.count() == 1
     assert AppropriationAccountBalances.objects.count() == 1
     assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 9
