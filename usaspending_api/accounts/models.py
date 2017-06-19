@@ -19,7 +19,8 @@ class FederalAccount(models.Model):
     agency_identifier = models.TextField(db_index=True)
     main_account_code = models.TextField(db_index=True)
     account_title = account_title = models.TextField()
-    # agency_identifier + '-' + main_account_code + ' - ' + account_title
+    # This field is a combination of the above fields for the purpose of autocomplete
+    # The format is: agency_identifier + '-' + main_account_code + ' - ' + account_title
     federal_account_code = models.TextField(null=True)
 
     class Meta:
