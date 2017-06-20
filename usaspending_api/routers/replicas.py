@@ -12,6 +12,7 @@ handle the models that are *not* readonly appropriately.
 It splits requests among two databases but you can add more.
 """
 
+
 class ReadReplicaRouter(object):
 
     def db_for_read(self, model, **hints):
