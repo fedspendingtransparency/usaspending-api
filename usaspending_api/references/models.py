@@ -240,19 +240,10 @@ class Location(DataSourceTrackedModel):
         self.fill_missing_state_data()
         super(Location, self).save(*args, **kwargs)
 
-    def state_name_mismatch(self):
-        "True if state_name and state_code not in agreement"
-
-        if (not self.state_name) or (not self.state_code):
-            return False
-        return (self.state_name != code_to_state.get(self.state_code))
-
     def fill_missing_state_data(self):
         """Fills in blank US state names or codes from its counterpart"""
 
         if self.state_code and self.state_name:
-            return
-        if self.state_name_mismatch():
             return
         if self.country_name == 'UNITED STATES':
             if (not self.state_code):
