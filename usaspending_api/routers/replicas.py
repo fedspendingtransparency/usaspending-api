@@ -1,13 +1,21 @@
-from usaspending_api.common.models import RequestCatalog
-from usaspending_api.references.models import FilterHash
 import random
 
-# Simple router to randomly choose between reading from the source or read replicas
+from usaspending_api.common.models import RequestCatalog
+from usaspending_api.references.models import FilterHash
 
+"""
+The USAspending API is a *mostly* readonly application. This
+router is used to balance loads between multiple databases
+defined by the environment variables in settings.py, and
+handle the models that are *not* readonly appropriately.
+
+It splits requests among two databases but you can add more.
+"""
 
 class ReadReplicaRouter(object):
 
     def db_for_read(self, model, **hints):
+
         if model in [RequestCatalog, FilterHash]:
             return 'db_source'
         return random.choice(['db_source', 'db_r1'])
