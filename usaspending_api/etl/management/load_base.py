@@ -498,9 +498,9 @@ def store_value(model_instance_or_dict, field, value, reverse=None):
     if field.endswith('date'):  # turn datetimes into dates
         if isinstance(value, str):
             try:
-                value = parse_datetime(value).date() or value
-            except TypeError:
-                pass  # was not a datetime in string form after all
+                value = dateutil.parser.parse(value).date()
+            except (TypeError, ValueError):
+                pass
     if reverse and reverse.search(field):
         value = -1 * Decimal(value)
     if isinstance(model_instance_or_dict, dict):
