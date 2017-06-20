@@ -17,7 +17,7 @@ def before_colon(txt):
 
 
 def preprocess_historical_d2_row(row):
-    "Change values `code: full description` to simply `code` for certain row keys"
+    """Change values `code: full description` to simply `code` for certain row keys"""
 
     for key in ('awarding_sub_tier_agency_c', 'business_types', 'action_type', 'assistance_type'):
         row[key] = before_colon(row[key])
@@ -57,6 +57,7 @@ class Command(load_base.Command):
             load_base.load_file_d2(submission_attributes, assistance_data, db_cursor, row_preprocessor=preprocess_historical_d2_row)
 
     def broker_data(self, db_cursor, table_name, options):
+        """Applies user-selected filters and gets rows from appropriate broker-side table"""
         filter_sql = []
         filter_values = []
         for (column, filter) in (

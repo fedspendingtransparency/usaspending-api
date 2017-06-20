@@ -74,7 +74,7 @@ class Command(BaseCommand):
         self.post_load_cleanup()
 
     def post_load_cleanup(self):
-        "Global cleanup/post-load tasks not specific to a submission"
+        """Global cleanup/post-load tasks not specific to a submission"""
 
         # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
         update_model_description_fields()
@@ -212,7 +212,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
 
 
 def no_preprocessing(row):
-    "For data whose rows require no preprocessing."
+    """For data whose rows require no preprocessing."""
 
     return row
 
