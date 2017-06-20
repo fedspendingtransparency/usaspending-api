@@ -33,8 +33,8 @@ class Command(load_base.Command):
     def add_arguments(self, parser):
 
         super(Command, self).add_arguments(parser)
-        parser.add_argument('--contracts', action='store_true', help='Load contracts (not FA')
-        parser.add_argument('--financial_assistance', action='store_true', help='Load financial assistance (not contracts)')
+        parser.add_argument('--contracts', action='store_true', help='Load contracts')
+        parser.add_argument('--financial_assistance', action='store_true', help='Load financial assistance')
         parser.add_argument('--action_date_begin', type=parse_date, default=None, help='First action_date to get - YYYY-MM-DD')
         parser.add_argument('--action_date_end', type=parse_date, default=None, help='Last action_date to get - YYYY-MM-DD')
         parser.add_argument('--cgac', default=None)
@@ -45,14 +45,14 @@ class Command(load_base.Command):
         submission_attributes.usaspending_update = datetime.now()
         submission_attributes.save()
 
-        if options['contracts'] and options['financial_assistance']:
-            raise CommandError('Default is to load both contracts and financial_assistance')
+        if not options['contracts'] and not options['financial_assistance']:
+            raise CommandError('Must specify either --contracts, --financial_assistance, or both')
 
-        if not options['financial_assistance']:
+        if options['contracts']:
             procurement_data = self.broker_data(db_cursor, 'detached_award_procurement', options)
             load_base.load_file_d1(submission_attributes, procurement_data, db_cursor)
 
-        if not options['contracts']:
+        if options['financial_assistance']:
             assistance_data = self.broker_data(db_cursor, 'published_award_financial_assistance', options)
             load_base.load_file_d2(submission_attributes, assistance_data, db_cursor, row_preprocessor=preprocess_historical_d2_row)
 
