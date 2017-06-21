@@ -7,17 +7,19 @@ from datetime import datetime
 from decimal import Decimal
 import logging
 
+import dateutil
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
 from django.db import connections
 from django.core.cache import caches
+from django.utils.dateparse import parse_datetime
 
 from usaspending_api.awards.models import (
     Award,
-    TransactionContract, Transaction)
+    TransactionAssistance, TransactionContract, Transaction)
 from usaspending_api.references.models import (
-    Agency, LegalEntity, Location, RefCountryCode, )
+    Agency, LegalEntity, Cfda, Location, RefCountryCode, )
 from usaspending_api.etl.award_helpers import (
     update_awards, update_contract_awards,
     update_award_categories, )
@@ -72,7 +74,7 @@ class Command(BaseCommand):
         self.post_load_cleanup()
 
     def post_load_cleanup(self):
-        "Global cleanup/post-load tasks not specific to a submission"
+        """Global cleanup/post-load tasks not specific to a submission"""
 
         # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
         update_model_description_fields()
@@ -84,7 +86,7 @@ class Command(BaseCommand):
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
 
-def load_file_d1(submission_attributes, procurement_data, db_cursor, date_pattern='%Y%m%d'):
+def load_file_d1(submission_attributes, procurement_data, db_cursor):
     """
     Process and load file D1 broker data (contract award txns).
     """
@@ -176,9 +178,9 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, date_patter
             "recipient": legal_entity,
             "place_of_performance": pop_location,
             'submission': submission_attributes,
-            "period_of_performance_start_date": format_date(row['period_of_performance_star'], date_pattern),
-            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr'], date_pattern),
-            "action_date": format_date(row['action_date'], date_pattern),
+            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+            "action_date": format_date(row['action_date']),
         }
 
         transaction_dict = load_data_into_model(
@@ -195,7 +197,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, date_patter
             'submission': submission_attributes,
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
-            "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'], date_pattern)
+            "period_of_performance_potential_end_date": format_date(row['period_of_perf_potential_e'])
         }
 
         contract_instance = load_data_into_model(
@@ -209,10 +211,154 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, date_patter
         transaction_contract.save()
 
 
-def format_date(date_string, pattern='%Y%m%d'):
+def no_preprocessing(row):
+    """For data whose rows require no preprocessing."""
+
+    return row
+
+
+def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, row_preprocessor=no_preprocessing):
+    """
+    Process and load file D2 broker data (financial assistance award txns).
+    """
+    legal_entity_location_field_map = {
+        "address_line1": "legal_entity_address_line1",
+        "address_line2": "legal_entity_address_line2",
+        "address_line3": "legal_entity_address_line3",
+        "city_code": "legal_entity_city_code",
+        "city_name": "legal_entity_city_name",
+        "congressional_code": "legal_entity_congressional",
+        "county_code": "legal_entity_county_code",
+        "county_name": "legal_entity_county_name",
+        "foreign_city_name": "legal_entity_foreign_city",
+        "foreign_postal_code": "legal_entity_foreign_posta",
+        "foreign_province": "legal_entity_foreign_provi",
+        "state_code": "legal_entity_state_code",
+        "state_name": "legal_entity_state_name",
+        "zip5": "legal_entity_zip5",
+        "zip_last4": "legal_entity_zip_last4",
+        "location_country_code": "legal_entity_country_code"
+    }
+
+    place_of_performance_field_map = {
+        "city_name": "place_of_performance_city",
+        "performance_code": "place_of_performance_code",
+        "congressional_code": "place_of_performance_congr",
+        "county_name": "place_of_perform_county_na",
+        "foreign_location_description": "place_of_performance_forei",
+        "state_name": "place_of_perform_state_nam",
+        "zip4": "place_of_performance_zip4a",
+        "location_country_code": "place_of_perform_country_c"
+
+    }
+
+    legal_entity_location_value_map = {
+        "recipient_flag": True
+    }
+
+    place_of_performance_value_map = {
+        "place_of_performance_flag": True
+    }
+
+    fad_field_map = {
+        "type": "assistance_type",
+        "description": "award_description",
+    }
+
+    for row in award_financial_assistance_data:
+
+        row = row_preprocessor(row)
+
+        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
+
+        # Create the legal entity if it doesn't exist
+        legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
+        if created:
+            legal_entity_value_map = {
+                "location": legal_entity_location,
+            }
+            legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
+
+        # Create the place of performance location
+        pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
+
+        # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
+        # use the sub tier code to look it up. This code assumes that all incoming
+        # records will supply an awarding subtier agency code
+        if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
+            row['awarding_agency_code'] = Agency.get_by_subtier(
+                row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
+        # If funding toptier agency code (aka CGAC) is empty, try using the sub
+        # tier funding code to look it up. Unlike the awarding agency, we can't
+        # assume that the funding agency subtier code will always be present.
+        if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+            funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
+            row['funding_agency_code'] = (
+                funding_agency.toptier_agency.cgac_code if funding_agency is not None
+                else None)
+
+        # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+        awarding_agency = Agency.get_by_toptier_subtier(
+            row['awarding_agency_code'],
+            row["awarding_sub_tier_agency_c"]
+        )
+        created, award = Award.get_or_create_summary_award(
+            awarding_agency=awarding_agency,
+            piid=row.get('piid'),
+            fain=row.get('fain'),
+            uri=row.get('uri'),
+            parent_award_id=row.get('parent_award_id'))
+        award.save()
+
+        AWARD_UPDATE_ID_LIST.append(award.id)
+
+        parent_txn_value_map = {
+            "award": award,
+            "awarding_agency": awarding_agency,
+            "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
+                                                            row["funding_sub_tier_agency_co"]),
+            "recipient": legal_entity,
+            "place_of_performance": pop_location,
+            'submission': submission_attributes,
+            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+            "action_date": format_date(row['action_date']),
+        }
+
+        transaction_dict = load_data_into_model(
+            Transaction(),  # thrown away
+            row,
+            field_map=fad_field_map,
+            value_map=parent_txn_value_map,
+            as_dict=True)
+
+        transaction = Transaction.get_or_create_transaction(**transaction_dict)
+        transaction.save()
+
+        fad_value_map = {
+            "submission": submission_attributes,
+            "cfda": Cfda.objects.filter(program_number=row['cfda_number']).first(),
+            'reporting_period_start': submission_attributes.reporting_period_start,
+            'reporting_period_end': submission_attributes.reporting_period_end,
+            "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+            "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+        }
+
+        financial_assistance_data = load_data_into_model(
+            TransactionAssistance(),  # thrown away
+            row,
+            field_map=fad_field_map,
+            value_map=fad_value_map,
+            as_dict=True)
+
+        transaction_assistance = TransactionAssistance.get_or_create(transaction=transaction, **financial_assistance_data)
+        transaction_assistance.save()
+
+
+def format_date(date_string):
     try:
-        return datetime.strptime(date_string, pattern)
-    except TypeError:
+        return dateutil.parser.parse(date_string).date()
+    except (TypeError, ValueError):
         return None
 
 
@@ -271,8 +417,11 @@ def load_data_into_model(model_instance, data, **kwargs):
                 sts = True
         if field_map and not sts:
             if broker_field in field_map:
-                store_value(mod, field, data[field_map[broker_field]], reverse)
-                sts = True
+                try:
+                    store_value(mod, field, data[field_map[broker_field]], reverse)
+                    sts = True
+                except KeyError:
+                    print('column {} missing from data'.format(field_map[broker_field]))
             elif field in field_map:
                 store_value(mod, field, data[field_map[field]], reverse)
                 sts = True
@@ -346,6 +495,12 @@ def get_or_create_location(location_map, row, location_value_map=None):
 def store_value(model_instance_or_dict, field, value, reverse=None):
     if value is None:
         return
+    if field.endswith('date'):  # turn datetimes into dates
+        if isinstance(value, str):
+            try:
+                value = dateutil.parser.parse(value).date()
+            except (TypeError, ValueError):
+                pass
     if reverse and reverse.search(field):
         value = -1 * Decimal(value)
     if isinstance(model_instance_or_dict, dict):
