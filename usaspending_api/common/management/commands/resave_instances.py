@@ -23,6 +23,8 @@ class Command(BaseCommand):
     Run the `.save()` method on each instance of a named model.
 
     This applies any data fixes made within .save().
+    Should only be necessary after there's a data modification there that
+    needs to be applied to existing records.
     """
     help = "Re-save all instances of named model."
     logger = logging.getLogger('console')
@@ -47,4 +49,3 @@ class Command(BaseCommand):
                 print(models_with_custom_save())
         else:
             print(models_with_custom_save())
-
