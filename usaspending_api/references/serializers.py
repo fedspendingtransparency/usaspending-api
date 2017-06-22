@@ -87,7 +87,6 @@ class CfdaSerializer(LimitableSerializer):
 class LocationSerializer(LimitableSerializer):
 
     class Meta:
-
         model = Location
         fields = '__all__'
         default_fields = [

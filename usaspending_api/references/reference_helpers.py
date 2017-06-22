@@ -23,6 +23,14 @@ def update_federal_accounts(tas_tuple=None):
         Number of rows updated
     """
 
+    # add federal_account_code
+    queryset = FederalAccount.objects.all()
+    queryset = queryset.filter(federal_account_code=None)
+    for fa in queryset:
+        fa.federal_account_code = fa.agency_identifier + '-' + fa.main_account_code +\
+                                  ' - ' + fa.account_title
+        fa.save()
+
     # Because orm doesn't support join updates, dropping down to raw SQL
     # to update existing federal_account FK relationships on the tas table.
     tas_fk_sql = '''
@@ -71,7 +79,8 @@ def insert_federal_accounts():
         fa_objects = [FederalAccount(
             agency_identifier=f[0],
             main_account_code=f[1],
-            account_title=f[2]) for f in federal_accounts]
+            account_title=f[2],
+            federal_account_code=f[0]+'-'+f[1]+' - '+f[2]) for f in federal_accounts]
         FederalAccount.objects.bulk_create(fa_objects)
 
         # now that the new account records are inserted, add federal_account

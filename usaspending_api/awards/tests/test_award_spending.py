@@ -5,7 +5,7 @@ from rest_framework import status
 
 @pytest.fixture
 def award_spending_data(db):
-    agency = mommy.make('references.Agency', id=111)
+    agency = mommy.make('references.Agency', id=111, toptier_flag=True)
     legal_entity = mommy.make('references.LegalEntity')
     award = mommy.make('awards.Award', category='grants', awarding_agency=agency)
     mommy.make(

@@ -48,7 +48,6 @@ def test_financial_balances_agencies(client, financial_balances_models):
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 1
     result = resp.data['results'][0]
-    assert result['fiscal_year'] == 2016
     assert result['budget_authority_amount'] == '2000.00'
     assert result['obligated_amount'] == '4000.01'
     assert result['outlay_amount'] == '1000.00'

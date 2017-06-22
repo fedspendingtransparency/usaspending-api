@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal
-from django.core.management import call_command
+from django.core.management import call_command, CommandError
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import (
@@ -33,6 +33,55 @@ def partially_flushed():
     Location.objects.all().delete()
     LegalEntity.objects.all().delete()
     Award.objects.all().delete()
+
+
+@pytest.mark.django_db
+def test_load_historical_command_contracts(endpoint_data, partially_flushed):
+    """
+    Test process to load detached historical contract info, not part of a submission
+    """
+    assert Award.objects.count() == 0
+    assert TransactionContract.objects.count() == 0
+    assert LegalEntity.objects.count() == 0
+    assert Location.objects.count() == 0
+    call_command('load_historical', '--test', '--contracts',
+                 '--action_date_begin', '2017-05-01',
+                 '--action_date_end', '2017-05-02',
+                 '--cgac', '015')
+    assert Award.objects.count() == 9
+    assert TransactionContract.objects.count() == 10
+    assert LegalEntity.objects.count() == 9
+    assert Location.objects.count() == 10
+
+    # verify that load is idempotent by running it again, verifying extra records not created
+    call_command('load_historical', '--test', '--contracts',
+                 '--action_date_begin', '2017-05-01',
+                 '--action_date_end', '2017-05-02',
+                 '--cgac', '015')
+    assert Award.objects.count() == 9
+    assert TransactionContract.objects.count() == 10
+    assert LegalEntity.objects.count() == 9
+    assert Location.objects.count() == 10
+
+
+@pytest.mark.skip("detached_award_financial_assistance lacks a state column")
+@pytest.mark.django_db
+def test_load_historical_command_financial_assistance(endpoint_data, partially_flushed):
+    """
+    Test historical loader for financial assistance
+    """
+    assert Award.objects.count() == 0
+    assert TransactionAssistance.objects.count() == 0
+    assert LegalEntity.objects.count() == 0
+    assert Location.objects.count() == 0
+    call_command('load_historical', '--test', '--financial_assistance',
+                 '--action_date_begin', '2016-04-01',
+                 '--action_date_end', '2016-04-30',
+                 '--awarding_agency_code', '031')
+    assert Award.objects.count() == 9
+    assert TransactionAssistance.objects.count() == 10
+    assert LegalEntity.objects.count() == 9
+    assert Location.objects.count() == 10
 
 
 @pytest.mark.django_db
