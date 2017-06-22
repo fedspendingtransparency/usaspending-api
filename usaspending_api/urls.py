@@ -23,6 +23,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     url(r'^status/', views.StatusView.as_view()),
+    url(r'^status2/', views.StatusView.as_view()),
     url(r'^api/v1/federal_accounts/', include('usaspending_api.accounts.urls_federal_account')),
     url(r'^api/v2/financial_spending/', include('usaspending_api.accounts.urls_financial_spending')),
     url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
