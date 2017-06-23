@@ -7,7 +7,7 @@
     <li><a href="#status-codes">Status Codes</a></li>
     <li><a href="#endpoints-and-methods">Endpoints and Methods</a></li>
     <li><a href="#endpoint-index">Endpoint Index</a></li>
-  </ul>-->  
+  </ul>-->
   </li>
   <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
   <li><a href="/docs/recipes">Request Recipes</a></li>
@@ -81,6 +81,6 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | Returns a list of submissions |
 | [/api/v1/filter/](/api/v1/filter/) | POST | Returns a hash of the json body |
 | [/api/v1/hash/](/api/v1/hash/) | POST | Returns a previously input json body |
-| [/api/v2/award_spending/award_type/](/api/v1/award_spending/award_type/) | GET | Returns a list of total obligations by award_type |
-| [/api/v2/award_spending/recipient/](/api/v1/award_spending/recipient/) | GET | Returns a list of total obligations by recipient |
+| [/api/v2/award_spending/award_type/](/api/v2/award_spending/award_type/) | GET | Returns a list of total obligations by award_type |
+| [/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/) | GET | Returns a list of total obligations by recipient |
 | [/api/v2/financial_spending/object_class/](/api/v2/financial_spending/object_class/) | GET | takes fiscal year and funding agency id as input, and returns that agencies obligated amounts to specific major object classes  |
