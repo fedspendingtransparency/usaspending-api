@@ -37,14 +37,14 @@ def glossary_data(db):
     }),
 ])
 @pytest.mark.django_db
-def test_guides_autocomplete(client, glossary_data, fields, value, expected):
+def test_glossary_autocomplete(client, glossary_data, fields, value, expected):
     """test partial-text search on awards."""
 
     check_autocomplete('references/glossary', client, fields, value, expected)
 
 
 @pytest.mark.django_db
-def test_bad_guides_autocomplete_request(client):
+def test_bad_glossary_autocomplete_request(client):
     """Verify error on bad autocomplete request for awards."""
 
     resp = client.post(
