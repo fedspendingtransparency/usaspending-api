@@ -11,7 +11,7 @@ from usaspending_api.common.tests.autocomplete import check_autocomplete
 
 
 @pytest.fixture
-def guide_data(db):
+def glossary_data(db):
     mommy.make(
         Definition,
         term='Word',
@@ -37,10 +37,10 @@ def guide_data(db):
     }),
 ])
 @pytest.mark.django_db
-def test_guides_autocomplete(client, guide_data, fields, value, expected):
+def test_guides_autocomplete(client, glossary_data, fields, value, expected):
     """test partial-text search on awards."""
 
-    check_autocomplete('references/guide', client, fields, value, expected)
+    check_autocomplete('references/glossary', client, fields, value, expected)
 
 
 @pytest.mark.django_db
@@ -48,7 +48,7 @@ def test_bad_guides_autocomplete_request(client):
     """Verify error on bad autocomplete request for awards."""
 
     resp = client.post(
-        '/api/v1/references/guide/autocomplete/',
+        '/api/v1/references/glossary/autocomplete/',
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

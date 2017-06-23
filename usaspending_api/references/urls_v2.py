@@ -2,8 +2,8 @@ from django.conf.urls import url
 from usaspending_api.references import views, views_v2
 from rest_framework.routers import DefaultRouter
 
-guide_router = DefaultRouter()
-guide_router.register('guide', views.GuideViewSet)
+glossary_router = DefaultRouter()
+glossary_router.register('glossary', views.GlossaryViewSet)
 
 mode_list = {'get': 'list', 'post': 'list'}
 mode_detail = {'get': 'retrieve', 'post': 'retrieve'}

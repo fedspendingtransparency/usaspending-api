@@ -10,7 +10,6 @@ from usaspending_api.common.views import DetailViewSet, AutocompleteView
 import json
 import hashlib
 from django.http import HttpResponseBadRequest
-from django.core import serializers
 
 
 class FilterEndpoint(APIView):
@@ -168,7 +167,7 @@ class RecipientAutocomplete(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class GuideViewSet(FilterQuerysetMixin, DetailViewSet):
+class GlossaryViewSet(FilterQuerysetMixin, DetailViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -183,7 +182,7 @@ class GuideViewSet(FilterQuerysetMixin, DetailViewSet):
         return filtered_queryset
 
 
-class GuideAutocomplete(FilterQuerysetMixin,
+class GlossaryAutocomplete(FilterQuerysetMixin,
                         AutocompleteView):
     """Autocomplete support for legal entity (recipient) objects."""
     serializer_class = DefinitionSerializer
