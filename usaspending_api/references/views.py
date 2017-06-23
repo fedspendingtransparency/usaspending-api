@@ -182,8 +182,7 @@ class GlossaryViewSet(FilterQuerysetMixin, DetailViewSet):
         return filtered_queryset
 
 
-class GlossaryAutocomplete(FilterQuerysetMixin,
-                        AutocompleteView):
+class GlossaryAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """Autocomplete support for legal entity (recipient) objects."""
     serializer_class = DefinitionSerializer
 

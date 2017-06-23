@@ -31,7 +31,7 @@ In general, status codes returned are as follows:
 
 ## Endpoints and Methods <a name="endpoints-and-methods"></a>
 
-The currently available endpoints are listed below. Our [data dictionary](/docs/data-dictionary) provides more comprehensive definitions of the technical terms and government-specificage we use in the API.
+The currently available endpoints are listed below. Our [data dictionary](/docs/data-dictionary) provides more comprehensive definitions of the technical terms and government-specific language we use in the API.
 
 To reduce unnecessary data transfer, most endpoints return a default set of information about the items being requested. To override the default field list, use the `fields`, `exclude`, and `verbose` options (see [POST Requests](#post-requests) for more information).
 
