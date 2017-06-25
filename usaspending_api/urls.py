@@ -38,6 +38,7 @@ urlpatterns = [
     url(r'^api/v1/references/', include('usaspending_api.references.urls')),
     url(r'^api/v1/download/(?P<path>.*)', CsvDownloadView.as_view()),
     url(r'^api/v2/references/', include('usaspending_api.references.urls_v2')),
+    url(r'^api/v2/budget_authority/', include('usaspending_api.accounts.urls_budget_authority')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^docs/', include('usaspending_api.api_docs.urls')),
     url(r'^$', MarkdownView.as_view(markdown='landing_page.md')),

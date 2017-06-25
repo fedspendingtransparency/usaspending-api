@@ -406,3 +406,15 @@ class AppropriationAccountBalancesQuarterly(DataSourceTrackedModel):
             qtr_list.append(AppropriationAccountBalancesQuarterly(**rec_dict))
 
         AppropriationAccountBalancesQuarterly.objects.bulk_create(qtr_list)
+
+
+class BudgetAuthority(models.Model):
+
+    federal_account = models.ForeignKey(FederalAccount, db_index=True)
+    year = models.IntegerField(null=False)
+    amount = models.BigIntegerField(null=True)
+
+    class Meta:
+
+        db_table = 'budget_authority'
+        unique_together = (("federal_account", "year"),)

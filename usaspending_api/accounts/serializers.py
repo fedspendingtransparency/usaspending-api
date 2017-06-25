@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from usaspending_api.accounts.models import (
-    AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount)
+    AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount,
+    BudgetAuthority)
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass
 )
@@ -136,3 +137,16 @@ class AgenciesFinancialBalancesSerializer(serializers.Serializer):
     budget_authority_amount = serializers.DecimalField(None, 2)
     obligated_amount = serializers.DecimalField(None, 2)
     outlay_amount = serializers.DecimalField(None, 2)
+
+
+class BudgetAuthoritySerializer(serializers.Serializer):
+
+    year = serializers.IntegerField()
+    amount = serializers.IntegerField()
+
+    """
+    class Meta:
+
+        model = BudgetAuthority
+        fields = ('year', 'amount')
+    """
