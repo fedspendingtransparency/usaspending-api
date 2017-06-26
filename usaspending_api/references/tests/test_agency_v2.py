@@ -16,7 +16,7 @@ def financial_spending_data(db):
     ttagency1 = mommy.make('references.ToptierAgency', name="tta_name", cgac_code='100')
     mommy.make('references.Agency', id=1, toptier_agency=ttagency1)
 
-    # create TAS
+    #create TAS
     tas = mommy.make('accounts.TreasuryAppropriationAccount', funding_toptier_agency=ttagency1)
 
     # CREATE SUBMISSIONS
