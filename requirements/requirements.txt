@@ -36,3 +36,4 @@ uWSGI==2.0.14
 django-simple-history==1.8.2
 openpyxl==2.4.7
 pandas==0.18.1
+python-dateutil==2.6.0

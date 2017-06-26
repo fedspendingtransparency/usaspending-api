@@ -6,6 +6,7 @@ from django.utils.text import slugify
 from django.contrib.postgres.fields import ArrayField, JSONField
 
 from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.references.abbreviations import code_to_state, state_to_code
 from usaspending_api.references.helpers import canonicalize_string
 
 
@@ -236,7 +237,19 @@ class Location(DataSourceTrackedModel):
     def save(self, *args, **kwargs):
         self.load_country_data()
         self.load_city_county_data()
+        self.fill_missing_state_data()
         super(Location, self).save(*args, **kwargs)
+
+    def fill_missing_state_data(self):
+        """Fills in blank US state names or codes from its counterpart"""
+
+        if self.state_code and self.state_name:
+            return
+        if self.country_name == 'UNITED STATES':
+            if (not self.state_code):
+                self.state_code = state_to_code.get(self.state_name)
+            elif (not self.state_name):
+                self.state_name = code_to_state.get(self.state_code)
 
     def load_country_data(self):
         if self.location_country_code:
