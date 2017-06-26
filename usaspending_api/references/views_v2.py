@@ -10,14 +10,14 @@ class AgencyViewSet(APIView):
     """Return an agency name and active fy"""
     def get(self, request, pk, format=None):
         """Return the view's queryset."""
+
         response = {'results': {}}
         # get id from url
         agency_id = int(pk)
-        # get agency cgac code
+        # get agency's cgac code and use that code to get the agency's submission
         agency = Agency.objects.filter(id=agency_id).first()
 
         if agency is None:
-            print("agency does not exist")
             return Response(response)
 
         toptier_agency = agency.toptier_agency
@@ -25,7 +25,7 @@ class AgencyViewSet(APIView):
         queryset = SubmissionAttributes.objects.all()
         queryset = queryset.filter(cgac_code=toptier_agency.cgac_code)
 
-        # get the most up to date fy
+        # get the most up to date fy and quarter
         queryset = queryset.order_by('-reporting_fiscal_year', '-reporting_fiscal_quarter')
         queryset = queryset.annotate(
             fiscal_year=F('reporting_fiscal_year'),
@@ -36,11 +36,6 @@ class AgencyViewSet(APIView):
             return Response(response)
         active_fiscal_year = submission.reporting_fiscal_year
         active_fiscal_quarter = submission.fiscal_quarter
-
-        # craft response
-        # response['results']['agency_name'] = toptier_agency.name
-        # response['results']['active_fy'] = str(active_fiscal_year)
-        # response['results']['active_fq'] = str(active_fiscal_quarter)
 
         # using final_objects below ensures that we're only pulling the latest
         # set of financial information for each fiscal year
@@ -62,18 +57,13 @@ class AgencyViewSet(APIView):
         if submission is None:
             return Response(response)
 
-        # craft more of the response
-        # response['results']['budget_authority_amount'] = str(submission.budget_authority_amount)
-        # response['results']['obligated_amount'] = str(submission.obligated_amount)
-        # response['results']['outlay_amount'] = str(submission.outlay_amount)
-
+        # get the overall total government budget authority (to craft a budget authority percentage)
         queryset2 = OverallTotals.objects.all()
         queryset2 = queryset2.filter(fiscal_year=active_fiscal_year)
 
         submission2 = queryset2.first()
-        # response['results']['total_budget_authority_amount'] = str(submission.total_budget_authority)
 
-        #craft response
+        # craft response
         response['results']['total_budget_authority_amount'] = str(submission2.total_budget_authority)
 
         response['results']['budget_authority_amount'] = str(submission.budget_authority_amount)
