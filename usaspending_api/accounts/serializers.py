@@ -1,13 +1,13 @@
 from rest_framework import serializers
 
 from usaspending_api.accounts.models import (
-    AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount)
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass
+    AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 )
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import (
-    ProgramActivitySerializer, ObjectClassSerializer, ToptierAgencySerializer)
+    ProgramActivitySerializer, ObjectClassSerializer, ToptierAgencySerializer
+)
 from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 
 
@@ -136,3 +136,10 @@ class AgenciesFinancialBalancesSerializer(serializers.Serializer):
     budget_authority_amount = serializers.DecimalField(None, 2)
     obligated_amount = serializers.DecimalField(None, 2)
     outlay_amount = serializers.DecimalField(None, 2)
+
+
+class FederalAccountByObligationSerializer(serializers.Serializer):
+
+    agency_name = serializers.CharField()
+    account_title = serializers.CharField()
+    obligated_amount = serializers.DecimalField(None, 2)
