@@ -11,6 +11,7 @@ mode_detail = {'get': 'retrieve', 'post': 'retrieve'}
 
 urlpatterns = [
     url(r'^filter', views.FilterEndpoint.as_view()),
+    
     url(r'^hash', views.HashEndpoint.as_view()),
     url(r'^locations/$', views.LocationEndpoint.as_view(mode_list)),
     url(r'^locations/geocomplete', views.LocationGeoCompleteEndpoint.as_view()),
