@@ -16,7 +16,7 @@ def financial_spending_data(db):
     ttagency1 = mommy.make('references.ToptierAgency', name="tta_name", cgac_code='100')
     mommy.make('references.Agency', id=1, toptier_agency=ttagency1)
 
-    #create TAS
+    # create TAS
     tas = mommy.make('accounts.TreasuryAppropriationAccount', funding_toptier_agency=ttagency1)
 
     # CREATE SUBMISSIONS
@@ -27,12 +27,13 @@ def financial_spending_data(db):
 
     # CREATE AppropriationAccountBalances
     aab = mommy.make('accounts.AppropriationAccountBalances', final_of_fy=True, reporting_period_start="2017-1-1",
-                     submission=submission_1 , budget_authority_available_amount_total_cpe=2,
+                     submission=submission_1, budget_authority_available_amount_total_cpe=2,
                      obligations_incurred_total_by_tas_cpe=2, gross_outlay_amount_by_tas_cpe=2,
                      treasury_account_identifier=tas)
 
     # CREATE OverallTotals
     ot = mommy.make('references.OverallTotals', fiscal_year=2017, total_budget_authority=3860000000.00)
+
 
 @pytest.mark.django_db
 def test_award_type_endpoint(client, financial_spending_data):
