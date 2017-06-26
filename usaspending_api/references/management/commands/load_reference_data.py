@@ -38,6 +38,6 @@ class Command(BaseCommand):
         call_command('loadcfda')
 
         self.logger.info("Loading descriptions of commonly used terms")
-        call_command('load_guide')
+        call_command('load_glossary')
 
         self.logger.info("Reference data loaded.")

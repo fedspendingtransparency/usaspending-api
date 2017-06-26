@@ -9,11 +9,11 @@ from usaspending_api.references.models import Definition
 
 
 class Command(BaseCommand):
-    help = "Loads an Excel spreadsheet of USAspending terminology definitions into the Guide model"
+    help = "Loads an Excel spreadsheet of USAspending terminology definitions into the Glossary model"
 
     logger = logging.getLogger('console')
 
-    path = 'usaspending_api/data/USAspendingGuide.xlsx'
+    path = 'usaspending_api/data/USAspendingGlossary.xlsx'
     path = os.path.normpath(path)
     default_path = os.path.join(settings.BASE_DIR, path)
 
@@ -32,10 +32,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        load_guide(path=options['path'], append=options['append'])
+        load_glossary(path=options['path'], append=options['append'])
 
 
-def load_guide(path, append):
+def load_glossary(path, append):
 
     logger = logging.getLogger('console')
 
