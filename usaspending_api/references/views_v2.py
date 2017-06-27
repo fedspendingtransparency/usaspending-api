@@ -58,20 +58,20 @@ class AgencyViewSet(APIView):
             return Response(response)
 
         # get the overall total government budget authority (to craft a budget authority percentage)
-        queryset2 = OverallTotals.objects.all()
-        queryset2 = queryset2.filter(fiscal_year=active_fiscal_year)
+        total_budget_authority_queryset = OverallTotals.objects.all()
+        total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
 
-        submission2 = queryset2.first()
+        total_budget_authority_submission = total_budget_authority_queryset.first()
 
         # craft response
-        response['results']['total_budget_authority_amount'] = str(submission2.total_budget_authority)
-
-        response['results']['budget_authority_amount'] = str(submission.budget_authority_amount)
-        response['results']['obligated_amount'] = str(submission.obligated_amount)
-        response['results']['outlay_amount'] = str(submission.outlay_amount)
-
-        response['results']['active_fq'] = str(active_fiscal_quarter)
-        response['results']['active_fy'] = str(active_fiscal_year)
-        response['results']['agency_name'] = toptier_agency.name
+        response['results'] = {'agency_name': toptier_agency.name,
+                               'active_fy': str(active_fiscal_year),
+                               'active_fq': str(active_fiscal_quarter),
+                               'outlay_amount': str(submission.outlay_amount),
+                               'obligated_amount': str(submission.obligated_amount),
+                               'budget_authority_amount': str(submission.budget_authority_amount),
+                               'total_budget_authority_amount': str(total_budget_authority_submission.
+                                                                    total_budget_authority)
+                               }
 
         return Response(response)
