@@ -59,4 +59,4 @@ class Command(BaseCommand):
         logger.info('{} successes, {} failures'.format(successes, failures))
         OverallTotals.objects.bulk_create(
             OverallTotals(fiscal_year=year, total_budget_authority=amount)
-            for (year, amount) in overall_totals.items() )
+            for (year, amount) in overall_totals.items())

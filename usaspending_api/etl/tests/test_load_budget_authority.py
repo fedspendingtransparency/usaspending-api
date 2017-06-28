@@ -6,6 +6,7 @@ from usaspending_api.references.models import OverallTotals
 
 import pytest
 
+
 @pytest.fixture()
 @pytest.mark.django_db
 def flushed():
