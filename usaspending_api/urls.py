@@ -25,7 +25,7 @@ urlpatterns = [
     url(r'^status/', views.StatusView.as_view()),
     url(r'^status2/', views.StatusView.as_view()),
     url(r'^api/v1/federal_accounts/', include('usaspending_api.accounts.urls_federal_account')),
-    url(r'^api/v2/federal_accounts_v2/', include('usaspending_api.accounts.urls_federal_account_v2')),
+    url(r'^api/v2/federal_obligations/', include('usaspending_api.accounts.urls_federal_obligations')),
     url(r'^api/v2/financial_spending/', include('usaspending_api.accounts.urls_financial_spending')),
     url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
     url(r'^api/v1/awards/', include('usaspending_api.awards.urls_awards')),
