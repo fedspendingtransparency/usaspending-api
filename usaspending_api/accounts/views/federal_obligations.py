@@ -24,8 +24,8 @@ class FederalAccountByObligationViewSet(DetailViewSet):
                 'Missing required query parameters: fiscal_year & funding_agency_id'
             )
         # Use filter() instead of get() on Agency.objects
-        # get() will likely raise an error on a bad agency id
-        # Get the top_tier_agency_id from the Agency set
+        # as get() will likely raise an error on a bad agency id
+        # while trying to get the top_tier_agency_id from the Agency set
         top_tier_agency_id = Agency.objects.filter(id=funding_agency_id).first().toptier_agency_id
         # Using final_objects below ensures that we're only pulling the latest
         # set of financial information for each fiscal year
@@ -34,10 +34,13 @@ class FederalAccountByObligationViewSet(DetailViewSet):
             treasury_account__funding_toptier_agency=top_tier_agency_id
         ).annotate(
             agency_name=F('treasury_account__reporting_agency_name'),
-            account_title=F('treasury_account__account_title')
+            account_title=F('treasury_account__account_title'),
+            id=F('treasury_account__federal_account')
+
         )
         # Sum and sort descending obligations_incurred by account
         queryset = queryset.values(
+            'id',
             'agency_name',
             'account_title'
         ).annotate(

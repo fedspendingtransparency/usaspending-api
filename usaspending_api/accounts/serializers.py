@@ -140,6 +140,7 @@ class AgenciesFinancialBalancesSerializer(serializers.Serializer):
 
 class FederalAccountByObligationSerializer(serializers.Serializer):
 
+    id = serializers.CharField()
     agency_name = serializers.CharField()
     account_title = serializers.CharField()
     obligated_amount = serializers.DecimalField(None, 2)
