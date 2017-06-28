@@ -28,16 +28,20 @@ class Command(BaseCommand):
 
         potential_childless = []
         for transaction in submission.transaction_set.all():
+            potential_childless.append(transaction.place_of_performance)
             potential_childless.append(transaction.award.place_of_performance)
-            potential_childless.append(transaction.award.recipient.location)
+            if transaction.award.recipient:
+                potential_childless.append(transaction.award.recipient.location)
             for subaward in transaction.award.subawards.all():
                 # potential_childless.append(subaward)
                 potential_childless.append(subaward.place_of_performance)
-                potential_childless.append(subaward.recipient.place_of_performance)
+                if subaward.recipient:
+                    potential_childless.append(subaward.recipient.place_of_performance)
             # potential_childless.append(transaction.award)
             # could get the LegalEntities, too
 
-        return potential_childless
+        # Return without `None`s
+        return [p for p in potential_childless if p]
 
     def handle(self, *args, **options):
         # This will throw an exception and exit the command if the id doesn't exist
