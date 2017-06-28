@@ -7,6 +7,7 @@ from django.conf import settings
 from django.db import connections
 
 from usaspending_api.accounts.models import FederalAccount, BudgetAuthority
+from usaspending_api.references.models import OverallTotals
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
@@ -27,6 +28,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Grab the data broker database connections
 
+        overall_totals = defaultdict(int)
         results = defaultdict(int)
         failures = 0
         successes = 0
@@ -45,6 +47,7 @@ class Command(BaseCommand):
                         amount = row[str(year)]
                         amount = int(amount.replace(',', '')) * 1000
                         results[(federal_account, year)] += amount
+                        overall_totals[year] += amount
                 else:
                     failures += 1
                     logger.error('No federal account for Treasury Account Code (GCAC) {}, Account Code (MAC) {}'
@@ -52,8 +55,13 @@ class Command(BaseCommand):
 
         data = [{'federal_account': federal_account, 'year': year, 'amount': amount}
                 for ((federal_account, year), amount) in results.items()]
+        """
         for d in data:
             b = BudgetAuthority(**d)
             b.save()
-        # BudgetAuthority.objects.bulk_create(BudgetAuthority(**d) for d in data)
+        """
+        BudgetAuthority.objects.bulk_create(BudgetAuthority(**d) for d in data)
         logger.info('{} successes, {} failures'.format(successes, failures))
+        OverallTotals.objects.bulk_create(
+            OverallTotals(fiscal_year=year, total_budget_authority=amount)
+            for (year, amount) in overall_totals.items() )
