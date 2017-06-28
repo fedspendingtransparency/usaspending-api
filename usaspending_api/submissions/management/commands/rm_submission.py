@@ -33,11 +33,9 @@ class Command(BaseCommand):
             if transaction.award.recipient:
                 potential_childless.append(transaction.award.recipient.location)
             for subaward in transaction.award.subawards.all():
-                # potential_childless.append(subaward)
                 potential_childless.append(subaward.place_of_performance)
                 if subaward.recipient:
                     potential_childless.append(subaward.recipient.place_of_performance)
-            # potential_childless.append(transaction.award)
             # could get the LegalEntities, too
 
         # Return without `None`s
