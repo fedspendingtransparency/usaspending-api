@@ -53,14 +53,9 @@ class Command(BaseCommand):
                     logger.error('No federal account for Treasury Account Code (GCAC) {}, Account Code (MAC) {}'
                                  .format(cgac, mac))
 
-        data = [{'federal_account': federal_account, 'year': year, 'amount': amount}
-                for ((federal_account, year), amount) in results.items()]
-        """
-        for d in data:
-            b = BudgetAuthority(**d)
-            b.save()
-        """
-        BudgetAuthority.objects.bulk_create(BudgetAuthority(**d) for d in data)
+        BudgetAuthority.objects.bulk_create(BudgetAuthority(
+            federal_account=federal_account, year=year, amount=amount)
+            for ((federal_account, year), amount) in results.items())
         logger.info('{} successes, {} failures'.format(successes, failures))
         OverallTotals.objects.bulk_create(
             OverallTotals(fiscal_year=year, total_budget_authority=amount)
