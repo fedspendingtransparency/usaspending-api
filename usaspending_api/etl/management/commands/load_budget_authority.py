@@ -48,10 +48,10 @@ class Command(BaseCommand):
                 else:
                     failures += 1
                     logger.error('No federal account for Treasury Account Code (GCAC) {}, Account Code (MAC) {}'
-                        .format(cgac, mac))
+                                 .format(cgac, mac))
 
         data = [{'federal_account': federal_account, 'year': year, 'amount': amount}
-            for ((federal_account, year), amount) in results.items()]
+                for ((federal_account, year), amount) in results.items()]
         for d in data:
             b = BudgetAuthority(**d)
             b.save()
