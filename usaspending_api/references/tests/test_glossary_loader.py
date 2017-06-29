@@ -1,10 +1,10 @@
 from usaspending_api.references.models import Definition
-from usaspending_api.references.management.commands.load_guide import load_guide, Command
+from usaspending_api.references.management.commands.load_glossary import load_glossary, Command
 import pytest
 from django.db.utils import IntegrityError
 
 
-def test_guide_load(db):
+def test_glossary_load(db):
     """
     Ensure definition guide data can can be loaded from source file
     """
@@ -12,7 +12,7 @@ def test_guide_load(db):
     Definition.objects.all().delete()
 
     assert Definition.objects.count() == 0
-    load_guide(path=Command.default_path, append=False)
+    load_glossary(path=Command.default_path, append=False)
     rows = Definition.objects.count()
 
     # Verify that loaded definitions have a mix of nulls and non-nulls in nullable fields
@@ -21,9 +21,9 @@ def test_guide_load(db):
     assert 0 < Definition.objects.filter(official__isnull=True).count() < rows
 
     # Re-loading with append=False should succeed and load the same rows
-    load_guide(path=Command.default_path, append=False)
+    load_glossary(path=Command.default_path, append=False)
     assert Definition.objects.count() == rows
 
     # Trying to append the same rows should throw integrity errors
     with pytest.raises(IntegrityError):
-        load_guide(path=Command.default_path, append=True)
+        load_glossary(path=Command.default_path, append=True)
