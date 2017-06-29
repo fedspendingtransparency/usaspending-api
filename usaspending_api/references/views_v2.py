@@ -62,7 +62,7 @@ class AgencyViewSet(APIView):
         total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
 
         total_budget_authority_submission = total_budget_authority_queryset.first()
-        total_budget_authority_amount = ""
+        total_budget_authority_amount = "-1"
 
         if total_budget_authority_submission is not None:
             total_budget_authority_amount = str(total_budget_authority_submission.total_budget_authority)
