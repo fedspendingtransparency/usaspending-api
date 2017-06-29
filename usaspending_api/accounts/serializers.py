@@ -142,11 +142,4 @@ class AgenciesFinancialBalancesSerializer(serializers.Serializer):
 class BudgetAuthoritySerializer(serializers.Serializer):
 
     year = serializers.IntegerField()
-    amount = serializers.IntegerField()
-
-    """
-    class Meta:
-
-        model = BudgetAuthority
-        fields = ('year', 'amount')
-    """
+    total = serializers.IntegerField()

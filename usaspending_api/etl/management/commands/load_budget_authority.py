@@ -1,20 +1,20 @@
-import logging
 import csv
 import glob
-from datetime import date
+import logging
 import os.path
-from collections import defaultdict
 from argparse import ArgumentTypeError
+from collections import defaultdict
+from datetime import date
 
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.db import connections
 from xlrd import open_workbook
 
-from django.core.management.base import BaseCommand
-from django.conf import settings
-from django.db import connections
-
-from usaspending_api.accounts.models import FederalAccount, BudgetAuthority
-from usaspending_api.references.models import OverallTotals
+from usaspending_api.accounts.models import BudgetAuthority, FederalAccount
 from usaspending_api.common.helpers import fy
+from usaspending_api.references.models import OverallTotals
+
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
@@ -32,7 +32,8 @@ class Command(BaseCommand):
     """
 
     help = "Loads historical budget authority data from a CSV"
-    DIRECTORY_PATH = os.path.join('usaspending_api', 'data', 'budget_authority')
+    DIRECTORY_PATH = os.path.join('usaspending_api', 'data',
+                                  'budget_authority')
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -50,7 +51,8 @@ class Command(BaseCommand):
         https://max.omb.gov/maxportal/document/SF133/Budget/FY%202017%20-%20SF%20133%20Reports%20on%20Budget%20Execution%20and%20Budgetary%20Resources.html
         """
 
-        QUARTERLY_PATH = os.path.join(self.DIRECTORY_PATH, 'quarterly', '*.xls')
+        QUARTERLY_PATH = os.path.join(self.DIRECTORY_PATH, 'quarterly',
+                                      '*.xls')
         this_fy = fy(date.today())
         amount_column = 'Q{}_AMT'.format(quarter)
         for filename in glob.glob(QUARTERLY_PATH):
@@ -60,11 +62,17 @@ class Command(BaseCommand):
             for i in range(1, sheet.nrows):
                 row = dict(zip(headers, (cell.value for cell in sheet.row(i))))
                 if row['LNO'] == '2500':
-                    results[(row['TRAG'], this_fy)] = int(row[amount_column]) * 1000
+                    results[(row['TRAG'], None,
+                             this_fy)] = int(row[amount_column]) * 1000
+
+    def find_frec(self, agency_identifier, account_name):
+
+        return None
 
     def handle(self, *args, **options):
 
-        DIRECTORY_PATH = os.path.join('usaspending_api', 'data', 'budget_authority')
+        DIRECTORY_PATH = os.path.join('usaspending_api', 'data',
+                                      'budget_authority')
         HISTORICAL_PATH = os.path.join(DIRECTORY_PATH, 'budget_authority.csv')
 
         overall_totals = defaultdict(int)
@@ -75,10 +83,11 @@ class Command(BaseCommand):
             reader = csv.DictReader(infile)
             for row in reader:
                 agency_identifier = row['Treasury Agency Code'].zfill(3)
+                frec = self.find_frec(agency_identifier, row['Account Name'])
                 for year in range(1976, 2023):
                     amount = row[str(year)]
                     amount = int(amount.replace(',', '')) * 1000
-                    results[(agency_identifier, year)] += amount
+                    results[(agency_identifier, frec, year)] += amount
                     overall_totals[year] += amount
 
         quarter = options['quarter']
@@ -87,9 +96,14 @@ class Command(BaseCommand):
         else:
             print('No quarter given. Quarterly spreadsheets not loaded')
 
-        BudgetAuthority.objects.bulk_create(BudgetAuthority(
-            agency_identifier=agency_identifier, year=year, amount=amount)
-            for ((agency_identifier, year), amount) in results.items())
+        BudgetAuthority.objects.bulk_create(
+            BudgetAuthority(
+                agency_identifier=agency_identifier,
+                fr_entity_code=frec,
+                year=year,
+                amount=amount)
+            for ((agency_identifier, frec, year), amount) in results.items())
         OverallTotals.objects.bulk_create(
-            OverallTotals(fiscal_year=year, total_budget_authority=amount)
+            OverallTotals(
+                fiscal_year=year, total_budget_authority=amount)
             for (year, amount) in overall_totals.items())
