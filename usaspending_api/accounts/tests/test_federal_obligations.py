@@ -12,7 +12,7 @@ def financial_obligations_models():
     federal_id_awesome = mommy.make('accounts.FederalAccount', id=6969)
     federal_id_lame = mommy.make('accounts.FederalAccount', id=1234)
     """
-        Until this gets updated with make.Make(),
+        Until this gets updated with mock.Mock(),
         the following cascade of variables applied to parameters,
         is the work around for annotating.
     """
