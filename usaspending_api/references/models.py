@@ -5,7 +5,7 @@ from django.db.models import F, Q
 from django.utils.text import slugify
 from django.contrib.postgres.fields import ArrayField, JSONField
 
-from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.common.models import DataSourceTrackedModel, DeleteIfChildlessMixin
 from usaspending_api.references.abbreviations import code_to_state, state_to_code
 from usaspending_api.references.helpers import canonicalize_string
 
@@ -198,7 +198,7 @@ class FilterHash(models.Model):
         db_table = 'filter_hash'
 
 
-class Location(DataSourceTrackedModel):
+class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     location_id = models.AutoField(primary_key=True)
     location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
     country_name = models.TextField(blank=True, null=True, verbose_name="Country Name")
