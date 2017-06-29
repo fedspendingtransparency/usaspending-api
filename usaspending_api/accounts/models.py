@@ -410,11 +410,11 @@ class AppropriationAccountBalancesQuarterly(DataSourceTrackedModel):
 
 class BudgetAuthority(models.Model):
 
-    federal_account = models.ForeignKey(FederalAccount, db_index=True)
+    agency_identifier = models.TextField(db_index=True)  # aka CGAC
     year = models.IntegerField(null=False)
     amount = models.BigIntegerField(null=True)
 
     class Meta:
 
         db_table = 'budget_authority'
-        unique_together = (("federal_account", "year"),)
+        unique_together = (("agency_identifier", "year"),)

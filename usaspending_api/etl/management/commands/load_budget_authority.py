@@ -14,6 +14,7 @@ exception_logger = logging.getLogger("exceptions")
 
 class Command(BaseCommand):
     """
+    Loads historical budget authority data from a CSV
     """
     help = "Loads historical budget authority data from a CSV"
 
@@ -26,37 +27,24 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Grab the data broker database connections
 
         overall_totals = defaultdict(int)
         results = defaultdict(int)
-        failures = 0
-        successes = 0
         with open(options['file']) as infile:
             BudgetAuthority.objects.all().delete()
             results = defaultdict(int)
             reader = csv.DictReader(infile)
             for row in reader:
-                cgac = row['Treasury Agency Code'].zfill(3)
-                mac = row['Account Code'].zfill(4)
-                federal_account = FederalAccount.objects.filter(
-                    agency_identifier=cgac, main_account_code=mac).first()
-                if federal_account:
-                    successes += 1
-                    for year in range(1976, 2023):
-                        amount = row[str(year)]
-                        amount = int(amount.replace(',', '')) * 1000
-                        results[(federal_account, year)] += amount
-                        overall_totals[year] += amount
-                else:
-                    failures += 1
-                    logger.error('No federal account for Treasury Account Code (GCAC) {}, Account Code (MAC) {}'
-                                 .format(cgac, mac))
+                agency_identifier = row['Treasury Agency Code'].zfill(3)
+                for year in range(1976, 2023):
+                    amount = row[str(year)]
+                    amount = int(amount.replace(',', '')) * 1000
+                    results[(agency_identifier, year)] += amount
+                    overall_totals[year] += amount
 
         BudgetAuthority.objects.bulk_create(BudgetAuthority(
-            federal_account=federal_account, year=year, amount=amount)
-            for ((federal_account, year), amount) in results.items())
-        logger.info('{} successes, {} failures'.format(successes, failures))
+            agency_identifier=agency_identifier, year=year, amount=amount)
+            for ((agency_identifier, year), amount) in results.items())
         OverallTotals.objects.bulk_create(
             OverallTotals(fiscal_year=year, total_budget_authority=amount)
             for (year, amount) in overall_totals.items())

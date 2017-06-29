@@ -15,6 +15,4 @@ class BudgetAuthorityViewSet(DetailViewSet):
 
     def get_queryset(self):
         cgac = self.kwargs['cgac']
-        result = BudgetAuthority.objects.filter(federal_account__agency_identifier=cgac) \
-            .values('year').annotate(amount=Sum('amount'))
-        return result
+        return BudgetAuthority.objects.filter(agency_identifier=cgac).all()

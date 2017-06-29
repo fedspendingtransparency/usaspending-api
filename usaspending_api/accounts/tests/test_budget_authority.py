@@ -6,10 +6,9 @@ import json
 
 @pytest.fixture
 def model_instances():
-    federal_account = mommy.make('accounts.FederalAccount', agency_identifier='000')
-    mommy.make('accounts.BudgetAuthority', year=2000, amount=2000000, federal_account=federal_account)
-    mommy.make('accounts.BudgetAuthority', year=2001, amount=2001000, federal_account=federal_account)
-    mommy.make('accounts.BudgetAuthority', year=2002, amount=2002000, federal_account=federal_account)
+    mommy.make('accounts.BudgetAuthority', year=2000, amount=2000000, agency_identifier='000')
+    mommy.make('accounts.BudgetAuthority', year=2001, amount=2001000, agency_identifier='000')
+    mommy.make('accounts.BudgetAuthority', year=2002, amount=2002000, agency_identifier='000')
 
 
 @pytest.mark.django_db
