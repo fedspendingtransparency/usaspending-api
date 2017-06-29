@@ -72,7 +72,7 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/references/agency/autocomplete/](/api/v1/references/agency/autocomplete/) | POST | Supports autocomplete on agency records |
 | [/api/v1/references/cfda/](/api/v1/references/cfda/) | GET, POST | Returns a list of CFDA Programs |
 | /api/v1/references/cfda/:id | GET, POST | Returns a single CFDA program, with all fields |
-| [/api/v1/references/guide/autocomplete/](/api/v1/references/guide/autocomplete/) | POST | Supports autocomplete on recipient records |
+| [/api/v1/references/glossary/autocomplete/](/api/v1/references/glossary/autocomplete/) | POST | Supports autocomplete on recipient records |
 | [/api/v1/references/locations/](/api/v1/references/locations/) | POST | Returns a list of locations - places of performance or vendor locations |
 | [/api/v1/references/locations/geocomplete/](/api/v1/references/locations/geocomplete/) | POST | Supports geocomplete queries, see [Using the API](/docs/using-the-api) |
 | [/api/v1/references/recipients/](/api/v1/references/recipients/) | GET, POST | Returns a list of recipient records |

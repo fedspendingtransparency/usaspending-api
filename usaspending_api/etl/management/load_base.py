@@ -463,7 +463,9 @@ def get_or_create_location(location_map, row, location_value_map=None):
     if location_country:
         location_value_map.update({
             'location_country_code': location_country,
-            'country_name': location_country.country_name
+            'country_name': location_country.country_name,
+            'state_code': None,  # expired
+            'state_name': None,
         })
     else:
         # no country found for this code

@@ -11,6 +11,7 @@ from usaspending_api.awards.models import Transaction, TransactionContract, Tran
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.accounts.models import AppropriationAccountBalances, AppropriationAccountBalancesQuarterly
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly
+from usaspending_api.references.models import Location
 
 SUBMISSION_MODELS = [AppropriationAccountBalances,
                      FinancialAccountsByAwards,
@@ -29,18 +30,25 @@ def submission_data():
 
     mommy.make("accounts.AppropriationAccountBalances", submission=submission_123, _quantity=10)
     mommy.make("awards.FinancialAccountsByAwards", submission=submission_123, _quantity=10)
+    loc1 = mommy.make("references.Location", city_name='city1', )
+    loc2 = mommy.make("references.Location", city_name='city2', )
     # Making child transaction items creates the parent by default
-    mommy.make("awards.TransactionContract", submission=submission_123, transaction__submission=submission_123, _quantity=10)
-    mommy.make("awards.TransactionAssistance", submission=submission_123, transaction__submission=submission_123, _quantity=10)
+    mommy.make("awards.TransactionContract", submission=submission_123, transaction__submission=submission_123,
+               transaction__place_of_performance=loc1, _quantity=10)
+    mommy.make("awards.TransactionAssistance", submission=submission_123, transaction__submission=submission_123,
+               transaction__place_of_performance=loc2, _quantity=10)
     mommy.make("financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_123, _quantity=10)
     mommy.make("financial_activities.TasProgramActivityObjectClassQuarterly", submission=submission_123, _quantity=10)
     mommy.make("accounts.AppropriationAccountBalancesQuarterly", submission=submission_123, _quantity=10)
 
     mommy.make("accounts.AppropriationAccountBalances", submission=submission_456, _quantity=10)
     mommy.make("awards.FinancialAccountsByAwards", submission=submission_456, _quantity=10)
+    loc3 = mommy.make("references.Location", city_name='city3', )
     # Making child transaction items creates the parent by default
-    mommy.make("awards.TransactionContract", submission=submission_456, transaction__submission=submission_456, _quantity=10)
-    mommy.make("awards.TransactionAssistance", submission=submission_456, transaction__submission=submission_456, _quantity=10)
+    mommy.make("awards.TransactionContract", submission=submission_456, transaction__submission=submission_456,
+               transaction__place_of_performance=loc2, _quantity=10)
+    mommy.make("awards.TransactionAssistance", submission=submission_456, transaction__submission=submission_456,
+               transaction__place_of_performance=loc3, _quantity=10)
     mommy.make("financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_456, _quantity=10)
     mommy.make("financial_activities.TasProgramActivityObjectClassQuarterly", submission=submission_456, _quantity=10)
     mommy.make("accounts.AppropriationAccountBalancesQuarterly", submission=submission_456, _quantity=10)
@@ -65,6 +73,22 @@ def test_rm_submission(client, submission_data):
     call_command("rm_submission", 456)
 
     verify_zero_count(SUBMISSION_MODELS, 456)
+
+
+@pytest.mark.django_db
+def test_rm_submission_location_cleanup(client, submission_data):
+    """Locations no longer referring to a record should be cleaned up."""
+
+    assert Location.objects.count() == 3
+    call_command("rm_submission", 123)
+    # city 1 appears only in submission 123 and should be gone
+    assert Location.objects.count() == 2
+    assert not Location.objects.filter(city_name='city1').exists()
+    # city 2 also appears in submission 456 and should still be present
+    assert Location.objects.filter(city_name='city2').exists()
+
+    call_command("rm_submission", 456)
+    assert not Location.objects.exists()
 
 
 def verify_zero_count(models, submission_id, field="submission", eq_zero=True):
