@@ -23,6 +23,6 @@ def test_load_budget_authority(flushed):
     """
     assert not OverallTotals.objects.exists()
     assert not BudgetAuthority.objects.exists()
-    call_command('load_budget_authority')
+    call_command('load_budget_authority', '-q', '2')
     assert OverallTotals.objects.exists()
     assert BudgetAuthority.objects.exists()
