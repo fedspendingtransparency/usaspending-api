@@ -10,17 +10,17 @@ from usaspending_api.references.serializers_v2.autocomplete import RecipientAuto
 
 class BaseAutocompleteViewSet(APIView):
     # SearchRank ranks a non-matching result with 1e-20
-    SEARCH_SIMILARITY_THRESHOLD = 0.03
+    SEARCH_SIMILARITY_THRESHOLD = 0.3
 
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
     serializer_class = RecipientAutocompleteSerializer
 
-    def get_queryset(self):
+    def post(self, request):
         """Return all award spending by award type for a given fiscal year and agency id"""
 
-        json_request = self.request.data
+        json_request = request.data
 
         # retrieve search_text from request
         search_text = json_request.get('search_text', None)
@@ -38,10 +38,7 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
         queryset = queryset.annotate(similarity=Greatest(TrigramSimilarity('recipient_name', search_text),
                                                          TrigramSimilarity('recipient_unique_id', search_text))).\
-            filter(Q(recipient_name__trigram_similar=search_text) |
-                   Q(recipient_unique_id__trigram_similar=search_text),
-                   similarity__gt=self.SEARCH_SIMILARITY_THRESHOLD).\
-            values('legal_entity_id', 'recipient_name', 'recipient_unique_id', 'similarity').\
+            filter(similarity__gt=self.SEARCH_SIMILARITY_THRESHOLD).\
             order_by('-similarity')[:limit]
 
-        return queryset
+        return Response({'results': RecipientAutocompleteSerializer(queryset, many=True).data})
