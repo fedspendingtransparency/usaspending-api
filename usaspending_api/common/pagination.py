@@ -26,6 +26,7 @@ class UsaspendingPagination(BasePagination):
 
     def paginate_queryset(self, queryset, request, view=None):
         self.request = request
+        self.count = queryset.count()
         self.limit = self.get_limit(request)
         self.page = self.get_page(request)
         self.offset = self.get_offset(request)
@@ -74,6 +75,7 @@ class UsaspendingPagination(BasePagination):
 
     def get_paginated_response(self, data):
         page_metadata = OrderedDict([
+            ('count', self.count),
             ('page', self.page),
             ('has_next_page', self.has_next_page),
             ('has_previous_page', self.has_previous_page),
