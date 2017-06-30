@@ -1,6 +1,5 @@
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models.functions import Greatest
-from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.awards.models import LegalEntity
@@ -8,12 +7,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.serializers_v2.autocomplete import RecipientAutocompleteSerializer
 
 
-class BaseAutocompleteViewSet(APIView):
-    # SearchRank ranks a non-matching result with 1e-20
-    SEARCH_SIMILARITY_THRESHOLD = 0.3
-
-
-class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
+class RecipientAutocompleteViewSet(APIView):
 
     serializer_class = RecipientAutocompleteSerializer
 
@@ -38,7 +32,10 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
         queryset = queryset.annotate(similarity=Greatest(TrigramSimilarity('recipient_name', search_text),
                                                          TrigramSimilarity('recipient_unique_id', search_text))).\
-            filter(similarity__gt=self.SEARCH_SIMILARITY_THRESHOLD).\
-            order_by('-similarity')[:limit]
+            order_by('-similarity')
 
-        return Response({'results': RecipientAutocompleteSerializer(queryset, many=True).data})
+        exact_match_queryset = queryset.filter(similarity=1.0)
+        if exact_match_queryset.count() > 0:
+            queryset = exact_match_queryset
+
+        return Response({'results': RecipientAutocompleteSerializer(queryset[:limit], many=True).data})
