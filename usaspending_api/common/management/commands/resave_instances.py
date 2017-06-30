@@ -25,8 +25,10 @@ class Command(BaseCommand):
     This applies any data fixes made within .save().
     Should only be necessary after there's a data modification there that
     needs to be applied to existing records.
+
+    Argument: app.modelname, like `references.Location`
     """
-    help = "Re-save all instances of named model."
+    help = "Re-save all instances of named model.  Arg: app.modelname"
     logger = logging.getLogger('console')
 
     def add_arguments(self, parser):
