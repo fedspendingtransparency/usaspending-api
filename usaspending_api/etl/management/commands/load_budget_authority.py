@@ -26,12 +26,28 @@ def valid_quarter(raw):
 
 class Command(BaseCommand):
     """
-    Loads historical budget authority data from a CSV
+    Loads historical budget authority data from spreadsheets.
+
+    Expects the following files:
+
+        budget_authority.csv: Historical budget authority by FY
+        broker_rules_fr_entity.xlsx: fr_entity_codes by agency ID, MAC, subfunction code
+        quarterly/*.xls: quarter-by-quarter data for this fiscal year
+
+    Files in `quarterly` are only read if which quarter is specified
+    with the `--quarter` option.
+
+    By default, these files are expected in the
+    usaspending_api/data/budget_authority directory
+    (they are checked into the repository there).
+    A different directory can be searched instead
+    using the --directory option.  (This is done for
+    testing to test against smaller versions of the files.)
     """
 
     help = "Loads historical budget authority data from a CSV"
-    DIRECTORY_PATH = os.path.join('usaspending_api', 'data',
-                                  'budget_authority')
+    DEFAULT_DIRECTORY_PATH = os.path.join('usaspending_api', 'data',
+                                          'budget_authority')
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -41,11 +57,17 @@ class Command(BaseCommand):
             help='Quarter to load from spreadsheets in data/budget_authority/quarterly',
         )
 
+        parser.add_argument(
+            '-d',
+            '--directory',
+            default=self.DEFAULT_DIRECTORY_PATH,
+            help='Directory containing broker_rules_fr_entity.xlsx, budget_authority.csv, and quarterly/ directory',
+        )
+
     def load_frec_map(self):
 
-        # import ipdb; ipdb.set_trace()
-
-        FREC_MAP_PATH = os.path.join(self.DIRECTORY_PATH, 'broker_rules_fr_entity.xlsx')
+        FREC_MAP_PATH = os.path.join(self.directory,
+                                     'broker_rules_fr_entity.xlsx')
 
         workbook = open_workbook(FREC_MAP_PATH)
         sheet = workbook.sheets()[1]
@@ -56,14 +78,14 @@ class Command(BaseCommand):
         instances = []
         for i in range(4, sheet.nrows):
             row = dict(zip(headers, (cell.value for cell in sheet.row(i))))
-            instance = FrecMap(agency_identifier=row['AID'],
-            main_account_code=row['MAIN'],
-            treasury_appropriation_account_title = row['GWA_TAS NAME'],
-            sub_function_code = row['Sub Function Code'],
-            fr_entity_code = row['FR Entity Type'])
+            instance = FrecMap(
+                agency_identifier=row['AID'],
+                main_account_code=row['MAIN'],
+                treasury_appropriation_account_title=row['GWA_TAS NAME'],
+                sub_function_code=row['Sub Function Code'],
+                fr_entity_code=row['FR Entity Type'])
             instances.append(instance)
         FrecMap.objects.bulk_create(instances)
-
 
     def load_quarterly_spreadsheets(self, quarter, results):
         """Special procedure for getting quarterly update .xls files
@@ -73,11 +95,10 @@ class Command(BaseCommand):
         https://max.omb.gov/maxportal/document/SF133/Budget/FY%202017%20-%20SF%20133%20Reports%20on%20Budget%20Execution%20and%20Budgetary%20Resources.html
         """
 
-        QUARTERLY_PATH = os.path.join(self.DIRECTORY_PATH, 'quarterly',
-                                      '*.xls')
+        quarterly_path = os.path.join(self.directory, 'quarterly', '*.xls')
         this_fy = fy(date.today())
         amount_column = 'Q{}_AMT'.format(quarter)
-        for filename in glob.glob(QUARTERLY_PATH):
+        for filename in glob.glob(quarterly_path):
             workbook = open_workbook(filename)
             sheet = workbook.sheets()[0]
             headers = [cell.value for cell in sheet.row(0)]
@@ -88,7 +109,8 @@ class Command(BaseCommand):
                              this_fy)] = int(row[amount_column]) * 1000
 
     def find_frec(self, agency_identifier, row):
-        frec_inst = FrecMap.objects.filter(agency_identifier=agency_identifier,
+        frec_inst = FrecMap.objects.filter(
+            agency_identifier=agency_identifier,
             main_account_code=row['Account Code'],
             sub_function_code=row['Subfunction Code'])
         if frec_inst.exists():
@@ -97,11 +119,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        DIRECTORY_PATH = os.path.join('usaspending_api', 'data',
-                                      'budget_authority')
+        self.directory = options['directory']
         self.load_frec_map()
 
-        HISTORICAL_PATH = os.path.join(DIRECTORY_PATH, 'budget_authority.csv')
+        HISTORICAL_PATH = os.path.join(self.directory, 'budget_authority.csv')
         overall_totals = defaultdict(int)
         results = defaultdict(int)
         with open(HISTORICAL_PATH) as infile:
@@ -110,7 +131,8 @@ class Command(BaseCommand):
             reader = csv.DictReader(infile)
             for row in reader:
                 agency_identifier = row['Treasury Agency Code'].zfill(3)
-                frec_inst = FrecMap.objects.filter(agency_identifier=agency_identifier,
+                frec_inst = FrecMap.objects.filter(
+                    agency_identifier=agency_identifier,
                     main_account_code=row['Account Code'],
                     sub_function_code=row['Subfunction Code'])
                 if frec_inst.exists():
