@@ -1,5 +1,4 @@
-from decimal import Decimal
-from django.core.management import call_command, CommandError
+from django.core.management import call_command
 
 from usaspending_api.accounts.models import BudgetAuthority
 from usaspending_api.references.models import OverallTotals
@@ -26,3 +25,4 @@ def test_load_budget_authority(flushed):
     call_command('load_budget_authority', '-q', '2')
     assert OverallTotals.objects.exists()
     assert BudgetAuthority.objects.exists()
+    BudgetAuthority.objects.filter(fr_entity_code__isnull=False).exists()

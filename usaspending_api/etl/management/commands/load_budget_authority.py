@@ -6,14 +6,12 @@ from argparse import ArgumentTypeError
 from collections import defaultdict
 from datetime import date
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db import connections
 from xlrd import open_workbook
 
-from usaspending_api.accounts.models import BudgetAuthority, FederalAccount
+from usaspending_api.accounts.models import BudgetAuthority
 from usaspending_api.common.helpers import fy
-from usaspending_api.references.models import OverallTotals
+from usaspending_api.references.models import OverallTotals, FrecMap
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
@@ -43,6 +41,30 @@ class Command(BaseCommand):
             help='Quarter to load from spreadsheets in data/budget_authority/quarterly',
         )
 
+    def load_frec_map(self):
+
+        # import ipdb; ipdb.set_trace()
+
+        FREC_MAP_PATH = os.path.join(self.DIRECTORY_PATH, 'broker_rules_fr_entity.xlsx')
+
+        workbook = open_workbook(FREC_MAP_PATH)
+        sheet = workbook.sheets()[1]
+        headers = [cell.value for cell in sheet.row(3)]
+
+        FrecMap.objects.all().delete()
+
+        instances = []
+        for i in range(4, sheet.nrows):
+            row = dict(zip(headers, (cell.value for cell in sheet.row(i))))
+            instance = FrecMap(agency_identifier=row['AID'],
+            main_account_code=row['MAIN'],
+            treasury_appropriation_account_title = row['GWA_TAS NAME'],
+            sub_function_code = row['Sub Function Code'],
+            fr_entity_code = row['FR Entity Type'])
+            instances.append(instance)
+        FrecMap.objects.bulk_create(instances)
+
+
     def load_quarterly_spreadsheets(self, quarter, results):
         """Special procedure for getting quarterly update .xls files
 
@@ -65,16 +87,21 @@ class Command(BaseCommand):
                     results[(row['TRAG'], None,
                              this_fy)] = int(row[amount_column]) * 1000
 
-    def find_frec(self, agency_identifier, account_name):
+    def find_frec(self, agency_identifier, row):
+        frec_inst = FrecMap.objects.filter(agency_identifier=agency_identifier,
+            main_account_code=row['Account Code'],
+            sub_function_code=row['Subfunction Code'])
+        if frec_inst.exists():
 
-        return None
+            return frec_inst.first().fr_entity_code
 
     def handle(self, *args, **options):
 
         DIRECTORY_PATH = os.path.join('usaspending_api', 'data',
                                       'budget_authority')
-        HISTORICAL_PATH = os.path.join(DIRECTORY_PATH, 'budget_authority.csv')
+        self.load_frec_map()
 
+        HISTORICAL_PATH = os.path.join(DIRECTORY_PATH, 'budget_authority.csv')
         overall_totals = defaultdict(int)
         results = defaultdict(int)
         with open(HISTORICAL_PATH) as infile:
@@ -83,7 +110,14 @@ class Command(BaseCommand):
             reader = csv.DictReader(infile)
             for row in reader:
                 agency_identifier = row['Treasury Agency Code'].zfill(3)
-                frec = self.find_frec(agency_identifier, row['Account Name'])
+                frec_inst = FrecMap.objects.filter(agency_identifier=agency_identifier,
+                    main_account_code=row['Account Code'],
+                    sub_function_code=row['Subfunction Code'])
+                if frec_inst.exists():
+                    frec = frec_inst.first()
+                else:
+                    frec = None
+                frec = self.find_frec(agency_identifier, row)
                 for year in range(1976, 2023):
                     amount = row[str(year)]
                     amount = int(amount.replace(',', '')) * 1000
