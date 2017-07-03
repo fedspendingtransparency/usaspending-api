@@ -32,6 +32,7 @@ urlpatterns = [
     url(r'^api/v1/submissions/', include('usaspending_api.submissions.urls')),
     url(r'^api/v1/tas/', include('usaspending_api.accounts.urls_tas')),
     url(r'^api/v1/transactions/', include('usaspending_api.awards.urls_transactions')),
+    url(r'^api/v2/autocomplete/', include('usaspending_api.references.urls_autocomplete')),
     url(r'^api/v2/award_spending/', include('usaspending_api.awards.urls_award_spending')),
     url(r'^api/v2/federal_obligations/', include('usaspending_api.accounts.urls_federal_obligations')),
     url(r'^api/v2/financial_balances/', include('usaspending_api.accounts.urls_financial_balances')),
