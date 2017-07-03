@@ -6,10 +6,13 @@ from usaspending_api.accounts.models import (
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass
 )
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.serializers import (
-    ProgramActivitySerializer, ObjectClassSerializer, ToptierAgencySerializer)
+    ProgramActivitySerializer, ObjectClassSerializer, ToptierAgencySerializer
+)
 from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
+
 
 
 class FederalAccountSerializer(LimitableSerializer):
@@ -143,3 +146,11 @@ class BudgetAuthoritySerializer(serializers.Serializer):
 
     year = serializers.IntegerField()
     total = serializers.IntegerField()
+
+
+class FederalAccountByObligationSerializer(serializers.Serializer):
+
+    id = serializers.CharField()
+    agency_name = serializers.CharField()
+    account_title = serializers.CharField()
+    obligated_amount = serializers.DecimalField(None, 2)

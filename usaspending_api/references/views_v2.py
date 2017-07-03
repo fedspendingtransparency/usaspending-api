@@ -62,6 +62,10 @@ class AgencyViewSet(APIView):
         total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
 
         total_budget_authority_submission = total_budget_authority_queryset.first()
+        total_budget_authority_amount = "-1"
+
+        if total_budget_authority_submission is not None:
+            total_budget_authority_amount = str(total_budget_authority_submission.total_budget_authority)
 
         # craft response
         response['results'] = {'agency_name': toptier_agency.name,
@@ -70,8 +74,7 @@ class AgencyViewSet(APIView):
                                'outlay_amount': str(submission.outlay_amount),
                                'obligated_amount': str(submission.obligated_amount),
                                'budget_authority_amount': str(submission.budget_authority_amount),
-                               'total_budget_authority_amount': str(total_budget_authority_submission.
-                                                                    total_budget_authority)
+                               'total_budget_authority_amount': total_budget_authority_amount
                                }
 
         return Response(response)
