@@ -12,7 +12,7 @@ class RecipientAutocompleteViewSet(APIView):
     serializer_class = RecipientAutocompleteSerializer
 
     def post(self, request):
-        """Return all award spending by award type for a given fiscal year and agency id"""
+        """Return all recipients matching the provided search text"""
 
         json_request = request.data
 
