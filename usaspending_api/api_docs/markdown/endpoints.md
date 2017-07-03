@@ -84,4 +84,4 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v2/award_spending/award_type/](/api/v2/award_spending/award_type/) | GET | Returns a list of total obligations by award_type |
 | [/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/) | GET | Returns a list of total obligations by recipient |
 | [/api/v2/financial_spending/object_class/](/api/v2/financial_spending/object_class/) | GET | takes fiscal year and funding agency id as input, and returns that agency's obligated amounts to specific major object classes  |
-| [/api/v2/budget_authority/agency/](/api/v2/budget_authority/agency/) | GET | takes funding agency id as input, and returns that agency's budget authority by year |
+| [/api/v2/budget_authority/agency/](/api/v2/budget_authority/agency/) | GET | takes funding agency id as input, and returns that agency's budget authority by year.  Accepts optional query parameter `?frec=` for additional filtering. |
