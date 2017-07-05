@@ -87,7 +87,7 @@ class Command(BaseCommand):
             instances.append(instance)
         FrecMap.objects.bulk_create(instances)
 
-    def load_quarterly_spreadsheets(self, quarter, results):
+    def load_quarterly_spreadsheets(self, quarter, results, overall_totals):
         """Special procedure for getting quarterly update .xls files
 
         These are downloaded from
@@ -97,6 +97,7 @@ class Command(BaseCommand):
 
         quarterly_path = os.path.join(self.directory, 'quarterly', '*.xls')
         this_fy = fy(date.today())
+        overall_totals[this_fy] = 0
         amount_column = 'Q{}_AMT'.format(quarter)
         for filename in glob.glob(quarterly_path):
             workbook = open_workbook(filename)
@@ -105,8 +106,9 @@ class Command(BaseCommand):
             for i in range(1, sheet.nrows):
                 row = dict(zip(headers, (cell.value for cell in sheet.row(i))))
                 if row['LNO'] == '2500':
-                    results[(row['TRAG'], None,
-                             this_fy)] = int(row[amount_column]) * 1000
+                    dollars = int(row[amount_column]) * 1000
+                    results[(row['TRAG'], None, this_fy)] = dollars
+                    overall_totals[this_fy] += dollars
 
     def find_frec(self, agency_identifier, row):
         frec_inst = FrecMap.objects.filter(
@@ -148,7 +150,7 @@ class Command(BaseCommand):
 
         quarter = options['quarter']
         if quarter:
-            self.load_quarterly_spreadsheets(options['quarter'], results)
+            self.load_quarterly_spreadsheets(options['quarter'], results, overall_totals)
         else:
             print('No quarter given. Quarterly spreadsheets not loaded')
 
