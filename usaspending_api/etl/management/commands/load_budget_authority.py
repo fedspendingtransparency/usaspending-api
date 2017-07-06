@@ -32,12 +32,15 @@ class Command(BaseCommand):
 
         budget_authority.csv: Historical budget authority by FY
         broker_rules_fr_entity.xlsx: fr_entity_codes by agency ID, MAC, subfunction code
-        quarterly/*.xls: quarter-by-quarter data for this fiscal year
+        quarterly/*.xls: quarter-by-quarter SF133 worksheets for this fiscal year
 
     Files in `quarterly` are only read if which quarter is specified
-    with the `--quarter` option.
+    with the `--quarter` option.  They're currently downloaded from
+    the "Quarterly SF133s in Excel" section of "MAX Information and Reports":
 
-    By default, these files are expected in the
+    https://max.omb.gov/maxportal/document/SF133/Budget/FY%202017%20-%20SF%20133%20Reports%20on%20Budget%20Execution%20and%20Budgetary%20Resources.html
+
+    By default, all the files are expected in the
     usaspending_api/data/budget_authority directory
     (they are checked into the repository there).
     A different directory can be searched instead
