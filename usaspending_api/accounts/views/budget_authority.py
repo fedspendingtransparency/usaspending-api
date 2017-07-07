@@ -1,7 +1,4 @@
 from django.db.models import Sum
-from rest_framework.exceptions import ParseError
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.filters import OrderingFilter
 
 from usaspending_api.accounts.serializers import BudgetAuthoritySerializer
 from usaspending_api.accounts.models import BudgetAuthority
@@ -20,11 +17,11 @@ class BudgetAuthorityViewSet(DetailViewSet):
         "Generate the order_by string based on query parameters"
         sort_by = self.request.query_params.get('sort', 'year').lower()
         if sort_by not in self.ordering_fields:
-            raise ParseError('sort should be one of {}, not {}'.format(
+            raise InvalidParameterException('sort should be one of {}, not {}'.format(
                 self.ordering_fields, sort_by))
         order_by = self.request.query_params.get('order', 'asc').lower()
         if order_by not in self.order_directions:
-            raise ParseError('order should be {}, not {}'.format(' or '.join(
+            raise InvalidParameterException('order should be {}, not {}'.format(' or '.join(
                 self.order_directions), order_by))
 
         return '{}{}'.format(self.order_directions[order_by], sort_by)
