@@ -94,7 +94,7 @@ def test_budget_authority_endpoint_sorts_year_by_default(model_instances,
 def test_budget_authority_endpoint_bad_sort_parameters(model_instances,
                                                        client):
     "Appropriate errors should be thrown if bad sort parameters supplied"
-    resp = client.get('/api/v2/budget_authority/agencies/002/?sort=wxyz')
+    resp = client.get('/api/v2/budget_authority/agencies/000/?sort=wxyz')
     # Even though I'm raising ParseErrors, which should be 400s,
     # they're being raised as 500s... thus skipping for now
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
@@ -104,12 +104,24 @@ def test_budget_authority_endpoint_bad_sort_parameters(model_instances,
 
 
 @pytest.mark.django_db
-def test_budget_authority_endpoint_sort(model_instances, client):
+def test_budget_authority_endpoint_sort_year(model_instances, client):
     "Test support for `sort` and `order` parameters"
-    resp = client.get('/api/v2/budget_authority/agencies/002/?sort=year')
+    resp = client.get('/api/v2/budget_authority/agencies/000/?sort=year')
     years = [r['year'] for r in resp.json()['results']]
     assert years == sorted(years)
+
+
+@pytest.mark.django_db
+def test_budget_authority_endpoint_sort_year_desc(model_instances, client):
     resp = client.get(
-        '/api/v2/budget_authority/agencies/002/?sort=year&order=desc')
+        '/api/v2/budget_authority/agencies/000/?sort=year&order=desc')
     years = [r['year'] for r in resp.json()['results']]
-    assert years == sorted(years)
+    assert years == sorted(years, reverse=True)
+
+
+@pytest.mark.django_db
+def test_budget_authority_endpoint_sort_total(model_instances, client):
+    resp = client.get(
+        '/api/v2/budget_authority/agencies/000/?sort=total&order=desc')
+    totals = [r['total'] for r in resp.json()['results']]
+    assert totals == sorted(totals, reverse=True)

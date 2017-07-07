@@ -13,7 +13,7 @@ class BudgetAuthorityViewSet(DetailViewSet):
     """Return historical budget authority for a given agency id"""
 
     serializer_class = BudgetAuthoritySerializer
-    ordering_fields = ('year', 'amount')
+    ordering_fields = ('year', 'total')
     order_directions = {'asc': '', 'desc': '-'}
 
     def sort(self):
