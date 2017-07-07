@@ -5,6 +5,7 @@ from usaspending_api.common.helpers import fy
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.references.reference_helpers import insert_federal_accounts, update_federal_accounts
 
 
 class FederalAccount(models.Model):
@@ -24,6 +25,11 @@ class FederalAccount(models.Model):
         managed = True
         db_table = 'federal_account'
         unique_together = ('agency_identifier', 'main_account_code')
+
+    def save(self, *args, **kwargs):
+        self.federal_account_code = self.agency_identifier + '-' + self.main_account_code + \
+                                    ' - ' + self.account_title
+        super().save(*args, **kwargs)
 
 
 class TreasuryAppropriationAccount(DataSourceTrackedModel):
