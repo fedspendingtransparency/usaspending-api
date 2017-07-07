@@ -5,7 +5,6 @@ from usaspending_api.common.helpers import fy
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.common.models import DataSourceTrackedModel
-from usaspending_api.references.reference_helpers import insert_federal_accounts, update_federal_accounts
 
 
 class FederalAccount(models.Model):
