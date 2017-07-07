@@ -7,7 +7,6 @@
                 "next": "http://testserver/api/v1/awards/?limit=1&page=2&req=08416c5e5e306c10e7cae2edb963c89678cddfb44185222cd48b872ea1c55394",
                 "previous": null
             },
-            "req": "08416c5e5e306c10e7cae2edb963c89678cddfb44185222cd48b872ea1c55394",
             "results": [
                 {
                     "piid": null,
@@ -36,7 +35,6 @@
                 "next": "http://testserver/api/v1/awards/?limit=1&page=2&req=2528870dac8a62c67d1d0fc2630189db9669c83a5f5f77c0e998a2a6f394819b",
                 "previous": null
             },
-            "req": "2528870dac8a62c67d1d0fc2630189db9669c83a5f5f77c0e998a2a6f394819b",
             "results": [
                 {
                     "id": 47587,
@@ -140,7 +138,6 @@
                 "next": "http://testserver/api/v1/awards/?limit=1&page=2&req=8eb19ef415363e355105445773a6658294064a43f72be9f797699eb95cb33f89",
                 "previous": null
             },
-            "req": "8eb19ef415363e355105445773a6658294064a43f72be9f797699eb95cb33f89",
             "results": [
                 {
                     "funding_agency": {
@@ -186,7 +183,6 @@
                 "next": null,
                 "previous": null
             },
-            "req": "9163ec43b4a27049344a0dccf07b1c39ff0ded55a7b0daefeff36284bf5bdd18",
             "results": []
         },
         "status_code": 200,
@@ -221,7 +217,6 @@
                 "next": null,
                 "previous": null
             },
-            "req": "dced30267ed114c5165c3c185bb459b0aaac32d771cc3a12b107fc954adca9f6",
             "results": [
                 {
                     "fain": "SBAHQ15J0005",
@@ -347,7 +342,6 @@
                 "next": null,
                 "previous": null
             },
-            "req": "8a86477cb8b39283a9b43a7eb944477a5cccbfe0968b56dd309409ef0c914d60",
             "results": [
                 {
                     "fain": "SBAHQ15J0005",
@@ -467,7 +461,6 @@
                 "next": null,
                 "previous": null
             },
-            "req": "70ec974b6944233f6b893e90b76d06d857867e6fe247f3408690f00ff6886399",
             "results": [
                 {
                     "item": "Cooperative Agreement",
@@ -497,7 +490,6 @@
                 "next": null,
                 "previous": null
             },
-            "req": "4f2d1ec386e9af378eb95bb9cf82c6ee6fabd5279d79108d7bd4e79002cd33b4",
             "results": [
                 {
                     "budget_authority_unobligated_balance_brought_forward_fyb": "864120.58"
@@ -529,7 +521,6 @@
                 "next": null,
                 "previous": null
             },
-            "req": "e9dadbba7a37ed84706ce006beee696737ddb0122e5d06b07e66652bd5d6f0ba",
             "results": [
                 {
                     "main_account_code": "0100"
@@ -561,7 +552,6 @@
                 "next": null,
                 "previous": null
             },
-            "req": "41e7e460c03a8fee2ca6c310d8db0d0be415a4452400aaec1adfddcf95270917",
             "results": [
                 {
                     "cgac_code": "073"
@@ -629,7 +619,6 @@
             "current": "http://testserver/api/v1/accounts/awards/?limit=100&page=1&req=c6e30f115d6",
             "previous": null
           },
-          "req": "c6e30f115d6",
           "results": [
             {
               "financial_accounts_by_awards_id": 12544,
