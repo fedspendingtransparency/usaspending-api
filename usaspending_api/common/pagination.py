@@ -86,7 +86,6 @@ class UsaspendingPagination(BasePagination):
 
         return Response(OrderedDict([
             ('page_metadata', page_metadata),
-            ('req', self.req.checksum),
             ('results', data)
         ]))
 
