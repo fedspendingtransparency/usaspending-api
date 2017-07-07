@@ -27,8 +27,7 @@ def update_federal_accounts(tas_tuple=None):
     queryset = FederalAccount.objects.all()
     queryset = queryset.filter(federal_account_code=None)
     for fa in queryset:
-        fa.federal_account_code = fa.agency_identifier + '-' + fa.main_account_code +\
-                                  ' - ' + fa.account_title
+        # fa.save is overwritten and adds a federal account code to the fa before save
         fa.save()
 
     # Because orm doesn't support join updates, dropping down to raw SQL
