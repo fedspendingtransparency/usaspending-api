@@ -16,7 +16,7 @@ class BudgetAuthorityViewSet(DetailViewSet):
     def get_queryset(self):
         cgac = self.kwargs['cgac']
         result = BudgetAuthority.objects.filter(agency_identifier__iexact=cgac) \
-            .values('year').annotate(total=Sum('amount'))
+            .values('year').annotate(total=Sum('amount')).order_by('year')
         frec = self.request.query_params.get('frec', None)
         if frec:
             result = result.filter(fr_entity_code__iexact=frec)
