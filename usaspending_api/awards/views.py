@@ -1,15 +1,10 @@
 from collections import namedtuple
 
 from usaspending_api.awards.models import Award, Transaction, Subaward
-from usaspending_api.awards.serializers import AwardSerializer, AwardTypeAwardSpendingSerializer, \
-    RecipientAwardSpendingSerializer, SubawardSerializer, TransactionSerializer
+from usaspending_api.awards.serializers import AwardSerializer, SubawardSerializer, TransactionSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin, AggregateQuerysetMixin
-from usaspending_api.common.views import DetailViewSet, AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import check_valid_toptier_agency
-from django.db.models import F, Sum
-
+from usaspending_api.common.views import DetailViewSet, AutocompleteView
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
@@ -45,37 +40,6 @@ class AwardAutocomplete(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class AwardTypeAwardSpendingViewSet(DetailViewSet):
-    """Return all award spending by award type for a given fiscal year and agency id"""
-
-    serializer_class = AwardTypeAwardSpendingSerializer
-
-    def get_queryset(self):
-        # retrieve post request payload
-        json_request = self.request.query_params
-
-        # retrieve fiscal_year & awarding_agency_id from request
-        fiscal_year = json_request.get('fiscal_year', None)
-        awarding_agency_id = json_request.get('awarding_agency_id', None)
-
-        # required query parameters were not provided
-        if not (fiscal_year and awarding_agency_id):
-            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, awarding_agency_id')
-
-        if not check_valid_toptier_agency(awarding_agency_id):
-            raise InvalidParameterException('Awarding Agency ID provided must correspond to a toptier agency')
-
-        queryset = Transaction.objects.all()
-        # Filter based on fiscal year and agency id
-        queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=awarding_agency_id)
-        # alias awards.category to be award_type
-        queryset = queryset.annotate(award_type=F('award__category'))
-        # sum obligations for each category type
-        queryset = queryset.values('award_type').annotate(obligated_amount=Sum('federal_action_obligation'))
-
-        return queryset
-
-
 class AwardViewSet(SuperLoggingMixin,
                    FilterQuerysetMixin,
                    DetailViewSet):
@@ -100,39 +64,6 @@ class AwardViewSet(SuperLoggingMixin,
         filtered_queryset = self.filter_records(self.request, queryset=queryset, filter_map=self.filter_map)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
-
-
-class RecipientAwardSpendingViewSet(DetailViewSet):
-    """Return all award spending by recipient for a given fiscal year and agency id"""
-
-    serializer_class = RecipientAwardSpendingSerializer
-
-    def get_queryset(self):
-        # retrieve post request payload
-        json_request = self.request.query_params
-
-        # retrieve fiscal_year & awarding_agency_id from request
-        fiscal_year = json_request.get('fiscal_year', None)
-        awarding_agency_id = json_request.get('awarding_agency_id', None)
-
-        # required query parameters were not provided
-        if not (fiscal_year and awarding_agency_id):
-            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, awarding_agency_id')
-
-        if not check_valid_toptier_agency(awarding_agency_id):
-            raise InvalidParameterException('Awarding Agency ID provided must correspond to a toptier agency')
-
-        queryset = Transaction.objects.all()
-        # Filter based on fiscal year and agency id
-        queryset = queryset.filter(fiscal_year=fiscal_year, awarding_agency=awarding_agency_id)
-        # alias recipient column names
-        queryset = queryset.annotate(recipient_name=F('recipient__recipient_name'))
-        queryset = queryset.annotate(recipient_id=F('recipient__legal_entity_id'))
-        # sum obligations for each recipient
-        queryset = queryset.values('recipient_id', 'recipient_name').\
-            annotate(obligated_amount=Sum('federal_action_obligation'))
-
-        return queryset
 
 
 class SubawardAggregateViewSet(SuperLoggingMixin,
