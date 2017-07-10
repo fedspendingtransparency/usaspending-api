@@ -25,11 +25,6 @@ class FederalAccount(models.Model):
         db_table = 'federal_account'
         unique_together = ('agency_identifier', 'main_account_code')
 
-    def save(self, *args, **kwargs):
-        self.federal_account_code = self.agency_identifier + '-' + self.main_account_code +\
-                                    ' - ' + self.account_title
-        super().save(*args, **kwargs)
-
 
 class TreasuryAppropriationAccount(DataSourceTrackedModel):
     """Represents a single Treasury Account Symbol (TAS)."""
