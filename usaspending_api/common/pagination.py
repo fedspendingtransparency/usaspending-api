@@ -86,6 +86,7 @@ class UsaspendingPagination(BasePagination):
 
         return Response(OrderedDict([
             ('page_metadata', page_metadata),
+            ('req', self.req.checksum),
             ('results', data)
         ]))
 
@@ -96,6 +97,7 @@ class UsaspendingPagination(BasePagination):
         url = self.request.build_absolute_uri()
         url = replace_query_param(url, self.page_size_query_param, self.limit)
         url = replace_query_param(url, self.page_query_param, self.page + 1)
+        url = replace_query_param(url, "req", self.req.checksum)
 
         return url
 
@@ -103,6 +105,7 @@ class UsaspendingPagination(BasePagination):
         url = self.request.build_absolute_uri()
         url = replace_query_param(url, self.page_size_query_param, self.limit)
         url = replace_query_param(url, self.page_query_param, self.page)
+        url = replace_query_param(url, "req", self.req.checksum)
 
         return url
 
@@ -113,6 +116,7 @@ class UsaspendingPagination(BasePagination):
         url = self.request.build_absolute_uri()
         url = replace_query_param(url, self.page_size_query_param, self.limit)
         url = replace_query_param(url, self.page_query_param, self.page - 1)
+        url = replace_query_param(url, "req", self.req.checksum)
 
         return url
 

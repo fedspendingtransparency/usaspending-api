@@ -15,7 +15,7 @@ def test_transaction_endpoint(client):
 
     resp = client.get('/api/v1/transactions/')
     assert resp.status_code == 200
-    assert len(resp.data) > 1
+    assert len(resp.data) > 2
 
     assert client.post(
         '/api/v1/transactions/?page=1&limit=4',

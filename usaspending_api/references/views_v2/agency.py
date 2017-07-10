@@ -48,10 +48,14 @@ class AgencyViewSet(APIView):
             submission__reporting_fiscal_year=active_fiscal_year,
             treasury_account_identifier__funding_toptier_agency=toptier_agency
         )
-        aggregate_dict = queryset.aggregate(
+        queryset = queryset.annotate(
             budget_authority_amount=Sum('budget_authority_available_amount_total_cpe'),
             obligated_amount=Sum('obligations_incurred_total_by_tas_cpe'),
             outlay_amount=Sum('gross_outlay_amount_by_tas_cpe'))
+
+        submission = queryset.first()
+        if submission is None:
+            return Response(response)
 
         # get the overall total government budget authority (to craft a budget authority percentage)
         total_budget_authority_queryset = OverallTotals.objects.all()
@@ -67,10 +71,10 @@ class AgencyViewSet(APIView):
         response['results'] = {'agency_name': toptier_agency.name,
                                'active_fy': str(active_fiscal_year),
                                'active_fq': str(active_fiscal_quarter),
-                               'outlay_amount': str(aggregate_dict['outlay_amount']),
-                               'obligated_amount': str(aggregate_dict['obligated_amount']),
-                               'budget_authority_amount': str(aggregate_dict['budget_authority_amount']),
-                               'current_total_budget_authority_amount': total_budget_authority_amount
+                               'outlay_amount': str(submission.outlay_amount),
+                               'obligated_amount': str(submission.obligated_amount),
+                               'budget_authority_amount': str(submission.budget_authority_amount),
+                               'total_budget_authority_amount': total_budget_authority_amount
                                }
 
         return Response(response)

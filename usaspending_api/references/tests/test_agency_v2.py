@@ -44,7 +44,7 @@ def test_award_type_endpoint(client, financial_spending_data):
     assert resp.data == {'results': {'agency_name': 'tta_name', 'active_fy': '2017', 'active_fq': '2',
                                      'outlay_amount': '2.00', 'obligated_amount': '2.00',
                                      'budget_authority_amount': '2.00',
-                                     'current_total_budget_authority_amount': '3860000000.00'}}
+                                     'total_budget_authority_amount': '3860000000.00'}}
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/references/agency/4/')
