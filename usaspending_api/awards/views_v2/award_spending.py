@@ -42,12 +42,10 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
         )
         # alias awards.category to be award_type
         queryset = queryset.annotate(
-            award_type=F('award__category'),
-            toptier_agency=F('awarding_agency__toptier_agency__name'),
-            subtier_agency=F('awarding_agency__subtier_agency__name')
+            award_type=F('award__category')
         )
         # sum obligations for each category type
-        queryset = queryset.values('award_type', 'toptier_agency', 'subtier_agency').annotate(
+        queryset = queryset.values('award_type').annotate(
             obligated_amount=Sum('federal_action_obligation')
         ).order_by('-obligated_amount')
 
@@ -88,16 +86,12 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
         # alias recipient column names with top and sub tier agencies
         queryset = queryset.annotate(
             recipient_name=F('recipient__recipient_name'),
-            recipient_id=F('recipient__legal_entity_id'),
-            toptier_agency=F('awarding_agency__toptier_agency__name'),
-            subtier_agency=F('awarding_agency__subtier_agency__name')
+            recipient_id=F('recipient__legal_entity_id')
         )
         # sum obligations for each recipient
         queryset = queryset.values(
             'recipient_id',
-            'recipient_name',
-            'toptier_agency',
-            'subtier_agency'
+            'recipient_name'
         ).annotate(
             obligated_amount=Sum('federal_action_obligation')
         ).order_by('-obligated_amount')
