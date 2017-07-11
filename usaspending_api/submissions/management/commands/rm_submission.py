@@ -26,20 +26,20 @@ class Command(BaseCommand):
         Could be expanded to other models.
         """
 
-        potential_childless = []
+        potential_childless = set()
         for transaction in submission.transaction_set.all():
-            potential_childless.append(transaction.place_of_performance)
-            potential_childless.append(transaction.award.place_of_performance)
+            potential_childless.add(transaction.place_of_performance)
+            potential_childless.add(transaction.award.place_of_performance)
             if transaction.award.recipient:
-                potential_childless.append(transaction.award.recipient.location)
+                potential_childless.add(transaction.award.recipient.location)
             for subaward in transaction.award.subawards.all():
-                potential_childless.append(subaward.place_of_performance)
+                potential_childless.add(subaward.place_of_performance)
                 if subaward.recipient:
-                    potential_childless.append(subaward.recipient.place_of_performance)
+                    potential_childless.add(subaward.recipient.location)
             # could get the LegalEntities, too
 
         # Return without `None`s
-        return [p for p in potential_childless if p]
+        return potential_childless - {None}
 
     def handle(self, *args, **options):
         # This will throw an exception and exit the command if the id doesn't exist
