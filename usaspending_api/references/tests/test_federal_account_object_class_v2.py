@@ -28,13 +28,13 @@ def financial_spending_data(db):
     tas = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=federal_account_1)
     tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=federal_account_1)
 
-
     # CREATE Financial account by program activity object class
-    fabpaoc = mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas, object_class=object_class_1)
-    fabpaoc2 = mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas, object_class=object_class_2)
-    fabpaoc3 = mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas, object_class=object_class_4)
-
-
+    fabpaoc = mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas,
+                         object_class=object_class_1)
+    fabpaoc2 = mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas,
+                          object_class=object_class_2)
+    fabpaoc3 = mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas,
+                          object_class=object_class_4)
 
 
 @pytest.mark.django_db
@@ -47,7 +47,7 @@ def test_federal_account_object_class_endpoint(client, financial_spending_data):
                                       {'major_object_class': 'mocName2', 'minor_object_class':
                                           ['ocName2', 'ocName4']}]}) or \
            (resp.data == {'results': [{'major_object_class': 'mocName2', 'minor_object_class': ['ocName2', 'ocName4']},
-                                      {'major_object_class': 'mocName1', 'minor_object_class': ['ocName1']},]})
+                                      {'major_object_class': 'mocName1', 'minor_object_class': ['ocName1']}]})
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/federal_accounts/object_class/2/')
