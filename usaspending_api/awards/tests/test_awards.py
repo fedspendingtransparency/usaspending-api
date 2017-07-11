@@ -15,7 +15,7 @@ def test_award_endpoint(client):
 
     resp = client.get('/api/v1/awards/')
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data) > 2
+    assert len(resp.data) > 1
 
     assert client.post(
         '/api/v1/awards/?page=1&limit=10',

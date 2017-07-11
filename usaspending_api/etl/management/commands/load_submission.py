@@ -5,7 +5,7 @@ import logging
 import re
 
 from django.core.management import call_command
-from django.db import connections
+from django.db import connections, transaction
 from django.db.models import Q
 from django.core.cache import caches
 import pandas as pd
@@ -54,6 +54,7 @@ class Command(load_base.Command):
         parser.add_argument('submission_id', nargs=1, help='the data broker submission id to load', type=int)
         super(Command, self).add_arguments(parser)
 
+    @transaction.atomic
     def handle_loading(self, db_cursor, *args, **options):
 
         # Grab the submission id
