@@ -2,6 +2,7 @@ from datetime import datetime
 import logging
 
 from django.utils.dateparse import parse_date
+from django.db import transaction
 
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -39,6 +40,7 @@ class Command(load_base.Command):
         parser.add_argument('--action_date_end', type=parse_date, default=None, help='Last action_date to get - YYYY-MM-DD')
         parser.add_argument('--cgac', default=None)
 
+    @transaction.atomic
     def handle_loading(self, db_cursor, *args, **options):
 
         submission_attributes = SubmissionAttributes()
