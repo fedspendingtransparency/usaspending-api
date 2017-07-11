@@ -1,15 +1,10 @@
-from django.db.models import F, Sum
-from usaspending_api.accounts.serializers import (ObjectClassFinancialSpendingSerializer,
-                                                  MinorObjectClassFinancialSpendingSerializer)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.models import Agency
-from usaspending_api.common.views import DetailViewSet
-from usaspending_api.common.exceptions import InvalidParameterException
 from rest_framework.response import Response
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
+from rest_framework.views import APIView
 
 
-class ObjectClassFederalAccountsViewSet(DetailViewSet):
+class ObjectClassFederalAccountsViewSet(APIView):
     """Returns financial spending data by object class."""
 
     def get(self, request, pk, format=None):
@@ -21,7 +16,7 @@ class ObjectClassFederalAccountsViewSet(DetailViewSet):
         fa_id = int(pk)
 
         # get FA row
-        fa = FederalAccount.objects.filter(agency_identifier=fa_id).first()
+        fa = FederalAccount.objects.filter(id=fa_id).first()
         if fa is None:
             return Response(response)
 
@@ -33,7 +28,8 @@ class ObjectClassFederalAccountsViewSet(DetailViewSet):
 
         # get fin based on tas
         for tas in tas_queryset:
-            financial_account_queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(tas=tas)
+            financial_account_queryset = \
+                FinancialAccountsByProgramActivityObjectClass.objects.filter(treasury_account=tas)
 
             # get oc out of financial account
             for financial_account in financial_account_queryset:
@@ -43,13 +39,12 @@ class ObjectClassFederalAccountsViewSet(DetailViewSet):
         oc_set = set(oc_list)
 
         # structure response
-        ret_val = {}
-
-        for oc in oc_set:
-            if ret_val.contains({'major_object_class': oc.major_object_class_name}):
-                # add to object class
-                pass
-            else:
-                ret_val.append({'major_object_class': oc.major_object_class_name, 'minor_object_class': [oc.object_class_name]})
-
-        return Response({'results': ret_val})
+        major_classes = set(oc.major_object_class_name for oc in oc_set)
+        result = [
+            {
+                'major_object_class': maj,
+                'minor_object_class': [oc.object_class_name for oc in oc_set if oc.major_object_class_name == maj]
+            }
+            for maj in major_classes
+        ]
+        return Response({'results': result})
