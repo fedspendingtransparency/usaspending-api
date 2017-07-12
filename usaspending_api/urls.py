@@ -38,6 +38,7 @@ urlpatterns = [
     url(r'^api/v2/federal_obligations/', include('usaspending_api.accounts.urls_federal_obligations')),
     url(r'^api/v2/financial_balances/', include('usaspending_api.accounts.urls_financial_balances')),
     url(r'^api/v2/financial_spending/', include('usaspending_api.accounts.urls_financial_spending')),
+    url(r'^api/v2/industry_codes/', include('usaspending_api.awards.urls_industry_codes')),
     url(r'^api/v2/references/', include('usaspending_api.references.urls_v2')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^docs/', include('usaspending_api.api_docs.urls')),

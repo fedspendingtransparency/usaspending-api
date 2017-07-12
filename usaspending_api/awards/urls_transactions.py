@@ -7,8 +7,8 @@ transaction_list = views.TransactionViewset.as_view(
     {'get': 'list', 'post': 'list'})
 transaction_detail = views.TransactionViewset.as_view(
     {'get': 'retrieve', 'post': 'retrieve'})
-transaction_total = views.TransactionAggregateViewSet.as_view({
-    'get': 'list', 'post': 'list'})
+transaction_total = views.TransactionAggregateViewSet.as_view(
+    {'get': 'list', 'post': 'list'})
 
 urlpatterns = [
     url(r'^$', transaction_list, name='transaction-list'),
