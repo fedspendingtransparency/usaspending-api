@@ -10,12 +10,6 @@ from usaspending_api.references.serializers import AgencySerializer, LegalEntity
 from usaspending_api.common.helpers import fy
 
 
-class AwardTypeAwardSpendingSerializer(serializers.Serializer):
-
-    award_type = serializers.CharField()
-    obligated_amount = serializers.DecimalField(None, 2)
-
-
 class FinancialAccountsByAwardsSerializer(LimitableSerializer):
 
     class Meta:
@@ -62,17 +56,6 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             },
         }
-
-
-class RecipientSeriallizer(serializers.Serializer):
-    recipient_id = serializers.IntegerField()
-    recipient_name = serializers.CharField()
-
-
-class RecipientAwardSpendingSerializer(serializers.Serializer):
-
-    recipient = RecipientSeriallizer(source='*')
-    obligated_amount = serializers.DecimalField(None, 2)
 
 
 class SubawardSerializer(LimitableSerializer):

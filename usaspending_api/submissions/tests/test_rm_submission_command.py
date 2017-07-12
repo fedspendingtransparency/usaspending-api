@@ -34,7 +34,9 @@ def submission_data():
     loc2 = mommy.make("references.Location", city_name='city2', )
     # Making child transaction items creates the parent by default
     mommy.make("awards.TransactionContract", submission=submission_123, transaction__submission=submission_123,
-               transaction__place_of_performance=loc1, _quantity=10)
+               transaction__place_of_performance=loc1,
+               transaction__award__piid='ABC123', transaction__award__parent_award__piid='DEF455',
+               _quantity=10)
     mommy.make("awards.TransactionAssistance", submission=submission_123, transaction__submission=submission_123,
                transaction__place_of_performance=loc2, _quantity=10)
     mommy.make("financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_123, _quantity=10)
