@@ -68,13 +68,17 @@ class AgencyViewSet(APIView):
             total_budget_authority_amount = str(total_budget_authority_submission.total_budget_authority)
 
         # craft response
-        response['results'] = {'agency_name': toptier_agency.name,
-                               'active_fy': str(active_fiscal_year),
-                               'active_fq': str(active_fiscal_quarter),
-                               'outlay_amount': str(submission.outlay_amount),
-                               'obligated_amount': str(submission.obligated_amount),
-                               'budget_authority_amount': str(submission.budget_authority_amount),
-                               'total_budget_authority_amount': total_budget_authority_amount
-                               }
+        response['results'] = {
+            'agency_name': toptier_agency.name,
+            'active_fy': str(active_fiscal_year),
+            'active_fq': str(active_fiscal_quarter),
+            'outlay_amount': str(submission.outlay_amount),
+            'obligated_amount': str(submission.obligated_amount),
+            'budget_authority_amount': str(submission.budget_authority_amount),
+            'total_budget_authority_amount': total_budget_authority_amount,
+            'mission': toptier_agency.mission,
+            'website': toptier_agency.website,
+            'icon': toptier_agency.icon_filename
+        }
 
         return Response(response)
