@@ -73,7 +73,7 @@ class AgencyViewSet(APIView):
                                'current_total_budget_authority_amount': total_budget_authority_amount,
                                'mission': toptier_agency.mission,
                                'website': toptier_agency.website,
-                               'icon': toptier_agency.icon_filename
+                               'icon_filename': toptier_agency.icon_filename
                                }
 
         return Response(response)
