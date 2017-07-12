@@ -24,7 +24,6 @@ class Command(BaseCommand):
             '--duns',
             dest="duns",
             nargs='+',
-            type=int,
             help="DUNS to load subawards for"
         )
 

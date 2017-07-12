@@ -1,14 +1,15 @@
 from django.conf.urls import url
-from usaspending_api.references import views, views_v2
+from usaspending_api.references import views
+from usaspending_api.references.views_v2 import agency
 from rest_framework.routers import DefaultRouter
 
-guide_router = DefaultRouter()
-guide_router.register('guide', views.GuideViewSet)
+glossary_router = DefaultRouter()
+glossary_router.register('glossary', views.GlossaryViewSet)
 
 mode_list = {'get': 'list', 'post': 'list'}
 mode_detail = {'get': 'retrieve', 'post': 'retrieve'}
 
 
 urlpatterns = [
-    url(r'^agency/(?P<pk>[0-9]+)/$', views_v2.AgencyViewSet.as_view())
+    url(r'^agency/(?P<pk>[0-9]+)/$', agency.AgencyViewSet.as_view())
 ]

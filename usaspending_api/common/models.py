@@ -25,6 +25,23 @@ class DataSourceTrackedModel(models.Model):
         abstract = True
 
 
+class DeleteIfChildlessMixin(object):
+
+    def delete_if_childless(self):
+        """Deletes the instance if no child records point to it.
+
+        For cleaning up leftover parent records after child deletions."""
+
+        for attr_name in dir(self):
+            if attr_name.endswith('_set'):
+                children = getattr(self, attr_name)
+                if children.exists():
+                    return (0, {})  # was not an orphan
+
+        # No child records found, so
+        return self.delete()
+
+
 class RequestCatalog(models.Model):
     """Stores a POST request and generates a string identifier (checksum), allowing it to be re-run via a GET request"""
 
