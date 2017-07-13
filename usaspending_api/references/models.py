@@ -156,6 +156,9 @@ class ToptierAgency(models.Model):
     fpds_code = models.TextField(blank=True, null=True)
     abbreviation = models.TextField(blank=True, null=True, verbose_name="Agency Abbreviation")
     name = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Name")
+    mission = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Mission Statement")
+    website = models.URLField(blank=True, null=True, verbose_name="Top-Tier Agency Website")
+    icon_filename = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Icon Filename")
 
     class Meta:
         managed = True
