@@ -24,7 +24,7 @@ def recipients_data(db):
 
 
 @pytest.mark.django_db
-def test_recipient_autocomplete_success(client, recipients_data):
+def test_budget_function_autocomplete_success(client, recipients_data):
     """Verify error on bad autocomplete request for recipients."""
 
     # test for budget_function exact match
@@ -64,7 +64,7 @@ def test_recipient_autocomplete_success(client, recipients_data):
 
 
 @pytest.mark.django_db
-def test_recipient_autocomplete_failure(client):
+def test_budget_function_autocomplete_failure(client):
     """Verify error on bad autocomplete request for recipients."""
 
     resp = client.post(
