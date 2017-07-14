@@ -8,7 +8,7 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount
 
 
 @pytest.fixture
-def recipients_data(db):
+def budget_function_data(db):
     mommy.make(
         TreasuryAppropriationAccount,
         budget_function_title="Income Security",
@@ -24,8 +24,7 @@ def recipients_data(db):
 
 
 @pytest.mark.django_db
-def test_budget_function_autocomplete_success(client, recipients_data):
-    """Verify error on bad autocomplete request for recipients."""
+def test_budget_function_autocomplete_success(client, budget_function_data):
 
     # test for budget_function exact match
     resp = client.post(
@@ -65,7 +64,7 @@ def test_budget_function_autocomplete_success(client, recipients_data):
 
 @pytest.mark.django_db
 def test_budget_function_autocomplete_failure(client):
-    """Verify error on bad autocomplete request for recipients."""
+    """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
         '/api/v2/autocomplete/budget_function/',
