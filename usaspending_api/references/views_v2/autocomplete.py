@@ -62,8 +62,8 @@ class BudgetFunctionAutocompleteViewSet(BaseAutocompleteViewSet):
         if subfunction_exact_match_queryset.count() > 0:
             subfunction_results = subfunction_exact_match_queryset
 
-        function_titles = function_results.values_list('budget_function_title', flat=True)[:limit]
-        subfunction_titles = subfunction_results.values_list('budget_subfunction_title', flat=True)[:limit]
+        function_titles = list(function_results.values_list('budget_function_title', flat=True)[:limit])
+        subfunction_titles = list(subfunction_results.values_list('budget_subfunction_title', flat=True)[:limit])
 
         response['results'] = {'budget_function_title': function_titles,
                                'budget_subfunction_title': subfunction_titles}
