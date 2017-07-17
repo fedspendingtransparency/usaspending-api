@@ -7,11 +7,13 @@ from datetime import datetime
 from decimal import Decimal
 import logging
 
+from django import db
+
 import dateutil
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
-from django.db import connections
+from django.db import connection, connections
 from django.core.cache import caches
 from django.utils.dateparse import parse_datetime
 
@@ -23,7 +25,7 @@ from usaspending_api.references.models import (
 from usaspending_api.etl.award_helpers import (
     update_awards, update_contract_awards,
     update_award_categories, )
-from usaspending_api.etl.broker_etl_helpers import PhonyCursor
+from usaspending_api.etl.broker_etl_helpers import PhonyCursor, setup_broker_fdw
 from usaspending_api.references.helpers import canonicalize_location_dict
 
 from usaspending_api.etl.helpers import update_model_description_fields
@@ -56,6 +58,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        setup_broker_fdw()
         awards_cache.clear()
 
         # Grab the data broker database connections
@@ -123,6 +126,17 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
         "description": "award_description"
     }
 
+    # TODO: reversing
+    with db.connection.cursor() as cursor:
+        with open('usaspending_api/etl/management/raw_sql.sql') as infile:
+            for raw_sql in infile.read().split('\n\n\n'):
+                if 'INSERT INTO awards' in raw_sql:
+                    import ipdb; ipdb.set_trace()
+                parameters = [submission_attributes.broker_submission_id, ] * raw_sql.count('%s')
+                cursor.execute(raw_sql, parameters)
+
+    return
+
     for row in procurement_data:
 
         legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, copy(legal_entity_location_value_map))
@@ -164,7 +178,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
             piid=row.get('piid'),
             fain=row.get('fain'),
             uri=row.get('uri'),
-            parent_award_id=row.get('parent_award_id'))
+            parent_award_id=row.get('parent_award_id'))  # but why would the row include the ID on our side?
         award.save()
 
         AWARD_UPDATE_ID_LIST.append(award.id)
