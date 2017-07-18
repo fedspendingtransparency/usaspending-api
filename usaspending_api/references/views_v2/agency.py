@@ -70,7 +70,10 @@ class AgencyViewSet(APIView):
                                'outlay_amount': str(aggregate_dict['outlay_amount']),
                                'obligated_amount': str(aggregate_dict['obligated_amount']),
                                'budget_authority_amount': str(aggregate_dict['budget_authority_amount']),
-                               'current_total_budget_authority_amount': total_budget_authority_amount
+                               'current_total_budget_authority_amount': total_budget_authority_amount,
+                               'mission': toptier_agency.mission,
+                               'website': toptier_agency.website,
+                               'icon_filename': toptier_agency.icon_filename
                                }
 
         return Response(response)
