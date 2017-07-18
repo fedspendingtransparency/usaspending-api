@@ -20,6 +20,7 @@ class Command(BaseCommand):
                     as csvfile:
 
                 reader = csv.DictReader(csvfile)
+                counter = 0
                 for row in reader:
                     fpds_code = row.get('FPDS DEPARTMENT ID', '')
                     cgac_code = row.get('CGAC AGENCY CODE', '')
@@ -28,6 +29,9 @@ class Command(BaseCommand):
                     subtier_name = row.get('SUBTIER NAME', '')
                     subtier_code = row.get('SUBTIER CODE', '')
                     subtier_abbr = row.get('SUBTIER ABBREVIATION', '')
+                    mission = row.get('MISSION', '')
+                    website = row.get('WEBSITE', '')
+                    icon_filename = row.get('ICON FILENAME', '')
 
                     toptier_agency = None
                     subtier_agency = None
@@ -38,9 +42,17 @@ class Command(BaseCommand):
                     # versions of this agency loader
                     toptier_agency, created = ToptierAgency.objects.get_or_create(cgac_code=cgac_code, fpds_code=fpds_code)
 
+                    toptier_flag = (subtier_name == department_name)
+
                     # Set or update the department name and abbreviation
                     toptier_agency.name = department_name
                     toptier_agency.abbreviation = department_abbr
+
+                    if toptier_flag:
+                        toptier_agency.mission = mission
+                        toptier_agency.website = website
+                        toptier_agency.icon_filename = icon_filename
+
                     toptier_agency.save()
 
                     # Do the same with the subtier that exists, but only on subtier code
@@ -51,7 +63,6 @@ class Command(BaseCommand):
                         subtier_agency.abbreviation = subtier_abbr
                         subtier_agency.save()
 
-                    toptier_flag = (subtier_name == department_name)
                     # Create new summary agency object
                     # Top tier flag is set after to insure variable is idempotent.
                     agency, created = Agency.objects.get_or_create(toptier_agency=toptier_agency,
