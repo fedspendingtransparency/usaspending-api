@@ -1,9 +1,12 @@
 from django.contrib.postgres.search import TrigramSimilarity
+from django.db.models import F
 from django.db.models.functions import Greatest
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.models import Agency
+from usaspending_api.references.serializers import AgencySerializer
 from usaspending_api.references.serializers_v2.autocomplete import RecipientAutocompleteSerializer
 
 
@@ -34,6 +37,28 @@ class BaseAutocompleteViewSet(APIView):
             raise InvalidParameterException('Missing one or more required request parameters: search_text')
 
         return search_text, limit
+
+    def agency_autocomplete_response(self, request):
+        order_list = ['-toptier_flag', '-similarity']
+        search_text, limit = self.get_request_payload(request)
+
+        queryset = Agency.objects.filter(subtier_agency__isnull=False)
+
+        queryset = queryset.annotate(similarity=TrigramSimilarity('subtier_agency__name', search_text)). \
+            order_by(*order_list)
+
+        exact_match_queryset = queryset.filter(similarity=1.0)
+        if exact_match_queryset.count() > 0:
+            queryset = exact_match_queryset
+
+        return Response({'results': AgencySerializer(queryset[:limit], many=True).data})
+
+
+class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
+
+    def post(self, request):
+        """Return all awarding agencies matching the provided search text"""
+        return self.agency_autocomplete_response(request)
 
 
 class BudgetFunctionAutocompleteViewSet(BaseAutocompleteViewSet):
@@ -72,6 +97,13 @@ class BudgetFunctionAutocompleteViewSet(BaseAutocompleteViewSet):
                               'budget_subfunction_title': len(subfunction_titles)}
 
         return Response(response)
+
+
+class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
+
+    def post(self, request):
+        """Return all funding agencies matching the provided search text"""
+        return self.agency_autocomplete_response(request)
 
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
