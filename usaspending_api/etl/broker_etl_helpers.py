@@ -33,7 +33,7 @@ class PhonyCursor:
                 self.results = self.db_responses[key]
 
 
-def setup_broker_fdw():
+def setup_broker_fdw(broker_submission_id):
     """Prepares the foreign data wrapper used to query the broker db.
     """
     broker_conn = dj_database_url.parse(
@@ -56,13 +56,18 @@ def setup_broker_fdw():
            LIMIT TO (submission, appropriation, award_procurement)
            FROM SERVER broker_fdw_server
            INTO broker """,
+        """DROP SCHEMA IF EXISTS local_broker CASCADE""",
+        """CREATE SCHEMA local_broker""",
+        """CREATE TABLE local_broker.award_procurement AS
+           SELECT * FROM broker.award_procurement ap
+           WHERE ap.submission_id = %s""",
 
         # todo: guarantee last result for each view?
 
-        """CREATE OR REPLACE VIEW broker.location_by_award_procurement AS
+        """CREATE OR REPLACE VIEW local_broker.location_by_award_procurement AS
            SELECT p.award_procurement_id,
                   l.location_id
-           FROM   broker.award_procurement p
+           FROM   local_broker.award_procurement p
            JOIN   references_location l ON (
                     COALESCE(p.legal_entity_country_code, '') = COALESCE(l.location_country_code, '')
                     -- not country name, that is looked up in ref_country_code from code
@@ -76,24 +81,12 @@ def setup_broker_fdw():
                 AND l.recipient_flag)
         """,
 
-# select count(location_id)
-# from   broker.location_by_award_procurement lbap
-# join   broker.award_procurement ap using (award_procurement_id)
-# where  ap.submission_id = 3927;
-#
-#  count
-# -------
-#   1593
-# (1 row)
-#
-# Time: 1650.792 ms
-
-        """CREATE OR REPLACE VIEW broker.place_of_performance_by_award_procurement AS
+        """CREATE OR REPLACE VIEW local_broker.place_of_performance_by_award_procurement AS
            SELECT p.award_procurement_id,
                   l.location_id
-           FROM   broker.award_procurement p
+           FROM   local_broker.award_procurement p
            JOIN   references_location l ON (
-                    COALESCE(p.place_of_perform_country_c, '') = COALESCE(l.country_name, '')
+                    COALESCE(p.place_of_perform_country_c, '') = COALESCE(l.location_country_code, '')
                 AND COALESCE(p.place_of_performance_state, '') = COALESCE(l.state_code, '')
                 AND COALESCE(p.place_of_performance_locat, '') = COALESCE(l.city_name, '')
                 AND COALESCE(p.place_of_performance_zip4a, '') = COALESCE(l.zip4, '')  -- TODO - that zip4a to zip4
@@ -114,32 +107,34 @@ def setup_broker_fdw():
 # Time: 1486.160 ms
 
 
-        """CREATE OR REPLACE VIEW broker.recipient_by_award_procurement AS
+        """CREATE OR REPLACE VIEW local_broker.recipient_by_award_procurement AS
            SELECT p.award_procurement_id,
                   le.legal_entity_id
-           FROM   broker.award_procurement p
-           JOIN   broker.location_by_award_procurement lbap ON (p.award_procurement_id = lbap.award_procurement_id)
-           JOIN   legal_entity le ON (    p.awardee_or_recipient_uniqu = le.recipient_unique_id
-                                      AND le.location_id = lbap.location_id)
+           FROM   local_broker.award_procurement p
+           JOIN   local_broker.location_by_award_procurement lbap ON (p.award_procurement_id = lbap.award_procurement_id)
+           JOIN   legal_entity le ON (    p.awardee_or_recipient_uniqu = le.recipient_unique_id  -- # match DUNS
+                                      AND p.vendor_doing_as_business_n = le.vendor_doing_as_business_name
+                                      AND p.awardee_or_recipient_legal = le.recipient_name
+                                      AND lbap.location_id = le.location_id)
         """,
 
-        """CREATE OR REPLACE VIEW broker.award_by_award_procurement AS
+        """CREATE OR REPLACE VIEW local_broker.award_by_award_procurement AS
            SELECT p.award_procurement_id,
                   a.id AS award_id
-           FROM   broker.award_procurement p
+           FROM   local_broker.award_procurement p
            JOIN   awards a ON (p.piid = a.piid)
-           JOIN   awards parent_award ON
+           LEFT OUTER JOIN   awards parent_award ON
                (    a.parent_award_id = parent_award.id
                 AND p.parent_award_id = parent_award.piid)   -- what if parent award is null?
-           JOIN broker.place_of_performance_by_award_procurement popbap ON
-               (    p.award_procurement_id = popbap.award_procurement_id
-                AND a.place_of_performance_id = popbap.location_id)
-           JOIN broker.recipient_by_award_procurement rbap ON
-               (    p.award_procurement_id = rbap.award_procurement_id
-                AND a.recipient_id = rbap.legal_entity_id)""",
+           LEFT OUTER JOIN local_broker.place_of_performance_by_award_procurement popbap ON
+               (p.award_procurement_id = popbap.award_procurement_id )
+           JOIN local_broker.recipient_by_award_procurement rbap ON
+               (    p.award_procurement_id = rbap.award_procurement_id )
+               """,
 
            ]
 
     with connection.cursor() as cursor:
         for sql_command in commands:
-            cursor.execute(sql_command)
+            params = [broker_submission_id, ] * sql_command.count('%s')
+            cursor.execute(sql_command, params)

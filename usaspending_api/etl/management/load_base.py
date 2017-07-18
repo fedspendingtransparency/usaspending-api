@@ -58,22 +58,24 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        setup_broker_fdw()
-        awards_cache.clear()
 
-        # Grab the data broker database connections
-        if not options['test']:
-            try:
-                db_conn = connections['data_broker']
-                db_cursor = db_conn.cursor()
-            except Exception as err:
-                logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
-                logger.critical(print(err))
-                return
-        else:
-            db_cursor = PhonyCursor()
+        for submission_id in options['submission_id']: # TODO: multiple submission IDs
+            setup_broker_fdw(submission_id)
+            awards_cache.clear()
 
-        self.handle_loading(db_cursor=db_cursor, *args, **options)
+            # Grab the data broker database connections
+            if not options['test']:
+                try:
+                    db_conn = connections['data_broker']
+                    db_cursor = db_conn.cursor()
+                except Exception as err:
+                    logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                    logger.critical(print(err))
+                    return
+            else:
+                db_cursor = PhonyCursor()
+
+            self.handle_loading(db_cursor=db_cursor, *args, **options)
         self.post_load_cleanup()
 
     def post_load_cleanup(self):
@@ -130,8 +132,6 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
     with db.connection.cursor() as cursor:
         with open('usaspending_api/etl/management/raw_sql.sql') as infile:
             for raw_sql in infile.read().split('\n\n\n'):
-                if 'INSERT INTO awards' in raw_sql:
-                    import ipdb; ipdb.set_trace()
                 parameters = [submission_attributes.broker_submission_id, ] * raw_sql.count('%s')
                 cursor.execute(raw_sql, parameters)
 
