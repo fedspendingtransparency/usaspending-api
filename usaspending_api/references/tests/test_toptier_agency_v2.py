@@ -39,7 +39,7 @@ def financial_spending_data(db):
 def test_award_type_endpoint(client, financial_spending_data):
     """Test the award_type endpoint."""
 
-    resp = client.get('/api/v2/references/toptier_agency/')
+    resp = client.get('/api/v2/references/toptier_agencies/')
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == {'results': [{'agency_id': 1, 'agency_name': 'tta_name', 'active_fy': '2017', 'active_fq': '2',
                                       'outlay_amount': '2.00', 'obligated_amount': '2.00',
