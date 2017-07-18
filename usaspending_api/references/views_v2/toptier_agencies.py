@@ -7,7 +7,7 @@ from usaspending_api.common.views import DetailViewSet
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
 
-class ToptierAgencyViewSet(APIView):
+class ToptierAgenciesViewSet(APIView):
     """Return an agency name and active fy"""
 
     def get(self, request, format=None):
