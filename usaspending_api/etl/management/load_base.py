@@ -71,7 +71,9 @@ class Command(BaseCommand):
             db_cursor = PhonyCursor()
 
         self.handle_loading(db_cursor=db_cursor, *args, **options)
-        self.post_load_cleanup()
+
+        if not hasattr(self, 'exit_code'):
+            self.post_load_cleanup()
 
     def post_load_cleanup(self):
         """Global cleanup/post-load tasks not specific to a submission"""

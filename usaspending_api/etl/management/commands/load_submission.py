@@ -67,10 +67,12 @@ class Command(load_base.Command):
         if len(submission_data) == 0:
             logger.error('Could not find submission with id ' + str(submission_id))
             transaction.set_rollback(True)
+            self.exit_code = 1
             return
         elif len(submission_data) > 1:
             logger.error('Found multiple submissions with id ' + str(submission_id))
             transaction.set_rollback(True)
+            self.exit_code = 1
             return
 
         # We have a single submission, which is what we want
