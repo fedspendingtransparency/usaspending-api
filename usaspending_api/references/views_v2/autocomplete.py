@@ -1,9 +1,8 @@
 from django.contrib.postgres.search import TrigramSimilarity
-from django.db.models import F
 from django.db.models.functions import Greatest
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount
+from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionContract
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
 from usaspending_api.references.serializers import AgencySerializer
@@ -104,6 +103,34 @@ class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     def post(self, request):
         """Return all funding agencies matching the provided search text"""
         return self.agency_autocomplete_response(request)
+
+
+class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+
+        search_text, limit = self.get_request_payload(request)
+
+        # get relevant TransactionContracts
+        queryset = TransactionContract.objects.filter(naics__isnull=False, naics_description__isnull=False)
+        # Filter based on search text
+        response = {}
+
+        queryset = queryset.annotate(similarity=Greatest(
+            TrigramSimilarity('naics', search_text),
+            TrigramSimilarity('naics_description', search_text)))\
+            .distinct().order_by('-similarity')
+
+        naics_exact_match_queryset = queryset.filter(similarity=1.0)
+        if naics_exact_match_queryset.count() > 0:
+            queryset = naics_exact_match_queryset
+
+        results_set = list(queryset.values('naics', 'naics_description')[:limit])
+        response['results'] = results_set
+        response['counts'] = len(results_set)
+
+        return Response(response)
 
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
