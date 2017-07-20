@@ -80,24 +80,24 @@ class Command(load_base.Command):
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
-        logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
+        logger.info('Acquired File A (appropriation) data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
         load_file_a(submission_attributes, appropriation_data, db_cursor)
 
         # Let's get File B information
         prg_act_obj_cls_data = get_file_b(submission_attributes, db_cursor)
-        logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
+        logger.info('Acquired File B (program activity object class) data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
         load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor)
 
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
         award_financial_assistance_data = dictfetchall(db_cursor)
-        logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
+        logger.info('Acquired File D2 (award financial assistance) data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
         load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor)
 
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
         procurement_data = dictfetchall(db_cursor)
-        logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
+        logger.info('Acquired File D1 (award procurement) data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
         load_base.load_file_d1(submission_attributes, procurement_data, db_cursor)
 
         # Let's get File C information
@@ -114,7 +114,7 @@ class Command(load_base.Command):
         else:  # real data
             award_financial_frame = pd.read_sql(award_financial_query % submission_id,
                                                 connections['data_broker'])
-        logger.info('Acquired award financial data for {}, there are {} rows.'
+        logger.info('Acquired File C (award financial) data for {}, there are {} rows.'
                     .format(submission_id, award_financial_frame.shape[0]))
         load_file_c(submission_attributes, db_cursor, award_financial_frame)
 
@@ -369,7 +369,7 @@ def get_file_b(submission_attributes, db_cursor):
     selecting * from the broker's File B data.
 
     Args:
-        submission_attrbitues: submission object currently being loaded
+        submission_attributes: submission object currently being loaded
         db_cursor: db connection info
     """
     submission_id = submission_attributes.broker_submission_id
@@ -528,7 +528,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     # file loading
 
     if not award_financial_frame.size:
-        logger.warning('No award financial data found; skipping file C load')
+        logger.warning('No File C (award financial) data found, skipping...')
         return
 
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
