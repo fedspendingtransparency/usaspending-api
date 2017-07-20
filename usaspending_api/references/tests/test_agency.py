@@ -12,7 +12,7 @@ from usaspending_api.references.models import Agency
 def agency_data():
     call_command('flush', '--noinput')
     call_command('loaddata', 'endpoint_fixture_db')
-    call_command('loadagencies')
+    call_command('load_agencies')
 
 
 @pytest.mark.django_db
