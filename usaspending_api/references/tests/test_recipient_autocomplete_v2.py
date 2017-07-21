@@ -4,7 +4,6 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.common.tests.autocomplete import check_autocomplete
 from usaspending_api.references.models import LegalEntity
 
 
@@ -12,15 +11,43 @@ from usaspending_api.references.models import LegalEntity
 def recipients_data(db):
     mommy.make(
         LegalEntity,
-        recipient_name="Lunar Colonization Society",
-        recipient_unique_id="LCS123")
+        recipient_name='Weyland-Yutani Corp',
+        parent_recipient_unique_id='2099',
+        recipient_unique_id='2099')
     mommy.make(
         LegalEntity,
-        recipient_name="Cerean Mineral Extraction Corp.",
-        recipient_unique_id="CMEC")
+        recipient_name='Yutani Corp',
+        parent_recipient_unique_id='2049',
+        recipient_unique_id='2049')
     mommy.make(
         LegalEntity,
-        recipient_name="LOOK NO DUNS.",
+        recipient_name='Tyrell Corporation',
+        parent_recipient_unique_id='AF19',
+        recipient_unique_id='AF19')
+    mommy.make(
+        LegalEntity,
+        recipient_name='Weyland-Yutani Vessel, USCSS Nostromo LV426',
+        parent_recipient_unique_id='2099',
+        recipient_unique_id='LV426')
+    mommy.make(
+        LegalEntity,
+        recipient_name='Wey-Yu, USCSS Prometheus LV223',
+        parent_recipient_unique_id='2099',
+        recipient_unique_id='LV223')
+    mommy.make(
+        LegalEntity,
+        recipient_name='Wey-Yu Vessel, USCSS Covenant Origae-6',
+        parent_recipient_unique_id='2099',
+        recipient_unique_id='Origae-6')
+    mommy.make(
+        LegalEntity,
+        recipient_name='Replicants',
+        parent_recipient_unique_id='AF19',
+        recipient_unique_id='Nexus-6')
+    mommy.make(
+        LegalEntity,
+        recipient_name='Weyland-Yutani, Xenomorph XX121',
+        parent_recipient_unique_id='2099',
         recipient_unique_id=None)
 
 
@@ -28,28 +55,46 @@ def recipients_data(db):
 def test_recipient_autocomplete_success(client, recipients_data):
     """Verify error on bad autocomplete request for recipients."""
 
-    # test for exact match
+    # Test for Parent Recipient Filter
     resp = client.post(
         '/api/v2/autocomplete/recipient/',
         content_type='application/json',
-        data=json.dumps({'search_text': 'LCS123'}))
+        data=json.dumps({'search_text': 'Corp'}))
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data['results']) == 1
-    assert resp.data['results'][0]['recipient_unique_id'] == 'LCS123'
+    assert len(resp.data['results']) == 2
+    result = resp.data['results']
+    parents = result['parent_recipient']
+    assert parents[0].count() == 3
+    assert parents[0][0]['recipient_name'] == 'Yutani Corp'
+    assert parents[0][1]['recipient_name'] == 'Weyland-Yutani Corp'
+    assert parents[0][2]['recipient_name'] == 'Tyrell Corporation'
 
-    # test for similar matches
+    # Test for Similar Matches
     resp = client.post(
         '/api/v2/autocomplete/recipient/',
         content_type='application/json',
-        data=json.dumps({'search_text': 'Lunar', 'limit': 3}))
+        data=json.dumps({'search_text': 'Weyland-Yutani'}))
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data['results']) == 3
+    assert len(resp.data['results']) == 2
+    result = resp.data['results']
+    parents = result['parent_recipient']
+    assert parents[0].count() == 3
 
-    # test closest match is at the top
-    assert resp.data['results'][0]['recipient_name'] == 'Lunar Colonization Society'
+    # Test Order of Closest Matched Parents
+    assert parents[0][0]['parent_recipient_unique_id'] == '2099'
+    assert parents[0][1]['parent_recipient_unique_id'] == '2049'
 
-    # test furthest match is at the end
-    assert resp.data['results'][-1]['recipient_name'] == 'Cerean Mineral Extraction Corp.'
+    # Test Order of Closest Matched Recipients
+    recipients = result['recipient']
+
+    # Verify None Recipient ID excluded
+    assert recipients[0].count() == 4
+
+    # Verify Top Match
+    assert recipients[0][0]['recipient_unique_id'] == 'LV426'
+
+    # Verify Bottom Match
+    assert recipients[0][3]['recipient_unique_id'] == 'Nexus-6'
 
 
 @pytest.mark.django_db
