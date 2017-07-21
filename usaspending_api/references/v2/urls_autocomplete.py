@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from usaspending_api.references.v2.views.autocomplete import AwardingAgencyAutocompleteViewSet, \
     BudgetFunctionAutocompleteViewSet, CFDAAutocompleteViewSet, FundingAgencyAutocompleteViewSet, \
-    NAICSAutocompleteViewSet,PSCAutocompleteViewSet, RecipientAutocompleteViewSet, ToptierAgencyAutocompleteViewSet
+    NAICSAutocompleteViewSet, PSCAutocompleteViewSet, RecipientAutocompleteViewSet, ToptierAgencyAutocompleteViewSet
 
 urlpatterns = [
     url(r'^awarding_agency', AwardingAgencyAutocompleteViewSet.as_view()),
