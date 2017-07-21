@@ -6,6 +6,7 @@ from rest_framework import status
 
 from usaspending_api.awards.models import TransactionContract
 
+
 @pytest.fixture
 def budget_function_data(db):
     mommy.make(
