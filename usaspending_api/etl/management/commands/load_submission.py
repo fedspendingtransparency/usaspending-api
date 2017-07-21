@@ -526,6 +526,11 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     # this matches the file b reverse directive, but am repeating it here
     # to ensure that we don't overwrite it as we change up the order of
     # file loading
+
+    if not award_financial_frame.size:
+        logger.warning('No award financial data found; skipping file C load')
+        return
+
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
 
     award_financial_frame['txn'] = award_financial_frame.apply(get_award_financial_transaction, axis=1)

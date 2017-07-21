@@ -56,8 +56,6 @@ def test_awarding_agency_autocomplete_success(client, agency_data):
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 2
 
-    print(resp.data['results'])
-
     # test closest match is at the top
     assert resp.data['results'][0]['subtier_agency']['name'] == 'Department of Transportation'
     assert resp.data['results'][1]['subtier_agency']['name'] == 'Department of the Army'
