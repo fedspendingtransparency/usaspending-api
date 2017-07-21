@@ -1,13 +1,15 @@
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import F
 from django.db.models.functions import Greatest
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
-from usaspending_api.references.serializers import AgencySerializer
-from usaspending_api.references.serializers_v2.autocomplete import RecipientAutocompleteSerializer
+from usaspending_api.references.v1.serializers import AgencySerializer
+from usaspending_api.references.v2.serializers.autocomplete import RecipientAutocompleteSerializer, \
+    ToptierAgencyAutocompleteSerializer
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -108,8 +110,6 @@ class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
-    serializer_class = RecipientAutocompleteSerializer
-
     def post(self, request):
         """Return all recipients matching the provided search text"""
 
@@ -126,3 +126,24 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
             queryset = exact_match_queryset
 
         return Response({'results': RecipientAutocompleteSerializer(queryset[:limit], many=True).data})
+
+
+class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
+
+    def post(self, request):
+        """Return all toptier agencies matching the provided search text"""
+
+        search_text, limit = self.get_request_payload(request)
+
+        queryset = Agency.objects.filter(toptier_flag=True)
+
+        queryset = queryset.annotate(similarity=TrigramSimilarity('toptier_agency__name', search_text)).\
+            order_by('-similarity')
+
+        exact_match_queryset = queryset.filter(similarity=1.0)
+        if exact_match_queryset.count() > 0:
+            queryset = exact_match_queryset
+
+        queryset = queryset.annotate(agency_id=F('id'), agency_name=F('toptier_agency__name'))
+
+        return Response({'results': ToptierAgencyAutocompleteSerializer(queryset[:limit], many=True).data})
