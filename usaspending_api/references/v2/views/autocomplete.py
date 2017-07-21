@@ -160,7 +160,18 @@ class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     def post(self, request):
         """Return all toptier agencies matching the provided search text"""
 
-        search_text, limit = self.get_request_payload(request)
+        json_request = request.data
+
+        # retrieve search_text from request
+        search_text = json_request.get('search_text', None)
+        limit = json_request.get('limit')
+
+        # if there's a limit present, convert to an int. otherwise everything will be returned
+        if limit:
+            try:
+                limit = int(limit)
+            except ValueError:
+                raise InvalidParameterException('Limit request parameter is not a valid, positive integer')
 
         queryset = Agency.objects.filter(toptier_flag=True)
 
@@ -175,4 +186,6 @@ class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
         column_names = ['agency_id', 'agency_name']
 
-        return Response({'results': list(queryset.values(*column_names)[:limit])})
+        results = list(queryset.values(*column_names)[:limit]) if limit else list(queryset.values(*column_names))
+
+        return Response({'results': results})
