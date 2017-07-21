@@ -1,12 +1,13 @@
 from django.contrib.postgres.search import TrigramSimilarity
+from django.db.models import F
 from django.db.models.functions import Greatest
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionContract
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
-from usaspending_api.references.serializers import AgencySerializer
-from usaspending_api.references.serializers_v2.autocomplete import RecipientAutocompleteSerializer
+from usaspending_api.references.v1.serializers import AgencySerializer
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -134,8 +135,6 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
-    serializer_class = RecipientAutocompleteSerializer
-
     def post(self, request):
         """Return all recipients matching the provided search text"""
 
@@ -151,4 +150,46 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         if exact_match_queryset.count() > 0:
             queryset = exact_match_queryset
 
-        return Response({'results': RecipientAutocompleteSerializer(queryset[:limit], many=True).data})
+        column_names = ['legal_entity_id', 'recipient_name', 'recipient_unique_id']
+
+        return Response({'results': list(queryset.values(*column_names)[:limit])})
+
+
+class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
+
+    def post(self, request):
+        """Return all toptier agencies matching the provided search text"""
+
+        json_request = request.data
+
+        # retrieve search_text from request
+        search_text = json_request.get('search_text', None)
+        limit = json_request.get('limit')
+
+        # required query parameters were not provided
+        if not search_text:
+            raise InvalidParameterException('Missing one or more required request parameters: search_text')
+
+        # if there's a limit present, convert to an int. otherwise everything will be returned
+        if limit:
+            try:
+                limit = int(limit)
+            except ValueError:
+                raise InvalidParameterException('Limit request parameter is not a valid, positive integer')
+
+        queryset = Agency.objects.filter(toptier_flag=True)
+
+        queryset = queryset.annotate(similarity=TrigramSimilarity('toptier_agency__name', search_text)).\
+            order_by('-similarity')
+
+        exact_match_queryset = queryset.filter(similarity=1.0)
+        if exact_match_queryset.count() > 0:
+            queryset = exact_match_queryset
+
+        queryset = queryset.annotate(agency_id=F('id'), agency_name=F('toptier_agency__name'))
+
+        column_names = ['agency_id', 'agency_name']
+
+        results = list(queryset.values(*column_names)[:limit]) if limit else list(queryset.values(*column_names))
+
+        return Response({'results': results})

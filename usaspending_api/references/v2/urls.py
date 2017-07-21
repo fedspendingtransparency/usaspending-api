@@ -1,7 +1,8 @@
 from django.conf.urls import url
-from usaspending_api.references import views
-from usaspending_api.references.views_v2 import agency, toptier_agencies
 from rest_framework.routers import DefaultRouter
+
+from usaspending_api.references.v1 import views
+from usaspending_api.references.v2.views import agency, toptier_agencies
 
 glossary_router = DefaultRouter()
 glossary_router.register('glossary', views.GlossaryViewSet)
