@@ -72,4 +72,3 @@ def test_toptier_agency_autocomplete_failure(client):
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
