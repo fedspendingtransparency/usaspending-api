@@ -128,7 +128,6 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
         results_set = list(queryset.values('naics', 'naics_description')[:limit])
         response['results'] = results_set
-        response['counts'] = len(results_set)
 
         return Response(response)
 
