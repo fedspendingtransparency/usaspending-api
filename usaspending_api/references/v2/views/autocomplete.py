@@ -166,6 +166,10 @@ class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
         search_text = json_request.get('search_text', None)
         limit = json_request.get('limit')
 
+        # required query parameters were not provided
+        if not search_text:
+            raise InvalidParameterException('Missing one or more required request parameters: search_text')
+
         # if there's a limit present, convert to an int. otherwise everything will be returned
         if limit:
             try:
