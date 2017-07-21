@@ -1,9 +1,9 @@
 from django.contrib.postgres.search import TrigramSimilarity
+from django.db.models import F
 from django.db.models.functions import Greatest
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount
 from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionContract
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
