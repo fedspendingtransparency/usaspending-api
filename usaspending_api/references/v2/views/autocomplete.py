@@ -4,17 +4,10 @@ from django.db.models.functions import Greatest
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-<<<<<<< HEAD:usaspending_api/references/views_v2/autocomplete.py
-from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import Agency
-from usaspending_api.references.serializers import AgencySerializer
-=======
 from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionContract
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
 from usaspending_api.references.v1.serializers import AgencySerializer
->>>>>>> dev:usaspending_api/references/v2/views/autocomplete.py
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -125,8 +118,6 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
         # Filter based on search text
         response = {}
 
-<<<<<<< HEAD:usaspending_api/references/views_v2/autocomplete.py
-=======
         queryset = queryset.annotate(similarity=Greatest(
             TrigramSimilarity('naics', search_text),
             TrigramSimilarity('naics_description', search_text)))\
@@ -144,7 +135,6 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
->>>>>>> dev:usaspending_api/references/v2/views/autocomplete.py
     def post(self, request):
         """Return all Parents and Recipients matching the provided search text"""
 
@@ -190,14 +180,6 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         return Response(response)
 
 
-
-<<<<<<< HEAD:usaspending_api/references/views_v2/autocomplete.py
-=======
-        column_names = ['legal_entity_id', 'recipient_name', 'recipient_unique_id']
-
-        return Response({'results': list(queryset.values(*column_names)[:limit])})
-
-
 class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
     def post(self, request):
@@ -236,4 +218,3 @@ class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
         results = list(queryset.values(*column_names)[:limit]) if limit else list(queryset.values(*column_names))
 
         return Response({'results': results})
->>>>>>> dev:usaspending_api/references/v2/views/autocomplete.py
