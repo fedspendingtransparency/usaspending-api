@@ -8,8 +8,6 @@ from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAcco
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency
 from usaspending_api.references.v1.serializers import AgencySerializer
-from usaspending_api.references.v2.serializers.autocomplete import RecipientAutocompleteSerializer, \
-    ToptierAgencyAutocompleteSerializer
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -125,7 +123,9 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         if exact_match_queryset.count() > 0:
             queryset = exact_match_queryset
 
-        return Response({'results': RecipientAutocompleteSerializer(queryset[:limit], many=True).data})
+        column_names = ['legal_entity_id', 'recipient_name', 'recipient_unique_id']
+
+        return Response({'results': list(queryset.values(*column_names)[:limit])})
 
 
 class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
@@ -146,4 +146,6 @@ class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
         queryset = queryset.annotate(agency_id=F('id'), agency_name=F('toptier_agency__name'))
 
-        return Response({'results': ToptierAgencyAutocompleteSerializer(queryset[:limit], many=True).data})
+        column_names = ['agency_id', 'agency_name']
+
+        return Response({'results': list(queryset.values(*column_names)[:limit])})
