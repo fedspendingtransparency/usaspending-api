@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionContract
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import Agency
+from usaspending_api.references.models import Agency, Cfda
 from usaspending_api.references.serializers import AgencySerializer
 from usaspending_api.references.serializers_v2.autocomplete import RecipientAutocompleteSerializer
 
@@ -98,6 +98,43 @@ class BudgetFunctionAutocompleteViewSet(BaseAutocompleteViewSet):
         return Response(response)
 
 
+class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+
+        search_text, limit = self.get_request_payload(request)
+
+        # get relevant TransactionContracts
+        queryset = Cfda.objects.filter(program_number__isnull=False,
+                                       program_title__isnull=False,
+                                       popular_name__isnull=False)
+        # Filter based on search text
+        response = {}
+
+        queryset = queryset.annotate(similarity=Greatest(
+            TrigramSimilarity('program_number', search_text),
+            TrigramSimilarity('program_title', search_text),
+            TrigramSimilarity('popular_name', search_text)))\
+            .distinct().order_by('-similarity')
+
+        queryset = queryset.annotate(prog_num_similarity=TrigramSimilarity('program_number', search_text))
+
+        cfda_exact_match_queryset = queryset.filter(similarity=1.0)
+        if cfda_exact_match_queryset.count() > 0:
+            # check for trigram error if similarity is a program number
+            if cfda_exact_match_queryset.filter(prog_num_similarity=1.0).count() > 0:
+                if len(cfda_exact_match_queryset.first().program_number) == len(search_text):
+                    queryset = cfda_exact_match_queryset
+            else:
+                queryset = cfda_exact_match_queryset
+
+        results_set = list(queryset.values('program_number', 'program_title', 'popular_name')[:limit])
+        response['results'] = results_set
+
+        return Response(response)
+
+
 class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
     def post(self, request):
@@ -127,6 +164,33 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
             queryset = naics_exact_match_queryset
 
         results_set = list(queryset.values('naics', 'naics_description')[:limit])
+        response['results'] = results_set
+
+        return Response(response)
+
+
+class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+
+        search_text, limit = self.get_request_payload(request)
+
+        # get relevant TransactionContracts
+        queryset = TransactionContract.objects.filter(product_or_service_code__isnull=False)
+        # Filter based on search text
+        response = {}
+
+        queryset = queryset.annotate(similarity=TrigramSimilarity('product_or_service_code', search_text))\
+            .distinct().order_by('-similarity')
+
+        # look for exact match
+        psc_exact_match_queryset = queryset.filter(similarity=1.0)
+        if psc_exact_match_queryset.count() == 1:
+            if len(psc_exact_match_queryset.first().product_or_service_code) == len(search_text):
+                queryset = psc_exact_match_queryset
+
+        results_set = list(queryset.values('product_or_service_code')[:limit])
         response['results'] = results_set
 
         return Response(response)
