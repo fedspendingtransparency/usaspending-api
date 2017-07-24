@@ -28,6 +28,7 @@ class Command(BaseCommand):
 
         potential_childless = set()
         for transaction in submission.transaction_set.all():
+            self.logger.info('Running childless check on transaction => ' + str(transaction))
             potential_childless.add(transaction.place_of_performance)
             potential_childless.add(transaction.award.place_of_performance)
             if transaction.award.recipient:
