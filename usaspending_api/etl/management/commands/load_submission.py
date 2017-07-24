@@ -262,7 +262,11 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
 
     logger.info('TAS ARGS => ' + str(q_kwargs))
 
-    TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
+    query = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs))
+
+    logger.info('Running query => ' + str(query.query))
+
+    TAS_ID_TO_ACCOUNT[tas_lookup_id] = query.first()
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
