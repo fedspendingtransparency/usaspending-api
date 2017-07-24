@@ -246,8 +246,11 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
-    db_cursor.execute('SELECT * FROM tas_lookup WHERE account_num = %s', [tas_lookup_id])
+    db_cursor.execute('SELECT * FROM tas_lookup WHERE financial_indicator2 <> 'F' and account_num = %s', [tas_lookup_id])
     tas_data = dictfetchall(db_cursor)
+
+    if len(tas_data) == 0:
+        return None
 
     # These or "" convert from none to a blank string, which is how the TAS table stores nulls
     q_kwargs = {
@@ -260,13 +263,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
         "sub_account_code": tas_data[0]["sub_account_code"] or ""
     }
 
-    logger.info('TAS ARGS => ' + str(q_kwargs))
-
-    query = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs))
-
-    logger.info('Running query => ' + str(query.query))
-
-    TAS_ID_TO_ACCOUNT[tas_lookup_id] = query.first()
+    TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
@@ -344,7 +341,8 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+            logger.warning('Could not find appropriation account for TAS: ' + row['tas'] + '. Skipping TAS.')
+            continue
 
         # Now that we have the account, we can load the appropriation balances
         # TODO: Figure out how we want to determine what row is overriden by what row
@@ -508,7 +506,8 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             # Check and see if there is an entry for this TAS
             treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
-                raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+                logger.warning('Could not find appropriation account for TAS: ' + row['tas'] + '. Skipping TAS.')
+                continue
         except:
             continue
 
@@ -567,7 +566,8 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+            logger.warning('Could not find appropriation account for TAS: ' + row['tas'] + '. Skipping TAS.')
+            continue
 
         # Find a matching transaction record, so we can use its
         # subtier agency information to match to (or create) an Award record
