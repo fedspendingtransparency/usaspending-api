@@ -42,6 +42,8 @@ class Command(BaseCommand):
         return potential_childless - {None}
 
     def handle(self, *args, **options):
+        self.logger.info('Staring rm_submissions management command')
+
         # This will throw an exception and exit the command if the id doesn't exist
         try:
             submission = SubmissionAttributes.objects.get(broker_submission_id=options["submission_id"][0])
@@ -49,6 +51,7 @@ class Command(BaseCommand):
             self.logger.error("Submission with broker id " + str(options["submission_id"][0]) + " does not exist")
             return
 
+        self.logger.info('Getting childless submissions')
         potentially_childless = self.instances_potentially_left_childless(submission)
 
         deleted = defaultdict(int)
@@ -56,11 +59,17 @@ class Command(BaseCommand):
         deletion_tally = submission.delete()
         deleted_total += deletion_tally[0]
         deleted.update(deletion_tally[1])
+
+        self.logger.info('Starting iteration over potentially childless submissions')
         for instance in potentially_childless:
+            self.logger.info('Running deletion check on => ' + str(instance))
             deletions = instance.delete_if_childless()
             deleted_total += deletions[0]
+            self.logger.info('Compiling deleted values for => ' + str(instance))
             for (key, value) in deletions[1].items():
                 deleted[key] += value
+
+        self.logger.info('Finished deletions')
 
         statistics = "Statistics:\n  Total objects Removed: {}".format(deleted_total)
         for (model, count) in deleted.items():
