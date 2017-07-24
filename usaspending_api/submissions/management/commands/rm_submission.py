@@ -49,8 +49,7 @@ class Command(BaseCommand):
         try:
             submission = SubmissionAttributes.objects.get(broker_submission_id=options["submission_id"][0])
         except ObjectDoesNotExist:
-            self.logger.error("Submission with broker id " + str(options["submission_id"][0]) + " does not exist")
-            return
+            raise "Submission with broker id " + str(options["submission_id"][0]) + " does not exist"
 
         self.logger.info('Getting childless submissions')
         potentially_childless = self.instances_potentially_left_childless(submission)

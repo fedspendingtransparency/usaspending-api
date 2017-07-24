@@ -67,15 +67,9 @@ class Command(load_base.Command):
         logger.info('Finished getting submission from broker')
 
         if len(submission_data) == 0:
-            logger.error('Could not find submission with id ' + str(submission_id))
-            transaction.set_rollback(True)
-            self.exit_code = 1
-            return
+            raise 'Could not find submission with id ' + str(submission_id)
         elif len(submission_data) > 1:
-            logger.error('Found multiple submissions with id ' + str(submission_id))
-            transaction.set_rollback(True)
-            self.exit_code = 1
-            return
+            raise 'Found multiple submissions with id ' + str(submission_id)
 
         # We have a single submission, which is what we want
         submission_data = submission_data[0]
