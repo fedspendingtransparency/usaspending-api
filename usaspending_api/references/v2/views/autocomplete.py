@@ -130,7 +130,9 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
             else:
                 queryset = cfda_exact_match_queryset
 
-        results_set = list(queryset.values('program_number', 'program_title', 'popular_name')[:limit])
+        results_set = list(queryset.values('program_number', 'program_title', 'popular_name')[:limit]) if list else \
+            list(queryset.values('program_number', 'program_title', 'popular_name'))
+
         response['results'] = results_set
 
         return Response(response)
@@ -164,7 +166,8 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
         if naics_exact_match_queryset.count() > 0:
             queryset = naics_exact_match_queryset
 
-        results_set = list(queryset.values('naics', 'naics_description')[:limit])
+        results_set = list(queryset.values('naics', 'naics_description')[:limit]) if limit else list(
+            queryset.values('naics', 'naics_description'))
         response['results'] = results_set
 
         return Response(response)
@@ -191,7 +194,9 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
             if len(psc_exact_match_queryset.first().product_or_service_code) == len(search_text):
                 queryset = psc_exact_match_queryset
 
-        results_set = list(queryset.values('product_or_service_code')[:limit])
+        # craft results
+        results_set = list(queryset.values('product_or_service_code')[:limit]) if limit else list(
+            queryset.values('product_or_service_code'))
         response['results'] = results_set
 
         return Response(response)
