@@ -19,11 +19,9 @@ def financial_spending_data(db):
     mommy.make('references.Agency', id=1, toptier_agency=ttagency1, toptier_flag=True)
     mommy.make('references.Agency', id=2, toptier_agency=ttagency2, toptier_flag=True)
 
-
     # create TAS
     tas = mommy.make('accounts.TreasuryAppropriationAccount', funding_toptier_agency=ttagency1)
     tas2 = mommy.make('accounts.TreasuryAppropriationAccount', funding_toptier_agency=ttagency2)
-
 
     # CREATE SUBMISSIONS
     # submission_3 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2015, cgac_code='100')
@@ -39,9 +37,9 @@ def financial_spending_data(db):
                      obligations_incurred_total_by_tas_cpe=2, gross_outlay_amount_by_tas_cpe=2,
                      treasury_account_identifier=tas)
     aab2 = mommy.make('accounts.AppropriationAccountBalances', final_of_fy=True, reporting_period_start="2017-1-1",
-                     submission=submission_2, budget_authority_available_amount_total_cpe=14,
-                     obligations_incurred_total_by_tas_cpe=14, gross_outlay_amount_by_tas_cpe=14,
-                     treasury_account_identifier=tas2)
+                      submission=submission_2, budget_authority_available_amount_total_cpe=14,
+                      obligations_incurred_total_by_tas_cpe=14, gross_outlay_amount_by_tas_cpe=14,
+                      treasury_account_identifier=tas2)
 
     # CREATE OverallTotals
     ot = mommy.make('references.OverallTotals', fiscal_year=2017, total_budget_authority=3860000000.00)
