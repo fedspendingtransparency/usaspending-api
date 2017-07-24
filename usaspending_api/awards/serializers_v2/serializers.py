@@ -6,11 +6,8 @@ class AwardTypeAwardSpendingSerializer(serializers.Serializer):
     obligated_amount = serializers.DecimalField(None, 2)
 
 
-class RecipientSeriallizer(serializers.Serializer):
+class RecipientAwardSpendingSerializer(serializers.Serializer):
+    award__category = serializers.CharField()
     recipient_id = serializers.IntegerField()
     recipient_name = serializers.CharField()
-
-
-class RecipientAwardSpendingSerializer(serializers.Serializer):
-    recipient = RecipientSeriallizer(source='*')
     obligated_amount = serializers.DecimalField(None, 2)

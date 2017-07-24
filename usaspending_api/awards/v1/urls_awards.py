@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from usaspending_api.awards import views
+from usaspending_api.awards.v1 import views
 
 # map reqest types to viewset method; replace this with a router
 award_list = views.AwardViewSet.as_view({
