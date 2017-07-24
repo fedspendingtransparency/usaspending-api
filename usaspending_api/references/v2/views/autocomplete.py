@@ -173,10 +173,6 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
                 recipients.values('legal_entity_id',
                                   'recipient_name',
                                   'recipient_unique_id')[:limit]]}
-
-        response['counts'] = {'parent_recipient': len(parents),
-                              'recipient': len(recipients)}
-
         return Response(response)
 
 
