@@ -260,7 +260,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
         "sub_account_code": tas_data[0]["sub_account_code"] or ""
     }
 
-    logger.debug(str(q_kwargs))
+    logger.info('TAS ARGS => ' + str(q_kwargs))
 
     TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
