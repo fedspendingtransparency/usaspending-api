@@ -108,8 +108,7 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
 
         # get relevant TransactionContracts
         queryset = Cfda.objects.filter(program_number__isnull=False,
-                                       program_title__isnull=False,
-                                       popular_name__isnull=False)
+                                       program_title__isnull=False)
         # Filter based on search text
         response = {}
 
