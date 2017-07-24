@@ -128,7 +128,7 @@ class Command(load_base.Command):
         try:
             load_subawards(submission_attributes, db_cursor)
         except:
-            logger.warn("Error loading subawards for this submission")
+            logger.warning("Error loading subawards for this submission")
 
         # Cleanup not specific to this submission is run in the `.handle` method
 
@@ -246,6 +246,8 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
         "main_account_code": tas_data[0]["main_account_code"] or "",
         "sub_account_code": tas_data[0]["sub_account_code"] or ""
     }
+
+    logger.debug(str(q_kwargs))
 
     TAS_ID_TO_ACCOUNT[tas_lookup_id] = TreasuryAppropriationAccount.objects.filter(Q(**q_kwargs)).first()
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
