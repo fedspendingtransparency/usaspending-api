@@ -69,26 +69,25 @@ class ToptierAgenciesViewSet(APIView):
             total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
 
             total_budget_authority_submission = total_budget_authority_queryset.first()
-            total_budget_authority_amount = "-1"
-            percentage = "-1"
+            total_budget_authority_amount = -1
+            percentage = -1
 
             if total_budget_authority_submission is not None:
-                total_budget_authority_amount = str(total_budget_authority_submission.total_budget_authority)
-                percentage = str(float(aggregate_dict['budget_authority_amount']) /
-                                 float(total_budget_authority_amount))
+                total_budget_authority_amount = total_budget_authority_submission.total_budget_authority
+                percentage = (float(aggregate_dict['budget_authority_amount']) / float(total_budget_authority_amount))
 
             # craft response
             response['results'].append({'agency_id': agency.id,
                                         'agency_name': toptier_agency.name,
                                         'active_fy': str(active_fiscal_year),
                                         'active_fq': str(active_fiscal_quarter),
-                                        'outlay_amount': str(aggregate_dict['outlay_amount']),
-                                        'obligated_amount': str(aggregate_dict['obligated_amount']),
-                                        'budget_authority_amount': str(aggregate_dict['budget_authority_amount']),
-                                        'current_total_budget_authority_amount': total_budget_authority_amount,
+                                        'outlay_amount': float(aggregate_dict['outlay_amount']),
+                                        'obligated_amount': float(aggregate_dict['obligated_amount']),
+                                        'budget_authority_amount': float(aggregate_dict['budget_authority_amount']),
+                                        'current_total_budget_authority_amount': float(total_budget_authority_amount),
                                         'percentage_of_total_budget_authority': percentage
                                         })
 
-            response['results'] = sorted(response['results'], key=lambda k: k[sort], reverse=(order == 'desc'))
+        response['results'] = sorted(response['results'], key=lambda k: k[sort], reverse=(order == 'desc'))
 
         return Response(response)
