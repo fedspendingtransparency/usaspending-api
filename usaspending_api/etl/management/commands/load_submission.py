@@ -1,8 +1,8 @@
 from datetime import datetime
-from copy import copy
-from decimal import Decimal
 import logging
 import re
+import signal
+import sys
 
 from django.core.management import call_command
 from django.db import connections, transaction
@@ -57,6 +57,12 @@ class Command(load_base.Command):
     @transaction.atomic
     def handle_loading(self, db_cursor, *args, **options):
 
+        def signal_handler(signal, frame):
+            transaction.set_rollback(True)
+            raise Exception('Received interrupt signal. Aborting...')
+
+        signal.signal(signal.SIGINT, signal_handler)
+
         # Grab the submission id
         submission_id = options['submission_id'][0]
 
@@ -83,16 +89,18 @@ class Command(load_base.Command):
         appropriation_data = dictfetchall(db_cursor)
         logger.info('Acquired File A (appropriation) data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
         logger.info('Loading File A data')
+        start_time = datetime.now()
         load_file_a(submission_attributes, appropriation_data, db_cursor)
-        logger.info('Finished loading File A data')
+        logger.info('Finished loading File A data, took {}'.format(datetime.now() - start_time))
 
         logger.info('Getting File B data')
         # Let's get File B information
         prg_act_obj_cls_data = get_file_b(submission_attributes, db_cursor)
         logger.info('Acquired File B (program activity object class) data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
         logger.info('Loading File B data')
+        start_time = datetime.now()
         load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor)
-        logger.info('Finished loading File B data')
+        logger.info('Finished loading File B data, took {}'.format(datetime.now() - start_time))
 
         logger.info('Getting File D2 data')
         # File D2
@@ -100,8 +108,9 @@ class Command(load_base.Command):
         award_financial_assistance_data = dictfetchall(db_cursor)
         logger.info('Acquired File D2 (award financial assistance) data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
         logger.info('Loading File D2 data')
+        start_time = datetime.now()
         load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor)
-        logger.info('Finished loading File D2 data')
+        logger.info('Finished loading File D2 data, took {}'.format(datetime.now() - start_time))
 
         logger.info('Getting File D1 data')
         # File D1
@@ -109,8 +118,9 @@ class Command(load_base.Command):
         procurement_data = dictfetchall(db_cursor)
         logger.info('Acquired File D1 (award procurement) data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
         logger.info('Loading File D1 data')
+        start_time = datetime.now()
         load_base.load_file_d1(submission_attributes, procurement_data, db_cursor)
-        logger.info('Finished loading File D1 data')
+        logger.info('Finished loading File D1 data, took {}'.format(datetime.now() - start_time))
 
         logger.info('Getting File C data')
         # Let's get File C information
@@ -130,19 +140,21 @@ class Command(load_base.Command):
         logger.info('Acquired File C (award financial) data for {}, there are {} rows.'
                     .format(submission_id, award_financial_frame.shape[0]))
         logger.info('Loading File C data')
+        start_time = datetime.now()
         load_file_c(submission_attributes, db_cursor, award_financial_frame)
-        logger.info('Finished loading File C data')
+        logger.info('Finished loading File C data, took {}'.format(datetime.now() - start_time))
 
         logger.info('Loading subaward data')
         # Once all the files have been processed, run any global
         # cleanup/post-load tasks.
         # 1. Load subawards
+        start_time = datetime.now()
         try:
             load_subawards(submission_attributes, db_cursor)
         except:
             logger.warning("Error loading subawards for this submission")
 
-        logger.info('Finshed loading subaward data')
+        logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
         # Cleanup not specific to this submission is run in the `.handle` method
 
 
