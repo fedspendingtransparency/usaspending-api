@@ -236,7 +236,8 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
             'recipient': [
                 recipients.values('legal_entity_id',
                                   'recipient_name',
-                                  'recipient_unique_id')]}
+                                  'recipient_unique_id',
+                                  'parent_recipient_unique_id')]}
         return Response(response)
 
 
