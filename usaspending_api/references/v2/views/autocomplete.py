@@ -216,31 +216,27 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         # Filter based on search text
         response = {}
         # Search and filter for Parent Recipients
-        try:
-            parents = queryset.annotate(
-                search=SearchVector('recipient_name', 'parent_recipient_unique_id')
-            ).filter(
-                search__icontains=search_text,
-                parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
-        except:
-            pass
-        else:
-            # Search and filter for Recipients, excluding Parent Recipients
-            recipients = queryset.annotate(
-                search=SearchVector('recipient_name', 'recipient_unique_id', 'parent_recipient_unique_id')
-            ).filter(
-                search__icontains=search_text).exclude(
-                parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
+        parents = queryset.annotate(
+            search=SearchVector('recipient_name', 'parent_recipient_unique_id')
+        ).filter(
+            search__icontains=search_text,
+            parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
+        # Search and filter for Recipients, excluding Parent Recipients
+        recipients = queryset.annotate(
+            search=SearchVector('recipient_name', 'recipient_unique_id', 'parent_recipient_unique_id')
+        ).filter(
+            search__icontains=search_text).exclude(
+            parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
 
-            response['results'] = {
-                'parent_recipient': [
-                    parents.values('legal_entity_id',
-                                   'recipient_name',
-                                   'parent_recipient_unique_id')],
-                'recipient': [
-                    recipients.values('legal_entity_id',
-                                      'recipient_name',
-                                      'recipient_unique_id')]}
+        response['results'] = {
+            'parent_recipient': [
+                parents.values('legal_entity_id',
+                               'recipient_name',
+                               'parent_recipient_unique_id')],
+            'recipient': [
+                recipients.values('legal_entity_id',
+                                  'recipient_name',
+                                  'recipient_unique_id')]}
         return Response(response)
 
 
