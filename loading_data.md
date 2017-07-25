@@ -1,6 +1,6 @@
 # Getting USAspending Data 
 
-After an agency certifies a submission on (broker.usaspending.gov)[broker.usaspending.gov], they are presented with the option to **publish** their certified submission to [beta.usaspending.gov](beta.usaspending.gov). After the submission is chosen to be published in the broker:
+After an agency certifies a submission on [broker.usaspending.gov](broker.usaspending.gov), they are presented with the option to **publish** their certified submission to [beta.usaspending.gov](beta.usaspending.gov). After the submission is chosen to be published in the broker:
 - The submission ID (unique to each submission) is queued for loading into a clone of the database used by [beta.usaspending.gov](beta.usaspending.gov)
 - If other submissions are currently in the queue, they are loaded first
 - An individual submission can take up to 24 hours to load
