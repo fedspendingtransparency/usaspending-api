@@ -30,6 +30,7 @@ MATVIEW_SQL = """
     CREATE INDEX ON agency_by_subtier_and_optionally_toptier (subtier_code, cgac_code);
     """
 
+
 class Command(BaseCommand):
     help = "Loads agencies and sub-tier agencies from authoritative OMB list in \
             the folder of this management command."

@@ -6,6 +6,7 @@ from copy import copy
 from datetime import datetime
 from decimal import Decimal
 import logging
+import time
 
 from django import db
 
@@ -13,7 +14,7 @@ import dateutil
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
-from django.db import connection, connections
+from django.db import connection, connections, utils
 from django.core.cache import caches
 from django.utils.dateparse import parse_datetime
 
@@ -57,10 +58,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-
-
-        for submission_id in options['submission_id']: # TODO: multiple submission IDs
-            setup_broker_fdw(submission_id)
+        for submission_id in options['submission_id']:  # TODO: multiple submission IDs
             awards_cache.clear()
 
             # Grab the data broker database connections
@@ -91,7 +89,18 @@ class Command(BaseCommand):
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
 
-def load_file_d1(submission_attributes, procurement_data, db_cursor):
+def run_sql_file(file_path, parameters):
+    with db.connection.cursor() as cursor:
+        with open(file_path) as infile:
+            for raw_sql in infile.read().split('\n\n\n'):
+                if raw_sql.strip():
+                    sql_start_time = time.time()
+                    cursor.execute(raw_sql, parameters)
+                    some_sql = "\n".join(raw_sql.splitlines()[:3])
+                    logger.info('sql:\n\n{}\n\ntime: {}\n\n'.format(some_sql, time.time() - sql_start_time))
+
+
+def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False):
     """
     Process and load file D1 broker data (contract award txns).
     """
@@ -128,14 +137,13 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
         "description": "award_description"
     }
 
-    # TODO: reversing
-    with db.connection.cursor() as cursor:
-        with open('usaspending_api/etl/management/raw_sql.sql') as infile:
-            for raw_sql in infile.read().split('\n\n\n'):
-                parameters = [submission_attributes.broker_submission_id, ] * raw_sql.count('%s')
-                cursor.execute(raw_sql, parameters)
+    d_start_time = time.time()
 
-    return
+    if quick:
+        parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
+        run_sql_file('usaspending_api/etl/management/load_file_d1.sql', parameters)
+        logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
+        return
 
     for row in procurement_data:
 
@@ -223,6 +231,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
 
         transaction_contract = TransactionContract(transaction=transaction, **contract_instance)
         transaction_contract.save()
+    logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
 
 
 def no_preprocessing(row):
@@ -231,10 +240,21 @@ def no_preprocessing(row):
     return row
 
 
-def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, row_preprocessor=no_preprocessing):
+def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick, row_preprocessor=no_preprocessing):
     """
     Process and load file D2 broker data (financial assistance award txns).
     """
+
+    d_start_time = time.time()
+
+    if quick:
+        setup_broker_fdw()
+
+        parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
+        run_sql_file('usaspending_api/etl/management/load_file_d2.sql', parameters)
+        logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
+        return
+
     legal_entity_location_field_map = {
         "address_line1": "legal_entity_address_line1",
         "address_line2": "legal_entity_address_line2",
@@ -367,6 +387,8 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
 
         transaction_assistance = TransactionAssistance.get_or_create(transaction=transaction, **financial_assistance_data)
         transaction_assistance.save()
+
+    logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
 
 
 def format_date(date_string):
