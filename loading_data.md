@@ -63,7 +63,7 @@ Award data from the current USAspending site. This data comes in two different f
 5. Click _Submit_ to download the contract award file
 6. Once the file is downloaded, start the load by running:
     
-    python manage.py load_usaspending_contracts [path-to-contracts-file.csv]
+    `python manage.py load_usaspending_contracts [path-to-contracts-file.csv]`
 
 ### How to Load Financial Assistance Awards
 1. Go to the current [USAspending Data Download page](https://www.usaspending.gov/DownloadCenter/Pages/DataDownload.aspx).
@@ -73,7 +73,7 @@ Award data from the current USAspending site. This data comes in two different f
 5. Click _Submit_ to download the financial assistance award file
 6. Once the file is downloaded, start the load by running:
 
-    python manage.py load_usaspending_assistance [path-to-contracts-file.csv]
+    `python manage.py load_usaspending_assistance [path-to-contracts-file.csv]`
 
 
 ## Miscellaneous Data Loading Commands
