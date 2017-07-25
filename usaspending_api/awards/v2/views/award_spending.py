@@ -80,7 +80,7 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
             awarding_agency__toptier_agency=top_tier_agency_id,
             award__category=award_category
         ).annotate(
-            award_type=F('award__category'),
+            award_category=F('award__category'),
             recipient_id=F('recipient__legal_entity_id'),
             recipient_name=F('recipient__recipient_name')
         )
