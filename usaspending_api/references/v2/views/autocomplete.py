@@ -1,4 +1,4 @@
-from django.contrib.postgres.search import TrigramSimilarity
+from django.contrib.postgres.search import TrigramSimilarity, SearchVector
 from django.db.models import F
 from django.db.models.functions import Greatest
 from rest_framework.response import Response
@@ -204,23 +204,44 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
     def post(self, request):
-        """Return all recipients matching the provided search text"""
+        """Return all Parents and Recipients matching the provided search text"""
 
         search_text, limit = self.get_request_payload(request)
 
-        queryset = LegalEntity.objects.all()
+        # Return Recipients with valid id entries
+        queryset = LegalEntity.objects.exclude(
+            recipient_unique_id__isnull=True).exclude(
+            recipient_unique_id__exact='')
 
-        queryset = queryset.annotate(similarity=Greatest(TrigramSimilarity('recipient_name', search_text),
-                                                         TrigramSimilarity('recipient_unique_id', search_text))).\
-            order_by('-similarity')
+        # Filter based on search text
+        response = {}
+        # Search and filter for Parent Recipients
+        try:
+            parents = queryset.annotate(
+                search=SearchVector('recipient_name', 'parent_recipient_unique_id')
+            ).filter(
+                search__icontains=search_text,
+                parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
+        except:
+            pass
+        else:
+            # Search and filter for Recipients, excluding Parent Recipients
+            recipients = queryset.annotate(
+                search=SearchVector('recipient_name', 'recipient_unique_id')
+            ).filter(
+                search__icontains=search_text).exclude(
+                parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
 
-        exact_match_queryset = queryset.filter(similarity=1.0)
-        if exact_match_queryset.count() > 0:
-            queryset = exact_match_queryset
-
-        column_names = ['legal_entity_id', 'recipient_name', 'recipient_unique_id']
-
-        return Response({'results': list(queryset.values(*column_names)[:limit])})
+            response['results'] = {
+                'parent_recipient': [
+                    parents.values('legal_entity_id',
+                                   'recipient_name',
+                                   'parent_recipient_unique_id')],
+                'recipient': [
+                    recipients.values('legal_entity_id',
+                                      'recipient_name',
+                                      'recipient_unique_id')]}
+        return Response(response)
 
 
 class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
