@@ -1,6 +1,7 @@
 from django.conf.urls import url, include
-from usaspending_api.references import views
 from rest_framework.routers import DefaultRouter
+
+from usaspending_api.references.v1 import views
 
 glossary_router = DefaultRouter()
 glossary_router.register('glossary', views.GlossaryViewSet)

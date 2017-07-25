@@ -2,9 +2,9 @@ from rest_framework import serializers
 
 from usaspending_api.accounts.models import (
     AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount)
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.common.serializers import LimitableSerializer
-from usaspending_api.references.serializers import (
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.v1.serializers import (
     ProgramActivitySerializer, ObjectClassSerializer, ToptierAgencySerializer
 )
 from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
