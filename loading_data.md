@@ -30,10 +30,12 @@ To load in the reference data, from the same directory as manage.py:
 ## DATA Act Certified Submission Data:
 
 To load certified submission data from the broker, you will need a read-only (or higher) connection string to the broker PostgreSQL database. Set this environment variable before running the **load_submission** command:
-    `DATA_BROKER_DATABASE_URL=postgres://user:password@url:5432/data_broker`
+
+    DATA_BROKER_DATABASE_URL=postgres://user:password@url:5432/data_broker
 
 To load a submission from the data broker database:
-    `python manage.py load_submission [broker_submission_id]`
+
+    python manage.py load_submission [broker_submission_id]
 
 This will load data into your USAspending database in the following order:
 - File A (Appropriation data)
@@ -60,7 +62,8 @@ Award data from the current USAspending site. This data comes in two different f
 4. Make sure _csv_ is selected in _5. Select Type of File_
 5. Click _Submit_ to download the contract award file
 6. Once the file is downloaded, start the load by running:
-        `python manage.py load_usaspending_contracts [path-to-contracts-file.csv]`
+    
+    python manage.py load_usaspending_contracts [path-to-contracts-file.csv]
 
 ### How to Load Financial Assistance Awards
 1. Go to the current [USAspending Data Download page](https://www.usaspending.gov/DownloadCenter/Pages/DataDownload.aspx).
@@ -69,7 +72,8 @@ Award data from the current USAspending site. This data comes in two different f
 4. Make sure _csv_ is selected in _5. Select Type of File_
 5. Click _Submit_ to download the financial assistance award file
 6. Once the file is downloaded, start the load by running:
-        `python manage.py load_usaspending_assistance [path-to-contracts-file.csv]`
+
+    python manage.py load_usaspending_assistance [path-to-contracts-file.csv]
 
 
 ## Miscellaneous Data Loading Commands
