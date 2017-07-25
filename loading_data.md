@@ -24,8 +24,8 @@ Populates lookup tables like country codes, agency names, and other fairly stati
 
 To load in the reference data, from the same directory as manage.py:
 
-    `python manage.py load_reference_data`
-
+    python manage.py load_reference_data
+    
 
 ## DATA Act Certified Submission Data:
 
