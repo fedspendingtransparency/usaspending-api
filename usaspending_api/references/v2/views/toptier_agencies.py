@@ -3,19 +3,32 @@ from usaspending_api.references.models import Agency, OverallTotals
 from usaspending_api.submissions.models import SubmissionAttributes
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from usaspending_api.common.views import DetailViewSet
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
 
 class ToptierAgenciesViewSet(APIView):
-    """Return an agency name and active fy"""
 
     def get(self, request, format=None):
-        """Return the view's queryset."""
+        """Return all toptier agencies and associated information"""
 
+        sortable_columns = ['agency_id', 'agency_name', 'active_fy', 'active_fq', 'outlay_amount', 'obligated_amount',
+                            'budget_authority_amount', 'current_total_budget_authority_amount',
+                            'percentage_of_total_budget_authority']
+
+        sort = request.query_params.get('sort', 'agency_name')
+        order = request.query_params.get('order', 'asc')
         response = {'results': []}
-        # get agency queryset
 
+        if sort not in sortable_columns:
+            raise InvalidParameterException('The sort value provided is not a valid option. '
+                                            'Please choose from the following: ' + str(sortable_columns))
+
+        if order not in ['asc', 'desc']:
+            raise InvalidParameterException('The order value provided is not a valid option. '
+                                            "Please choose from the following: ['asc', 'desc']")
+
+        # get agency queryset
         agency_queryset = Agency.objects.filter(toptier_flag=True)
         for agency in agency_queryset:
             toptier_agency = agency.toptier_agency
@@ -56,24 +69,25 @@ class ToptierAgenciesViewSet(APIView):
             total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
 
             total_budget_authority_submission = total_budget_authority_queryset.first()
-            total_budget_authority_amount = "-1"
-            percentage = "-1"
+            total_budget_authority_amount = -1
+            percentage = -1
 
             if total_budget_authority_submission is not None:
-                total_budget_authority_amount = str(total_budget_authority_submission.total_budget_authority)
-                percentage = str(float(aggregate_dict['budget_authority_amount']) /
-                                 float(total_budget_authority_amount))
+                total_budget_authority_amount = total_budget_authority_submission.total_budget_authority
+                percentage = (float(aggregate_dict['budget_authority_amount']) / float(total_budget_authority_amount))
 
             # craft response
             response['results'].append({'agency_id': agency.id,
                                         'agency_name': toptier_agency.name,
                                         'active_fy': str(active_fiscal_year),
                                         'active_fq': str(active_fiscal_quarter),
-                                        'outlay_amount': str(aggregate_dict['outlay_amount']),
-                                        'obligated_amount': str(aggregate_dict['obligated_amount']),
-                                        'budget_authority_amount': str(aggregate_dict['budget_authority_amount']),
-                                        'current_total_budget_authority_amount': total_budget_authority_amount,
+                                        'outlay_amount': float(aggregate_dict['outlay_amount']),
+                                        'obligated_amount': float(aggregate_dict['obligated_amount']),
+                                        'budget_authority_amount': float(aggregate_dict['budget_authority_amount']),
+                                        'current_total_budget_authority_amount': float(total_budget_authority_amount),
                                         'percentage_of_total_budget_authority': percentage
                                         })
+
+        response['results'] = sorted(response['results'], key=lambda k: k[sort], reverse=(order == 'desc'))
 
         return Response(response)
