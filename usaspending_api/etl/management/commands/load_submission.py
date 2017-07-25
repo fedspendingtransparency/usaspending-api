@@ -249,7 +249,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     db_cursor.execute("SELECT * FROM tas_lookup WHERE financial_indicator2 <> 'F' and account_num = %s", [tas_lookup_id])
     tas_data = dictfetchall(db_cursor)
 
-    if len(tas_data) == 0:
+    if tas_data is None or len(tas_data) == 0:
         return None
 
     # These or "" convert from none to a blank string, which is how the TAS table stores nulls
