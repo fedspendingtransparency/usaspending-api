@@ -1,15 +1,11 @@
-from datetime import datetime
 import logging
-import os
+import signal
 from time import time
-
-from django.core.management.base import BaseCommand
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.management import call_command
-from django.db import connection
 
 import django.db.models.base
 from django.apps import apps
+from django.core.management.base import BaseCommand
+from django.db import transaction
 
 
 def models_with_custom_save():
@@ -34,7 +30,14 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('model', nargs='+', help='app and model to be re-saved')
 
+    @transaction.atomic
     def handle(self, *args, **options):
+
+        def signal_handler(signal, frame):
+            transaction.set_rollback(True)
+            raise Exception('Received interrupt signal. Aborting...')
+
+        signal.signal(signal.SIGINT, signal_handler)
 
         if options['model']:
             try:
