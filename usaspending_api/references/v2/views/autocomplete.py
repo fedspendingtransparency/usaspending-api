@@ -223,7 +223,7 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
             parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
         # Search and filter for Recipients, excluding Parent Recipients
         recipients = queryset.annotate(
-            search=SearchVector('recipient_name', 'recipient_unique_id', 'parent_recipient_unique_id')
+            search=SearchVector('recipient_name', 'recipient_unique_id')
         ).filter(
             search__icontains=search_text).exclude(
             parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
@@ -236,8 +236,7 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
             'recipient': [
                 recipients.values('legal_entity_id',
                                   'recipient_name',
-                                  'recipient_unique_id',
-                                  'parent_recipient_unique_id')]}
+                                  'recipient_unique_id')]}
         return Response(response)
 
 

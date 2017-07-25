@@ -101,10 +101,9 @@ def test_recipient_autocomplete_success(client, recipients_data):
     assert parents[0].count() == 1
     assert parents[0][0]['recipient_name'] == 'Tyrell Corporation'
 
-    # Verify single matching recipient
+    # Verify no matching recipient
     recipients = result['recipient']
-    assert recipients[0].count() == 1
-    assert recipients[0][0]['recipient_name'] == 'Replicants'
+    assert recipients[0].count() == 0
 
 
 @pytest.mark.django_db
