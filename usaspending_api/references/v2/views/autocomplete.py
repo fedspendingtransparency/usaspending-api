@@ -232,23 +232,24 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         p_limit = parents.count()
         r_limit = recipients.count()
         counts = p_limit + r_limit
-        # If both counts are equal to the limit, distribute results evenly.
-        if p_limit and r_limit == limit:
-            parents = parents[:5]
-            recipients = recipients[:5]
-        # If counts are 10 or less, pass.
-        elif counts < 11:
+        # If counts are less than or equal to limit, pass.
+        if counts <= limit:
             pass
-        # If the total counts are greater than 10, set new limits.
-        elif counts > 10:
-            # If both limits are greater than 5, set limits to 5.
-            if p_limit and r_limit > 5:
+        # If counts are greater than limit, set new limits
+        elif counts > limit:
+            # If both limits are greater than 5 or equal to the limit, set limits to 5.
+            if (p_limit & r_limit) > 5 or (p_limit & r_limit) == limit:
                 parents = parents[:5]
                 recipients = recipients[:5]
-            # If parents limit is greater than 5 but less than 10, and total counts is greater than 10,
-            # Set recipients limit to total counts less parents limit.
-            elif (5 < p_limit < 10) and (counts > 10):
-                limit = counts - p_limit
+            # If parents limit is greater than 5,
+            # Set parents new limit to: limit less recipients limit.
+            elif p_limit > 5:
+                limit = limit - r_limit
+                parents = parents[:limit]
+            # If recipients limit is greater than 5,
+            # Set recipients new limit to: limit less parents limit.
+            elif r_limit > 5:
+                limit = limit - p_limit
                 recipients = recipients[:limit]
 
         response['results'] = {
