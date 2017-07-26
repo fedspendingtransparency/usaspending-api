@@ -6,7 +6,7 @@ DROP SERVER IF EXISTS broker_fdw_server CASCADE
 
 CREATE SERVER broker_fdw_server
    FOREIGN DATA WRAPPER postgres_fdw
-   OPTIONS (host %(HOST)s, port '%(PORT)s', dbname %(NAME)s)
+   OPTIONS (host %(HOST)s, port %(PORT)s, dbname %(NAME)s)
 
 
 CREATE USER MAPPING FOR CURRENT_USER
