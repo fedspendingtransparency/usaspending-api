@@ -1,12 +1,16 @@
 # Getting USAspending Data 
 
+***Note:*** *The FY 2017 3rd Quarter submission window is currently open. Submissions are due August 14, 2017.*
+
 After an agency certifies a submission on [broker.usaspending.gov](broker.usaspending.gov), they are presented with the option to **publish** their certified submission to [beta.usaspending.gov](beta.usaspending.gov). After the submission is chosen to be published in the broker:
 - The submission ID (unique to each submission) is queued for loading into a clone of the database used by [beta.usaspending.gov](beta.usaspending.gov)
 - If other submissions are currently in the queue, they are loaded first
 - An individual submission can take up to 24 hours to load
 - When a new build of [usaspending-api](https://github.com/fedspendingtransparency/usaspending-api) is deployed (every two weeks), the cloned database replaces the old one used by beta.usaspending.gov
-- Any submissions that are certified and published less than 24 hours before the deployment window will be published to [beta.usaspending.gov](beta.usaspending.gov) in the next deployment
-- The current beta.usaspending.gov database is publicly available on Amazon's Relational Database Service: https://aws.amazon.com/public-datasets/usaspending/
+- Data will also be published to [beta.usaspending.gov](beta.usaspending.gov) the day following the quarterly submission deadline
+- Any data certified before the close of the quarterly submission window will be available on [beta.usaspending.gov](beta.usapending.gov) the following day
+
+The current beta.usaspending.gov database is publicly available on Amazon's Relational Database Service: https://aws.amazon.com/public-datasets/usaspending/
 
 
 # Loading USAspending Data (for Developers)
