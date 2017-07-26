@@ -25,7 +25,7 @@ class Command(BaseCommand):
             "reporting_agency_name": "Agency Name",
             "budget_bureau_code": "ADMIN_ORG",
             "budget_bureau_name": "Admin Org Name",
-            "fr_entity_code": "FR Entity Type Code",
+            "fr_entity_code": "FR Entity Type",
             "fr_entity_description": "FR Entity Description",
             "budget_function_code": "Function Code",
             "budget_function_title": "Function Description",

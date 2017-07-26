@@ -5,7 +5,7 @@ import logging
 import re
 
 from django.core.management import call_command
-from django.db import connections
+from django.db import connections, transaction
 from django.db.models import Q
 from django.core.cache import caches
 import pandas as pd
@@ -54,6 +54,7 @@ class Command(load_base.Command):
         parser.add_argument('submission_id', nargs=1, help='the data broker submission id to load', type=int)
         super(Command, self).add_arguments(parser)
 
+    @transaction.atomic
     def handle_loading(self, db_cursor, *args, **options):
 
         # Grab the submission id
@@ -525,6 +526,11 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     # this matches the file b reverse directive, but am repeating it here
     # to ensure that we don't overwrite it as we change up the order of
     # file loading
+
+    if not award_financial_frame.size:
+        logger.warning('No award financial data found; skipping file C load')
+        return
+
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
 
     award_financial_frame['txn'] = award_financial_frame.apply(get_award_financial_transaction, axis=1)
