@@ -38,6 +38,7 @@ class Command(BaseCommand):
             raise Exception('Received interrupt signal. Aborting...')
 
         signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
 
         if options['model']:
             try:

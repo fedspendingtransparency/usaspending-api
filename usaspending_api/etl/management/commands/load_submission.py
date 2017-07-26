@@ -63,6 +63,7 @@ class Command(load_base.Command):
             raise Exception('Received interrupt signal. Aborting...')
 
         signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
 
         # Grab the submission id
         submission_id = options['submission_id'][0]

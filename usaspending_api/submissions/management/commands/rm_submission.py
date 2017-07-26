@@ -1,12 +1,15 @@
-from collections import defaultdict
-from datetime import datetime
 import logging
-import os
+import signal
 
-from django.core.management.base import BaseCommand
+from collections import defaultdict
+
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.management.base import BaseCommand
 
 from usaspending_api.submissions.models import SubmissionAttributes
+from django.db import transaction
+
+
 
 
 class Command(BaseCommand):
@@ -42,8 +45,16 @@ class Command(BaseCommand):
         # Return without `None`s
         return potential_childless - {None}
 
+    @transaction.atomic
     def handle(self, *args, **options):
         self.logger.info('Staring rm_submissions management command')
+
+        def signal_handler(signal, frame):
+            transaction.set_rollback(True)
+            raise Exception('Received interrupt signal. Aborting...')
+
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
 
         # This will throw an exception and exit the command if the id doesn't exist
         try:
