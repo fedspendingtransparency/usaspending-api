@@ -51,15 +51,17 @@ This will load data into your USAspending database in the following order:
 - Any subaward data
 
 
-## Historic USAspending (Out of date)
+## Historic USAspending Data
 
-Award data from the current USAspending site. This data comes in two different formats:
-* Contracts
-* Assistance awards (which include grants, loans, and "other" awards)
+*This section needs to be updated. The commands listed below may be different than those in the current version of the USAspending API.*
 
-**Note:** current USAspending loaders are insert only (not update). So flush current data before running these.
+Award data from the [current USAspending site](https://www.usaspending.gov/) comes in two different formats:
+- Contracts
+- Assistance awards (which include grants, loans, and "other" awards)
 
-### How to Load Contract Awards
+**Note:** Current USAspending loaders are insert only (not update). Flush any existing data before running these loaders.
+
+### Loading Historic Contract Awards
 1. Go to the current [USAspending Data Download page](https://www.usaspending.gov/DownloadCenter/Pages/DataDownload.aspx).
 2. Choose _Contracts_ in option _2. Select the Spending Type_
 3. Select any other download parameters you'd like (agency, date range, etc.)
@@ -69,7 +71,7 @@ Award data from the current USAspending site. This data comes in two different f
     
     `python manage.py load_usaspending_contracts [path-to-contracts-file.csv]`
 
-### How to Load Financial Assistance Awards
+### Loading Historic Financial Assistance Awards
 1. Go to the current [USAspending Data Download page](https://www.usaspending.gov/DownloadCenter/Pages/DataDownload.aspx).
 2. Choose _Grants_, _Loans_, or _Other Financial Assistnace_ in option _2. Select the Spending Type_
 3. Select any other download parameters you'd like (agency, date range, etc.)
@@ -80,9 +82,9 @@ Award data from the current USAspending site. This data comes in two different f
     `python manage.py load_usaspending_assistance [path-to-contracts-file.csv]`
 
 
-## Miscellaneous Data Loading Commands
+### Miscellaneous Data Loading Commands
 
-* `python manage.py update_location_usage_flags` - Updates all locations to have proper usage flags. This should be run after any set of submission loads to ensure the flags are properly set.
+- `python manage.py update_location_usage_flags` - Updates all locations to have proper usage flags. This should be run after any set of submission loads to ensure the flags are properly set.
 
-* `python manage.py load_executive_compensation --all` - Loads executive compensation data for any currently loaded submissions. For more information on other options for this command, reference the command's help text.
+- `python manage.py load_executive_compensation --all` - Loads executive compensation data for any currently loaded submissions. For more information on other options for this command, reference the command's help text.
 
