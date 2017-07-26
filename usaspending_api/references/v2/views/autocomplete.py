@@ -227,31 +227,7 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         ).filter(
             search__icontains=search_text).exclude(
             parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
-
-        # Counts to check for more than 10 total results
-        p_limit = parents.count()
-        r_limit = recipients.count()
-        counts = p_limit + r_limit
-        # If counts are less than or equal to limit, pass.
-        if counts <= limit:
-            pass
-        # If counts are greater than limit, set new limits
-        elif counts > limit:
-            # If both limits are greater than 5 or equal to the limit, set limits to 5.
-            if (p_limit & r_limit) > 5 or (p_limit & r_limit) == limit:
-                parents = parents[:5]
-                recipients = recipients[:5]
-            # If parents limit is greater than 5,
-            # Set parents new limit to: limit less recipients limit.
-            elif p_limit > 5:
-                limit = limit - r_limit
-                parents = parents[:limit]
-            # If recipients limit is greater than 5,
-            # Set recipients new limit to: limit less parents limit.
-            elif r_limit > 5:
-                limit = limit - p_limit
-                recipients = recipients[:limit]
-
+        # Format response
         response['results'] = {
             'parent_recipient': [
                 parents.values('legal_entity_id',
