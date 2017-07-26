@@ -228,6 +228,10 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
             search__icontains=search_text).exclude(
             parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
 
+        if parents.count() > 5 and recipients.count() > 5:
+            parents = parents[:5]
+            recipients = recipients[:5]
+
         response['results'] = {
             'parent_recipient': [
                 parents.values('legal_entity_id',
