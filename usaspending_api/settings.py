@@ -223,13 +223,13 @@ LOGGING = {
             'formatter': 'specifics'
         },
         'console': {
-            'level': 'INFO',
+            'level': 'INFO' if not DEBUG else 'DEBUG',
             'class': 'logging.StreamHandler',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['console', 'file'],
             'level': 'DEBUG',
             'propagate': True,
         },
