@@ -301,9 +301,12 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
 
     total_rows = len(award_financial_assistance_data)
 
+    start_time = datetime.now()
     for index, row in enumerate(award_financial_assistance_data, 1):
         if not (index % 100):
-            logger.info('D2 File Load: Loading row ' + str(index) + ' of ' + str(total_rows))
+            logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                         str(total_rows),
+                                                                         datetime.now() - start_time))
 
         row = row_preprocessor(row)
 
