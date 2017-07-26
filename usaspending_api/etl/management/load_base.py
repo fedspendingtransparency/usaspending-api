@@ -302,7 +302,8 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
     total_rows = len(award_financial_assistance_data)
 
     for index, row in enumerate(award_financial_assistance_data, 1):
-        logger.info('D2 File Load: Loading row ' + str(index) + ' of ' + str(total_rows))
+        if not (index % 100):
+            logger.info('D2 File Load: Loading row ' + str(index) + ' of ' + str(total_rows))
 
         row = row_preprocessor(row)
 
