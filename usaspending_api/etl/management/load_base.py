@@ -240,20 +240,9 @@ def no_preprocessing(row):
     return row
 
 
-def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick, row_preprocessor=no_preprocessing):
-    """
-    Process and load file D2 broker data (financial assistance award txns).
-    """
-
+def add_location_data(award_financial_assistance_data, row_preprocessor=no_preprocessing):
+    logger.info('D2 Location Loader starting')
     d_start_time = time.time()
-
-    if quick:
-        setup_broker_fdw()
-
-        parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
-        run_sql_file('usaspending_api/etl/management/load_file_d2.sql', parameters)
-        logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
-        return
 
     legal_entity_location_field_map = {
         "address_line1": "legal_entity_address_line1",
@@ -294,23 +283,26 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         "place_of_performance_flag": True
     }
 
-    fad_field_map = {
-        "type": "assistance_type",
-        "description": "award_description",
-    }
-
     total_rows = len(award_financial_assistance_data)
-
     start_time = datetime.now()
-    for index, row in enumerate(award_financial_assistance_data, 1):
+
+    award_financial_assistance_data['legal_entity'] = ''
+    award_financial_assistance_data['pop_location'] = ''
+
+    legal_entity_location_lookup = {}
+    legal_entity_lookup = {}
+    pop_location_lookup = {}
+
+    for index, row in award_financial_assistance_data.iterrows():
         if not (index % 100):
-            logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
+            logger.info('D2 File Location Load: Loading row {} of {} ({})'.format(str(index),
                                                                          str(total_rows),
                                                                          datetime.now() - start_time))
 
         row = row_preprocessor(row)
 
-        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
+        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row,
+                                                                legal_entity_location_value_map)
 
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
@@ -321,7 +313,49 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
         # Create the place of performance location
-        pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
+        pop_location, created = get_or_create_location(place_of_performance_field_map, row,
+                                                       place_of_performance_value_map)
+
+        row['legal_entity'] = legal_entity
+        row['pop_location'] = pop_location
+
+        award_financial_assistance_data.loc[index] = row
+
+    logger.info('File D2 Location load time elapsed: {}'.format(time.time() - d_start_time))
+
+
+def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick, row_preprocessor=no_preprocessing):
+    """
+    Process and load file D2 broker data (financial assistance award txns).
+    """
+
+    add_location_data(award_financial_assistance_data)
+
+    d_start_time = time.time()
+
+    if quick:
+        setup_broker_fdw()
+
+        parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
+        run_sql_file('usaspending_api/etl/management/load_file_d2.sql', parameters)
+        logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
+        return
+
+    fad_field_map = {
+        "type": "assistance_type",
+        "description": "award_description",
+    }
+
+    total_rows = len(award_financial_assistance_data)
+
+    start_time = datetime.now()
+    for index, row in award_financial_assistance_data.iterrows():
+        if not (index % 100):
+            logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                         str(total_rows),
+                                                                         datetime.now() - start_time))
+
+        row = row_preprocessor(row)
 
         # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
         # use the sub tier code to look it up. This code assumes that all incoming
@@ -358,8 +392,8 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             "awarding_agency": awarding_agency,
             "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
                                                             row["funding_sub_tier_agency_co"]),
-            "recipient": legal_entity,
-            "place_of_performance": pop_location,
+            "recipient": row['legal_entity'],
+            "place_of_performance": row['pop_location'],
             'submission': submission_attributes,
             "period_of_performance_start_date": format_date(row['period_of_performance_star']),
             "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
