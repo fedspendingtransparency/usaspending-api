@@ -90,17 +90,18 @@ class Command(BaseCommand):
 
 
 def run_sql_file(file_path, parameters):
-    with db.connection.cursor() as cursor:
+    with connection.cursor() as cursor:
         with open(file_path) as infile:
             for raw_sql in infile.read().split('\n\n\n'):
                 if raw_sql.strip():
                     sql_start_time = time.time()
-                    cursor.execute(raw_sql, parameters)
                     some_sql = "\n".join(raw_sql.splitlines()[:3])
-                    logger.info('sql:\n\n{}\n\ntime: {}\n\n'.format(some_sql, time.time() - sql_start_time))
+                    logger.info('sql:\n\n{}'.format(some_sql))
+                    cursor.execute(raw_sql, parameters)
+                    logger.info('\ntime: {}\n\n'.format(time.time() - sql_start_time))
 
 
-def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False):
+def load_file_d1(submission_attributes, procurement_data, quick=False):
     """
     Process and load file D1 broker data (contract award txns).
     """
@@ -240,7 +241,7 @@ def no_preprocessing(row):
     return row
 
 
-def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick, row_preprocessor=no_preprocessing):
+def load_file_d2(submission_attributes, award_financial_assistance_data, quick, row_preprocessor=no_preprocessing, testing=False):
     """
     Process and load file D2 broker data (financial assistance award txns).
     """
@@ -248,9 +249,15 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
     d_start_time = time.time()
 
     if quick:
-        setup_broker_fdw()
-
+        # parameters = connections.databases['data_broker']
         parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
+        if testing:
+            run_sql_file('usaspending_api/etl/management/local_broker_test_data.sql', {})
+        else:
+            setup_broker_fdw()
+            run_sql_file('usaspending_api/etl/management/load_local_broker.sql', parameters)
+
+        run_sql_file('usaspending_api/etl/management/etl_ddl.sql', parameters)
         run_sql_file('usaspending_api/etl/management/load_file_d2.sql', parameters)
         logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
         return

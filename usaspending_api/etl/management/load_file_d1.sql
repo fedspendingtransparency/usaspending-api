@@ -1,14 +1,3 @@
-CREATE TABLE local_broker.award_procurement AS
-   SELECT * FROM broker.award_procurement ap
-   WHERE ap.submission_id = %(broker_submission_id)s
-
-
-
-
-ALTER TABLE references_location ADD COLUMN location_award_procurement_ids INTEGER[];
-
-
-
 -- recipient locations from contracts
 INSERT INTO references_location (
         data_source,
@@ -114,10 +103,6 @@ DO UPDATE
 SET location_award_procurement_ids = EXCLUDED.location_award_procurement_ids;
 
 
-ALTER TABLE references_location ADD COLUMN place_of_performance_award_procurement_ids INTEGER[];
-
-
-
 -- place of performance locations from contracts
 INSERT INTO references_location (
         data_source,
@@ -221,13 +206,6 @@ ON CONFLICT
 )
   DO UPDATE
   SET place_of_performance_award_procurement_ids = EXCLUDED.place_of_performance_award_procurement_ids;
-
-
-
-ALTER TABLE legal_entity ADD COLUMN award_procurement_ids INTEGER[];
-
-
-
 
 
 -- legal entities from contracts
@@ -491,10 +469,6 @@ DO UPDATE
 SET award_procurement_ids = EXCLUDED.award_procurement_ids;
 
 
-
-ALTER TABLE awards ADD COLUMN award_procurement_ids INTEGER[];
-
-
 -- awards from contracts
 INSERT INTO awards (
     data_source,
@@ -626,10 +600,10 @@ SET award_procurement_ids = EXCLUDED.award_procurement_ids;
                 place_of_performance_id,
                 recipient_id,
                 submission_id,
-                fiscal_year
+                fiscal_year,
+                award_procurement_id
               )
             SELECT
-                DISTINCT
                 'DBR', -- ==> data_source
                 NULL, -- ==> usaspending_unique_transaction_id
                 p.contract_award_type, -- ==> type
@@ -655,7 +629,8 @@ SET award_procurement_ids = EXCLUDED.award_procurement_ids;
                 a.place_of_performance_id, -- ==> place_of_performance_id
                 a.recipient_id, -- ==> recipient_id
                 s.submission_id, -- ==> submission_id
-                NULL::INTEGER -- ==> fiscal_year  TODO
+                NULL::INTEGER, -- ==> fiscal_year  TODO
+                p.award_procurement_id -- ==> award_procurement_id
             FROM    local_broker.award_procurement p
             JOIN    awards a ON (p.award_procurement_id = ANY(a.award_procurement_ids))
             JOIN    submission_attributes s ON (s.broker_submission_id = p.submission_id)
@@ -774,7 +749,6 @@ SET award_procurement_ids = EXCLUDED.award_procurement_ids;
           submission_id
         )
       SELECT
-          DISTINCT
           'DBR', -- ==> data_source
           transaction_ins.id, -- ==> transaction_id
           p.piid, -- ==> piid
@@ -884,7 +858,7 @@ SET award_procurement_ids = EXCLUDED.award_procurement_ids;
           s.reporting_period_start, -- ==> reporting_period_start
           s.reporting_period_end, -- ==> reporting_period_end
           s.submission_id -- ==> submission_id
-      FROM local_broker.award_procurement p
-      CROSS JOIN transaction_ins   -- has only one row, dont' panic
+      FROM    local_broker.award_procurement p
+      JOIN    transaction_ins ON (p.award_procurement_id = transaction_ins.award_procurement_id)
       JOIN    awards a ON (transaction_ins.award_id = a.id)
       JOIN    submission_attributes s ON (s.broker_submission_id = p.submission_id)
