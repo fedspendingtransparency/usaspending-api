@@ -75,7 +75,7 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
         queryset = Transaction.objects.all()
 
         if award_category is not None:
-            # Filter based on fiscal_year, awarding_agency_id
+            # Filter based on fiscal_year, awarding_agency_id, award_category
             queryset = queryset.filter(
                 fiscal_year=fiscal_year,
                 awarding_agency__toptier_agency=top_tier_agency_id,
