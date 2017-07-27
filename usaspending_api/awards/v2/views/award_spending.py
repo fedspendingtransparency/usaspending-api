@@ -74,16 +74,27 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
         top_tier_agency_id = Agency.objects.filter(id=awarding_agency_id).first().toptier_agency_id
         queryset = Transaction.objects.all()
 
-        # Filter based on fiscal_year, awarding_agency_id, and category
-        queryset = queryset.filter(
-            fiscal_year=fiscal_year,
-            awarding_agency__toptier_agency=top_tier_agency_id,
-            award__category=award_category
-        ).annotate(
-            award_category=F('award__category'),
-            recipient_id=F('recipient__legal_entity_id'),
-            recipient_name=F('recipient__recipient_name')
-        )
+        if award_category is not None:
+            # Filter based on fiscal_year, awarding_agency_id
+            queryset = queryset.filter(
+                fiscal_year=fiscal_year,
+                awarding_agency__toptier_agency=top_tier_agency_id,
+                award__category=award_category
+            ).annotate(
+                award_category=F('award__category'),
+                recipient_id=F('recipient__legal_entity_id'),
+                recipient_name=F('recipient__recipient_name')
+            )
+        else:
+            # Filter based on fiscal_year, awarding_agency_id
+            queryset = queryset.filter(
+                fiscal_year=fiscal_year,
+                awarding_agency__toptier_agency=top_tier_agency_id
+            ).annotate(
+                award_category=F('award__category'),
+                recipient_id=F('recipient__legal_entity_id'),
+                recipient_name=F('recipient__recipient_name')
+            )
 
         # Sum Obligations for each Recipient
         queryset = queryset.values(
