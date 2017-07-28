@@ -60,14 +60,32 @@ def test_recipient_autocomplete_success(client, recipients_data):
     result = resp.data['results']
     parents = result['parent_recipient']
 
-    # Verify single parent result
-    assert parents[0].count() == 1
-    assert parents[0][0]['recipient_name'] == 'Weyland-Yutani Corp'
+    # Verify parent result
+    assert parents[0]['recipient_name'] == 'Weyland-Yutani Corp'
 
     # Check for Recipients results
     recipients = result['recipient']
-    # Verify None Recipient ID, non-matching name, and Parent excluded from Recipients
-    assert recipients[0].count() == 3
+    # Verify top recipient results contain search_text
+    assert recipients[0]['recipient_name'] == 'Wey-Yu, USCSS Prometheus LV223'
+    assert recipients[1]['recipient_name'] == 'Wey-Yu Vessel, USCSS Covenant Origae-6'
+    assert recipients[2]['recipient_name'] == 'Weyland-Yutani Vessel, USCSS Nostromo LV426'
+
+    # Test on on search_text using multiple words
+    resp = client.post(
+        '/api/v2/autocomplete/recipient/',
+        content_type='application/json',
+        data=json.dumps({'search_text': 'USCSS Nostromo'}))
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data['results']) == 2
+    result = resp.data['results']
+    parents = result['parent_recipient']
+
+    # Verify closest parent result
+    assert parents[0]['recipient_name'] == 'Weyland-Yutani Corp'
+
+    # Verify top matching recipient
+    recipients = result['recipient']
+    assert recipients[0]['recipient_name'] == 'Weyland-Yutani Vessel, USCSS Nostromo LV426'
 
     # Test on on search_text using recipient_unique_id
     resp = client.post(
@@ -79,13 +97,12 @@ def test_recipient_autocomplete_success(client, recipients_data):
     result = resp.data['results']
     parents = result['parent_recipient']
 
-    # Verify no parent result
-    assert parents[0].count() == 0
+    # Verify closest parent result
+    assert parents[0]['recipient_name'] == 'Weyland-Yutani Corp'
 
-    # Verify single matching recipient
+    # Verify top matching recipient
     recipients = result['recipient']
-    assert recipients[0].count() == 1
-    assert recipients[0][0]['recipient_name'] == 'Weyland-Yutani Vessel, USCSS Nostromo LV426'
+    assert recipients[0]['recipient_name'] == 'Weyland-Yutani Vessel, USCSS Nostromo LV426'
 
     # Test on on search_text using parent_recipient_unique_id
     resp = client.post(
@@ -97,13 +114,12 @@ def test_recipient_autocomplete_success(client, recipients_data):
     result = resp.data['results']
     parents = result['parent_recipient']
 
-    # Verify single parent result
-    assert parents[0].count() == 1
-    assert parents[0][0]['recipient_name'] == 'Tyrell Corporation'
+    # Verify top parent result
+    assert parents[0]['recipient_name'] == 'Tyrell Corporation'
 
-    # Verify no matching recipient
+    # Verify closest matching recipient
     recipients = result['recipient']
-    assert recipients[0].count() == 0
+    assert recipients[0]['recipient_name'] == 'Replicants'
 
 
 @pytest.mark.django_db
