@@ -53,6 +53,7 @@ class Command(load_base.Command):
     def add_arguments(self, parser):
         parser.add_argument('submission_id', nargs=1, help='the data broker submission id to load', type=int)
         parser.add_argument('-q', '--quick', action='store_true', help='experimental SQL-based load')
+        parser.add_argument('-r', '--report', action='store_true', help='report for comparing new vs old load')
         super(Command, self).add_arguments(parser)
 
     @transaction.atomic
@@ -94,13 +95,13 @@ class Command(load_base.Command):
         award_financial_assistance_data = dictfetchall(db_cursor)
         logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
         testing = isinstance(db_cursor, PhonyCursor)
-        load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick=options['quick'], testing=testing)
+        load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick=options['quick'], testing=testing, create_report=options['report'])
 
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
         procurement_data = dictfetchall(db_cursor)
         logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
-        load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, quick=options['quick'])
+        load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, quick=options['quick'], create_report=options['report'])
 
         # Let's get File C information
         # Note: we load File C last, because the D1 and D2 files have the awarding

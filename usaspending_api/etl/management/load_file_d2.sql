@@ -466,6 +466,11 @@ DO UPDATE
 SET award_financial_assistance_ids = EXCLUDED.award_financial_assistance_ids;
 
 
+UPDATE legal_entity
+SET    business_categories = FIND_BUSINESS_TYPE_CATEGORIES(legal_entity)
+WHERE  award_financial_assistance_ids IS NOT NULL;  -- TODO: best way to find the new additions?
+
+
 -- awards from financial assistance
 INSERT INTO awards (
     data_source,
@@ -625,7 +630,7 @@ SET award_financial_assistance_ids = EXCLUDED.award_financial_assistance_ids;
                 a.place_of_performance_id, -- ==> place_of_performance_id
                 a.recipient_id, -- ==> recipient_id
                 s.submission_id, -- ==> submission_id
-                NULL::INTEGER, -- ==> fiscal_year  TODO
+                FY(action_date::date), -- ==> fiscal_year
                 fa.award_financial_assistance_id -- ==> award_financial_assistance_id
             FROM    local_broker.award_financial_assistance fa
             JOIN    awards a ON (fa.award_financial_assistance_id = ANY(a.award_financial_assistance_ids))

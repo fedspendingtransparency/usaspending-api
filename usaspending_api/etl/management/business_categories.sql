@@ -1,5 +1,6 @@
 DROP FUNCTION IF EXISTS find_business_type_categories(le legal_entity);
 
+
 CREATE FUNCTION find_business_type_categories(le legal_entity) RETURNS text[] AS $$
 DECLARE
     result text[] := '{}';
@@ -82,7 +83,6 @@ BEGIN
     END IF;
 
         -- # End Minority Owned Business Category
-
 
         -- # Woman Owned Business Category
     IF le.women_owned_small_business = '1' THEN

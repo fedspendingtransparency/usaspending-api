@@ -101,15 +101,27 @@ def run_sql_file(file_path, parameters):
 
 
 class Report:
+    """For generating a report comparing quick vs. standard loading results.
+
+    Temporary code only while we figure out whether to switch the the quick loader.
+
+    1. From a clean db, run `python manage.py load_submission -q (submission #)`
+    2. In psql, move the results to a schema named `quick`:
+       `alter schema public rename to quick;`
+       `create schema public`
+    3. Re-run `python manage.py load_reference_data`
+    4. `python manage.py load_submission -r (submission #)`
+    5. Open load_report.csv
+    """
 
     def __init__(self):
         self.report = []
-        self.fields = set()
+        self.fields = []
 
     def remember(self, cursor):
         row = cursor.fetchone()
         fieldnames = [d[0] for d in cursor.description]
-        self.fields |= set(fieldnames)
+        self.fields.extend(f for f in fieldnames if f not in self.fields)
         self.report.append(dict(zip(fieldnames, row)))
 
     def record(self, label, table_name, broker_row_id, broker_column_name, object, id_column):
@@ -132,14 +144,16 @@ class Report:
     def write(self):
         import csv
         with open('load_report.csv', 'w') as outfile:
-            writer = csv.DictWriter(outfile, fieldnames=self.fields)
-            writer.writeheader()
+            writer = csv.writer(outfile)
+            writer.writerow(self.fields)
             for row in self.report:
-                writer.writerow(row)
+                writer.writerow(row.get(f, '') for f in self.fields)
+
 
 report = Report()
 
-def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False):
+
+def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False, create_report=False):
     """
     Process and load file D1 broker data (contract award txns).
     """
@@ -181,6 +195,8 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
     if quick:
         parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
         run_sql_file('usaspending_api/etl/management/load_file_d1.sql', parameters)
+        for loc in Location.objects.all():
+            loc.save()
         logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
         return
 
@@ -271,11 +287,13 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
         transaction_contract = TransactionContract(transaction=transaction, **contract_instance)
         transaction_contract.save()
 
-        report.record('d1', 'references_location', row['award_procurement_id'], 'award_procurement_ids', legal_entity_location, 'location_id')
+        if report:
+            report.record('d1', 'references_location', row['award_procurement_id'], 'award_procurement_ids', legal_entity_location, 'location_id')
         # load_report('d1', 'legal_entity', row['award_procurement_id'], legal_entity)
 
     logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
-    report.write()
+    if create_report:
+        report.write()
 
 
 def no_preprocessing(row):
@@ -284,7 +302,8 @@ def no_preprocessing(row):
     return row
 
 
-def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick=False, row_preprocessor=no_preprocessing, testing=False):
+def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor,
+                 quick=False, row_preprocessor=no_preprocessing, testing=False, create_report=False):
     """
     Process and load file D2 broker data (financial assistance award txns).
     """
@@ -301,7 +320,12 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             run_sql_file('usaspending_api/etl/management/load_local_broker.sql', parameters)
 
         run_sql_file('usaspending_api/etl/management/etl_ddl.sql', parameters)
+        run_sql_file('usaspending_api/etl/management/business_categories.sql', parameters)
         run_sql_file('usaspending_api/etl/management/load_file_d2.sql', parameters)
+        # TODO: filter this to only the newly created locations
+        # or, better, pull it out into SQL
+        for loc in Location.objects.all():
+            loc.save()
         logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
         return
 
@@ -438,7 +462,8 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         transaction_assistance = TransactionAssistance.get_or_create(transaction=transaction, **financial_assistance_data)
         transaction_assistance.save()
 
-        report.record('d2', 'references_location', row['award_financial_assistance_id'], 'award_financial_assistance_ids', legal_entity_location, 'location_id')
+        if create_report:
+            report.record('d2', 'references_location', row['award_financial_assistance_id'], 'award_financial_assistance_ids', legal_entity_location, 'location_id')
 
     logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
 

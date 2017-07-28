@@ -629,7 +629,7 @@ SET award_procurement_ids = EXCLUDED.award_procurement_ids;
                 a.place_of_performance_id, -- ==> place_of_performance_id
                 a.recipient_id, -- ==> recipient_id
                 s.submission_id, -- ==> submission_id
-                NULL::INTEGER, -- ==> fiscal_year  TODO
+                FY(p.action_date::date), -- ==> fiscal_year  TODO
                 p.award_procurement_id -- ==> award_procurement_id
             FROM    local_broker.award_procurement p
             JOIN    awards a ON (p.award_procurement_id = ANY(a.award_procurement_ids))
