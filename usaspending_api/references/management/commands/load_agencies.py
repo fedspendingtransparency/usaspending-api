@@ -1,9 +1,34 @@
+from django.db import connection
 from django.core.management.base import BaseCommand, CommandError
 from usaspending_api.references.models import ToptierAgency, SubtierAgency, OfficeAgency, Agency
 import os
 import csv
 import logging
 import django
+
+MATVIEW_SQL = """
+    DROP MATERIALIZED VIEW IF EXISTS agency_by_subtier_and_optionally_toptier;
+    CREATE MATERIALIZED VIEW agency_by_subtier_and_optionally_toptier AS
+    WITH subq AS (
+        SELECT a.id,
+               s.subtier_code,
+               ''::TEXT AS cgac_code,
+               rank() OVER (PARTITION BY s.subtier_agency_id ORDER BY s.update_date DESC) AS update_rank
+        FROM   agency a
+        JOIN   subtier_agency s ON (s.subtier_agency_id = a.subtier_agency_id) )
+    SELECT subtier_code, cgac_code, id
+    FROM   subq
+    WHERE  update_rank = 1   -- forces only one row per subtier code
+    UNION ALL
+    SELECT
+           s.subtier_code,
+           t.cgac_code,
+           a.id
+    FROM   agency a
+    JOIN   subtier_agency s ON (s.subtier_agency_id = a.subtier_agency_id)
+    JOIN   toptier_agency t ON (t.toptier_agency_id = a.toptier_agency_id);
+    CREATE INDEX ON agency_by_subtier_and_optionally_toptier (subtier_code, cgac_code);
+    """
 
 
 class Command(BaseCommand):
@@ -69,6 +94,9 @@ class Command(BaseCommand):
                                                                    subtier_agency=subtier_agency)
                     agency.toptier_flag = toptier_flag
                     agency.save()
+
+                with connection.cursor() as cursor:
+                    cursor.execute(MATVIEW_SQL)
 
         except IOError:
             self.logger.log("Could not open file to load from")
