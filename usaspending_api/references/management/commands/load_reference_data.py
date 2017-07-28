@@ -21,7 +21,7 @@ class Command(BaseCommand):
         call_command('loaddata', 'reference_fixture')
 
         self.logger.info("Loading agency list")
-        call_command('loadagencies')
+        call_command('load_agencies')
 
         # TAS's should only be loaded after agencies to ensure they can properly link to agencies
         self.logger.info("Loading tas_list.csv")
