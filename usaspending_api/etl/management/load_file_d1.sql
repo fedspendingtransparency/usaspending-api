@@ -31,7 +31,7 @@ INSERT INTO references_location (
         place_of_performance_flag,
         recipient_flag,
         location_country_code,
-        location_award_procurement_ids
+        award_procurement_ids
       )
 SELECT
         'DBR', -- ==> data_source
@@ -65,7 +65,7 @@ SELECT
         false, -- ==> place_of_performance_flag
         true, -- ==> recipient_flag
         p.legal_entity_country_code, -- ==> location_country_code
-        ARRAY_AGG(p.award_procurement_id) -- ==> location_award_procurement_ids
+        ARRAY_AGG(p.award_procurement_id) -- ==> award_procurement_ids
 FROM    local_broker.award_procurement p
 JOIN    ref_country_code ON (ref_country_code.country_code = p.legal_entity_country_code)
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -100,7 +100,7 @@ ON CONFLICT
   place_of_performance_flag
 )
 DO UPDATE
-SET location_award_procurement_ids = EXCLUDED.location_award_procurement_ids;
+SET award_procurement_ids = EXCLUDED.award_procurement_ids;
 
 
 -- place of performance locations from contracts
@@ -442,7 +442,7 @@ SELECT
     ARRAY[]::TEXT[], -- ==> business_categories   TODO: will need to run legal_entity.update_business_type_categories - it's in legalentity.save()
     ARRAY_AGG(p.award_procurement_id) -- ==> award_procurement_ids
 FROM    local_broker.award_procurement p
-JOIN    references_location l ON (p.award_procurement_id = ANY(l.location_award_procurement_ids))
+JOIN    references_location l ON (p.award_procurement_id = ANY(l.award_procurement_ids))
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9,
     99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, location_id
 ON CONFLICT (

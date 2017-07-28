@@ -111,7 +111,7 @@ ALTER TABLE transaction ADD COLUMN award_financial_assistance_id INTEGER;
 ALTER TABLE transaction ADD COLUMN award_procurement_id INTEGER;
 
 
-ALTER TABLE references_location ADD COLUMN location_award_procurement_ids INTEGER[];
+ALTER TABLE references_location ADD COLUMN award_procurement_ids INTEGER[];
 
 
 ALTER TABLE references_location ADD COLUMN place_of_performance_award_procurement_ids INTEGER[];

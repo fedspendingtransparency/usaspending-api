@@ -58,22 +58,21 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        for submission_id in options['submission_id']:  # TODO: multiple submission IDs
-            awards_cache.clear()
+        awards_cache.clear()
 
-            # Grab the data broker database connections
-            if not options['test']:
-                try:
-                    db_conn = connections['data_broker']
-                    db_cursor = db_conn.cursor()
-                except Exception as err:
-                    logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
-                    logger.critical(print(err))
-                    return
-            else:
-                db_cursor = PhonyCursor()
+        # Grab the data broker database connections
+        if not options['test']:
+            try:
+                db_conn = connections['data_broker']
+                db_cursor = db_conn.cursor()
+            except Exception as err:
+                logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                logger.critical(print(err))
+                return
+        else:
+            db_cursor = PhonyCursor()
 
-            self.handle_loading(db_cursor=db_cursor, *args, **options)
+        self.handle_loading(db_cursor=db_cursor, *args, **options)
         self.post_load_cleanup()
 
     def post_load_cleanup(self):
@@ -101,7 +100,46 @@ def run_sql_file(file_path, parameters):
                     logger.info('\ntime: {}\n\n'.format(time.time() - sql_start_time))
 
 
-def load_file_d1(submission_attributes, procurement_data, quick=False):
+class Report:
+
+    def __init__(self):
+        self.report = []
+        self.fields = set()
+
+    def remember(self, cursor):
+        row = cursor.fetchone()
+        fieldnames = [d[0] for d in cursor.description]
+        self.fields |= set(fieldnames)
+        self.report.append(dict(zip(fieldnames, row)))
+
+    def record(self, label, table_name, broker_row_id, broker_column_name, object, id_column):
+        row_sql = "select '{label}' as file, '{table_name}' as table, '{schema}' as schema, * from {schema}.{table_name} {filter}"
+        with connection.cursor() as cursor:
+            schema = 'public'
+            row_id = getattr(object, id_column)
+            filter = 'WHERE {id_column} = {row_id}'.format(**locals())
+            sql = row_sql.format(**locals())
+            cursor.execute(sql, (row_id, ))
+            self.remember(cursor)
+
+            schema = 'quick'
+            row_id = broker_row_id
+            filter = 'WHERE %s = ANY({})'.format(broker_column_name)
+            sql = row_sql.format(**locals())
+            cursor.execute(sql, (broker_row_id, ))
+            self.remember(cursor)
+
+    def write(self):
+        import csv
+        with open('load_report.csv', 'w') as outfile:
+            writer = csv.DictWriter(outfile, fieldnames=self.fields)
+            writer.writeheader()
+            for row in self.report:
+                writer.writerow(row)
+
+report = Report()
+
+def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False):
     """
     Process and load file D1 broker data (contract award txns).
     """
@@ -232,7 +270,12 @@ def load_file_d1(submission_attributes, procurement_data, quick=False):
 
         transaction_contract = TransactionContract(transaction=transaction, **contract_instance)
         transaction_contract.save()
+
+        report.record('d1', 'references_location', row['award_procurement_id'], 'award_procurement_ids', legal_entity_location, 'location_id')
+        # load_report('d1', 'legal_entity', row['award_procurement_id'], legal_entity)
+
     logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
+    report.write()
 
 
 def no_preprocessing(row):
@@ -241,7 +284,7 @@ def no_preprocessing(row):
     return row
 
 
-def load_file_d2(submission_attributes, award_financial_assistance_data, quick, row_preprocessor=no_preprocessing, testing=False):
+def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick=False, row_preprocessor=no_preprocessing, testing=False):
     """
     Process and load file D2 broker data (financial assistance award txns).
     """
@@ -394,6 +437,8 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, quick, 
 
         transaction_assistance = TransactionAssistance.get_or_create(transaction=transaction, **financial_assistance_data)
         transaction_assistance.save()
+
+        report.record('d2', 'references_location', row['award_financial_assistance_id'], 'award_financial_assistance_ids', legal_entity_location, 'location_id')
 
     logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
 
