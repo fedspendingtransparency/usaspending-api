@@ -1,6 +1,6 @@
 import logging
 import signal
-
+from datetime import datetime
 from collections import defaultdict
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -30,17 +30,28 @@ class Command(BaseCommand):
         """
 
         potential_childless = set()
+
         self.logger.info('Running childless check on %s transactions', str(submission.transaction_set.count()))
-        for transaction in submission.transaction_set.all():
+        pop = submission.transaction_set.prefetch_related('place_of_performance')
+        for transaction in pop:
             potential_childless.add(transaction.place_of_performance)
+
+        award = submission.transaction_set.prefetch_related('award__place_of_performance')
+        for transaction in award:
             potential_childless.add(transaction.award.place_of_performance)
+
+        recipient = submission.transaction_set.prefetch_related('award__recipient__location')
+        for transaction in recipient:
             if transaction.award.recipient:
                 potential_childless.add(transaction.award.recipient.location)
+
+        subawards = submission.transaction_set.prefetch_related('award__subawards__place_of_performance')
+        for transaction in subawards:
             for subaward in transaction.award.subawards.all():
                 potential_childless.add(subaward.place_of_performance)
                 if subaward.recipient:
                     potential_childless.add(subaward.recipient.location)
-            # could get the LegalEntities, too
+                # could get the LegalEntities, too
 
         # Return without `None`s
         return potential_childless - {None}
