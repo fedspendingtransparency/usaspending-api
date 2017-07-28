@@ -6,12 +6,15 @@ from copy import copy
 from datetime import datetime
 from decimal import Decimal
 import logging
+import time
+
+from django import db
 
 import dateutil
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
-from django.db import connections
+from django.db import connection, connections, utils
 from django.core.cache import caches
 from django.utils.dateparse import parse_datetime
 
@@ -23,7 +26,7 @@ from usaspending_api.references.models import (
 from usaspending_api.etl.award_helpers import (
     update_awards, update_contract_awards,
     update_award_categories, )
-from usaspending_api.etl.broker_etl_helpers import PhonyCursor
+from usaspending_api.etl.broker_etl_helpers import PhonyCursor, setup_broker_fdw
 from usaspending_api.references.helpers import canonicalize_location_dict
 
 from usaspending_api.etl.helpers import update_model_description_fields
@@ -55,22 +58,22 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        for submission_id in options['submission_id']:  # TODO: multiple submission IDs
+            awards_cache.clear()
 
-        awards_cache.clear()
+            # Grab the data broker database connections
+            if not options['test']:
+                try:
+                    db_conn = connections['data_broker']
+                    db_cursor = db_conn.cursor()
+                except Exception as err:
+                    logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                    logger.critical(print(err))
+                    return
+            else:
+                db_cursor = PhonyCursor()
 
-        # Grab the data broker database connections
-        if not options['test']:
-            try:
-                db_conn = connections['data_broker']
-                db_cursor = db_conn.cursor()
-            except Exception as err:
-                logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
-                logger.critical(print(err))
-                return
-        else:
-            db_cursor = PhonyCursor()
-
-        self.handle_loading(db_cursor=db_cursor, *args, **options)
+            self.handle_loading(db_cursor=db_cursor, *args, **options)
         self.post_load_cleanup()
 
     def post_load_cleanup(self):
@@ -86,7 +89,18 @@ class Command(BaseCommand):
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
 
-def load_file_d1(submission_attributes, procurement_data, db_cursor):
+def run_sql_file(file_path, parameters):
+    with db.connection.cursor() as cursor:
+        with open(file_path) as infile:
+            for raw_sql in infile.read().split('\n\n\n'):
+                if raw_sql.strip():
+                    sql_start_time = time.time()
+                    cursor.execute(raw_sql, parameters)
+                    some_sql = "\n".join(raw_sql.splitlines()[:3])
+                    logger.info('sql:\n\n{}\n\ntime: {}\n\n'.format(some_sql, time.time() - sql_start_time))
+
+
+def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False):
     """
     Process and load file D1 broker data (contract award txns).
     """
@@ -122,6 +136,14 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
         "type": "contract_award_type",
         "description": "award_description"
     }
+
+    d_start_time = time.time()
+
+    if quick:
+        parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
+        run_sql_file('usaspending_api/etl/management/load_file_d1.sql', parameters)
+        logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
+        return
 
     for row in procurement_data:
 
@@ -164,7 +186,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
             piid=row.get('piid'),
             fain=row.get('fain'),
             uri=row.get('uri'),
-            parent_award_id=row.get('parent_award_id'))
+            parent_award_id=row.get('parent_award_id'))  # but why would the row include the ID on our side?
         award.save()
 
         AWARD_UPDATE_ID_LIST.append(award.id)
@@ -209,6 +231,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
 
         transaction_contract = TransactionContract(transaction=transaction, **contract_instance)
         transaction_contract.save()
+    logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
 
 
 def no_preprocessing(row):
@@ -217,10 +240,10 @@ def no_preprocessing(row):
     return row
 
 
-def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, row_preprocessor=no_preprocessing):
-    """
-    Process and load file D2 broker data (financial assistance award txns).
-    """
+def add_location_data(award_financial_assistance_data, row_preprocessor=no_preprocessing):
+    logger.info('D2 Location Loader starting')
+    d_start_time = time.time()
+
     legal_entity_location_field_map = {
         "address_line1": "legal_entity_address_line1",
         "address_line2": "legal_entity_address_line2",
@@ -260,16 +283,26 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         "place_of_performance_flag": True
     }
 
-    fad_field_map = {
-        "type": "assistance_type",
-        "description": "award_description",
-    }
+    total_rows = len(award_financial_assistance_data)
+    start_time = datetime.now()
 
-    for row in award_financial_assistance_data:
+    award_financial_assistance_data['legal_entity'] = ''
+    award_financial_assistance_data['pop_location'] = ''
+
+    legal_entity_location_lookup = {}
+    legal_entity_lookup = {}
+    pop_location_lookup = {}
+
+    for index, row in award_financial_assistance_data.iterrows():
+        if not (index % 100):
+            logger.info('D2 File Location Load: Loading row {} of {} ({})'.format(str(index),
+                                                                         str(total_rows),
+                                                                         datetime.now() - start_time))
 
         row = row_preprocessor(row)
 
-        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
+        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row,
+                                                                legal_entity_location_value_map)
 
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
@@ -280,7 +313,49 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
         # Create the place of performance location
-        pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
+        pop_location, created = get_or_create_location(place_of_performance_field_map, row,
+                                                       place_of_performance_value_map)
+
+        row['legal_entity'] = legal_entity
+        row['pop_location'] = pop_location
+
+        award_financial_assistance_data.loc[index] = row
+
+    logger.info('File D2 Location load time elapsed: {}'.format(time.time() - d_start_time))
+
+
+def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick, row_preprocessor=no_preprocessing):
+    """
+    Process and load file D2 broker data (financial assistance award txns).
+    """
+
+    add_location_data(award_financial_assistance_data)
+
+    d_start_time = time.time()
+
+    if quick:
+        setup_broker_fdw()
+
+        parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
+        run_sql_file('usaspending_api/etl/management/load_file_d2.sql', parameters)
+        logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
+        return
+
+    fad_field_map = {
+        "type": "assistance_type",
+        "description": "award_description",
+    }
+
+    total_rows = len(award_financial_assistance_data)
+
+    start_time = datetime.now()
+    for index, row in award_financial_assistance_data.iterrows():
+        if not (index % 100):
+            logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                         str(total_rows),
+                                                                         datetime.now() - start_time))
+
+        row = row_preprocessor(row)
 
         # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
         # use the sub tier code to look it up. This code assumes that all incoming
@@ -317,8 +392,8 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             "awarding_agency": awarding_agency,
             "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
                                                             row["funding_sub_tier_agency_co"]),
-            "recipient": legal_entity,
-            "place_of_performance": pop_location,
+            "recipient": row['legal_entity'],
+            "place_of_performance": row['pop_location'],
             'submission': submission_attributes,
             "period_of_performance_start_date": format_date(row['period_of_performance_star']),
             "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
@@ -353,6 +428,8 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
 
         transaction_assistance = TransactionAssistance.get_or_create(transaction=transaction, **financial_assistance_data)
         transaction_assistance.save()
+
+    logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
 
 
 def format_date(date_string):

@@ -33,7 +33,7 @@ def canonicalize_location_dict(dct):
     rules in `canonicalize_string`.
     """
     for partial_field_name in canonicalizable:
-        for field in dct:
+        for field in dct.index:
             if partial_field_name in field:
                 dct[field] = canonicalize_string(dct[field])
     return dct
