@@ -219,28 +219,38 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         parents = queryset.annotate(
             similarity=Greatest(
                 TrigramSimilarity('recipient_name', search_text),
+                TrigramSimilarity('recipient_unique_id', search_text),
                 TrigramSimilarity('parent_recipient_unique_id', search_text))
         ).distinct().order_by('-similarity').filter(
-            parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
+            parent_recipient_unique_id__in=F('recipient_unique_id'))
 
         # Search and filter for Recipients, excluding Parent Recipients
         recipients = queryset.annotate(
             similarity=Greatest(
                 TrigramSimilarity('recipient_name', search_text),
+                TrigramSimilarity('recipient_unique_id', search_text),
                 TrigramSimilarity('parent_recipient_unique_id', search_text))
         ).distinct().order_by('-similarity').exclude(
-            parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
+            parent_recipient_unique_id__in=F('recipient_unique_id'))
+
+        parents_exact_match_queryset = parents.filter(similarity=1.0)
+        if parents_exact_match_queryset.count() > 0:
+            parents = parents_exact_match_queryset
+
+        recipients_exact_match_queryset = recipients.filter(similarity=1.0)
+        if recipients_exact_match_queryset.count() > 0:
+            recipients = recipients_exact_match_queryset
 
         # Format response
         response['results'] = {
             'parent_recipient':
                 parents.values('legal_entity_id',
                                'recipient_name',
-                               'parent_recipient_unique_id'),
+                               'parent_recipient_unique_id')[:limit],
             'recipient':
                 recipients.values('legal_entity_id',
                                   'recipient_name',
-                                  'recipient_unique_id')}
+                                  'recipient_unique_id')[:limit]}
         return Response(response)
 
 
