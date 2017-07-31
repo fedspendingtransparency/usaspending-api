@@ -228,8 +228,7 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         recipients = queryset.annotate(
             similarity=Greatest(
                 TrigramSimilarity('recipient_name', search_text),
-                TrigramSimilarity('recipient_unique_id', search_text),
-                TrigramSimilarity('parent_recipient_unique_id', search_text))
+                TrigramSimilarity('recipient_unique_id', search_text))
         ).distinct().order_by('-similarity').exclude(
             parent_recipient_unique_id__in=F('recipient_unique_id'))
 
