@@ -75,6 +75,7 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
         queryset = Transaction.objects.all()
 
         queryset = queryset.filter(
+            # Filter based on fiscal_year and awarding_category_id
             fiscal_year=fiscal_year,
             awarding_agency__toptier_agency=top_tier_agency_id
         ).annotate(
@@ -84,7 +85,7 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
         )
 
         if award_category is not None:
-            # Filter based on fiscal_year, awarding_agency_id, award_category
+            # Filter based on award_category
             queryset = queryset.filter(award_category=award_category)
 
         # Sum Obligations for each Recipient
