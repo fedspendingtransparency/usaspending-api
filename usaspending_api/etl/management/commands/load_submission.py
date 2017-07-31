@@ -349,6 +349,13 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
     aka appropriation account balances).
     """
     reverse = re.compile('gross_outlay_amount_by_tas_cpe')
+
+    # dictionary to capture TAS that were skipped and some metadata
+    # tas = top-level key
+    # count = number of rows skipped
+    # rows = row numbers skipped, corresponding to the original row numbers in the file that was submitted
+    skipped_tas = {}
+
     # Create account objects
     for row in appropriation_data:
 
@@ -356,7 +363,14 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            logger.warning('Could not find appropriation account for TAS: ' + row['tas'] + '. Skipping TAS.')
+            if row['tas'] not in skipped_tas:
+                skipped_tas[row['tas']] = {}
+                skipped_tas[row['tas']]['count'] = 1
+                skipped_tas[row['tas']]['rows'] = [row['row_number']]
+            else:
+                skipped_tas[row['tas']]['count'] += 1
+                skipped_tas[row['tas']]['rows'] += row['row_number']
+
             continue
 
         # Now that we have the account, we can load the appropriation balances
@@ -382,6 +396,9 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
     # Insert File A quarterly numbers for this submission
     AppropriationAccountBalancesQuarterly.insert_quarterly_numbers(
         submission_attributes.submission_id)
+
+    for key in skipped_tas:
+        logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
 
 
 def get_file_b(submission_attributes, db_cursor):
@@ -513,6 +530,13 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     activity and object class).
     """
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
+
+    # dictionary to capture TAS that were skipped and some metadata
+    # tas = top-level key
+    # count = number of rows skipped
+    # rows = row numbers skipped, corresponding to the original row numbers in the file that was submitted
+    skipped_tas = {}
+
     test_counter = 0
     for row in prg_act_obj_cls_data:
         test_counter += 1
@@ -521,7 +545,13 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             # Check and see if there is an entry for this TAS
             treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
-                logger.warning('Could not find appropriation account for TAS: ' + row['tas'] + '. Skipping TAS.')
+                if row['tas'] not in skipped_tas:
+                    skipped_tas[row['tas']] = {}
+                    skipped_tas[row['tas']]['count'] = 1
+                    skipped_tas[row['tas']]['rows'] = [row['row_number']]
+                else:
+                    skipped_tas[row['tas']]['count'] += 1
+                    skipped_tas[row['tas']]['rows'] += row['row_number']
                 continue
         except:
             continue
@@ -552,6 +582,9 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
 
     FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 
+    for key in skipped_tas:
+        logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
+
 
 def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     """
@@ -570,6 +603,12 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
 
+    # dictionary to capture TAS that were skipped and some metadata
+    # tas = top-level key
+    # count = number of rows skipped
+    # rows = row numbers skipped, corresponding to the original row numbers in the file that was submitted
+    skipped_tas = {}
+
     award_financial_frame['txn'] = award_financial_frame.apply(get_award_financial_transaction, axis=1)
     award_financial_frame['awarding_agency'] = award_financial_frame.apply(get_awarding_agency, axis=1)
     award_financial_frame['object_class'] = award_financial_frame.apply(get_or_create_object_class_rw, axis=1, logger=logger)
@@ -581,7 +620,13 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            logger.warning('Could not find appropriation account for TAS: ' + row['tas'] + '. Skipping TAS.')
+            if row['tas'] not in skipped_tas:
+                skipped_tas[row['tas']] = {}
+                skipped_tas[row['tas']]['count'] = 1
+                skipped_tas[row['tas']]['rows'] = [row['row_number']]
+            else:
+                skipped_tas[row['tas']]['count'] += 1
+                skipped_tas[row['tas']]['rows'] += row['row_number']
             continue
 
         # Find a matching transaction record, so we can use its
@@ -612,3 +657,6 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=True, reverse=reverse)
 
     awards_cache.clear()
+
+    for key in skipped_tas:
+        logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
