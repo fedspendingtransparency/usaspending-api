@@ -73,10 +73,8 @@ class Command(BaseCommand):
 
         self.logger.info('Starting iteration over potentially childless submissions')
         for instance in potentially_childless:
-            self.logger.info('Running deletion check on => ' + str(instance))
             deletions = instance.delete_if_childless()
             deleted_total += deletions[0]
-            self.logger.info('Compiling deleted values for => ' + str(instance))
             for (key, value) in deletions[1].items():
                 deleted[key] += value
 
