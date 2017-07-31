@@ -625,7 +625,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
                 skipped_tas[row['tas']]['rows'] = [row['row_number']]
             else:
                 skipped_tas[row['tas']]['count'] += 1
-                skipped_tas[row['tas']]['rows'] += row['row_number']
+                skipped_tas[row['tas']]['rows'] += [row['row_number']]
             continue
 
         # Find a matching transaction record, so we can use its
