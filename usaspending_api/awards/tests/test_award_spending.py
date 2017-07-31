@@ -63,13 +63,13 @@ def test_award_category_endpoint(client, award_spending_data):
 def test_recipient_endpoint(client, award_spending_data):
     """Test the recipient endpoint."""
 
-    # Test for default null entry
+    # Test for empty optional award_category
     resp = client.get('/api/v2/award_spending/recipient/?fiscal_year=2017&awarding_agency_id=111')
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data['results']) == 1
-    assert resp.data['results'][0]['award_category'] is None
+    assert len(resp.data['results']) == 3
+    assert resp.data['results'][0]['award_category'] == 'contracts'
 
-    # Test for contract
+    # Test for contract optional award_category
     resp = client.get(
         '/api/v2/award_spending/recipient/?award_category=contracts&fiscal_year=2017&awarding_agency_id=111')
     assert resp.status_code == status.HTTP_200_OK
