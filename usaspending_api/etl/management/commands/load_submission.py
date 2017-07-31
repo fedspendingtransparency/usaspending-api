@@ -124,7 +124,6 @@ class Command(load_base.Command):
         load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, quick=options['quick'])
         logger.info('Finished loading File D1 data, took {}'.format(datetime.now() - start_time))
 
-
         logger.info('Getting File C data')
         # Let's get File C information
         # Note: we load File C last, because the D1 and D2 files have the awarding

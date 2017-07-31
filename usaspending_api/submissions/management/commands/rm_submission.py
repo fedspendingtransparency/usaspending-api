@@ -10,8 +10,6 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from django.db import transaction
 
 
-
-
 class Command(BaseCommand):
     """
     This command will remove a submission and all associated data with it from the
