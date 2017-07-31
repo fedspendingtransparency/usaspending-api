@@ -124,7 +124,6 @@ class Command(load_base.Command):
         load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, quick=options['quick'])
         logger.info('Finished loading File D1 data, took {}'.format(datetime.now() - start_time))
 
-
         logger.info('Getting File C data')
         # Let's get File C information
         # Note: we load File C last, because the D1 and D2 files have the awarding
@@ -626,7 +625,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
                 skipped_tas[row['tas']]['rows'] = [row['row_number']]
             else:
                 skipped_tas[row['tas']]['count'] += 1
-                skipped_tas[row['tas']]['rows'] += row['row_number']
+                skipped_tas[row['tas']]['rows'] += [row['row_number']]
             continue
 
         # Find a matching transaction record, so we can use its

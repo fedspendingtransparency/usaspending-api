@@ -58,22 +58,21 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        for submission_id in options['submission_id']:  # TODO: multiple submission IDs
-            awards_cache.clear()
+        awards_cache.clear()
 
-            # Grab the data broker database connections
-            if not options['test']:
-                try:
-                    db_conn = connections['data_broker']
-                    db_cursor = db_conn.cursor()
-                except Exception as err:
-                    logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
-                    logger.critical(print(err))
-                    return
-            else:
-                db_cursor = PhonyCursor()
+        # Grab the data broker database connections
+        if not options['test']:
+            try:
+                db_conn = connections['data_broker']
+                db_cursor = db_conn.cursor()
+            except Exception as err:
+                logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
+                logger.critical(print(err))
+                return
+        else:
+            db_cursor = PhonyCursor()
 
-            self.handle_loading(db_cursor=db_cursor, *args, **options)
+        self.handle_loading(db_cursor=db_cursor, *args, **options)
         self.post_load_cleanup()
 
     def post_load_cleanup(self):
