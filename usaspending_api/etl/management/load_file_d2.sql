@@ -68,6 +68,24 @@ SELECT
     ARRAY_AGG(fa.award_financial_assistance_id) -- ==> location_award_procurement_ids
 FROM     local_broker.award_financial_assistance fa
 JOIN     ref_country_code ON (ref_country_code.country_code = fa.legal_entity_country_code)
+LEFT JOIN LATERAL (
+  SELECT fa.award_financial_assistance_id,
+         rccc.city_code,
+         rccc.county_code,
+         rccc.state_code,
+         rccc.city_name,
+         rccc.county_name,
+         count(*)
+  FROM   ref_city_county_code rccc
+  WHERE
+         ((fa.legal_entity_city_code IS NULL) OR (rccc.city_code = fa.legal_entity_city_code))
+     AND ((fa.legal_entity_county_code IS NULL) OR (rccc.county_code = fa.legal_entity_county_code))
+     AND ((fa.legal_entity_state_code IS NULL) OR (rccc.state_code ilike '%' || REPLACE(fa.legal_entity_state_code, '.', '') || '%'))
+     AND ((fa.legal_entity_city_name IS NULL) OR (rccc.city_name ilike '%' || fa.legal_entity_city_name || '%'))
+     AND ((fa.legal_entity_county_name IS NULL) OR (rccc.county_name ilike '%' || fa.legal_entity_county_name || '%'))
+  GROUP BY 1, 2, 3, 4, 5, 6
+  HAVING COUNT(*) = 1   -- only if the match is unambiguous
+) citycounty ON (fa.award_financial_assistance_id = citycounty.award_financial_assistance_id)
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
 ON CONFLICT
 (

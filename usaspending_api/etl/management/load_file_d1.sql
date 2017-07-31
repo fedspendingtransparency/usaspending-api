@@ -36,13 +36,13 @@ INSERT INTO references_location (
 SELECT
         'DBR', -- ==> data_source
         ref_country_code.country_name, -- ==> country_name
-        REPLACE(p.legal_entity_state_code, '.', ''), -- ==> state_code
+        COALESCE(citycounty.state_code, REPLACE(p.legal_entity_state_code, '.', '')), -- ==> state_code
         NULL, -- ==> state_name  TODO: read from the mapping usaspending_api.references.abbreviations import code_to_state, state_to_code
         NULL, -- ==> state_description
-        p.legal_entity_city_name, -- ==> city_name
-        NULL, -- ==> city_code
-        NULL, -- ==> county_name
-        NULL, -- ==> county_code
+        COALESCE(citycounty.city_name, p.legal_entity_city_name), -- ==> city_name
+        citycounty.city_code, -- ==> city_code
+        citycounty.county_name, -- ==> county_name
+        citycounty.county_code, -- ==> county_code
         p.legal_entity_address_line1, -- ==> address_line1
         p.legal_entity_address_line2, -- ==> address_line2
         p.legal_entity_address_line3, -- ==> address_line3
@@ -68,6 +68,21 @@ SELECT
         ARRAY_AGG(p.award_procurement_id) -- ==> award_procurement_ids
 FROM    local_broker.award_procurement p
 JOIN    ref_country_code ON (ref_country_code.country_code = p.legal_entity_country_code)
+LEFT JOIN LATERAL (
+  SELECT p.award_procurement_id,
+         rccc.city_code,
+         rccc.county_code,
+         rccc.state_code,
+         rccc.city_name,
+         rccc.county_name,
+         count(*)
+  FROM   ref_city_county_code rccc
+  WHERE
+         ((p.legal_entity_state_code IS NULL) OR (rccc.state_code ilike '%' || REPLACE(p.legal_entity_state_code, '.', '') || '%'))
+    AND  ((p.legal_entity_city_name IS NULL) OR (rccc.city_name ilike '%' || p.legal_entity_city_name || '%'))
+  GROUP BY 1, 2, 3, 4, 5, 6
+  HAVING COUNT(*) = 1   -- only if the match is unambiguous
+) citycounty ON (p.award_procurement_id = citycounty.award_procurement_id)
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
          11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
          21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
