@@ -116,11 +116,7 @@ def test_recipient_autocomplete_success(client, recipients_data):
 
     # Verify top parent result
     assert parents[0]['recipient_name'] == 'Tyrell Corporation'
-
-    # Verify closest matching recipient
-    recipients = result['recipient']
-    assert recipients[0]['recipient_name'] == 'Replicants'
-
+    
 
 @pytest.mark.django_db
 def test_recipient_autocomplete_failure(client):
