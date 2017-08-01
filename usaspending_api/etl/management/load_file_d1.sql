@@ -208,6 +208,39 @@ ON CONFLICT
   SET place_of_performance_award_procurement_ids = EXCLUDED.place_of_performance_award_procurement_ids;
 
 
+  -- replaces self.load_city_county_data() in Loction.save()
+  WITH cte AS
+    ( SELECT l.location_id,
+             rccc.city_code,
+             rccc.county_code,
+             rccc.state_code,
+             rccc.city_name,
+             rccc.county_name,
+             COUNT(*)
+      FROM   ref_city_county_code rccc
+      JOIN   references_location l ON (
+             (l.city_code IS NULL OR l.city_code = '' OR l.city_code = rccc.city_code)
+         AND (l.county_code IS NULL OR l.county_code = '' OR l.county_code = rccc.county_code)
+         AND (l.state_code IS NULL OR l.state_code = '' OR UPPER(l.state_code) = UPPER(rccc.state_code))
+         AND (l.city_name IS NULL OR l.city_name = '' OR UPPER(l.city_name) = UPPER(rccc.city_name))
+         AND (l.county_name IS NULL OR l.county_name = '' OR UPPER(l.county_name) = UPPER(rccc.county_name))
+       )
+      WHERE l.award_financial_assistance_ids IS NOT NULL
+      OR    l.place_of_performance_award_financial_assistance_ids IS NOT NULL
+      OR    l.place_of_performance_award_procurement_ids IS NOT NULL
+      OR    l.award_procurement_ids IS NOT NULL
+      GROUP BY 1, 2, 3, 4, 5, 6
+      HAVING COUNT(*) = 1  -- only if the match is unambiguous
+    )
+  UPDATE references_location rl
+  SET    city_code = cte.city_code,
+         county_code = cte.county_code,
+         state_code = cte.state_code,
+         city_name = cte.city_name,
+         county_name = cte.county_name
+  FROM   cte WHERE cte.location_id = rl.location_id;
+
+
 -- legal entities from contracts
 INSERT INTO public.legal_entity (
     data_source,
