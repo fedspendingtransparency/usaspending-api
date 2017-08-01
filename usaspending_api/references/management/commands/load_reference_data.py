@@ -40,4 +40,7 @@ class Command(BaseCommand):
         self.logger.info("Loading descriptions of commonly used terms")
         call_command('load_glossary')
 
+        self.logger.info("Loading US state abbreviations")
+        call_command('load_reference_csv', 'StateAbbreviation', 'usaspending_api/data/ref_state_abbreviation.csv', 'utf8')
+
         self.logger.info("Reference data loaded.")

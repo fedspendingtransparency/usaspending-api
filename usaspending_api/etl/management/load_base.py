@@ -118,28 +118,32 @@ class Report:
         self.report = []
         self.fields = []
 
-    def remember(self, cursor):
+    def find_row(self, cursor):
         row = cursor.fetchone()
         fieldnames = [d[0] for d in cursor.description]
         self.fields.extend(f for f in fieldnames if f not in self.fields)
-        self.report.append(dict(zip(fieldnames, row)))
+        return dict(zip(fieldnames, row))
 
-    def record(self, label, table_name, broker_row_id, broker_column_name, object, id_column):
+    def record(self, label, table_name, broker_row_id, broker_column_name, object, id_column, source_row):
         row_sql = "select '{label}' as file, '{table_name}' as table, '{schema}' as schema, * from {schema}.{table_name} {filter}"
+        result = {}
         with connection.cursor() as cursor:
             schema = 'public'
             row_id = getattr(object, id_column)
             filter = 'WHERE {id_column} = {row_id}'.format(**locals())
             sql = row_sql.format(**locals())
             cursor.execute(sql, (row_id, ))
-            self.remember(cursor)
+            result[schema] = self.find_row(cursor)
 
             schema = 'quick'
             row_id = broker_row_id
             filter = 'WHERE %s = ANY({})'.format(broker_column_name)
             sql = row_sql.format(**locals())
             cursor.execute(sql, (broker_row_id, ))
-            self.remember(cursor)
+            result[schema] = self.find_row(cursor)
+
+            result['source'] = source_row
+            self.report.append(result)
 
     def write(self):
         import csv
@@ -147,7 +151,13 @@ class Report:
             writer = csv.writer(outfile)
             writer.writerow(self.fields)
             for row in self.report:
-                writer.writerow(row.get(f, '') for f in self.fields)
+                source_row = sorted(row['source'].items())
+                writer.writerow(r[0] for r in source_row)
+                writer.writerow(r[1] for r in source_row)
+                writer.writerow(self.fields)
+                writer.writerow(row['public'].get(f, '') for f in self.fields)
+                writer.writerow(row['quick'].get(f, '') for f in self.fields)
+                writer.writerow('' * len(self.fields))
 
 
 report = Report()
@@ -288,7 +298,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
         transaction_contract.save()
 
         if report:
-            report.record('d1', 'references_location', row['award_procurement_id'], 'award_procurement_ids', legal_entity_location, 'location_id')
+            report.record('d1', 'references_location', row['award_procurement_id'], 'award_procurement_ids', legal_entity_location, 'location_id', row)
         # load_report('d1', 'legal_entity', row['award_procurement_id'], legal_entity)
 
     logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
@@ -463,7 +473,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         transaction_assistance.save()
 
         if create_report:
-            report.record('d2', 'references_location', row['award_financial_assistance_id'], 'award_financial_assistance_ids', legal_entity_location, 'location_id')
+            report.record('d2', 'references_location', row['award_financial_assistance_id'], 'award_financial_assistance_ids', legal_entity_location, 'location_id', row)
 
     logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
 

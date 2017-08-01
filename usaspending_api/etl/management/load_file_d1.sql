@@ -37,7 +37,7 @@ SELECT
         'DBR', -- ==> data_source
         ref_country_code.country_name, -- ==> country_name
         REPLACE(p.legal_entity_state_code, '.', ''), -- ==> state_code
-        NULL, -- ==> state_name  TODO: read from the mapping usaspending_api.references.abbreviations import code_to_state, state_to_code
+        sa.name, -- ==> state_name
         NULL, -- ==> state_description
         p.legal_entity_city_name, -- ==> city_name
         NULL, -- ==> city_code
@@ -67,7 +67,8 @@ SELECT
         p.legal_entity_country_code, -- ==> location_country_code
         ARRAY_AGG(p.award_procurement_id) -- ==> award_procurement_ids
 FROM    local_broker.award_procurement p
-JOIN    ref_country_code ON (ref_country_code.country_code = p.legal_entity_country_code)
+LEFT OUTER JOIN ref_country_code ON (ref_country_code.country_code = p.legal_entity_country_code)
+LEFT OUTER JOIN references_stateabbreviation sa ON (sa.abbrev = REPLACE(p.legal_entity_state_code, '.', '') AND legal_entity_country_code = 'USA')
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
          11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
          21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -142,7 +143,7 @@ SELECT
         'DBR', -- ==> data_source
         ref_country_code.country_name, -- ==> country_name
         REPLACE(p.place_of_performance_state, '.', ''), -- ==> state_code
-        NULL, -- ==> state_name  TODO: read from the mapping - perhaps during the save
+        sa.name, -- ==> state_name
         NULL, -- ==> state_description
         p.place_of_performance_locat, -- ==> city_name
         NULL, -- ==> city_code
@@ -172,7 +173,8 @@ SELECT
         p.place_of_perform_country_c, -- ==> location_country_code
         ARRAY_AGG(p.award_procurement_id) -- ==> place_of_performance_award_procurement_ids
 FROM    local_broker.award_procurement p
-JOIN    ref_country_code ON (ref_country_code.country_code = p.place_of_perform_country_c)
+LEFT OUTER JOIN    ref_country_code ON (ref_country_code.country_code = p.place_of_perform_country_c)
+LEFT OUTER JOIN references_stateabbreviation sa ON (sa.abbrev = REPLACE(p.place_of_performance_state, '.', '') AND p.place_of_perform_country_c = 'USA')
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
          11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
          21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31

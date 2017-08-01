@@ -37,7 +37,7 @@ SELECT
     'DBR', -- ==> data_source
     ref_country_code.country_name, -- ==> country_name
     REPLACE(fa.legal_entity_state_code, '.', ''), -- ==> state_code
-    legal_entity_state_name, -- ==> state_name
+    COALESCE(sa.name, legal_entity_state_name), -- ==> state_name
     NULL::text, -- ==> state_description
     legal_entity_city_name, -- ==> city_name
     legal_entity_city_code, -- ==> city_code
@@ -67,7 +67,8 @@ SELECT
     legal_entity_country_code, -- ==> location_country_code
     ARRAY_AGG(fa.award_financial_assistance_id) -- ==> location_award_procurement_ids
 FROM     local_broker.award_financial_assistance fa
-JOIN     ref_country_code ON (ref_country_code.country_code = fa.legal_entity_country_code)
+LEFT OUTER JOIN ref_country_code ON (ref_country_code.country_code = fa.legal_entity_country_code)
+LEFT OUTER JOIN references_stateabbreviation sa ON (sa.abbrev = REPLACE(fa.legal_entity_state_code, '.', '') AND legal_entity_country_code = 'USA')
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
 ON CONFLICT
 (
@@ -138,9 +139,9 @@ INSERT INTO references_location (
       )
 SELECT
         'DBR', -- ==> data_source
-        place_of_perform_county_na, -- ==> country_name
-        NULL::text, -- ==> state_code  TODO: fetch from reference table by name?
-        place_of_perform_state_nam, -- ==> state_name
+        ref_country_code.country_name, -- ==> country_name
+        sa.abbrev, -- ==> state_code
+        UPPER(place_of_perform_state_nam), -- ==> state_name
         NULL::text, -- ==> state_description
         place_of_performance_city, -- ==> city_name
         NULL::text, -- ==> city_code
@@ -170,6 +171,8 @@ SELECT
         place_of_perform_country_c, -- ==> location_country_code
         ARRAY_AGG(fa.award_financial_assistance_id) -- ==> place_of_performance_award_financial_assistance_ids
 FROM    local_broker.award_financial_assistance fa
+LEFT OUTER JOIN ref_country_code ON (ref_country_code.country_code = fa.place_of_perform_country_c)
+LEFT OUTER JOIN references_stateabbreviation sa ON (sa.name = UPPER(fa.place_of_perform_state_nam) AND fa.place_of_perform_country_c = 'USA')
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
          11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
          21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
