@@ -207,7 +207,6 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         """Return all Parents and Recipients matching the provided search text"""
 
         search_text, limit = self.get_request_payload(request)
-
         # Return Recipients with valid id entries
         queryset = LegalEntity.objects.exclude(
             recipient_unique_id__isnull=True).exclude(
@@ -215,28 +214,41 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
         # Filter based on search text
         response = {}
+
         # Search and filter for Parent Recipients
         parents = queryset.annotate(
-            search=SearchVector('recipient_name', 'parent_recipient_unique_id')
-        ).filter(
-            search__icontains=search_text,
-            parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
+            similarity=Greatest(
+                TrigramSimilarity('recipient_name', search_text),
+                TrigramSimilarity('parent_recipient_unique_id', search_text))
+        ).distinct().order_by('-similarity').filter(
+            parent_recipient_unique_id__in=F('recipient_unique_id'))
+
         # Search and filter for Recipients, excluding Parent Recipients
         recipients = queryset.annotate(
-            search=SearchVector('recipient_name', 'recipient_unique_id')
-        ).filter(
-            search__icontains=search_text).exclude(
-            parent_recipient_unique_id__in=F('recipient_unique_id'))[:limit]
+            similarity=Greatest(
+                TrigramSimilarity('recipient_name', search_text),
+                TrigramSimilarity('recipient_unique_id', search_text))
+        ).distinct().order_by('-similarity').exclude(
+            parent_recipient_unique_id__in=F('recipient_unique_id'))
+
+        parents_exact_match_queryset = parents.filter(similarity=1.0)
+        if parents_exact_match_queryset.count() > 0:
+            parents = parents_exact_match_queryset
+
+        recipients_exact_match_queryset = recipients.filter(similarity=1.0)
+        if recipients_exact_match_queryset.count() > 0:
+            recipients = recipients_exact_match_queryset
+
         # Format response
         response['results'] = {
-            'parent_recipient': [
+            'parent_recipient':
                 parents.values('legal_entity_id',
                                'recipient_name',
-                               'parent_recipient_unique_id')],
-            'recipient': [
+                               'parent_recipient_unique_id')[:limit],
+            'recipient':
                 recipients.values('legal_entity_id',
                                   'recipient_name',
-                                  'recipient_unique_id')]}
+                                  'recipient_unique_id')[:limit]}
         return Response(response)
 
 
