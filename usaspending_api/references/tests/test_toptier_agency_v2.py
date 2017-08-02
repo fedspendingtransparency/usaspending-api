@@ -52,7 +52,7 @@ def test_award_type_endpoint(client, financial_spending_data):
     resp = client.get('/api/v2/references/toptier_agencies/')
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == {'results': [{'abbreviation': 'tta_abrev',
-                                       'active_fq': '2',
+                                      'active_fq': '2',
                                       'active_fy': '2017',
                                       'agency_id': 1,
                                       'agency_name': 'tta_name',
@@ -62,7 +62,7 @@ def test_award_type_endpoint(client, financial_spending_data):
                                       'outlay_amount': 2.0,
                                       'percentage_of_total_budget_authority': 5.181347150259067e-10},
                                      {'abbreviation': 'tta_abrev_2',
-                                       'active_fq': '2',
+                                      'active_fq': '2',
                                       'active_fy': '2017',
                                       'agency_id': 2,
                                       'agency_name': 'tta_name_2',
