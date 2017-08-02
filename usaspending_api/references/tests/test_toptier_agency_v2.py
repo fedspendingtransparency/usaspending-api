@@ -13,8 +13,8 @@ from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgen
 def financial_spending_data(db):
     # Create agency - submission relationship
     # Create AGENCY AND TopTier AGENCY
-    ttagency1 = mommy.make('references.ToptierAgency', name="tta_name", cgac_code='100')
-    ttagency2 = mommy.make('references.ToptierAgency', name="tta_name_2", cgac_code='200')
+    ttagency1 = mommy.make('references.ToptierAgency', name="tta_name", cgac_code='100', abbreviation='tta_abrev')
+    ttagency2 = mommy.make('references.ToptierAgency', name="tta_name_2", cgac_code='200', abbreviation='tta_abrev_2')
 
     mommy.make('references.Agency', id=1, toptier_agency=ttagency1, toptier_flag=True)
     mommy.make('references.Agency', id=2, toptier_agency=ttagency2, toptier_flag=True)
@@ -51,7 +51,8 @@ def test_award_type_endpoint(client, financial_spending_data):
 
     resp = client.get('/api/v2/references/toptier_agencies/')
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == {'results': [{'active_fq': '2',
+    assert resp.data == {'results': [{'abbreviation': 'tta_abrev',
+                                       'active_fq': '2',
                                       'active_fy': '2017',
                                       'agency_id': 1,
                                       'agency_name': 'tta_name',
@@ -60,7 +61,8 @@ def test_award_type_endpoint(client, financial_spending_data):
                                       'obligated_amount': 2.0,
                                       'outlay_amount': 2.0,
                                       'percentage_of_total_budget_authority': 5.181347150259067e-10},
-                                     {'active_fq': '2',
+                                     {'abbreviation': 'tta_abrev_2',
+                                       'active_fq': '2',
                                       'active_fy': '2017',
                                       'agency_id': 2,
                                       'agency_name': 'tta_name_2',
@@ -73,7 +75,8 @@ def test_award_type_endpoint(client, financial_spending_data):
     resp = client.get('/api/v2/references/toptier_agencies/?sort=budget_authority_amount&order=desc')
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == {'results': [
-                        {'active_fq': '2',
+                        {'abbreviation': 'tta_abrev_2',
+                         'active_fq': '2',
                          'active_fy': '2017',
                          'agency_id': 2,
                          'agency_name': 'tta_name_2',
@@ -82,7 +85,8 @@ def test_award_type_endpoint(client, financial_spending_data):
                          'obligated_amount': 14.0,
                          'outlay_amount': 14.0,
                          'percentage_of_total_budget_authority': 3.6269430051813473e-09},
-                        {'active_fq': '2', 'active_fy': '2017',
+                        {'abbreviation': 'tta_abrev',
+                         'active_fq': '2', 'active_fy': '2017',
                          'agency_id': 1,
                          'agency_name': 'tta_name',
                          'budget_authority_amount': 2.0,

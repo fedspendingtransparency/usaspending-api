@@ -77,8 +77,13 @@ class ToptierAgenciesViewSet(APIView):
                 total_budget_authority_amount = total_budget_authority_submission.total_budget_authority
                 percentage = (float(aggregate_dict['budget_authority_amount']) / float(total_budget_authority_amount))
 
+            abbreviation = ""
+            if toptier_agency.abbreviation is not None:
+                abbreviation = toptier_agency.abbreviation
+
             # craft response
             response['results'].append({'agency_id': agency.id,
+                                        'abbreviation': abbreviation,
                                         'agency_name': toptier_agency.name,
                                         'active_fy': str(active_fiscal_year),
                                         'active_fq': str(active_fiscal_quarter),
