@@ -3,6 +3,7 @@ Code for loaders in management/commands to inherit from or share.
 """
 
 from copy import copy
+from collections import defaultdict
 from datetime import datetime
 from decimal import Decimal
 import logging
@@ -116,48 +117,59 @@ class Report:
 
     def __init__(self):
         self.report = []
-        self.fields = []
+        self.fields = defaultdict(list)
 
-    def find_row(self, cursor):
+
+    def find_row(self, cursor, table_name):
         row = cursor.fetchone()
         fieldnames = [d[0] for d in cursor.description]
-        self.fields.extend(f for f in fieldnames if f not in self.fields)
+        self.fields[table_name].extend(f for f in fieldnames if f not in self.fields)
         return dict(zip(fieldnames, row))
 
-    def record(self, label, table_name, broker_row_id, broker_column_name, object, id_column, source_row):
+    def record_source_row(self, row):
+        self.fields['source'] = self.fields['source'] or sorted(row.keys())
+        self.report.append(('source', row))
+
+    def record(self, label, table_name, broker_row_id, broker_column_name, object, id_column):
         row_sql = "select '{label}' as file, '{table_name}' as table, '{schema}' as schema, * from {schema}.{table_name} {filter}"
-        result = {}
         with connection.cursor() as cursor:
-            schema = 'public'
-            row_id = getattr(object, id_column)
-            filter = 'WHERE {id_column} = {row_id}'.format(**locals())
-            sql = row_sql.format(**locals())
-            cursor.execute(sql, (row_id, ))
-            result[schema] = self.find_row(cursor)
+            # schema = 'public'
+            # row_id = getattr(object, id_column)
+            # filter = 'WHERE {id_column} = {row_id}'.format(**locals())
+            # sql = row_sql.format(**locals())
+            # cursor.execute(sql, (row_id, ))
+            # row = self.find_row(cursor, table_name)
+            # self.report.append((table_name, row))
 
             schema = 'quick'
-            row_id = broker_row_id
-            filter = 'WHERE %s = ANY({})'.format(broker_column_name)
+            if table_name in ('transaction_contract', 'transaction_assistance'):
+                filter = 'WHERE transaction_id = (SELECT id FROM {}.transaction WHERE %s = {})'.format(schema, broker_column_name)
+            else:
+                filter = 'WHERE %s = {}'.format(broker_column_name)
             sql = row_sql.format(**locals())
             cursor.execute(sql, (broker_row_id, ))
-            result[schema] = self.find_row(cursor)
+            row = self.find_row(cursor, table_name)
+            self.report.append((table_name, row))
 
-            result['source'] = source_row
-            self.report.append(result)
+            row = {f: getattr(object, f) for f in self.fields[table_name] if hasattr(object, f)}
+            row.update({'schema': 'public', 'file': label, 'table': table_name})
+            self.report.append((table_name, row))
+            print('wrote {}.{}'.format(table_name, broker_row_id))
+
 
     def write(self):
         import csv
         with open('load_report.csv', 'w') as outfile:
             writer = csv.writer(outfile)
-            writer.writerow(self.fields)
-            for row in self.report:
-                source_row = sorted(row['source'].items())
-                writer.writerow(r[0] for r in source_row)
-                writer.writerow(r[1] for r in source_row)
-                writer.writerow(self.fields)
-                writer.writerow(row['public'].get(f, '') for f in self.fields)
-                writer.writerow(row['quick'].get(f, '') for f in self.fields)
-                writer.writerow('' * len(self.fields))
+            last_header_printed = None
+            for (table_name, row) in self.report:
+                if table_name == 'source':
+                    writer.writerow('' * 20)
+                    writer.writerow('' * 20)
+                if table_name != last_header_printed:
+                    writer.writerow(self.fields[table_name])
+                    last_header_printed = table_name
+                writer.writerow(row.get(f, '') for f in self.fields[table_name])
 
 
 report = Report()
@@ -298,8 +310,13 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
         transaction_contract.save()
 
         if report:
-            report.record('d1', 'references_location', row['award_procurement_id'], 'award_procurement_ids', legal_entity_location, 'location_id', row)
-        # load_report('d1', 'legal_entity', row['award_procurement_id'], legal_entity)
+            report.record_source_row(row)
+            report.record('d1', 'references_location', row['award_procurement_id'], 'ANY(award_procurement_ids)', legal_entity_location, 'location_id')
+            report.record('d1', 'references_location', row['award_procurement_id'], 'ANY(place_of_performance_award_procurement_ids)', pop_location, 'location_id')
+            report.record('d1', 'legal_entity', row['award_procurement_id'], 'ANY(award_procurement_ids)', legal_entity, 'legal_entity_id')
+            report.record('d1', 'awards', row['award_procurement_id'], 'ANY(award_procurement_ids)', award, 'id')
+            report.record('d1', 'transaction', row['award_procurement_id'], 'award_procurement_id', transaction, 'id')
+            report.record('d1', 'transaction_contract', row['award_procurement_id'], 'award_procurement_id', transaction_contract, 'id')
 
     logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
     if create_report:
@@ -321,7 +338,6 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
     d_start_time = time.time()
 
     if quick:
-        # parameters = connections.databases['data_broker']
         parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
         if testing:
             run_sql_file('usaspending_api/etl/management/local_broker_test_data.sql', {})
@@ -332,10 +348,6 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         run_sql_file('usaspending_api/etl/management/etl_ddl.sql', parameters)
         run_sql_file('usaspending_api/etl/management/business_categories.sql', parameters)
         run_sql_file('usaspending_api/etl/management/load_file_d2.sql', parameters)
-        # TODO: filter this to only the newly created locations
-        # or, better, pull it out into SQL
-        for loc in Location.objects.all():
-            loc.save()
         logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
         return
 
@@ -473,7 +485,13 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         transaction_assistance.save()
 
         if create_report:
-            report.record('d2', 'references_location', row['award_financial_assistance_id'], 'award_financial_assistance_ids', legal_entity_location, 'location_id', row)
+            report.record_source_row(row)
+            report.record('d2', 'references_location', row['award_financial_assistance_id'], 'ANY(award_financial_assistance_ids)', legal_entity_location, 'location_id')
+            report.record('d2', 'references_location', row['award_financial_assistance_id'], 'ANY(place_of_performance_award_financial_assistance_ids)', pop_location, 'location_id')
+            report.record('d2', 'legal_entity', row['award_financial_assistance_id'], 'ANY(award_financial_assistance_ids)', legal_entity, 'legal_entity_id')
+            report.record('d2', 'awards', row['award_financial_assistance_id'], 'ANY(award_financial_assistance_ids)', award, 'id')
+            report.record('d2', 'transaction', row['award_financial_assistance_id'], 'award_financial_assistance_id', transaction, 'id')
+            report.record('d2', 'transaction_assistance', row['award_financial_assistance_id'], 'award_financial_assistance_id', transaction_assistance, 'id')
 
     logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
 

@@ -41,7 +41,7 @@ SELECT
     NULL::text, -- ==> state_description
     legal_entity_city_name, -- ==> city_name
     legal_entity_city_code, -- ==> city_code
-    legal_entity_county_name, -- ==> county_name
+    UPPER(legal_entity_county_name), -- ==> county_name
     legal_entity_county_code, -- ==> county_code
     legal_entity_address_line1, -- ==> address_line1
     legal_entity_address_line2, -- ==> address_line2
