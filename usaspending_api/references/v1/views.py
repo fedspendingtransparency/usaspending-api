@@ -1,15 +1,17 @@
+import hashlib
+import json
+
+from django.http import HttpResponseBadRequest
 from rest_framework import status
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
-from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition, FilterHash
-from usaspending_api.references.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, \
-    CfdaSerializer, DefinitionSerializer, FilterSerializer, HashSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
-import json
-import hashlib
-from django.http import HttpResponseBadRequest
+from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition, FilterHash
+from usaspending_api.references.v1.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, \
+    CfdaSerializer, DefinitionSerializer, FilterSerializer, HashSerializer
 
 
 class FilterEndpoint(APIView):
