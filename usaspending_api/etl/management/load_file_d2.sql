@@ -60,8 +60,8 @@ SELECT
     NULL::date, -- ==> reporting_period_end
     NULL::date, -- ==> last_modified_date  # TODO:
     NULL::date, -- ==> certified_date
-    NULL::timestamp with time zone, -- ==> create_date
-    NULL::timestamp with time zone, -- ==> update_date
+    current_timestamp, -- ==> create_date
+    current_timestamp, -- ==> update_date
     false, -- ==> place_of_performance_flag
     true, -- ==> recipient_flag
     legal_entity_country_code, -- ==> location_country_code
@@ -164,8 +164,8 @@ SELECT
         NULL::date, -- ==> reporting_period_end
         NULL::date, -- ==> last_modified_date
         NULL::date, -- ==> certified_date
-        NULL::timestamp with time zone, -- ==> create_date
-        NULL::timestamp with time zone, -- ==> update_date
+        current_timestamp, -- ==> create_date
+        current_timestamp, -- ==> update_date
         true, -- ==> place_of_performance_flag
         false, -- ==> recipient_flag
         place_of_perform_country_c, -- ==> location_country_code

@@ -124,6 +124,11 @@ if os.environ.get('DB_SOURCE') or os.environ.get('DB_R1'):
 if os.environ.get('DATA_BROKER_DATABASE_URL') and not sys.argv[1:2] == ['test']:
     DATABASES['data_broker'] = dj_database_url.parse(os.environ.get('DATA_BROKER_DATABASE_URL'), conn_max_age=600)
 
+# Temporary, for loading comparisons
+try:
+    DATABASES['quick_load'] = dj_database_url.parse('postgresql:///api_datastore_quick')
+except:
+    DATABASES['quick_load'] = None
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
