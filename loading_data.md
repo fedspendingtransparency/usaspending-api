@@ -33,7 +33,7 @@ To load in the reference data, from the same directory as manage.py:
 
 ## DATA Act Certified Submission Data:
 
-To load certified submission data from the broker, you will need a read-only (or higher) connection string to the broker PostgreSQL database. You will also need to ensure your IP address has been whitelisted in the appropriate AWS Security Groups. Set this environment variable before running the **load_submission** command:
+To load certified submission data from the broker, you will need a read-only (or higher) connection string to the broker PostgreSQL database. If not running locally, you will also need to ensure your IP address has been whitelisted in the appropriate AWS Security Groups. Set this environment variable before running the **load_submission** command:
 
     DATA_BROKER_DATABASE_URL=postgres://user:password@url:5432/data_broker
 
