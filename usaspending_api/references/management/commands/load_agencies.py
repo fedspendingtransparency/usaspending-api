@@ -24,6 +24,7 @@ class Command(BaseCommand):
                 for row in reader:
                     fpds_code = row.get('FPDS DEPARTMENT ID', '')
                     cgac_code = row.get('CGAC AGENCY CODE', '')
+                    frec_code = row.get('FREC', '')
                     department_name = row.get('AGENCY NAME', '')
                     department_abbr = row.get('AGENCY ABBREVIATION', '')
                     subtier_name = row.get('SUBTIER NAME', '')
@@ -40,7 +41,10 @@ class Command(BaseCommand):
                     # First, see if we have a toptier agency that matches our fpds and cgac codes
                     # We use only these codes here to make sure we are idempotent with previous
                     # versions of this agency loader
-                    toptier_agency, created = ToptierAgency.objects.get_or_create(cgac_code=cgac_code, fpds_code=fpds_code)
+                    toptier_agency, created = ToptierAgency.objects.get_or_create(
+                        cgac_code=cgac_code,
+                        fpds_code=fpds_code,
+                        frec_code=frec_code)
 
                     toptier_flag = (subtier_name == department_name)
 
