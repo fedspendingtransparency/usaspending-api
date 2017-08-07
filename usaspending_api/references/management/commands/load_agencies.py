@@ -52,6 +52,7 @@ class Command(BaseCommand):
                     toptier_agency.abbreviation = department_abbr
 
                     if toptier_flag:
+                        toptier_agency.frec_code = frec_code
                         toptier_agency.mission = mission
                         toptier_agency.website = website
                         toptier_agency.icon_filename = icon_filename
