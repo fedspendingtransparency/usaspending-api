@@ -1,8 +1,8 @@
 from datetime import datetime
-from copy import copy
-from decimal import Decimal
 import logging
 import re
+import signal
+import sys
 
 from django.core.management import call_command
 from django.db import connections, transaction
@@ -52,24 +52,32 @@ class Command(load_base.Command):
 
     def add_arguments(self, parser):
         parser.add_argument('submission_id', nargs=1, help='the data broker submission id to load', type=int)
+        parser.add_argument('-q', '--quick', action='store_true', help='experimental SQL-based load')
         super(Command, self).add_arguments(parser)
 
     @transaction.atomic
     def handle_loading(self, db_cursor, *args, **options):
 
+        def signal_handler(signal, frame):
+            transaction.set_rollback(True)
+            raise Exception('Received interrupt signal. Aborting...')
+
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
         # Grab the submission id
         submission_id = options['submission_id'][0]
 
+        logger.info('Getting submission from broker')
         # Verify the ID exists in the database, and grab the data
         db_cursor.execute('SELECT * FROM submission WHERE submission_id = %s', [submission_id])
         submission_data = dictfetchall(db_cursor)
+        logger.info('Finished getting submission from broker')
 
         if len(submission_data) == 0:
-            logger.error('Could not find submission with id ' + str(submission_id))
-            return
+            raise 'Could not find submission with id ' + str(submission_id)
         elif len(submission_data) > 1:
-            logger.error('Found multiple submissions with id ' + str(submission_id))
-            return
+            raise 'Found multiple submissions with id ' + str(submission_id)
 
         # We have a single submission, which is what we want
         submission_data = submission_data[0]
@@ -77,29 +85,46 @@ class Command(load_base.Command):
         del submission_data['submission_id']  # To avoid collisions with the newer PK system
         submission_attributes = get_submission_attributes(broker_submission_id, submission_data)
 
+        logger.info('Getting File A data')
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
-        logger.info('Acquired appropriation data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
+        logger.info('Acquired File A (appropriation) data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
+        logger.info('Loading File A data')
+        start_time = datetime.now()
         load_file_a(submission_attributes, appropriation_data, db_cursor)
+        logger.info('Finished loading File A data, took {}'.format(datetime.now() - start_time))
 
+        logger.info('Getting File B data')
         # Let's get File B information
         prg_act_obj_cls_data = get_file_b(submission_attributes, db_cursor)
-        logger.info('Acquired program activity object class data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
+        logger.info('Acquired File B (program activity object class) data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
+        logger.info('Loading File B data')
+        start_time = datetime.now()
         load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor)
+        logger.info('Finished loading File B data, took {}'.format(datetime.now() - start_time))
 
+        logger.info('Getting File D2 data')
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
         award_financial_assistance_data = dictfetchall(db_cursor)
         logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
-        load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor)
+        logger.info('Loading File D2 data')
+        start_time = datetime.now()
+        load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick=options['quick'])
+        logger.info('Finished loading File D2 data, took {}'.format(datetime.now() - start_time))
 
+        logger.info('Getting File D1 data')
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
         procurement_data = dictfetchall(db_cursor)
         logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
-        load_base.load_file_d1(submission_attributes, procurement_data, db_cursor)
+        logger.info('Loading File D1 data')
+        start_time = datetime.now()
+        load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, quick=options['quick'])
+        logger.info('Finished loading File D1 data, took {}'.format(datetime.now() - start_time))
 
+        logger.info('Getting File C data')
         # Let's get File C information
         # Note: we load File C last, because the D1 and D2 files have the awarding
         # agency top tier (CGAC) and sub tier data needed to look up/create
@@ -114,18 +139,24 @@ class Command(load_base.Command):
         else:  # real data
             award_financial_frame = pd.read_sql(award_financial_query % submission_id,
                                                 connections['data_broker'])
-        logger.info('Acquired award financial data for {}, there are {} rows.'
+        logger.info('Acquired File C (award financial) data for {}, there are {} rows.'
                     .format(submission_id, award_financial_frame.shape[0]))
+        logger.info('Loading File C data')
+        start_time = datetime.now()
         load_file_c(submission_attributes, db_cursor, award_financial_frame)
+        logger.info('Finished loading File C data, took {}'.format(datetime.now() - start_time))
 
+        logger.info('Loading subaward data')
         # Once all the files have been processed, run any global
         # cleanup/post-load tasks.
         # 1. Load subawards
+        start_time = datetime.now()
         try:
             load_subawards(submission_attributes, db_cursor)
         except:
-            logger.warn("Error loading subawards for this submission")
+            logger.warning("Error loading subawards for this submission")
 
+        logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
         # Cleanup not specific to this submission is run in the `.handle` method
 
 
@@ -229,8 +260,11 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
-    db_cursor.execute('SELECT * FROM tas_lookup WHERE account_num = %s', [tas_lookup_id])
+    db_cursor.execute("SELECT * FROM tas_lookup WHERE financial_indicator2 <> 'F' and account_num = %s", [tas_lookup_id])
     tas_data = dictfetchall(db_cursor)
+
+    if tas_data is None or len(tas_data) == 0:
+        return None
 
     # These or "" convert from none to a blank string, which is how the TAS table stores nulls
     q_kwargs = {
@@ -314,6 +348,13 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
     aka appropriation account balances).
     """
     reverse = re.compile('gross_outlay_amount_by_tas_cpe')
+
+    # dictionary to capture TAS that were skipped and some metadata
+    # tas = top-level key
+    # count = number of rows skipped
+    # rows = row numbers skipped, corresponding to the original row numbers in the file that was submitted
+    skipped_tas = {}
+
     # Create account objects
     for row in appropriation_data:
 
@@ -321,7 +362,15 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+            if row['tas'] not in skipped_tas:
+                skipped_tas[row['tas']] = {}
+                skipped_tas[row['tas']]['count'] = 1
+                skipped_tas[row['tas']]['rows'] = [row['row_number']]
+            else:
+                skipped_tas[row['tas']]['count'] += 1
+                skipped_tas[row['tas']]['rows'] += row['row_number']
+
+            continue
 
         # Now that we have the account, we can load the appropriation balances
         # TODO: Figure out how we want to determine what row is overriden by what row
@@ -347,6 +396,9 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
     AppropriationAccountBalancesQuarterly.insert_quarterly_numbers(
         submission_attributes.submission_id)
 
+    for key in skipped_tas:
+        logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
+
 
 def get_file_b(submission_attributes, db_cursor):
     """
@@ -369,7 +421,7 @@ def get_file_b(submission_attributes, db_cursor):
     selecting * from the broker's File B data.
 
     Args:
-        submission_attrbitues: submission object currently being loaded
+        submission_attributes: submission object currently being loaded
         db_cursor: db connection info
     """
     submission_id = submission_attributes.broker_submission_id
@@ -477,6 +529,13 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     activity and object class).
     """
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
+
+    # dictionary to capture TAS that were skipped and some metadata
+    # tas = top-level key
+    # count = number of rows skipped
+    # rows = row numbers skipped, corresponding to the original row numbers in the file that was submitted
+    skipped_tas = {}
+
     test_counter = 0
     for row in prg_act_obj_cls_data:
         test_counter += 1
@@ -485,7 +544,14 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             # Check and see if there is an entry for this TAS
             treasury_account = get_treasury_appropriation_account_tas_lookup(row.get('tas_id'), db_cursor)
             if treasury_account is None:
-                raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+                if row['tas'] not in skipped_tas:
+                    skipped_tas[row['tas']] = {}
+                    skipped_tas[row['tas']]['count'] = 1
+                    skipped_tas[row['tas']]['rows'] = [row['row_number']]
+                else:
+                    skipped_tas[row['tas']]['count'] += 1
+                    skipped_tas[row['tas']]['rows'] += row['row_number']
+                continue
         except:
             continue
 
@@ -515,6 +581,9 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
 
     FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 
+    for key in skipped_tas:
+        logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
+
 
 def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     """
@@ -528,10 +597,16 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     # file loading
 
     if not award_financial_frame.size:
-        logger.warning('No award financial data found; skipping file C load')
+        logger.warning('No File C (award financial) data found, skipping...')
         return
 
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
+
+    # dictionary to capture TAS that were skipped and some metadata
+    # tas = top-level key
+    # count = number of rows skipped
+    # rows = row numbers skipped, corresponding to the original row numbers in the file that was submitted
+    skipped_tas = {}
 
     award_financial_frame['txn'] = award_financial_frame.apply(get_award_financial_transaction, axis=1)
     award_financial_frame['awarding_agency'] = award_financial_frame.apply(get_awarding_agency, axis=1)
@@ -544,7 +619,14 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
         if treasury_account is None:
-            raise Exception('Could not find appropriation account for TAS: ' + row['tas'])
+            if row['tas'] not in skipped_tas:
+                skipped_tas[row['tas']] = {}
+                skipped_tas[row['tas']]['count'] = 1
+                skipped_tas[row['tas']]['rows'] = [row['row_number']]
+            else:
+                skipped_tas[row['tas']]['count'] += 1
+                skipped_tas[row['tas']]['rows'] += [row['row_number']]
+            continue
 
         # Find a matching transaction record, so we can use its
         # subtier agency information to match to (or create) an Award record
@@ -574,3 +656,6 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         afd = load_data_into_model(award_financial_data, row, value_map=value_map, save=True, reverse=reverse)
 
     awards_cache.clear()
+
+    for key in skipped_tas:
+        logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
