@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class DetachedAwardProcurement(models.Model):
     created_at = models.DateTimeField(blank=True, null=True)
     updated_at = models.DateTimeField(blank=True, null=True)
