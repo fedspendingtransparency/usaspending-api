@@ -6,7 +6,6 @@ from django.utils.timezone import now
 
 from usaspending_api.common.api_request_utils import FilterGenerator, AutoCompleteHandler
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.models import RequestCatalog
 from rest_framework_tracking.mixins import LoggingMixin
 
 import logging
