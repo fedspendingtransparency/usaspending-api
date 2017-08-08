@@ -24,12 +24,13 @@ class Command(BaseCommand):
                 for row in reader:
                     fpds_code = row.get('FPDS DEPARTMENT ID', '')
                     cgac_code = row.get('CGAC AGENCY CODE', '')
-                    frec_code = row.get('FREC', '')
                     department_name = row.get('AGENCY NAME', '')
                     department_abbr = row.get('AGENCY ABBREVIATION', '')
                     subtier_name = row.get('SUBTIER NAME', '')
                     subtier_code = row.get('SUBTIER CODE', '')
                     subtier_abbr = row.get('SUBTIER ABBREVIATION', '')
+                    frec_code = row.get('FREC', '')
+                    frec_name = row.get('FREC ENTITY DESCRIPTION', '')
                     mission = row.get('MISSION', '')
                     website = row.get('WEBSITE', '')
                     icon_filename = row.get('ICON FILENAME', '')
@@ -53,6 +54,7 @@ class Command(BaseCommand):
 
                     if toptier_flag:
                         toptier_agency.frec_code = frec_code
+                        toptier_agency.frec_name = frec_name
                         toptier_agency.mission = mission
                         toptier_agency.website = website
                         toptier_agency.icon_filename = icon_filename
