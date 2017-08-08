@@ -17,9 +17,8 @@ class CsvDownloadView(APIView):
     exception_logger = logging.getLogger("exceptions")
 
     def process_csv_download(self, path, request):
-        import pdb; pdb.set_trace()
         try:
-            timestamp = time.time()
+            timestamp = str(time.time())
             response = {
                 "request_timestamp": timestamp ,
                 "request_path": format_path(path),
