@@ -10,7 +10,6 @@ from model_mommy import mommy
 
 from usaspending_api.awards.models import Award, Transaction
 from usaspending_api.common.mixins import AggregateQuerysetMixin
-from usaspending_api.common.models import RequestCatalog
 
 
 @pytest.fixture()
@@ -74,7 +73,6 @@ def test_agg_fields(monkeypatch, aggregate_models):
     request.query_params = {}
     request.data = {'field': 'total_obligation', 'group': 'type', 'show_nulls': True}
     a = AggregateQuerysetMixin()
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=Award.objects.all())
 
     # Test number of returned recrods
@@ -154,7 +152,6 @@ def test_aggregate(monkeypatch, aggregate_models, model, request_data, result):
     request.query_params = {}
     request.data = request_data
     a = AggregateQuerysetMixin()
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=model.objects.all())
 
     agg_list = [a for a in agg]
@@ -194,7 +191,6 @@ def test_aggregate_fy(monkeypatch, aggregate_models, model, request_data,
     request.query_params = {}
     request.data = request_data
     a = AggregateQuerysetMixin()
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=model.objects.all())
 
     agg_list = [a for a in agg]
@@ -265,7 +261,6 @@ def test_aggregate_fy_and_type(monkeypatch, aggregate_models, model, request_dat
     request.query_params = {}
     request.data = request_data
     a = AggregateQuerysetMixin()
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=model.objects.all())
 
     agg_list = [a for a in agg]
@@ -310,7 +305,6 @@ def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model,
     request.query_params = {}
     request.data = request_data
     a = AggregateQuerysetMixin()
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=model.objects.all())
 
     def itemsorter(a):
@@ -345,7 +339,6 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     request.query_params = {}
     request.data = {"field": "federal_action_obligation", "group": "assistance_data__cfda__program_number"}
     a = AggregateQuerysetMixin()
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=Transaction.objects.all())
     agg_list = [a for a in agg]
 
@@ -353,7 +346,6 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     assert agg_list[0]["aggregate"] == 10.0
 
     request.data = {"field": "federal_action_obligation", "group": ["assistance_data__cfda__program_number", "contract_data__naics"]}
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=Transaction.objects.all())
     agg_list = [a for a in agg]
     agg_list.sort(key=itemsorter)
@@ -364,7 +356,6 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
 
     # Allow null aggregate fileds
     request.data = {"field": "federal_action_obligation", "group": ["assistance_data__cfda__program_number", "contract_data__naics"], "show_null_aggregates": True}
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=Transaction.objects.all())
     agg_list = [a for a in agg]
     agg_list.sort(key=itemsorter)
@@ -376,7 +367,6 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
 
     # Allow null groups fields
     request.data = {"field": "federal_action_obligation", "group": "assistance_data__cfda__program_number", "show_null_groups": True}
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=Transaction.objects.all())
     agg_list = [a for a in agg]
     agg_list.sort(key=itemsorter)
@@ -387,7 +377,6 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
 
     # Allow null aggregate fields and null groups
     request.data = {"field": "federal_action_obligation", "group": "contract_data__naics", "show_null_aggregates": True, "show_null_groups": True}
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=Transaction.objects.all())
     agg_list = [a for a in agg]
     agg_list.sort(key=itemsorter)
@@ -399,7 +388,6 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
 
     # Allow null aggregate fields and groups (using show_nulls to trigger both)
     request.data = {"field": "federal_action_obligation", "group": "contract_data__naics", "show_nulls": True}
-    created, a.req = RequestCatalog.get_or_create_from_request(request)
     agg = a.aggregate(request=request, queryset=Transaction.objects.all())
     agg_list = [a for a in agg]
     agg_list.sort(key=itemsorter)

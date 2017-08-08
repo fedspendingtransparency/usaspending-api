@@ -1,3 +1,5 @@
+import time
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -5,7 +7,6 @@ from rest_framework.utils.urls import replace_query_param
 
 from django.conf import settings
 
-from usaspending_api.common.models import RequestCatalog
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.csv_helpers import format_path, s3_get_url, sqs_add_to_queue, resolve_path_to_view
 
@@ -16,20 +17,21 @@ class CsvDownloadView(APIView):
     exception_logger = logging.getLogger("exceptions")
 
     def process_csv_download(self, path, request):
+        import pdb; pdb.set_trace()
         try:
-            created, self.req = RequestCatalog.get_or_create_from_request(request)
+            timestamp = time.time()
             response = {
-                "request_checksum": self.req.checksum,
+                "request_timestamp": timestamp ,
                 "request_path": format_path(path),
                 "status": "",
-                "retry_url": replace_query_param(request.build_absolute_uri().split("?")[0], "req", self.req.checksum),
+                "retry_url": replace_query_param(request.build_absolute_uri().split("?")[0], "req", timestamp),
                 "location": None
             }
 
             location = None
             try:
                 # Get URL location from S3
-                location = s3_get_url(path, self.req.checksum)
+                location = s3_get_url(path, timestamp)
 
                 if not location:
                     try:
@@ -45,7 +47,7 @@ class CsvDownloadView(APIView):
                             response["status"] = "Requested path is not currently supported by CSV bulk download"
                             status_code = status.HTTP_400_BAD_REQUEST
                         else:
-                            sqs_add_to_queue(path, self.req.checksum)
+                            sqs_add_to_queue(path, timestamp)
                             response["status"] = "File has been queued for generation."
                             status_code = status.HTTP_202_ACCEPTED
                     except Exception as e:
@@ -63,16 +65,10 @@ class CsvDownloadView(APIView):
         except InvalidParameterException as e:
             response = {"message": str(e)}
             status_code = status.HTTP_400_BAD_REQUEST
-            if 'req' in self.__dict__:
-                # If we've made a request catalog, but the request is bad, we need to delete it
-                self.req.delete()
             self.exception_logger.exception(e)
         except Exception as e:
             response = {"message": str(e)}
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            if 'req' in self.__dict__:
-                # If we've made a request catalog, but the request is bad, we need to delete it
-                self.req.delete()
             self.exception_logger.exception(e)
         finally:
             return Response(response, status=status_code)

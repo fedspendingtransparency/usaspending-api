@@ -5,7 +5,6 @@ from rest_framework import status
 from rest_framework_extensions.cache.decorators import cache_response
 from django.views.generic import TemplateView
 
-from usaspending_api.common.models import RequestCatalog
 from usaspending_api.common.mixins import AutocompleteResponseMixin, FilterQuerysetMixin
 
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -24,7 +23,6 @@ class AutocompleteView(AutocompleteResponseMixin,
 
     def post(self, request, *args, **kwargs):
         try:
-            # created, self.req = RequestCatalog.get_or_create_from_request(request)
             response = self.build_response(
                 request, queryset=self.get_queryset(), serializer=self.serializer_class)
             status_code = status.HTTP_200_OK
@@ -59,10 +57,6 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     @cache_response()
     def list(self, request, *args, **kwargs):
         try:
-            # First, get the req object from RequestCatalog
-            created, self.req = RequestCatalog.get_or_create_from_request(request)
-            # Pass this to the paginator
-            self.paginator.req = self.req
             # Get the queryset (this will handle filtering and ordering)
             queryset = self.get_queryset()
             # Grab the page of data
@@ -87,11 +81,6 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
                 # If we've made a request catalog, but the request is bad, we need to delete it
                 self.req.delete()
             return Response(response, status=status_code)
-
-    @cache_response()
-    def retrieve(self, request, *args, **kwargs):
-        created, self.req = RequestCatalog.get_or_create_from_request(request)
-        return super().retrieve(request, *args, **kwargs)
 
 
 class MarkdownView(TemplateView):
