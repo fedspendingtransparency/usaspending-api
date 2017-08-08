@@ -25,7 +25,6 @@ class AutocompleteView(AutocompleteResponseMixin,
     def post(self, request, *args, **kwargs):
         try:
             # created, self.req = RequestCatalog.get_or_create_from_request(request)
-            import pytest; pytest.set_trace()
             response = self.build_response(
                 request, queryset=self.get_queryset(), serializer=self.serializer_class)
             status_code = status.HTTP_200_OK
