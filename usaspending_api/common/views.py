@@ -18,13 +18,14 @@ class AutocompleteView(AutocompleteResponseMixin,
 
     exception_logger = logging.getLogger("exceptions")
 
-    def get_serializer_context(self):
-        context = super(AutocompleteView, self).get_serializer_context()
-        return {'req': self.req, **context}
+    # def get_serializer_context(self):
+    #     context = super(AutocompleteView, self).get_serializer_context()
+    #     return {'req': self.req, **context}
 
     def post(self, request, *args, **kwargs):
         try:
-            created, self.req = RequestCatalog.get_or_create_from_request(request)
+            # created, self.req = RequestCatalog.get_or_create_from_request(request)
+            import pytest; pytest.set_trace()
             response = self.build_response(
                 request, queryset=self.get_queryset(), serializer=self.serializer_class)
             status_code = status.HTTP_200_OK
@@ -52,9 +53,9 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
 
     exception_logger = logging.getLogger("exceptions")
 
-    def get_serializer_context(self):
-        context = super(DetailViewSet, self).get_serializer_context()
-        return {'req': self.req, **context}
+    # def get_serializer_context(self):
+    #     context = super(DetailViewSet, self).get_serializer_context()
+    #     return {'req': self.req, **context}
 
     @cache_response()
     def list(self, request, *args, **kwargs):
