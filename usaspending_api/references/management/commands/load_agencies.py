@@ -69,7 +69,8 @@ class Command(BaseCommand):
                     # versions of this agency loader
                     toptier_agency, created = ToptierAgency.objects.get_or_create(
                         cgac_code=cgac_code,
-                        fpds_code=fpds_code)
+                        fpds_code=fpds_code,
+                        frec_code=frec_code)
 
                     toptier_flag = (subtier_name == department_name)
 
@@ -78,7 +79,6 @@ class Command(BaseCommand):
                     toptier_agency.abbreviation = department_abbr
 
                     if toptier_flag:
-                        toptier_agency.frec_code = frec_code
                         toptier_agency.frec_name = frec_name
                         toptier_agency.mission = mission
                         toptier_agency.website = website
