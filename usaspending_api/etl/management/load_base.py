@@ -153,7 +153,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
     if quick:
         parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
         run_sql(parameters, 'usaspending_api/etl/management/load_file_d1.sql')
-        logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
+        logger.info('\n\n\n\nFile D1 time elapsed, quick, {}: {}'.format(submission_attributes.broker_submission_id, time.time() - d_start_time))
         return
 
     if create_report:
@@ -260,6 +260,43 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
             write_report_qry(writer=writer, load_method='quick', table='entity loc',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
 
+            write_report(writer=writer, load_method='old', table='pop loc', row=pop_location)
+            writer.writerow('' * 10)
+            quick_qry = 'SELECT * FROM references_location WHERE %(award_procurement_id)s = ANY(award_procurement_ids) AND place_of_performance_flag'
+            write_report_qry(writer=writer, load_method='quick', table='pop loc',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
+
+            write_report(writer=writer, load_method='old', table='legal_entity', row=legal_entity)
+            writer.writerow('' * 10)
+            quick_qry = 'SELECT * FROM legal_entity WHERE %(award_procurement_id)s = ANY(award_procurement_ids)'
+            write_report_qry(writer=writer, load_method='quick', table='legal_entity',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
+
+            write_report(writer=writer, load_method='old', table='awards', row=award)
+            writer.writerow('' * 10)
+            quick_qry = 'SELECT * FROM awards WHERE %(award_procurement_id)s = ANY(award_procurement_ids)'
+            write_report_qry(writer=writer, load_method='quick', table='awards',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
+
+            write_report(writer=writer, load_method='old', table='transaction', row=transaction)
+            writer.writerow('' * 10)
+            quick_qry = 'SELECT * FROM transaction WHERE %(award_procurement_id)s = award_procurement_id'
+            write_report_qry(writer=writer, load_method='quick', table='transaction',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
+
+            write_report(writer=writer, load_method='old', table='transaction_assistance', row=transaction)
+            writer.writerow('' * 10)
+            quick_qry = '''SELECT tc.* FROM transaction_contract tc
+                JOIN transaction t ON (tc.transaction_id = t.id)
+                WHERE %(award_procurement_id)s = t.award_procurement_id'''
+            write_report_qry(writer=writer, load_method='quick', table='transaction_contract',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
+
             # record(outfile=report_file, load_method='quick', table='entity loc', row=legal_entity_location)
             # report.record_source_row(row)
             # report.record('d1', 'references_location', row['award_procurement_id'], 'ANY(award_procurement_ids)', legal_entity_location, 'location_id')
@@ -270,7 +307,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
             # report.record('d1', 'transaction_contract', row['award_procurement_id'], 'award_procurement_id', transaction_contract, 'id')
 
 
-    logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
+    logger.info('\n\n\n\nFile D1 time elapsed, slow, {}: {}'.format(submission_attributes.broker_submission_id, time.time() - d_start_time))
 
     if create_report:
         quick_cursor.close()
@@ -293,9 +330,10 @@ def write_report(writer, load_method, table, row):
 def write_report_qry(writer, load_method, table, cursor, qry, params):
     cursor.execute(qry, params)
     row = cursor.fetchone()
-    fields = [desc[0] for desc in cursor.description]
-    dct = dict(zip(fields, row))
-    write_report(writer, load_method, table, dct)
+    if row:
+        fields = [desc[0] for desc in cursor.description]
+        dct = dict(zip(fields, row))
+        write_report(writer, load_method, table, dct)
 
 def no_preprocessing(row):
     """For data whose rows require no preprocessing."""
@@ -322,7 +360,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         run_sql(parameters, 'usaspending_api/etl/management/etl_ddl.sql')
         run_sql(parameters, 'usaspending_api/etl/management/business_categories.sql')
         run_sql(parameters, 'usaspending_api/etl/management/load_file_d2.sql')
-        logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
+        logger.info('\n\n\n\nFile D2 time elapsed, quick, {}: {}'.format(submission_attributes.broker_submission_id, time.time() - d_start_time))
         return
 
     if create_report:
@@ -474,17 +512,47 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             quick_params = {'award_financial_assistance_id': row['award_financial_assistance_id']}
             write_report_qry(writer=writer, load_method='quick', table='entity loc',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
 
-        # if create_report:
-        #     report.record_source_row(row)
-        #     report.record('d2', 'references_location', row['award_financial_assistance_id'], 'ANY(award_financial_assistance_ids)', legal_entity_location, 'location_id')
-        #     report.record('d2', 'references_location', row['award_financial_assistance_id'], 'ANY(place_of_performance_award_financial_assistance_ids)', pop_location, 'location_id')
-        #     report.record('d2', 'legal_entity', row['award_financial_assistance_id'], 'ANY(award_financial_assistance_ids)', legal_entity, 'legal_entity_id')
-        #     report.record('d2', 'awards', row['award_financial_assistance_id'], 'ANY(award_financial_assistance_ids)', award, 'id')
-        #     report.record('d2', 'transaction', row['award_financial_assistance_id'], 'award_financial_assistance_id', transaction, 'id')
-        #     report.record('d2', 'transaction_assistance', row['award_financial_assistance_id'], 'award_financial_assistance_id', transaction_assistance, 'id')
+            write_report(writer=writer, load_method='old', table='pop loc', row=pop_location)
+            writer.writerow('' * 10)
+            quick_qry = 'SELECT * FROM references_location WHERE %(award_financial_assistance_id)s = ANY(place_of_performance_award_financial_assistance_ids) AND place_of_performance_flag'
+            write_report_qry(writer=writer, load_method='quick', table='pop loc',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
 
-    logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
+            write_report(writer=writer, load_method='old', table='legal_entity', row=legal_entity)
+            writer.writerow('' * 10)
+            quick_qry = 'SELECT * FROM legal_entity WHERE %(award_financial_assistance_id)s = ANY(award_financial_assistance_ids)'
+            write_report_qry(writer=writer, load_method='quick', table='legal_entity',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
+
+            write_report(writer=writer, load_method='old', table='awards', row=award)
+            writer.writerow('' * 10)
+            quick_qry = 'SELECT * FROM awards WHERE %(award_financial_assistance_id)s = ANY(award_financial_assistance_ids)'
+            write_report_qry(writer=writer, load_method='quick', table='awards',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
+
+            write_report(writer=writer, load_method='old', table='transaction', row=transaction)
+            writer.writerow('' * 10)
+            quick_qry = 'SELECT * FROM transaction WHERE %(award_financial_assistance_id)s = award_financial_assistance_id'
+            write_report_qry(writer=writer, load_method='quick', table='transaction',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
+
+            write_report(writer=writer, load_method='old', table='transaction_assistance', row=transaction_assistance)
+            writer.writerow('' * 10)
+            quick_qry = '''SELECT ta.* FROM transaction_assistance ta
+                JOIN transaction t ON (ta.transaction_id = t.id)
+                WHERE %(award_financial_assistance_id)s = t.award_financial_assistance_id'''
+            write_report_qry(writer=writer, load_method='quick', table='transaction_assistance',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            writer.writerow('' * 10)
+
+
+    logger.info('\n\n\n\nFile D2 time elapsed, slow, {}: {}'.format(submission_attributes.broker_submission_id, time.time() - d_start_time))
 
     if create_report:
         quick_cursor.close()
