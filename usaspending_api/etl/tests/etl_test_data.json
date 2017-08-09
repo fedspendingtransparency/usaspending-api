@@ -2620,6 +2620,7 @@
       "is_quarter_format": true,
       "publishable": false,
       "cgac_code": "000",
+      "frec_code": "0000",
       "number_of_errors": 0,
       "reporting_end_date": "2015-12-31",
       "reporting_fiscal_year": 2016,
@@ -4420,7 +4421,7 @@
       "count": 1
     }
   ],
-  "SELECT * FROM tas_lookup WHERE account_num = %s": [
+  "SELECT * FROM tas_lookup WHERE financial_indicator2 <> 'F' and account_num = %s": [
     {
       "sub_account_code": "000",
       "main_account_code": "0100",
