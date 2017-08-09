@@ -13,7 +13,7 @@ from usaspending_api.references.v1.serializers import AgencySerializer
 class DownloadStatusViewSet(APIView):
 
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
+        """Return status of a csv"""
 
         json_request = self.get_request_payload(request)
 
