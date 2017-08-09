@@ -280,9 +280,10 @@ def get_submission_attributes(broker_submission_id, submission_data):
         logger.info('Broker submission id {} already exists. It will be deleted.'.format(broker_submission_id))
         call_command('rm_submission', broker_submission_id)
 
-    # Find the previous submission for this CGAC and fiscal year (if there is one)
+    # Find the previous submission for this CGAC, FREC, and fiscal year (if there is one)
     previous_submission = get_previous_submission(
         submission_data['cgac_code'],
+        submission_data['frec_code'],
         submission_data['reporting_fiscal_year'],
         submission_data['reporting_fiscal_period'])
 
