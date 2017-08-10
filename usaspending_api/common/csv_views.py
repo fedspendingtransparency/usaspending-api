@@ -20,7 +20,7 @@ class CsvDownloadView(APIView):
         try:
             timestamp = str(time.time())
             response = {
-                "request_timestamp": timestamp ,
+                "request_timestamp": timestamp,
                 "request_path": format_path(path),
                 "status": "",
                 "retry_url": replace_query_param(request.build_absolute_uri().split("?")[0], "req", timestamp),
