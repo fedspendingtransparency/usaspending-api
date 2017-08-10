@@ -134,7 +134,7 @@ def get_fiscal_quarter(fiscal_reporting_period):
         return 4
 
 
-def get_previous_submission(cgac_code, fiscal_year, fiscal_period):
+def get_previous_submission(cgac_code, frec_code, fiscal_year, fiscal_period):
     """
     For the specified CGAC (e.g., department/top-tier agency) and specified
     fiscal year and quarter, return the previous submission within the same fiscal
@@ -143,6 +143,7 @@ def get_previous_submission(cgac_code, fiscal_year, fiscal_period):
     previous_submission = SubmissionAttributes.objects \
         .filter(
             cgac_code=cgac_code,
+            frec_code=frec_code,
             reporting_fiscal_year=fiscal_year,
             reporting_fiscal_period__lt=fiscal_period,
             quarter_format_flag=True) \

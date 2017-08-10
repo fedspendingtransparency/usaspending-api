@@ -154,6 +154,7 @@ class ToptierAgency(models.Model):
     update_date = models.DateTimeField(auto_now=True, null=True)
     cgac_code = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Code")
     fpds_code = models.TextField(blank=True, null=True)
+    frec_code = models.TextField(blank=True, null=True)
     abbreviation = models.TextField(blank=True, null=True, verbose_name="Agency Abbreviation")
     name = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Name")
     mission = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Mission Statement")

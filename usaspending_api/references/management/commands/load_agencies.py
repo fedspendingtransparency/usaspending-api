@@ -54,6 +54,8 @@ class Command(BaseCommand):
                     subtier_name = row.get('SUBTIER NAME', '')
                     subtier_code = row.get('SUBTIER CODE', '')
                     subtier_abbr = row.get('SUBTIER ABBREVIATION', '')
+                    frec_code = row.get('FREC', '')
+                    frec_name = row.get('FREC ENTITY DESCRIPTION', '')
                     mission = row.get('MISSION', '')
                     website = row.get('WEBSITE', '')
                     icon_filename = row.get('ICON FILENAME', '')
@@ -65,7 +67,10 @@ class Command(BaseCommand):
                     # First, see if we have a toptier agency that matches our fpds and cgac codes
                     # We use only these codes here to make sure we are idempotent with previous
                     # versions of this agency loader
-                    toptier_agency, created = ToptierAgency.objects.get_or_create(cgac_code=cgac_code, fpds_code=fpds_code)
+                    toptier_agency, created = ToptierAgency.objects.get_or_create(
+                        cgac_code=cgac_code,
+                        fpds_code=fpds_code,
+                        frec_code=frec_code)
 
                     toptier_flag = (subtier_name == department_name)
 
@@ -74,6 +79,7 @@ class Command(BaseCommand):
                     toptier_agency.abbreviation = department_abbr
 
                     if toptier_flag:
+                        toptier_agency.frec_name = frec_name
                         toptier_agency.mission = mission
                         toptier_agency.website = website
                         toptier_agency.icon_filename = icon_filename
