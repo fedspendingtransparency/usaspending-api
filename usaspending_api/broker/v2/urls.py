@@ -12,6 +12,6 @@ mode_detail = {'get': 'retrieve', 'post': 'retrieve'}
 
 
 urlpatterns = [
-    url(r'^detachedawardprocurementviewset/$', views.DetachedAwardProcurementViewSet.as_view({'get': 'list'})),
-    url(r'^publishedawardfinancialassistance/$', views.PublishedAwardFinancialAssistanceViewSet.as_view({'get': 'list'})),
+    url(r'^detached_award_procurement/$', views.DetachedAwardProcurementViewSet.as_view({'get': 'list'})),
+    url(r'^published_award_financial_assistance/$', views.PublishedAwardFinancialAssistanceViewSet.as_view({'get': 'list'})),
 ]
