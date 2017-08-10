@@ -61,6 +61,8 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
 
 class SubawardSerializer(LimitableSerializer):
 
+    prefetchable = False
+
     class Meta:
         model = Subaward
         fields = '__all__'
@@ -90,6 +92,8 @@ class SubawardSerializer(LimitableSerializer):
 
 class TransactionAssistanceSerializer(LimitableSerializer):
 
+    prefetchable = False
+
     class Meta:
         model = TransactionAssistance
         fields = '__all__'
@@ -113,6 +117,8 @@ class TransactionAssistanceSerializer(LimitableSerializer):
 
 class TransactionContractSerializer(LimitableSerializer):
 
+    prefetchable = False
+
     class Meta:
         model = TransactionContract
         fields = '__all__'
@@ -132,6 +138,8 @@ class TransactionContractSerializer(LimitableSerializer):
 
 class TransactionSerializer(LimitableSerializer):
     """Serialize complete transactions, including assistance and contract data."""
+
+    prefetchable = False
 
     class Meta:
 
@@ -232,11 +240,11 @@ class AwardSerializer(LimitableSerializer):
             "place_of_performance": {
                 "class": LocationSerializer,
                 "kwargs": {"read_only": True}
-            },
-            "latest_transaction": {
-                "class": TransactionSerializer,
-                "kwargs": {"read_only": True}
             }
+            #"latest_transaction": {
+            #    "class": TransactionSerializer,
+            #    "kwargs": {"read_only": True}
+            #}
         }
 
     date_signed__fy = serializers.SerializerMethodField()
