@@ -1,6 +1,6 @@
 """
-These preliminary views are introduced strictly as examples of 
-how to query from the models in broker/models.py - 
+These preliminary views are introduced strictly as examples of
+how to query from the models in broker/models.py -
 specifically, by using `.using('data_broker')`.
 
 """
