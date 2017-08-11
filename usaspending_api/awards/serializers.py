@@ -240,11 +240,11 @@ class AwardSerializer(LimitableSerializer):
             "place_of_performance": {
                 "class": LocationSerializer,
                 "kwargs": {"read_only": True}
+            },
+            "latest_transaction": {
+                "class": TransactionSerializer,
+                "kwargs": {"read_only": True}
             }
-            #"latest_transaction": {
-            #    "class": TransactionSerializer,
-            #    "kwargs": {"read_only": True}
-            #}
         }
 
     date_signed__fy = serializers.SerializerMethodField()
