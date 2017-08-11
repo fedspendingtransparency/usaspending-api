@@ -11,7 +11,6 @@ class SubmissionAttributesSerializer(LimitableSerializer):
         default_fields = [
             'submission_id',
             'cgac_code',
-            'frec_code',
             'reporting_fiscal_year',
             'reporting_fiscal_quarter'
             ]

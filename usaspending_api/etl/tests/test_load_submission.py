@@ -131,7 +131,6 @@ def test_load_submission_command(endpoint_data, partially_flushed):
 def test_get_submission_attributes():
     submission_data = {
         'cgac_code': 'ABC',
-        'frec_code': 'ABCD',
         'reporting_fiscal_year': 2016,
         'reporting_fiscal_period': 9,
         'is_quarter_format': True,
@@ -147,7 +146,6 @@ def test_get_submission_attributes():
     # get the submission and make sure all fields populated correctly
     sub = SubmissionAttributes.objects.get(broker_submission_id=11111)
     assert sub.cgac_code == 'ABC'
-    assert sub.frec_code == 'ABCD'
     assert sub.reporting_fiscal_year == 2016
     assert sub.reporting_fiscal_period == 9
     assert sub.quarter_format_flag is True
@@ -159,7 +157,6 @@ def test_get_submission_attributes():
     # test re-running the submission
     old_create_date = sub.create_date
     submission_data['cgac_code'] = 'XYZ'
-    submission_data['frec_code'] = 'WXYZ'
     sub = get_submission_attributes(11111, submission_data)
     # there should only be one submission in the db right now
     assert SubmissionAttributes.objects.all().count() == 1
@@ -168,13 +165,10 @@ def test_get_submission_attributes():
     assert sub.create_date > old_create_date
     # record should have the updated cgac info
     assert sub.cgac_code == 'XYZ'
-    # record should have the updated frec info
-    assert sub.frec_code == 'WXYZ'
 
     # insert a submission for the following quarter
     new_submission_data = {
         'cgac_code': 'XYZ',
-        'frec_code': 'WXYZ',
         'reporting_fiscal_year': 2016,
         'reporting_fiscal_period': 12,
         'is_quarter_format': True,
@@ -226,7 +220,6 @@ def test_get_or_create_program_activity_name(transaction=True):
     # insert a submission for the following quarter
     new_submission_data = {
         'cgac_code': '999',
-        'frec_code': '0123',
         'reporting_fiscal_year': 2017,
         'reporting_fiscal_period': 2,
         'is_quarter_format': True,
