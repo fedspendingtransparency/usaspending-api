@@ -613,8 +613,16 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     award_financial_frame['object_class'] = award_financial_frame.apply(get_or_create_object_class_rw, axis=1, logger=logger)
     award_financial_frame['program_activity'] = award_financial_frame.apply(get_or_create_program_activity, axis=1, submission_attributes=submission_attributes)
 
+    total_rows = award_financial_frame.shape[0]
+    start_time = datetime.now()
+
     # for row in award_financial_data:
-    for row in award_financial_frame.replace({np.nan: None}).to_dict(orient='records'):
+    for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
+        if not (index % 100):
+            logger.info('C File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                         str(total_rows),
+                                                                         datetime.now() - start_time))
+        
         # Check and see if there is an entry for this TAS
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
