@@ -144,7 +144,14 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
         logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
         return
 
-    for row in procurement_data:
+    total_rows = len(procurement_data)
+
+    start_time = datetime.now()
+    for index, row in enumerate(procurement_data, 1):
+        if not (index % 100):
+            logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                         str(total_rows),
+                                                                         datetime.now() - start_time))
 
         legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, copy(legal_entity_location_value_map))
 
