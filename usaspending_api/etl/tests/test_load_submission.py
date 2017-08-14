@@ -98,7 +98,7 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     for account in FinancialAccountsByAwards.objects.all():
         assert account.transaction_obligated_amount == -6500
         # for testing, data pulled from etl_test_data.json
-    assert Location.objects.count() == 4
+    assert Location.objects.count() == 5
     assert LegalEntity.objects.count() == 2
     assert Award.objects.count() == 7
     assert Transaction.objects.count() == 2

@@ -116,7 +116,7 @@ class Command(load_base.Command):
         logger.info('Loading File D2 data')
         start_time = datetime.now()
         load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor,
-                               quick=options['quick'], empty_location=empty_location, d_file=True)
+                               quick=options['quick'])
         logger.info('Finished loading File D2 data, took {}'.format(datetime.now() - start_time))
 
         logger.info('Getting File D1 data')
@@ -127,8 +127,7 @@ class Command(load_base.Command):
             len(procurement_data)) + ' rows.')
         logger.info('Loading File D1 data')
         start_time = datetime.now()
-        load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, quick=options['quick'],
-                               empty_location=empty_location, d_file=True)
+        load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, quick=options['quick'])
         logger.info('Finished loading File D1 data, took {}'.format(datetime.now() - start_time))
 
         logger.info('Getting File C data')

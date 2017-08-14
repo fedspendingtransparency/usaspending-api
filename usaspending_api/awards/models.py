@@ -440,7 +440,7 @@ class TransactionContract(DataSourceTrackedModel):
     history = HistoricalRecords()
 
     @classmethod
-    def get_or_create(cls, transaction, **kwargs):
+    def get_or_create_2(cls, transaction, **kwargs):
         try:
             if not transaction.newer_than(kwargs):
                 for (k, v) in kwargs.items():
@@ -487,7 +487,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     history = HistoricalRecords()
 
     @classmethod
-    def get_or_create(cls, transaction, **kwargs):
+    def get_or_create_2(cls, transaction, **kwargs):
         try:
             if not transaction.newer_than(kwargs):
                 for (k, v) in kwargs.items():

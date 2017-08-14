@@ -103,8 +103,13 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
     """
     Process and load file D1 broker data (contract award txns).
     """
-    empty_dict = {"place_of_performance_flag": True}
-    empty_location, created = Location.objects.get_or_create(**empty_dict, defaults={'data_source': 'DBR'})
+    empty_dict = {"place_of_performance_flag": True, 'data_source': 'DBR'}
+    empty_location = None
+    location_queryset = Location.objects.filter(**empty_dict)
+    if location_queryset.count() > 0:
+        empty_location = location_queryset.first()
+    else:
+        empty_location = Location.objects.create(**empty_dict)
 
     legal_entity_location_field_map = {
         "address_line1": "legal_entity_address_line1",
@@ -254,8 +259,13 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
     Process and load file D2 broker data (financial assistance award txns).
     """
 
-    empty_dict = {"place_of_performance_flag": True}
-    empty_location, created = Location.objects.get_or_create(**empty_dict, defaults={'data_source': 'DBR'})
+    empty_dict = {"place_of_performance_flag": True, 'data_source': 'DBR'}
+    empty_location = None
+    location_queryset = Location.objects.filter(**empty_dict)
+    if location_queryset.count() > 0:
+        empty_location = location_queryset.first()
+    else:
+        empty_location = Location.objects.create(**empty_dict)
 
     d_start_time = time.time()
 
