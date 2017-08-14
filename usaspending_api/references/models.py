@@ -216,7 +216,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     address_line2 = models.TextField(blank=True, null=True, verbose_name="Address Line 2")
     address_line3 = models.TextField(blank=True, null=True, verbose_name="Address Line 3")
     foreign_location_description = models.TextField(blank=True, null=True)
-    zip4 = models.TextField(blank=True, null=True, verbose_name="ZIP+4")
+    zip4 = models.TextField(blank=True, null=True, verbose_name="ZIP+4", db_index=True)
     zip_4a = models.TextField(blank=True, null=True)
     congressional_code = models.TextField(blank=True, null=True, verbose_name="Congressional District Code", db_index=True)
     performance_code = models.TextField(blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
@@ -313,7 +313,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
 
 
 class LegalEntity(DataSourceTrackedModel):
-    legal_entity_id = models.AutoField(primary_key=True)
+    legal_entity_id = models.AutoField(primary_key=True, db_index=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
     parent_recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="Parent DUNS Number")
     recipient_name = models.TextField(blank=True, verbose_name="Recipient Name")
