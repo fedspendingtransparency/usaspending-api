@@ -83,13 +83,14 @@ class Command(BaseCommand):
         if options['only_descrip'] is False:
             self.handle_loading(db_cursor=db_cursor, *args, **options)
 
+        # To do: roll update_model_description into its own management command
         if options['no_descrip'] is False or options['only-descrip'] is True:
             update_model_description_fields()
 
         if options['only-descrip'] is False:
             self.post_load_cleanup()
 
-    def post_load_cleanup(self, no_descrip, only_descrip):
+    def post_load_cleanup(self):
         """Global cleanup/post-load tasks not specific to a submission"""
 
         # 1. Update the descriptions (performed by main handler)
