@@ -188,6 +188,10 @@ LOGGING = {
         },
         'json': {
             '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
+        },
+        'simpletime': {
+            'format': "%(asctime)s - %(message)s",
+            'datefmt': "%H:%M:%S"
         }
     },
     'handlers': {
@@ -225,6 +229,7 @@ LOGGING = {
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'simpletime'
         },
     },
     'loggers': {
