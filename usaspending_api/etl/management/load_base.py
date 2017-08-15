@@ -79,7 +79,7 @@ class Command(BaseCommand):
         """Global cleanup/post-load tasks not specific to a submission"""
 
         # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
-        update_model_description_fields()
+        #    update_model_description_fields()
         # 2. Update awards to reflect their latest associated txn info
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
         # 3. Update contract-specific award fields to reflect latest txn info
