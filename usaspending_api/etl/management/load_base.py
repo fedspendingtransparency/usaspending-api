@@ -103,13 +103,6 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
     """
     Process and load file D1 broker data (contract award txns).
     """
-    empty_dict = {"place_of_performance_flag": True, 'data_source': 'DBR'}
-    empty_location = None
-    location_queryset = Location.objects.filter(**empty_dict)
-    if location_queryset.count() > 0:
-        empty_location = location_queryset.first()
-    else:
-        empty_location = Location.objects.create(**empty_dict)
 
     legal_entity_location_field_map = {
         "address_line1": "legal_entity_address_line1",
@@ -161,7 +154,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
                                                                          str(total_rows),
                                                                          datetime.now() - start_time))
 
-        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, copy(legal_entity_location_value_map), empty_location=empty_location, d_file=True)
+        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, copy(legal_entity_location_value_map))
 
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
@@ -173,7 +166,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
 
         # Create the place of performance location
         pop_location, created = get_or_create_location(
-            place_of_performance_field_map, row, copy(place_of_performance_value_map), empty_location=empty_location, d_file=True)
+            place_of_performance_field_map, row, copy(place_of_performance_value_map))
 
         # If awarding toptier agency code (aka CGAC) is not supplied on the D1 record,
         # use the sub tier code to look it up. This code assumes that all incoming
@@ -259,14 +252,6 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
     Process and load file D2 broker data (financial assistance award txns).
     """
 
-    empty_dict = {"place_of_performance_flag": True, 'data_source': 'DBR'}
-    empty_location = None
-    location_queryset = Location.objects.filter(**empty_dict)
-    if location_queryset.count() > 0:
-        empty_location = location_queryset.first()
-    else:
-        empty_location = Location.objects.create(**empty_dict)
-
     d_start_time = time.time()
 
     if quick:
@@ -332,7 +317,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
 
         row = row_preprocessor(row)
 
-        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map, empty_location=empty_location, d_file=True)
+        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
 
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
@@ -343,7 +328,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
         # Create the place of performance location
-        pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map, empty_location=empty_location, d_file=True)
+        pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
 
         # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
         # use the sub tier code to look it up. This code assumes that all incoming
@@ -545,16 +530,9 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
     del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
     if len(location_data):
         try:
-            if d_file:
-                if not empty_location and len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
-                    empty_location = Location.objects.filter(**location_data).first()
-                    location_object = empty_location
-                    created = False
-                elif empty_location and (location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
-                    location_object = empty_location
-                    created = False
-                else:
-                    location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})
+            if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
+                location_object = None
+                created = False
             else:
                 location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})
         except MultipleObjectsReturned:
