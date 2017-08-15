@@ -217,7 +217,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     address_line3 = models.TextField(blank=True, null=True, verbose_name="Address Line 3", db_index=True)
     foreign_location_description = models.TextField(blank=True, null=True)
     zip4 = models.TextField(blank=True, null=True, verbose_name="ZIP+4", db_index=True)
-    zip_4a = models.TextField(blank=True, null=True)
+    zip_4a = models.TextField(blank=True, null=True, db_index=True)
     congressional_code = models.TextField(blank=True, null=True, verbose_name="Congressional District Code", db_index=True)
     performance_code = models.TextField(blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
     zip_last4 = models.TextField(blank=True, null=True, db_index=True)
