@@ -488,7 +488,7 @@ def load_data_into_model(model_instance, data, **kwargs):
         return model_instance
 
 
-def get_or_create_location(location_map, row, location_value_map=None, empty_location = None, d_file=False):
+def get_or_create_location(location_map, row, location_value_map=None, empty_location=None, d_file=False):
     """
     Retrieve or create a location object
 
