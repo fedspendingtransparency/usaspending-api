@@ -47,8 +47,13 @@ class Command(load_base.Command):
     This command will load a single submission from the DATA Act broker. If
     we've already loaded the specified broker submisison, this command
     will remove the existing records before loading them again.
+
+    Options:
+    --no-description-cleanup : skips update_model_description_fields in load_base.py
+    --only-description-cleanup : only runs update_model_description_fields in load_base.py (doesn't load a sub)
     """
-    help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable must set so we can pull submission data from their db."
+
+    help = "Loads a single submission from the DATA Act Broker. The DATA_BROKER_DATABASE_URL environment variable must set so we can pull submission data from their db."
 
     def add_arguments(self, parser):
         parser.add_argument('submission_id', nargs=1, help='the data broker submission id to load', type=int)
@@ -162,7 +167,7 @@ class Command(load_base.Command):
         except:
             logger.warning("Error loading subawards for this submission")
 
-        logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
+        logger.info('Finished loading subaward data, took {}'.format(datetime.now() - start_time))
         # Cleanup not specific to this submission is run in the `.handle` method
 
 
