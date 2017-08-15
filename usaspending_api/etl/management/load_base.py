@@ -48,7 +48,6 @@ class Command(BaseCommand):
     help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable must set so we can pull submission data from their db."
 
     def add_arguments(self, parser):
-
         parser.add_argument(
             '--test',
             action='store_true',
@@ -56,6 +55,14 @@ class Command(BaseCommand):
             default=False,
             help='Runs the submission loader in test mode and uses stored data rather than pulling from a database'
         )
+        parser.add_argument('--no-description-cleanup', action='store_true',
+                            dest='no_descrip',
+                            default=False,
+                            help='skips update_model_description_fields in load_base.py')
+        parser.add_argument('--only-description-cleanup', action='store_true',
+                            dest='only_descrip',
+                            default=False,
+                            help='only runs update_model_description_fields in load_base.py')
 
     def handle(self, *args, **options):
         awards_cache.clear()
@@ -72,14 +79,20 @@ class Command(BaseCommand):
         else:
             db_cursor = PhonyCursor()
 
-        self.handle_loading(db_cursor=db_cursor, *args, **options)
-        self.post_load_cleanup()
+        # If we want only to clean descriptions, don't skip loader
+        if options['only_descrip'] is False:
+            self.handle_loading(db_cursor=db_cursor, *args, **options)
 
-    def post_load_cleanup(self):
+        if options['no_descrip'] is False or options['only-descrip'] is True:
+            update_model_description_fields()
+
+        if options['only-descrip'] is False:
+            self.post_load_cleanup()
+
+    def post_load_cleanup(self, no_descrip, only_descrip):
         """Global cleanup/post-load tasks not specific to a submission"""
 
-        # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
-        update_model_description_fields()
+        # 1. Update the descriptions (performed by main handler)
         # 2. Update awards to reflect their latest associated txn info
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
         # 3. Update contract-specific award fields to reflect latest txn info
