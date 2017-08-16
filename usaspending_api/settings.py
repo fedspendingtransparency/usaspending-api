@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'usaspending_api.submissions',
     'usaspending_api.financial_activities',
     'usaspending_api.api_docs',
+    'usaspending_api.broker',
     'django_spaghetti',
     'simple_history',
 ]
