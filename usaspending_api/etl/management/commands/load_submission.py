@@ -321,6 +321,9 @@ def get_submission_attributes(broker_submission_id, submission_data):
         logger.info('Broker submission id {} already exists. It will be deleted.'.format(broker_submission_id))
         call_command('rm_submission', broker_submission_id)
 
+    logger.info("Merging CGAC and FREC columns")
+    submission_data["cgac_code"] = submission_data["cgac_code"] if submission_data["cgac_code"] else submission_data["frec_code"]
+
     # Find the previous submission for this CGAC and fiscal year (if there is one)
     previous_submission = get_previous_submission(
         submission_data['cgac_code'],
