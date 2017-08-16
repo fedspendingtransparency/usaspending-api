@@ -103,6 +103,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
     """
     Process and load file D1 broker data (contract award txns).
     """
+
     legal_entity_location_field_map = {
         "address_line1": "legal_entity_address_line1",
         "address_line2": "legal_entity_address_line2",
@@ -144,7 +145,14 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
         logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
         return
 
-    for row in procurement_data:
+    total_rows = len(procurement_data)
+
+    start_time = datetime.now()
+    for index, row in enumerate(procurement_data, 1):
+        if not (index % 100):
+            logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                         str(total_rows),
+                                                                         datetime.now() - start_time))
 
         legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, copy(legal_entity_location_value_map))
 
@@ -391,7 +399,7 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             value_map=fad_value_map,
             as_dict=True)
 
-        transaction_assistance = TransactionAssistance.get_or_create(transaction=transaction, **financial_assistance_data)
+        transaction_assistance = TransactionAssistance.get_or_create_2(transaction=transaction, **financial_assistance_data)
         transaction_assistance.save()
 
     logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
@@ -480,7 +488,7 @@ def load_data_into_model(model_instance, data, **kwargs):
         return model_instance
 
 
-def get_or_create_location(location_map, row, location_value_map=None):
+def get_or_create_location(location_map, row, location_value_map=None, empty_location=None, d_file=False):
     """
     Retrieve or create a location object
 
@@ -522,7 +530,11 @@ def get_or_create_location(location_map, row, location_value_map=None):
     del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
     if len(location_data):
         try:
-            location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})
+            if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
+                location_object = None
+                created = False
+            else:
+                location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})
         except MultipleObjectsReturned:
             # incoming location data is so sparse that comparing it to existing locations
             # yielded multiple records. create a new location with this limited info.
