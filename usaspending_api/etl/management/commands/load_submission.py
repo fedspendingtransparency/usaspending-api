@@ -20,7 +20,7 @@ from usaspending_api.awards.models import (
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
-    Agency, LegalEntity, ObjectClass, Cfda, RefProgramActivity)
+    Agency, LegalEntity, ObjectClass, Cfda, RefProgramActivity, Location)
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import (
     get_award_financial_transaction, get_awarding_agency)
@@ -89,7 +89,8 @@ class Command(load_base.Command):
         # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
-        logger.info('Acquired File A (appropriation) data for ' + str(submission_id) + ', there are ' + str(len(appropriation_data)) + ' rows.')
+        logger.info('Acquired File A (appropriation) data for ' + str(submission_id) + ', there are ' + str(
+            len(appropriation_data)) + ' rows.')
         logger.info('Loading File A data')
         start_time = datetime.now()
         load_file_a(submission_attributes, appropriation_data, db_cursor)
@@ -98,7 +99,9 @@ class Command(load_base.Command):
         logger.info('Getting File B data')
         # Let's get File B information
         prg_act_obj_cls_data = get_file_b(submission_attributes, db_cursor)
-        logger.info('Acquired File B (program activity object class) data for ' + str(submission_id) + ', there are ' + str(len(prg_act_obj_cls_data)) + ' rows.')
+        logger.info(
+            'Acquired File B (program activity object class) data for ' + str(submission_id) + ', there are ' + str(
+                len(prg_act_obj_cls_data)) + ' rows.')
         logger.info('Loading File B data')
         start_time = datetime.now()
         load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor)
@@ -108,17 +111,20 @@ class Command(load_base.Command):
         # File D2
         db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
         award_financial_assistance_data = dictfetchall(db_cursor)
-        logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(len(award_financial_assistance_data)) + ' rows.')
+        logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(
+            len(award_financial_assistance_data)) + ' rows.')
         logger.info('Loading File D2 data')
         start_time = datetime.now()
-        load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick=options['quick'])
+        load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor,
+                               quick=options['quick'])
         logger.info('Finished loading File D2 data, took {}'.format(datetime.now() - start_time))
 
         logger.info('Getting File D1 data')
         # File D1
         db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
         procurement_data = dictfetchall(db_cursor)
-        logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(len(procurement_data)) + ' rows.')
+        logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(
+            len(procurement_data)) + ' rows.')
         logger.info('Loading File D1 data')
         start_time = datetime.now()
         load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, quick=options['quick'])
@@ -260,7 +266,8 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
-    db_cursor.execute("SELECT * FROM tas_lookup WHERE financial_indicator2 <> 'F' and account_num = %s", [tas_lookup_id])
+    db_cursor.execute("SELECT * FROM tas_lookup WHERE financial_indicator2 <> 'F' and account_num = %s",
+                      [tas_lookup_id])
     tas_data = dictfetchall(db_cursor)
 
     if tas_data is None or len(tas_data) == 0:
@@ -334,7 +341,8 @@ def get_submission_attributes(broker_submission_id, submission_data):
             submission_data['reporting_fiscal_period']),
         'previous_submission': None if previous_submission is None else previous_submission,
         # pull in broker's last update date to use as certified date
-        'certified_date': submission_data['updated_at'].date() if type(submission_data['updated_at']) == datetime else None,
+        'certified_date': submission_data['updated_at'].date() if type(
+            submission_data['updated_at']) == datetime else None,
     }
 
     return load_data_into_model(
@@ -388,7 +396,8 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
 
         field_map = {}
 
-        load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True, reverse=reverse)
+        load_data_into_model(appropriation_balances, row, field_map=field_map, value_map=value_map, save=True,
+                             reverse=reverse)
 
     AppropriationAccountBalances.populate_final_of_fy()
 
@@ -610,11 +619,21 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     award_financial_frame['txn'] = award_financial_frame.apply(get_award_financial_transaction, axis=1)
     award_financial_frame['awarding_agency'] = award_financial_frame.apply(get_awarding_agency, axis=1)
-    award_financial_frame['object_class'] = award_financial_frame.apply(get_or_create_object_class_rw, axis=1, logger=logger)
-    award_financial_frame['program_activity'] = award_financial_frame.apply(get_or_create_program_activity, axis=1, submission_attributes=submission_attributes)
+    award_financial_frame['object_class'] = award_financial_frame.apply(get_or_create_object_class_rw, axis=1,
+                                                                        logger=logger)
+    award_financial_frame['program_activity'] = award_financial_frame.apply(get_or_create_program_activity, axis=1,
+                                                                            submission_attributes=submission_attributes)
+
+    total_rows = award_financial_frame.shape[0]
+    start_time = datetime.now()
 
     # for row in award_financial_data:
-    for row in award_financial_frame.replace({np.nan: None}).to_dict(orient='records'):
+    for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
+        if not (index % 100):
+            logger.info('C File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                        str(total_rows),
+                                                                        datetime.now() - start_time))
+
         # Check and see if there is an entry for this TAS
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)
