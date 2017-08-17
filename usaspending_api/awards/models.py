@@ -113,9 +113,9 @@ class Award(DataSourceTrackedModel):
     see ETL\award_helpers.py for details.
     """
 
-    type = models.TextField(db_index=True, verbose_name="Award Type", null=True, help_text="	The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.")
+    type = models.TextField(db_index=True, verbose_name="Award Type", null=True, help_text="The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.")
     type_description = models.TextField(verbose_name="Award Type Description", blank=True, null=True, help_text="The plain text description of the type of the award")
-    category = models.TextField(verbose_name="Category", null=True, help_text=" A field that generalizes the award's type.")
+    category = models.TextField(verbose_name="Category", null=True, help_text="A field that generalizes the award's type.")
     piid = models.TextField(db_index=True, blank=True, null=True, help_text="Procurement Instrument Identifier - A unique identifier assigned to a federal contract, purchase order, basic ordering agreement, basic agreement, and blanket purchase agreement. It is used to track the contract, and any modifications or transactions related to it. After October 2017, it is between 13 and 17 digits, both letters and numbers.")
     parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True, help_text="The parent award, if applicable")
     fain = models.TextField(db_index=True, blank=True, null=True, help_text="An identification code assigned to each financial assistance award tracking purposes. The FAIN is tied to that award (and all future modifications to that award) throughout the award’s life. Each FAIN is assigned by an agency. Within an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN stands for Federal Award Identification Number, though the digits are letters, not numbers.")

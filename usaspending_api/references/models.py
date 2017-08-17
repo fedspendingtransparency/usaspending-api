@@ -858,20 +858,6 @@ class LegalEntity(DataSourceTrackedModel):
 
         le.business_categories = categories
 
-    @classmethod
-    def get_or_create_by_duns(cls, duns):
-        """
-        Finds a legal entity with the matching duns, or creates it if it does
-        not exist. If the duns is null, will always create a new instance.
-
-        Returns a single legal entity instance, and a boolean indicating if the
-        record was created or retrieved (i.e. mimicing the return of get_or_create)
-        """
-        if duns is None or len(duns) == 0:
-            return cls.objects.create(), True
-        else:
-            return cls.objects.get_or_create(recipient_unique_id=duns)
-
     class Meta:
         managed = True
         db_table = 'legal_entity'
@@ -932,7 +918,11 @@ class RefProgramActivity(models.Model):
     class Meta:
         managed = True
         db_table = 'ref_program_activity'
-        unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
+        unique_together = (('program_activity_code',
+                            'budget_year',
+                            'responsible_agency_id',
+                            'allocation_transfer_agency_id',
+                            'main_account_code'),)
 
 
 class Cfda(DataSourceTrackedModel):
@@ -983,7 +973,7 @@ class Cfda(DataSourceTrackedModel):
         managed = True
 
     def __str__(self):
-        return "%s" % (self.program_title)
+        return "%s" % self.program_title
 
 
 class Definition(models.Model):
