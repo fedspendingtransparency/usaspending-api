@@ -187,6 +187,8 @@ def load_subawards(submission_attributes, db_cursor):
         if recipient_name is None:
             recipient_name = row['awardee_or_recipient_legal']
         if recipient_name is None:
+            recipient_name = row['company_name']
+        if recipient_name is None:
             recipient_name = ""
 
         # Get or create unique DUNS-recipient pair
