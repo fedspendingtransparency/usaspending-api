@@ -273,11 +273,11 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.TextField(blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
-    type = models.TextField(verbose_name="Action Type", null=True, help_text="The type for this transaction. For example, A, B, C, D")
+    type = models.TextField(verbose_name="Action Type", null=True, help_text="The type for this transaction. For example, A, B, C, D", db_index=True)
     type_description = models.TextField(blank=True, verbose_name="Action Type Description", null=True, help_text="The plain text description of the transaction type")
     period_of_performance_start_date = models.DateField(verbose_name="Period of Performance Start Date", null=True, help_text="The period of performance start date")
     period_of_performance_current_end_date = models.DateField(verbose_name="Period of Performance Current End Date", null=True, help_text="The current end date of the period of performance")
-    action_date = models.DateField(verbose_name="Transaction Date", help_text="The date this transaction was actioned")
+    action_date = models.DateField(verbose_name="Transaction Date", help_text="The date this transaction was actioned", db_index=True)
     action_type = models.TextField(blank=True, null=True, help_text="The type of transaction. For example, A, B, C, D")
     action_type_description = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True, null=True, help_text="The obligation of the federal government for this transaction")
@@ -331,8 +331,8 @@ class TransactionContract(DataSourceTrackedModel):
         Transaction, on_delete=models.CASCADE,
         primary_key=True, related_name='contract_data', help_text="Non-specific transaction data, fields shared among both assistance and contract transactions")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    piid = models.TextField(blank=True, help_text="The PIID of this transaction")
-    parent_award_id = models.TextField(blank=True, null=True, verbose_name="Parent Award ID", help_text="The parent award id for this transaction. This is generally the piid of an IDV")
+    piid = models.TextField(blank=True, help_text="The PIID of this transaction", db_index=True)
+    parent_award_id = models.TextField(blank=True, null=True, verbose_name="Parent Award ID", db_index=True, help_text="The parent award id for this transaction. This is generally the piid of an IDV")
     cost_or_pricing_data = models.TextField(blank=True, null=True, help_text="")
     cost_or_pricing_data_description = models.TextField(blank=True, null=True)
     type_of_contract_pricing = models.TextField(default="UN", blank=True, null=True, verbose_name="Type of Contract Pricing", help_text="The type of contract pricing data, as a code")
@@ -440,7 +440,7 @@ class TransactionContract(DataSourceTrackedModel):
     history = HistoricalRecords()
 
     @classmethod
-    def get_or_create(cls, transaction, **kwargs):
+    def get_or_create_2(cls, transaction, **kwargs):
         try:
             if not transaction.newer_than(kwargs):
                 for (k, v) in kwargs.items():
@@ -458,8 +458,8 @@ class TransactionAssistance(DataSourceTrackedModel):
         Transaction, on_delete=models.CASCADE,
         primary_key=True, related_name='assistance_data')
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    fain = models.TextField(blank=True, null=True)
-    uri = models.TextField(blank=True, null=True)
+    fain = models.TextField(blank=True, null=True, db_index=True)
+    uri = models.TextField(blank=True, null=True, db_index=True)
     cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_assistance", null=True)
     business_funds_indicator = models.TextField()
     business_funds_indicator_description = models.TextField(blank=True, null=True)
@@ -487,7 +487,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     history = HistoricalRecords()
 
     @classmethod
-    def get_or_create(cls, transaction, **kwargs):
+    def get_or_create_2(cls, transaction, **kwargs):
         try:
             if not transaction.newer_than(kwargs):
                 for (k, v) in kwargs.items():
