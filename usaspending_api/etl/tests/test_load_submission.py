@@ -100,7 +100,7 @@ def test_load_submission_command(endpoint_data, partially_flushed):
         # for testing, data pulled from etl_test_data.json
     assert Location.objects.count() == 4
     assert LegalEntity.objects.count() == 2
-    assert Award.objects.count() == 7
+    assert Award.objects.count() == 15
     assert Transaction.objects.count() == 2
     assert TransactionContract.objects.count() == 1
     assert TransactionAssistance.objects.count() == 1
