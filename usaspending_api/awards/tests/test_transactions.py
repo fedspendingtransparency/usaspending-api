@@ -240,7 +240,7 @@ def test_txn_get_or_create():
 
 @pytest.mark.django_db
 def test_txn_assistance_get_or_create():
-    """Test TransactionAssistance.get_or_create method."""
+    """Test TransactionAssistance.get_or_create_2 method."""
 
     agency1 = mommy.make('references.Agency')
     sub = mommy.make('submissions.SubmissionAttributes')
@@ -270,7 +270,7 @@ def test_txn_assistance_get_or_create():
         'record_type': 2,
         'total_funding_amount': 2000,
     }
-    ta2 = TransactionAssistance.get_or_create(txn1, **ta_dict)
+    ta2 = TransactionAssistance.get_or_create_2(txn1, **ta_dict)
     ta2.save()
     assert TransactionAssistance.objects.all().count() == 1
     t = Transaction.objects.get(id=txn1.id)
@@ -285,7 +285,7 @@ def test_txn_assistance_get_or_create():
         'record_type': 5,
         'total_funding_amount': 8000,
     }
-    ta3 = TransactionAssistance.get_or_create(
+    ta3 = TransactionAssistance.get_or_create_2(
         mommy.make('awards.Transaction'), **ta_dict)
     ta3.save()
     assert TransactionAssistance.objects.all().count() == 2
@@ -293,7 +293,7 @@ def test_txn_assistance_get_or_create():
 
 @pytest.mark.django_db
 def test_txn_contract_get_or_create():
-    """Test TransactionContract.get_or_create method."""
+    """Test TransactionContract.get_or_create_2 method."""
 
     agency1 = mommy.make('references.Agency')
     sub = mommy.make('submissions.SubmissionAttributes')
@@ -321,7 +321,7 @@ def test_txn_contract_get_or_create():
         'piid': 'abc',
         'potential_total_value_of_award': 5000,
     }
-    tc2 = TransactionContract.get_or_create(txn1, **tc_dict)
+    tc2 = TransactionContract.get_or_create_2(txn1, **tc_dict)
     tc2.save()
     assert TransactionContract.objects.all().count() == 1
     t = Transaction.objects.get(id=txn1.id)
@@ -334,7 +334,7 @@ def test_txn_contract_get_or_create():
         'piid': 'xyz',
         'potential_total_value_of_award': 5555,
     }
-    tc3 = TransactionContract.get_or_create(
+    tc3 = TransactionContract.get_or_create_2(
         mommy.make('awards.Transaction'), **tc_dict)
     tc3.save()
     assert TransactionContract.objects.all().count() == 2
