@@ -51,7 +51,7 @@ def test_load_historical_command_contracts(endpoint_data, partially_flushed):
     assert Award.objects.count() == 9
     assert TransactionContract.objects.count() == 10
     assert LegalEntity.objects.count() == 9
-    assert Location.objects.count() == 10
+    assert Location.objects.count() == 9
 
     # verify that load is idempotent by running it again, verifying extra records not created
     call_command('load_historical', '--test', '--contracts',
@@ -61,7 +61,7 @@ def test_load_historical_command_contracts(endpoint_data, partially_flushed):
     assert Award.objects.count() == 9
     assert TransactionContract.objects.count() == 10
     assert LegalEntity.objects.count() == 9
-    assert Location.objects.count() == 10
+    assert Location.objects.count() == 9
 
 
 @pytest.mark.skip("detached_award_financial_assistance lacks a state column")

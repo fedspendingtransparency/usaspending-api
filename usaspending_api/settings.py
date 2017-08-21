@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'usaspending_api.submissions',
     'usaspending_api.financial_activities',
     'usaspending_api.api_docs',
+    'usaspending_api.broker',
     'django_spaghetti',
     'simple_history',
 ]
@@ -188,6 +189,10 @@ LOGGING = {
         },
         'json': {
             '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
+        },
+        'simpletime': {
+            'format': "%(asctime)s - %(message)s",
+            'datefmt': "%H:%M:%S"
         }
     },
     'handlers': {
@@ -225,6 +230,7 @@ LOGGING = {
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'simpletime'
         },
     },
     'loggers': {

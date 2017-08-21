@@ -6,12 +6,15 @@ from copy import copy
 from datetime import datetime
 from decimal import Decimal
 import logging
+import time
+
+from django import db
 
 import dateutil
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
-from django.db import connections
+from django.db import connection, connections, utils
 from django.core.cache import caches
 from django.utils.dateparse import parse_datetime
 
@@ -23,7 +26,7 @@ from usaspending_api.references.models import (
 from usaspending_api.etl.award_helpers import (
     update_awards, update_contract_awards,
     update_award_categories, )
-from usaspending_api.etl.broker_etl_helpers import PhonyCursor
+from usaspending_api.etl.broker_etl_helpers import PhonyCursor, setup_broker_fdw
 from usaspending_api.references.helpers import canonicalize_location_dict
 
 from usaspending_api.etl.helpers import update_model_description_fields
@@ -55,7 +58,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-
         awards_cache.clear()
 
         # Grab the data broker database connections
@@ -86,10 +88,22 @@ class Command(BaseCommand):
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
 
-def load_file_d1(submission_attributes, procurement_data, db_cursor):
+def run_sql_file(file_path, parameters):
+    with db.connection.cursor() as cursor:
+        with open(file_path) as infile:
+            for raw_sql in infile.read().split('\n\n\n'):
+                if raw_sql.strip():
+                    sql_start_time = time.time()
+                    cursor.execute(raw_sql, parameters)
+                    some_sql = "\n".join(raw_sql.splitlines()[:3])
+                    logger.info('sql:\n\n{}\n\ntime: {}\n\n'.format(some_sql, time.time() - sql_start_time))
+
+
+def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False):
     """
     Process and load file D1 broker data (contract award txns).
     """
+
     legal_entity_location_field_map = {
         "address_line1": "legal_entity_address_line1",
         "address_line2": "legal_entity_address_line2",
@@ -123,7 +137,22 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
         "description": "award_description"
     }
 
-    for row in procurement_data:
+    d_start_time = time.time()
+
+    if quick:
+        parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
+        run_sql_file('usaspending_api/etl/management/load_file_d1.sql', parameters)
+        logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
+        return
+
+    total_rows = len(procurement_data)
+
+    start_time = datetime.now()
+    for index, row in enumerate(procurement_data, 1):
+        if not (index % 100):
+            logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                         str(total_rows),
+                                                                         datetime.now() - start_time))
 
         legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, copy(legal_entity_location_value_map))
 
@@ -164,7 +193,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
             piid=row.get('piid'),
             fain=row.get('fain'),
             uri=row.get('uri'),
-            parent_award_id=row.get('parent_award_id'))
+            parent_award_id=row.get('parent_award_id'))  # but why would the row include the ID on our side?
         award.save()
 
         AWARD_UPDATE_ID_LIST.append(award.id)
@@ -209,6 +238,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor):
 
         transaction_contract = TransactionContract(transaction=transaction, **contract_instance)
         transaction_contract.save()
+    logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
 
 
 def no_preprocessing(row):
@@ -217,10 +247,21 @@ def no_preprocessing(row):
     return row
 
 
-def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, row_preprocessor=no_preprocessing):
+def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick, row_preprocessor=no_preprocessing):
     """
     Process and load file D2 broker data (financial assistance award txns).
     """
+
+    d_start_time = time.time()
+
+    if quick:
+        setup_broker_fdw()
+
+        parameters = {'broker_submission_id': submission_attributes.broker_submission_id}
+        run_sql_file('usaspending_api/etl/management/load_file_d2.sql', parameters)
+        logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
+        return
+
     legal_entity_location_field_map = {
         "address_line1": "legal_entity_address_line1",
         "address_line2": "legal_entity_address_line2",
@@ -265,7 +306,14 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
         "description": "award_description",
     }
 
-    for row in award_financial_assistance_data:
+    total_rows = len(award_financial_assistance_data)
+
+    start_time = datetime.now()
+    for index, row in enumerate(award_financial_assistance_data, 1):
+        if not (index % 100):
+            logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                         str(total_rows),
+                                                                         datetime.now() - start_time))
 
         row = row_preprocessor(row)
 
@@ -351,8 +399,10 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             value_map=fad_value_map,
             as_dict=True)
 
-        transaction_assistance = TransactionAssistance.get_or_create(transaction=transaction, **financial_assistance_data)
+        transaction_assistance = TransactionAssistance.get_or_create_2(transaction=transaction, **financial_assistance_data)
         transaction_assistance.save()
+
+    logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
 
 
 def format_date(date_string):
@@ -438,7 +488,7 @@ def load_data_into_model(model_instance, data, **kwargs):
         return model_instance
 
 
-def get_or_create_location(location_map, row, location_value_map=None):
+def get_or_create_location(location_map, row, location_value_map=None, empty_location=None, d_file=False):
     """
     Retrieve or create a location object
 
@@ -480,7 +530,11 @@ def get_or_create_location(location_map, row, location_value_map=None):
     del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
     if len(location_data):
         try:
-            location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})
+            if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
+                location_object = None
+                created = False
+            else:
+                location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})
         except MultipleObjectsReturned:
             # incoming location data is so sparse that comparing it to existing locations
             # yielded multiple records. create a new location with this limited info.
