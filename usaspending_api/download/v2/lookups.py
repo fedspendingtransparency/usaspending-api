@@ -2,7 +2,7 @@ transaction_d1_columns = {
     "Award ID": "piid",  # DONE
     "Modification Number": "transaction__modification_number",  # DONE
     "Transaction Number": "transaction_number",  # DONE
-    "Parent Award Agency ID": "parent_award_agency_id",  # TODO
+    "Parent Award Agency ID": "referenced_idv_agency_identifier",  # DONE
     "Parent Award Agency Name": "parent_award_agency_name",  # TODO
     "Parent Award ID": "parent_award_id",  # DONE
     "Parent Award Modification Number": "parent_award_modification_number",  # TODO
@@ -15,7 +15,7 @@ transaction_d1_columns = {
     "Period of Performance Potential End Date": "period_of_performance_potential_end_date",  # DONE
     "Ordering Period End Date": "ordering_period_end_date",  # DONE
     "Awarding Agency Code": "awarding_agency_code",  # TODO drv_parent_award_awarding_agency_code
-    "Awarding Agency Name": "awarding_agency_name",  # TODO
+    "Awarding Agency Name": "transaction_awarding_agency__toptier_agency_name",  # TODO
     "Awarding Sub Agency Code": "awarding_sub_agency_code",  # TODO
     "Awarding Sub Agency Name": "awarding_sub_agency_name",  # TODO
     "Awarding Office Code": "awarding_office_code",  # TODO
@@ -26,7 +26,8 @@ transaction_d1_columns = {
     "Funding Sub Agency Name": "funding_sub_agency_name",  # TODO
     "Funding Office Code": "funding_office_code",  # TODO
     "Funding Office Name": "funding_office_name",  # TODO
-    "Foreign Funding": "foreign_funding",  # DONE  TODO do we want the description as well?
+    "Foreign Funding Code": "foreign_funding",  # DONE
+    "Foreign Funding": "foreign_funding_description",  # DONE
     "SAM Exception": "sam_exception",  # TODO
     "Recipient DUNS": "transaction__recipient__recipient_unique_id",  # DONE
     "Recipient Name": "transaction__recipient__recipient_name",  # DONE
@@ -69,188 +70,188 @@ transaction_d1_columns = {
     "Award Description": "transaction__award_description",
     "Action Type Code": "transaction__action_type",  # DONE
     "Action Type": "transaction__action_type_description",  # DONE
-    "Solicitation Identifier": "solicitation_identifier",
-    "Number of Actions": "number_of_actions",
-    "Product or Service Code (PSC)": "product_or_service_code",
-    "Product or Service Code (PSC) Description": "product_or_service_code_description",
-    "Contract Bundling Code": "contract_bundling_code",
-    "Contract Bundling": "contract_bundling",
-    "DoD Claimant Program Code": "dod_claimant_program_code",
-    "DoD Claimant Program Description": "dod_claimant_program_description",
+    "Solicitation Identifier": "solicitation_identifier",  # DONE
+    "Number of Actions": "number_of_actions",  # DONE
+    "Product or Service Code (PSC)": "product_or_service_code",  # DONE
+    "Product or Service Code (PSC) Description": "product_or_service_code_description",  # TODO
+    "Contract Bundling Code": "contract_bundling",  # DONE
+    "Contract Bundling": "contract_bundling__description",  # DONE
+    "DoD Claimant Program Code": "dod_claimant_program_code",  # DONE
+    "DoD Claimant Program Description": "dod_claimant_program_description",  # TODO
     "NAICS Code": "naics",  # DONE
     "NAICS Description": "naics_description",  # DONE
-    "Recovered Materials/Sustainability Code": "recovered_materials_sustainability_code",
-    "Recovered Materials/Sustainability": "recovered_materials_sustainability",
-    "Domestic or Foreign Entity Code": "domestic_or_foreign_entity_code",
-    "Domestic or Foreign Entity": "domestic_or_foreign_entity",
-    "DoD Acquisition Program Code": "dod_acquisition_program_code",
-    "DoD Acquisition Program Description": "dod_acquisition_program_description",
-    "Information Technology Commercial Item Category Code": "information_technology_commercial_item_category_code",
-    "Information Technology Commercial Item Category": "information_technology_commercial_item_category",
-    "EPA-Designated Product Code": "epa_designated_product_code",
-    "EPA-Designated Product": "epa_designated_product",
-    "Country of Product or Service Origin Code": "country_of_product_or_service_origin_code",
-    "Country of Product or Service Origin": "country_of_product_or_service_origin",
-    "Place of Manufacture Code": "place_of_manufacture_code",
-    "Place of Manufacture": "place_of_manufacture",
-    "Subcontracting Plan Code": "subcontracting_plan_code",
-    "Subcontracting Plan": "subcontracting_plan",
-    "Extent Competed Code": "extent_competed_code",
-    "Extent Competed": "extent_competed",
-    "Solicitation Procedures Code": "solicitation_procedures_code",
-    "Solicitation Procedures": "solicitation_procedures",
-    "Type of Set Aside Code": "type_of_set_aside_code",
-    "Type of Set Aside": "type_of_set_aside",
-    "Evaluated Preference Code": "evaluated_preference_code",
-    "Evaluated Preference": "evaluated_preference",
-    "Research Code": "research_code",
-    "Research": "research",
-    "Fair Opportunity Limited Sources Code": "fair_opportunity_limited_sources_code",
-    "Fair Opportunity Limited Sources": "fair_opportunity_limited_sources",
-    "Other than Full and Open Competition Code": "other_than_full_and_open_competition_code",
-    "Other than Full and Open Competition": "other_than_full_and_open_competition",
-    "Number of Offers Received": "number_of_offers_received",
-    "Commercial Item Acquisition Procedures Code": "commercial_item_acquisition_procedures_code",
-    "Commercial Item Acquisition Procedures": "commercial_item_acquisition_procedures",
-    "Small Business Competitiveness Demonstration Program": "small_business_competitiveness_demonstration _program",
-    "Commercial Item Test Program Code": "commercial_item_test_program_code",
-    "Commercial Item Test Program": "commercial_item_test_program",
-    "A-76 FAIR Act Action Code": "a76_fair_act_action_code",
-    "A-76 FAIR Act Action": "a76_fair_act_action",
-    "FedBizOpps Code": "fed_biz_opps_code",
-    "FedBizOpps": "fed_biz_opps",
-    "Local Area Set Aside Code": "local_area_set_aside_code",
-    "Local Area Set Aside": "local_area_set_aside",
-    "Price Evaluation Adjustment Preference Percent Difference": "price_evaluation_adjustment_preference_percent_difference",
-    "Clinger-Cohen Act Planning Compliance Code": "clinger_cohen_act_planning_code",
-    "Clinger-Cohen Act Planning Compliance": "clinger_cohen_act_planning",
-    "Walsh Healey Act Code": "walsh_healey_act_code",
-    "Walsh Healey Act": "walsh_healey_act",
-    "Service Contract Act Code": "service_contract_act_code",
-    "Service Contract Act": "service_contract_act",
-    "Davis Bacon Act Code": "davis_bacon_act_code",
-    "Davis Bacon Act": "davis_bacon_act",
-    "Interagency Contracting Authority Code": "interagency_contracting_authority_code",
-    "Interagency Contracting Authority": "interagency_contracting_authority",
-    "Other Statutory Authority": "other_statutory_authority",
-    "Program Acronym": "program_acronym",
-    "Parent Award Type Code": "parent_award_type_code",
-    "Parent Award Type": "parent_award_type",
-    "Parent Award Single or Multiple Code": "parent_award_single_or_multiple_code",
-    "Parent Award Single or Multiple": "parent_award_single_or_multiple",
-    "Major Program": "major_program",
-    "National Interest Action Code": "national_interest_action_code",
-    "National Interest Action": "national_interest_action",
-    "Cost or Pricing Data Code": "cost_or_pricing_data_code",
-    "Cost or Pricing Data": "cost_or_pricing_data",
-    "Cost Accounting Standards Clause Code": "cost_accounting_standards_clause_code",
-    "Cost Accounting Standards Clause": "cost_accounting_standards_clause",
-    "GFE and GFP Code": "gfe_gfp_code",
-    "GFE and GFP": "gfe_gfp",
-    "Sea Transportation Code": "sea_transportation_code",
-    "Sea Transportation": "sea_transportation",
-    "Undefinitized Action Code": "undefinitized_action_code",
-    "Undefinitized Action": "undefinitized_action",
-    "Consolidated Contract Code": "consolidated_contract_code",
-    "Consolidated Contract": "consolidated_contract",
-    "Performance-Based Service Acquisition Code": "performance_based_service_acquisition_code",
-    "Performance-Based Service Acquisition": "performance_based_service_acquisition",
-    "Multi Year Contract Code": "multi_year_contract_code",
-    "Multi Year Contract": "multi_year_contract",
-    "Contract Financing Code": "contract_financing_code",
-    "Contract Financing": "contract_financing",
-    "Purchase Card as Payment Method Code": "purchase_card_as_payment_method_code",
-    "Purchase Card as Payment Method": "purchase_card_as_payment_method",
-    "Contingency Humanitarian or Peacekeeping Operation Code": "contingency_humanitarian_or_peacekeeping_operation_code",
-    "Contingency Humanitarian or Peacekeeping Operation": "contingency_humanitarian_or_peacekeeping_operation",
-    "Alaskan Native Owned Corporation or Firm": "alaskan_native_owned_corporation_or_firm",
-    "American Indian Owned Business": "american_indian_owned_business",
-    "Indian Tribe Federally Recognized": "indian_tribe_federally_recognized",
-    "Native Hawaiian Owned Business": "native_hawaiian_owned_business",
-    "Tribally Owned Business": "tribally_owned_business",
-    "Veteran Owned Business": "veteran_owned_business",
-    "Service Disabled Veteran Owned Business": "service_disabled_veteran_owned_business",
-    "Woman Owned Business": "woman_owned_business",
-    "Women Owned Small Business": "women_owned_small_business",
-    "Economically Disadvantaged Women Owned Small Business": "economically_disadvantaged_women_owned_small_business",
-    "Joint Venture Women Owned Small Business": "joint_venture_women_owned_small_business",
-    "Joint Venture Economically Disadvantaged Women Owned Small Business": "joint_venture_economic_disadvantaged_women_owned_small_bus",
-    "Minority Owned Business": "minority_owned_business",
-    "Subcontinent Asian Asian - Indian American Owned Business": "subcontinent_asian_asian_indian_american_owned_business",
-    "Asian Pacific American Owned Business": "asian_pacific_american_owned_business",
-    "Black American Owned Business": "black_american_owned_business",
-    "Hispanic American Owned Business": "hispanic_american_owned_business",
-    "Native American Owned Business": "native_american_owned_business",
-    "Other Minority Owned Business": "other_minority_owned_business",
+    "Recovered Materials/Sustainability Code": "recovered_materials_sustainability",  # DONE
+    "Recovered Materials/Sustainability": "recovered_materials_sustainability_description",  # DONE
+    "Domestic or Foreign Entity Code": "domestic_or_foreign_entity_code",  # TODO
+    "Domestic or Foreign Entity": "domestic_or_foreign_entity",  # TODO
+    "DoD Acquisition Program Code": "program_system_or_equipment_code",  # DONE
+    "DoD Acquisition Program Description": "dod_acquisition_program_description",  # TODO
+    "Information Technology Commercial Item Category Code": "information_technology_commercial_item_category",  # DONE
+    "Information Technology Commercial Item Category": "information_technology_commercial_item_category_description",  # DONE
+    "EPA-Designated Product Code": "epa_designated_product",  # DONE
+    "EPA-Designated Product": "epa_designated_product_description",  # DONE
+    "Country of Product or Service Origin Code": "country_of_product_or_service_origin",  # TODO not quite right
+    "Country of Product or Service Origin": "country_of_product_or_service_origin",  # TODO not quite right
+    "Place of Manufacture Code": "place_of_manufacture",  # DONE
+    "Place of Manufacture": "place_of_manufacture_description",  # DONE
+    "Subcontracting Plan Code": "subcontracting_plan",  # DONE
+    "Subcontracting Plan": "subcontracting_plan_description",  # DONE
+    "Extent Competed Code": "extent_competed",  # DONE
+    "Extent Competed": "extent_competed_description",  # DONE
+    "Solicitation Procedures Code": "solicitation_procedures",  # DONE
+    "Solicitation Procedures": "solicitation_procedures_description",  # DONE
+    "Type of Set Aside Code": "type_set_aside",  # DONE
+    "Type of Set Aside": "type_set_aside_description",  # DONE
+    "Evaluated Preference Code": "evaluated_preference",  # DONE
+    "Evaluated Preference": "evaluated_preference_description",  # DONE
+    "Research Code": "research",  # DONE
+    "Research": "research_description",  # DONE
+    "Fair Opportunity Limited Sources Code": "fair_opportunity_limited_sources",  # DONE
+    "Fair Opportunity Limited Sources": "fair_opportunity_limited_sources_description",  # DONE
+    "Other than Full and Open Competition Code": "other_than_full_and_open_competition",  # TODO: Code or description?
+    "Other than Full and Open Competition": "other_than_full_and_open_competition",  # TODO: Code or description?
+    "Number of Offers Received": "number_of_offers_received",  # DONE
+    "Commercial Item Acquisition Procedures Code": "commercial_item_acquisition_procedures",  # DONE
+    "Commercial Item Acquisition Procedures": "commercial_item_acquisition_procedures_description",  # DONE
+    "Small Business Competitiveness Demonstration Program": "small_business_competitiveness_demonstration_program",  # DONE
+    "Commercial Item Test Program Code": "commercial_item_test_program",  # TODO
+    "Commercial Item Test Program": "commercial_item_test_program_description",  # TODO
+    "A-76 FAIR Act Action Code": "a76_fair_act_action_code",  # TODO
+    "A-76 FAIR Act Action": "a76_fair_act_action_description",  # TODO
+    "FedBizOpps Code": "fed_biz_opps",  # DONE
+    "FedBizOpps": "fed_biz_opps_description",  # DONE
+    "Local Area Set Aside Code": "local_area_set_aside_code",  # TODO
+    "Local Area Set Aside": "local_area_set_aside_description",  # TODO
+    "Price Evaluation Adjustment Preference Percent Difference": "price_evaluation_adjustment_preference_percent_difference",  # DONE
+    "Clinger-Cohen Act Planning Compliance Code": "clinger_cohen_act_planning_code",  # TODO
+    "Clinger-Cohen Act Planning Compliance": "clinger_cohen_act_planning_description",  # TODO
+    "Walsh Healey Act Code": "walsh_healey_act_code",  # TODO
+    "Walsh Healey Act": "walsh_healey_act_description",  # TODO
+    "Service Contract Act Code": "service_contract_act",  # DONE
+    "Service Contract Act": "service_contract_act_description",  # DONE
+    "Davis Bacon Act Code": "davis_bacon_act",  # DONE
+    "Davis Bacon Act": "davis_bacon_act_description",  # DONE
+    "Interagency Contracting Authority Code": "interagency_contracting_authority",  # DONE
+    "Interagency Contracting Authority": "interagency_contracting_authority_description",  # DONE
+    "Other Statutory Authority": "other_statutory_authority",  # DONE
+    "Program Acronym": "program_acronym",  # DONE
+    "Parent Award Type Code": "parent_award_type_code",  # TODO
+    "Parent Award Type": "parent_award_type",  # TODO
+    "Parent Award Single or Multiple Code": "parent_award_single_or_multiple_code",  # TODO
+    "Parent Award Single or Multiple": "parent_award_single_or_multiple",  # TODO
+    "Major Program": "major_program",  # DONE
+    "National Interest Action Code": "national_interest_action",  # DONE
+    "National Interest Action": "national_interest_action_description",  # DONE
+    "Cost or Pricing Data Code": "cost_or_pricing_data",  # DONE
+    "Cost or Pricing Data": "cost_or_pricing_data_description",  # DONE
+    "Cost Accounting Standards Clause Code": "cost_accounting_standards_clause_code",  # TODO
+    "Cost Accounting Standards Clause": "cost_accounting_standards_clause_description",  # TODO
+    "GFE and GFP Code": "gfe_gfp",  # TODO: Code or description?
+    "GFE and GFP": "gfe_gfp",  # TODO: Code or description?
+    "Sea Transportation Code": "sea_transportation",  # DONE
+    "Sea Transportation": "sea_transportation_description",  # DONE
+    "Undefinitized Action Code": "undefinitized_action_code",  # TODO
+    "Undefinitized Action": "undefinitized_action_description",  # TODO
+    "Consolidated Contract Code": "consolidated_contract_code",  # TODO: Code or description?
+    "Consolidated Contract": "consolidated_contract_description",  # TODO: Code or description?
+    "Performance-Based Service Acquisition Code": "performance_based_service_acquisition",  # DONE
+    "Performance-Based Service Acquisition": "performance_based_service_acquisition_description",  # DONE
+    "Multi Year Contract Code": "multi_year_contract",  # TODO: Code or description?
+    "Multi Year Contract": "multi_year_contract",  # TODO: Code or description?
+    "Contract Financing Code": "contract_financing",  # DONE
+    "Contract Financing": "contract_financing_description",  # DONE
+    "Purchase Card as Payment Method Code": "purchase_card_as_payment_method_code",  # TODO: Code or description?
+    "Purchase Card as Payment Method": "purchase_card_as_payment_method_description",  # TODO: Code or description?
+    "Contingency Humanitarian or Peacekeeping Operation Code": "contingency_humanitarian_or_peacekeeping_operation",  # DONE
+    "Contingency Humanitarian or Peacekeeping Operation": "contingency_humanitarian_or_peacekeeping_operation_description",  # DONE
+    "Alaskan Native Owned Corporation or Firm": "alaskan_native_owned_corporation_or_firm",  # TODO: Special Legal Entity business type
+    "American Indian Owned Business": "american_indian_owned_business",  # TODO: Special Legal Entity business type
+    "Indian Tribe Federally Recognized": "indian_tribe_federally_recognized",  # TODO: Special Legal Entity business type
+    "Native Hawaiian Owned Business": "native_hawaiian_owned_business",  # TODO: Special Legal Entity business type
+    "Tribally Owned Business": "tribally_owned_business",  # TODO: Special Legal Entity business type
+    "Veteran Owned Business": "veteran_owned_business",  # TODO: Special Legal Entity business type, MAYBE service_disabled_veteran_owned_business
+    "Service Disabled Veteran Owned Business": "service_disabled_veteran_owned_business",  # TODO: Special Legal Entity business type
+    "Woman Owned Business": "woman_owned_business",  # TODO: Special Legal Entity business type
+    "Women Owned Small Business": "women_owned_small_business",  # TODO: Special Legal Entity business type
+    "Economically Disadvantaged Women Owned Small Business": "economically_disadvantaged_women_owned_small_business",  # TODO: Special Legal Entity business type
+    "Joint Venture Women Owned Small Business": "joint_venture_women_owned_small_business",  # TODO: Special Legal Entity business type
+    "Joint Venture Economically Disadvantaged Women Owned Small Business": "joint_venture_economic_disadvantaged_women_owned_small_bus",  # TODO: Special Legal Entity business type
+    "Minority Owned Business": "minority_owned_business",  # TODO: Special Legal Entity business type
+    "Subcontinent Asian Asian - Indian American Owned Business": "subcontinent_asian_asian_indian_american_owned_business",  # TODO: Special Legal Entity business type
+    "Asian Pacific American Owned Business": "asian_pacific_american_owned_business",  # TODO: Special Legal Entity business type
+    "Black American Owned Business": "black_american_owned_business",  # TODO: Special Legal Entity business type
+    "Hispanic American Owned Business": "hispanic_american_owned_business",  # TODO: Special Legal Entity business type
+    "Native American Owned Business": "native_american_owned_business",  # TODO: Special Legal Entity business type
+    "Other Minority Owned Business": "other_minority_owned_business",  # TODO: Special Legal Entity business type
     "Contracting Officer's Determination of Business Size": "contracting_officers_determination_of_business_size",
     "Contracting Officer's Determination of Business Size Code": "contracting_officers_determination_of_business_size_code",
-    "Emerging Small Business": "emerging_small_business",
-    "Community Developed Corporation Owned Firm": "community_developed_corporation_owned_firm",
-    "Labor Surplus Area Firm": "labor_surplus_area_firm",
-    "U.S. Federal Government": "us_federal_government",
-    "Federally Funded Research and Development Corp": "federally_funded_research_and_development_corp",
-    "Federal Agency": "federal_agency",
-    "U.S. State Government": "us_state_government",
-    "U.S. Local Government": "us_local_government",
-    "City Local Government": "city_local_government",
-    "County Local Government": "county_local_government",
-    "Inter-Municipal Local Government": "inter_municipal_local_government",
-    "Local Government Owned": "local_government_owned",
-    "Municipality Local Government": "municipality_local_government",
-    "School District Local Government": "school_district_local_government",
-    "Township Local Government": "township_local_government",
-    "U.S. Tribal Government": "us_tribal_government",
-    "Foreign Government": "foreign_government",
-    "Corporate Entity Not Tax Exempt": "corporate_entity_not_tax_exempt",
-    "Corporate Entity Tax Exempt": "corporate_entity_tax_exempt",
-    "Partnership or Limited Liability Partnership": "partnership_or_limited_liability_partnership",
-    "Sole Proprietorship": "sole_proprietorship",
-    "Small Agricultural Cooperative": "small_agricultural_cooperative",
-    "International Organization": "international_organization",
-    "U.S. Government Entity": "us_government_entity",
-    "Community Development Corporation": "community_development_corporation",
-    "Domestic Shelter": "domestic_shelter",
-    "Educational Institution": "educational_institution",
-    "Foundation": "foundation",
-    "Hospital Flag": "hospital_flag",
-    "Manufacturer of Goods": "manufacturer_of_goods",
-    "Veterinary Hospital": "veterinary_hospital",
-    "Hispanic Servicing Institution": "hispanic_servicing_institution",
-    "Receives Contracts": "receives_contracts",
-    "Receives Grants": "receives_grants",
-    "Receives Contracts and Grants": "receives_contracts_and_grants",
-    "Airport Authority": "airport_authority",
-    "Council of Governments": "council_of_governments",
-    "Housing Authorities Public/Tribal": "housing_authorities_public_tribal",
-    "Interstate Entity": "interstate_entity",
-    "Planning Commission": "planning_commission",
-    "Port Authority": "port_authority",
-    "Transit Authority": "transit_authority",
-    "Subchapter S Corporation": "subchapter_scorporation",
-    "Limited Liability Corporation": "limited_liability_corporation",
-    "Foreign Owned and Located": "foreign_owned_and_located",
-    "For Profit Organization": "for_profit_organization",
-    "Nonprofit Organization": "nonprofit_organization",
-    "Other Not For Profit Organization": "other_not_for_profit_organization",
-    "The AbilityOne Program": "the_ability_one_program",
-    "Private University or College ": "private_university_or_college",
-    "State Controlled Institution of Higher Learning": "state_controlled_institution_of_higher_learning",
-    "1862 Land Grant College": "1862_land_grant_college",
-    "1890 Land Grant College": "1890_land_grant_college",
-    "1994 Land Grant College": "1994_land_grant_college",
-    "Minority Institution": "minority_institution",
-    "Historically Black College or University": "historically_black_college",
-    "Tribal College": "tribal_college",
-    "Alaskan Native Servicing Institution": "alaskan_native_servicing_institution",
-    "Native Hawaiian Servicing Institution": "native_hawaiian_servicing_institution",
-    "School of Forestry": "school_of_forestry",
-    "Veterinary College": "veterinary_college",
-    "DoT Certified Disadvantaged Business Enterprise": "dot_certified_disadvantage",
-    "Self-Certified Small Disadvantaged Business": "self_certified_small_disadvantaged_business",
-    "Small Disadvantaged Business": "small_disadvantaged_business",
-    "8a Program Participant": "c8a_program_participant",
-    "Historically Underutilized Business Zone HUBZone Firm": "historically_underutilized_business_zone _hubzone_firm",
-    "SBA Certified 8a Joint Venture": "sba_certified_8a_joint_venture",
+    "Emerging Small Business": "emerging_small_business",  # TODO: Special Legal Entity business type
+    "Community Developed Corporation Owned Firm": "community_developed_corporation_owned_firm",  # TODO: Special Legal Entity business type
+    "Labor Surplus Area Firm": "labor_surplus_area_firm",  # TODO: Special Legal Entity business type
+    "U.S. Federal Government": "transaction__recipient__us_federal_government",  # DONE
+    "Federally Funded Research and Development Corp": "transaction__recipient__federally_funded_research_and_development_corp",
+    "Federal Agency": "transaction__recipient__federal_agency",  # DONE
+    "U.S. State Government": "transaction__recipient__us_state_government",  # DONE
+    "U.S. Local Government": "transaction__recipient__us_local_government",  # DONE
+    "City Local Government": "transaction__recipient__city_local_government",  # DONE
+    "County Local Government": "transaction__recipient__county_local_government",  # DONE
+    "Inter-Municipal Local Government": "transaction__recipient__inter_municipal_local_government",  # DONE
+    "Local Government Owned": "transaction__recipient__local_government_owned",  # DONE
+    "Municipality Local Government": "transaction__recipient__municipality_local_government",  # DONE
+    "School District Local Government": "transaction__recipient__school_district_local_government",  # DONE
+    "Township Local Government": "transaction__recipient__township_local_government",  # DONE
+    "U.S. Tribal Government": "transaction__recipient__us_tribal_government",  # DONE
+    "Foreign Government": "transaction__recipient__foreign_government",  # DONE
+    "Corporate Entity Not Tax Exempt": "transaction__recipient__corporate_entity_not_tax_exempt",  # DONE
+    "Corporate Entity Tax Exempt": "transaction__recipient__corporate_entity_tax_exempt",  # DONE
+    "Partnership or Limited Liability Partnership": "transaction__recipient__partnership_or_limited_liability_partnership",  # DONE
+    "Sole Proprietorship": "transaction__recipient__sole_proprietorship",  # DONE
+    "Small Agricultural Cooperative": "transaction__recipient__small_agricultural_cooperative",  # DONE
+    "International Organization": "transaction__recipient__international_organization",  # DONE
+    "U.S. Government Entity": "transaction__recipient__us_government_entity",  # DONE
+    "Community Development Corporation": "transaction__recipient__community_development_corporation",  # DONE
+    "Domestic Shelter": "transaction__recipient__domestic_shelter",  # DONE
+    "Educational Institution": "transaction__recipient__educational_institution",  # DONE
+    "Foundation": "transaction__recipient__foundation",  # DONE
+    "Hospital Flag": "transaction__recipient__hospital_flag",  # DONE
+    "Manufacturer of Goods": "transaction__recipient__manufacturer_of_goods",  # DONE
+    "Veterinary Hospital": "transaction__recipient__veterinary_hospital",  # DONE
+    "Hispanic Servicing Institution": "transaction__recipient__hispanic_servicing_institution",  # DONE
+    "Receives Contracts": "receives_contracts",  # TODO receives_contracts_and_grants
+    "Receives Grants": "receives_grants",  # TODO receives_contracts_and_grants
+    "Receives Contracts and Grants": "transaction__recipient__receives_contracts_and_grants",  # DONE
+    "Airport Authority": "transaction__recipient__airport_authority",  # DONE
+    "Council of Governments": "transaction__recipient__council_of_governments",  # DONE
+    "Housing Authorities Public/Tribal": "transaction__recipient__housing_authorities_public_tribal",  # DONE
+    "Interstate Entity": "transaction__recipient__interstate_entity",  # DONE
+    "Planning Commission": "transaction__recipient__planning_commission",  # DONE
+    "Port Authority": "transaction__recipient__port_authority",  # DONE
+    "Transit Authority": "transaction__recipient__transit_authority",  # DONE
+    "Subchapter S Corporation": "transaction__recipient__subchapter_scorporation",  # DONE
+    "Limited Liability Corporation": "transaction__recipient__limited_liability_corporation",  # DONE
+    "Foreign Owned and Located": "transaction__recipient__foreign_owned_and_located",  # DONE
+    "For Profit Organization": "transaction__recipient__for_profit_organization",  # DONE
+    "Nonprofit Organization": "transaction__recipient__nonprofit_organization",  # DONE
+    "Other Not For Profit Organization": "transaction__recipient__other_not_for_profit_organization",  # DONE
+    "The AbilityOne Program": "transaction__recipient__the_ability_one_program",  # DONE
+    "Private University or College ": "transaction__recipient__private_university_or_college",  # DONE
+    "State Controlled Institution of Higher Learning": "transaction__recipient__state_controlled_institution_of_higher_learning",  # DONE
+    "1862 Land Grant College": "transaction__recipient__c1862_land_grant_college",  # DONE
+    "1890 Land Grant College": "transaction__recipient__c1890_land_grant_college",  # DONE
+    "1994 Land Grant College": "transaction__recipient__c1994_land_grant_college",  # DONE
+    "Minority Institution": "transaction__recipient__minority_institution",  # DONE
+    "Historically Black College or University": "transaction__recipient__historically_black_college",  # DONE
+    "Tribal College": "transaction__recipient__tribal_college",  # DONE
+    "Alaskan Native Servicing Institution": "transaction__recipient__alaskan_native_servicing_institution",  # DONE
+    "Native Hawaiian Servicing Institution": "transaction__recipient__native_hawaiian_servicing_institution",  # DONE
+    "School of Forestry": "transaction__recipient__school_of_forestry",  # DONE
+    "Veterinary College": "transaction__recipient__veterinary_college",  # DONE
+    "DoT Certified Disadvantaged Business Enterprise": "transaction__recipient__dot_certified_disadvantage",  # DONE
+    "Self-Certified Small Disadvantaged Business": "transaction__recipient__self_certified_small_disadvantaged_business",  # DONE
+    "Small Disadvantaged Business": "transaction__recipient__small_disadvantaged_business",  # DONE
+    "8a Program Participant": "transaction__recipient__c8a_program_participant",  # DONE
+    "Historically Underutilized Business Zone HUBZone Firm": "transaction__recipient__historically_underutilized_business_zone _hubzone_firm",  # TODO
+    "SBA Certified 8a Joint Venture": "transaction__recipient__sba_certified_8a_joint_venture",  # DONE
     "Last Modified Date": "last_modified_date"  # DONE
 }
 

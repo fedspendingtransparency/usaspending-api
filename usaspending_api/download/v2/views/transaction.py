@@ -7,11 +7,12 @@ from usaspending_api.awards.v2.filters.transaction_contract import transaction_c
 from usaspending_api.download.v2.csv_creator import create_transaction_csv
 
 
-class DownloadTransactionViewSet(APIView):
+class DownloadTransactionsViewSet(APIView):
+
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
 
-        json_request = self.get_request_payload(request)
+        json_request = request.data
         filters = json_request['filters']
         columns = json_request['columns']
 
