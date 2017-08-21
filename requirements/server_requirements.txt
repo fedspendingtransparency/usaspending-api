@@ -1,2 +1,1 @@
-supervisor==3.3.3
 uwsgi==2.0.13.1
