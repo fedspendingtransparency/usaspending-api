@@ -4,7 +4,7 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.awards.models import Award
+from usaspending_api.awards.models import Award, Transaction
 from usaspending_api.references.models import Location, Agency, ToptierAgency, SubtierAgency
 
 
@@ -29,7 +29,7 @@ def budget_function_data(db):
         toptier_agency=ttagency1,
         subtier_agency=stagency1)
 
-    mommy.make(
+    award1 = mommy.make(
         Award,
         id=1,
         description="test",
@@ -41,6 +41,13 @@ def budget_function_data(db):
         funding_agency=agency1,
         total_obligation=1000000.10)
 
+    trans1 = mommy.make(
+        Transaction,
+        action_date="2222-2-22",
+        id=1,
+        award=award1,
+        federal_action_obligation=50)
+
 
 @pytest.mark.django_db
 def test_spending_over_time_success(client, budget_function_data):
@@ -50,14 +57,40 @@ def test_spending_over_time_success(client, budget_function_data):
         '/api/v2/visualizations/spending_over_time',
         content_type='application/json',
         data=json.dumps({
-            "group": "quarter",
+            "group": "fiscal_year",
             "filters": {
                 "keyword": "test"
             }
         }))
     assert resp.status_code == status.HTTP_200_OK
     print(resp.data)
-
+    all_filters = {
+        "keyword": "test",
+        "time_period": "2222-2-22",
+        'award_type_codes': ['011','020'],
+        'agencies': 'idk',
+        'legal_entities': 'idk',
+        'recipient_location_scope': 'idk',
+        'recipient_locations': 'idk',
+        'recipient_type_names': 'idk',
+        'place_of_performance_scope': 'idk',
+        'place_of_performances': 'idk',
+        'award_amounts': 'idk',
+        'award_ids': 'idk',
+        'program_numbers': 'idk',
+        'naics_codes': ['2','1'],
+        'psc_codes': ["1","2"],
+        'contract_pricing_type_codes': ["",""],
+        'set_aside_type_codes': ["",""],
+        'extent_competed_type_codes': [""]
+    }
+    resp = client.post(
+        '/api/v2/visualizations/spending_over_time',
+        content_type='application/json',
+        data=json.dumps({
+            "group": "quarter",
+            "filters": all_filters
+        }))
     # test for similar matches (with no duplicates)
 
 

@@ -27,6 +27,29 @@ def get_params_from_req_or_request(request=None, req=None):
 
     return params
 
+def generate_fiscal_year(context):
+    """ Generate fiscal year based on the date provided """
+    year = context.year
+    print(year)
+    if context.month in [10, 11, 12]:
+        year += 1
+    return year
+
+
+def generate_fiscal_period(context):
+    """ Generate fiscal period based on the date provided """
+
+    period = (context.month + 3) % 12
+    period = 12 if period == 0 else period
+    return period
+
+
+def generate_fiscal_month(context):
+    """ Generate fiscal period based on the date provided """
+    if context.month in [10, 11, 12, "10", "11", "12"]:
+        return context.month - 9
+    return context.month + 3
+
 
 def fy(raw_date):
     'Federal fiscal year corresponding to date'

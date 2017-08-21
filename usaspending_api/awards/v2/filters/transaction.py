@@ -30,7 +30,9 @@ def transaction_filter(filters):
 
         # keyword - DONE
         if key == "keyword":
-            queryset = queryset.fitler(award__description=value)
+            print("keyword")
+            print(value)
+            queryset = queryset.filter(award__description=value)
 
         # time_period - DONE
         elif key == "time_period":
@@ -38,7 +40,7 @@ def transaction_filter(filters):
                 or_queryset = Transaction.objects.none()
                 for v in value:
                     # (may have to cast to date) (oct 1 to sept 30)
-                    or_queryset = or_queryset.fitler(
+                    or_queryset = or_queryset.filter(
                         award__period_of_performance_start_date__gte=value["start_date"],
                         award__period_of_performance_current_end_date__lte=value["end_date"])
                 queryset |= or_queryset
@@ -49,7 +51,7 @@ def transaction_filter(filters):
         elif key == "award_type_codes":
             or_queryset = Transaction.objects.none()
             for v in value:
-                or_queryset |= Transaction.fitler(award__type=v)
+                or_queryset |= Transaction.filter(award__type=v)
             queryset &= or_queryset
 
         # agencies - DONE
@@ -61,14 +63,14 @@ def transaction_filter(filters):
                 name = v["name"]
                 if type == "funding":
                     if tier == "toptier":
-                        or_queryset |= Transaction.fitler(award__funding_agency__toptier_agency__name=name)
+                        or_queryset |= Transaction.filter(award__funding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
-                        or_queryset |= Transaction.fitler(award__funding_agency__subtier_agency__name=name)
+                        or_queryset |= Transaction.filter(award__funding_agency__subtier_agency__name=name)
                 elif type == "awarding":
                     if tier == "toptier":
-                        or_queryset |= Transaction.fitler(award__awarding_agency__toptier_agency__name=name)
+                        or_queryset |= Transaction.filter(award__awarding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
-                        or_queryset |= Transaction.fitler(award__awarding_agency__subtier_agency__name=name)
+                        or_queryset |= Transaction.filter(award__awarding_agency__subtier_agency__name=name)
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + name + ' type is invalid.')
             pass
@@ -77,7 +79,7 @@ def transaction_filter(filters):
         elif key == "legal_entities":
             or_queryset = Transaction.objects.none()
             for v in value:
-                or_queryset |= Transaction.fitler(award__recipient__name=v)
+                or_queryset |= Transaction.filter(award__recipient__name=v)
             queryset = queryset & or_queryset
 
         # recipient_location_scope (broken till data reload) - Done
@@ -95,7 +97,7 @@ def transaction_filter(filters):
             if value is not None:
                 or_queryset = Transaction.objects.none()
                 for v in value:
-                    or_queryset |= Transaction.fitler(award__recipient__location__location_id=v)
+                    or_queryset |= Transaction.filter(award__recipient__location__location_id=v)
                 queryset = queryset & or_queryset
             else:
                 raise InvalidParameterException('Invalid filter: recipient_location object is invalid.')
@@ -104,7 +106,7 @@ def transaction_filter(filters):
         elif key == "recipient_type_names":
             or_queryset = Transaction.objects.none()
             for v in value:
-                or_queryset |= Transaction.fitler(award__recipient__business_types_description=v)
+                or_queryset |= Transaction.filter(award__recipient__business_types_description=v)
             queryset &= or_queryset
 
         # place_of_performance_scope (broken till data reload)- DONE
@@ -121,7 +123,7 @@ def transaction_filter(filters):
             if value is not None:
                 or_queryset = Transaction.objects.none()
                 for v in value:
-                    or_queryset |= Transaction.fitler(award__place_of_performance__location_id=v)
+                    or_queryset |= Transaction.filter(award__place_of_performance__location_id=v)
                 queryset = queryset & or_queryset
             else:
                 raise InvalidParameterException('Invalid filter: recipient_location object is invalid.')
@@ -131,12 +133,12 @@ def transaction_filter(filters):
             or_queryset = Transaction.objects.none()
             for v in value:
                 if v["lower_bound"] is not None and v["upper_bound"] is not None:
-                    or_queryset |= Transaction.fitler(award__total_obligation__gt=v["lower_bound"],
+                    or_queryset |= Transaction.filter(award__total_obligation__gt=v["lower_bound"],
                                                       total_obligation__lt=v["upper_bound"])
                 elif v["lower_bound"] is not None:
-                    or_queryset |= Transaction.fitler(award__total_obligation__gt=v["lower_bound"])
+                    or_queryset |= Transaction.filter(award__total_obligation__gt=v["lower_bound"])
                 elif v["upper_bound"] is not None:
-                    or_queryset |= Transaction.fitler(award__total_obligation__lt=v["upper_bound"])
+                    or_queryset |= Transaction.filter(award__total_obligation__lt=v["upper_bound"])
                 else:
                     raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
             queryset &= or_queryset
@@ -145,14 +147,14 @@ def transaction_filter(filters):
         elif key == "award_ids":
             or_queryset = Transaction.objects.none()
             for v in value:
-                or_queryset |= Transaction.fitler(award__id=v)
+                or_queryset |= Transaction.filter(award__id=v)
             queryset &= or_queryset
 
         # program_numbers  - DONE
         elif key == "program_numbers":
             or_queryset = Transaction.objects.none()
             for v in value:
-                or_queryset |= Transaction.fitler(
+                or_queryset |= Transaction.filter(
                     assistance_data__cfda__program_number=v)
             queryset &= or_queryset
 
@@ -160,7 +162,7 @@ def transaction_filter(filters):
         elif key == "naics_codes":
             or_queryset = Transaction.objects.none()
             for v in value:
-                or_queryset |= Transaction.fitler(
+                or_queryset |= Transaction.filter(
                     contract_data__naics=v)
             queryset &= or_queryset
 
@@ -168,7 +170,7 @@ def transaction_filter(filters):
         elif key == "psc_codes":
             or_queryset = Transaction.objects.none()
             for v in value:
-                or_queryset |= Transaction.fitler(
+                or_queryset |= Transaction.filter(
                     contract_data__product_or_service_code=v)
             queryset &= or_queryset
 
@@ -176,21 +178,21 @@ def transaction_filter(filters):
         elif key == "contract_pricing_type_codes":
             or_queryset = Transaction.objects.none()
             for v in value:
-                or_queryset |= Transaction.fitler(
+                or_queryset |= Transaction.filter(
                     contract_data__type_of_contract_pricing=v)
             queryset &= or_queryset
         # set_aside_type_codes - DONE
         elif key == "set_aside_type_codes":
             or_queryset = Transaction.objects.none()
             for v in value:
-                or_queryset |= Transaction.fitler(
+                or_queryset |= Transaction.filter(
                     contract_data__type_set_aside=v)
             queryset &= or_queryset
         # extent_competed_type_codes - DONE
         elif key == "extent_competed_type_codes":
             or_queryset = Transaction.objects.none()
             for v in value:
-                or_queryset |= Transaction.fitler(
+                or_queryset |= Transaction.filter(
                     contract_data__extent_competed=v)
             queryset &= or_queryset
 
@@ -199,6 +201,6 @@ def transaction_filter(filters):
             # kwargs = {
             #     '{0}'.format(filterdict[key]): value
             # }
-            # queryset = queryset.fitler(**kwargs)
+            # queryset = queryset.filter(**kwargs)
 
     return queryset
