@@ -11,7 +11,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
-        print('test1')
         json_request = request.data
         group = json_request.get('group', None)
         filters = json_request.get('filters', None)
@@ -26,17 +25,14 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         queryset = transaction_filter(filters)
         # Filter based on search text
-        print(queryset.query)
         response = {'group': group, 'results': []}
 
         # filter queryset by time
         queryset = queryset.order_by("award__period_of_performance_start_date")
         # oldest_date = queryset.last().award.period_of_performance_start_date
-
         group_results = {}  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
         for trans in queryset:
-            #transaction_year = trans.action_date.split('-')[0]
             key = {}
             if group == "fy" or group == "fiscal_year":
                 fy = generate_fiscal_year(trans.action_date)

@@ -63,26 +63,55 @@ def test_spending_over_time_success(client, budget_function_data):
             }
         }))
     assert resp.status_code == status.HTTP_200_OK
-    print(resp.data)
     all_filters = {
         "keyword": "test",
-        "time_period": "2222-2-22",
+        "time_period": [
+            {
+                "start_date": "2016-10-01",
+                "end_date": "2017-09-30"
+            }
+        ],
         'award_type_codes': ['011','020'],
-        'agencies': 'idk',
-        'legal_entities': 'idk',
-        'recipient_location_scope': 'idk',
-        'recipient_locations': 'idk',
-        'recipient_type_names': 'idk',
-        'place_of_performance_scope': 'idk',
-        'place_of_performances': 'idk',
-        'award_amounts': 'idk',
-        'award_ids': 'idk',
-        'program_numbers': 'idk',
-        'naics_codes': ['2','1'],
-        'psc_codes': ["1","2"],
-        'contract_pricing_type_codes': ["",""],
-        'set_aside_type_codes': ["",""],
-        'extent_competed_type_codes': [""]
+        "agencies": [
+            {
+                "type": "funding",
+                "tier": "toptier",
+                "name": "Office of Pizza"
+            },
+            {
+                "type": "awarding",
+                "tier": "subtier",
+                "name": "Personal Pizza"
+            }
+        ],
+        "legal_entities": [1, 2, 3],
+        'recipient_scope': "domestic",
+        "recipient_locations": [1, 2, 3],
+        "recipient_type_names": [
+            "Small Business",
+            "Alaskan Native Owned Business"],
+        "place_of_performance_scope": "domestic",
+        "place_of_performance_locations": [1, 2, 3],
+        "award_type_codes": ["A", "B", "03"],
+        "award_ids": [1, 2, 3],
+        "award_amounts": [
+            {
+                "lower_bound": 1000000.00,
+                "upper_bound": 25000000.00
+            },
+            {
+                "upper_bound": 1000000.00
+            },
+            {
+                "lower_bound": 500000000.00
+            }
+        ],
+        "program_numbers": ["10.553"],
+        "naics_codes": ["336411"],
+        "psc_codes": ["1510"],
+        "contract_pricing_type_codes": ["SAMPLECODE_CPTC"],
+        "set_aside_type_codes": ["SAMPLECODE123"],
+        "extent_competed_type_codes": ["SAMPLECODE_ECTC"]
     }
     resp = client.post(
         '/api/v2/visualizations/spending_over_time',
