@@ -3,6 +3,8 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
+from usaspending_api.awards.v2.filters.award import award_filter
+
 import ast
 from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month
 
@@ -193,3 +195,52 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         response['results'] = results
         return Response(response)
+
+
+class SpendingByGeographyVisualizationViewSet(APIView):
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        json_request = request.data
+        scope = json_request.get('scope', None)
+        filters = json_request.get('filters', None)
+        limit = json_request.get('limit', None)
+
+        if scope is None:
+            raise InvalidParameterException('Missing one or more required request parameters: group')
+        if filters is None:
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
+        potential_scopes = ["recipient_location", "place_of_performance"]
+        if scope not in potential_scopes:
+            raise InvalidParameterException('group does not have a valid value')
+
+        # build sql query filters
+        queryset = award_filter(filters)
+
+        # define what values are needed in the sql query
+        # queryset = queryset.values('action_date', 'federal_action_obligation')
+
+        # build response
+        response = {'scope': scope, 'results': []}
+
+        # key is time period (defined by group), value is federal_action_obligation
+        name_dict = {}
+        if scope == "recipient_location":
+            for award in queryset:
+                if award.get('recipient') & award.get('recipient').get('location'):
+                    state_code = award.recipient.location.get('state_code')
+                    if name_dict.get(state_code):
+                        name_dict[state_code] += award.total_obligation
+                    else:
+                        name_dict[state_code] = award.total_obligation
+
+        # convert result into expected format
+        results = []
+
+        for key, value in name_dict.items():
+            result = {"state_code": key, "aggregated_amount": float(value)}
+            results.append(result)
+        response['results'] = results
+
+        return Response(response)
+
