@@ -175,14 +175,14 @@ class Award(DataSourceTrackedModel):
         # If the ID is fain or a uri, it's financial assistance. If the award transaction
         # has both a fain and a uri, include both.
         try:
-            lookup_kwargs = {"awarding_agency": awarding_agency}
+            lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
             for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
                 lookup_kwargs[i[1]] = i[0]
-                if parent_award_id:
-                    lookup_kwargs["parent_award__" + i[1]] = parent_award_id
+                if parent_award_id and i[0]:
                     # parent_award__piid, parent_award__fain, parent_award__uri
-                else:
-                    lookup_kwargs["parent_award"] = None
+                    lookup_kwargs["parent_award__" + i[1]] = parent_award_id
+                    if "parent_award" in lookup_kwargs:
+                        del lookup_kwargs["parent_award"]
 
             # Look for an existing award record
             summary_award = Award.objects \
