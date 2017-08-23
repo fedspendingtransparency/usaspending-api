@@ -322,3 +322,40 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         return Response(response)
 
 
+class SpendingByAwardVisualizationViewSet(APIView):
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        json_request = request.data
+        fields = json_request.get('fields', None)
+        filters = json_request.get('filters', None)
+        limit = json_request.get('limit', None)
+        page = json_request.get('page', None)
+
+        if fields is None:
+            raise InvalidParameterException('Missing one or more required request parameters: fields')
+        if filters is None:
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
+        if limit is None:
+            raise InvalidParameterException('Missing one or more required request parameters: limit')
+        if page is None:
+            raise InvalidParameterException('Missing one or more required request parameters: page')
+
+        # build sql query filters
+        queryset = award_filter(filters)
+
+        # define what values are needed in the sql query
+        # queryset = queryset.values('action_date', 'federal_action_obligation')
+
+        # build response
+        response = {'limit': limit, 'page': page, 'results': []}
+        results = []
+        name_dict = {}
+
+        for award in queryset:
+            row = {}
+            for filter in filters:
+                row[filter] = award[filter]
+            results.append(row)
+
+        return Response(response)
