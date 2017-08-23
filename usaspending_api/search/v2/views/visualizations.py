@@ -99,9 +99,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         # filter queryset
         queryset = transaction_filter(filters)
 
-        # build response
-        response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': []}
-
         # filter the transactions by category
         if category == "funding_agency" | category == "awarding_agency":
             # filter the transactions by scope name
@@ -137,6 +134,20 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                             name_dict[oname] = {"aggregated_amount": trans.federal_action_obligation,
                                                 "abbreviation": trans[category].toptier_agency.abbreviation}
 
+            # build response
+            results = []
+            # [{
+            # "agency_name": ttname,
+            # "agency_abbreviation": ttabrev,
+            # 	"aggregated_amount": "200000000"
+            # },...]
+            for key, value in name_dict:
+                results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
+                                "aggregated_amount": value["aggregated_amount"]})
+
+            response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
+            return Response(response)
+
         elif category == "recipient":
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
@@ -151,6 +162,19 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         else:
                             name_dict[r_name] = {"aggregated_amount": trans.federal_action_obligation,
                                                  "legal_entity_id": trans.recipient.get('legal_entity_id')}
+                # build response
+                results = []
+                # [{
+                # "recipient_name": key,
+                # "legal_entity_id": ttabrev,
+                # 	"aggregated_amount": "200000000"
+                # },...]
+                for key, value in name_dict:
+                    results.append({"recipient_name": key, "legal_entity_id": value["legal_entity_id"],
+                                    "aggregated_amount": value["aggregated_amount"]})
+                response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
+                return Response(response)
+
             elif scope == "parent_duns":
                 for trans in queryset:
                     if trans.get('recipient'):
@@ -161,15 +185,26 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                             name_dict[r_name] = {"aggregated_amount": trans.federal_action_obligation,
                                                  "parent_recipient_unique_id":
                                                      trans.recipient.get('parent_recipient_unique_id')}
+                # build response
+                results = []
+                # [{
+                # "recipient_name": key,
+                # "legal_entity_id": ttabrev,
+                # 	"aggregated_amount": "200000000"
+                # },...]
+                for key, value in name_dict:
+                    results.append({"recipient_name": key, "parent_recipient_unique_id": value["parent_recipient_unique_id"],
+                                    "aggregated_amount": value["aggregated_amount"]})
+                response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
+                return Response(response)
             else:  # recipient_type
                 raise InvalidParameterException('recipient type is not yet implemented')
 
         elif category == "cfda_programs":
-            pass
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
             # define what values are needed in the sql query
-            queryset = queryset.values('federal_action_obligation', 'assistance_data__cgac')
+            #queryset = queryset.values('federal_action_obligation', 'assistance_data__cgac')
             for trans in queryset:
                 if trans.get('assistance_data'):
                     cfda_program_number = trans.assistance_data.cfda.program_number
@@ -177,24 +212,66 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         name_dict[cfda_program_number]["aggregated_amount"] += trans.federal_action_obligation
                     else:
                         name_dict[cfda_program_number] = {"aggregated_amount": trans.federal_action_obligation,
-                                                          "program_title": trans.assistance_data.cfda.get('program_title'),
-                                                          "popular_name": trans.assistance_data.cfda.get('popular_name')}
+                                                          "program_title":
+                                                              trans.assistance_data.cfda.get('program_title'),
+                                                          "popular_name":
+                                                              trans.assistance_data.cfda.get('popular_name')}
+
+            # build response
+            results = []
+
+            for key, value in name_dict:
+                results.append({"cfda_program_number": key, "program_title": value["program_title"],
+                                "popular_name": value["popular_name"],
+                                "aggregated_amount": value["aggregated_amount"]})
+            response = {'category': category, 'limit': limit, 'page': page,
+                        'results': results}
+            return Response(response)
+
         else:  # industry_codes
-            pass
+            # filter the transactions by scope name
+            name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
+            # define what values are needed in the sql query
+            #queryset = queryset.values('federal_action_obligation', 'assistance_data__cgac')
 
-        # build results
-        results = []
-        # [{
-        # "agency_name": ttname,
-        # "agency_abbreviation": ttabrev,
-        # 	"aggregated_amount": "200000000"
-        # }]
-        for key, value in name_dict:
-            results.append({"agency_name": key, "agency_abbreviation":value["abbreviation"],
-                            "aggregated_amount": value["aggregated_amount"]})
+            if scope == "psc":
+                for trans in queryset:
+                    if trans.get('contract_data'):
+                        psc = trans.contract_data.product_or_service_code
+                        if name_dict.get(psc):
+                            name_dict[psc] += trans.federal_action_obligation
+                        else:
+                            name_dict[psc] = trans.federal_action_obligation
 
-        response['results'] = results
-        return Response(response)
+                        results = []
+                        for key, value in name_dict:
+                            results.append({"psc_code": key,
+                                            "aggregated_amount": value})
+                        response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
+                                    'results': results}
+                        return Response(response)
+
+            elif scope == "naics":
+                for trans in queryset:
+                    if trans.get('contract_data'):
+                        naics = trans.contract_data.naics
+                        if name_dict.get(naics):
+                            name_dict[naics]["aggregated_amount"] += trans.federal_action_obligation
+                        else:
+                            name_dict[naics] = {"aggregated_amount": trans.federal_action_obligation,
+                                                "naics_description":
+                                                    trans.contract_data.get('naics_description')}
+
+                        results = []
+                        for key, value in name_dict:
+                            results.append({"psc_code": key,
+                                            "aggregated_amount": value})
+                        response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
+                                    'results': results}
+                        return Response(response)
+
+            else:  # recipient_type
+                raise InvalidParameterException('recipient type is not yet implemented')
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):
@@ -243,4 +320,5 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         response['results'] = results
 
         return Response(response)
+
 
