@@ -61,6 +61,7 @@ class Command(BaseCommand):
 
                     toptier_agency = None
                     subtier_agency = None
+                    toptier_flag = False
 
                     # Toptier agency
                     # First, see if we have a toptier agency that matches our fpds and cgac codes
@@ -77,10 +78,10 @@ class Command(BaseCommand):
                         # Set or update the department name and abbreviation
                         toptier_agency.name = department_name
                         toptier_agency.abbreviation = department_abbr
-                        if toptier_flag:
-                            toptier_agency.mission = mission
-                            toptier_agency.website = website
-                            toptier_agency.icon_filename = icon_filename
+                    if toptier_flag:
+                        toptier_agency.mission = mission
+                        toptier_agency.website = website
+                        toptier_agency.icon_filename = icon_filename
 
                     toptier_agency.save()
 
