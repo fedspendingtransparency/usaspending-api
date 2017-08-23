@@ -354,8 +354,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         for award in queryset:
             row = {}
-            for filter in filters:
-                row[filter] = award[filter]
+            for f in filters:
+                row[f] = award[f]
             results.append(row)
 
         return Response(response)
