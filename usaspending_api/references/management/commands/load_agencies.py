@@ -67,7 +67,7 @@ class Command(BaseCommand):
                     # First, see if we have a toptier agency that matches our fpds and cgac codes
                     # We use only these codes here to make sure we are idempotent with previous
                     # versions of this agency loader
-                    if frec_code:
+                    if frec_code & (subtier_name == department_name):
                         toptier_flag = True
                         toptier_agency, created = ToptierAgency.objects.get_or_create(cgac_code=frec_code, fpds_code=fpds_code)
                         toptier_agency.name = subtier_name
