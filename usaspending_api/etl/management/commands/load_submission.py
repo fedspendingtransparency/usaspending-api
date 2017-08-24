@@ -621,8 +621,6 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     skipped_tas = {}
 
     award_financial_frame['txn'] = award_financial_frame.apply(get_award_financial_transaction, axis=1)
-    award_financial_frame = award_financial_frame.replace(np.nan, '', regex=True)
-    award_financial_frame = award_financial_frame.applymap(lambda x: str(x).strip() if len(str(x).strip()) else None)
     award_financial_frame['awarding_agency'] = award_financial_frame.apply(get_awarding_agency, axis=1)
     award_financial_frame['object_class'] = award_financial_frame.apply(get_or_create_object_class_rw, axis=1,
                                                                         logger=logger)

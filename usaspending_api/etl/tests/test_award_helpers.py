@@ -308,15 +308,15 @@ def test_get_award_financial_transaction():
 
     # match on piid
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid='abc'))
-    assert txn == agency.id
+    assert txn == str(agency.id)
 
     # match on piid + parent award id
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid='abc', parent_award_id='def'))
-    assert txn == agency.id
+    assert txn == str(agency.id)
 
     # match on fain
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain='123'))
-    assert txn == agency.id
+    assert txn == str(agency.id)
 
     # fain/uri combo should be unique
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain='123', uri='fakeuri'))
@@ -324,7 +324,7 @@ def test_get_award_financial_transaction():
 
     # match on uri alone
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, uri='456'))
-    assert txn == agency.id
+    assert txn == str(agency.id)
 
     # if there's an unmatched fain, we should not find a txn match,
     # even if there's a match on the URI
@@ -333,7 +333,7 @@ def test_get_award_financial_transaction():
 
     # match on fain alone, even when there's no uri = Null record in the txn table
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain='789'))
-    assert txn == agency.id
+    assert txn == str(agency.id)
 
     # should not match on award id fields for a different cgac
     txn = get_award_financial_transaction(FakeRow(agency_identifier='999', piid='abc'))
@@ -353,4 +353,4 @@ def test_get_award_financial_transaction():
         parent_award_id='def'
     )
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid='abc', parent_award_id='def'))
-    assert txn == agency.id
+    assert txn == str(agency.id)

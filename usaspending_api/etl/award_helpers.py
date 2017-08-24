@@ -237,14 +237,14 @@ def get_award_financial_transaction(row):
             contract_data__parent_award_id=row.parent_award_id) \
             .order_by('-action_date').values("awarding_agency").first()
 
-    return int(txn["awarding_agency"]) if txn else None
+    return str(txn["awarding_agency"]) if txn else None
 
 
 def get_awarding_agency(row):
     if row.txn:
         # We found a matching transaction, so grab its awarding agency
         # info and pass it get_or_create_summary_award
-        return Agency.objects.get(id=row.txn)
+        return Agency.objects.get(id=int(row.txn))
     else:
         # No matching transaction found, so find/create Award by using
         # topiter agency only, since CGAC code is the only piece of
