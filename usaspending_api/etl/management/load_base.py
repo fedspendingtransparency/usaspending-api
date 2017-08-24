@@ -16,7 +16,6 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
 from django.db import connection, connections, utils
 from django.core.cache import caches
-from django.utils.dateparse import parse_datetime
 
 from usaspending_api.awards.models import (
     Award,
@@ -56,6 +55,13 @@ class Command(BaseCommand):
             default=False,
             help='Runs the submission loader in test mode and uses stored data rather than pulling from a database'
         )
+        parser.add_argument(
+            '--noclean',
+            action='store_true',
+            dest='noclean',
+            default=False,
+            help='Skips the cleanup step to update model description fields'
+        )
 
     def handle(self, *args, **options):
         awards_cache.clear()
@@ -73,18 +79,24 @@ class Command(BaseCommand):
             db_cursor = PhonyCursor()
 
         self.handle_loading(db_cursor=db_cursor, *args, **options)
+
+        # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
+        if not options['noclean']:
+            update_model_description_fields()
+
         self.post_load_cleanup()
 
     def post_load_cleanup(self):
         """Global cleanup/post-load tasks not specific to a submission"""
 
-        # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
-        #    update_model_description_fields()
         # 2. Update awards to reflect their latest associated txn info
+        logger.info('Cleaning up awards...')
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
         # 3. Update contract-specific award fields to reflect latest txn info
+        logger.info('Cleaning up contract-specific awards...')
         update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
         # 4. Update the category variable
+        logger.info('Cleaning up award categories...')
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
 
