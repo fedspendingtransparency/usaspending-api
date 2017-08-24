@@ -82,7 +82,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         if category is None:
             raise InvalidParameterException('Missing one or more required request parameters: group')
-        if scope is None & category != "cfda_programs":
+        if (scope is None) & (category != "cfda_programs"):
             raise InvalidParameterException('Missing one or more required request parameters: group')
         if limit is None:
             limit = 10
@@ -90,15 +90,16 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             page = 0
         if filters is None:
             raise InvalidParameterException('Missing one or more required request parameters: filters')
-        potential_scopes = ["agency", "subagency", "offices"]
-        if scope not in potential_scopes:
-            raise InvalidParameterException('scope does not have a valid value')
+
 
         # filter queryset
         queryset = transaction_filter(filters)
 
         # filter the transactions by category
-        if category == "funding_agency" | category == "awarding_agency":
+        if category == "awarding_agency":
+            potential_scopes = ["agency", "subagency", "offices"]
+            if scope not in potential_scopes:
+                raise InvalidParameterException('scope does not have a valid value')
             # filter the transactions by scope name
             name_dict = {}  # {ttname: {aggregated_amount: 1000, abbreviation: "tt"}
             # define what values are needed in the sql query
@@ -106,31 +107,34 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             if scope == 'agency':
                 for trans in queryset:
-                    ttname = trans[category].toptier_agency.name
-                    if name_dict.get(ttname):
-                        name_dict[ttname]["aggregated_amount"] += trans.federal_action_obligation
-                    else:
-                        name_dict[ttname] = {"aggregated_amount": trans.federal_action_obligation,
-                                             "abbreviation": trans[category].toptier_agency.abbreviation}
+                    if (trans.get("awarding_agency")) & (trans.awarding_agency.get("toptier_agency")):
+                        ttname = trans.awarding_agency.toptier_agency.name
+                        if name_dict.get(ttname):
+                            name_dict[ttname]["aggregated_amount"] += trans.federal_action_obligation
+                        else:
+                            name_dict[ttname] = {"aggregated_amount": trans.federal_action_obligation,
+                                                 "abbreviation": trans.awarding_agency.toptier_agency.abbreviation}
 
             elif scope == 'subagency':
                 for trans in queryset:
-                    if trans[category].subtier_agency:
-                        stname = trans[category].subtier_agency.name
-                        if name_dict.get(stname):
-                            name_dict[stname]["aggregated_amount"] += trans.federal_action_obligation
-                        else:
-                            name_dict[stname] = {"aggregated_amount": trans.federal_action_obligation,
-                                                 "abbreviation": trans[category].toptier_agency.abbreviation}
+                    if (trans.get("awarding_agency")) & (trans.awarding_agency.get("subtier_agency")):
+                        if trans.awarding_agency.subtier_agency:
+                            stname = trans.awarding_agency.subtier_agency.name
+                            if name_dict.get(stname):
+                                name_dict[stname]["aggregated_amount"] += trans.federal_action_obligation
+                            else:
+                                name_dict[stname] = {"aggregated_amount": trans.federal_action_obligation,
+                                                     "abbreviation": trans.awarding_agency.toptier_agency.abbreviation}
             else:  # offices
                 for trans in queryset:
-                    if trans[category].office_agency:
-                        oname = trans[category].office_agency.name
-                        if name_dict.get(oname):
-                            name_dict[oname]["aggregated_amount"] += trans.federal_action_obligation
-                        else:
-                            name_dict[oname] = {"aggregated_amount": trans.federal_action_obligation,
-                                                "abbreviation": trans[category].toptier_agency.abbreviation}
+                    if (trans.get("awarding_agency")) & (trans.awarding_agency.get("office_agency")):
+                        if trans.awarding_agency.office_agency:
+                            oname = trans.awarding_agency.office_agency.name
+                            if name_dict.get(oname):
+                                name_dict[oname]["aggregated_amount"] += trans.federal_action_obligation
+                            else:
+                                name_dict[oname] = {"aggregated_amount": trans.federal_action_obligation,
+                                                    "abbreviation": trans.awarding_agency.toptier_agency.abbreviation}
 
             # build response
             results = []
@@ -146,6 +150,59 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
             return Response(response)
 
+        elif category == "funding_agency":
+            potential_scopes = ["agency", "subagency", "offices"]
+            if scope not in potential_scopes:
+                raise InvalidParameterException('scope does not have a valid value')
+            # filter the transactions by scope name
+            name_dict = {}  # {ttname: {aggregated_amount: 1000, abbreviation: "tt"}
+            # define what values are needed in the sql query
+            queryset = queryset.values('federal_action_obligation', 'funding_agency', 'awarding_agency')
+
+            if scope == 'agency':
+                for trans in queryset:
+                    if (trans.get("funding_agency")) & (trans.funding_agency.get("toptier_agency")):
+                        ttname = trans.funding_agency.toptier_agency.name
+                        if name_dict.get(ttname):
+                            name_dict[ttname]["aggregated_amount"] += trans.federal_action_obligation
+                        else:
+                            name_dict[ttname] = {"aggregated_amount": trans.federal_action_obligation,
+                                                 "abbreviation": trans.funding_agency.toptier_agency.abbreviation}
+
+            elif scope == 'subagency':
+                for trans in queryset:
+                    if (trans.get("funding_agency")) & (trans.funding_agency.get("subtier_agency")):
+                        if trans.funding_agency.subtier_agency:
+                            stname = trans.funding_agency.subtier_agency.name
+                            if name_dict.get(stname):
+                                name_dict[stname]["aggregated_amount"] += trans.federal_action_obligation
+                            else:
+                                name_dict[stname] = {"aggregated_amount": trans.federal_action_obligation,
+                                                     "abbreviation": trans.funding_agency.toptier_agency.abbreviation}
+            else:  # offices
+                for trans in queryset:
+                    if (trans.get("funding_agency")) & (trans.funding_agency.get("office_agency")):
+                        if trans.funding_agency.office_agency:
+                            oname = trans.funding_agency.office_agency.name
+                            if name_dict.get(oname):
+                                name_dict[oname]["aggregated_amount"] += trans.federal_action_obligation
+                            else:
+                                name_dict[oname] = {"aggregated_amount": trans.federal_action_obligation,
+                                                    "abbreviation": trans.funding_agency.toptier_agency.abbreviation}
+
+            # build response
+            results = []
+            # [{
+            # "agency_name": ttname,
+            # "agency_abbreviation": ttabrev,
+            # 	"aggregated_amount": "200000000"
+            # },...]
+            for key, value in name_dict:
+                results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
+                                "aggregated_amount": value["aggregated_amount"]})
+
+            response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
+            return Response(response)
         elif category == "recipient":
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
