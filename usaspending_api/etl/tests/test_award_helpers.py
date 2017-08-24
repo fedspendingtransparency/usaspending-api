@@ -318,9 +318,9 @@ def test_get_award_financial_transaction():
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain='123'))
     assert txn == agency.id
 
-    # if there's not match on fain/uri combo, we should match on fain by itself
+    # fain/uri combo should be unique
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain='123', uri='fakeuri'))
-    assert txn == agency.id
+    assert txn == None
 
     # match on uri alone
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, uri='456'))
