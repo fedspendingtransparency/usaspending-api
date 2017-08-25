@@ -80,24 +80,19 @@ class Command(BaseCommand):
 
         self.handle_loading(db_cursor=db_cursor, *args, **options)
 
-        # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
         if not options['noclean']:
+            # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
+            logger.info('Cleaning up model description fields...')
             update_model_description_fields()
-
-        self.post_load_cleanup()
-
-    def post_load_cleanup(self):
-        """Global cleanup/post-load tasks not specific to a submission"""
-
-        # 2. Update awards to reflect their latest associated txn info
-        logger.info('Cleaning up awards...')
-        update_awards(tuple(AWARD_UPDATE_ID_LIST))
-        # 3. Update contract-specific award fields to reflect latest txn info
-        logger.info('Cleaning up contract-specific awards...')
-        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
-        # 4. Update the category variable
-        logger.info('Cleaning up award categories...')
-        update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+            # 2. Update awards to reflect their latest associated txn info
+            logger.info('Cleaning up awards...')
+            update_awards(tuple(AWARD_UPDATE_ID_LIST))
+            # 3. Update contract-specific award fields to reflect latest txn info
+            logger.info('Cleaning up contract-specific awards...')
+            update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+            # 4. Update the category variable
+            logger.info('Cleaning up award categories...')
+            update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
 
 def run_sql_file(file_path, parameters):
