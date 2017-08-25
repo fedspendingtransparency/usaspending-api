@@ -7,6 +7,7 @@
 
 log/*
 csv_downloads/*
+tmp/*
 usaspending_api/logs/*
 usaspending_api/.idea/*
 usaspending_api/references/.idea/*

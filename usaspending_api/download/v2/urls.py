@@ -1,12 +1,12 @@
 from django.conf.urls import url
-from usaspending_api.download.v2.views.award import DownloadAwardsViewSet
-from usaspending_api.download.v2.views.common import DownloadStatusViewSet, DownloadColumnsViewSet
-from usaspending_api.download.v2.views.transaction import DownloadTransactionsViewSet
+
+from usaspending_api.download.v2 import views
+# from usaspending_api.download.v2.views.common import DownloadStatusViewSet, DownloadColumnsViewSet
 
 
 urlpatterns = [
-    url(r'^awards', DownloadAwardsViewSet.as_view()),
-    url(r'^columns', DownloadColumnsViewSet.as_view()),
-    url(r'^status', DownloadStatusViewSet.as_view()),
-    url(r'^transactions', DownloadTransactionsViewSet.as_view())
+    url(r'^awards', views.DownloadAwardsViewSet.as_view()),
+    # url(r'^columns', DownloadColumnsViewSet.as_view()),
+    url(r'^status', views.DownloadStatusViewSet.as_view()),
+    # url(r'^transactions', views.DownloadTransactionsViewSet.as_view())
 ]

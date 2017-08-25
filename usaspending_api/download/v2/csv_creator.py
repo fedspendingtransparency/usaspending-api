@@ -1,5 +1,5 @@
 import csv
-from usaspending_api.download.v2.lookups import transaction_d1_columns, transaction_d2_columns, transaction_columns_unique
+from usaspending_api.download.v2.download_column_lookups import transaction_d1_columns, transaction_d2_columns, transaction_columns_unique
 
 
 def create_transaction_csv(columns, transaction_contract_queryset, transaction_assistance_queryset):
