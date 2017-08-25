@@ -34,14 +34,14 @@ def test_subtier(agency_data):
     Make sure a subtier is properly mapped to its parent department
     """
 
-    # In this department, the FREC is being used as the cgac_code
-    subtier = Agency.objects.get(toptier_agency__cgac_code='002',
+    # Make sure the subtier is mapped to a frec and the department are mapped to a frec and toptier respectively
+    subtier = Agency.objects.get(toptier_agency__cgac_code='0000',
                                  toptier_agency__fpds_code='0000',
                                  subtier_agency__subtier_code='0001')
     department = Agency.objects.get(toptier_agency__cgac_code='002',
                                     toptier_agency__fpds_code='0000',
                                     subtier_agency__subtier_code='0000')
-    assert subtier.toptier_agency == department.toptier_agency
+    assert subtier.toptier_agency != department.toptier_agency
 
 
 @pytest.mark.django_db
