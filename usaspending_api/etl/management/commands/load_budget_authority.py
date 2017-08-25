@@ -84,7 +84,7 @@ class Command(BaseCommand):
             instance = FrecMap(
                 agency_identifier=row['AID'],
                 main_account_code=row['MAIN'],
-                treasury_appropriation_account_title=row['GWA_TAS NAME'],
+                treasury_appropriation_account_title=row['GWA_TAS_NAME'],
                 sub_function_code=row['Sub Function Code'],
                 fr_entity_code=row['FR Entity Type'])
             instances.append(instance)

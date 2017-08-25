@@ -173,79 +173,65 @@ class Award(DataSourceTrackedModel):
         """
         # If an award transaction's ID is a piid, it's contract data
         # If the ID is fain or a uri, it's financial assistance. If the award transaction
-        # has both a fain and a uri, fain takes precedence.
-        q_kwargs = {}
-        for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-            if i[0]:
-                q_kwargs[i[1]] = i[0]
-                if parent_award_id:
-                    q_kwargs["parent_award__" + i[1]] = parent_award_id
+        # has both a fain and a uri, include both.
+        try:
+            lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
+            for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+                lookup_kwargs[i[1]] = i[0]
+                if parent_award_id and i[0]:
                     # parent_award__piid, parent_award__fain, parent_award__uri
-                else:
-                    q_kwargs["parent_award"] = None
+                    lookup_kwargs["parent_award__" + i[1]] = parent_award_id
+                    if "parent_award" in lookup_kwargs:
+                        del lookup_kwargs["parent_award"]
 
-                # Now search for it
-                # Do we want to log something if the the query below turns up
-                # more than one award record?
-                if use_cache:
-                    q_kwargs_fixed = list(q_kwargs.items()) + [('awarding_agency', awarding_agency), ]
-                    q_kwargs_fixed.sort()
-                    summary_award = awards_cache.get(q_kwargs_fixed)
-                    if summary_award:
-                        return [], summary_award
-
-                # Look for an existing award record
-                summary_award = Award.objects \
-                    .filter(Q(**q_kwargs)) \
-                    .filter(awarding_agency=awarding_agency) \
-                    .first()
-                if (summary_award is None and
+            # Look for an existing award record
+            summary_award = Award.objects \
+                .filter(Q(**lookup_kwargs)) \
+                .filter(awarding_agency=awarding_agency) \
+                .first()
+            if (summary_award is None and
                         awarding_agency is not None and
                         awarding_agency.toptier_agency.name != awarding_agency.subtier_agency.name):
-                    # No award match found when searching by award id info +
-                    # awarding subtier agency. Relax the awarding agency
-                    # critera to just the toptier agency instead of the subtier
-                    # agency and try the search again.
-                    awarding_agency_toptier = Agency.get_by_toptier(
-                        awarding_agency.toptier_agency.cgac_code)
-                    summary_award = Award.objects \
-                        .filter(Q(**q_kwargs)) \
-                        .filter(awarding_agency=awarding_agency_toptier) \
-                        .first()
+                # No award match found when searching by award id info +
+                # awarding subtier agency. Relax the awarding agency
+                # critera to just the toptier agency instead of the subtier
+                # agency and try the search again.
+                awarding_agency_toptier = Agency.get_by_toptier(
+                    awarding_agency.toptier_agency.cgac_code)
+                summary_award = Award.objects \
+                    .filter(Q(**lookup_kwargs)) \
+                    .filter(awarding_agency=awarding_agency_toptier) \
+                    .first()
 
-                if summary_award:
-                    if use_cache:
-                        awards_cache.set(q_kwargs_fixed, summary_award)
-                    return [], summary_award
+            if summary_award:
+                return [], summary_award
 
-                # We weren't able to match, so create a new award record.
-                if parent_award_id:
-                    # If parent award id was supplied, recursively get/create
-                    # an award record for it
-                    parent_created, parent_award = Award.get_or_create_summary_award(
-                        use_cache=use_cache,
-                        **{i[1]: parent_award_id, 'awarding_agency': awarding_agency})
-                else:
-                    parent_created, parent_award = [], None
+            # We weren't able to match, so create a new award record.
+            if parent_award_id:
+                # If parent award id was supplied, recursively get/create
+                # an award record for it
+                parent_q_kwargs = {'awarding_agency': awarding_agency}
+                for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+                    parent_q_kwargs[i[1]] = parent_award_id if i[0] else None
+                parent_created, parent_award = Award.get_or_create_summary_award(**parent_q_kwargs)
+            else:
+                parent_created, parent_award = [], None
 
-                # Now create the award record for this award transaction
-                summary_award = Award(**{
-                    i[1]: i[0],
-                    "parent_award": parent_award,
-                    "awarding_agency": awarding_agency})
-                created = [summary_award, ]
-                created.extend(parent_created)
+            # Now create the award record for this award transaction
+            create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award}
+            for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+                create_kwargs[i[1]] = i[0]
+            summary_award = Award(**create_kwargs)
+            created = [summary_award, ]
+            created.extend(parent_created)
 
-                if use_cache:
-                    awards_cache.set(q_kwargs_fixed, summary_award)
-                else:
-                    summary_award.save()
-                return created, summary_award
-
-        raise ValueError(
-            'Unable to find or create an award with the provided information: '
-            'piid={}, fain={}, uri={}, parent_id={}, awarding_agency={}'.format(
-                piid, fain, uri, parent_award_id, awarding_agency))
+            summary_award.save()
+            return created, summary_award
+        except:
+            raise ValueError(
+                'Unable to find or create an award with the provided information: '
+                'piid={}, fain={}, uri={}, parent_id={}, awarding_agency={}'.format(
+                    piid, fain, uri, parent_award_id, awarding_agency))
 
     class Meta:
         db_table = 'awards'
