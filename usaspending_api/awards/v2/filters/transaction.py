@@ -66,8 +66,7 @@ def transaction_filter(filters):
                 else:
                     or_queryset = Transaction.objects.filter(award__type=v)
             if or_queryset is not None:
-                if or_queryset is not None:
-                    queryset &= or_queryset
+                queryset &= or_queryset
 
         # agencies - DONE
         elif key == "agencies":
@@ -105,9 +104,8 @@ def transaction_filter(filters):
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' type is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
-                if or_queryset is not None:
-                    queryset &= or_queryset
-            pass
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # legal_entities - DONE
         elif key == "legal_entities":
