@@ -48,7 +48,7 @@ def transaction_filter(filters):
                 if v.get("start_date") is not None:
                     kwargs["award__period_of_performance_start_date__gte"] = v.get("start_date")
                 if v.get("end_date") is not None:
-                    kwargs["award__period_of_performance_current_end_date__lte"] = v.get("start_date")
+                    kwargs["award__period_of_performance_current_end_date__lte"] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if or_queryset:
                     or_queryset |= or_queryset.filter(**kwargs)
