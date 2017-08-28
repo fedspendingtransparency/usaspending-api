@@ -327,4 +327,3 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             else:  # recipient_type
                 raise InvalidParameterException('recipient type is not yet implemented')
-
