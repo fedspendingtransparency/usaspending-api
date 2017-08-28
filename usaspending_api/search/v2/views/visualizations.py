@@ -63,4 +63,4 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             results.append(result)
         response['results'] = results
 
-        return Response(results)
+        return Response(response)
