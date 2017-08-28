@@ -11,7 +11,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('awards', '0011_create_transaction'),
         ('references', '0020_indices_d1_d2_c'),
         ('broker', '0001_initial'),
     ]
