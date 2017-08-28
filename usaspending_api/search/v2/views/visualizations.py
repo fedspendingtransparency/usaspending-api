@@ -261,7 +261,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # define what values are needed in the sql query
             #queryset = queryset.values('federal_action_obligation', 'assistance_data__cgac')
             for trans in queryset:
-                if trans.get('assistance_data'):
+                if (trans.get('assistance_data')) and (trans.assistance_data.get('cfda')):
                     cfda_program_number = trans.assistance_data.cfda.program_number
                     if name_dict.get(cfda_program_number):
                         name_dict[cfda_program_number]["aggregated_amount"] += trans.federal_action_obligation
