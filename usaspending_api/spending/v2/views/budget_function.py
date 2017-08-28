@@ -18,24 +18,17 @@ def budget_function(queryset):
     for key, value in function_total.items():
         function_total = value
 
+    # Unpack budget_subfunction results
+    budget_sub_function_results = budget_subfunction(queryset)
+
     budget_function_results = {
         'count': bf.count(),
         'total': function_total,
         'end_date': fiscal_year,
         'budget_function': bf,
+        'budget_sub_function': budget_sub_function_results
     }
-
-    # Unpack budget_subfunction results
-    budget_sub_function_results, federal_accounts_results, object_classes_results,\
-        recipients_results, award_category_results, awards_results = budget_subfunction(queryset)
-
     results = [
-        budget_function_results,
-        budget_sub_function_results,
-        federal_accounts_results,
-        object_classes_results,
-        recipients_results,
-        award_category_results,
-        awards_results
+        budget_function_results
     ]
     return results

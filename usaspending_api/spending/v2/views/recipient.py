@@ -18,21 +18,18 @@ def recipient(queryset):
     recipients_total = recipients.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
     for key, value in recipients_total.items():
         recipients_total = value
+    # Unpack award results
+    award_category_results = award_category(queryset)
 
     recipients_results = {
         'count': recipients.count(),
         'total': recipients_total,
         'end_date': fiscal_year,
         'recipients': recipients,
+        'award_category': award_category_results
     }
-
-    # Unpack award results
-    award_category_results, awards_results = award_category(queryset)
-
     results = [
-        recipients_results,
-        award_category_results,
-        awards_results
+        recipients_results
     ]
     return results
 
@@ -51,20 +48,17 @@ def recipient_budget(queryset):
     recipients_total = recipients.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
     for key, value in recipients_total.items():
         recipients_total = value
+    # Unpack award results
+    award_category_results = award_category(queryset)
 
     recipients_results = {
         'count': recipients.count(),
         'total': recipients_total,
         'end_date': fiscal_year,
         'recipients': recipients,
+        'award_category': award_category_results
     }
-
-    # Unpack award results
-    award_category_results, awards_results = award_category(queryset)
-
     results = [
-        recipients_results,
-        award_category_results,
-        awards_results
+        recipients_results
     ]
     return results

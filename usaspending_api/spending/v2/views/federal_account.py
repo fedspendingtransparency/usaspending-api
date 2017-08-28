@@ -21,24 +21,18 @@ def federal_account_pa(queryset):
     for key, value in federal_accounts_total.items():
         federal_accounts_total = value
 
+    # Unpack program activity results
+    program_activity_results = program_activity_fa(queryset)
+
     federal_accounts_results = {
         'count': federal_accounts.count(),
         'total': federal_accounts_total,
         'end_date': fiscal_year,
         'federal_account': federal_accounts,
+        'program_activity': program_activity_results
     }
-
-    # Unpack program activity results
-    program_activity_results, object_classes_results, recipients_results,\
-        award_category_results, awards_results = program_activity_fa(queryset)
-
     results = [
-        federal_accounts_results,
-        program_activity_results,
-        object_classes_results,
-        recipients_results,
-        award_category_results,
-        awards_results
+        federal_accounts_results
     ]
     return results
 
@@ -58,22 +52,18 @@ def federal_account_budget(queryset):
     for key, value in federal_accounts_total.items():
         federal_accounts_total = value
 
+    # Unpack object class federal account results
+    object_classes_results = object_class_budget(queryset)
+
     federal_accounts_results = {
         'count': federal_accounts.count(),
         'total': federal_accounts_total,
         'end_date': fiscal_year,
         'federal_account': federal_accounts,
+        'object_class': object_classes_results
     }
-    # Unpack object class federal account results
-    object_classes_results, recipients_results, award_category_results,\
-        awards_results = object_class_budget(queryset)
-
     results = [
-        federal_accounts_results,
-        object_classes_results,
-        recipients_results,
-        award_category_results,
-        awards_results
+        federal_accounts_results
     ]
     return results
 
@@ -93,21 +83,17 @@ def federal_account_agency(queryset):
     for key, value in federal_accounts_total.items():
         federal_accounts_total = value
 
+    # Unpack object class federal account results
+    program_activity_results = program_activity_oc(queryset)
+
     federal_accounts_results = {
         'count': federal_accounts.count(),
         'total': federal_accounts_total,
         'end_date': fiscal_year,
         'federal_account': federal_accounts,
+        'program_activity': program_activity_results
     }
-    # Unpack object class federal account results
-    program_activity_results, recipients_results, award_category_results,\
-        awards_results = program_activity_oc(queryset)
-
     results = [
-        federal_accounts_results,
-        program_activity_results,
-        recipients_results,
-        award_category_results,
-        awards_results
+        federal_accounts_results
     ]
     return results

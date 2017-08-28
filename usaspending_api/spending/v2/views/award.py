@@ -18,18 +18,18 @@ def award_category(queryset):
     for key, value in award_category_total.items():
         award_category_total = value
 
+    # Unpack awards
+    awards_results = award(queryset)
+
     award_category_results = {
         'count': award_categories.count(),
         'total': award_category_total,
         'end_date': fiscal_year,
         'award_category': award_categories,
+        'awards': awards_results
     }
-    # Unpack awards
-    awards_results = award(queryset)
-
     results = [
-        award_category_results,
-        awards_results
+        award_category_results
     ]
     return results
 

@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 
 from rest_framework.response import Response
@@ -8,7 +7,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.spending.v2.filters.fy_filter import fy_filter
 from usaspending_api.spending.v2.filters.spending_filter import spending_filter
-from usaspending_api.spending.v2.views.award import award_category, award
+from usaspending_api.spending.v2.views.award import award_category
 from usaspending_api.spending.v2.views.budget_function import budget_function
 from usaspending_api.spending.v2.views.budget_subfunction import budget_subfunction
 from usaspending_api.spending.v2.views.federal_account import federal_account_pa
@@ -22,7 +21,7 @@ class SpendingExplorerViewSet(APIView):
     def post(self, request):
         results = []
         json_request = request.data
-        explorer = json_request.get('spending_explorer')
+        explorer = json_request.get('type')
         filters = json_request.get('filters', None)
         fiscal_year = json_request.get('fiscal_year', None)
 
@@ -51,7 +50,7 @@ class SpendingExplorerViewSet(APIView):
             # Base queryset
             queryset = FinancialAccountsByAwards.objects.all().filter(
                 award__period_of_performance_current_end_date=fiscal_year
-            )
+            ).exclude(obligations_incurred_total_by_award_cpe__isnull=True)
             if explorer == 'budget_function':
                 results = budget_function(queryset)
             if explorer == 'budget_subfunction':

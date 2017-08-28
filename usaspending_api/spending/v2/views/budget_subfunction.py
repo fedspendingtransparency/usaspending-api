@@ -19,23 +19,17 @@ def budget_subfunction(queryset):
     for key, value in budget_sub_function_total.items():
         budget_sub_function_total = value
 
+    # Unpack federal account object class results
+    federal_accounts_results = federal_account_budget(queryset)
+
     budget_sub_function_results = {
         'count': budget_sub_function.count(),
         'total': budget_sub_function_total,
         'end_date': fiscal_year,
         'budget_sub_function': budget_sub_function,
+        'federal_account': federal_accounts_results
     }
-
-    # Unpack federal account object class results
-    federal_accounts_results, object_classes_results, recipients_results,\
-        award_category_results, awards_results = federal_account_budget(queryset)
-
     results = [
-        budget_sub_function_results,
-        federal_accounts_results,
-        object_classes_results,
-        recipients_results,
-        award_category_results,
-        awards_results
+        budget_sub_function_results
     ]
     return results

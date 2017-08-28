@@ -20,21 +20,18 @@ def object_class_budget(queryset):
     for key, value in object_classes_total.items():
         object_classes_total = value
 
+    # Unpack recipient results
+    recipients_results = recipient_budget(queryset)
+
     object_classes_results = {
         'count': object_classes.count(),
         'total': object_classes_total,
         'end_date': fiscal_year,
         'object_classes': object_classes,
+        'recipients': recipients_results
     }
-
-    # Unpack recipient results
-    recipients_results, award_category_results, awards_results = recipient_budget(queryset)
-
     results = [
         object_classes_results,
-        recipients_results,
-        award_category_results,
-        awards_results
     ]
     return results
 
@@ -54,20 +51,17 @@ def object_class_pa(queryset):
     for key, value in object_classes_total.items():
         object_classes_total = value
 
+    # Unpack recipient results
+    recipients_results = recipient_budget(queryset)
+
     object_classes_results = {
         'count': object_classes.count(),
         'total': object_classes_total,
         'end_date': fiscal_year,
         'object_classes': object_classes,
+        'recipient': recipients_results
     }
-
-    # Unpack recipient results
-    recipients_results, award_category_results, awards_results = recipient_budget(queryset)
-
     results = [
-        object_classes_results,
-        recipients_results,
-        award_category_results,
-        awards_results
+        object_classes_results
     ]
     return results

@@ -20,23 +20,18 @@ def program_activity(queryset):
     for key, value in program_activity_total.items():
         program_activity_total = value
 
+    # Unpack object class program activity results
+    object_classes_results = object_class_pa(queryset)
+
     program_activity_results = {
         'count': pa.count(),
         'total': program_activity_total,
         'end_date': fiscal_year,
         'program_activity': pa,
+        'object_class': object_classes_results
     }
-
-    # Unpack object class program activity results
-    object_classes_results, recipients_results, award_category_results,\
-        awards_results = object_class_pa(queryset)
-
     results = [
-        program_activity_results,
-        object_classes_results,
-        recipients_results,
-        award_category_results,
-        awards_results
+        program_activity_results
     ]
     return results
 
@@ -56,23 +51,18 @@ def program_activity_fa(queryset):
     for key, value in program_activity_total.items():
         program_activity_total = value
 
+    # Unpack object class program activity results
+    object_classes_results = object_class_pa(queryset)
+
     program_activity_results = {
         'count': pa.count(),
         'total': program_activity_total,
         'end_date': fiscal_year,
         'program_activity': pa,
+        'object_class': object_classes_results
     }
-
-    # Unpack object class program activity results
-    object_classes_results, recipients_results, award_category_results,\
-        awards_results = object_class_pa(queryset)
-
     results = [
-        program_activity_results,
-        object_classes_results,
-        recipients_results,
-        award_category_results,
-        awards_results
+        program_activity_results
     ]
     return results
 
@@ -92,21 +82,17 @@ def program_activity_oc(queryset):
     for key, value in program_activity_total.items():
         program_activity_total = value
 
+    # Unpack object class program activity results
+    recipients_results = recipient(queryset)
+
     program_activity_results = {
         'count': pa.count(),
         'total': program_activity_total,
         'end_date': fiscal_year,
         'program_activity': pa,
+        'recipients': recipients_results
     }
-
-    # Unpack object class program activity results
-    recipients_results, award_category_results,\
-        awards_results = recipient(queryset)
-
     results = [
-        program_activity_results,
-        recipients_results,
-        award_category_results,
-        awards_results
+        program_activity_results
     ]
     return results
