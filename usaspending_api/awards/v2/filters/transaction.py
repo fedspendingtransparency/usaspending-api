@@ -4,7 +4,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 import logging
 logger = logging.getLogger(__name__)
 
-
+# TODO: Performance when multiple false values are initially provided
 def transaction_filter(filters):
     # 'keyword',
     # 'time_period',
@@ -94,7 +94,6 @@ def transaction_filter(filters):
                             or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__name=name)
                         else:
                             or_queryset = Transaction.objects.filter(award__awarding_agency__toptier_agency__name=name)
-
                     elif tier == "subtier":
                         if or_queryset:
                             or_queryset |= or_queryset.filter(award__awarding_agency__subtier_agency__name=name)
@@ -108,6 +107,7 @@ def transaction_filter(filters):
                 queryset &= or_queryset
 
         # legal_entities - DONE
+        # TODO: Recipient names or Recipient Unique ID? Also is this OR or AND?
         elif key == "legal_entities":
             or_queryset = None
             for v in value:
@@ -123,7 +123,7 @@ def transaction_filter(filters):
             if value is not None:
                 if value == "domestic":
                     queryset = queryset.filter(award__recipient__location__country_name="UNITED STATES")
-                elif value["type"] == "foreign":
+                elif value == "foreign":
                     queryset = queryset.exclude(award__recipient__location__country_name="UNITED STATES")
                 else:
                     raise InvalidParameterException('Invalid filter: recipient_location type is invalid.')
