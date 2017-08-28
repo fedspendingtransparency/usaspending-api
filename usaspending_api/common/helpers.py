@@ -30,7 +30,6 @@ def get_params_from_req_or_request(request=None, req=None):
 def generate_fiscal_year(context):
     """ Generate fiscal year based on the date provided """
     year = context.year
-    print(year)
     if context.month in [10, 11, 12]:
         year += 1
     return year
