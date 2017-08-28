@@ -107,9 +107,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             if scope == 'agency':
                 for trans in queryset:
-                    if (trans.get("awarding_agency")) and (trans.awarding_agency.get("toptier_agency")):
+                    if (hasattr(trans, "awarding_agency")) and (hasattr(trans.awarding_agency, "toptier_agency")):
                         ttname = trans.awarding_agency.toptier_agency.name
-                        if name_dict.get(ttname):
+                        if hasattr(name_dict, ttname):
                             name_dict[ttname]["aggregated_amount"] += trans.federal_action_obligation
                         else:
                             name_dict[ttname] = {"aggregated_amount": trans.federal_action_obligation,
@@ -117,20 +117,20 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == 'subagency':
                 for trans in queryset:
-                    if (trans.get("awarding_agency")) and (trans.awarding_agency.get("subtier_agency")):
+                    if (hasattr(trans, "awarding_agency")) and (hasattr(trans.awarding_agency, "subtier_agency")):
                         if trans.awarding_agency.subtier_agency:
                             stname = trans.awarding_agency.subtier_agency.name
-                            if name_dict.get(stname):
+                            if hasattr(name_dict, stname):
                                 name_dict[stname]["aggregated_amount"] += trans.federal_action_obligation
                             else:
                                 name_dict[stname] = {"aggregated_amount": trans.federal_action_obligation,
                                                      "abbreviation": trans.awarding_agency.toptier_agency.abbreviation}
             else:  # offices
                 for trans in queryset:
-                    if (trans.get("awarding_agency")) and (trans.awarding_agency.get("office_agency")):
+                    if (hasattr(trans, "awarding_agency")) and (hasattr(trans.awarding_agency, "office_agency")):
                         if trans.awarding_agency.office_agency:
                             oname = trans.awarding_agency.office_agency.name
-                            if name_dict.get(oname):
+                            if hasattr(name_dict, oname):
                                 name_dict[oname]["aggregated_amount"] += trans.federal_action_obligation
                             else:
                                 name_dict[oname] = {"aggregated_amount": trans.federal_action_obligation,
@@ -161,9 +161,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             if scope == 'agency':
                 for trans in queryset:
-                    if (trans.get("funding_agency")) and (trans.funding_agency.get("toptier_agency")):
+                    if (hasattr(trans, "funding_agency")) and (hasattr(trans.funding_agency, "toptier_agency")):
                         ttname = trans.funding_agency.toptier_agency.name
-                        if name_dict.get(ttname):
+                        if hasattr(name_dict, ttname):
                             name_dict[ttname]["aggregated_amount"] += trans.federal_action_obligation
                         else:
                             name_dict[ttname] = {"aggregated_amount": trans.federal_action_obligation,
@@ -171,20 +171,20 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == 'subagency':
                 for trans in queryset:
-                    if (trans.get("funding_agency")) and (trans.funding_agency.get("subtier_agency")):
+                    if (hasattr(trans, "funding_agency")) and (hasattr(trans.funding_agency, "subtier_agency")):
                         if trans.funding_agency.subtier_agency:
                             stname = trans.funding_agency.subtier_agency.name
-                            if name_dict.get(stname):
+                            if hasattr(name_dict, stname):
                                 name_dict[stname]["aggregated_amount"] += trans.federal_action_obligation
                             else:
                                 name_dict[stname] = {"aggregated_amount": trans.federal_action_obligation,
                                                      "abbreviation": trans.funding_agency.toptier_agency.abbreviation}
             else:  # offices
                 for trans in queryset:
-                    if (trans.get("funding_agency")) and (trans.funding_agency.get("office_agency")):
+                    if (hasattr(trans, "funding_agency")) and (hasattr(trans.funding_agency, "office_agency")):
                         if trans.funding_agency.office_agency:
                             oname = trans.funding_agency.office_agency.name
-                            if name_dict.get(oname):
+                            if hasattr(name_dict, oname):
                                 name_dict[oname]["aggregated_amount"] += trans.federal_action_obligation
                             else:
                                 name_dict[oname] = {"aggregated_amount": trans.federal_action_obligation,
@@ -210,9 +210,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             queryset = queryset.values('federal_action_obligation', 'recipient')
             if scope == "duns":
                 for trans in queryset:
-                    if trans.get('recipient'):
+                    if hasattr(trans, 'recipient'):
                         r_name = trans.recipient.recipient_name
-                        if name_dict.get(r_name):
+                        if hasattr(name_dict, r_name):
                             name_dict[r_name]["aggregated_amount"] += trans.federal_action_obligation
                         else:
                             name_dict[r_name] = {"aggregated_amount": trans.federal_action_obligation,
@@ -232,9 +232,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "parent_duns":
                 for trans in queryset:
-                    if trans.get('recipient'):
+                    if hasattr(trans, 'recipient'):
                         r_name = trans.recipient.recipient_name
-                        if name_dict.get(r_name):
+                        if hasattr(name_dict, r_name):
                             name_dict[r_name]["aggregated_amount"] += trans.federal_action_obligation
                         else:
                             name_dict[r_name] = {"aggregated_amount": trans.federal_action_obligation,
@@ -261,9 +261,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # define what values are needed in the sql query
             #queryset = queryset.values('federal_action_obligation', 'assistance_data__cgac')
             for trans in queryset:
-                if (trans.get('assistance_data')) and (trans.assistance_data.get('cfda')):
+                if (hasattr(trans, 'assistance_data')) and (trans.assistance_data.get('cfda')):
                     cfda_program_number = trans.assistance_data.cfda.program_number
-                    if name_dict.get(cfda_program_number):
+                    if hasattr(name_dict, cfda_program_number):
                         name_dict[cfda_program_number]["aggregated_amount"] += trans.federal_action_obligation
                     else:
                         name_dict[cfda_program_number] = {"aggregated_amount": trans.federal_action_obligation,
@@ -291,9 +291,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             if scope == "psc":
                 for trans in queryset:
-                    if trans.get('contract_data'):
+                    if hasattr(trans, 'contract_data'):
                         psc = trans.contract_data.product_or_service_code
-                        if name_dict.get(psc):
+                        if hasattr(name_dict, psc):
                             name_dict[psc] += trans.federal_action_obligation
                         else:
                             name_dict[psc] = trans.federal_action_obligation
@@ -308,9 +308,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "naics":
                 for trans in queryset:
-                    if trans.get('contract_data'):
+                    if hasattr(trans, 'contract_data'):
                         naics = trans.contract_data.naics
-                        if name_dict.get(naics):
+                        if hasattr(name_dict, naics):
                             name_dict[naics]["aggregated_amount"] += trans.federal_action_obligation
                         else:
                             name_dict[naics] = {"aggregated_amount": trans.federal_action_obligation,
