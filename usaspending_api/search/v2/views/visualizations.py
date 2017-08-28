@@ -107,7 +107,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             if scope == 'agency':
                 for trans in queryset:
-                    if (trans.get("awarding_agency")) & (trans.awarding_agency.get("toptier_agency")):
+                    if (trans.get("awarding_agency")) and (trans.awarding_agency.get("toptier_agency")):
                         ttname = trans.awarding_agency.toptier_agency.name
                         if name_dict.get(ttname):
                             name_dict[ttname]["aggregated_amount"] += trans.federal_action_obligation
@@ -117,7 +117,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == 'subagency':
                 for trans in queryset:
-                    if (trans.get("awarding_agency")) & (trans.awarding_agency.get("subtier_agency")):
+                    if (trans.get("awarding_agency")) and (trans.awarding_agency.get("subtier_agency")):
                         if trans.awarding_agency.subtier_agency:
                             stname = trans.awarding_agency.subtier_agency.name
                             if name_dict.get(stname):
@@ -127,7 +127,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                                      "abbreviation": trans.awarding_agency.toptier_agency.abbreviation}
             else:  # offices
                 for trans in queryset:
-                    if (trans.get("awarding_agency")) & (trans.awarding_agency.get("office_agency")):
+                    if (trans.get("awarding_agency")) and (trans.awarding_agency.get("office_agency")):
                         if trans.awarding_agency.office_agency:
                             oname = trans.awarding_agency.office_agency.name
                             if name_dict.get(oname):
@@ -161,7 +161,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             if scope == 'agency':
                 for trans in queryset:
-                    if (trans.get("funding_agency")) & (trans.funding_agency.get("toptier_agency")):
+                    if (trans.get("funding_agency")) and (trans.funding_agency.get("toptier_agency")):
                         ttname = trans.funding_agency.toptier_agency.name
                         if name_dict.get(ttname):
                             name_dict[ttname]["aggregated_amount"] += trans.federal_action_obligation
@@ -171,7 +171,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == 'subagency':
                 for trans in queryset:
-                    if (trans.get("funding_agency")) & (trans.funding_agency.get("subtier_agency")):
+                    if (trans.get("funding_agency")) and (trans.funding_agency.get("subtier_agency")):
                         if trans.funding_agency.subtier_agency:
                             stname = trans.funding_agency.subtier_agency.name
                             if name_dict.get(stname):
@@ -181,7 +181,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                                      "abbreviation": trans.funding_agency.toptier_agency.abbreviation}
             else:  # offices
                 for trans in queryset:
-                    if (trans.get("funding_agency")) & (trans.funding_agency.get("office_agency")):
+                    if (trans.get("funding_agency")) and (trans.funding_agency.get("office_agency")):
                         if trans.funding_agency.office_agency:
                             oname = trans.funding_agency.office_agency.name
                             if name_dict.get(oname):
