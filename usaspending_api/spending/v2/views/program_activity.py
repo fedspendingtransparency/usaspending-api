@@ -1,9 +1,9 @@
 from django.db.models import F, Sum
 from datetime import datetime
 
-from usaspending_api.explorers.v2.filters.fy_filter import fy_filter
-from usaspending_api.explorers.v2.views.object_class import object_class_pa
-from usaspending_api.explorers.v2.views.recipient import recipient
+from usaspending_api.spending.v2.filters.fy_filter import fy_filter
+from usaspending_api.spending.v2.views.object_class import object_class_pa
+from usaspending_api.spending.v2.views.recipient import recipient
 
 
 def program_activity(queryset):

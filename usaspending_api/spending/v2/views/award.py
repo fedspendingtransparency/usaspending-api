@@ -1,7 +1,7 @@
 from django.db.models import F, Sum
 from datetime import datetime
 
-from usaspending_api.explorers.v2.filters.fy_filter import fy_filter
+from usaspending_api.spending.v2.filters.fy_filter import fy_filter
 
 
 def award_category(queryset):
