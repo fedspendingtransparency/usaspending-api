@@ -6,6 +6,9 @@ from usaspending_api.awards.v2.filters.transaction import transaction_filter
 import ast
 from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class SpendingOverTimeVisualizationViewSet(APIView):
 
@@ -32,6 +35,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # oldest_date = queryset.last().award.period_of_performance_start_date
         group_results = {}  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
+        logger.info("query: {}, has_run: {}".format(queryset.query(), queryset._result_cache is None))
         for trans in queryset:
             key = {}
             if group == "fy" or group == "fiscal_year":
