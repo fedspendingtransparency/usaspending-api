@@ -72,7 +72,6 @@ class Command(BaseCommand):
         }
 
         all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker').all()
-        print(len(all_transaction_assistance))
 
         for transaction_assistance in all_transaction_assistance[0]: # TODO: REMOVE INDEX SELECTION TO RUN ON ALL
             legal_entity_location, created = get_or_create_location(
