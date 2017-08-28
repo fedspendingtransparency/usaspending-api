@@ -44,15 +44,16 @@ def transaction_filter(filters):
         elif key == "time_period":
             or_queryset = None
             for v in value:
+                kwargs = {}
+                if v.get("start_date"):
+                    kwargs["award__period_of_performance_start_date__gte"] = v.get("start_date")
+                if v.get("end_date"):
+                    kwargs["award__period_of_performance_current_end_date__lte"] = v.get("start_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(
-                        award__period_of_performance_start_date__gte=v.get("start_date"),
-                        award__period_of_performance_current_end_date__lte=v.get("end_date"))
+                    or_queryset |= or_queryset.filter(**kwargs)
                 else:
-                    or_queryset = Transaction.objects.filter(
-                        award__period_of_performance_start_date__gte=v.get("start_date"),
-                        award__period_of_performance_current_end_date__lte=v.get("end_date"))
+                    or_queryset = Transaction.objects.filter(**kwargs)
             if or_queryset is not None:
                 queryset &= or_queryset
 
