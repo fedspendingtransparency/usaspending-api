@@ -49,12 +49,15 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 fy = generate_fiscal_year(trans["action_date"])
                 q = generate_fiscal_period(trans["action_date"])
                 key = {"fiscal_year": str(fy), "quarter": str(q)}
-            # pyton cant have a dict as a str
+            # python cant have a dict as a str
             key = str(key)
             if group_results.get(key) is None:
                 group_results[key] = trans["federal_action_obligation"]
             else:
-                group_results[key] = group_results.get(key) + trans["federal_action_obligation"]
+                if trans["federal_action_obligation"]:
+                    group_results[key] = group_results.get(key) + trans["federal_action_obligation"]
+                else:
+                    group_results[key] = group_results.get(key)
 
         results = []
         # [{
