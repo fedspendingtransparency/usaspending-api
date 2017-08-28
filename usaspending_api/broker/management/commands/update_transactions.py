@@ -24,23 +24,23 @@ AWARD_CONTRACT_UPDATE_ID_LIST = []
 class Command(BaseCommand):
     help = "Checks what TASs are in Broker but not in Data Store"
 
-    # TODO: ensure references to old d1 broker model is updated to match DetachedAwardProcurement
+    # TODO: ensure references to old d2 broker model is updated to match D2 model
     def update_transaction_assistance(self):
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
-            # "city_code": "legal_entity_city_code", # not found, derived?
-            # "city_name": "legal_entity_city_name", # not found, derived?
+            "city_code": "legal_entity_city_code",
+            "city_name": "legal_entity_city_name",
             "congressional_code": "legal_entity_congressional",
-            # "county_code": "legal_entity_county_code", # not found, derived?
-            # "county_name": "legal_entity_county_name", # not found, derived?
+            "county_code": "legal_entity_county_code",
+            "county_name": "legal_entity_county_name",
             "foreign_city_name": "legal_entity_foreign_city",
             "foreign_postal_code": "legal_entity_foreign_posta",
             "foreign_province": "legal_entity_foreign_provi",
-            # "state_code": "legal_entity_state_code", # not found, derived?
-            # "state_name": "legal_entity_state_name", # not found, derived?
+            "state_code": "legal_entity_state_code",
+            "state_name": "legal_entity_state_name",
             "zip5": "legal_entity_zip5",
             "zip_last4": "legal_entity_zip_last4",
             "location_country_code": "legal_entity_country_code"
