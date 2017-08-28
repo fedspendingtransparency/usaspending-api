@@ -30,7 +30,6 @@ def transaction_filter(filters):
 
         # keyword - DONE
         if key == "keyword":
-            print(value)
             queryset = queryset.filter(award__description=value)
 
         # time_period - DONE
