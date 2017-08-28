@@ -45,14 +45,15 @@ def transaction_filter(filters):
                 for v in value:
                     # (may have to cast to date) (oct 1 to sept 30)
                     if or_queryset:
-                        or_queryset = or_queryset.filter(
+                        or_queryset |= or_queryset.filter(
                             award__period_of_performance_start_date__gte=v.get("start_date"),
                             award__period_of_performance_current_end_date__lte=v.get("end_date"))
                     else:
                         or_queryset = Transaction.objects.filter(
                             award__period_of_performance_start_date__gte=v.get("start_date"),
                             award__period_of_performance_current_end_date__lte=v.get("end_date"))
-                queryset |= or_queryset
+                if or_queryset is not None:
+                    queryset &= or_queryset
             else:
                 raise InvalidParameterException('Invalid filter: time period value is invalid.')
 
@@ -65,7 +66,8 @@ def transaction_filter(filters):
                 else:
                     or_queryset = Transaction.objects.filter(award__type=v)
             if or_queryset is not None:
-                queryset &= or_queryset
+                if or_queryset is not None:
+                    queryset &= or_queryset
 
         # agencies - DONE
         elif key == "agencies":
@@ -97,9 +99,11 @@ def transaction_filter(filters):
                             or_queryset |= or_queryset.filter(award__awarding_agency__subtier_agency__name=name)
                         else:
                             Transaction.objects.filter(award__awarding_agency__subtier_agency__name=name)
-
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + name + ' type is invalid.')
+                if or_queryset is not None:
+                    if or_queryset is not None:
+                        queryset &= or_queryset
             pass
 
         # legal_entities - DONE
@@ -110,7 +114,9 @@ def transaction_filter(filters):
                     or_queryset |= or_queryset.filter(award__recipient__recipient_name=v)
                 else:
                     or_queryset = Transaction.objects.filter(award__recipient__recipient_name=v)
-            queryset = queryset & or_queryset
+            if or_queryset is not None:
+                if or_queryset is not None:
+                    queryset &= or_queryset
 
         # recipient_location_scope (broken till data reload) - Done
         elif key == "recipient_scope":
@@ -131,7 +137,9 @@ def transaction_filter(filters):
                         or_queryset |= or_queryset.filter(award__recipient__location__location_id=v)
                     else:
                         or_queryset = Transaction.objects.filter(award__recipient__location__location_id=v)
-                queryset = queryset & or_queryset
+                if or_queryset is not None:
+                    if or_queryset is not None:
+                        queryset &= or_queryset
             else:
                 raise InvalidParameterException('Invalid filter: recipient_location object is invalid.')
 
@@ -143,7 +151,9 @@ def transaction_filter(filters):
                     or_queryset |= or_queryset.filter(award__recipient__business_types_description=v)
                 else:
                     or_queryset = Transaction.objects.filter(award__recipient__business_types_description=v)
-            queryset &= or_queryset
+            if or_queryset is not None:
+                if or_queryset is not None:
+                    queryset &= or_queryset
 
         # place_of_performance_scope (broken till data reload)- DONE
         elif key == "place_of_performance_scope":
@@ -163,7 +173,9 @@ def transaction_filter(filters):
                         or_queryset |= or_queryset.filter(award__place_of_performance__location_id=v)
                     else:
                         or_queryset = Transaction.objects.filter(award__place_of_performance__location_id=v)
-                queryset = queryset & or_queryset
+                if or_queryset is not None:
+                    if or_queryset is not None:
+                        queryset &= or_queryset
             else:
                 raise InvalidParameterException('Invalid filter: recipient_location object is invalid.')
 
@@ -190,7 +202,9 @@ def transaction_filter(filters):
                         or_queryset = Transaction.objects.filter(award__total_obligation__lt=v["upper_bound"])
                 else:
                     raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
-            queryset &= or_queryset
+            if or_queryset is not None:
+                if or_queryset is not None:
+                    queryset &= or_queryset
 
         # award_ids - DONE
         elif key == "award_ids":
@@ -200,7 +214,8 @@ def transaction_filter(filters):
                     or_queryset |= or_queryset.filter(award__id=v)
                 else:
                     or_queryset = Transaction.objects.filter(award__id=v)
-            queryset &= or_queryset
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # program_numbers  - DONE
         elif key == "program_numbers":
@@ -212,7 +227,8 @@ def transaction_filter(filters):
                 else:
                     or_queryset = Transaction.objects.filter(
                         assistance_data__cfda__program_number=v)
-            queryset &= or_queryset
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # naics_codes - DONE
         elif key == "naics_codes":
@@ -224,7 +240,8 @@ def transaction_filter(filters):
                 else:
                     or_queryset = Transaction.objects.filter(
                         contract_data__naics=v)
-            queryset &= or_queryset
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # psc_codes - DONE
         elif key == "psc_codes":
@@ -236,7 +253,8 @@ def transaction_filter(filters):
                 else:
                     or_queryset = Transaction.objects.filter(
                         contract_data__product_or_service_code=v)
-            queryset &= or_queryset
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # contract_pricing_type_codes - DONE
         elif key == "contract_pricing_type_codes":
@@ -248,7 +266,8 @@ def transaction_filter(filters):
                 else:
                     or_queryset = Transaction.objects.filter(
                         contract_data__type_of_contract_pricing=v)
-            queryset &= or_queryset
+            if or_queryset is not None:
+                queryset &= or_queryset
         # set_aside_type_codes - DONE
         elif key == "set_aside_type_codes":
             or_queryset = None
@@ -259,7 +278,8 @@ def transaction_filter(filters):
                 else:
                     or_queryset = Transaction.objects.filter(
                         contract_data__type_set_aside=v)
-            queryset &= or_queryset
+            if or_queryset is not None:
+                queryset &= or_queryset
         # extent_competed_type_codes - DONE
         elif key == "extent_competed_type_codes":
             or_queryset = None
@@ -270,7 +290,8 @@ def transaction_filter(filters):
                 else:
                     or_queryset = Transaction.objects.filter(
                         contract_data__extent_competed=v)
-            queryset &= or_queryset
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         else:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
