@@ -67,6 +67,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         response['results'] = results
 
         return Response(response)
+<<<<<<< HEAD
 
 
 class SpendingByCategoryVisualizationViewSet(APIView):
@@ -327,3 +328,5 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             else:  # recipient_type
                 raise InvalidParameterException('recipient type is not yet implemented')
+=======
+>>>>>>> feature-spending-by-time-visualization
