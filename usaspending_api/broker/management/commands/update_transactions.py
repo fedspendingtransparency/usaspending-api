@@ -71,7 +71,7 @@ class Command(BaseCommand):
             "description": "award_description",
         }
 
-        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker')[:1]
+        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker').all()
 
         for transaction_assistance in all_transaction_assistance: # TODO: REMOVE INDEX SELECTION TO RUN ON ALL
             legal_entity_location, created = get_or_create_location(
