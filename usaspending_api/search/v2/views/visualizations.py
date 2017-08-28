@@ -329,7 +329,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             else:  # recipient_type
                 raise InvalidParameterException('recipient type is not yet implemented')
-<<<<<<< HEAD
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):
@@ -342,7 +341,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         limit = json_request.get('limit', None)
 
         if scope is None:
-            raise InvalidParameterException('Missing one or more required request parameters: group')
+            raise InvalidParameterException('Missing one or more required request parameters: scope')
         if filters is None:
             raise InvalidParameterException('Missing one or more required request parameters: filters')
         potential_scopes = ["recipient_location", "place_of_performance"]
@@ -362,8 +361,17 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         name_dict = {}
         if scope == "recipient_location":
             for award in queryset:
-                if award.get('recipient') & award.get('recipient').get('location'):
+                if hasattr(award, 'recipient') and hasattr(award, 'recipient').get('location'):
                     state_code = award.recipient.location.get('state_code')
+                    if name_dict.get(state_code):
+                        name_dict[state_code] += award.total_obligation
+                    else:
+                        name_dict[state_code] = award.total_obligation
+
+        else:  # place of performance
+            for award in queryset:
+                if hasattr(award, 'place_of_performance'):
+                    state_code = hasattr(award.place_of_performance, 'state_code')
                     if name_dict.get(state_code):
                         name_dict[state_code] += award.total_obligation
                     else:
@@ -378,7 +386,3 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         response['results'] = results
 
         return Response(response)
-
-
-=======
->>>>>>> feature-spending-by-category
