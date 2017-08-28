@@ -25,11 +25,11 @@ def transaction_filter(filters):
     # 'set_aside_type_codes',
     # 'extent_competed_type_codes'
 
-    logger.info("starting transaction_filter")
+    print("starting transaction_filter")
 
     queryset = Transaction.objects.all()
     for key, value in filters.items():
-        logger.info("transaction_filter: key:{}, value:{}".format(key, value))
+        print("transaction_filter: key:{}, value:{}".format(key, value))
         # check for valid key
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')

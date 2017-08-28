@@ -35,7 +35,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # oldest_date = queryset.last().award.period_of_performance_start_date
         group_results = {}  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
-        logger.info("query: {}, has_run: {}".format(queryset.query, queryset._result_cache is None))
+        print("query: {}, has_run: {}".format(queryset.query, queryset._result_cache is None))
         for trans in queryset:
             key = {}
             if group == "fy" or group == "fiscal_year":
