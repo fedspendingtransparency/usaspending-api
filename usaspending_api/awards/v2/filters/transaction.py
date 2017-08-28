@@ -35,12 +35,17 @@ def transaction_filter(filters):
         # time_period - DONE
         elif key == "time_period":
             if value is not None:
-                or_queryset = Transaction.objects.none()
+                or_queryset = None
                 for v in value:
                     # (may have to cast to date) (oct 1 to sept 30)
-                    or_queryset = or_queryset.filter(
-                        award__period_of_performance_start_date__gte=v.get("start_date"),
-                        award__period_of_performance_current_end_date__lte=v.get("end_date"))
+                    if or_queryset:
+                        or_queryset = or_queryset.filter(
+                            award__period_of_performance_start_date__gte=v.get("start_date"),
+                            award__period_of_performance_current_end_date__lte=v.get("end_date"))
+                    else:
+                        or_queryset = Transaction.objects.filter(
+                            award__period_of_performance_start_date__gte=v.get("start_date"),
+                            award__period_of_performance_current_end_date__lte=v.get("end_date"))
                 queryset |= or_queryset
             else:
                 raise InvalidParameterException('Invalid filter: time period value is invalid.')
@@ -58,21 +63,35 @@ def transaction_filter(filters):
 
         # agencies - DONE
         elif key == "agencies":
-            or_queryset = Transaction.objects.none()
+            or_queryset = None
             for v in value:
                 type = v["type"]
                 tier = v["tier"]
                 name = v["name"]
                 if type == "funding":
                     if tier == "toptier":
-                        or_queryset |= or_queryset.filter(award__funding_agency__toptier_agency__name=name)
+                        if or_queryset:
+                            or_queryset |= or_queryset.filter(award__funding_agency__toptier_agency__name=name)
+                        else:
+                            Transaction.objects.filter(award__funding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
-                        or_queryset |= or_queryset.filter(award__funding_agency__subtier_agency__name=name)
+                        if or_queryset:
+                            or_queryset |= or_queryset.filter(award__funding_agency__subtier_agency__name=name)
+                        else:
+                            Transaction.objects.filter(award__funding_agency__subtier_agency__name=name)
                 elif type == "awarding":
                     if tier == "toptier":
-                        or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__name=name)
+                        if or_queryset:
+                            or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__name=name)
+                        else:
+                            Transaction.objects.filter(award__awarding_agency__subtier_agency__name=name)
+                    
                     elif tier == "subtier":
-                        or_queryset |= or_queryset.filter(award__awarding_agency__subtier_agency__name=name)
+                        if or_queryset:
+                            or_queryset |= or_queryset.filter(award__awarding_agency__subtier_agency__name=name)
+                        else:
+                            Transaction.objects.filter(award__awarding_agency__subtier_agency__name=name)
+
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + name + ' type is invalid.')
             pass
