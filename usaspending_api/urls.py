@@ -26,6 +26,7 @@ urlpatterns = [
     url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
     url(r'^api/v1/awards/', include('usaspending_api.awards.v1.urls_awards')),
     url(r'^api/v1/download/(?P<path>.*)', CsvDownloadView.as_view()),
+    url(r'^api/v2/explorers/', include('usaspending_api.explorers.v2.urls.urls_explorer')),
     url(r'^api/v1/federal_accounts/', include('usaspending_api.accounts.urls_federal_account')),
     url(r'^api/v1/references/', include('usaspending_api.references.v1.urls')),
     url(r'^api/v1/subawards/', include('usaspending_api.awards.v1.urls_subawards')),

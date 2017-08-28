@@ -45,7 +45,7 @@ class AutocompleteView(AutocompleteResponseMixin,
 
 class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Handles the views for endpoints that request a detailed
+    Handles the v2 for endpoints that request a detailed
     view of model objects (either in the form of a single
     object or a list of objects).
     """
