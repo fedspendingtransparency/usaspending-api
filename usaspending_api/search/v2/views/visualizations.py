@@ -36,6 +36,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         group_results = {}  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
         queryset = queryset.values("action_date", "federal_action_obligation")
         print("query: {}, has_run: {}".format(queryset.query, queryset._result_cache is not None))
+        print("count: {}".format(queryset.count()))
         for trans in queryset:
             key = {}
             if group == "fy" or group == "fiscal_year":
