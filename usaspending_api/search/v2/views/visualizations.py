@@ -39,22 +39,22 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         for trans in queryset:
             key = {}
             if group == "fy" or group == "fiscal_year":
-                fy = generate_fiscal_year(trans.action_date)
+                fy = generate_fiscal_year(trans["action_date"])
                 key = {"fiscal_year": str(fy)}
             elif group == "m" or group == 'month':
-                fy = generate_fiscal_year(trans.action_date)
-                m = generate_fiscal_month(trans.action_date)
+                fy = generate_fiscal_year(trans["action_date"])
+                m = generate_fiscal_month(trans["action_date"])
                 key = {"fiscal_year": str(fy), "month": str(m)}
             else:  # quarter
-                fy = generate_fiscal_year(trans.action_date)
-                q = generate_fiscal_period(trans.action_date)
+                fy = generate_fiscal_year(trans["action_date"])
+                q = generate_fiscal_period(trans["action_date"])
                 key = {"fiscal_year": str(fy), "quarter": str(q)}
             # pyton cant have a dict as a str
             key = str(key)
             if group_results.get(key) is None:
-                group_results[key] = trans.federal_action_obligation
+                group_results[key] = trans["federal_action_obligation"]
             else:
-                group_results[key] = group_results.get(key) + trans.federal_action_obligation
+                group_results[key] = group_results.get(key) + trans["federal_action_obligation"]
 
         results = []
         # [{
@@ -63,7 +63,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # }]
         for key, value in group_results.items():
             key = ast.literal_eval(key)
-            result = {"time_period": key, "aggregated_ammount": float(value)}
+            result = {"time_period": key, "aggregated_amount": float(value)}
             results.append(result)
         response['results'] = results
 
