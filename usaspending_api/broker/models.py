@@ -371,7 +371,7 @@ class TransactionAssistanceNew(models.Model):
     funding_sub_tier_agency_co = models.TextField(blank=True, null=True)
     funding_sub_tier_agency_na = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(null=False, default=False)
-    is_historical = models.BooleanField(blank=True, null=True)
+    is_historical = models.NullBooleanField()
     legal_entity_address_line1 = models.TextField(blank=True, null=True)
     legal_entity_address_line2 = models.TextField(blank=True, null=True)
     legal_entity_address_line3 = models.TextField(blank=True, null=True)
