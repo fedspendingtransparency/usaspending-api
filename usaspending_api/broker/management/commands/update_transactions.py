@@ -71,9 +71,9 @@ class Command(BaseCommand):
             "description": "award_description",
         }
 
-        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker').all()
+        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker')[:1]
 
-        for transaction_assistance in all_transaction_assistance[0]: # TODO: REMOVE INDEX SELECTION TO RUN ON ALL
+        for transaction_assistance in all_transaction_assistance: # TODO: REMOVE INDEX SELECTION TO RUN ON ALL
             legal_entity_location, created = get_or_create_location(
                 legal_entity_location_field_map, transaction_assistance, legal_entity_location_value_map
             )
@@ -151,6 +151,7 @@ class Command(BaseCommand):
             transaction_map.transaction_id = transaction.transaction_id
             transaction_map.transaction_assistance_id = transaction_assistance['published_award_financial_assistance_id']
             transaction_map.save()
+            break
 
 
     def update_transaction_contract(self):
