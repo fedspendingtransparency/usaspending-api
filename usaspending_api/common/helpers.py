@@ -38,7 +38,7 @@ def generate_fiscal_year(context):
 def generate_fiscal_period(context):
     """ Generate fiscal period based on the date provided """
 
-    return (context.month + 3 % 4) + 1
+    return ((context.month + 3) % 4) + 1
 
 
 def generate_fiscal_month(context):
