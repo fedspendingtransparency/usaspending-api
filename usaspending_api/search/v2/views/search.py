@@ -6,7 +6,8 @@ from collections import OrderedDict
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 import ast
-from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month
+from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month, \
+    get_pagination
 
 import logging
 logger = logging.getLogger(__name__)
@@ -160,6 +161,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
 
+            results = get_pagination(results, limit, page)
             response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
             return Response(response)
 
@@ -216,6 +218,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
 
+            results = get_pagination(results, limit, page)
             response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
             return Response(response)
         elif category == "recipient":
@@ -243,6 +246,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for key, value in name_dict.items():
                     results.append({"recipient_name": key, "legal_entity_id": value["legal_entity_id"],
                                     "aggregated_amount": value["aggregated_amount"]})
+                results = get_pagination(results, limit, page)
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
                 return Response(response)
 
@@ -267,6 +271,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for key, value in name_dict.items():
                     results.append({"recipient_name": key, "parent_recipient_unique_id": value["parent_recipient_unique_id"],
                                     "aggregated_amount": value["aggregated_amount"]})
+                results = get_pagination(results, limit, page)
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
                 return Response(response)
             else:  # recipient_type
@@ -297,6 +302,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 results.append({"cfda_program_number": key, "program_title": value["program_title"],
                                 "popular_name": value["popular_name"],
                                 "aggregated_amount": value["aggregated_amount"]})
+            results = get_pagination(results, limit, page)
             response = {'category': category, 'limit': limit, 'page': page,
                         'results': results}
             return Response(response)
@@ -321,6 +327,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for key, value in name_dict.items():
                     results.append({"psc_code": key,
                                     "aggregated_amount": value})
+                results = get_pagination(results, limit, page)
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
                             'results': results}
                 return Response(response)
@@ -341,6 +348,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for key, value in name_dict.items():
                     results.append({"naics_code": key,
                                     "aggregated_amount": value})
+                results = get_pagination(results, limit, page)
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
                             'results': results}
                 return Response(response)

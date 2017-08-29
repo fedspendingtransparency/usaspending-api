@@ -49,6 +49,10 @@ def generate_fiscal_month(date):
     return date.month + 3
 
 
+def get_pagination(results, limit, page):
+    return results[limit*(page-1):((limit)*(page)-1)]
+
+
 def fy(raw_date):
     'Federal fiscal year corresponding to date'
 
