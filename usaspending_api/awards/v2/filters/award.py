@@ -149,6 +149,7 @@ def award_filter(filters):
         elif key == "award_amounts":
             or_queryset = None
             for v in value:
+<<<<<<< HEAD
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if or_queryset:
                         or_queryset |= or_queryset.filter(total_obligation__gt=v["lower_bound"],
@@ -166,6 +167,15 @@ def award_filter(filters):
                         or_queryset |= or_queryset.filter(total_obligation__lt=v["upper_bound"])
                     else:
                         or_queryset = Award.objects.filter(total_obligation__lt=v["upper_bound"])
+=======
+                if v["lower_bound"] is not None and v["upper_bound"] is not None:
+                    or_queryset |= Award.filter(total_obligation__gt=v["lower_bound"],
+                                                total_obligation__lt=v["upper_bound"])
+                elif v["lower_bound"] is not None:
+                    or_queryset |= Award.filter(total_obligation__gt=v["lower_bound"])
+                elif v["upper_bound"] is not None:
+                    or_queryset |= Award.filter(total_obligation__lt=v["upper_bound"])
+>>>>>>> feature-spending-by-category
                 else:
                     raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
             queryset &= or_queryset

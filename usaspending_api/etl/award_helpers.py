@@ -212,14 +212,14 @@ def get_award_financial_transaction(row):
         txn = Transaction.objects.filter(
             awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
             assistance_data__fain=row.fain) \
-            .order_by('-action_date').first()
+            .order_by('-action_date').values("awarding_agency").first()
 
     elif row.uri is not None:
         # this is an assistance award id'd by uri
         txn = Transaction.objects.filter(
             awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
             assistance_data__uri=row.uri) \
-            .order_by('-action_date').first()
+            .order_by('-action_date').values("awarding_agency").first()
 
     else:
         # this is a contract award
@@ -227,7 +227,7 @@ def get_award_financial_transaction(row):
             awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
             contract_data__piid=row.piid,
             contract_data__parent_award_id=row.parent_award_id) \
-            .order_by('-action_date').first()
+            .order_by('-action_date').values("awarding_agency").first()
 
     return txn
 
@@ -236,7 +236,7 @@ def get_awarding_agency(row):
     if row.txn:
         # We found a matching transaction, so grab its awarding agency
         # info and pass it get_or_create_summary_award
-        return row.txn.awarding_agency
+        return Agency.objects.get(id=row.txn["awarding_agency"])
     else:
         # No matching transaction found, so find/create Award by using
         # topiter agency only, since CGAC code is the only piece of

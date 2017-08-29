@@ -2,34 +2,31 @@
 Code for loaders in management/commands to inherit from or share.
 """
 
-from copy import copy
-from datetime import datetime
-from decimal import Decimal
 import logging
 import time
-
-from django import db
+from datetime import datetime
+from decimal import Decimal
 
 import dateutil
+from copy import copy
+from django import db
 from django.conf import settings
+from django.core.cache import caches
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
-from django.db import connection, connections, utils
-from django.core.cache import caches
-from django.utils.dateparse import parse_datetime
+from django.db import connections
 
 from usaspending_api.awards.models import (
     Award,
     TransactionAssistance, TransactionContract, Transaction)
-from usaspending_api.references.models import (
-    Agency, LegalEntity, Cfda, Location, RefCountryCode, )
 from usaspending_api.etl.award_helpers import (
     update_awards, update_contract_awards,
     update_award_categories, )
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor, setup_broker_fdw
-from usaspending_api.references.helpers import canonicalize_location_dict
-
 from usaspending_api.etl.helpers import update_model_description_fields
+from usaspending_api.references.helpers import canonicalize_location_dict
+from usaspending_api.references.models import (
+    Agency, LegalEntity, Cfda, Location, RefCountryCode, )
 
 # Lists to store for update_awards and update_contract_awards
 AWARD_UPDATE_ID_LIST = []
@@ -45,7 +42,8 @@ class Command(BaseCommand):
     we've already loaded the specified broker submisison, this command
     will remove the existing records before loading them again.
     """
-    help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable must set so we can pull submission data from their db."
+    help = "Loads a single submission from the DATA Act broker." \
+           "The DATA_BROKER_DATABASE_URL environment variable must set so we can pull submission data from their db."
 
     def add_arguments(self, parser):
 
@@ -154,10 +152,16 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
                                                                          str(total_rows),
                                                                          datetime.now() - start_time))
 
-        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, copy(legal_entity_location_value_map))
+        legal_entity_location, created = get_or_create_location(
+            legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
+        )
 
         # Create the legal entity if it doesn't exist
-        legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
+        legal_entity, created = LegalEntity.objects.get_or_create(
+            recipient_unique_id=row['awardee_or_recipient_uniqu'],
+            recipient_name=row['awardee_or_recipient_legal']
+        )
+
         if created:
             legal_entity_value_map = {
                 "location": legal_entity_location,
@@ -247,7 +251,9 @@ def no_preprocessing(row):
     return row
 
 
-def load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor, quick, row_preprocessor=no_preprocessing):
+def load_file_d2(
+        submission_attributes, award_financial_assistance_data, db_cursor, quick, row_preprocessor=no_preprocessing
+):
     """
     Process and load file D2 broker data (financial assistance award txns).
     """
@@ -317,10 +323,16 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
 
         row = row_preprocessor(row)
 
-        legal_entity_location, created = get_or_create_location(legal_entity_location_field_map, row, legal_entity_location_value_map)
+        legal_entity_location, created = get_or_create_location(
+            legal_entity_location_field_map, row, legal_entity_location_value_map
+        )
 
         # Create the legal entity if it doesn't exist
-        legal_entity, created = LegalEntity.get_or_create_by_duns(duns=row['awardee_or_recipient_uniqu'])
+        legal_entity, created = LegalEntity.objects.get_or_create(
+            recipient_unique_id=row['awardee_or_recipient_uniqu'],
+            recipient_name=row['awardee_or_recipient_legal']
+        )
+
         if created:
             legal_entity_value_map = {
                 "location": legal_entity_location,
@@ -328,7 +340,9 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
         # Create the place of performance location
-        pop_location, created = get_or_create_location(place_of_performance_field_map, row, place_of_performance_value_map)
+        pop_location, created = get_or_create_location(
+            place_of_performance_field_map, row, place_of_performance_value_map
+        )
 
         # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
         # use the sub tier code to look it up. This code assumes that all incoming
