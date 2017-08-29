@@ -36,18 +36,27 @@ class SpendingExplorerViewSet(APIView):
                 'Valid Explorers: budget_function, budget_subfunction, federal_account, '
                 'program_activity, object_class, recipients, awards')
 
-        # Filter based on explorer
+        # Apply filters to explorer type
         if filters is not None:
+            # Get filtered queryset
             queryset = spending_filter(filters)
             queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
+
+            # Set fiscal year
+            fiscal_year = None
             for key, value in filters.items():
                 if key == 'fy':
-                    if key is None:
+                    if value is None:
                         fiscal_year = fy_filter(datetime.now().date())
                         queryset = queryset.filter(award__period_of_performance_current_end_date=fiscal_year)
-                    elif key is not None:
+                    elif value is not None:
                         fiscal_year = validate_fy(value)
                         queryset = queryset.filter(award__period_of_performance_current_end_date=fiscal_year)
+                else:
+                    fiscal_year = fy_filter(datetime.now().date())
+                    queryset = queryset.filter(award__period_of_performance_current_end_date=fiscal_year)
+
+            # Retrieve explorer type data
             if explorer == 'budget_function':
                 results = budget_function(queryset, fiscal_year)
             if explorer == 'budget_subfunction':
@@ -68,11 +77,14 @@ class SpendingExplorerViewSet(APIView):
 
         # Return explorer and results if no filter specified
         if filters is None:
-            # Base queryset
+
+            # Set fiscal year and queryset if no filters applied
             fiscal_year = fy_filter(datetime.now().date())
             queryset = FinancialAccountsByAwards.objects.all().filter(
                 award__period_of_performance_current_end_date=fiscal_year
             ).exclude(obligations_incurred_total_by_award_cpe__isnull=True)
+
+            # Retrieve explorer type data
             if explorer == 'budget_function':
                 results = budget_function(queryset, fiscal_year)
             if explorer == 'budget_subfunction':
