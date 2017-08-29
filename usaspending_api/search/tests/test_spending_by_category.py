@@ -53,7 +53,7 @@ def test_spending_by_category_success(client, budget_function_data):
 
     # test for NAICS_description exact match
     resp = client.post(
-        '/api/v2/visualizations/spending_by_category',
+        '/api/v2/search/spending_by_category',
         content_type='application/json',
         data=json.dumps({
             "category": "funding_agency",
@@ -128,7 +128,7 @@ def test_naics_autocomplete_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
-        '/api/v2/visualizations/spending_by_category/',
+        '/api/v2/search/spending_by_category/',
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

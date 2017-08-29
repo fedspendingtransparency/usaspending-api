@@ -28,8 +28,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # build sql query filters
         queryset = transaction_filter(filters)
-
-<<<<<<< HEAD:usaspending_api/search/v2/views/visualizations.py
         # define what values are needed in the sql query
         queryset = queryset.values('action_date', 'federal_action_obligation')
 
@@ -38,13 +36,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # key is time period (defined by group), value is federal_action_obligation
         group_results = {}  # '{"fy": "2017", "quarter": "3"}' : 1000
-=======
-        # filter queryset by time
-        # queryset = queryset.order_by("award__period_of_performance_start_date")
-        # oldest_date = queryset.last().award.period_of_performance_start_date
-        group_results = {}  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
-        queryset = queryset.values("action_date", "federal_action_obligation")
->>>>>>> feature-spending-by-time-visualization:usaspending_api/search/v2/views/search.py
+
         for trans in queryset:
             key = {}
             if group == "fy" or group == "fiscal_year":
@@ -58,11 +50,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 fy = generate_fiscal_year(trans["action_date"])
                 q = generate_fiscal_period(trans["action_date"])
                 key = {"fiscal_year": str(fy), "quarter": str(q)}
-<<<<<<< HEAD:usaspending_api/search/v2/views/visualizations.py
             # python cant have a dict as a key
-=======
-            # python cant have a dict as a str
->>>>>>> feature-spending-by-time-visualization:usaspending_api/search/v2/views/search.py
+
             key = str(key)
             if group_results.get(key) is None:
                 group_results[key] = trans["federal_action_obligation"]
