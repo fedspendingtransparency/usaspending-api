@@ -374,7 +374,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             raise InvalidParameterException('Missing one or more required request parameters: filters')
         potential_scopes = ["recipient_location", "place_of_performance"]
         if scope not in potential_scopes:
-            raise InvalidParameterException('group does not have a valid value')
+            raise InvalidParameterException('scope does not have a valid value')
 
         # build sql query filters
         queryset = award_filter(filters)
