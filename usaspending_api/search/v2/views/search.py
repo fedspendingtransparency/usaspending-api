@@ -278,7 +278,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # define what values are needed in the sql query
             # queryset = queryset.values('federal_action_obligation', 'assistance_data__cgac')
             for trans in queryset:
-                if (hasattr(trans, 'assistance_data')) and (trans.assistance_data.get('cfda')):
+                if (hasattr(trans, 'assistance_data')) and hasattr(trans.assistance_datal, 'cfda'):
                     print("cfda: {}".format(trans.assistance_data.cfda.program_number))
                     cfda_program_number = trans.assistance_data.cfda.program_number
                     if hasattr(name_dict, cfda_program_number):
