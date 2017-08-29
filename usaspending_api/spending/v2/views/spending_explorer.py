@@ -44,7 +44,7 @@ class SpendingExplorerViewSet(APIView):
             queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
             for item in queryset.values('obligations_incurred_total_by_award_cpe'):
                 for key, value in item.items():
-                    if value == Decimal('Inf') or value == Decimal('-Inf'):
+                    if value != value or value == Decimal('Inf') or value == Decimal('-Inf'):
                         queryset.exclude(obligations_incurred_total_by_award_cpe=value)
 
             # Set fiscal year
