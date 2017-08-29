@@ -339,7 +339,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                 results = []
                 for key, value in name_dict.items():
-                    results.append({"psc_code": key,
+                    results.append({"naics_code": key,
                                     "aggregated_amount": value})
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
                             'results': results}
