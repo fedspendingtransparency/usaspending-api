@@ -39,13 +39,13 @@ class SpendingExplorerViewSet(APIView):
 
         # Apply filters to explorer type
         if filters is not None:
-            # Get filtered queryset
+            # Get filtered queryset removing null and NaN values
             queryset = spending_filter(filters)
             queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
             for item in queryset.values('obligations_incurred_total_by_award_cpe'):
                 for key, value in item.items():
                     if value != value or value == Decimal('Inf') or value == Decimal('-Inf'):
-                        queryset.exclude(obligations_incurred_total_by_award_cpe=value)
+                        queryset = queryset.exclude(obligations_incurred_total_by_award_cpe=value)
 
             # Set fiscal year
             fiscal_year = None
