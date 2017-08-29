@@ -5,7 +5,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 # TODO: Performance when multiple false values are initially provided
-# TODO: For list provided ids, do we want to use AND or OR?
 def transaction_filter(filters):
     # 'keyword',
     # 'time_period',
@@ -32,12 +31,12 @@ def transaction_filter(filters):
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
-        # keyword - DONE
+        # keyword
         if key == "keyword":
             queryset = queryset.filter(award__description=value)
 
 
-        # time_period - DONE
+        # time_period
         elif key == "time_period":
             or_queryset = None
             for v in value:
@@ -54,7 +53,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # award_type_codes - DONE
+        # award_type_codes
         elif key == "award_type_codes":
             or_queryset = None
             for v in value:
@@ -65,7 +64,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # agencies - DONE
+        # agencies
         elif key == "agencies":
             or_queryset = None
             for v in value:
@@ -103,19 +102,18 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # legal_entities - DONE
-        # TODO: Recipient names or Recipient Unique ID?
+        # legal_entities
         elif key == "legal_entities":
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(award__recipient__recipient_name=v)
+                    or_queryset |= or_queryset.filter(award__recipient__legal_entity_id=v)
                 else:
-                    or_queryset = Transaction.objects.filter(award__recipient__recipient_name=v)
+                    or_queryset = Transaction.objects.filter(award__recipient__legal_entity_id=v)
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # recipient_location_scope (broken till data reload) - Done
+        # recipient_location_scope (broken till data reload)
         elif key == "recipient_scope":
             if value == "domestic":
                 queryset = queryset.filter(award__recipient__location__country_name="UNITED STATES")
@@ -124,7 +122,7 @@ def transaction_filter(filters):
             else:
                 raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
-        # recipient_location - DONE
+        # recipient_location
         elif key == "recipient_locations":
             or_queryset = None
             for v in value:
@@ -135,7 +133,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # recipient_type_names - DONE
+        # recipient_type_names
         elif key == "recipient_type_names":
             or_queryset = None
             for v in value:
@@ -146,7 +144,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # place_of_performance_scope (broken till data reload)- DONE
+        # place_of_performance_scope (broken till data reload
         elif key == "place_of_performance_scope":
             if value == "domestic":
                 queryset = queryset.filter(award__place_of_performance__country_name="UNITED STATES")
@@ -155,7 +153,7 @@ def transaction_filter(filters):
             else:
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
-        # place_of_performance  - DONE
+        # place_of_performance
         elif key == "place_of_performance_locations":
             or_queryset = None
             for v in value:
@@ -166,7 +164,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # award_amounts - DONE
+        # award_amounts
         elif key == "award_amounts":
             or_queryset = None
             for v in value:
@@ -192,7 +190,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # award_ids - DONE
+        # award_ids
         elif key == "award_ids":
             or_queryset = None
             for v in value:
@@ -203,7 +201,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # program_numbers  - DONE
+        # program_numbers
         elif key == "program_numbers":
             or_queryset = None
             for v in value:
@@ -216,7 +214,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # naics_codes - DONE
+        # naics_codes
         elif key == "naics_codes":
             or_queryset = None
             for v in value:
@@ -229,7 +227,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # psc_codes - DONE
+        # psc_codes
         elif key == "psc_codes":
             or_queryset = None
             for v in value:
@@ -242,7 +240,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # contract_pricing_type_codes - DONE
+        # contract_pricing_type_codes
         elif key == "contract_pricing_type_codes":
             or_queryset = None
             for v in value:
@@ -255,7 +253,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # set_aside_type_codes - DONE
+        # set_aside_type_codes
         elif key == "set_aside_type_codes":
             or_queryset = None
             for v in value:
@@ -268,7 +266,7 @@ def transaction_filter(filters):
             if or_queryset is not None:
                 queryset &= or_queryset
 
-        # extent_competed_type_codes - DONE
+        # extent_competed_type_codes
         elif key == "extent_competed_type_codes":
             or_queryset = None
             for v in value:
