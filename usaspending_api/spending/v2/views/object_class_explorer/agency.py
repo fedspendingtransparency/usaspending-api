@@ -202,4 +202,3 @@ def funding_sub_tier_agency(queryset, fiscal_year):
         funding_sub_tier_agencies_results
     ]
     return results
-

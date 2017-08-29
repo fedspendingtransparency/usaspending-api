@@ -3,7 +3,7 @@ from urllib.error import HTTPError
 from datetime import datetime
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.spending.v2.filters.fy_filter import fy_filter
+from usaspending_api.spending.v2.filters.fy_filter import fy_filter, validate_fy
 
 
 def spending_filter(filters):
@@ -71,8 +71,9 @@ def spending_filter(filters):
             if key is None:
                 fiscal_year = fy_filter(datetime.now().date())
                 queryset = queryset.filter(award__period_of_performance_current_end_date=fiscal_year)
-            else:
-                queryset = queryset.filter(award__period_of_performance_current_end_date=value)
+            elif key is not None:
+                fiscal_year = validate_fy(value)
+                queryset = queryset.filter(award__period_of_performance_current_end_date=fiscal_year)
 
         else:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
