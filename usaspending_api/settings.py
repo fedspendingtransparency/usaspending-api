@@ -103,7 +103,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'usaspending_api.wsgi.application'
 
 # CORS Settings
-CORS_ORIGIN_ALLOW_ALL = True  # arary while in development
+CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
