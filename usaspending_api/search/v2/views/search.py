@@ -1,6 +1,8 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from collections import OrderedDict
+
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 import ast
@@ -30,11 +32,49 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # Filter based on search text
         response = {'group': group, 'results': []}
 
+        # # filter queryset by time
+        # # queryset = queryset.order_by("award__period_of_performance_start_date")
+        # # oldest_date = queryset.last().award.period_of_performance_start_date
+        # group_results = {}  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
+        # queryset = queryset.values("action_date", "federal_action_obligation")
+        # for trans in queryset:
+        #     key = {}
+        #     if group == "fy" or group == "fiscal_year":
+        #         fy = generate_fiscal_year(trans["action_date"])
+        #         key = '{"fiscal_year": {}}'.format(str(fy))
+        #     elif group == "m" or group == 'month':
+        #         fy = generate_fiscal_year(trans["action_date"])
+        #         m = generate_fiscal_month(trans["action_date"])
+        #         key = '{"fiscal_year": {}, "month": {}}'.format(str(fy), str(m))
+        #     else:  # quarter
+        #         fy = generate_fiscal_year(trans["action_date"])
+        #         q = generate_fiscal_period(trans["action_date"])
+        #         key = '{"fiscal_year": {}, "quarter": {}}'.format(str(fy), str(q))
+        #     if group_results.get(key) is None:
+        #         group_results[key] = trans["federal_action_obligation"]
+        #     else:
+        #         if trans["federal_action_obligation"]:
+        #             group_results[key] = group_results.get(key) + trans["federal_action_obligation"]
+        #         else:
+        #             group_results[key] = group_results.get(key)
+        #
+        # results = []
+        # # [{
+        # # "time_period": {"fy": "2017", "quarter": "3"},
+        # # 	"aggregated_amount": "200000000"
+        # # }]
+        # for key, value in group_results.items():
+        #     key_dict = ast.literal_eval(key)
+        #     result = {"time_period": key_dict, "aggregated_amount": float(value)}
+        #     results.append(result)
+        # results = sorted(results, lambda result: str(result["time_period"]))
+        # response['results'] = results
+
         # filter queryset by time
         # queryset = queryset.order_by("award__period_of_performance_start_date")
         # oldest_date = queryset.last().award.period_of_performance_start_date
-        group_results = {}  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
-        queryset = queryset.values("action_date", "federal_action_obligation")
+        group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
+        queryset = queryset.order_by("action_date").values("action_date", "federal_action_obligation")
         for trans in queryset:
             key = {}
             if group == "fy" or group == "fiscal_year":
@@ -48,7 +88,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 fy = generate_fiscal_year(trans["action_date"])
                 q = generate_fiscal_period(trans["action_date"])
                 key = {"fiscal_year": str(fy), "quarter": str(q)}
-            # python cant have a dict as a str
             key = str(key)
             if group_results.get(key) is None:
                 group_results[key] = trans["federal_action_obligation"]
@@ -64,8 +103,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # 	"aggregated_amount": "200000000"
         # }]
         for key, value in group_results.items():
-            key = ast.literal_eval(key)
-            result = {"time_period": key, "aggregated_amount": float(value)}
+            key_dict = ast.literal_eval(key)
+            result = {"time_period": key_dict, "aggregated_amount": float(value)}
             results.append(result)
         response['results'] = results
 
