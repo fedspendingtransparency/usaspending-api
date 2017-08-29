@@ -39,7 +39,7 @@ class ObjectClassExplorerViewSet(APIView):
         # Filter based on explorer
         if filters is not None:
             queryset = spending_filter(filters)
-            response = {'explorer': explorer, 'results': [queryset]}
+            response = {'type': explorer, 'filters': [queryset]}
             return Response(response)
 
         # Return explorer and results if no filter specified

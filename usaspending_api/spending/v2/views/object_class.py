@@ -44,7 +44,8 @@ def object_class_pa(queryset):
         major_object_class_name=F('object_class__major_object_class_name'),
         major_object_class_code=F('object_class__major_object_class')
     ).values(
-        'program_activity_code', 'major_object_class_name', 'major_object_class_code').annotate(
+        'budget_function_code', 'sub_function_code', 'program_activity_code',
+        'major_object_class_name', 'major_object_class_code').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
     object_classes_total = object_classes.aggregate(Sum('obligations_incurred_total_by_award_cpe'))

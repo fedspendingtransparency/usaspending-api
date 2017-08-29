@@ -42,8 +42,24 @@ class SpendingExplorerViewSet(APIView):
         # Filter based on explorer
         if filters is not None:
             queryset = spending_filter(filters)
-            response = {'explorer': explorer, 'results': [queryset]}
-            return Response(response)
+            queryset = queryset.filter(
+                award__period_of_performance_current_end_date=fiscal_year
+            ).exclude(obligations_incurred_total_by_award_cpe__isnull=True)
+            if explorer == 'budget_function':
+                results = budget_function(queryset)
+            if explorer == 'budget_subfunction':
+                results = budget_subfunction(queryset)
+            if explorer == 'federal_account':
+                results = federal_account_pa(queryset)
+            if explorer == 'program_activity':
+                results = program_activity(queryset)
+            if explorer == 'object_class':
+                results = object_class_budget(queryset)
+            if explorer == 'recipients':
+                results = recipient(queryset)
+            if explorer == 'awards':
+                results = award_category(queryset)
+            return Response(results)
 
         # Return explorer and results if no filter specified
         if filters is None:

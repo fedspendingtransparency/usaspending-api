@@ -2,6 +2,7 @@ from django.db.models import F, Sum
 from datetime import datetime
 
 from usaspending_api.spending.v2.filters.fy_filter import fy_filter
+from usaspending_api.spending.v2.views.agency import awarding_agency
 
 
 def award_category(queryset):
@@ -50,12 +51,15 @@ def award(queryset):
     awards_total = awards.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
     for key, value in awards_total.items():
         awards_total = value
+    # Unpack awarding agency
+    awarding_agencies_results = awarding_agency(queryset)
 
     awards_results = {
         'count': awards.count(),
         'total': awards_total,
         'end_date': fiscal_year,
         'awards': awards,
+        'agencies': awarding_agencies_results
     }
 
     return awards_results

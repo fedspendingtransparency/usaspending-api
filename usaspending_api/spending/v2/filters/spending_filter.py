@@ -33,7 +33,7 @@ def spending_filter(filters):
 
         # federal_account - DONE
         elif key == 'federal_account':
-            queryset = queryset.filter(treasury_account__federal_account=value)
+            queryset = queryset.filter(treasury_account__federal_account__main_account_code=value)
 
         # program_activity - DONE
         elif key == 'program_activity':
@@ -41,11 +41,11 @@ def spending_filter(filters):
 
         # object_class - DONE
         elif key == 'object_class':
-            queryset = queryset.filter(object_class=value)
+            queryset = queryset.filter(object_class__major_object_class=value)
 
         # recipient - DONE
         elif key == 'recipient':
-            queryset = queryset.filter(award__recipient__legal_entity_id=value)
+            queryset = queryset.filter(award__recipient__recipient_unique_id=value)
 
         # award - DONE
         elif key == 'award':
@@ -54,23 +54,22 @@ def spending_filter(filters):
         # agency - DONE
         elif key == 'agency':
             try:
-                agency_id = queryset.filter(award__funding_agency__id=value).first().toptier_agency_id
+                agency_id = queryset.filter(award__awarding_agency__id=value)
 
             except urllib.error.HTTPError as e:
                 try:
                     if e.code == 400:
-                        agency_id = queryset.filter(award__funding_agency__subtier_agency__subtier_code=value)
+                        agency_id = queryset.filter(award__awarding_agency__subtier_agency__subtier_code=value)
                     else:
                         raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
                 finally:
-                    queryset = queryset.filter(award__funding_agency__id=agency_id)
+                    queryset = queryset.filter(award__awarding_agency__id=agency_id)
 
         # fiscal_year - DONE
         elif key == 'fiscal_year':
-            queryset = queryset.filter(submission__reporting_fiscal_year=value)
+            queryset = queryset.filter(award__period_of_performance_current_end_date=value)
 
         else:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
     return queryset
-
