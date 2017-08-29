@@ -103,7 +103,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'usaspending_api.wsgi.application'
 
 # CORS Settings
-CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
+CORS_ORIGIN_ALLOW_ALL = True  # arary while in development
 
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
@@ -124,12 +124,6 @@ if os.environ.get('DB_SOURCE') or os.environ.get('DB_R1'):
 # using the environemnt variable, DATA_BROKER_DATABASE_URL - only if it is set
 if os.environ.get('DATA_BROKER_DATABASE_URL') and not sys.argv[1:2] == ['test']:
     DATABASES['data_broker'] = dj_database_url.parse(os.environ.get('DATA_BROKER_DATABASE_URL'), conn_max_age=600)
-
-# Temporary, for loading comparisons
-try:
-    DATABASES['quick_load'] = dj_database_url.parse('postgresql:///api_datastore_quick')
-except:
-    DATABASES['quick_load'] = None
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
