@@ -6,7 +6,6 @@ from django.utils.timezone import now
 
 from usaspending_api.common.api_request_utils import FilterGenerator, AutoCompleteHandler
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.models import RequestCatalog
 from rest_framework_tracking.mixins import LoggingMixin
 
 import logging
@@ -25,8 +24,8 @@ class AggregateQuerysetMixin(object):
         # regardless of request type (e.g., GET, POST)
         # (not sure if this is a good practice, or we should be more
         # prescriptive that aggregate requests can only be of one type)
-        params = dict(self.req.request["query_params"])
-        params.update(dict(self.req.request["data"]))
+        params = dict(request.query_params)
+        params.update(dict(request.data))
 
         # get the queryset to be aggregated
         queryset = kwargs.get('queryset', None)
@@ -189,12 +188,11 @@ class FilterQuerysetMixin(object):
         filter_map = kwargs.get('filter_map', {})
         fg = FilterGenerator(queryset.model, filter_map=filter_map)
 
-        # req here is the request catalog entry for this request
-        if len(self.req.request["data"]):
+        if len(request.data):
             fg = FilterGenerator(queryset.model)
-            filters = fg.create_from_request_body(self.req.request["data"])
+            filters = fg.create_from_request_body(request.data)
         else:
-            filters = Q(**fg.create_from_query_params(self.req.request["query_params"]))
+            filters = Q(**fg.create_from_query_params(request.query_params))
 
         # Handle FTS vectors
         if len(fg.search_vectors) > 0:
@@ -220,8 +218,8 @@ class FilterQuerysetMixin(object):
         # (not sure if this is a good practice, or we should be more
         # prescriptive that aggregate requests can only be of one type)
 
-        params = dict(self.req.request["query_params"])
-        params.update(dict(self.req.request["data"]))
+        params = dict(request.query_params)
+        params.update(dict(request.data))
         ordering = params.get('order')
         if ordering is not None:
             return queryset.order_by(*ordering)

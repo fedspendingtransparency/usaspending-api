@@ -1,5 +1,4 @@
 from django.core.management.base import BaseCommand, CommandError
-from usaspending_api.common.models import RequestCatalog
 
 from djqscsv import write_csv
 
@@ -19,19 +18,14 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('request_path', nargs=1, help='The API path of the request, e.g. /api/v1/awards/')
-        parser.add_argument('request_checksum', nargs=1, help='The request checksum, for looking up via RequestCatalog')
+        parser.add_argument('request_timestamp', nargs=1, help='The request timestamp')
 
     def handle(self, *args, **options):
         request_path = format_path(options['request_path'][0])
-        request_checksum = options['request_checksum'][0]
+        request_timestamp = options['request_timestamp'][0]
 
         # Check if we have a request for that checksum
-        request_catalog = RequestCatalog.objects.filter(checksum=request_checksum).first()
-        file_name = create_filename_from_options(request_path, request_checksum)
-
-        if not request_catalog:
-            self.logger.critical("No request catalog found for checksum: {}, aborting...".format(request_checksum))
-            sys.exit(0)
+        file_name = create_filename_from_options(request_path, request_timestamp)
 
         try:
             self.logger.info("Beginning generation...")

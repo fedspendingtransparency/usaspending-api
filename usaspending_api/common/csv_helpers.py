@@ -8,12 +8,12 @@ import botocore
 import json
 
 
-def s3_get_url(path, checksum):
+def s3_get_url(path, timestamp):
     '''
     Returns a pre-signed S3 URL for the CSV file, or None if the file does not exist
     '''
     s3 = boto3.resource('s3', region_name=settings.CSV_AWS_REGION)
-    filename = create_filename_from_options(path, checksum)
+    filename = create_filename_from_options(path, timestamp)
 
     bucket = s3.Bucket(settings.CSV_S3_BUCKET_NAME)
     try:
@@ -29,7 +29,7 @@ def s3_get_url(path, checksum):
     return None
 
 
-def sqs_add_to_queue(path, checksum):
+def sqs_add_to_queue(path, timestamp):
     '''
     Adds a request to generate a CSV file to the SQS queue
     '''
@@ -37,7 +37,7 @@ def sqs_add_to_queue(path, checksum):
     queue = sqs.get_queue_by_name(QueueName=settings.CSV_SQS_QUEUE_NAME)
 
     queue.send_message(MessageBody=json.dumps({
-        "request_checksum": checksum,
+        "request_timestamp": timestamp,
         "request_path": format_path(path),
     }))
 
@@ -61,10 +61,10 @@ def format_path(path):
     return path
 
 
-def create_filename_from_options(path, checksum):
+def create_filename_from_options(path, timestamp):
     path = format_path(path)
     split_path = [x for x in path.split("/") if len(x) > 0 and x != "api"]
-    split_path.append(checksum)
+    split_path.append(timestamp)
 
     filename = "{}.csv".format("_".join(split_path))
 
