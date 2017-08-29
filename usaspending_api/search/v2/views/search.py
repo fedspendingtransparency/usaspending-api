@@ -301,7 +301,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         'results': results}
             return Response(response)
 
-        else:  # industry_codes
+        elif category == "industry_codes":  # industry_codes
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
             # define what values are needed in the sql query
