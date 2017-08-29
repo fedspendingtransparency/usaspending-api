@@ -33,8 +33,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         response = {'group': group, 'results': []}
 
         # filter queryset by time
-        # queryset = queryset.order_by("award__period_of_performance_start_date")
-        # oldest_date = queryset.last().award.period_of_performance_start_date
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
         queryset = queryset.order_by("action_date").values("action_date", "federal_action_obligation")
         for trans in queryset:
@@ -60,6 +58,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     group_results[key] = group_results.get(key)
 
         results = []
+        # Expected results structure
         # [{
         # "time_period": {"fy": "2017", "quarter": "3"},
         # 	"aggregated_amount": "200000000"

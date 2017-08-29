@@ -7,24 +7,6 @@ logger = logging.getLogger(__name__)
 
 # TODO: Performance when multiple false values are initially provided
 def transaction_filter(filters):
-    # 'keyword',
-    # 'time_period',
-    # 'award_type_codes',
-    # 'agencies',
-    # 'legal_entities',
-    # 'recipient_scope',
-    # 'recipient_locations',
-    # 'recipient_type_names',
-    # 'place_of_performance_scope',
-    # 'place_of_performance_locations',
-    # 'award_amounts',
-    # 'award_ids',
-    # 'program_numbers',
-    # 'naics_codes',
-    # 'psc_codes',
-    # 'contract_pricing_type_codes',
-    # 'set_aside_type_codes',
-    # 'extent_competed_type_codes'
 
     queryset = Transaction.objects.all()
     for key, value in filters.items():
@@ -53,10 +35,6 @@ def transaction_filter(filters):
 
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
-            # kwargs = {
-            #     '{0}'.format(filterdict[key]): value
-            # }
-            # queryset = queryset.filter(**kwargs)
 
         # keyword
         if key == "keyword":
@@ -304,10 +282,5 @@ def transaction_filter(filters):
                         contract_data__extent_competed=v)
             if or_queryset is not None:
                 queryset &= or_queryset
-
-        # print("-------------1----------")
-        # print(key)
-        # print("-------------2----------")
-        # print(queryset.query)
 
     return queryset
