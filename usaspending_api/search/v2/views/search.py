@@ -36,15 +36,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # build response
         response = {'group': group, 'results': []}
 
-<<<<<<< HEAD
-        # key is time period (defined by group), value is federal_action_obligation
-        group_results = {}  # '{"fy": "2017", "quarter": "3"}' : 1000
-
-=======
         # filter queryset by time
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
         queryset = queryset.order_by("action_date").values("action_date", "federal_action_obligation")
->>>>>>> feature-spending-by-time-visualization
+
         for trans in queryset:
             key = {}
             if group == "fy" or group == "fiscal_year":
@@ -58,11 +53,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 fy = generate_fiscal_year(trans["action_date"])
                 q = generate_fiscal_period(trans["action_date"])
                 key = {"fiscal_year": str(fy), "quarter": str(q)}
-<<<<<<< HEAD
-            # python cant have a dict as a key
 
-=======
->>>>>>> feature-spending-by-time-visualization
             key = str(key)
             if group_results.get(key) is None:
                 group_results[key] = trans["federal_action_obligation"]
