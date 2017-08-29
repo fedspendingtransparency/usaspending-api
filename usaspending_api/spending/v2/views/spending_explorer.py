@@ -1,3 +1,4 @@
+import urllib
 from datetime import datetime
 
 from rest_framework.response import Response
@@ -7,6 +8,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.spending.v2.filters.fy_filter import fy_filter
 from usaspending_api.spending.v2.filters.spending_filter import spending_filter
+from usaspending_api.spending.v2.views.agency import awarding_top_tier_agency, awarding_sub_tier_agency
 from usaspending_api.spending.v2.views.award import award_category
 from usaspending_api.spending.v2.views.budget_function import budget_function
 from usaspending_api.spending.v2.views.budget_subfunction import budget_subfunction
@@ -25,7 +27,7 @@ class SpendingExplorerViewSet(APIView):
         filters = json_request.get('filters', None)
 
         explorers = ['budget_function', 'budget_subfunction', 'federal_account',
-                     'program_activity', 'object_class', 'recipients', 'awards']
+                     'program_activity', 'object_class', 'recipients', 'awards', 'agency']
 
         if explorer is None:
             raise InvalidParameterException('Missing one or more required request parameters: explorer')
@@ -53,6 +55,8 @@ class SpendingExplorerViewSet(APIView):
                 results = recipient_budget(queryset)
             if explorer == 'awards':
                 results = award_category(queryset)
+            if explorer == 'agency':
+                results = awarding_top_tier_agency(queryset)
             return Response(results)
 
         # Return explorer and results if no filter specified
@@ -76,4 +80,6 @@ class SpendingExplorerViewSet(APIView):
                 results = recipient_budget(queryset)
             if explorer == 'awards':
                 results = award_category(queryset)
+            if explorer == 'agency':
+                results = awarding_top_tier_agency(queryset)
             return Response(results)
