@@ -6,8 +6,8 @@ from usaspending_api.spending.v2.views.object_class_explorer.spending_explorer i
 from usaspending_api.spending.v2.views.spending_explorer import SpendingExplorerViewSet
 
 urlpatterns = [
-    url(r'^type', SpendingExplorerViewSet.as_view()),
-    url(r'^budget_type', BudgetFunctionExplorerViewSet.as_view()),
-    url(r'^agency_type', AgencyExplorerViewSet.as_view()),
-    url(r'^object_type', ObjectClassExplorerViewSet.as_view())
+    url(r'^', SpendingExplorerViewSet.as_view()),
+    url(r'^budget', BudgetFunctionExplorerViewSet.as_view()),
+    url(r'^agency', AgencyExplorerViewSet.as_view()),
+    url(r'^object', ObjectClassExplorerViewSet.as_view())
 ]

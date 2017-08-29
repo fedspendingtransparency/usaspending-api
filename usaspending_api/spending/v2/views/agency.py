@@ -1,49 +1,20 @@
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Value, CharField
 from datetime import datetime
 
 from usaspending_api.spending.v2.filters.fy_filter import fy_filter
-
-
-def awarding_agency(queryset):
-    fiscal_year = fy_filter(datetime.now().date())
-    # Awarding Agencies Queryset
-    awarding_agencies = queryset.annotate(
-        awarding_agency_id=F('award__awarding_agency__id')
-    ).values(
-        'awarding_agency_id'
-    ).annotate(
-        total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
-
-    awarding_agencies_total = awarding_agencies.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
-    for key, value in awarding_agencies_total.items():
-        awarding_agencies_total = value
-
-    # Unpack awarding top and sub tier results
-    awarding_top_tier_agencies_results = awarding_top_tier_agency(queryset)
-
-    awarding_agencies_results = {
-        'count': awarding_agencies.count(),
-        'total': awarding_agencies_total,
-        'end_date': fiscal_year,
-        'awarding_agencies': awarding_agencies,
-        'awarding_top_tier_agencies': awarding_top_tier_agencies_results
-    }
-    results = [
-        awarding_agencies_results,
-    ]
-    return results
 
 
 def awarding_top_tier_agency(queryset):
     fiscal_year = fy_filter(datetime.now().date())
     # Awarding Top Tier Agencies Queryset
     awarding_top_tier_agencies = queryset.annotate(
-        awarding_agency_id=F('award__awarding_agency__id'),
-        awarding_toptier_agency_id=F('award__awarding_agency__toptier_agency__toptier_agency_id'),
-        awarding_toptier_agency_name=F('award__awarding_agency__toptier_agency__name')
+        id=F('financial_accounts_by_awards_id'),
+        type=Value('top_tier_agency', output_field=CharField()),
+        code=F('award__awarding_agency__id'),
+        name=F('award__awarding_agency__toptier_agency__name'),
+        amount=F('obligations_incurred_total_by_award_cpe')
     ).values(
-        'awarding_agency_id',
-        'awarding_toptier_agency_id', 'awarding_toptier_agency_name'
+        'id', 'type', 'code', 'name', 'amount'
     ).annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
@@ -56,14 +27,13 @@ def awarding_top_tier_agency(queryset):
     awarding_sub_tier_agencies_results = awarding_sub_tier_agency(queryset)
 
     awarding_top_tier_agencies_results = {
-        'count': awarding_top_tier_agencies.count(),
         'total': awarding_top_tier_agencies_total,
         'end_date': fiscal_year,
-        'awarding_top_tier_agencies': awarding_top_tier_agencies,
-        'awarding_sub_tier_agencies': awarding_sub_tier_agencies_results
+        'results': awarding_top_tier_agencies,
     }
     results = [
-        awarding_top_tier_agencies_results
+        awarding_top_tier_agencies_results,
+        awarding_sub_tier_agencies_results
     ]
     return results
 
@@ -72,14 +42,13 @@ def awarding_sub_tier_agency(queryset):
     fiscal_year = fy_filter(datetime.now().date())
     # Awarding Sub Tier Agencies Queryset
     awarding_sub_tier_agencies = queryset.annotate(
-        awarding_agency_id=F('award__awarding_agency__id'),
-        awarding_toptier_agency_id=F('award__awarding_agency__toptier_agency__toptier_agency_id'),
-        awarding_toptier_agency_name=F('award__awarding_agency__toptier_agency__name'),
-        awarding_subtier_agency_id=F('award__awarding_agency__subtier_agency__subtier_code'),
-        awarding_subtier_agency_name=F('award__awarding_agency__subtier_agency__name'),
+        id=F('financial_accounts_by_awards_id'),
+        type=Value('sub_tier_agency', output_field=CharField()),
+        code=F('award__awarding_agency__subtier_agency__subtier_code'),
+        name=F('award__awarding_agency__subtier_agency__name'),
+        amount=F('obligations_incurred_total_by_award_cpe')
     ).values(
-        'awarding_agency_id', 'awarding_toptier_agency_id',
-        'awarding_toptier_agency_name', 'awarding_subtier_agency_id', 'awarding_subtier_agency_name'
+        'id', 'type', 'code', 'name', 'amount'
     ).annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
@@ -89,108 +58,11 @@ def awarding_sub_tier_agency(queryset):
         awarding_sub_tier_agencies_total = value
 
     awarding_sub_tier_agencies_results = {
-        'count': awarding_sub_tier_agencies.count(),
         'total': awarding_sub_tier_agencies_total,
         'end_date': fiscal_year,
-        'awarding_sub_tier_agencies': awarding_sub_tier_agencies,
+        'results': awarding_sub_tier_agencies,
     }
     results = [
         awarding_sub_tier_agencies_results
-    ]
-    return results
-
-
-def funding_agency(queryset):
-    fiscal_year = fy_filter(datetime.now().date())
-    # Funding Agencies Queryset
-    funding_agencies = queryset.annotate(
-        funding_agency_id=F('award__funding_agency__id'),
-    ).values(
-        'funding_agency_id'
-    ).annotate(
-        total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
-
-    funding_agencies_total = funding_agencies.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
-    for key, value in funding_agencies_total.items():
-        funding_agencies_total = value
-
-    # Unpack funding top and sub tier results
-    funding_top_tier_agencies_results = funding_top_tier_agency(queryset)
-
-    funding_agencies_results = {
-        'count': funding_agencies.count(),
-        'total': funding_agencies_total,
-        'end_date': fiscal_year,
-        'funding_agencies': funding_agencies,
-        'funding_top_tier_agencies': funding_top_tier_agencies_results
-    }
-    results = [
-        funding_agencies_results
-    ]
-    return results
-
-
-def funding_top_tier_agency(queryset):
-    fiscal_year = fy_filter(datetime.now().date())
-    # Funding Top Tier Agencies Queryset
-    funding_top_tier_agencies = queryset.annotate(
-        funding_agency_id=F('award__funding_agency__id'),
-        funding_toptier_agency_id=F('award__funding_agency__toptier_agency__toptier_agency_id'),
-        funding_toptier_agency_name=F('award__funding_agency__toptier_agency__name')
-    ).values(
-        'funding_agency_id', 'funding_toptier_agency_id',
-        'funding_toptier_agency_name'
-    ).annotate(
-        total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
-
-    funding_top_tier_agencies_total = funding_top_tier_agencies.aggregate(
-        Sum('obligations_incurred_total_by_award_cpe'))
-    for key, value in funding_top_tier_agencies_total.items():
-        funding_top_tier_agencies_total = value
-
-    # Unpack funding sub tier results
-    funding_sub_tier_agencies_results = funding_sub_tier_agency(queryset)
-
-    funding_top_tier_agencies_results = {
-        'count': funding_top_tier_agencies.count(),
-        'total': funding_top_tier_agencies_total,
-        'end_date': fiscal_year,
-        'funding_top_tier_agencies': funding_top_tier_agencies,
-        'funding_sub_tier_agencies': funding_sub_tier_agencies_results
-    }
-    results = [
-        funding_top_tier_agencies_results
-    ]
-    return results
-
-
-def funding_sub_tier_agency(queryset):
-    fiscal_year = fy_filter(datetime.now().date())
-    # Funding Sub Tier Agencies Queryset
-    funding_sub_tier_agencies = queryset.annotate(
-        funding_agency_id=F('award__funding_agency__id'),
-        funding_toptier_agency_id=F('award__funding_agency__toptier_agency__toptier_agency_id'),
-        funding_toptier_agency_name=F('award__funding_agency__toptier_agency__name'),
-        funding_subtier_agency_id=F('award__funding_agency__subtier_agency__subtier_code'),
-        funding_subtier_agency_name=F('award__funding_agency__subtier_agency__name')
-    ).values(
-        'funding_agency_id', 'funding_toptier_agency_id',
-        'funding_toptier_agency_name', 'funding_subtier_agency_id', 'funding_subtier_agency_name'
-    ).annotate(
-        total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
-
-    funding_sub_tier_agencies_total = funding_sub_tier_agencies.aggregate(
-        Sum('obligations_incurred_total_by_award_cpe'))
-    for key, value in funding_sub_tier_agencies_total.items():
-        funding_sub_tier_agencies_total = value
-
-    funding_sub_tier_agencies_results = {
-        'count': funding_sub_tier_agencies.count(),
-        'total': funding_sub_tier_agencies_total,
-        'end_date': fiscal_year,
-        'funding_sub_tier_agencies': funding_sub_tier_agencies
-    }
-    results = [
-        funding_sub_tier_agencies_results
     ]
     return results
