@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from decimal import Decimal
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -40,8 +41,11 @@ class SpendingExplorerViewSet(APIView):
         if filters is not None:
             # Get filtered queryset
             queryset = spending_filter(filters)
-            queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True,
-                                        obligations_incurred_total_by_award_cpe='NaN')
+            queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
+            for item in queryset.values('obligations_incurred_total_by_award_cpe'):
+                for key, value in item.items():
+                    if value == Decimal('Inf') or value == Decimal('-Inf'):
+                        queryset.exclude(obligations_incurred_total_by_award_cpe=value)
 
             # Set fiscal year
             fiscal_year = None
