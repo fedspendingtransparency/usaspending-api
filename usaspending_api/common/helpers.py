@@ -27,6 +27,7 @@ def get_params_from_req_or_request(request=None, req=None):
 
     return params
 
+
 def generate_fiscal_year(context):
     """ Generate fiscal year based on the date provided """
     year = context.year

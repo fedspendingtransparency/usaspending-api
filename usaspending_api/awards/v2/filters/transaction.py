@@ -4,6 +4,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 import logging
 logger = logging.getLogger(__name__)
 
+
 # TODO: Performance when multiple false values are initially provided
 def transaction_filter(filters):
     # 'keyword',
@@ -34,7 +35,6 @@ def transaction_filter(filters):
         # keyword
         if key == "keyword":
             queryset = queryset.filter(award__description=value)
-
 
         # time_period
         elif key == "time_period":

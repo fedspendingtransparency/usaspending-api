@@ -8,7 +8,6 @@ from usaspending_api.awards.models import Award, Transaction
 from usaspending_api.references.models import Location, Agency, ToptierAgency, SubtierAgency
 
 
-
 @pytest.fixture
 def budget_function_data(db):
 
@@ -71,7 +70,7 @@ def test_spending_over_time_success(client, budget_function_data):
                 "end_date": "2017-09-30"
             }
         ],
-        'award_type_codes': ['011','020'],
+        'award_type_codes': ['011', '020'],
         "agencies": [
             {
                 "type": "funding",
