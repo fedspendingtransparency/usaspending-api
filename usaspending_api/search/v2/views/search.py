@@ -286,9 +286,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     else:
                         name_dict[cfda_program_number] = {"aggregated_amount": trans.federal_action_obligation,
                                                           "program_title":
-                                                              trans.assistance_data.cfda.get('program_title'),
+                                                              trans.assistance_data.cfda.program_title,
                                                           "popular_name":
-                                                              trans.assistance_data.cfda.get('popular_name')}
+                                                              trans.assistance_data.cfda.popular_name}
 
             # build response
             results = []
@@ -335,7 +335,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         else:
                             name_dict[naics] = {"aggregated_amount": trans.federal_action_obligation,
                                                 "naics_description":
-                                                    trans.contract_data.get('naics_description')}
+                                                    trans.contract_data.naics_description}
 
                         results = []
                         for key, value in name_dict.items():
