@@ -11,6 +11,8 @@ import logging
 import os
 import time
 
+import xlsxwriter
+
 from django import db
 
 import dateutil
@@ -158,6 +160,10 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
 
     if create_report:
         report_file = open('d1_load_report.{}.csv'.format(submission_attributes.broker_submission_id), 'w')
+        report_filename = 'd1_load_report.{}.xlsx'.format(submission_attributes.broker_submission_id)
+        report_workbook = xlsxwriter.Workbook(report_filename)
+        report_worksheet = report_workbook.add_worksheet()
+
         quick_cursor = connections['quick_load'].cursor()
 
     for row in procurement_data:
@@ -252,48 +258,66 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
             writer.writerow('' * 10)
             writer.writerow('' * 10)
             write_report(writer=writer, load_method='source', table='award_procurement', row=row)
+            write_excel_report_line(report_worksheet, 2, load_method='source', table='award_procurement', row=row)
             writer.writerow('' * 10)
             write_report(writer=writer, load_method='old', table='entity loc', row=legal_entity_location)
+            write_excel_report_line(report_worksheet, 5, load_method='old', table='entity loc', row=legal_entity_location)
             writer.writerow('' * 10)
             quick_qry = 'SELECT * FROM references_location WHERE %(award_procurement_id)s = ANY(award_procurement_ids) AND recipient_flag'
             quick_params = {'award_procurement_id': row['award_procurement_id']}
             write_report_qry(writer=writer, load_method='quick', table='entity loc',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 8, load_method='quick', table='entity loc',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
 
             write_report(writer=writer, load_method='old', table='pop loc', row=pop_location)
+            write_excel_report_line(report_worksheet, 11, load_method='old', table='pop loc', row=pop_location)
             writer.writerow('' * 10)
             quick_qry = 'SELECT * FROM references_location WHERE %(award_procurement_id)s = ANY(award_procurement_ids) AND place_of_performance_flag'
             write_report_qry(writer=writer, load_method='quick', table='pop loc',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 14, load_method='quick', table='pop loc',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
             write_report(writer=writer, load_method='old', table='legal_entity', row=legal_entity)
+            write_excel_report_line(report_worksheet, 17, load_method='old', table='legal_entity', row=legal_entity)
             writer.writerow('' * 10)
             quick_qry = 'SELECT * FROM legal_entity WHERE %(award_procurement_id)s = ANY(award_procurement_ids)'
             write_report_qry(writer=writer, load_method='quick', table='legal_entity',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 20, load_method='quick', table='legal_entity',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
-            write_report(writer=writer, load_method='old', table='awards', row=award)
+            write_excel_report_line(report_worksheet, 23, load_method='old', table='awards', row=award)
             writer.writerow('' * 10)
             quick_qry = 'SELECT * FROM awards WHERE %(award_procurement_id)s = ANY(award_procurement_ids)'
             write_report_qry(writer=writer, load_method='quick', table='awards',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 26, load_method='quick', table='awards',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
             write_report(writer=writer, load_method='old', table='transaction', row=transaction)
+            write_excel_report_line(report_worksheet, 29, load_method='old', table='transaction', row=transaction)
             writer.writerow('' * 10)
             quick_qry = 'SELECT * FROM transaction WHERE %(award_procurement_id)s = award_procurement_id'
             write_report_qry(writer=writer, load_method='quick', table='transaction',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 32, load_method='quick', table='transaction',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
             write_report(writer=writer, load_method='old', table='transaction_assistance', row=transaction)
+            write_excel_report_line(report_worksheet, 35, load_method='old', table='transaction_assistance', row=transaction)
             writer.writerow('' * 10)
             quick_qry = '''SELECT tc.* FROM transaction_contract tc
                 JOIN transaction t ON (tc.transaction_id = t.id)
                 WHERE %(award_procurement_id)s = t.award_procurement_id'''
             write_report_qry(writer=writer, load_method='quick', table='transaction_contract',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 38, load_method='quick', table='transaction_contract',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
@@ -317,6 +341,22 @@ do_not_report = ('award_financial_assistance_ids', 'award_financial_assistance_i
     'award_procurement_ids', 'award_procurement_id', 'place_of_performance_award_procurement_ids',
     'place_of_performance_award_financial_assistance_ids', )
 
+def write_excel_report_line(worksheet, row_number, load_method, table, row):
+    if isinstance(row, dict):
+        dct = row
+    else:
+        dct = row.__dict__
+    items = sorted(dct.items())
+    items = [i for i in items if not i[0].startswith('_') and i[0] not in do_not_report]
+    cells = ['load method', 'table', *[i[0] for i in items]]
+    for (col_number, cell) in enumerate(cells):
+        worksheet.write(row_number, col_number, str(cell))
+    cells = [load_method, table, *[i[1] for i in items]]
+    for (col_number, cell) in enumerate(cells):
+        worksheet.write(row_number+1, col_number, str(cell))
+
+
+
 def write_report(writer, load_method, table, row):
     if isinstance(row, dict):
         dct = row
@@ -334,6 +374,14 @@ def write_report_qry(writer, load_method, table, cursor, qry, params):
         fields = [desc[0] for desc in cursor.description]
         dct = dict(zip(fields, row))
         write_report(writer, load_method, table, dct)
+
+def write_report_qry_to_excel(worksheet, row_number, load_method, table, cursor, qry, params):
+    cursor.execute(qry, params)
+    row = cursor.fetchone()
+    if row:
+        fields = [desc[0] for desc in cursor.description]
+        dct = dict(zip(fields, row))
+        write_excel_report_line(worksheet, row_number, load_method, table, dct)
 
 def no_preprocessing(row):
     """For data whose rows require no preprocessing."""
@@ -365,6 +413,9 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
 
     if create_report:
         report_file = open('d2_load_report.{}.csv'.format(submission_attributes.broker_submission_id), 'w')
+        report_filename = 'd2_load_report.{}.xlsx'.format(submission_attributes.broker_submission_id)
+        report_workbook = xlsxwriter.Workbook(report_filename)
+        report_worksheet = report_workbook.add_worksheet()
         quick_cursor = connections['quick_load'].cursor()
 
     legal_entity_location_field_map = {
@@ -505,49 +556,68 @@ def load_file_d2(submission_attributes, award_financial_assistance_data, db_curs
             writer.writerow('' * 10)
             writer.writerow('' * 10)
             write_report(writer=writer, load_method='source', table='award_procurement', row=row)
+            write_excel_report_line(report_worksheet, 2, load_method='source', table='award_procurement', row=row)
             writer.writerow('' * 10)
             write_report(writer=writer, load_method='old', table='entity loc', row=legal_entity_location)
+            write_excel_report_line(report_worksheet, 5, load_method='old', table='entity loc', row=legal_entity_location)
             writer.writerow('' * 10)
             quick_qry = 'SELECT * FROM references_location WHERE %(award_financial_assistance_id)s = ANY(award_financial_assistance_ids) AND recipient_flag'
             quick_params = {'award_financial_assistance_id': row['award_financial_assistance_id']}
             write_report_qry(writer=writer, load_method='quick', table='entity loc',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 8, load_method='quick', table='entity loc',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
             write_report(writer=writer, load_method='old', table='pop loc', row=pop_location)
+            write_excel_report_line(report_worksheet, 11, load_method='old', table='pop loc', row=pop_location)
             writer.writerow('' * 10)
             quick_qry = 'SELECT * FROM references_location WHERE %(award_financial_assistance_id)s = ANY(place_of_performance_award_financial_assistance_ids) AND place_of_performance_flag'
             write_report_qry(writer=writer, load_method='quick', table='pop loc',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 14, load_method='quick', table='pop loc',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
             write_report(writer=writer, load_method='old', table='legal_entity', row=legal_entity)
+            write_excel_report_line(report_worksheet, 17, load_method='old', table='legal_entity', row=legal_entity)
             writer.writerow('' * 10)
             quick_qry = 'SELECT * FROM legal_entity WHERE %(award_financial_assistance_id)s = ANY(award_financial_assistance_ids)'
             write_report_qry(writer=writer, load_method='quick', table='legal_entity',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 20, load_method='quick', table='legal_entity',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
             write_report(writer=writer, load_method='old', table='awards', row=award)
+            write_excel_report_line(report_worksheet, 23, load_method='old', table='awards', row=award)
             writer.writerow('' * 10)
             quick_qry = 'SELECT * FROM awards WHERE %(award_financial_assistance_id)s = ANY(award_financial_assistance_ids)'
             write_report_qry(writer=writer, load_method='quick', table='awards',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 26, load_method='quick', table='awards',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
             write_report(writer=writer, load_method='old', table='transaction', row=transaction)
+            write_excel_report_line(report_worksheet, 29, load_method='old', table='transaction', row=transaction)
             writer.writerow('' * 10)
             quick_qry = 'SELECT * FROM transaction WHERE %(award_financial_assistance_id)s = award_financial_assistance_id'
             write_report_qry(writer=writer, load_method='quick', table='transaction',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 32, load_method='quick', table='transaction',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
             write_report(writer=writer, load_method='old', table='transaction_assistance', row=transaction_assistance)
+            write_excel_report_line(report_worksheet, 35, load_method='old', table='transaction_assistance', row=transaction_assistance)
             writer.writerow('' * 10)
             quick_qry = '''SELECT ta.* FROM transaction_assistance ta
                 JOIN transaction t ON (ta.transaction_id = t.id)
                 WHERE %(award_financial_assistance_id)s = t.award_financial_assistance_id'''
             write_report_qry(writer=writer, load_method='quick', table='transaction_assistance',
+                cursor = quick_cursor, qry = quick_qry, params=quick_params)
+            write_report_qry_to_excel(report_worksheet, 38, load_method='quick', table='transaction_assistance',
                 cursor = quick_cursor, qry = quick_qry, params=quick_params)
             writer.writerow('' * 10)
 
