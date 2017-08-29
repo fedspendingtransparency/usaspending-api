@@ -40,7 +40,8 @@ class SpendingExplorerViewSet(APIView):
         if filters is not None:
             # Get filtered queryset
             queryset = spending_filter(filters)
-            queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
+            queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True,
+                                        obligations_incurred_total_by_award_cpe='NaN')
 
             # Set fiscal year
             fiscal_year = None
@@ -82,7 +83,8 @@ class SpendingExplorerViewSet(APIView):
             fiscal_year = fy_filter(datetime.now().date())
             queryset = FinancialAccountsByAwards.objects.all().filter(
                 award__period_of_performance_current_end_date=fiscal_year
-            ).exclude(obligations_incurred_total_by_award_cpe__isnull=True)
+            ).exclude(obligations_incurred_total_by_award_cpe__isnull=True,
+                      obligations_incurred_total_by_award_cpe='NaN')
 
             # Retrieve explorer type data
             if explorer == 'budget_function':
