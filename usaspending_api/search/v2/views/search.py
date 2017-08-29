@@ -153,7 +153,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # "agency_abbreviation": ttabrev,
             # 	"aggregated_amount": "200000000"
             # },...]
-            for key, value in name_dict:
+            for key, value in name_dict.items():
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
 
@@ -209,7 +209,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # "agency_abbreviation": ttabrev,
             # 	"aggregated_amount": "200000000"
             # },...]
-            for key, value in name_dict:
+            for key, value in name_dict.items():
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
 
@@ -237,7 +237,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 # "legal_entity_id": ttabrev,
                 # 	"aggregated_amount": "200000000"
                 # },...]
-                for key, value in name_dict:
+                for key, value in name_dict.items():
                     results.append({"recipient_name": key, "legal_entity_id": value["legal_entity_id"],
                                     "aggregated_amount": value["aggregated_amount"]})
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
@@ -261,7 +261,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 # "legal_entity_id": ttabrev,
                 # 	"aggregated_amount": "200000000"
                 # },...]
-                for key, value in name_dict:
+                for key, value in name_dict.items():
                     results.append({"recipient_name": key, "parent_recipient_unique_id": value["parent_recipient_unique_id"],
                                     "aggregated_amount": value["aggregated_amount"]})
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
@@ -290,7 +290,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # build response
             results = []
 
-            for key, value in name_dict:
+            for key, value in name_dict.items():
                 results.append({"cfda_program_number": key, "program_title": value["program_title"],
                                 "popular_name": value["popular_name"],
                                 "aggregated_amount": value["aggregated_amount"]})
@@ -315,7 +315,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                             name_dict[psc] = trans.federal_action_obligation
 
                         results = []
-                        for key, value in name_dict:
+                        for key, value in name_dict.items():
                             results.append({"psc_code": key,
                                             "aggregated_amount": value})
                         response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
@@ -335,7 +335,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                                     trans.contract_data.get('naics_description')}
 
                         results = []
-                        for key, value in name_dict:
+                        for key, value in name_dict.items():
                             results.append({"psc_code": key,
                                             "aggregated_amount": value})
                         response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
