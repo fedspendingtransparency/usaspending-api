@@ -317,13 +317,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         else:
                             name_dict[psc] = trans.federal_action_obligation
 
-                        results = []
-                        for key, value in name_dict.items():
-                            results.append({"psc_code": key,
-                                            "aggregated_amount": value})
-                        response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
-                                    'results': results}
-                        return Response(response)
+                results = []
+                for key, value in name_dict.items():
+                    results.append({"psc_code": key,
+                                    "aggregated_amount": value})
+                response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
+                            'results': results}
+                return Response(response)
 
             elif scope == "naics":
                 for trans in queryset:
@@ -337,13 +337,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                                 "naics_description":
                                                     trans.contract_data.naics_description}
 
-                        results = []
-                        for key, value in name_dict.items():
-                            results.append({"psc_code": key,
-                                            "aggregated_amount": value})
-                        response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
-                                    'results': results}
-                        return Response(response)
+                results = []
+                for key, value in name_dict.items():
+                    results.append({"psc_code": key,
+                                    "aggregated_amount": value})
+                response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
+                            'results': results}
+                return Response(response)
 
             else:  # recipient_type
                 raise InvalidParameterException('recipient type is not yet implemented')
