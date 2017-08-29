@@ -22,7 +22,8 @@
                 "fain",
                 "uri",
                 "piid"
-            ]
+            ],
+            "order": ["id"]
         },
         "url": "/api/v1/awards/?page=1&limit=1",
         "name": "Test field limiting on awards/"
@@ -124,6 +125,7 @@
                 "uri",
                 "piid"
             ],
+            "order": ["id"],
             "limit": 1,
             "page": 1
         },
@@ -170,7 +172,8 @@
                     "operation": "equals",
                     "field": "funding_agency__toptier_agency__name"
                 }
-            ]
+            ],
+            "order": ["id"]
         },
         "url": "/api/v1/awards/?page=1&limit=1",
         "name": "Testing filter operation 'equals' on awards"
@@ -329,7 +332,8 @@
                     "operation": "search",
                     "field": "funding_agency__toptier_agency__name"
                 }
-            ]
+            ],
+            "order": ["id"]
         },
         "url": "/api/v1/awards/?page=1&limit=5",
         "name": "Testing filter operation 'search' on awards"
@@ -388,7 +392,8 @@
                     ],
                     "combine_method": "OR"
                 }
-            ]
+            ],
+            "order": ["id"]
         },
         "url": "/api/v1/awards/?page=1&limit=100",
         "name": "Testing filter combinations via OR on awards"

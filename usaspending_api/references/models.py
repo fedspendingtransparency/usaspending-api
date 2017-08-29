@@ -13,10 +13,10 @@ from usaspending_api.references.helpers import canonicalize_string
 class RefCityCountyCode(models.Model):
     city_county_code_id = models.AutoField(primary_key=True)
     state_code = models.TextField(blank=True, null=True)
-    city_name = models.TextField(blank=True, null=True)
+    city_name = models.TextField(blank=True, null=True, db_index=True)
     city_code = models.TextField(blank=True, null=True)
-    county_code = models.TextField(blank=True, null=True)
-    county_name = models.TextField(blank=True, null=True)
+    county_code = models.TextField(blank=True, null=True, db_index=True)
+    county_name = models.TextField(blank=True, null=True, db_index=True)
     type_of_area = models.TextField(blank=True, null=True)
     valid_begin_date = models.DateTimeField(blank=True, null=True)
     valid_end_date = models.DateTimeField(blank=True, null=True)
@@ -152,7 +152,7 @@ class ToptierAgency(models.Model):
     toptier_agency_id = models.AutoField(primary_key=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
-    cgac_code = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Code")
+    cgac_code = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Code", db_index=True)
     fpds_code = models.TextField(blank=True, null=True)
     abbreviation = models.TextField(blank=True, null=True, verbose_name="Agency Abbreviation")
     name = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Name")
@@ -203,25 +203,25 @@ class FilterHash(models.Model):
 
 class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     location_id = models.AutoField(primary_key=True)
-    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
-    country_name = models.TextField(blank=True, null=True, verbose_name="Country Name")
-    state_code = models.TextField(blank=True, null=True, verbose_name="State Code")
+    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code", db_index=True)
+    country_name = models.TextField(blank=True, null=True, verbose_name="Country Name", db_index=True)
+    state_code = models.TextField(blank=True, null=True, verbose_name="State Code", db_index=True)
     state_name = models.TextField(blank=True, null=True, verbose_name="State Name")
     state_description = models.TextField(blank=True, null=True, verbose_name="State Description")
-    city_name = models.TextField(blank=True, null=True, verbose_name="City Name")
+    city_name = models.TextField(blank=True, null=True, verbose_name="City Name", db_index=True)
     city_code = models.TextField(blank=True, null=True)
-    county_name = models.TextField(blank=True, null=True)
-    county_code = models.TextField(blank=True, null=True)
-    address_line1 = models.TextField(blank=True, null=True, verbose_name="Address Line 1")
-    address_line2 = models.TextField(blank=True, null=True, verbose_name="Address Line 2")
-    address_line3 = models.TextField(blank=True, null=True, verbose_name="Address Line 3")
+    county_name = models.TextField(blank=True, null=True, db_index=True)
+    county_code = models.TextField(blank=True, null=True, db_index=True)
+    address_line1 = models.TextField(blank=True, null=True, verbose_name="Address Line 1", db_index=True)
+    address_line2 = models.TextField(blank=True, null=True, verbose_name="Address Line 2", db_index=True)
+    address_line3 = models.TextField(blank=True, null=True, verbose_name="Address Line 3", db_index=True)
     foreign_location_description = models.TextField(blank=True, null=True)
-    zip4 = models.TextField(blank=True, null=True, verbose_name="ZIP+4")
-    zip_4a = models.TextField(blank=True, null=True)
-    congressional_code = models.TextField(blank=True, null=True, verbose_name="Congressional District Code")
+    zip4 = models.TextField(blank=True, null=True, verbose_name="ZIP+4", db_index=True)
+    zip_4a = models.TextField(blank=True, null=True, db_index=True)
+    congressional_code = models.TextField(blank=True, null=True, verbose_name="Congressional District Code", db_index=True)
     performance_code = models.TextField(blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
-    zip_last4 = models.TextField(blank=True, null=True)
-    zip5 = models.TextField(blank=True, null=True)
+    zip_last4 = models.TextField(blank=True, null=True, db_index=True)
+    zip5 = models.TextField(blank=True, null=True, db_index=True)
     foreign_postal_code = models.TextField(blank=True, null=True)
     foreign_province = models.TextField(blank=True, null=True)
     foreign_city_name = models.TextField(blank=True, null=True)
@@ -313,14 +313,14 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
 
 
 class LegalEntity(DataSourceTrackedModel):
-    legal_entity_id = models.AutoField(primary_key=True)
+    legal_entity_id = models.AutoField(primary_key=True, db_index=True)
     location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
     parent_recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="Parent DUNS Number")
     recipient_name = models.TextField(blank=True, verbose_name="Recipient Name")
     vendor_doing_as_business_name = models.TextField(blank=True, null=True)
     vendor_phone_number = models.TextField(blank=True, null=True)
     vendor_fax_number = models.TextField(blank=True, null=True)
-    business_types = models.TextField(blank=True, null=True)
+    business_types = models.TextField(blank=True, null=True, db_index=True)
     business_types_description = models.TextField(blank=True, null=True)
 
     '''
@@ -394,7 +394,7 @@ class LegalEntity(DataSourceTrackedModel):
     '''
     business_categories = ArrayField(models.TextField(), default=list)
 
-    recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="DUNS Number")
+    recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="DUNS Number", db_index=True)
     limited_liability_corporation = models.TextField(blank=True, null=True)
     sole_proprietorship = models.TextField(blank=True, null=True)
     partnership_or_limited_liability_partnership = models.TextField(blank=True, null=True)
@@ -483,7 +483,7 @@ class LegalEntity(DataSourceTrackedModel):
     other_minority_owned_business = models.TextField(blank=True, null=True)
     us_local_government = models.TextField(blank=True, null=True)
     undefinitized_action = models.TextField(blank=True, null=True)
-    domestic_or_foreign_entity = models.TextField(blank=True, null=True)
+    domestic_or_foreign_entity = models.TextField(blank=True, null=True, db_index=True)
     domestic_or_foreign_entity_description = models.TextField(null=True, blank=True)
     division_name = models.TextField(blank=True, null=True)
     division_number = models.TextField(blank=True, null=True)
@@ -858,20 +858,6 @@ class LegalEntity(DataSourceTrackedModel):
 
         le.business_categories = categories
 
-    @classmethod
-    def get_or_create_by_duns(cls, duns):
-        """
-        Finds a legal entity with the matching duns, or creates it if it does
-        not exist. If the duns is null, will always create a new instance.
-
-        Returns a single legal entity instance, and a boolean indicating if the
-        record was created or retrieved (i.e. mimicing the return of get_or_create)
-        """
-        if duns is None or len(duns) == 0:
-            return cls.objects.create(), True
-        else:
-            return cls.objects.get_or_create(recipient_unique_id=duns)
-
     class Meta:
         managed = True
         db_table = 'legal_entity'
@@ -932,7 +918,11 @@ class RefProgramActivity(models.Model):
     class Meta:
         managed = True
         db_table = 'ref_program_activity'
-        unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
+        unique_together = (('program_activity_code',
+                            'budget_year',
+                            'responsible_agency_id',
+                            'allocation_transfer_agency_id',
+                            'main_account_code'),)
 
 
 class Cfda(DataSourceTrackedModel):
@@ -983,7 +973,7 @@ class Cfda(DataSourceTrackedModel):
         managed = True
 
     def __str__(self):
-        return "%s" % (self.program_title)
+        return "%s" % self.program_title
 
 
 class Definition(models.Model):

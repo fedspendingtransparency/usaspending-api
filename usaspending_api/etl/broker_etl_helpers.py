@@ -2,6 +2,10 @@ import json
 import os
 import dj_database_url
 from django.db import connection, connections
+import logging
+
+
+logger = logging.getLogger('console')
 
 
 def dictfetchall(cursor):
@@ -37,5 +41,7 @@ def setup_broker_fdw():
 
     with connection.cursor() as cursor:
         with open('usaspending_api/etl/management/setup_broker_fdw.sql') as infile:
+            logger.info(connections.databases['data_broker'])
             for raw_sql in infile.read().split('\n\n\n'):
+                logger.info('SETUP BROKER FDW: Running SQL => ' + str(raw_sql))
                 cursor.execute(raw_sql, connections.databases['data_broker'])

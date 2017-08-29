@@ -1,4 +1,5 @@
 from django.db.models import F, Sum
+from django.db.models.functions import Coalesce
 from usaspending_api.references.models import Agency, OverallTotals
 from usaspending_api.submissions.models import SubmissionAttributes
 from rest_framework.views import APIView
@@ -60,9 +61,9 @@ class ToptierAgenciesViewSet(APIView):
                 treasury_account_identifier__funding_toptier_agency=toptier_agency
             )
             aggregate_dict = queryset.aggregate(
-                budget_authority_amount=Sum('budget_authority_available_amount_total_cpe'),
-                obligated_amount=Sum('obligations_incurred_total_by_tas_cpe'),
-                outlay_amount=Sum('gross_outlay_amount_by_tas_cpe'))
+                budget_authority_amount=Coalesce(Sum('budget_authority_available_amount_total_cpe'), 0),
+                obligated_amount=Coalesce(Sum('obligations_incurred_total_by_tas_cpe'), 0),
+                outlay_amount=Coalesce(Sum('gross_outlay_amount_by_tas_cpe'), 0))
 
             # get the overall total government budget authority (to craft a budget authority percentage)
             total_budget_authority_queryset = OverallTotals.objects.all()
@@ -76,8 +77,13 @@ class ToptierAgenciesViewSet(APIView):
                 total_budget_authority_amount = total_budget_authority_submission.total_budget_authority
                 percentage = (float(aggregate_dict['budget_authority_amount']) / float(total_budget_authority_amount))
 
+            abbreviation = ""
+            if toptier_agency.abbreviation is not None:
+                abbreviation = toptier_agency.abbreviation
+
             # craft response
             response['results'].append({'agency_id': agency.id,
+                                        'abbreviation': abbreviation,
                                         'agency_name': toptier_agency.name,
                                         'active_fy': str(active_fiscal_year),
                                         'active_fq': str(active_fiscal_quarter),

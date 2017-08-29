@@ -2,10 +2,10 @@
 Django settings for usaspending_api project.
 
 For more information on this file, see
-https://docs.djangoproject.com/en/1.10/topics/settings/
+https://docs.djangoproject.com/en/1.11/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.10/ref/settings/
+https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'usaspending_api.submissions',
     'usaspending_api.financial_activities',
     'usaspending_api.api_docs',
+    'usaspending_api.broker',
     'django_spaghetti',
     'simple_history',
 ]
@@ -193,6 +194,10 @@ LOGGING = {
         },
         'json': {
             '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
+        },
+        'simpletime': {
+            'format': "%(asctime)s - %(message)s",
+            'datefmt': "%H:%M:%S"
         }
     },
     'handlers': {
@@ -230,6 +235,7 @@ LOGGING = {
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'simpletime'
         },
     },
     'loggers': {

@@ -1,7 +1,7 @@
 """usaspending_api URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/1.10/topics/http/urls/
+    https://docs.djangoproject.com/en/1.11/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -33,6 +33,7 @@ urlpatterns = [
     url(r'^api/v1/tas/', include('usaspending_api.accounts.urls_tas')),
     url(r'^api/v1/transactions/', include('usaspending_api.awards.v1.urls_transactions')),
     url(r'^api/v2/autocomplete/', include('usaspending_api.references.v2.urls_autocomplete')),
+    url(r'^api/v2/awards/', include('usaspending_api.awards.v2.urls_awards')),
     url(r'^api/v2/award_spending/', include('usaspending_api.awards.v2.urls_award_spending')),
     url(r'^api/v2/budget_authority/', include('usaspending_api.accounts.urls_budget_authority')),
     url(r'^api/v2/federal_accounts/', include('usaspending_api.accounts.urls_federal_accounts_v2')),
