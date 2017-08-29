@@ -1,12 +1,9 @@
 from django.db.models import F, Sum, Value, CharField
-from datetime import datetime
 
-from usaspending_api.spending.v2.filters.fy_filter import fy_filter
 from usaspending_api.spending.v2.views.budget_subfunction import budget_subfunction
 
 
-def budget_function(queryset):
-    fiscal_year = fy_filter(datetime.now().date())
+def budget_function(queryset, fiscal_year):
     # Budget Function Queryset
     bf = queryset.annotate(
         id=F('financial_accounts_by_awards_id'),
@@ -24,7 +21,8 @@ def budget_function(queryset):
     # Unpack budget_subfunction results
     budget_sub_function_results, federal_accounts_results, object_classes_results, \
         recipients_results, program_activity_results, award_category_results, awards_results, \
-        awarding_top_tier_agencies_results, awarding_sub_tier_agencies_results = budget_subfunction(queryset)
+        awarding_top_tier_agencies_results,\
+        awarding_sub_tier_agencies_results = budget_subfunction(queryset, fiscal_year)
 
     budget_function_results = {
         'total': function_total,

@@ -1,13 +1,9 @@
-from datetime import datetime
-
 from django.db.models import F, Sum, CharField, Value
 
-from usaspending_api.spending.v2.filters.fy_filter import fy_filter
 from usaspending_api.spending.v2.views.object_class import object_class_budget
 
 
-def program_activity(queryset):
-    fiscal_year = fy_filter(datetime.now().date())
+def program_activity(queryset, fiscal_year):
     # Program Activity Queryset
     pa = queryset.annotate(
         id=F('financial_accounts_by_awards_id'),
@@ -25,7 +21,8 @@ def program_activity(queryset):
 
     # Unpack object class program activity results
     object_classes_results, recipients_results, award_category_results, awards_results, \
-        awarding_top_tier_agencies_results, awarding_sub_tier_agencies_results = object_class_budget(queryset)
+        awarding_top_tier_agencies_results,\
+        awarding_sub_tier_agencies_results = object_class_budget(queryset, fiscal_year)
 
     program_activity_results = {
         'total': program_activity_total,

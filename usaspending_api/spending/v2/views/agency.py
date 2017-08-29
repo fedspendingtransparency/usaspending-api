@@ -1,11 +1,7 @@
 from django.db.models import F, Sum, Value, CharField
-from datetime import datetime
-
-from usaspending_api.spending.v2.filters.fy_filter import fy_filter
 
 
-def awarding_top_tier_agency(queryset):
-    fiscal_year = fy_filter(datetime.now().date())
+def awarding_top_tier_agency(queryset, fiscal_year):
     # Awarding Top Tier Agencies Queryset
     awarding_top_tier_agencies = queryset.annotate(
         id=F('financial_accounts_by_awards_id'),
@@ -24,7 +20,7 @@ def awarding_top_tier_agency(queryset):
         awarding_top_tier_agencies_total = value
 
     # Unpack awarding sub tier results
-    awarding_sub_tier_agencies_results = awarding_sub_tier_agency(queryset)
+    awarding_sub_tier_agencies_results = awarding_sub_tier_agency(queryset, fiscal_year)
 
     awarding_top_tier_agencies_results = {
         'total': awarding_top_tier_agencies_total,
@@ -38,8 +34,7 @@ def awarding_top_tier_agency(queryset):
     return results
 
 
-def awarding_sub_tier_agency(queryset):
-    fiscal_year = fy_filter(datetime.now().date())
+def awarding_sub_tier_agency(queryset, fiscal_year):
     # Awarding Sub Tier Agencies Queryset
     awarding_sub_tier_agencies = queryset.annotate(
         id=F('financial_accounts_by_awards_id'),

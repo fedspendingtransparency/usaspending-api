@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from usaspending_api.common.exceptions import InvalidParameterException
+
 
 def fy_filter(now):
 
@@ -53,4 +55,4 @@ def validate_fy(fy):
             fy = str(year) + str(q3_end)
         return fy
     except ValueError:
-        raise ValueError("Incorrect fiscal year format, should be four digit year: YYYY")
+        raise InvalidParameterException('Incorrect fiscal year format, should be four digit year: YYYY')

@@ -1,12 +1,9 @@
 from django.db.models import F, Sum, Value, CharField
-from datetime import datetime
 
-from usaspending_api.spending.v2.filters.fy_filter import fy_filter
 from usaspending_api.spending.v2.views.award import award_category
 
 
-def recipient_budget(queryset):
-    fiscal_year = fy_filter(datetime.now().date())
+def recipient_budget(queryset, fiscal_year):
     # Recipients Queryset
     recipients = queryset.annotate(
         id=F('financial_accounts_by_awards_id'),
@@ -24,7 +21,7 @@ def recipient_budget(queryset):
 
     # Unpack award results
     award_category_results, awards_results, awarding_top_tier_agencies_results,\
-        awarding_sub_tier_agencies_results = award_category(queryset)
+        awarding_sub_tier_agencies_results = award_category(queryset, fiscal_year)
 
     recipients_results = {
         'total': recipients_total,

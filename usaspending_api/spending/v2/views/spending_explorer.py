@@ -1,4 +1,3 @@
-import urllib
 from datetime import datetime
 
 from rest_framework.response import Response
@@ -6,9 +5,9 @@ from rest_framework.views import APIView
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.spending.v2.filters.fy_filter import fy_filter
+from usaspending_api.spending.v2.filters.fy_filter import fy_filter, validate_fy
 from usaspending_api.spending.v2.filters.spending_filter import spending_filter
-from usaspending_api.spending.v2.views.agency import awarding_top_tier_agency, awarding_sub_tier_agency
+from usaspending_api.spending.v2.views.agency import awarding_top_tier_agency
 from usaspending_api.spending.v2.views.award import award_category
 from usaspending_api.spending.v2.views.budget_function import budget_function
 from usaspending_api.spending.v2.views.budget_subfunction import budget_subfunction
@@ -41,22 +40,30 @@ class SpendingExplorerViewSet(APIView):
         if filters is not None:
             queryset = spending_filter(filters)
             queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
+            for key, value in filters.items():
+                if key == 'fy':
+                    if key is None:
+                        fiscal_year = fy_filter(datetime.now().date())
+                        queryset = queryset.filter(award__period_of_performance_current_end_date=fiscal_year)
+                    elif key is not None:
+                        fiscal_year = validate_fy(value)
+                        queryset = queryset.filter(award__period_of_performance_current_end_date=fiscal_year)
             if explorer == 'budget_function':
-                results = budget_function(queryset)
+                results = budget_function(queryset, fiscal_year)
             if explorer == 'budget_subfunction':
-                results = budget_subfunction(queryset)
+                results = budget_subfunction(queryset, fiscal_year)
             if explorer == 'federal_account':
-                results = federal_account_budget(queryset)
+                results = federal_account_budget(queryset, fiscal_year)
             if explorer == 'program_activity':
-                results = program_activity(queryset)
+                results = program_activity(queryset, fiscal_year)
             if explorer == 'object_class':
-                results = object_class_budget(queryset)
+                results = object_class_budget(queryset, fiscal_year)
             if explorer == 'recipients':
-                results = recipient_budget(queryset)
+                results = recipient_budget(queryset, fiscal_year)
             if explorer == 'awards':
-                results = award_category(queryset)
+                results = award_category(queryset, fiscal_year)
             if explorer == 'agency':
-                results = awarding_top_tier_agency(queryset)
+                results = awarding_top_tier_agency(queryset, fiscal_year)
             return Response(results)
 
         # Return explorer and results if no filter specified
@@ -67,19 +74,19 @@ class SpendingExplorerViewSet(APIView):
                 award__period_of_performance_current_end_date=fiscal_year
             ).exclude(obligations_incurred_total_by_award_cpe__isnull=True)
             if explorer == 'budget_function':
-                results = budget_function(queryset)
+                results = budget_function(queryset, fiscal_year)
             if explorer == 'budget_subfunction':
-                results = budget_subfunction(queryset)
+                results = budget_subfunction(queryset, fiscal_year)
             if explorer == 'federal_account':
-                results = federal_account_budget(queryset)
+                results = federal_account_budget(queryset, fiscal_year)
             if explorer == 'program_activity':
-                results = program_activity(queryset)
+                results = program_activity(queryset, fiscal_year)
             if explorer == 'object_class':
-                results = object_class_budget(queryset)
+                results = object_class_budget(queryset, fiscal_year)
             if explorer == 'recipients':
-                results = recipient_budget(queryset)
+                results = recipient_budget(queryset, fiscal_year)
             if explorer == 'awards':
-                results = award_category(queryset)
+                results = award_category(queryset, fiscal_year)
             if explorer == 'agency':
-                results = awarding_top_tier_agency(queryset)
+                results = awarding_top_tier_agency(queryset, fiscal_year)
             return Response(results)
