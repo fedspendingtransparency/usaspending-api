@@ -7,30 +7,34 @@ logger = logging.getLogger(__name__)
 
 # TODO: Performance when multiple false values are initially provided
 def transaction_filter(filters):
-    # 'keyword',
-    # 'time_period',
-    # 'award_type_codes',
-    # 'agencies',
-    # 'legal_entities',
-    # 'recipient_location_scope',
-    # 'recipient_locations',
-    # 'recipient_type_names',
-    # 'place_of_performance_scope',
-    # 'place_of_performances',
-    # 'award_amounts',
-    # 'award_ids',
-    # 'program_numbers',
-    # 'naics_codes',
-    # 'psc_codes',
-    # 'contract_pricing_type_codes',
-    # 'set_aside_type_codes',
-    # 'extent_competed_type_codes'
 
     queryset = Transaction.objects.all()
     for key, value in filters.items():
         # check for valid key
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
+
+        key_list = ['keyword',
+                    'time_period',
+                    'award_type_codes',
+                    'agencies',
+                    'legal_entities',
+                    'recipient_scope',
+                    'recipient_locations',
+                    'recipient_type_names',
+                    'place_of_performance_scope',
+                    'place_of_performance_locations',
+                    'award_amounts',
+                    'award_ids',
+                    'program_numbers',
+                    'naics_codes',
+                    'psc_codes',
+                    'contract_pricing_type_codes',
+                    'set_aside_type_codes',
+                    'extent_competed_type_codes']
+
+        if key not in key_list:
+            raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
         # keyword
         if key == "keyword":
@@ -42,9 +46,9 @@ def transaction_filter(filters):
             for v in value:
                 kwargs = {}
                 if v.get("start_date") is not None:
-                    kwargs["award__period_of_performance_start_date__gte"] = v.get("start_date")
+                    kwargs["action_date__gte"] = v.get("start_date")
                 if v.get("end_date") is not None:
-                    kwargs["award__period_of_performance_current_end_date__lte"] = v.get("end_date")
+                    kwargs["action_date__lte"] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if or_queryset:
                     or_queryset |= or_queryset.filter(**kwargs)
@@ -278,16 +282,5 @@ def transaction_filter(filters):
                         contract_data__extent_competed=v)
             if or_queryset is not None:
                 queryset &= or_queryset
-
-        else:
-            raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
-            # kwargs = {
-            #     '{0}'.format(filterdict[key]): value
-            # }
-            # queryset = queryset.filter(**kwargs)
-        # print("-------------1----------")
-        # print(key)
-        # print("-------------2----------")
-        # print(queryset.query)
 
     return queryset
