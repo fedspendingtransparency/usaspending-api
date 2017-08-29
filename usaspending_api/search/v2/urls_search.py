@@ -3,11 +3,6 @@ from usaspending_api.search.v2.views.search import SpendingOverTimeVisualization
     SpendingByCategoryVisualizationViewSet
 
 urlpatterns = [
-<<<<<<< HEAD
     url(r'^spending_over_time', SpendingOverTimeVisualizationViewSet.as_view()),
     url(r'^spending_by_category', SpendingByCategoryVisualizationViewSet.as_view())
 ]
-=======
-    url(r'^spending_over_time', SpendingOverTimeVisualizationViewSet.as_view())
-    ]
->>>>>>> feature-spending-by-time-visualization
