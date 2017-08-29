@@ -111,7 +111,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # filter the transactions by scope name
             name_dict = {}  # {ttname: {aggregated_amount: 1000, abbreviation: "tt"}
             # define what values are needed in the sql query
-            queryset = queryset.values('federal_action_obligation', 'funding_agency', 'awarding_agency')
+            # queryset = queryset.values('federal_action_obligation', 'funding_agency', 'awarding_agency')
 
             if scope == 'agency':
                 for trans in queryset:
