@@ -98,7 +98,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         if limit is None:
             limit = 10
         if page is None:
-            page = 0
+            page = 1
         if filters is None:
             raise InvalidParameterException('Missing one or more required request parameters: filters')
 
