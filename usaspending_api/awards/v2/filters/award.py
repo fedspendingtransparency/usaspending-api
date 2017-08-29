@@ -26,13 +26,8 @@ def award_filter(filters):
                     'place_of_performance_scope',
                     'place_of_performance_locations',
                     'award_amounts',
-                    'award_ids',
-                    'program_numbers',
-                    'naics_codes',
-                    'psc_codes',
-                    'contract_pricing_type_codes',
-                    'set_aside_type_codes',
-                    'extent_competed_type_codes']
+                    'award_ids'
+                    ]
 
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
@@ -79,27 +74,27 @@ def award_filter(filters):
                 if type == "funding":
                     if tier == "toptier":
                         if or_queryset:
-                            or_queryset |= or_queryset.filter(award__funding_agency__toptier_agency__name=name)
+                            or_queryset |= or_queryset.filter(funding_agency__toptier_agency__name=name)
                         else:
-                            or_queryset = Award.objects.filter(award__funding_agency__toptier_agency__name=name)
+                            or_queryset = Award.objects.filter(funding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
                         if or_queryset:
-                            or_queryset |= or_queryset.filter(award__funding_agency__subtier_agency__name=name)
+                            or_queryset |= or_queryset.filter(funding_agency__subtier_agency__name=name)
                         else:
-                            or_queryset = Award.objects.filter(award__funding_agency__subtier_agency__name=name)
+                            or_queryset = Award.objects.filter(funding_agency__subtier_agency__name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
                         if or_queryset:
-                            or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__name=name)
+                            or_queryset |= or_queryset.filter(awarding_agency__toptier_agency__name=name)
                         else:
-                            or_queryset = Award.objects.filter(award__awarding_agency__toptier_agency__name=name)
+                            or_queryset = Award.objects.filter(awarding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
                         if or_queryset:
-                            or_queryset |= or_queryset.filter(award__awarding_agency__subtier_agency__name=name)
+                            or_queryset |= or_queryset.filter(awarding_agency__subtier_agency__name=name)
                         else:
-                            or_queryset = Award.objects.filter(award__awarding_agency__subtier_agency__name=name)
+                            or_queryset = Award.objects.filter(awarding_agency__subtier_agency__name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
@@ -132,9 +127,9 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(award__recipient__location__location_id=v)
+                    or_queryset |= or_queryset.filter(recipient__location__location_id=v)
                 else:
-                    or_queryset = Transaction.objects.filter(award__recipient__location__location_id=v)
+                    or_queryset = Award.objects.filter(recipient__location__location_id=v)
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -143,18 +138,18 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(award__recipient__business_types_description=v)
+                    or_queryset |= or_queryset.filter(recipient__business_types_description=v)
                 else:
-                    or_queryset = Transaction.objects.filter(award__recipient__business_types_description=v)
+                    or_queryset = Award.objects.filter(recipient__business_types_description=v)
             if or_queryset is not None:
                 queryset &= or_queryset
 
         # place_of_performance_scope (broken till data reload
         elif key == "place_of_performance_scope":
             if value == "domestic":
-                queryset = queryset.filter(award__place_of_performance__country_name="UNITED STATES")
+                queryset = queryset.filter(place_of_performance__country_name="UNITED STATES")
             elif value == "foreign":
-                queryset = queryset.exclude(award__place_of_performance__country_name="UNITED STATES")
+                queryset = queryset.exclude(place_of_performance__country_name="UNITED STATES")
             else:
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
@@ -163,9 +158,9 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(award__place_of_performance__location_id=v)
+                    or_queryset |= or_queryset.filter(place_of_performance__location_id=v)
                 else:
-                    or_queryset = Transaction.objects.filter(award__place_of_performance__location_id=v)
+                    or_queryset = Award.objects.filter(place_of_performance__location_id=v)
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -175,21 +170,21 @@ def award_filter(filters):
             for v in value:
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(award__total_obligation__gt=v["lower_bound"],
-                                                          award__total_obligation__lt=v["upper_bound"])
+                        or_queryset |= or_queryset.filter(total_obligation__gt=v["lower_bound"],
+                                                          total_obligation__lt=v["upper_bound"])
                     else:
-                        or_queryset = Transaction.objects.filter(award__total_obligation__gt=v["lower_bound"],
-                                                                 award__total_obligation__lt=v["upper_bound"])
+                        or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"],
+                                                                 total_obligation__lt=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(award__total_obligation__gt=v["lower_bound"])
+                        or_queryset |= or_queryset.filter(total_obligation__gt=v["lower_bound"])
                     else:
-                        or_queryset = Transaction.objects.filter(award__total_obligation__gt=v["lower_bound"])
+                        or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"])
                 elif v.get("upper_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(award__total_obligation__lt=v["upper_bound"])
+                        or_queryset |= or_queryset.filter(total_obligation__lt=v["upper_bound"])
                     else:
-                        or_queryset = Transaction.objects.filter(award__total_obligation__lt=v["upper_bound"])
+                        or_queryset = Award.objects.filter(total_obligation__lt=v["upper_bound"])
                 else:
                     raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
             if or_queryset is not None:
@@ -200,87 +195,9 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(award__id=v)
+                    or_queryset |= or_queryset.filter(id=v)
                 else:
-                    or_queryset = Transaction.objects.filter(award__id=v)
-            if or_queryset is not None:
-                queryset &= or_queryset
-
-        # program_numbers
-        elif key == "program_numbers":
-            or_queryset = None
-            for v in value:
-                if or_queryset:
-                    or_queryset |= or_queryset.filter(
-                        assistance_data__cfda__program_number=v)
-                else:
-                    or_queryset = Transaction.objects.filter(
-                        assistance_data__cfda__program_number=v)
-            if or_queryset is not None:
-                queryset &= or_queryset
-
-        # naics_codes
-        elif key == "naics_codes":
-            or_queryset = None
-            for v in value:
-                if or_queryset:
-                    or_queryset |= or_queryset.filter(
-                        contract_data__naics=v)
-                else:
-                    or_queryset = Transaction.objects.filter(
-                        contract_data__naics=v)
-            if or_queryset is not None:
-                queryset &= or_queryset
-
-        # psc_codes
-        elif key == "psc_codes":
-            or_queryset = None
-            for v in value:
-                if or_queryset:
-                    or_queryset |= or_queryset.filter(
-                        contract_data__product_or_service_code=v)
-                else:
-                    or_queryset = Transaction.objects.filter(
-                        contract_data__product_or_service_code=v)
-            if or_queryset is not None:
-                queryset &= or_queryset
-
-        # contract_pricing_type_codes
-        elif key == "contract_pricing_type_codes":
-            or_queryset = None
-            for v in value:
-                if or_queryset:
-                    or_queryset |= or_queryset.filter(
-                        contract_data__type_of_contract_pricing=v)
-                else:
-                    or_queryset = Transaction.objects.filter(
-                        contract_data__type_of_contract_pricing=v)
-            if or_queryset is not None:
-                queryset &= or_queryset
-
-        # set_aside_type_codes
-        elif key == "set_aside_type_codes":
-            or_queryset = None
-            for v in value:
-                if or_queryset:
-                    or_queryset |= or_queryset.filter(
-                        contract_data__type_set_aside=v)
-                else:
-                    or_queryset = Transaction.objects.filter(
-                        contract_data__type_set_aside=v)
-            if or_queryset is not None:
-                queryset &= or_queryset
-
-        # extent_competed_type_codes
-        elif key == "extent_competed_type_codes":
-            or_queryset = None
-            for v in value:
-                if or_queryset:
-                    or_queryset |= or_queryset.filter(
-                        contract_data__extent_competed=v)
-                else:
-                    or_queryset = Transaction.objects.filter(
-                        contract_data__extent_competed=v)
+                    or_queryset = Award.objects.filter(id=v)
             if or_queryset is not None:
                 queryset &= or_queryset
 
