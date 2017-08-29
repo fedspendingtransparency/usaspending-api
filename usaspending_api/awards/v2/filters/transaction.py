@@ -107,9 +107,9 @@ def transaction_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(award__recipient__legal_entity_id=v)
+                    or_queryset |= or_queryset.filter(recipient__legal_entity_id=v)
                 else:
-                    or_queryset = Transaction.objects.filter(award__recipient__legal_entity_id=v)
+                    or_queryset = Transaction.objects.filter(recipient__legal_entity_id=v)
             if or_queryset is not None:
                 queryset &= or_queryset
 
