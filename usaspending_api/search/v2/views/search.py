@@ -232,7 +232,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                             name_dict[r_name]["aggregated_amount"] += trans.federal_action_obligation
                         else:
                             name_dict[r_name] = {"aggregated_amount": trans.federal_action_obligation,
-                                                 "legal_entity_id": trans.recipient.get('legal_entity_id')}
+                                                 "legal_entity_id": trans.recipient.legal_entity_id}
                 # build response
                 results = []
                 # [{
@@ -256,7 +256,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         else:
                             name_dict[r_name] = {"aggregated_amount": trans.federal_action_obligation,
                                                  "parent_recipient_unique_id":
-                                                     trans.recipient.get('parent_recipient_unique_id')}
+                                                     trans.recipient.parent_recipient_unique_id}
                 # build response
                 results = []
                 # [{
