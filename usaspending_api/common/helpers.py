@@ -50,7 +50,12 @@ def generate_fiscal_month(date):
 
 
 def get_pagination(results, limit, page):
-    return results[limit*(page-1):((limit)*(page)-1)]
+    if len(results)<limit*(page-1):
+        return []
+    if len(results)<((limit)*(page)-1):
+        return results[limit*(page-1):]
+    else:
+        return results[limit*(page-1):((limit)*(page)-1)]
 
 
 def fy(raw_date):
