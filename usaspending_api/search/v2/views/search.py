@@ -167,7 +167,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # filter the transactions by scope name
             name_dict = {}  # {ttname: {aggregated_amount: 1000, abbreviation: "tt"}
             # define what values are needed in the sql query
-            queryset = queryset.values('federal_action_obligation', 'funding_agency', 'awarding_agency')
+            # queryset = queryset.values('federal_action_obligation', 'funding_agency', 'awarding_agency')
 
             if scope == 'agency':
                 for trans in queryset:
@@ -219,7 +219,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
             # define what values are needed in the sql query
-            queryset = queryset.values('federal_action_obligation', 'recipient')
+            # queryset = queryset.values('federal_action_obligation', 'recipient')
             if scope == "duns":
                 for trans in queryset:
                     if hasattr(trans, 'recipient'):
@@ -273,7 +273,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
             # define what values are needed in the sql query
-            #queryset = queryset.values('federal_action_obligation', 'assistance_data__cgac')
+            # queryset = queryset.values('federal_action_obligation', 'assistance_data__cgac')
             for trans in queryset:
                 if (hasattr(trans, 'assistance_data')) and (trans.assistance_data.get('cfda')):
                     print("cfda: {}".format(trans.assistance_data.cfda.program_number))
@@ -302,7 +302,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
             # define what values are needed in the sql query
-            #queryset = queryset.values('federal_action_obligation', 'assistance_data__cgac')
+            # queryset = queryset.values('federal_action_obligation', 'assistance_data__cgac')
 
             if scope == "psc":
                 for trans in queryset:
