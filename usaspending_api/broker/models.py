@@ -432,5 +432,5 @@ class TransactionAssistanceNew(models.Model):
 
 class TransactionMap(models.Model):
     transaction = models.ForeignKey(TransactionNew, on_delete=models.CASCADE)
-    transaction_assistance_id = models.IntegerField()
-    transaction_contract_id = models.IntegerField()
+    transaction_assistance_id = models.IntegerField(blank=True, null=True)
+    transaction_contract_id = models.IntegerField(blank=True, null=True)
