@@ -33,10 +33,11 @@ def award(queryset, fiscal_year):
         award_piid=F('award__piid'),
         award_fain=F('award__fain'),
         award_uri=F('award__uri'),
+        code=F('award'),
         name=F('award__category'),
         amount=F('obligations_incurred_total_by_award_cpe')
     ).values(
-        'id', 'type', 'award_piid', 'award_fain', 'award_uri', 'name', 'amount').annotate(
+        'id', 'type', 'award_piid', 'award_fain', 'award_uri', 'code', 'name', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
     awards_total = awards.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
