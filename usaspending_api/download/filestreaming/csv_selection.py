@@ -40,6 +40,7 @@ def write_csv(download_job, file_name, upload_name, header, body):
             writer.finish_batch()
 
     except:
+        # TODO: Add proper exception logging
         download_job.job_status_id = JOB_STATUS_DICT['failed']
         download_job.error_message = 'An exception was raised while attempting to write the CSV'
     else:

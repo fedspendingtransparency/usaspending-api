@@ -1,4 +1,4 @@
-import boto3 as boto
+import boto
 import smart_open
 from usaspending_api.download.filestreaming.csv_abstract_writer import CsvAbstractWriter
 
@@ -18,6 +18,8 @@ class CsvS3Writer(CsvAbstractWriter):
         header - list of strings for the header
 
         """
+
+        # TODO: Update this connection setup to use boto3
         conn = boto.s3.connect_to_region(region).get_bucket(bucket).new_key(filename)
         self.stream = smart_open.smart_open(conn, 'w', min_part_size=CsvAbstractWriter.BUFFER_SIZE)
         super(CsvS3Writer, self).__init__(header)
