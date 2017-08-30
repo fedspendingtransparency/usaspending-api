@@ -1,81 +1,216 @@
+import logging
 import urllib
+from decimal import Decimal
 from urllib.error import HTTPError
-from datetime import datetime
-from usaspending_api.awards.models import FinancialAccountsByAwards
+
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.spending.v2.filters.fy_filter import fy_filter, validate_fy
+
+logger = logging.getLogger(__name__)
 
 
-def spending_filter(filters):
-    # 'budget_function',
-    # 'budget_subfunction',
-    # 'federal_account',
-    # 'program_activity',
-    # 'object_class',
-    # 'recipient',
-    # 'award',
-    # 'agency',
-    # 'fy'
-
-    queryset = FinancialAccountsByAwards.objects.all()
+def spending_filter(queryset, filters):
 
     for key, value in filters.items():
         # check for valid key
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
+        key_list = ['budget_function',
+                    'budget_subfunction',
+                    'federal_account',
+                    'program_activity',
+                    'object_class',
+                    'recipient',
+                    'award',
+                    'award_category',
+                    'agency',
+                    'agency_type',
+                    'fy']
+
+        if key not in key_list:
+            raise InvalidParameterException(
+                key + ' filter does not exist.'
+                      'Valid Filters: budget_function, budget_subfunction, federal_account,'
+                      'program_activity, object_class, recipient, award, award_category, agency, agency_type, fy.'
+            )
+
         # budget_function - DONE
         if key == 'budget_function':
-            queryset = queryset.filter(treasury_account__budget_function_code=value)
+            or_queryset = None
+            if or_queryset:
+                or_queryset |= or_queryset.filter(treasury_account__budget_function_code=value)
+            else:
+                or_queryset = queryset.filter(treasury_account__budget_function_code=value)
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # budget_subfunction - DONE
         elif key == 'budget_subfunction':
-            queryset = queryset.filter(treasury_account__budget_subfunction_code=value)
+            or_queryset = None
+            if or_queryset:
+                or_queryset |= or_queryset.filter(treasury_account__budget_subfunction_code=value)
+            else:
+                or_queryset = queryset.filter(treasury_account__budget_subfunction_code=value)
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # federal_account - DONE
         elif key == 'federal_account':
-            queryset = queryset.filter(treasury_account__federal_account__main_account_code=value)
+            or_queryset = None
+            if or_queryset:
+                or_queryset |= or_queryset.filter(treasury_account__federal_account__main_account_code=value)
+            else:
+                or_queryset = queryset.filter(treasury_account__federal_account__main_account_code=value)
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # program_activity - DONE
         elif key == 'program_activity':
-            queryset = queryset.filter(program_activity=value)
+            or_queryset = None
+            if or_queryset:
+                or_queryset |= or_queryset.filter(program_activity__program_activity_code=value)
+            else:
+                or_queryset = queryset.filter(program_activity__program_activity_code=value)
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # object_class - DONE
         elif key == 'object_class':
-            queryset = queryset.filter(object_class__major_object_class=value)
+            or_queryset = None
+            if or_queryset:
+                or_queryset |= or_queryset.filter(object_class__major_object_class=value)
+            else:
+                or_queryset = queryset.filter(object_class__major_object_class=value)
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # recipient - DONE
         elif key == 'recipient':
-            queryset = queryset.filter(award__recipient__recipient_unique_id=value)
+            or_queryset = None
+            if or_queryset:
+                or_queryset |= or_queryset.filter(award__recipient__recipient_unique_id=value)
+            else:
+                or_queryset = queryset.filter(award__recipient__recipient_unique_id=value)
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # award - DONE
         elif key == 'award':
-            queryset = queryset.filter(award=value)
+            or_queryset = None
+            if or_queryset:
+                or_queryset |= or_queryset.filter(award=value)
+            else:
+                or_queryset = queryset.filter(award=value)
+            if or_queryset is not None:
+                queryset &= or_queryset
+
+        # award_category - DONE
+        elif key == 'award_category':
+            or_queryset = None
+            if or_queryset:
+                or_queryset |= or_queryset.filter(award__category=value)
+            else:
+                or_queryset = queryset.filter(award__category=value)
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # agency - DONE
         elif key == 'agency':
+            or_queryset = None
             try:
-                agency_id = queryset.filter(award__awarding_agency__id=value)
-
+                if or_queryset:
+                    or_queryset |= or_queryset.filter(award__awarding_agency__id=value)
+                else:
+                    or_queryset = queryset.filter(award__awarding_agency__id=value)
+                if or_queryset is not None:
+                    queryset &= or_queryset
             except urllib.error.HTTPError as e:
                 try:
                     if e.code == 400:
-                        agency_id = queryset.filter(award__awarding_agency__subtier_agency__subtier_code=value)
+                        try:
+                            if or_queryset:
+                                or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__name=value)
+                            else:
+                                or_queryset = queryset.filter(award__awarding_agency__toptier_agency__name=value)
+                            if or_queryset is not None:
+                                queryset &= or_queryset
+                        except urllib.error.HTTPError as e:
+                            try:
+                                if e.code == 400:
+                                    if or_queryset:
+                                        or_queryset |= or_queryset.filter(
+                                            award__awarding_agency__subtier_agency__subtier_code=value)
+                                    else:
+                                        or_queryset = queryset.filter(
+                                            award__awarding_agency__subtier_agency__subtier_code=value)
+                                else:
+                                    raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
+                            finally:
+                                if or_queryset is not None:
+                                    queryset &= or_queryset
                     else:
                         raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
                 finally:
-                    queryset = queryset.filter(award__awarding_agency__id=agency_id)
+                    if or_queryset is not None:
+                        queryset &= or_queryset
 
-        # fiscal_year - DONE
-        elif key == 'fy':
-            if key is None:
-                fiscal_year = fy_filter(datetime.now().date())
-                queryset = queryset.filter(award__period_of_performance_current_end_date=fiscal_year)
-            elif key is not None:
-                fiscal_year = validate_fy(value)
-                queryset = queryset.filter(award__period_of_performance_current_end_date=fiscal_year)
-
+        # agency_type - DONE
+        elif key == 'agency_type':
+            or_queryset = None
+            try:
+                if or_queryset:
+                    or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__name=value)
+                else:
+                    or_queryset = queryset.filter(award__awarding_agency__toptier_agency__name=value)
+                if or_queryset is not None:
+                    queryset &= or_queryset
+            except urllib.error.HTTPError as e:
+                try:
+                    if e.code == 400:
+                        try:
+                            if or_queryset:
+                                or_queryset |= or_queryset.filter(
+                                    award__awarding_agency__subtier_agency__subtier_code=value)
+                            else:
+                                or_queryset = queryset.filter(
+                                    award__awarding_agency__subtier_agency__subtier_code=value)
+                            if or_queryset is not None:
+                                queryset &= or_queryset
+                        except urllib.error.HTTPError as e:
+                            try:
+                                if e.code == 400:
+                                    if or_queryset:
+                                        or_queryset |= or_queryset.filter(
+                                            award__awarding_agency__id=value)
+                                    else:
+                                        or_queryset = queryset.filter(
+                                            award__awarding_agency__id=value)
+                                else:
+                                    raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
+                            finally:
+                                if or_queryset is not None:
+                                    queryset &= or_queryset
+                    else:
+                        raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
+                finally:
+                    if or_queryset is not None:
+                        queryset &= or_queryset
         else:
-            raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
+            # Remove NaN and null values
+            or_queryset = None
+            if or_queryset:
+                or_queryset |= or_queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
+                for item in queryset.values('obligations_incurred_total_by_award_cpe'):
+                    for index, dec in item.items():
+                        if dec != dec or dec == Decimal('Inf') or dec == Decimal('-Inf'):
+                            queryset = queryset.exclude(obligations_incurred_total_by_award_cpe=dec)
+            else:
+                or_queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
+                for item in queryset.values('obligations_incurred_total_by_award_cpe'):
+                    for index, dec in item.items():
+                        if dec != dec or dec == Decimal('Inf') or dec == Decimal('-Inf'):
+                            queryset = queryset.exclude(obligations_incurred_total_by_award_cpe=dec)
+            if or_queryset is not None:
+                queryset &= or_queryset
 
     return queryset

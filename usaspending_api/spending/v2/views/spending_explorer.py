@@ -8,8 +8,8 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.spending.v2.filters.fy_filter import fy_filter, validate_fy
 from usaspending_api.spending.v2.filters.spending_filter import spending_filter
-from usaspending_api.spending.v2.views.agency import awarding_top_tier_agency
-from usaspending_api.spending.v2.views.award import award_category
+from usaspending_api.spending.v2.views.agency import awarding_top_tier_agency, awarding_agency
+from usaspending_api.spending.v2.views.award import award_category, award
 from usaspending_api.spending.v2.views.budget_function import budget_function
 from usaspending_api.spending.v2.views.budget_subfunction import budget_subfunction
 from usaspending_api.spending.v2.views.federal_account import federal_account_budget
@@ -27,26 +27,22 @@ class SpendingExplorerViewSet(APIView):
         filters = json_request.get('filters', None)
 
         explorers = ['budget_function', 'budget_subfunction', 'federal_account',
-                     'program_activity', 'object_class', 'recipients', 'awards', 'agency']
+                     'program_activity', 'object_class', 'recipient', 'award',
+                     'award_category', 'agency', 'agency_type']
 
         if explorer is None:
-            raise InvalidParameterException('Missing one or more required request parameters: explorer')
+            raise InvalidParameterException('Missing one or more required request parameters: type')
         elif explorer not in explorers:
             raise InvalidParameterException(
                 'Explorer does not have a valid value. '
                 'Valid Explorers: budget_function, budget_subfunction, federal_account, '
-                'program_activity, object_class, recipients, awards')
+                'program_activity, object_class, recipient, award, award_category agency, agency_type')
+
+        # Base Queryset
+        queryset = FinancialAccountsByAwards.objects.all()
 
         # Apply filters to explorer type
         if filters is not None:
-            # Get filtered queryset removing null and NaN values
-            queryset = spending_filter(filters)
-            queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
-            for item in queryset.values('obligations_incurred_total_by_award_cpe'):
-                for key, value in item.items():
-                    if value != value or value == Decimal('Inf') or value == Decimal('-Inf'):
-                        queryset = queryset.exclude(obligations_incurred_total_by_award_cpe=value)
-
             # Set fiscal year
             fiscal_year = None
             for key, value in filters.items():
@@ -61,6 +57,9 @@ class SpendingExplorerViewSet(APIView):
                     fiscal_year = fy_filter(datetime.now().date())
                     queryset = queryset.filter(award__period_of_performance_current_end_date=fiscal_year)
 
+            # Returned filtered queryset
+            queryset = spending_filter(queryset, filters)
+
             # Retrieve explorer type data
             if explorer == 'budget_function':
                 results = budget_function(queryset, fiscal_year)
@@ -72,23 +71,33 @@ class SpendingExplorerViewSet(APIView):
                 results = program_activity(queryset, fiscal_year)
             if explorer == 'object_class':
                 results = object_class_budget(queryset, fiscal_year)
-            if explorer == 'recipients':
+            if explorer == 'recipient':
                 results = recipient_budget(queryset, fiscal_year)
-            if explorer == 'awards':
+            if explorer == 'award':
+                results = award(queryset, fiscal_year)
+            if explorer == 'award_category':
                 results = award_category(queryset, fiscal_year)
             if explorer == 'agency':
+                results = awarding_agency(queryset, fiscal_year)
+            if explorer == 'agency_type':
                 results = awarding_top_tier_agency(queryset, fiscal_year)
+
             return Response(results)
 
-        # Return explorer and results if no filter specified
+        # Return explorer type and results if no filter specified
         if filters is None:
 
-            # Set fiscal year and queryset if no filters applied
+            # Set fiscal year, filter null and NaN - if no filters applied
             fiscal_year = fy_filter(datetime.now().date())
-            queryset = FinancialAccountsByAwards.objects.all().filter(
+            queryset = queryset.filter(
                 award__period_of_performance_current_end_date=fiscal_year
-            ).exclude(obligations_incurred_total_by_award_cpe__isnull=True,
-                      obligations_incurred_total_by_award_cpe='NaN')
+            ).exclude(
+                obligations_incurred_total_by_award_cpe__isnull=True
+            )
+            for item in queryset.values('obligations_incurred_total_by_award_cpe'):
+                for key, value in item.items():
+                    if value != value or value == Decimal('Inf') or value == Decimal('-Inf'):
+                        queryset = queryset.exclude(obligations_incurred_total_by_award_cpe=value)
 
             # Retrieve explorer type data
             if explorer == 'budget_function':
@@ -101,10 +110,15 @@ class SpendingExplorerViewSet(APIView):
                 results = program_activity(queryset, fiscal_year)
             if explorer == 'object_class':
                 results = object_class_budget(queryset, fiscal_year)
-            if explorer == 'recipients':
+            if explorer == 'recipient':
                 results = recipient_budget(queryset, fiscal_year)
-            if explorer == 'awards':
+            if explorer == 'award':
+                results = award(queryset, fiscal_year)
+            if explorer == 'award_category':
                 results = award_category(queryset, fiscal_year)
             if explorer == 'agency':
+                results = awarding_agency(queryset, fiscal_year)
+            if explorer == 'agency_type':
                 results = awarding_top_tier_agency(queryset, fiscal_year)
+
             return Response(results)
