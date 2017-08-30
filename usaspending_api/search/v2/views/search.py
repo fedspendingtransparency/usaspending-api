@@ -102,7 +102,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException('Missing one or more required request parameters: filters')
 
-
         # filter queryset
         queryset = transaction_filter(filters)
 

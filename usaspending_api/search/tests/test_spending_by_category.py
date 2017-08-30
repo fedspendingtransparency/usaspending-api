@@ -71,7 +71,7 @@ def test_spending_by_category_success(client, budget_function_data):
                 "end_date": "2017-09-30"
             }
         ],
-        'award_type_codes': ['011','020'],
+        'award_type_codes': ['011', '020'],
         "agencies": [
             {
                 "type": "funding",

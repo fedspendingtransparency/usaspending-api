@@ -13,6 +13,7 @@ legal_dates = {
 
 not_dates = (0, 2017.2, 'forthwith')
 
+
 def test_pagination():
     # Testing for if anything breaks for the special case of an empty list
     results = []
