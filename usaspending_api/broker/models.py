@@ -1,11 +1,11 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
-from usaspending_api.awards.models import Award
+from usaspending_api.awards.models import Award, TransactionAgeComparisonMixin
 from usaspending_api.references.models import Agency, LegalEntity, Location
 from usaspending_api.common.helpers import fy
 
 
-class TransactionNew(models.Model):
+class TransactionNew(models.Model, TransactionAgeComparisonMixin):
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.TextField(blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
     # submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
