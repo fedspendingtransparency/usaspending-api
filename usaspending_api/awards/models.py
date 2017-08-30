@@ -190,8 +190,8 @@ class Award(DataSourceTrackedModel):
                 .filter(awarding_agency=awarding_agency) \
                 .first()
             if (summary_award is None and
-                        awarding_agency is not None and
-                        awarding_agency.toptier_agency.name != awarding_agency.subtier_agency.name):
+                    awarding_agency is not None and
+                    awarding_agency.toptier_agency.name != awarding_agency.subtier_agency.name):
                 # No award match found when searching by award id info +
                 # awarding subtier agency. Relax the awarding agency
                 # critera to just the toptier agency instead of the subtier
