@@ -1,11 +1,11 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
-from usaspending_api.awards.models import Award, TransactionAgeComparisonMixin
+from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency, LegalEntity, Location
 from usaspending_api.common.helpers import fy
 
 
-class TransactionNew(models.Model, TransactionAgeComparisonMixin):
+class TransactionNew(models.Model):
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.TextField(blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
     # submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
@@ -35,6 +35,21 @@ class TransactionNew(models.Model, TransactionAgeComparisonMixin):
 
     def __str__(self):
         return '%s award: %s' % (self.type_description, self.award)
+
+    def newer_than(self, dct):
+        """Compares age of this instance to a Python dictionary
+
+        Determines the age of each by last_modified_date, if set,
+        otherwise action_date.
+        Returns `False` if either side lacks a date completely.
+        """
+
+        my_date = self.last_modified_date
+        their_date = dct.get('last_modified_date')
+        if my_date and their_date:
+            return my_date > their_date
+        else:
+            return False
 
     @classmethod
     def get_or_create_transaction(cls, **kwargs):
