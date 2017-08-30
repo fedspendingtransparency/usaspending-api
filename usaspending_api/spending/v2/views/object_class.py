@@ -1,5 +1,7 @@
 from django.db.models import F, Sum, CharField, Value
 
+from usaspending_api.spending.v2.views.agency import awarding_top_tier_agency, awarding_sub_tier_agency
+from usaspending_api.spending.v2.views.award import award_category, award
 from usaspending_api.spending.v2.views.recipient import recipient_budget
 
 
@@ -20,8 +22,15 @@ def object_class_budget(queryset, fiscal_year):
         object_classes_total = value
 
     # Unpack recipient results
-    recipients_results, award_category_results, awards_results, awarding_top_tier_agencies_results,\
-        awarding_sub_tier_agencies_results = recipient_budget(queryset, fiscal_year)
+    recipients_results = recipient_budget(queryset, fiscal_year)
+    # Unpack award results
+    award_category_results = award_category(queryset, fiscal_year)
+    # Unpack awards
+    awards_results = award(queryset, fiscal_year)
+    # Unpack awarding agency
+    awarding_top_tier_agencies_results = awarding_top_tier_agency(queryset, fiscal_year)
+    # Unpack awarding sub tier results
+    awarding_sub_tier_agencies_results = awarding_sub_tier_agency(queryset, fiscal_year)
 
     object_classes_results = {
         'total': object_classes_total,

@@ -57,7 +57,5 @@ def awarding_sub_tier_agency(queryset, fiscal_year):
         'end_date': fiscal_year,
         'results': awarding_sub_tier_agencies,
     }
-    results = [
-        awarding_sub_tier_agencies_results
-    ]
-    return results
+
+    return awarding_sub_tier_agencies_results

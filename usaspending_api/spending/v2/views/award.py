@@ -1,6 +1,6 @@
 from django.db.models import F, Sum, Value, CharField
 
-from usaspending_api.spending.v2.views.agency import awarding_top_tier_agency
+from usaspending_api.spending.v2.views.agency import awarding_top_tier_agency,  awarding_sub_tier_agency
 
 
 def award_category(queryset, fiscal_year):
@@ -20,8 +20,11 @@ def award_category(queryset, fiscal_year):
         award_category_total = value
 
     # Unpack awards
-    awards_results, awarding_top_tier_agencies_results,\
-        awarding_sub_tier_agencies_results = award(queryset, fiscal_year)
+    awards_results = award(queryset, fiscal_year)
+    # Unpack awarding agency
+    awarding_top_tier_agencies_results = awarding_top_tier_agency(queryset, fiscal_year)
+    # Unpack awarding sub tier results
+    awarding_sub_tier_agencies_results = awarding_sub_tier_agency(queryset, fiscal_year)
 
     award_category_results = {
         'total': award_category_total,
@@ -57,8 +60,9 @@ def award(queryset, fiscal_year):
         awards_total = value
 
     # Unpack awarding agency
-    awarding_top_tier_agencies_results,\
-        awarding_sub_tier_agencies_results = awarding_top_tier_agency(queryset, fiscal_year)
+    awarding_top_tier_agencies_results = awarding_top_tier_agency(queryset, fiscal_year)
+    # Unpack awarding sub tier results
+    awarding_sub_tier_agencies_results = awarding_sub_tier_agency(queryset, fiscal_year)
 
     awards_results = {
         'total': awards_total,
