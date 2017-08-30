@@ -27,28 +27,32 @@ def get_params_from_req_or_request(request=None, req=None):
 
     return params
 
-def generate_fiscal_year(context):
+
+def generate_fiscal_year(date):
     """ Generate fiscal year based on the date provided """
-    year = context.year
-    print(year)
-    if context.month in [10, 11, 12]:
+    year = date.year
+    if date.month in [10, 11, 12]:
         year += 1
     return year
 
 
-def generate_fiscal_period(context):
+def generate_fiscal_period(date):
     """ Generate fiscal period based on the date provided """
-
-    period = (context.month + 3) % 12
-    period = 12 if period == 0 else period
-    return period
+    return ((generate_fiscal_month(date) - 1) // 3) + 1
 
 
-def generate_fiscal_month(context):
+def generate_fiscal_month(date):
     """ Generate fiscal period based on the date provided """
-    if context.month in [10, 11, 12, "10", "11", "12"]:
-        return context.month - 9
-    return context.month + 3
+    if date.month in [10, 11, 12, "10", "11", "12"]:
+        return date.month - 9
+    return date.month + 3
+
+
+def get_pagination(results, limit, page):
+    if len(results) < limit*page:
+        return results[limit*(page-1):]
+    else:
+        return results[limit*(page-1):limit*page]
 
 
 def fy(raw_date):

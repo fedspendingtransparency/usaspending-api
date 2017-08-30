@@ -12,7 +12,7 @@ from usaspending_api.references.models import Agency
 
 # Transaction test cases so threads can find the data
 @pytest.mark.django_db(transaction=True)
-def test_usaspending_assistnace_load():
+def test_usaspending_assistance_load():
     """Ensure assistance awards can be loaded from usaspending"""
     call_command('loaddata', 'endpoint_fixture_db')
     call_command('load_usaspending_assistance',

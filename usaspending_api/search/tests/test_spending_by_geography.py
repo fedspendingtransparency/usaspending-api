@@ -49,14 +49,14 @@ def budget_function_data(db):
 
 
 @pytest.mark.django_db
-def test_spending_over_time_success(client, budget_function_data):
+def test_spending_by_geography_success(client, budget_function_data):
 
     # test for NAICS_description exact match
     resp = client.post(
-        '/api/v2/search/spending_over_time',
+        '/api/v2/visualizations/spending_by_geography',
         content_type='application/json',
         data=json.dumps({
-            "group": "fiscal_year",
+            "scope": "place_of_performance",
             "filters": {
                 "keyword": "test"
             }
@@ -70,7 +70,7 @@ def test_spending_over_time_success(client, budget_function_data):
                 "end_date": "2017-09-30"
             }
         ],
-        'award_type_codes': ['011', '020'],
+        'award_type_codes': ['011','020'],
         "agencies": [
             {
                 "type": "funding",
@@ -113,7 +113,7 @@ def test_spending_over_time_success(client, budget_function_data):
         "extent_competed_type_codes": ["SAMPLECODE_ECTC"]
     }
     resp = client.post(
-        '/api/v2/search/spending_over_time',
+        '/api/v2/visualizations/spending_by_geography',
         content_type='application/json',
         data=json.dumps({
             "group": "quarter",
@@ -127,7 +127,7 @@ def test_naics_autocomplete_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
-        '/api/v2/search/spending_over_time/',
+        '/api/v2/visualizations/spending_by_geography/',
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
