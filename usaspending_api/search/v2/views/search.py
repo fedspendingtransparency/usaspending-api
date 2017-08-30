@@ -93,6 +93,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         if category is None:
             raise InvalidParameterException('Missing one or more required request parameters: category')
+        potential_categories = ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"]
+        if category not in potential_categories:
+            raise InvalidParameterException('Category does not have a valid value')
         if (scope is None) and (category != "cfda_programs"):
             raise InvalidParameterException('Missing one or more required request parameters: scope')
         if limit is None:
