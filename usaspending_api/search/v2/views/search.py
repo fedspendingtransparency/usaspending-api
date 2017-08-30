@@ -377,7 +377,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             raise InvalidParameterException('scope does not have a valid value')
 
         # build sql query filters
-        queryset = award_filter(filters)
+        queryset = transaction_filter(filters)
 
         # define what values are needed in the sql query
         # queryset = queryset.values('action_date', 'federal_action_obligation')
@@ -388,22 +388,22 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # key is time period (defined by group), value is federal_action_obligation
         name_dict = {}
         if scope == "recipient_location":
-            for award in queryset:
-                if hasattr(award, 'recipient') and hasattr(award, 'recipient').get('location'):
-                    state_code = award.recipient.location.get('state_code')
+            for trans in queryset:
+                if hasattr(trans, 'recipient') and hasattr(trans, 'recipient').get('location'):
+                    state_code = trans.recipient.location.get('state_code')
                     if name_dict.get(state_code):
-                        name_dict[state_code] += award.total_obligation
+                        name_dict[state_code] += trans.federal_action_obligation
                     else:
-                        name_dict[state_code] = award.total_obligation
+                        name_dict[state_code] = trans.federal_action_obligation
 
         else:  # place of performance
-            for award in queryset:
-                if hasattr(award, 'place_of_performance'):
-                    state_code = hasattr(award.place_of_performance, 'state_code')
+            for trans in queryset:
+                if hasattr(trans, 'place_of_performance'):
+                    state_code = hasattr(trans.place_of_performance, 'state_code')
                     if name_dict.get(state_code):
-                        name_dict[state_code] += award.total_obligation
+                        name_dict[state_code] += trans.federal_action_obligation
                     else:
-                        name_dict[state_code] = award.total_obligation
+                        name_dict[state_code] = trans.federal_action_obligation
 
         # convert result into expected format
         results = []
