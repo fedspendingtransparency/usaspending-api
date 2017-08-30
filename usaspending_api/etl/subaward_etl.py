@@ -68,31 +68,39 @@ def load_subawards(submission_attributes, db_cursor):
         agency = get_valid_awarding_agency(row)
 
         if not agency:
-            logger.warn("Subaward number {} cannot find matching agency with toptier code {} and subtier code {}".format(row['subcontract_num'], row['awarding_agency_code'], row['awarding_sub_tier_agency_c']))
+            logger.warn(
+                "Subaward number {} cannot find matching agency with toptier code {} and subtier code {}".format(
+                    row['subcontract_num'], row['awarding_agency_code'], row['awarding_sub_tier_agency_c']))
             continue
 
         # Find the award to attach this sub-contract to
         # We perform this lookup by finding the Award containing a transaction with
         # a matching parent award id, piid, and submission attributes
-        award = Award.objects.filter(awarding_agency=agency,
-                                     transaction__submission=submission_attributes,
-                                     transaction__contract_data__piid=row['piid'],
-                                     transaction__contract_data__isnull=False,
-                                     transaction__contract_data__parent_award_id=row['parent_award_id']).distinct().order_by("-date_signed").first()
+        award = Award.objects.filter(
+            awarding_agency=agency,
+            transaction__submission=submission_attributes,
+            transaction__contract_data__piid=row['piid'],
+            transaction__contract_data__isnull=False,
+            transaction__contract_data__parent_award_id=row['parent_award_id']).distinct().order_by(
+            "-date_signed").first()
 
         # We don't have a matching award for this subcontract, log a warning and continue to the next row
         if not award:
-            logger.warn("Subcontract number {} cannot find matching award with piid {}, parent_award_id {}; skipping...".format(row['subcontract_num'], row['piid'], row['parent_award_id']))
+            logger.warn(
+                "Subcontract number {} cannot find matching award with piid {}, parent_award_id {}; skipping...".format(
+                    row['subcontract_num'], row['piid'], row['parent_award_id']))
             continue
 
         award_ids_to_update.add(award.id)
 
-        # Find the recipient by looking up by duns
-        recipient, created = LegalEntity.get_or_create_by_duns(duns=row['duns'])
+        # Get or create unique DUNS-recipient pair
+        recipient, created = LegalEntity.objects.get_or_create(
+            recipient_unique_id=row['duns'],
+            recipient_name=row['company_name']
+        )
 
         if created:
             recipient.parent_recipient_unique_id = row['parent_duns']
-            recipient.recipient_name = row['company_name']
             recipient.location = get_or_create_location(row, location_d1_recipient_mapper)
             recipient.save()
 
@@ -183,17 +191,19 @@ def load_subawards(submission_attributes, db_cursor):
 
         award_ids_to_update.add(award.id)
 
-        # Find the recipient by looking up by duns
-        recipient, created = LegalEntity.get_or_create_by_duns(duns=row['duns'])
+        recipient_name = row['awardee_name']
+        if recipient_name is None:
+            recipient_name = row['awardee_or_recipient_legal']
+        if recipient_name is None:
+            recipient_name = ""
+
+        # Get or create unique DUNS-recipient pair
+        recipient, created = LegalEntity.objects.get_or_create(
+            recipient_unique_id=row['duns'],
+            recipient_name=recipient_name
+        )
 
         if created:
-            recipient_name = row['awardee_name']
-            if recipient_name is None:
-                recipient_name = row['awardee_or_recipient_legal']
-            if recipient_name is None:
-                recipient_name = ""
-
-            recipient.recipient_name = recipient_name
             recipient.parent_recipient_unique_id = row['parent_duns']
             recipient.location = get_or_create_location(row, location_d2_recipient_mapper)
             recipient.save()
@@ -226,9 +236,11 @@ def load_subawards(submission_attributes, db_cursor):
         }
 
         # Create the subaward
-        subaward, created = Subaward.objects.update_or_create(subaward_number=row['subaward_num'],
-                                                              award=award,
-                                                              defaults=d2_f_dict)
+        subaward, created = Subaward.objects.update_or_create(
+            subaward_number=row['subaward_num'],
+            award=award,
+            defaults=d2_f_dict
+        )
         if created:
             d2_create_count += 1
         else:

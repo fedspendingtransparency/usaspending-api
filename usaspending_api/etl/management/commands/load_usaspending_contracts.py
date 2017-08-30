@@ -263,7 +263,10 @@ class Command(BaseCommand):
             "nonprofit_organization": self.parse_first_character(row['nonprofitorganizationflag']),
         }
 
-        le, created = LegalEntity.get_or_create_by_duns(duns=row['dunsnumber'])
+        le, created = LegalEntity.objects.get_or_create(
+            recipient_unique_id=row['dunsnumber'],
+            recipient_name=row['vendorname']
+        )
         if created:
             # Update from our recipient dictionary
             for attr, value in recipient_dict.items():
