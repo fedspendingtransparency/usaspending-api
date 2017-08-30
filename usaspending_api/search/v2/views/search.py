@@ -268,11 +268,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 # "legal_entity_id": ttabrev,
                 # 	"aggregated_amount": "200000000"
                 # },...]
+                print("results:{}".format(results))
                 for key, value in name_dict.items():
                     results.append({"recipient_name": key, "parent_recipient_unique_id": value["parent_recipient_unique_id"],
                                     "aggregated_amount": value["aggregated_amount"]})
                 results = get_pagination(results, limit, page)
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results}
+                print(response)
                 return Response(response)
             else:  # recipient_type
                 raise InvalidParameterException('recipient type is not yet implemented')
