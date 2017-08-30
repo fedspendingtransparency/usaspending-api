@@ -149,7 +149,7 @@ class Command(BaseCommand):
             transaction.save()
 
             transaction_map = TransactionMap()
-            transaction_map.transaction_id = transaction.transaction_id
+            transaction_map.transaction_id = transaction.transaction_new_id
             transaction_map.transaction_assistance_id = transaction_assistance['published_award_financial_assistance_id']
             transaction_map.save()
             break
