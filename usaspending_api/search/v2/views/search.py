@@ -469,20 +469,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
-        fields = json_request.get('fields', None)
         filters = json_request.get('filters', None)
-        limit = json_request.get('limit', None)
-        page = json_request.get('page', None)
 
-        if fields is None:
-            raise InvalidParameterException('Missing one or more required request parameters: fields')
         if filters is None:
             raise InvalidParameterException('Missing one or more required request parameters: filters')
-        if limit is None:
-            limit = 10
-        if page is None:
-            page = 1
-
+  
         # build sql query filters
         queryset = award_filter(filters)
 
@@ -490,15 +481,24 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         # queryset = queryset.values('action_date', 'federal_action_obligation')
 
         # build response
-        response = {'limit': limit, 'page': page, 'results': []}
-        results = []
-        name_dict = {}
+        response = {'results': {}}
+        results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
         for award in queryset:
-            row = {}
-            for f in filters:
-                row[f] = getattr(award, f)
-            results.append(row)
-        response["results"] = results
+            if hasattr(award, "last_transaction") and hasattr(award.last_transaction, "contract_data") and \
+                    hasattr(award.last_transaction, 'type'):
+                if award.last_transaction.type in ['A', 'B', 'C', 'D']:
+                    results["contracts"] += 1
+            elif hasattr(award, "last_transaction") and hasattr(award.last_transaction, "assistance_data") and \
+                    hasattr(award.last_transaction, 'type'):
+                if award.last_transaction.type in ['02', '03', '04', '05']:  # Grants
+                    results["grants"] += 1
+                elif award.last_transaction.type in ['10', '06']:  # Direct Payment
+                    results["direct_payments"] += 1
+                elif award.last_transaction.type in ['07', '08']:  # Loans
+                    results["loans"] += 1
+                elif award.last_transaction.type in ['09', '11']:  # Other
+                    results["other"] += 1
 
+        response["results"] = results
         return Response(response)
