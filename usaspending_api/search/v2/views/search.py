@@ -408,7 +408,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         response['results'] = results
 
         return Response(response)
-<<<<<<< HEAD:usaspending_api/search/v2/views/visualizations.py
 
 
 class SpendingByAwardVisualizationViewSet(APIView):
@@ -426,9 +425,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException('Missing one or more required request parameters: filters')
         if limit is None:
-            raise InvalidParameterException('Missing one or more required request parameters: limit')
+            limit = 10
         if page is None:
-            raise InvalidParameterException('Missing one or more required request parameters: page')
+            page = 1
 
         # build sql query filters
         queryset = award_filter(filters)
@@ -444,9 +443,45 @@ class SpendingByAwardVisualizationViewSet(APIView):
         for award in queryset:
             row = {}
             for f in filters:
-                row[f] = award[f]
+                row[f] = award
             results.append(row)
 
         return Response(response)
-=======
->>>>>>> feature-spending-by-geography:usaspending_api/search/v2/views/search.py
+
+class SpendingByAwardCountVisualizationViewSet(APIView):
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        json_request = request.data
+        fields = json_request.get('fields', None)
+        filters = json_request.get('filters', None)
+        limit = json_request.get('limit', None)
+        page = json_request.get('page', None)
+
+        if fields is None:
+            raise InvalidParameterException('Missing one or more required request parameters: fields')
+        if filters is None:
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
+        if limit is None:
+            limit = 10
+        if page is None:
+            page = 1
+
+        # build sql query filters
+        queryset = award_filter(filters)
+
+        # define what values are needed in the sql query
+        # queryset = queryset.values('action_date', 'federal_action_obligation')
+
+        # build response
+        response = {'limit': limit, 'page': page, 'results': []}
+        results = []
+        name_dict = {}
+
+        for award in queryset:
+            row = {}
+            for f in filters:
+                row[f] = award
+            results.append(row)
+
+        return Response(response)
