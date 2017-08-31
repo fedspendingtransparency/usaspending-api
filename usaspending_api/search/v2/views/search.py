@@ -6,7 +6,9 @@ from collections import OrderedDict
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
-from usaspending_api.awards.v2.lookups.lookups import transaction_columns_unique
+from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, award_assistance_mapping, \
+    award_type_mapping, contract_type_mapping, grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, \
+    other_type_mapping
 
 import ast
 from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month, \
@@ -446,12 +448,21 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         for award in queryset:
             row = {}
-            for c in columns:
-                row[c] = getattr(award, transaction_columns_unique[c])
-            results.append(row)
-        response["results"] = results
+            if filters.award_type.contains(['A', 'B', 'C', 'D']):  # TODO make sure its contains
+                if (hasattr(award, "last_transaction") and hasattr(award.last_transaction, "contract_data")):
+                    for c in columns:
+                        row[c] = getattr(award, award_contracts_mapping[c])  #TODO add a try catch incase mapping does not exist
+                        results.append(row)
+            else:  # assistance data
+                if (hasattr(award, "last_transaction") and hasattr(award.last_transaction, "assistance_data") and
+                        hasattr(award.last_transaction.assistance_data, 'award_type')):
+                        for c in columns:
+                            row[c] = getattr(award, award_assistance_mapping[c]) #TODO add a try catch incase mapping does not exist
+                            results.append(row)
 
+        response["results"] = results
         return Response(response)
+
 
 class SpendingByAwardCountVisualizationViewSet(APIView):
 
