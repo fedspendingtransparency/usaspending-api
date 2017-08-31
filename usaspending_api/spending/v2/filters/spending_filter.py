@@ -9,7 +9,16 @@ from usaspending_api.common.exceptions import InvalidParameterException
 logger = logging.getLogger(__name__)
 
 
-def spending_filter(queryset, filters):
+def spending_filter(queryset, explorer, filters):
+
+    if explorer == 'recipient':
+        queryset = FinancialAccountsByAwards.objects.all()
+    if explorer == 'award':
+        queryset = FinancialAccountsByAwards.objects.all()
+    if explorer == 'award_category':
+        queryset = FinancialAccountsByAwards.objects.all()
+    if explorer == 'agency_sub':
+        queryset = FinancialAccountsByAwards.objects.all()
 
     for key, value in filters.items():
         # check for valid key
@@ -99,7 +108,6 @@ def spending_filter(queryset, filters):
 
         # recipient - DONE
         elif key == 'recipient':
-            queryset = FinancialAccountsByAwards.objects.all()
             or_queryset = None
             if or_queryset:
                 or_queryset |= or_queryset.filter(award__recipient__recipient_unique_id=value)
@@ -110,7 +118,6 @@ def spending_filter(queryset, filters):
 
         # award - DONE
         elif key == 'award':
-            queryset = FinancialAccountsByAwards.objects.all()
             or_queryset = None
             if or_queryset:
                 or_queryset |= or_queryset.filter(award__awarding_agency__id=value)
@@ -121,7 +128,6 @@ def spending_filter(queryset, filters):
 
         # award_category - DONE
         elif key == 'award_category':
-            queryset = FinancialAccountsByAwards.objects.all()
             or_queryset = None
             if or_queryset:
                 or_queryset |= or_queryset.filter(award__category=value)
@@ -135,43 +141,17 @@ def spending_filter(queryset, filters):
             or_queryset = None
             try:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(treasury_account__awarding_toptier_agency__toptier_agency_id=value)
+                    or_queryset |= or_queryset.filter(
+                        treasury_account__awarding_toptier_agency__toptier_agency_id=value)
                 else:
                     or_queryset = queryset.filter(treasury_account__awarding_toptier_agency__toptier_agency_id=value)
                 if or_queryset is not None:
                     queryset &= or_queryset
             except urllib.error.HTTPError as e:
-                try:
-                    if e.code == 400:
-                        try:
-                            if or_queryset:
-                                or_queryset |= or_queryset.filter(
-                                    treasury_account__awarding_toptier_agency__cgac_code=value)
-                            else:
-                                or_queryset = queryset.filter(
-                                    treasury_account__awarding_toptier_agency__cgac_code=value)
-                            if or_queryset is not None:
-                                queryset &= or_queryset
-                        except urllib.error.HTTPError as e:
-                            try:
-                                queryset = FinancialAccountsByAwards.objects.all()
-                                if e.code == 400:
-                                    if or_queryset:
-                                        or_queryset |= or_queryset.filter(
-                                            award__awarding_agency__subtier_agency__subtier_code=value)
-                                    else:
-                                        or_queryset = queryset.filter(
-                                            award__awarding_agency__subtier_agency__subtier_code=value)
-                                else:
-                                    raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
-                            finally:
-                                if or_queryset is not None:
-                                    queryset &= or_queryset
-                    else:
-                        raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
-                finally:
-                    if or_queryset is not None:
-                        queryset &= or_queryset
+                raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
+            finally:
+                if or_queryset is not None:
+                    queryset &= or_queryset
 
         # agency_top - DONE
         elif key == 'agency_top':
@@ -184,97 +164,56 @@ def spending_filter(queryset, filters):
                 if or_queryset is not None:
                     queryset &= or_queryset
             except urllib.error.HTTPError as e:
-                try:
-                    if e.code == 400:
-                        try:
-                            queryset = FinancialAccountsByAwards.objects.all()
-                            if or_queryset:
-                                or_queryset |= or_queryset.filter(
-                                    award__awarding_agency__subtier_agency__subtier_code=value)
-                            else:
-                                or_queryset = queryset.filter(
-                                    award__awarding_agency__subtier_agency__subtier_code=value)
-                            if or_queryset is not None:
-                                queryset &= or_queryset
-                        except urllib.error.HTTPError as e:
-                            try:
-                                if e.code == 400:
-                                    if or_queryset:
-                                        or_queryset |= or_queryset.filter(
-                                            treasury_account__awarding_toptier_agency__toptier_agency_id=value)
-                                    else:
-                                        or_queryset = queryset.filter(
-                                            treasury_account__awarding_toptier_agency__toptier_agency_id=value)
-                                else:
-                                    raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
-                            finally:
-                                if or_queryset is not None:
-                                    queryset &= or_queryset
-                    else:
-                        raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
-                finally:
-                    if or_queryset is not None:
-                        queryset &= or_queryset
+                raise InvalidParameterException('Invalid top tier agency ID: ' + value + ' does not exist.')
+            finally:
+                if or_queryset is not None:
+                    queryset &= or_queryset
 
         # agency_top - DONE
         elif key == 'agency_sub':
             or_queryset = None
             try:
-                queryset = FinancialAccountsByAwards.objects.all()
                 if or_queryset:
                     or_queryset |= or_queryset.filter(award__awarding_agency__subtier_agency__subtier_code=value)
                 else:
                     or_queryset = queryset.filter(award__awarding_agency__subtier_agency__subtier_code=value)
                 if or_queryset is not None:
                     queryset &= or_queryset
-            except urllib.error.HTTPError as e:
-                try:
-                    if e.code == 400:
-                        try:
-                            if or_queryset:
-                                or_queryset |= or_queryset.filter(
-                                    treasury_account__awarding_toptier_agency__cgac_code=value)
-                            else:
-                                or_queryset = queryset.filter(
-                                    treasury_account__awarding_toptier_agency__cgac_code=value)
-                            if or_queryset is not None:
-                                queryset &= or_queryset
-                        except urllib.error.HTTPError as e:
-                            try:
-                                if e.code == 400:
-                                    if or_queryset:
-                                        or_queryset |= or_queryset.filter(
-                                            treasury_account__awarding_toptier_agency__toptier_agency_id=value)
-                                    else:
-                                        or_queryset = queryset.filter(
-                                            treasury_account__awarding_toptier_agency__toptier_agency_id=value)
-                                else:
-                                    raise InvalidParameterException(
-                                        'Invalid agency ID: ' + value + ' does not exist.')
-                            finally:
-                                if or_queryset is not None:
-                                    queryset &= or_queryset
-                    else:
-                        raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
-                finally:
-                    if or_queryset is not None:
-                        queryset &= or_queryset
+            except urllib.error.HTTPError:
+                raise InvalidParameterException('Invalid sub tier agency ID: ' + value + ' does not exist.')
+            finally:
+                if or_queryset is not None:
+                    queryset &= or_queryset
 
         else:
             # Remove NaN and null values
             or_queryset = None
             if or_queryset:
-                or_queryset |= or_queryset.exclude(obligations_incurred_by_program_object_class_cpe__isnull=True)
-                for item in queryset.values('obligations_incurred_by_program_object_class_cpe'):
-                    for index, dec in item.items():
-                        if dec != dec or dec == Decimal('Inf') or dec == Decimal('-Inf'):
-                            queryset = queryset.exclude(obligations_incurred_by_program_object_class_cpe=dec)
+                try:
+                    or_queryset |= or_queryset.exclude(obligations_incurred_by_program_object_class_cpe__isnull=True)
+                    for item in queryset.values('obligations_incurred_by_program_object_class_cpe'):
+                        for index, dec in item.items():
+                            if dec != dec or dec == Decimal('Inf') or dec == Decimal('-Inf'):
+                                queryset = queryset.exclude(obligations_incurred_by_program_object_class_cpe=dec)
+                except urllib.error.HTTPError:
+                    or_queryset |= or_queryset.exclude(obligations_incurred_total_by_award_cpe=True)
+                    for item in queryset.values('obligations_incurred_total_by_award_cpe'):
+                        for index, dec in item.items():
+                            if dec != dec or dec == Decimal('Inf') or dec == Decimal('-Inf'):
+                                queryset = queryset.exclude(obligations_incurred_total_by_award_cpe=dec)
             else:
-                or_queryset = queryset.exclude(obligations_incurred_by_program_object_class_cpe__isnull=True)
-                for item in queryset.values('obligations_incurred_by_program_object_class_cpe'):
-                    for index, dec in item.items():
-                        if dec != dec or dec == Decimal('Inf') or dec == Decimal('-Inf'):
-                            queryset = queryset.exclude(obligations_incurred_by_program_object_class_cpe=dec)
+                try:
+                    or_queryset = queryset.exclude(obligations_incurred_by_program_object_class_cpe__isnull=True)
+                    for item in queryset.values('obligations_incurred_by_program_object_class_cpe'):
+                        for index, dec in item.items():
+                            if dec != dec or dec == Decimal('Inf') or dec == Decimal('-Inf'):
+                                queryset = queryset.exclude(obligations_incurred_by_program_object_class_cpe=dec)
+                except urllib.error.HTTPError:
+                    or_queryset |= or_queryset.exclude(obligations_incurred_total_by_award_cpe=True)
+                    for item in queryset.values('obligations_incurred_total_by_award_cpe'):
+                        for index, dec in item.items():
+                            if dec != dec or dec == Decimal('Inf') or dec == Decimal('-Inf'):
+                                queryset = queryset.exclude(obligations_incurred_total_by_award_cpe=dec)
             if or_queryset is not None:
                 queryset &= or_queryset
 

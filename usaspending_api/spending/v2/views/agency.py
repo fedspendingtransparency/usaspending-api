@@ -5,7 +5,7 @@ def awarding_agency(queryset, end_date):
     # Awarding Agencies Queryset
     awarding_agencies = queryset.annotate(
         id=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
-        type=Value('awarding_agency', output_field=CharField()),
+        type=Value('agency', output_field=CharField()),
         code=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
         name=F('treasury_account__awarding_toptier_agency__name'),
         amount=Sum('obligations_incurred_by_program_object_class_cpe')
@@ -63,14 +63,14 @@ def awarding_sub_tier_agency(queryset, end_date):
         type=Value('sub_tier_agency', output_field=CharField()),
         code=F('award__awarding_agency__subtier_agency__subtier_code'),
         name=F('award__awarding_agency__subtier_agency__name'),
-        amount=Sum('transaction_obligated_amount')
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values(
         'id', 'type', 'code', 'name', 'amount'
     ).annotate(
-        total=Sum('transaction_obligated_amount')).order_by('-total')
+        total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
     awarding_sub_tier_agencies_total = awarding_sub_tier_agencies.aggregate(
-        Sum('transaction_obligated_amount')
+        Sum('obligations_incurred_total_by_award_cpe')
     )
     for key, value in awarding_sub_tier_agencies_total.items():
         awarding_sub_tier_agencies_total = value

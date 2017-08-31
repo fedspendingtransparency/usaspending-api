@@ -1,13 +1,13 @@
 from django.db.models import F, Sum, CharField, Value
 
 
-def federal_account_budget(queryset, fiscal_year):
+def federal_account(queryset, fiscal_year):
     # Federal Account Queryset
     federal_accounts = queryset.annotate(
-        id=F('treasury_account__budget_subfunction_code'),
+        id=F('treasury_account__federal_account__main_account_code'),
         type=Value('federal_account', output_field=CharField()),
         name=F('treasury_account__federal_account__account_title'),
-        code=F('treasury_account__federal_account__federal_account_code'),
+        code=F('treasury_account__federal_account__main_account_code'),
         amount=Sum('obligations_incurred_by_program_object_class_cpe')
     ).values(
         'id', 'type', 'name', 'code', 'amount').annotate(

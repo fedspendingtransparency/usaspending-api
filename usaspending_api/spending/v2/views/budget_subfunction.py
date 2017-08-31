@@ -4,7 +4,7 @@ from django.db.models import F, Sum, CharField, Value
 def budget_subfunction(queryset, fiscal_year):
     # Budget Sub Function Queryset
     budget_sub_function = queryset.annotate(
-        id=F('treasury_account__budget_function_code'),
+        id=F('treasury_account__budget_subfunction_code'),
         type=Value('budget_subfunction', output_field=CharField()),
         name=F('treasury_account__budget_subfunction_title'),
         code=F('treasury_account__budget_subfunction_code'),

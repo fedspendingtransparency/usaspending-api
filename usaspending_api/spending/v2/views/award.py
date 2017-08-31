@@ -10,12 +10,12 @@ def award_category(queryset, end_date):
         type=Value('award_category', output_field=CharField()),
         code=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
         name=F('award__category'),
-        amount=Sum('transaction_obligated_amount')
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values(
         'id', 'type', 'code', 'name', 'amount').annotate(
-        total=Sum('transaction_obligated_amount')).order_by('-total')
+        total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
-    award_category_total = award_categories.aggregate(Sum('transaction_obligated_amount'))
+    award_category_total = award_categories.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
     for key, value in award_category_total.items():
         award_category_total = value
 
@@ -36,12 +36,12 @@ def award(queryset, end_date):
         type=Value('award', output_field=CharField()),
         code=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
         name=F('award__description'),
-        amount=Sum('transaction_obligated_amount')
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values(
         'id', 'type', 'code', 'name', 'amount').annotate(
-        total=Sum('transaction_obligated_amount')).order_by('-total')
+        total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
-    awards_total = awards.aggregate(Sum('transaction_obligated_amount'))
+    awards_total = awards.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
     for key, value in awards_total.items():
         awards_total = value
 

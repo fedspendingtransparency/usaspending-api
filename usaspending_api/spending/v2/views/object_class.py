@@ -1,10 +1,10 @@
 from django.db.models import F, Sum, CharField, Value
 
 
-def object_class_budget(queryset, fiscal_year):
+def object_class(queryset, fiscal_year):
     # Object Classes Queryset
     object_classes = queryset.annotate(
-        id=F('program_activity__program_activity_code'),
+        id=F('object_class__major_object_class'),
         type=Value('object_class', output_field=CharField()),
         name=F('object_class__major_object_class_name'),
         code=F('object_class__major_object_class'),

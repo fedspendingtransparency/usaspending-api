@@ -4,7 +4,7 @@ from django.db.models import F, Sum, CharField, Value
 def program_activity(queryset, fiscal_year):
     # Program Activity Queryset
     pa = queryset.annotate(
-        id=F('treasury_account__federal_account__federal_account_code'),
+        id=F('program_activity__program_activity_code'),
         type=Value('program_activity', output_field=CharField()),
         name=F('program_activity__program_activity_name'),
         code=F('program_activity__program_activity_code'),
