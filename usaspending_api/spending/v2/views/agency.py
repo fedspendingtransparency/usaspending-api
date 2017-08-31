@@ -7,7 +7,7 @@ def awarding_agency(queryset, fiscal_year):
     awarding_agencies = queryset.annotate(
         id=F('award__awarding_agency__id'),
         type=Value('awarding_agency', output_field=CharField()),
-        code=F('award__awarding_agency__id'),
+        code=F('award__awarding_agency__toptier_agency__toptier_agency_id'),
         name=F('award__awarding_agency__toptier_agency__name'),
         amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values('id', 'type', 'code', 'name', 'amount').annotate(
@@ -34,7 +34,7 @@ def awarding_agency(queryset, fiscal_year):
 def awarding_top_tier_agency(queryset, fiscal_year):
     # Awarding Top Tier Agencies Queryset
     awarding_top_tier_agencies = queryset.annotate(
-        id=F('award__awarding_agency__id'),
+        id=F('award__awarding_agency__toptier_agency__toptier_agency_id'),
         type=Value('top_tier_agency', output_field=CharField()),
         code=F('award__awarding_agency__toptier_agency__cgac_code'),
         name=F('award__awarding_agency__toptier_agency__name'),

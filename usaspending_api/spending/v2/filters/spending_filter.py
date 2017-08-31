@@ -100,9 +100,9 @@ def spending_filter(queryset, filters):
         elif key == 'award':
             or_queryset = None
             if or_queryset:
-                or_queryset |= or_queryset.filter(award=value)
+                or_queryset |= or_queryset.filter(award__awarding_agency__id=value)
             else:
-                or_queryset = queryset.filter(award=value)
+                or_queryset = queryset.filter(award__awarding_agency__id=value)
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -121,9 +121,9 @@ def spending_filter(queryset, filters):
             or_queryset = None
             try:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(award__awarding_agency__id=value)
+                    or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__toptier_agency_id=value)
                 else:
-                    or_queryset = queryset.filter(award__awarding_agency__id=value)
+                    or_queryset = queryset.filter(award__awarding_agency__toptier_agency__toptier_agency_id=value)
                 if or_queryset is not None:
                     queryset &= or_queryset
             except urllib.error.HTTPError as e:
@@ -131,9 +131,11 @@ def spending_filter(queryset, filters):
                     if e.code == 400:
                         try:
                             if or_queryset:
-                                or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__name=value)
+                                or_queryset |= or_queryset.filter(
+                                    award__awarding_agency__toptier_agency__cgac_code=value)
                             else:
-                                or_queryset = queryset.filter(award__awarding_agency__toptier_agency__name=value)
+                                or_queryset = queryset.filter(
+                                    award__awarding_agency__toptier_agency__cgac_code=value)
                             if or_queryset is not None:
                                 queryset &= or_queryset
                         except urllib.error.HTTPError as e:
@@ -156,8 +158,8 @@ def spending_filter(queryset, filters):
                     if or_queryset is not None:
                         queryset &= or_queryset
 
-        # agency_type - DONE
-        elif key == 'agency_top' or key == 'agency_sub':
+        # agency_top - DONE
+        elif key == 'agency_top':
             or_queryset = None
             try:
                 if or_queryset:
@@ -197,6 +199,50 @@ def spending_filter(queryset, filters):
                 finally:
                     if or_queryset is not None:
                         queryset &= or_queryset
+
+        # agency_top - DONE
+        elif key == 'agency_sub':
+            or_queryset = None
+            try:
+                if or_queryset:
+                    or_queryset |= or_queryset.filter(award__awarding_agency__subtier_agency__subtier_code=value)
+                else:
+                    or_queryset = queryset.filter(award__awarding_agency__subtier_agency__subtier_code=value)
+                if or_queryset is not None:
+                    queryset &= or_queryset
+            except urllib.error.HTTPError as e:
+                try:
+                    if e.code == 400:
+                        try:
+                            if or_queryset:
+                                or_queryset |= or_queryset.filter(
+                                    award__awarding_agency__toptier_agency__cgac_code=value)
+                            else:
+                                or_queryset = queryset.filter(
+                                    award__awarding_agency__toptier_agency__cgac_code=value)
+                            if or_queryset is not None:
+                                queryset &= or_queryset
+                        except urllib.error.HTTPError as e:
+                            try:
+                                if e.code == 400:
+                                    if or_queryset:
+                                        or_queryset |= or_queryset.filter(
+                                            award__awarding_agency__id=value)
+                                    else:
+                                        or_queryset = queryset.filter(
+                                            award__awarding_agency__id=value)
+                                else:
+                                    raise InvalidParameterException(
+                                        'Invalid agency ID: ' + value + ' does not exist.')
+                            finally:
+                                if or_queryset is not None:
+                                    queryset &= or_queryset
+                    else:
+                        raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
+                finally:
+                    if or_queryset is not None:
+                        queryset &= or_queryset
+
         else:
             # Remove NaN and null values
             or_queryset = None
