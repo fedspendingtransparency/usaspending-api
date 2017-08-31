@@ -2,7 +2,6 @@ from django.db.models import F, Sum, Value, CharField
 
 
 def awarding_agency(queryset, fiscal_year):
-
     # Awarding Agencies Queryset
     awarding_agencies = queryset.annotate(
         id=F('award__awarding_agency__id'),
@@ -13,11 +12,7 @@ def awarding_agency(queryset, fiscal_year):
     ).values('id', 'type', 'code', 'name', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')
     ).order_by('-total')
-    """
-    awarding_agencies = awarding_agencies.annotate(
-        
-    ).values('code')
-    """
+
     awarding_agencies_total = awarding_agencies.aggregate(
         Sum('obligations_incurred_total_by_award_cpe'))
     for key, value in awarding_agencies_total.items():
