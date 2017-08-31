@@ -449,22 +449,26 @@ class SpendingByAwardVisualizationViewSet(APIView):
             row = {}
             if set(filters["award_type_codes"]) < set(contract_type_mapping):
                 if (hasattr(award, "last_transaction") and hasattr(award.last_transaction, "contract_data")):
+                    print("contract_award: {}".format(award))
                     for field in fields:
                         try:
                             award_prop = award
                             for prop in award_contracts_mapping[field].split("__"):
                                 award_prop = getattr(award_prop, prop)
+                            print("award_prop:{}".format(award_prop))
                         except:
                             award_prop = None
                         row[field] = award_prop
             elif set(filters["award_type_codes"]) < set(assistance_type_mapping):  # assistance data
                 if (hasattr(award, "last_transaction") and hasattr(award.last_transaction, "assistance_data") and
                         hasattr(award.last_transaction.assistance_data, 'award_type')):
+                    print("assistance_award: {}".format(award))
                     for field in fields:
                         try:
                             award_prop = award
                             for prop in award_assistance_mapping[field].split("__"):
                                 award_prop = getattr(award_prop, prop)
+                            print("award_prop:{}".format(award_prop)
                         except:
                             award_prop = None
                         row[field] = award_prop
