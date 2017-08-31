@@ -3,7 +3,7 @@ transaction_d1_columns = {
     "Modification Number": "transaction__modification_number",  # DONE
     "Transaction Number": "transaction_number",  # DONE
     "Parent Award Agency ID": "referenced_idv_agency_identifier",  # DONE
-    "Parent Award Agency Name": "transaction__",  # TODO
+    "Parent Award Agency Name": "parent_award_agency_name",  # TODO
     "Parent Award ID": "parent_award_id",  # DONE
     "Parent Award Modification Number": "parent_award_modification_number",  # TODO
     "Federal Action Obligation": "transaction__federal_action_obligation",  # DONE
@@ -651,7 +651,7 @@ transaction_columns = [
     "Last Modified Date"
 ]
 
-transaction_columns_unique = [
+award_unique_columns = {
     "1862 Land Grant College",
     "1890 Land Grant College",
     "1994 Land Grant College",
@@ -932,4 +932,4 @@ transaction_columns_unique = [
     "Walsh Healey Act",
     "Woman Owned Business",
     "Women Owned Small Business"
-]
+}
