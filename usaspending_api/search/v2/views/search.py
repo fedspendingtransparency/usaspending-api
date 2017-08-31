@@ -6,6 +6,7 @@ from collections import OrderedDict
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
+from usaspending_api.awards.v2.lookups.lookups import transaction_columns_unique
 
 import ast
 from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month, \
@@ -419,11 +420,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
         filters = json_request.get('filters', None)
         limit = json_request.get('limit', None)
         page = json_request.get('page', None)
+        columns = json_request.get('columns', None)
 
         if fields is None:
             raise InvalidParameterException('Missing one or more required request parameters: fields')
         if filters is None:
             raise InvalidParameterException('Missing one or more required request parameters: filters')
+        if columns is None:
+            raise InvalidParameterException('Missing one or more required request parameters: columns')
         if limit is None:
             limit = 10
         if page is None:
@@ -442,9 +446,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         for award in queryset:
             row = {}
-            for f in filters:
-                row[f] = award
+            for c in columns:
+                row[c] = getattr(award, transaction_columns_unique[c])
             results.append(row)
+        response["results"] = results
 
         return Response(response)
 
@@ -481,7 +486,8 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         for award in queryset:
             row = {}
             for f in filters:
-                row[f] = award
+                row[f] = getattr(award, f)
             results.append(row)
+        response["results"] = results
 
         return Response(response)

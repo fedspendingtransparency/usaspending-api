@@ -58,7 +58,7 @@ def test_spending_by_award_type_success(client, budget_function_data):
         data=json.dumps({
             "fields": ["id","piid","fain","uri","recipient__recipient_name"],
             "filters": {
-                "keyword": "test"
+                "piid": "1234"
             }
         }))
     assert resp.status_code == status.HTTP_200_OK
