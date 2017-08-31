@@ -17,6 +17,7 @@ def fy_filter(now):
     # Evaluate current date
     year = datetime.strptime(str(now), '%Y-%m-%d').strftime('%Y-')
     fiscal_date = datetime.strptime(str(now), '%Y-%m-%d').strftime('%m-%d')
+    """
     if q1_start <= fiscal_date <= q1_end:
         fy = str(year) + str(q4_end)
     elif q2_start <= fiscal_date <= q2_end:
@@ -26,6 +27,8 @@ def fy_filter(now):
         fy = str(year) + str(q2_end)
     else:
         fy = str(year) + str(q3_end)
+    """
+    fy = str(year) + str(fiscal_date)
     return fy
 
 
@@ -44,6 +47,7 @@ def validate_fy(fy):
         year = datetime.strptime(fy, '%Y')
         year = year.strftime('%Y-')
         fiscal_date = datetime.strptime(str(datetime.now().date()), '%Y-%m-%d').strftime('%m-%d')
+        """
         if q1_start <= fiscal_date <= q1_end:
             fy = str(year) + str(q4_end)
         elif q2_start <= fiscal_date <= q2_end:
@@ -53,6 +57,8 @@ def validate_fy(fy):
             fy = str(year) + str(q2_end)
         else:
             fy = str(year) + str(q3_end)
+        """
+        fy = str(year) + str(fiscal_date)
         return fy
     except ValueError:
         raise InvalidParameterException('Incorrect fiscal year format, should be four digit year: YYYY')

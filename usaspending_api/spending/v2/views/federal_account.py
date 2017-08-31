@@ -7,13 +7,13 @@ def federal_account_budget(queryset, fiscal_year):
         id=F('treasury_account__budget_subfunction_code'),
         type=Value('federal_account', output_field=CharField()),
         name=F('treasury_account__federal_account__account_title'),
-        code=F('treasury_account__federal_account__main_account_code'),
-        amount=Sum('obligations_incurred_total_by_award_cpe')
+        code=F('treasury_account__federal_account__federal_account_code'),
+        amount=Sum('obligations_incurred_by_program_object_class_cpe')
     ).values(
         'id', 'type', 'name', 'code', 'amount').annotate(
-        total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
+        total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
-    federal_accounts_total = federal_accounts.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
+    federal_accounts_total = federal_accounts.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
     for key, value in federal_accounts_total.items():
         federal_accounts_total = value
 

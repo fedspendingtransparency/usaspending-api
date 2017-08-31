@@ -3,6 +3,7 @@ import urllib
 from decimal import Decimal
 from urllib.error import HTTPError
 
+from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,16 @@ def spending_filter(queryset, filters):
                       'program_activity, object_class, recipient, award, award_category,'
                       'agency, agency_top, agency_sub fy.'
             )
+
+        # federal_account - DONE
+        if key == 'fy':
+            or_queryset = None
+            if or_queryset:
+                or_queryset |= or_queryset.filter(submission__reporting_fiscal_year=value)
+            else:
+                or_queryset = queryset.filter(submission__reporting_fiscal_year=value)
+            if or_queryset is not None:
+                queryset &= or_queryset
 
         # budget_function - DONE
         if key == 'budget_function':
@@ -88,6 +99,7 @@ def spending_filter(queryset, filters):
 
         # recipient - DONE
         elif key == 'recipient':
+            queryset = FinancialAccountsByAwards.objects.all()
             or_queryset = None
             if or_queryset:
                 or_queryset |= or_queryset.filter(award__recipient__recipient_unique_id=value)
@@ -98,6 +110,7 @@ def spending_filter(queryset, filters):
 
         # award - DONE
         elif key == 'award':
+            queryset = FinancialAccountsByAwards.objects.all()
             or_queryset = None
             if or_queryset:
                 or_queryset |= or_queryset.filter(award__awarding_agency__id=value)
@@ -108,6 +121,7 @@ def spending_filter(queryset, filters):
 
         # award_category - DONE
         elif key == 'award_category':
+            queryset = FinancialAccountsByAwards.objects.all()
             or_queryset = None
             if or_queryset:
                 or_queryset |= or_queryset.filter(award__category=value)
@@ -121,9 +135,9 @@ def spending_filter(queryset, filters):
             or_queryset = None
             try:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__toptier_agency_id=value)
+                    or_queryset |= or_queryset.filter(treasury_account__awarding_toptier_agency__toptier_agency_id=value)
                 else:
-                    or_queryset = queryset.filter(award__awarding_agency__toptier_agency__toptier_agency_id=value)
+                    or_queryset = queryset.filter(treasury_account__awarding_toptier_agency__toptier_agency_id=value)
                 if or_queryset is not None:
                     queryset &= or_queryset
             except urllib.error.HTTPError as e:
@@ -132,14 +146,15 @@ def spending_filter(queryset, filters):
                         try:
                             if or_queryset:
                                 or_queryset |= or_queryset.filter(
-                                    award__awarding_agency__toptier_agency__cgac_code=value)
+                                    treasury_account__awarding_toptier_agency__cgac_code=value)
                             else:
                                 or_queryset = queryset.filter(
-                                    award__awarding_agency__toptier_agency__cgac_code=value)
+                                    treasury_account__awarding_toptier_agency__cgac_code=value)
                             if or_queryset is not None:
                                 queryset &= or_queryset
                         except urllib.error.HTTPError as e:
                             try:
+                                queryset = FinancialAccountsByAwards.objects.all()
                                 if e.code == 400:
                                     if or_queryset:
                                         or_queryset |= or_queryset.filter(
@@ -163,15 +178,16 @@ def spending_filter(queryset, filters):
             or_queryset = None
             try:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__cgac_code=value)
+                    or_queryset |= or_queryset.filter(treasury_account__awarding_toptier_agency__cgac_code=value)
                 else:
-                    or_queryset = queryset.filter(award__awarding_agency__toptier_agency__cgac_code=value)
+                    or_queryset = queryset.filter(treasury_account__awarding_toptier_agency__cgac_code=value)
                 if or_queryset is not None:
                     queryset &= or_queryset
             except urllib.error.HTTPError as e:
                 try:
                     if e.code == 400:
                         try:
+                            queryset = FinancialAccountsByAwards.objects.all()
                             if or_queryset:
                                 or_queryset |= or_queryset.filter(
                                     award__awarding_agency__subtier_agency__subtier_code=value)
@@ -185,10 +201,10 @@ def spending_filter(queryset, filters):
                                 if e.code == 400:
                                     if or_queryset:
                                         or_queryset |= or_queryset.filter(
-                                            award__awarding_agency__id=value)
+                                            treasury_account__awarding_toptier_agency__toptier_agency_id=value)
                                     else:
                                         or_queryset = queryset.filter(
-                                            award__awarding_agency__id=value)
+                                            treasury_account__awarding_toptier_agency__toptier_agency_id=value)
                                 else:
                                     raise InvalidParameterException('Invalid agency ID: ' + value + ' does not exist.')
                             finally:
@@ -204,6 +220,7 @@ def spending_filter(queryset, filters):
         elif key == 'agency_sub':
             or_queryset = None
             try:
+                queryset = FinancialAccountsByAwards.objects.all()
                 if or_queryset:
                     or_queryset |= or_queryset.filter(award__awarding_agency__subtier_agency__subtier_code=value)
                 else:
@@ -216,10 +233,10 @@ def spending_filter(queryset, filters):
                         try:
                             if or_queryset:
                                 or_queryset |= or_queryset.filter(
-                                    award__awarding_agency__toptier_agency__cgac_code=value)
+                                    treasury_account__awarding_toptier_agency__cgac_code=value)
                             else:
                                 or_queryset = queryset.filter(
-                                    award__awarding_agency__toptier_agency__cgac_code=value)
+                                    treasury_account__awarding_toptier_agency__cgac_code=value)
                             if or_queryset is not None:
                                 queryset &= or_queryset
                         except urllib.error.HTTPError as e:
@@ -227,10 +244,10 @@ def spending_filter(queryset, filters):
                                 if e.code == 400:
                                     if or_queryset:
                                         or_queryset |= or_queryset.filter(
-                                            award__awarding_agency__id=value)
+                                            treasury_account__awarding_toptier_agency__toptier_agency_id=value)
                                     else:
                                         or_queryset = queryset.filter(
-                                            award__awarding_agency__id=value)
+                                            treasury_account__awarding_toptier_agency__toptier_agency_id=value)
                                 else:
                                     raise InvalidParameterException(
                                         'Invalid agency ID: ' + value + ' does not exist.')
@@ -247,17 +264,17 @@ def spending_filter(queryset, filters):
             # Remove NaN and null values
             or_queryset = None
             if or_queryset:
-                or_queryset |= or_queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
-                for item in queryset.values('obligations_incurred_total_by_award_cpe'):
+                or_queryset |= or_queryset.exclude(obligations_incurred_by_program_object_class_cpe__isnull=True)
+                for item in queryset.values('obligations_incurred_by_program_object_class_cpe'):
                     for index, dec in item.items():
                         if dec != dec or dec == Decimal('Inf') or dec == Decimal('-Inf'):
-                            queryset = queryset.exclude(obligations_incurred_total_by_award_cpe=dec)
+                            queryset = queryset.exclude(obligations_incurred_by_program_object_class_cpe=dec)
             else:
-                or_queryset = queryset.exclude(obligations_incurred_total_by_award_cpe__isnull=True)
-                for item in queryset.values('obligations_incurred_total_by_award_cpe'):
+                or_queryset = queryset.exclude(obligations_incurred_by_program_object_class_cpe__isnull=True)
+                for item in queryset.values('obligations_incurred_by_program_object_class_cpe'):
                     for index, dec in item.items():
                         if dec != dec or dec == Decimal('Inf') or dec == Decimal('-Inf'):
-                            queryset = queryset.exclude(obligations_incurred_total_by_award_cpe=dec)
+                            queryset = queryset.exclude(obligations_incurred_by_program_object_class_cpe=dec)
             if or_queryset is not None:
                 queryset &= or_queryset
 
