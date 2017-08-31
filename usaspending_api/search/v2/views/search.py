@@ -444,6 +444,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         response = {'limit': limit, 'page': page, 'results': []}
         results = []
 
+        print(queryset.count)
         for award in queryset:
             row = {}
             if set(filters["award_type_codes"]) < set(contract_type_mapping):
