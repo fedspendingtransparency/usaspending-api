@@ -389,7 +389,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         name_dict = {}
         if scope == "recipient_location":
             for trans in queryset:
-                if hasattr(trans, 'recipient') and hasattr(trans, 'recipient').get('location'):
+                if hasattr(trans, 'recipient') and hasattr(trans.recipient, 'location'):
                     state_code = trans.recipient.location.get('state_code')
                     if name_dict.get(state_code):
                         name_dict[state_code] += trans.federal_action_obligation
@@ -399,7 +399,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         else:  # place of performance
             for trans in queryset:
                 if hasattr(trans, 'place_of_performance'):
-                    state_code = hasattr(trans.place_of_performance, 'state_code')
+                    state_code = trans.place_of_performance.get('state_code')
                     if name_dict.get(state_code):
                         name_dict[state_code] += trans.federal_action_obligation
                     else:
