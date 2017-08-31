@@ -447,6 +447,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         print(queryset.count())
         for award in queryset:
             row = {}
+            print("award_type_codes: {}".format(filters["award_type_codes"]))
+            print("contract_award_check:{}".format(set(filters["award_type_codes"]) < set(contract_type_mapping)))
+            print("assistance_award_check:{}".format(set(filters["award_type_codes"]) < set(assistance_type_mapping)))
             if set(filters["award_type_codes"]) < set(contract_type_mapping):
                 if (hasattr(award, "last_transaction") and hasattr(award.last_transaction, "contract_data")):
                     print("contract_award: {}".format(award))
