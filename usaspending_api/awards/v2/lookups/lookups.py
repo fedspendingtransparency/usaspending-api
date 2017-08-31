@@ -1139,3 +1139,5 @@ other_type_mapping = {
     '09': 'Insurance',
     '11': 'Other Financial Assistance'
 }
+
+assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, **loan_type_mapping, **other_type_mapping}

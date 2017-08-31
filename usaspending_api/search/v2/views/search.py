@@ -7,8 +7,8 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, award_assistance_mapping, \
-    award_type_mapping, contract_type_mapping, grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, \
-    other_type_mapping
+    contract_type_mapping, grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping, \
+    assistance_type_mapping
 
 import ast
 from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month, \
@@ -422,14 +422,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
         filters = json_request.get('filters', None)
         limit = json_request.get('limit', None)
         page = json_request.get('page', None)
-        columns = json_request.get('columns', None)
 
         if fields is None:
             raise InvalidParameterException('Missing one or more required request parameters: fields')
         if filters is None:
             raise InvalidParameterException('Missing one or more required request parameters: filters')
-        if columns is None:
-            raise InvalidParameterException('Missing one or more required request parameters: columns')
+        if "award_type_codes" not in filters:
+            raise InvalidParameterException('Missing one or more required request parameters: filters["award_type_codes"]')
         if limit is None:
             limit = 10
         if page is None:
@@ -444,22 +443,32 @@ class SpendingByAwardVisualizationViewSet(APIView):
         # build response
         response = {'limit': limit, 'page': page, 'results': []}
         results = []
-        name_dict = {}
 
         for award in queryset:
             row = {}
-            if filters.award_type.contains(['A', 'B', 'C', 'D']):  # TODO make sure its contains
+            if set(filters["award_type_codes"]) < set(contract_type_mapping):
                 if (hasattr(award, "last_transaction") and hasattr(award.last_transaction, "contract_data")):
-                    for c in columns:
-                        row[c] = getattr(award, award_contracts_mapping[c])  #TODO add a try catch incase mapping does not exist
-                        results.append(row)
-            else:  # assistance data
+                    for field in fields:
+                        try:
+                            award_prop = award
+                            for prop in award_contracts_mapping[field].split("__"):
+                                award_prop = getattr(award_prop, prop)
+                        except:
+                            award_prop = None
+                        row[field] = award_prop
+            elif set(filters["award_type_codes"]) < set(assistance_type_mapping):  # assistance data
                 if (hasattr(award, "last_transaction") and hasattr(award.last_transaction, "assistance_data") and
                         hasattr(award.last_transaction.assistance_data, 'award_type')):
-                        for c in columns:
-                            row[c] = getattr(award, award_assistance_mapping[c]) #TODO add a try catch incase mapping does not exist
-                            results.append(row)
-
+                    for field in fields:
+                        try:
+                            award_prop = award
+                            for prop in award_assistance_mapping[field].split("__"):
+                                award_prop = getattr(award_prop, prop)
+                        except:
+                            award_prop = None
+                        row[field] = award_prop
+            results.append(row)
+        results = get_pagination(results, limit, page)
         response["results"] = results
         return Response(response)
 
@@ -487,17 +496,17 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         for award in queryset:
             if hasattr(award, "last_transaction") and hasattr(award.last_transaction, "contract_data") and \
                     hasattr(award.last_transaction, 'type'):
-                if award.last_transaction.type in ['A', 'B', 'C', 'D']:
+                if award.last_transaction.type in contract_type_mapping:
                     results["contracts"] += 1
             elif hasattr(award, "last_transaction") and hasattr(award.last_transaction, "assistance_data") and \
                     hasattr(award.last_transaction, 'type'):
-                if award.last_transaction.type in ['02', '03', '04', '05']:  # Grants
+                if award.last_transaction.type in grant_type_mapping:  # Grants
                     results["grants"] += 1
-                elif award.last_transaction.type in ['10', '06']:  # Direct Payment
+                elif award.last_transaction.type in direct_payment_type_mapping:  # Direct Payment
                     results["direct_payments"] += 1
-                elif award.last_transaction.type in ['07', '08']:  # Loans
+                elif award.last_transaction.type in loan_type_mapping:  # Loans
                     results["loans"] += 1
-                elif award.last_transaction.type in ['09', '11']:  # Other
+                elif award.last_transaction.type in other_type_mapping:  # Other
                     results["other"] += 1
 
         response["results"] = results
