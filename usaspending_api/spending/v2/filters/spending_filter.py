@@ -24,14 +24,16 @@ def spending_filter(queryset, filters):
                     'award',
                     'award_category',
                     'agency',
-                    'agency_type',
+                    'agency_top',
+                    'agency_sub',
                     'fy']
 
         if key not in key_list:
             raise InvalidParameterException(
                 key + ' filter does not exist.'
                       'Valid Filters: budget_function, budget_subfunction, federal_account,'
-                      'program_activity, object_class, recipient, award, award_category, agency, agency_type, fy.'
+                      'program_activity, object_class, recipient, award, award_category,'
+                      'agency, agency_top, agency_sub fy.'
             )
 
         # budget_function - DONE
@@ -155,13 +157,13 @@ def spending_filter(queryset, filters):
                         queryset &= or_queryset
 
         # agency_type - DONE
-        elif key == 'agency_type':
+        elif key == 'agency_top' or key == 'agency_sub':
             or_queryset = None
             try:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__name=value)
+                    or_queryset |= or_queryset.filter(award__awarding_agency__toptier_agency__cgac_code=value)
                 else:
-                    or_queryset = queryset.filter(award__awarding_agency__toptier_agency__name=value)
+                    or_queryset = queryset.filter(award__awarding_agency__toptier_agency__cgac_code=value)
                 if or_queryset is not None:
                     queryset &= or_queryset
             except urllib.error.HTTPError as e:

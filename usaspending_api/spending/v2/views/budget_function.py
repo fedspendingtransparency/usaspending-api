@@ -4,11 +4,11 @@ from django.db.models import F, Sum, Value, CharField
 def budget_function(queryset, fiscal_year):
     # Budget Function Queryset
     bf = queryset.annotate(
-        id=F('financial_accounts_by_awards_id'),
+        id=F('treasury_account__budget_function_code'),
         type=Value('budget_function', output_field=CharField()),
         name=F('treasury_account__budget_function_title'),
         code=F('treasury_account__budget_function_code'),
-        amount=F('obligations_incurred_total_by_award_cpe')
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values('id', 'type', 'name', 'code', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 

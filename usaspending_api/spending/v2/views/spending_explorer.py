@@ -8,7 +8,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.spending.v2.filters.fy_filter import fy_filter, validate_fy
 from usaspending_api.spending.v2.filters.spending_filter import spending_filter
-from usaspending_api.spending.v2.views.agency import awarding_top_tier_agency, awarding_agency
+from usaspending_api.spending.v2.views.agency import awarding_top_tier_agency, awarding_agency, awarding_sub_tier_agency
 from usaspending_api.spending.v2.views.award import award_category, award
 from usaspending_api.spending.v2.views.budget_function import budget_function
 from usaspending_api.spending.v2.views.budget_subfunction import budget_subfunction
@@ -28,7 +28,7 @@ class SpendingExplorerViewSet(APIView):
 
         explorers = ['budget_function', 'budget_subfunction', 'federal_account',
                      'program_activity', 'object_class', 'recipient', 'award',
-                     'award_category', 'agency', 'agency_type']
+                     'award_category', 'agency', 'agency_top', 'agency_sub']
 
         if explorer is None:
             raise InvalidParameterException('Missing one or more required request parameters: type')
@@ -36,7 +36,7 @@ class SpendingExplorerViewSet(APIView):
             raise InvalidParameterException(
                 'Explorer does not have a valid value. '
                 'Valid Explorers: budget_function, budget_subfunction, federal_account, '
-                'program_activity, object_class, recipient, award, award_category agency, agency_type')
+                'program_activity, object_class, recipient, award, award_category agency, agency_top, agency_sub')
 
         # Base Queryset
         queryset = FinancialAccountsByAwards.objects.all()
@@ -79,9 +79,10 @@ class SpendingExplorerViewSet(APIView):
                 results = award_category(queryset, fiscal_year)
             if explorer == 'agency':
                 results = awarding_agency(queryset, fiscal_year)
-            if explorer == 'agency_type':
+            if explorer == 'agency_top':
                 results = awarding_top_tier_agency(queryset, fiscal_year)
-
+            if explorer == 'agency_sub':
+                results = awarding_sub_tier_agency(queryset, fiscal_year)
             return Response(results)
 
         # Return explorer type and results if no filter specified
@@ -118,7 +119,9 @@ class SpendingExplorerViewSet(APIView):
                 results = award_category(queryset, fiscal_year)
             if explorer == 'agency':
                 results = awarding_agency(queryset, fiscal_year)
-            if explorer == 'agency_type':
+            if explorer == 'agency_top':
                 results = awarding_top_tier_agency(queryset, fiscal_year)
+            if explorer == 'agency_sub':
+                results = awarding_sub_tier_agency(queryset, fiscal_year)
 
             return Response(results)

@@ -2,18 +2,22 @@ from django.db.models import F, Sum, Value, CharField
 
 
 def awarding_agency(queryset, fiscal_year):
+
     # Awarding Agencies Queryset
     awarding_agencies = queryset.annotate(
-        id=F('award__recipient__recipient_unique_id'),
+        id=F('award__awarding_agency__id'),
         type=Value('awarding_agency', output_field=CharField()),
         code=F('award__awarding_agency__id'),
         name=F('award__awarding_agency__toptier_agency__name'),
-        amount=F('obligations_incurred_total_by_award_cpe')
-    ).values(
-        'id', 'type', 'code', 'name', 'amount'
-    ).annotate(
-        total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
-
+        amount=Sum('obligations_incurred_total_by_award_cpe')
+    ).values('id', 'type', 'code', 'name', 'amount').annotate(
+        total=Sum('obligations_incurred_total_by_award_cpe')
+    ).order_by('-total')
+    """
+    awarding_agencies = awarding_agencies.annotate(
+        
+    ).values('code')
+    """
     awarding_agencies_total = awarding_agencies.aggregate(
         Sum('obligations_incurred_total_by_award_cpe'))
     for key, value in awarding_agencies_total.items():
@@ -34,7 +38,7 @@ def awarding_top_tier_agency(queryset, fiscal_year):
         type=Value('top_tier_agency', output_field=CharField()),
         code=F('award__awarding_agency__toptier_agency__cgac_code'),
         name=F('award__awarding_agency__toptier_agency__name'),
-        amount=F('obligations_incurred_total_by_award_cpe')
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values(
         'id', 'type', 'code', 'name', 'amount'
     ).annotate(
@@ -60,7 +64,7 @@ def awarding_sub_tier_agency(queryset, fiscal_year):
         type=Value('sub_tier_agency', output_field=CharField()),
         code=F('award__awarding_agency__subtier_agency__subtier_code'),
         name=F('award__awarding_agency__subtier_agency__name'),
-        amount=F('obligations_incurred_total_by_award_cpe')
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values(
         'id', 'type', 'code', 'name', 'amount'
     ).annotate(

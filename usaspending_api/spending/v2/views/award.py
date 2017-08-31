@@ -6,9 +6,9 @@ def award_category(queryset, fiscal_year):
     award_categories = queryset.annotate(
         id=F('award__recipient__recipient_unique_id'),
         type=Value('award_category', output_field=CharField()),
-        code=F('award'),
+        code=F('award__awarding_agency__id'),
         name=F('award__category'),
-        amount=F('obligations_incurred_total_by_award_cpe')
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values(
         'id', 'type', 'code', 'name', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
@@ -28,16 +28,13 @@ def award_category(queryset, fiscal_year):
 def award(queryset, fiscal_year):
     # Awards Queryset
     awards = queryset.annotate(
-        id=F('award'),
+        id=F('award__recipient__recipient_unique_id'),
         type=Value('award', output_field=CharField()),
-        award_piid=F('award__piid'),
-        award_fain=F('award__fain'),
-        award_uri=F('award__uri'),
-        code=F('award'),
-        name=F('award__category'),
-        amount=F('obligations_incurred_total_by_award_cpe')
+        code=F('award__awarding_agency__id'),
+        name=F('award__description'),
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values(
-        'id', 'type', 'award_piid', 'award_fain', 'award_uri', 'code', 'name', 'amount').annotate(
+        'id', 'type', 'code', 'name', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
     awards_total = awards.aggregate(Sum('obligations_incurred_total_by_award_cpe'))

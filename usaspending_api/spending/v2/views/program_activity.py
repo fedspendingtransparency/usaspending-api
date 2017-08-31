@@ -8,7 +8,7 @@ def program_activity(queryset, fiscal_year):
         type=Value('program_activity', output_field=CharField()),
         name=F('program_activity__program_activity_name'),
         code=F('program_activity__program_activity_code'),
-        amount=F('obligations_incurred_total_by_award_cpe')
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values(
         'id', 'type', 'name', 'code', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')

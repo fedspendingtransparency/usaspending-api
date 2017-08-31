@@ -8,7 +8,7 @@ def budget_subfunction(queryset, fiscal_year):
         type=Value('budget_subfunction', output_field=CharField()),
         name=F('treasury_account__budget_subfunction_title'),
         code=F('treasury_account__budget_subfunction_code'),
-        amount=F('obligations_incurred_total_by_award_cpe')
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values('id', 'type', 'name', 'code', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 

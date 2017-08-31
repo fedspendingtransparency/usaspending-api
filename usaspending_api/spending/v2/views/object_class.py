@@ -8,7 +8,7 @@ def object_class_budget(queryset, fiscal_year):
         type=Value('object_class', output_field=CharField()),
         name=F('object_class__major_object_class_name'),
         code=F('object_class__major_object_class'),
-        amount=F('obligations_incurred_total_by_award_cpe')
+        amount=Sum('obligations_incurred_total_by_award_cpe')
     ).values(
         'id', 'type', 'name', 'code', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
