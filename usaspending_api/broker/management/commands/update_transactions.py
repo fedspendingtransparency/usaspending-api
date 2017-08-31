@@ -31,7 +31,7 @@ class Command(BaseCommand):
             "address_line1": "legal_entity_address_line1",
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
-            "city_code": "legal_entity_city_code",
+            # "city_code": "legal_entity_city_code", # NOT PRESENT IN FABS!
             "city_name": "legal_entity_city_name",
             "congressional_code": "legal_entity_congressional",
             "county_code": "legal_entity_county_code",
@@ -71,9 +71,9 @@ class Command(BaseCommand):
             "description": "award_description",
         }
 
-        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker').values()[:5]
+        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker').values()[:1]
 
-        for transaction_assistance in all_transaction_assistance: # TODO: REMOVE INDEX SELECTION TO RUN ON ALL
+        for transaction_assistance in all_transaction_assistance:
 
             legal_entity_location, created = get_or_create_location(
                 legal_entity_location_field_map, transaction_assistance, legal_entity_location_value_map
@@ -152,7 +152,6 @@ class Command(BaseCommand):
             transaction_map.transaction_id = transaction.id
             transaction_map.transaction_assistance_id = transaction_assistance['published_award_financial_assistance_id']
             transaction_map.save()
-            break
 
 
     def update_transaction_contract(self):
@@ -190,7 +189,7 @@ class Command(BaseCommand):
             "description": "award_description"
         }
 
-        all_transaction_contract = TransactionContractNew.using('data_broker').objects.all()
+        all_transaction_contract = TransactionContractNew.using('data_broker').objects.all()[:1]
 
         for transaction_contract in all_transaction_contract:
             legal_entity_location, created = get_or_create_location(
@@ -265,6 +264,11 @@ class Command(BaseCommand):
 
             transaction = TransactionNew.get_or_create_transaction(**transaction_dict)
             transaction.save()
+
+            transaction_map = TransactionMap()
+            transaction_map.transaction_id = transaction.id
+            transaction_map.transaction_contract_id = transaction_contract['detached_award_procurement_id']
+            transaction_map.save()
 
 
     def handle(self, *args, **options):
