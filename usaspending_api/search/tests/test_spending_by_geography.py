@@ -53,7 +53,7 @@ def test_spending_by_geography_success(client, budget_function_data):
 
     # test for NAICS_description exact match
     resp = client.post(
-        '/api/v2/visualizations/spending_by_geography',
+        '/api/v2/search/spending_by_geography',
         content_type='application/json',
         data=json.dumps({
             "scope": "place_of_performance",
@@ -113,10 +113,10 @@ def test_spending_by_geography_success(client, budget_function_data):
         "extent_competed_type_codes": ["SAMPLECODE_ECTC"]
     }
     resp = client.post(
-        '/api/v2/visualizations/spending_by_geography',
+        '/api/v2/search/spending_by_geography',
         content_type='application/json',
         data=json.dumps({
-            "group": "quarter",
+            "scope": "place_of_performance",
             "filters": all_filters
         }))
     # test for similar matches (with no duplicates)
@@ -127,7 +127,7 @@ def test_naics_autocomplete_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
-        '/api/v2/visualizations/spending_by_geography/',
+        '/api/v2/search/spending_by_geography/',
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
