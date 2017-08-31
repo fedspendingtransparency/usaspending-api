@@ -285,8 +285,10 @@ class Command(BaseCommand):
         # else:
         #     db_cursor = PhonyCursor()
 
-        self.update_transaction_assistance()
+        # self.update_transaction_assistance()
+        #
+        # print('Finished updating transaction assistance')
 
-        print('Finished updating transaction assistance')
+        self.update_transaction_contract()
 
-        # self.update_transaction_contract()
+        print('Finished updating transaction contract')
