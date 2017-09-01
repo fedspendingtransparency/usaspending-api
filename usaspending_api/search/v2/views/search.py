@@ -451,30 +451,30 @@ class SpendingByAwardVisualizationViewSet(APIView):
             print("contract_award_check:{}".format(set(filters["award_type_codes"]) < set(contract_type_mapping)))
             print("assistance_award_check:{}".format(set(filters["award_type_codes"]) < set(assistance_type_mapping)))
             if set(filters["award_type_codes"]) < set(contract_type_mapping):
-                if (hasattr(award, "latest_transaction") and hasattr(award.latest_transaction, "contract_data")):
-                    print("contract_award: {}".format(award))
-                    for field in fields:
-                        try:
-                            award_prop = award
-                            for prop in award_contracts_mapping[field].split("__"):
-                                award_prop = getattr(award_prop, prop)
-                            print("award_prop:{}".format(award_prop))
-                        except:
-                            award_prop = None
-                        row[field] = award_prop
+                print("contract_award: {}".format(award))
+                for field in fields:
+                    try:
+                        award_prop = award
+                        print("field:{}".format(field))
+                        for prop in award_contracts_mapping[field].split("__"):
+                            award_prop = getattr(award_prop, prop)
+                        print("award_prop:{}".format(award_prop))
+                    except Exception as e:
+                        print(e)
+                        award_prop = None
+                    row[field] = award_prop
             elif set(filters["award_type_codes"]) < set(assistance_type_mapping):  # assistance data
-                if (hasattr(award, "latest_transaction") and hasattr(award.latest_transaction, "assistance_data") and
-                        hasattr(award.latest_transaction.assistance_data, 'award_type')):
-                    print("assistance_award: {}".format(award))
-                    for field in fields:
-                        try:
-                            award_prop = award
-                            for prop in award_assistance_mapping[field].split("__"):
-                                award_prop = getattr(award_prop, prop)
-                            print("award_prop:{}".format(award_prop))
-                        except:
-                            award_prop = None
-                        row[field] = award_prop
+                for field in fields:
+                    try:
+                        award_prop = award
+                        print("field:{}".format(field))
+                        for prop in award_assistance_mapping[field].split("__"):
+                            award_prop = getattr(award_prop, prop)
+                        print("award_prop:{}".format(award_prop))
+                    except:
+                        print(e)
+                        award_prop = None
+                    row[field] = award_prop
             results.append(row)
         results = get_pagination(results, limit, page)
         response["results"] = results
