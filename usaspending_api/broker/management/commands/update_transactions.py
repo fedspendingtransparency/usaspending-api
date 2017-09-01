@@ -189,7 +189,7 @@ class Command(BaseCommand):
             "description": "award_description"
         }
 
-        all_transaction_contract = TransactionContractNew.using('data_broker').objects.all()[:1]
+        all_transaction_contract = TransactionContractNew.objects.using('data_broker').objects.all()[:1]
 
         for transaction_contract in all_transaction_contract:
             legal_entity_location, created = get_or_create_location(
