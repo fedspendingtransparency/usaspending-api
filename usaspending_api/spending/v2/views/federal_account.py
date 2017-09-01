@@ -1,9 +1,9 @@
 from django.db.models import F, Sum, CharField, Value
 
 
-def federal_account(queryset, fiscal_year):
+def federal_account(queryset, fiscal_date):
     # Federal Account Queryset
-    federal_accounts = queryset.annotate(
+    queryset = queryset.annotate(
         id=F('treasury_account__federal_account__main_account_code'),
         type=Value('federal_account', output_field=CharField()),
         name=F('treasury_account__federal_account__account_title'),
@@ -13,13 +13,13 @@ def federal_account(queryset, fiscal_year):
         'id', 'type', 'name', 'code', 'amount').annotate(
         total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
-    federal_accounts_total = federal_accounts.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
-    for key, value in federal_accounts_total.items():
-        federal_accounts_total = value
+    total = queryset.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
+    for key, value in total.items():
+        total = value
 
     federal_accounts_results = {
-        'total': federal_accounts_total,
-        'end_date': fiscal_year,
-        'results': federal_accounts
+        'total': total,
+        'end_date': fiscal_date,
+        'results': queryset
     }
-    return federal_accounts_results
+    return total, fiscal_date, queryset

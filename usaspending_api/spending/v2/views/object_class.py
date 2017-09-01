@@ -1,9 +1,9 @@
 from django.db.models import F, Sum, CharField, Value
 
 
-def object_class(queryset, fiscal_year):
+def object_class(queryset, fiscal_date):
     # Object Classes Queryset
-    object_classes = queryset.annotate(
+    queryset = queryset.annotate(
         id=F('object_class__major_object_class'),
         type=Value('object_class', output_field=CharField()),
         name=F('object_class__major_object_class_name'),
@@ -13,13 +13,13 @@ def object_class(queryset, fiscal_year):
         'id', 'type', 'name', 'code', 'amount').annotate(
         total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
-    object_classes_total = object_classes.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
-    for key, value in object_classes_total.items():
-        object_classes_total = value
+    total = queryset.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
+    for key, value in total.items():
+        total = value
 
     object_classes_results = {
-        'total': object_classes_total,
-        'end_date': fiscal_year,
-        'results': object_classes
+        'total': total,
+        'end_date': fiscal_date,
+        'results': queryset
     }
-    return object_classes_results
+    return total, fiscal_date, queryset

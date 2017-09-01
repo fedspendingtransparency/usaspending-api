@@ -1,25 +1,25 @@
 from django.db.models import F, Sum, Value, CharField
 
 
-def recipient(queryset, end_date):
+def recipient(alt_set, fiscal_date):
     # Recipients Queryset
-    recipients = queryset.annotate(
+    alt_set = alt_set.annotate(
         id=F('award__recipient__recipient_unique_id'),
         type=Value('recipient', output_field=CharField()),
         name=F('award__recipient__recipient_name'),
         code=F('award__recipient__recipient_unique_id'),
-        amount=F('obligations_incurred_total_by_award_cpe')
+        amount=F('transaction_obligated_amount')
     ).values(
         'id', 'type', 'name', 'code', 'amount').annotate(
-        total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
+        total=Sum('transaction_obligated_amount')).order_by('-total')
 
-    recipients_total = recipients.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
-    for key, value in recipients_total.items():
-        recipients_total = value
+    total = alt_set.aggregate(Sum('transaction_obligated_amount'))
+    for key, value in total.items():
+        total = value
 
-    recipients_results = {
-        'total': recipients_total,
-        'end_date': end_date,
-        'results': recipients
+    recipient_results = {
+        'total': total,
+        'end_date': fiscal_date,
+        'results': alt_set
     }
-    return recipients_results
+    return total, fiscal_date, alt_set

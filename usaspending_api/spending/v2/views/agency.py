@@ -1,9 +1,9 @@
 from django.db.models import F, Sum, Value, CharField
 
 
-def awarding_agency(queryset, end_date):
+def agency(queryset, date):
     # Awarding Agencies Queryset
-    awarding_agencies = queryset.annotate(
+    queryset = queryset.annotate(
         id=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
         type=Value('agency', output_field=CharField()),
         code=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
@@ -13,24 +13,24 @@ def awarding_agency(queryset, end_date):
         total=Sum('obligations_incurred_by_program_object_class_cpe')
     ).order_by('-total')
 
-    awarding_agencies_total = awarding_agencies.aggregate(
+    total = queryset.aggregate(
         Sum('obligations_incurred_by_program_object_class_cpe')
     )
-    for key, value in awarding_agencies_total.items():
-        awarding_agencies_total = value
+    for key, value in total.items():
+        total = value
 
-    awarding_agencies_results = {
-        'total': awarding_agencies_total,
-        'end_date': end_date,
-        'results': awarding_agencies,
+    queryset_results = {
+        'total': total,
+        'end_date': date,
+        'results': queryset,
     }
-    return awarding_agencies_results
+    return total, date, queryset
 
 
-def awarding_top_tier_agency(queryset, end_date):
+def awarding_top_tier_agency(queryset, date):
     # Awarding Top Tier Agencies Queryset
-    awarding_top_tier_agencies = queryset.annotate(
-        id=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
+    queryset = queryset.annotate(
+        id=F('treasury_account__awarding_toptier_agency__cgac_code'),
         type=Value('top_tier_agency', output_field=CharField()),
         code=F('treasury_account__awarding_toptier_agency__cgac_code'),
         name=F('treasury_account__awarding_toptier_agency__name'),
@@ -40,26 +40,24 @@ def awarding_top_tier_agency(queryset, end_date):
     ).annotate(
         total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
-    awarding_top_tier_agencies_total = awarding_top_tier_agencies.aggregate(
+    total = queryset.aggregate(
         Sum('obligations_incurred_by_program_object_class_cpe')
     )
-    for key, value in awarding_top_tier_agencies_total.items():
-        awarding_top_tier_agencies_total = value
+    for key, value in total.items():
+        total = value
 
-    awarding_top_tier_agencies_results = {
-        'total': awarding_top_tier_agencies_total,
-        'end_date': end_date,
-        'results': awarding_top_tier_agencies,
+    top_tier_results = {
+        'total': total,
+        'end_date': date,
+        'results': queryset,
     }
-    return awarding_top_tier_agencies_results
+    return total, date, queryset
 
 
-def awarding_sub_tier_agency(queryset, end_date):
+def awarding_sub_tier_agency(alt_set, date):
     # Awarding Sub Tier Agencies Queryset
-    awarding_sub_tier_agencies = queryset.filter(
-        award__period_of_performance_current_end_date=end_date
-    ).annotate(
-        id=F('treasury_account__awarding_toptier_agency__cgac_code'),
+    alt_set = alt_set.annotate(
+        id=F('award__awarding_agency__subtier_agency__subtier_code'),
         type=Value('sub_tier_agency', output_field=CharField()),
         code=F('award__awarding_agency__subtier_agency__subtier_code'),
         name=F('award__awarding_agency__subtier_agency__name'),
@@ -69,15 +67,15 @@ def awarding_sub_tier_agency(queryset, end_date):
     ).annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
-    awarding_sub_tier_agencies_total = awarding_sub_tier_agencies.aggregate(
+    total = alt_set.aggregate(
         Sum('obligations_incurred_total_by_award_cpe')
     )
-    for key, value in awarding_sub_tier_agencies_total.items():
-        awarding_sub_tier_agencies_total = value
+    for key, value in total.items():
+        total = value
 
     awarding_sub_tier_agencies_results = {
-        'total': awarding_sub_tier_agencies_total,
-        'end_date': end_date,
-        'results': awarding_sub_tier_agencies,
+        'total': total,
+        'end_date': date,
+        'results': alt_set
     }
-    return awarding_sub_tier_agencies_results
+    return total, date, alt_set

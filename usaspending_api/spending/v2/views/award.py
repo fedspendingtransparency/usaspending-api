@@ -1,11 +1,9 @@
 from django.db.models import F, Sum, Value, CharField
 
 
-def award_category(queryset, end_date):
+def award_category(alt_set, fiscal_date):
     # Award Category Queryset
-    award_categories = queryset.filter(
-        award__period_of_performance_current_end_date=end_date
-    ).annotate(
+    alt_set = alt_set.annotate(
         id=F('award__recipient__recipient_unique_id'),
         type=Value('award_category', output_field=CharField()),
         code=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
@@ -15,23 +13,21 @@ def award_category(queryset, end_date):
         'id', 'type', 'code', 'name', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
-    award_category_total = award_categories.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
-    for key, value in award_category_total.items():
-        award_category_total = value
+    total = alt_set.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
+    for key, value in total.items():
+        total = value
 
     award_category_results = {
-        'total': award_category_total,
-        'end_date': end_date,
-        'results': award_categories,
+        'total': total,
+        'end_date': fiscal_date,
+        'results': alt_set,
     }
-    return award_category_results
+    return total, fiscal_date, alt_set
 
 
-def award(queryset, end_date):
+def award(alt_set, fiscal_date):
     # Awards Queryset
-    awards = queryset.filter(
-        award__period_of_performance_current_end_date=end_date
-    ).annotate(
+    alt_set = alt_set.annotate(
         id=F('award__recipient__recipient_unique_id'),
         type=Value('award', output_field=CharField()),
         code=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
@@ -41,13 +37,13 @@ def award(queryset, end_date):
         'id', 'type', 'code', 'name', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
 
-    awards_total = awards.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
-    for key, value in awards_total.items():
-        awards_total = value
+    total = alt_set.aggregate(Sum('obligations_incurred_total_by_award_cpe'))
+    for key, value in total.items():
+        total = value
 
-    awards_results = {
-        'total': awards_total,
-        'end_date': end_date,
-        'results': awards,
+    award_results = {
+        'total': total,
+        'end_date': fiscal_date,
+        'results': alt_set,
     }
-    return awards_results
+    return total, fiscal_date, alt_set
