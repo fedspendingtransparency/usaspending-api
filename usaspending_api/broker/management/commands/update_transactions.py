@@ -173,7 +173,7 @@ class Command(BaseCommand):
 
         place_of_performance_field_map = {
             # not sure place_of_performance_locat maps exactly to city name
-            "city_name": "place_of_performance_locat",
+            # "city_name": "place_of_performance_locat", # location id doesn't mean it's a city. Can't use this mapping
             "congressional_code": "place_of_performance_congr",
             "state_code": "place_of_performance_state",
             "zip4": "place_of_performance_zip4a",
