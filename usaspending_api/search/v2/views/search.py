@@ -6,9 +6,9 @@ from collections import OrderedDict
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
-from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, award_assistance_mapping, \
-    contract_type_mapping, grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping, \
-    assistance_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
+    grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping, \
+    loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
 
 import ast
 from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month, \
@@ -444,35 +444,33 @@ class SpendingByAwardVisualizationViewSet(APIView):
         response = {'limit': limit, 'page': page, 'results': []}
         results = []
 
-        print(queryset.count())
         for award in queryset:
             row = {}
-            print("award_type_codes: {}".format(filters["award_type_codes"]))
-            print("contract_award_check:{}".format(set(filters["award_type_codes"]) < set(contract_type_mapping)))
-            print("assistance_award_check:{}".format(set(filters["award_type_codes"]) < set(assistance_type_mapping)))
             if set(filters["award_type_codes"]) < set(contract_type_mapping):
-                print("contract_award: {}".format(award))
                 for field in fields:
                     try:
                         award_prop = award
-                        print("field:{}".format(field))
                         for prop in award_contracts_mapping[field].split("__"):
                             award_prop = getattr(award_prop, prop)
-                        print("award_prop:{}".format(award_prop))
-                    except Exception as e:
-                        print(e)
+                    except:
                         award_prop = None
                     row[field] = award_prop
-            elif set(filters["award_type_codes"]) < set(assistance_type_mapping):  # assistance data
+            elif set(filters["award_type_codes"]) < set(loan_type_mapping):  # loans
                 for field in fields:
                     try:
                         award_prop = award
-                        print("field:{}".format(field))
-                        for prop in award_assistance_mapping[field].split("__"):
+                        for prop in loan_award_mapping[field].split("__"):
                             award_prop = getattr(award_prop, prop)
-                        print("award_prop:{}".format(award_prop))
-                    except Exception as e:
-                        print(e)
+                    except:
+                        award_prop = None
+                    row[field] = award_prop
+            elif set(filters["award_type_codes"]) < set(non_loan_assistance_type_mapping):  # assistance data
+                for field in fields:
+                    try:
+                        award_prop = award
+                        for prop in non_loan_assistance_award_mapping[field].split("__"):
+                            award_prop = getattr(award_prop, prop)
+                    except:
                         award_prop = None
                     row[field] = award_prop
             results.append(row)
