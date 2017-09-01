@@ -451,7 +451,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             print("contract_award_check:{}".format(set(filters["award_type_codes"]) < set(contract_type_mapping)))
             print("assistance_award_check:{}".format(set(filters["award_type_codes"]) < set(assistance_type_mapping)))
             if set(filters["award_type_codes"]) < set(contract_type_mapping):
-                if (hasattr(award, "last_transaction") and hasattr(award.last_transaction, "contract_data")):
+                if (hasattr(award, "latest_transaction") and hasattr(award.latest_transaction, "contract_data")):
                     print("contract_award: {}".format(award))
                     for field in fields:
                         try:
@@ -463,8 +463,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                             award_prop = None
                         row[field] = award_prop
             elif set(filters["award_type_codes"]) < set(assistance_type_mapping):  # assistance data
-                if (hasattr(award, "last_transaction") and hasattr(award.last_transaction, "assistance_data") and
-                        hasattr(award.last_transaction.assistance_data, 'award_type')):
+                if (hasattr(award, "latest_transaction") and hasattr(award.latest_transaction, "assistance_data") and
+                        hasattr(award.latest_transaction.assistance_data, 'award_type')):
                     print("assistance_award: {}".format(award))
                     for field in fields:
                         try:
@@ -502,19 +502,19 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
         for award in queryset:
-            if hasattr(award, "last_transaction") and hasattr(award.last_transaction, "contract_data") and \
-                    hasattr(award.last_transaction, 'type'):
-                if award.last_transaction.type in contract_type_mapping:
+            if hasattr(award, "latest_transaction") and hasattr(award.latest_transaction, "contract_data") and \
+                    hasattr(award.latest_transaction, 'type'):
+                if award.latest_transaction.type in contract_type_mapping:
                     results["contracts"] += 1
-            elif hasattr(award, "last_transaction") and hasattr(award.last_transaction, "assistance_data") and \
-                    hasattr(award.last_transaction, 'type'):
-                if award.last_transaction.type in grant_type_mapping:  # Grants
+            elif hasattr(award, "latest_transaction") and hasattr(award.latest_transaction, "assistance_data") and \
+                    hasattr(award.latest_transaction, 'type'):
+                if award.latest_transaction.type in grant_type_mapping:  # Grants
                     results["grants"] += 1
-                elif award.last_transaction.type in direct_payment_type_mapping:  # Direct Payment
+                elif award.latest_transaction.type in direct_payment_type_mapping:  # Direct Payment
                     results["direct_payments"] += 1
-                elif award.last_transaction.type in loan_type_mapping:  # Loans
+                elif award.latest_transaction.type in loan_type_mapping:  # Loans
                     results["loans"] += 1
-                elif award.last_transaction.type in other_type_mapping:  # Other
+                elif award.latest_transaction.type in other_type_mapping:  # Other
                     results["other"] += 1
 
         response["results"] = results
