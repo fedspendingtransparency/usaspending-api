@@ -471,7 +471,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         for prop in award_assistance_mapping[field].split("__"):
                             award_prop = getattr(award_prop, prop)
                         print("award_prop:{}".format(award_prop))
-                    except:
+                    except Exception as e:
                         print(e)
                         award_prop = None
                     row[field] = award_prop
