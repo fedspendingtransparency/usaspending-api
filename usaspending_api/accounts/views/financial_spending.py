@@ -39,7 +39,7 @@ class ObjectClassFinancialSpendingViewSet(DetailViewSet):
             treasury_account__funding_toptier_agency=toptier_agency
         )
         queryset = queryset.annotate(
-            major_object_class_name=F('object_class__major_object_class_name'),
+            major_object_class_name=F('object_class__corrected_major_object_class_name'),
             major_object_class_code=F('object_class__major_object_class'))
         # sum obligated_mount by object class
         queryset = queryset.values('major_object_class_name', 'major_object_class_code').annotate(
