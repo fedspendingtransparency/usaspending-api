@@ -123,6 +123,19 @@ class MinorObjectClassFinancialSpendingSerializer(serializers.Serializer):
     obligated_amount = serializers.DecimalField(None, 2)
 
 
+class ObjectClassNameField(serializers.CharField):
+
+    def to_representation(self, obj):
+        import pdb; pdb.set_trace()
+        if obj == 'Other':
+            if self.parent.instance[0]['major_object_class_code'] == '00':
+                return 'Unknown Object Class'
+            else:
+                return obj
+        else:
+            return obj
+
+
 class ObjectClassFinancialSpendingSerializer(serializers.Serializer):
 
     major_object_class_code = serializers.CharField()
