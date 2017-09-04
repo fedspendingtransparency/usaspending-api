@@ -121,8 +121,8 @@ you should see something like this:
 
     Performing system checks...
     System check identified no issues (0 silenced).
-    April 17, 2017 - 01:46:02
-    Django version 1.10.7, using settings 'usaspending_api.settings'
+    August 22, 2017 - 15:55:33
+    Django version 1.11.4, using settings 'usaspending_api.settings'
     Starting development server at http://127.0.0.1:8000/
     Quit the server with CONTROL-C.
 

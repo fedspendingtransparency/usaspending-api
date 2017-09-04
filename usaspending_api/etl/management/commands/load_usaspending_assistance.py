@@ -174,7 +174,10 @@ class Command(BaseCommand):
         recipient_type = row.get("recipient_type", ":").split(":")[1].strip()
         recipient_dict.update(self.recipient_flags_by_type(recipient_type))
 
-        le, created = LegalEntity.get_or_create_by_duns(duns=row['duns_no'])
+        le, created = LegalEntity.objects.get_or_create(
+            recipient_unique_id=row['duns_no'],
+            recipient_name=row['recipient_name']
+        )
         if created:
             # Update from our recipient dictionary
             for attr, value in recipient_dict.items():
