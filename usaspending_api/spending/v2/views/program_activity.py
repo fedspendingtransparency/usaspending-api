@@ -7,8 +7,7 @@ def program_activity(queryset, fiscal_date):
         id=F('program_activity__program_activity_code'),
         type=Value('program_activity', output_field=CharField()),
         name=F('program_activity__program_activity_name'),
-        code=F('program_activity__program_activity_code'),
-        amount=Sum('obligations_incurred_by_program_object_class_cpe')
+        code=F('program_activity__program_activity_code')
     ).values(
         'id', 'type', 'name', 'code', 'amount').annotate(
         total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
@@ -17,9 +16,4 @@ def program_activity(queryset, fiscal_date):
     for key, value in total.items():
         total = value
 
-    program_activity_results = {
-        'total': total,
-        'end_date': fiscal_date,
-        'results': queryset,
-    }
     return total, fiscal_date, queryset

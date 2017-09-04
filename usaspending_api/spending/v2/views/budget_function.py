@@ -8,7 +8,6 @@ def budget_function(queryset, fiscal_date):
         type=Value('budget_function', output_field=CharField()),
         name=F('treasury_account__budget_function_title'),
         code=F('treasury_account__budget_function_code'),
-        amount=Sum('obligations_incurred_by_program_object_class_cpe')
     ).values('id', 'type', 'name', 'code', 'amount').annotate(
         total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
@@ -16,9 +15,4 @@ def budget_function(queryset, fiscal_date):
     for key, value in total.items():
         total = value
 
-    budget_function_results = {
-        'total': total,
-        'end_date': fiscal_date,
-        'results': queryset
-    }
     return total, fiscal_date, queryset

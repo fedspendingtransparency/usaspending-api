@@ -7,8 +7,7 @@ def object_class(queryset, fiscal_date):
         id=F('object_class__major_object_class'),
         type=Value('object_class', output_field=CharField()),
         name=F('object_class__major_object_class_name'),
-        code=F('object_class__major_object_class'),
-        amount=Sum('obligations_incurred_by_program_object_class_cpe')
+        code=F('object_class__major_object_class')
     ).values(
         'id', 'type', 'name', 'code', 'amount').annotate(
         total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
@@ -17,9 +16,4 @@ def object_class(queryset, fiscal_date):
     for key, value in total.items():
         total = value
 
-    object_classes_results = {
-        'total': total,
-        'end_date': fiscal_date,
-        'results': queryset
-    }
     return total, fiscal_date, queryset

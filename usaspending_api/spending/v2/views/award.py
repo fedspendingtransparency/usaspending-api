@@ -7,8 +7,7 @@ def award_category(alt_set, fiscal_date):
         id=F('award__recipient__recipient_unique_id'),
         type=Value('award_category', output_field=CharField()),
         code=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
-        name=F('award__category'),
-        amount=Sum('obligations_incurred_total_by_award_cpe')
+        name=F('award__category')
     ).values(
         'id', 'type', 'code', 'name', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
@@ -17,11 +16,6 @@ def award_category(alt_set, fiscal_date):
     for key, value in total.items():
         total = value
 
-    award_category_results = {
-        'total': total,
-        'end_date': fiscal_date,
-        'results': alt_set,
-    }
     return total, fiscal_date, alt_set
 
 
@@ -31,8 +25,7 @@ def award(alt_set, fiscal_date):
         id=F('award__recipient__recipient_unique_id'),
         type=Value('award', output_field=CharField()),
         code=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
-        name=F('award__description'),
-        amount=Sum('obligations_incurred_total_by_award_cpe')
+        name=F('award__description')
     ).values(
         'id', 'type', 'code', 'name', 'amount').annotate(
         total=Sum('obligations_incurred_total_by_award_cpe')).order_by('-total')
@@ -41,9 +34,4 @@ def award(alt_set, fiscal_date):
     for key, value in total.items():
         total = value
 
-    award_results = {
-        'total': total,
-        'end_date': fiscal_date,
-        'results': alt_set,
-    }
     return total, fiscal_date, alt_set
