@@ -2,17 +2,14 @@ import logging
 import urllib
 from urllib.error import HTTPError
 
-from django.db.models import Q
-
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import LegalEntity
 
 logger = logging.getLogger(__name__)
 
 
-def spending_filter(queryset, alt_set, filters, explorer):
+def spending_filter(alt_set, queryset, filters, explorer):
 
     for key, value in filters.items():
         # check for valid key
@@ -175,20 +172,20 @@ def spending_filter(queryset, alt_set, filters, explorer):
             if explorer == 'recipient' or explorer == 'award' or \
                     explorer == 'award_category' or explorer == 'agency_sub':
                 if or_alt_set:
-                    or_alt_set |= or_alt_set.filter(award__awarding_agency__id=value)
+                    or_alt_set |= or_alt_set.filter(award__piid=value)
                 else:
-                    or_alt_set = alt_set.filter(award__awarding_agency__id=value)
+                    or_alt_set = alt_set.filter(award__piid=value)
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
             else:
                 if or_queryset:
                     or_queryset |= or_queryset.filter(
                         treasury_account__in=alt_set.filter(
-                            award__awarding_agency__id=value))
+                            award__piid=value))
                 else:
                     or_queryset = queryset.filter(
                         treasury_account__in=alt_set.filter(
-                            award__awarding_agency__id=value))
+                            award__piid=value))
                 if or_queryset is not None:
                     queryset &= or_queryset
 
@@ -199,20 +196,20 @@ def spending_filter(queryset, alt_set, filters, explorer):
             if explorer == 'recipient' or explorer == 'award' or \
                     explorer == 'award_category' or explorer == 'agency_sub':
                 if or_alt_set:
-                    or_alt_set |= or_alt_set.filter(award__category=value)
+                    or_alt_set |= or_alt_set.filter(award__fain=value)
                 else:
-                    or_alt_set = alt_set.filter(award__category=value)
+                    or_alt_set = alt_set.filter(award__fain=value)
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
             else:
                 if or_queryset:
                     or_queryset |= or_queryset.filter(
                         treasury_account__in=alt_set.filter(
-                            award__category=value))
+                            award__fain=value))
                 else:
                     or_queryset = queryset.filter(
                         treasury_account__in=alt_set.filter(
-                            award__category=value))
+                            award__fain=value))
                 if or_queryset is not None:
                     queryset &= or_queryset
 
@@ -306,11 +303,11 @@ def spending_filter(queryset, alt_set, filters, explorer):
                 try:
                     if or_queryset:
                         or_queryset |= or_queryset.filter(
-                            treasury_Account__in=alt_set.filter(
+                            treasury_account__in=alt_set.filter(
                                 award__awarding_agency__subtier_agency__subtier_code=value))
                     else:
                         or_queryset = queryset.filter(
-                            treasury_Account__in=alt_set.filter(
+                            treasury_account__in=alt_set.filter(
                                 award__awarding_agency__subtier_agency__subtier_code=value))
                     if or_queryset is not None:
                         queryset &= or_queryset
@@ -320,4 +317,4 @@ def spending_filter(queryset, alt_set, filters, explorer):
                     if or_queryset is not None:
                         queryset &= or_queryset
 
-    return queryset, alt_set
+    return alt_set, queryset

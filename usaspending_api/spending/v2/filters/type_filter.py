@@ -1,6 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
-from itertools import chain
 
 from django.db.models import Sum
 
@@ -9,15 +7,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.spending.v2.filters.fy_filter import fy_filter
 from usaspending_api.spending.v2.filters.spending_filter import spending_filter
-from usaspending_api.spending.v2.views.agency import agency, awarding_top_tier_agency, \
-    awarding_sub_tier_agency
-from usaspending_api.spending.v2.views.award import award, award_category
-from usaspending_api.spending.v2.views.budget_function import budget_function
-from usaspending_api.spending.v2.views.budget_subfunction import budget_subfunction
-from usaspending_api.spending.v2.views.federal_account import federal_account
-from usaspending_api.spending.v2.views.object_class import object_class
-from usaspending_api.spending.v2.views.program_activity import program_activity
-from usaspending_api.spending.v2.views.recipient import recipient
+from usaspending_api.spending.v2.views.explorer import Explorer
 
 
 def type_filter(explorer, filters):
@@ -61,17 +51,19 @@ def type_filter(explorer, filters):
     if explorer == 'recipient' or explorer == 'award' or explorer == 'award_category' or explorer == 'agency_sub':
 
         # Apply filters to queryset and alt_set
-        alt_set, queryset = spending_filter(queryset, alt_set, filters, explorer)
+        alt_set, queryset = spending_filter(alt_set, queryset, filters, explorer)
 
-        # Retrieve explorer type data
+        # Annotate and get explorer type data
+        exp = Explorer(alt_set, queryset)
+
         if explorer == 'recipient':
-            total, fiscal_date, alt_set = recipient(alt_set, fiscal_date)
+            total, alt_set = exp.recipient()
         if explorer == 'award':
-            total, fiscal_date, alt_set = award(alt_set, fiscal_date)
+            total, alt_set = exp.award()
         if explorer == 'award_category':
-            total, fiscal_date, queryset = award_category(alt_set, fiscal_date)
+            total, alt_set = exp.award_category()
         if explorer == 'agency_sub':
-            total, fiscal_date, alt_set = awarding_sub_tier_agency(alt_set, fiscal_date)
+            total, alt_set = exp.awarding_sub_tier_agency()
 
         results = {
             'total': total,
@@ -81,24 +73,25 @@ def type_filter(explorer, filters):
 
     else:
         # Apply filters to queryset and alt_set
-        queryset, alt_set = spending_filter(queryset, alt_set, filters, explorer)
-        print(queryset)
+        alt_set, queryset = spending_filter(alt_set, queryset, filters, explorer)
 
-        # Retrieve explorer type data
+        # Annotate and get explorer type data
+        exp = Explorer(alt_set, queryset)
+
         if explorer == 'budget_function':
-            total, fiscal_date, queryset = budget_function(queryset, fiscal_date)
+            total, queryset = exp.budget_function()
         if explorer == 'budget_subfunction':
-            total, fiscal_date, queryset = budget_subfunction(queryset, fiscal_date)
+            total, queryset = exp.budget_subfunction()
         if explorer == 'federal_account':
-            total, fiscal_date, queryset = federal_account(queryset, fiscal_date)
+            total, queryset = exp.federal_account()
         if explorer == 'program_activity':
-            total, fiscal_date, queryset = program_activity(queryset, fiscal_date)
+            total, queryset = exp.program_activity()
         if explorer == 'object_class':
-            total, fiscal_date, queryset = object_class(queryset, fiscal_date)
+            total, queryset = exp.object_class()
         if explorer == 'agency':
-            total, fiscal_date, queryset = agency(queryset, fiscal_date)
+            total, queryset = exp.agency()
         if explorer == 'agency_top':
-            total, fiscal_date, queryset = awarding_top_tier_agency(queryset, fiscal_date)
+            total, queryset = exp.awarding_top_tier_agency()
 
         results = {
             'total': total,
