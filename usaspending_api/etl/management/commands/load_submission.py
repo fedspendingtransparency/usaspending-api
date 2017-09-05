@@ -307,16 +307,8 @@ def get_submission_attributes(broker_submission_id, submission_data):
         # do not proceed.
         # TODO: now that we're chaining submisisons together, get clarification on
         # what should happen when a submission in the middle of the chain is deleted
-        downstream_submission = SubmissionAttributes.objects.filter(previous_submission=submission_attributes).first()
-        if downstream_submission is not None:
-            message = (
-                'Broker submission {} (API submission id = {}) has a downstream submission (id={}) and '
-                'cannot be deleted'.format(
-                    broker_submission_id,
-                    submission_attributes.submission_id,
-                    downstream_submission.submission_id)
-            )
-            raise ValueError(message)
+
+        TasProgramActivityObjectClassQuarterly.refresh_downstream_quarterly_numbers(submission_attributes.submission_id)
 
         logger.info('Broker submission id {} already exists. It will be deleted.'.format(broker_submission_id))
         call_command('rm_submission', broker_submission_id)
@@ -562,9 +554,9 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
                     skipped_tas[row['tas']]['rows'] = [row['row_number']]
                 else:
                     skipped_tas[row['tas']]['count'] += 1
-                    skipped_tas[row['tas']]['rows'] += row['row_number']
+                    skipped_tas[row['tas']]['rows'] += [row['row_number']]
                 continue
-        except:
+        except:    # TODO: What is this trying to catch, actually?
             continue
 
         # get the corresponding account balances row (aka "File A" record)
