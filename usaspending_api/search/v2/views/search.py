@@ -142,7 +142,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 name_dict[stname]["aggregated_amount"] += trans.federal_action_obligation
                             else:
                                 name_dict[stname] = {"aggregated_amount": trans.federal_action_obligation,
-                                                     "abbreviation": trans.awarding_agency.toptier_agency.abbreviation}
+                                                     "abbreviation": trans.awarding_agency.subtier_agency.abbreviation}
             else:  # offices
                 for trans in queryset:
                     if (hasattr(trans, "awarding_agency")) and (hasattr(trans.awarding_agency, "office_agency")):
@@ -152,7 +152,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 name_dict[oname]["aggregated_amount"] += trans.federal_action_obligation
                             else:
                                 name_dict[oname] = {"aggregated_amount": trans.federal_action_obligation,
-                                                    "abbreviation": trans.awarding_agency.toptier_agency.abbreviation}
+                                                    "abbreviation": trans.awarding_agency.office_agency.abbreviation}
 
             # build response
             results = []
@@ -197,7 +197,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 name_dict[stname]["aggregated_amount"] += trans.federal_action_obligation
                             else:
                                 name_dict[stname] = {"aggregated_amount": trans.federal_action_obligation,
-                                                     "abbreviation": trans.funding_agency.toptier_agency.abbreviation}
+                                                     "abbreviation": trans.funding_agency.subtier_agency.abbreviation}
             else:  # offices
                 for trans in queryset:
                     if (hasattr(trans, "funding_agency")) and (hasattr(trans.funding_agency, "office_agency")):
@@ -207,7 +207,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 name_dict[oname]["aggregated_amount"] += trans.federal_action_obligation
                             else:
                                 name_dict[oname] = {"aggregated_amount": trans.federal_action_obligation,
-                                                    "abbreviation": trans.funding_agency.toptier_agency.abbreviation}
+                                                    "abbreviation": trans.funding_agency.office_agency.abbreviation}
 
             # build response
             results = []
