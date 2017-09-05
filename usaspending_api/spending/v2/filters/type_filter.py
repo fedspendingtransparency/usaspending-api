@@ -10,23 +10,23 @@ from usaspending_api.spending.v2.filters.spending_filter import spending_filter
 from usaspending_api.spending.v2.views.explorer import Explorer
 
 
-def type_filter(explorer, filters):
+def type_filter(_type, filters):
     total = None
     fiscal_quarter = None
     fiscal_date = None
 
-    explorers = ['budget_function', 'budget_subfunction', 'federal_account', 'program_activity', 'object_class',
-                 'recipient', 'award', 'award_category', 'agency', 'agency_top', 'agency_sub']
+    _types = ['budget_function', 'budget_subfunction', 'federal_account', 'program_activity', 'object_class',
+              'recipient', 'award', 'award_category', 'agency', 'agency_top', 'agency_sub']
 
-    # Validate explorer type
-    if explorer is None:
-        raise InvalidParameterException('Missing one or more required request parameters: type')
+    # Validate explorer _type
+    if _type is None:
+        raise InvalidParameterException('Missing Required Request Parameter, "type": "type"')
 
-    elif explorer not in explorers:
+    elif _type not in _types:
         raise InvalidParameterException(
-            'Explorer does not have a valid value. '
-            'Valid Explorers: budget_function, budget_subfunction, federal_account, '
-            'program_activity, object_class, recipient, award, award_category agency, agency_top, agency_sub')
+            'Type does not have a valid value. '
+            'Valid Types: budget_function, budget_subfunction, federal_account, program_activity,'
+            'object_class, recipient, award, award_category agency, agency_top, agency_sub')
 
     # Get fiscal_date and fiscal_quarter
     for key, value in filters.items():
@@ -34,7 +34,7 @@ def type_filter(explorer, filters):
             if value is not None:
                 fiscal_date, fiscal_quarter = fy_filter(value, datetime.now().date())
             else:
-                raise InvalidParameterException('Incorrect or Missing fiscal year: YYYY')
+                raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
 
     # Recipient, Award Queryset
     alt_set = FinancialAccountsByAwards.objects.all().exclude(
@@ -48,21 +48,21 @@ def type_filter(explorer, filters):
             submission__reporting_fiscal_quarter=fiscal_quarter).annotate(
             amount=Sum('obligations_incurred_by_program_object_class_cpe'))
 
-    if explorer == 'recipient' or explorer == 'award' or explorer == 'award_category' or explorer == 'agency_sub':
+    if _type == 'recipient' or _type == 'award' or _type == 'award_category' or _type == 'agency_sub':
 
         # Apply filters to queryset and alt_set
-        alt_set, queryset = spending_filter(alt_set, queryset, filters, explorer)
+        alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
 
-        # Annotate and get explorer type data
+        # Annotate and get explorer _type data
         exp = Explorer(alt_set, queryset)
 
-        if explorer == 'recipient':
+        if _type == 'recipient':
             total, alt_set = exp.recipient()
-        if explorer == 'award':
+        if _type == 'award':
             total, alt_set = exp.award()
-        if explorer == 'award_category':
+        if _type == 'award_category':
             total, alt_set = exp.award_category()
-        if explorer == 'agency_sub':
+        if _type == 'agency_sub':
             total, alt_set = exp.awarding_sub_tier_agency()
 
         results = {
@@ -73,24 +73,24 @@ def type_filter(explorer, filters):
 
     else:
         # Apply filters to queryset and alt_set
-        alt_set, queryset = spending_filter(alt_set, queryset, filters, explorer)
+        alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
 
-        # Annotate and get explorer type data
+        # Annotate and get explorer _type data
         exp = Explorer(alt_set, queryset)
 
-        if explorer == 'budget_function':
+        if _type == 'budget_function':
             total, queryset = exp.budget_function()
-        if explorer == 'budget_subfunction':
+        if _type == 'budget_subfunction':
             total, queryset = exp.budget_subfunction()
-        if explorer == 'federal_account':
+        if _type == 'federal_account':
             total, queryset = exp.federal_account()
-        if explorer == 'program_activity':
+        if _type == 'program_activity':
             total, queryset = exp.program_activity()
-        if explorer == 'object_class':
+        if _type == 'object_class':
             total, queryset = exp.object_class()
-        if explorer == 'agency':
+        if _type == 'agency':
             total, queryset = exp.agency()
-        if explorer == 'agency_top':
+        if _type == 'agency_top':
             total, queryset = exp.awarding_top_tier_agency()
 
         results = {

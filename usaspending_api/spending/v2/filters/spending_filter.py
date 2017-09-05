@@ -9,7 +9,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 logger = logging.getLogger(__name__)
 
 
-def spending_filter(alt_set, queryset, filters, explorer):
+def spending_filter(alt_set, queryset, filters, _type):
 
     for key, value in filters.items():
         # check for valid key
@@ -41,8 +41,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         if key == 'budget_function':
             or_queryset = None
             or_alt_set = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 if or_alt_set:
                     or_alt_set |= or_alt_set.filter(treasury_account__budget_function_code=value)
                 else:
@@ -61,8 +61,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         elif key == 'budget_subfunction':
             or_queryset = None
             or_alt_set = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 if or_alt_set:
                     or_alt_set |= or_alt_set.filter(treasury_account__budget_subfunction_code=value)
                 else:
@@ -81,8 +81,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         elif key == 'federal_account':
             or_queryset = None
             or_alt_set = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 if or_alt_set:
                     or_alt_set |= or_alt_set.filter(treasury_account__federal_account__main_account_code=value)
                 else:
@@ -101,8 +101,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         elif key == 'program_activity':
             or_queryset = None
             or_alt_set = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 if or_alt_set:
                     or_alt_set |= or_alt_set.filter(program_activity__program_activity_code=value)
                 else:
@@ -121,8 +121,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         elif key == 'object_class':
             or_queryset = None
             or_alt_set = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 if or_alt_set:
                     or_alt_set |= or_alt_set.filter(object_class__major_object_class=value)
                 else:
@@ -141,8 +141,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         elif key == 'recipient':
             or_alt_set = None
             or_queryset = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 if or_alt_set:
                     or_alt_set |= or_alt_set.filter(award__recipient__recipient_unique_id=value)
                 else:
@@ -169,8 +169,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         elif key == 'award':
             or_alt_set = None
             or_queryset = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 if or_alt_set:
                     or_alt_set |= or_alt_set.filter(award__piid=value)
                 else:
@@ -193,8 +193,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         elif key == 'award_category':
             or_alt_set = None
             or_queryset = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 if or_alt_set:
                     or_alt_set |= or_alt_set.filter(award__fain=value)
                 else:
@@ -217,8 +217,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         elif key == 'agency':
             or_alt_set = None
             or_queryset = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 try:
                     if or_alt_set:
                         or_alt_set |= or_alt_set.filter(
@@ -253,8 +253,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         elif key == 'agency_top':
             or_alt_set = None
             or_queryset = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 try:
                     if or_alt_set:
                         or_alt_set |= or_alt_set.filter(treasury_account__awarding_toptier_agency__cgac_code=value)
@@ -285,8 +285,8 @@ def spending_filter(alt_set, queryset, filters, explorer):
         elif key == 'agency_sub':
             or_alt_set = None
             or_queryset = None
-            if explorer == 'recipient' or explorer == 'award' or \
-                    explorer == 'award_category' or explorer == 'agency_sub':
+            if _type == 'recipient' or _type == 'award' or \
+                    _type == 'award_category' or _type == 'agency_sub':
                 try:
                     if or_alt_set:
                         or_alt_set |= or_alt_set.filter(award__awarding_agency__subtier_agency__subtier_code=value)

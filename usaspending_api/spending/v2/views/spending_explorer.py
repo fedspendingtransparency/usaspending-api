@@ -9,10 +9,10 @@ class SpendingExplorerViewSet(APIView):
     def post(self, request):
 
         json_request = request.data
-        explorer = json_request.get('type')
+        _type = json_request.get('type')
         filters = json_request.get('filters', None)
 
-        # Returned filtered queryset
-        results = type_filter(explorer, filters)
+        # Returned filtered queryset results
+        results = type_filter(_type, filters)
 
         return Response(results)

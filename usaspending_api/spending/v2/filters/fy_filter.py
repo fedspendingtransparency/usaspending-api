@@ -33,4 +33,4 @@ def fy_filter(fy, now):
             fiscal_quarter = '2'
         return fiscal_date, fiscal_quarter
     except ValueError:
-        raise InvalidParameterException('Incorrect or Missing fiscal year: YYYY')
+        raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
