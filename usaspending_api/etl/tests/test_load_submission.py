@@ -183,11 +183,6 @@ def test_get_submission_attributes():
     sub2 = SubmissionAttributes.objects.get(broker_submission_id=22222)
     # newer submission should recognize the first submission as it's previous sub
     assert sub2.previous_submission == sub
-    # trying to replace the first submission should fail now that it has
-    # a "downstream" submission
-    with pytest.raises(ValueError):
-        get_submission_attributes(11111, new_submission_data)
-
 
 @pytest.mark.django_db
 def test_load_submission_command_program_activity_uniqueness(endpoint_data, partially_flushed):
