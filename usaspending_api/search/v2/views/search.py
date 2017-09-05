@@ -362,7 +362,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         json_request = request.data
         scope = json_request.get('scope', None)
         filters = json_request.get('filters', None)
-        limit = json_request.get('limit', None)
 
         if scope is None:
             raise InvalidParameterException('Missing one or more required request parameters: scope')
