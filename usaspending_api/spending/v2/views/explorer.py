@@ -111,8 +111,8 @@ class Explorer(object):
         queryset = self.queryset.annotate(
             id=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
             type=Value('agency', output_field=CharField()),
-            code=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
-            name=F('treasury_account__awarding_toptier_agency__name')
+            name=F('treasury_account__awarding_toptier_agency__name'),
+            code=F('treasury_account__awarding_toptier_agency__toptier_agency_id')
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')
         ).order_by('-total')
@@ -130,8 +130,8 @@ class Explorer(object):
         queryset = self.queryset.annotate(
             id=F('treasury_account__awarding_toptier_agency__cgac_code'),
             type=Value('top_tier_agency', output_field=CharField()),
-            code=F('treasury_account__awarding_toptier_agency__cgac_code'),
-            name=F('treasury_account__awarding_toptier_agency__name')
+            name=F('treasury_account__awarding_toptier_agency__name'),
+            code=F('treasury_account__awarding_toptier_agency__cgac_code')
         ).values(
             'id', 'type', 'code', 'name', 'amount'
         ).annotate(
@@ -150,8 +150,8 @@ class Explorer(object):
         alt_set = self.alt_set.annotate(
             id=F('award__awarding_agency__subtier_agency__subtier_code'),
             type=Value('sub_tier_agency', output_field=CharField()),
-            code=F('award__awarding_agency__subtier_agency__subtier_code'),
-            name=F('award__awarding_agency__subtier_agency__name')
+            name=F('award__awarding_agency__subtier_agency__name'),
+            code=F('award__awarding_agency__subtier_agency__subtier_code')
         ).values(
             'id', 'type', 'code', 'name', 'amount'
         ).annotate(
@@ -170,8 +170,8 @@ class Explorer(object):
         alt_set = self.alt_set.annotate(
             id=F('award__fain'),
             type=Value('award_category', output_field=CharField()),
-            code=F('award__fain'),
-            name=F('award__category')
+            name=F('award__category'),
+            code=F('award__fain')
         ).values(
             'id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
@@ -187,8 +187,8 @@ class Explorer(object):
         alt_set = self.alt_set.annotate(
             id=F('award__piid'),
             type=Value('award', output_field=CharField()),
-            code=F('award__piid'),
-            name=F('award__type_description')
+            name=F('award__type_description'),
+            code=F('award__piid')
         ).values(
             'id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
