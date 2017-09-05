@@ -74,7 +74,7 @@ def type_filter(_type, filters):
     else:
         # Apply filters to queryset and alt_set
         alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
-
+        print(queryset.count())
         # Annotate and get explorer _type data
         exp = Explorer(alt_set, queryset)
 
