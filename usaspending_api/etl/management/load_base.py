@@ -81,18 +81,18 @@ class Command(BaseCommand):
         self.handle_loading(db_cursor=db_cursor, *args, **options)
 
         if not options['noclean']:
-            # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
-            logger.info('Cleaning up model description fields...')
+            # TODO: If this is slow, add ID limiting as below
+            logger.info('Updating model description fields...')
             update_model_description_fields()
-            # 2. Update awards to reflect their latest associated txn info
-            logger.info('Cleaning up awards...')
-            update_awards(tuple(AWARD_UPDATE_ID_LIST))
-            # 3. Update contract-specific award fields to reflect latest txn info
-            logger.info('Cleaning up contract-specific awards...')
-            update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
-            # 4. Update the category variable
-            logger.info('Cleaning up award categories...')
-            update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+            
+        logger.info('Updating awards to reflect their latest associated transaction info...')
+        update_awards(tuple(AWARD_UPDATE_ID_LIST))
+
+        logger.info('Updating contract-specific awards to reflect their latest transaction info...')
+        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+        
+        logger.info('Updating award category variables...')
+        update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
 
 def run_sql_file(file_path, parameters):
