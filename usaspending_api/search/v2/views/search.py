@@ -5,6 +5,8 @@ from collections import OrderedDict
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
+from usaspending_api.awards.v2.filters.award import award_filter
+
 import ast
 from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month, \
     get_pagination
@@ -344,3 +346,60 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             else:  # recipient_type
                 raise InvalidParameterException('recipient type is not yet implemented')
+
+
+class SpendingByGeographyVisualizationViewSet(APIView):
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        json_request = request.data
+        scope = json_request.get('scope', None)
+        filters = json_request.get('filters', None)
+
+        if scope is None:
+            raise InvalidParameterException('Missing one or more required request parameters: scope')
+        if filters is None:
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
+        potential_scopes = ["recipient_location", "place_of_performance"]
+        if scope not in potential_scopes:
+            raise InvalidParameterException('scope does not have a valid value')
+
+        # build sql query filters
+        queryset = transaction_filter(filters)
+
+        # define what values are needed in the sql query
+        # queryset = queryset.values('action_date', 'federal_action_obligation')
+
+        # build response
+        response = {'scope': scope, 'results': []}
+
+        # key is time period (defined by group), value is federal_action_obligation
+        name_dict = {}
+        if scope == "recipient_location":
+            for trans in queryset:
+                if (hasattr(trans, 'recipient') and hasattr(trans.recipient, 'location') and
+                        hasattr(trans.recipient.location, "state_code")):
+                    state_code = trans.recipient.location.state_code
+                    if name_dict.get(state_code):
+                        name_dict[state_code] += trans.federal_action_obligation
+                    else:
+                        name_dict[state_code] = trans.federal_action_obligation
+
+        else:  # place of performance
+            for trans in queryset:
+                if hasattr(trans, 'place_of_performance') and hasattr(trans.place_of_performance, "state_code"):
+                    state_code = trans.place_of_performance.state_code
+                    if name_dict.get(state_code):
+                        name_dict[state_code] += trans.federal_action_obligation
+                    else:
+                        name_dict[state_code] = trans.federal_action_obligation
+
+        # convert result into expected format
+        results = []
+
+        for key, value in name_dict.items():
+            result = {"state_code": key, "aggregated_amount": float(value)}
+            results.append(result)
+        response['results'] = results
+
+        return Response(response)
