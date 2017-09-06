@@ -90,8 +90,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         category = json_request.get('category', None)
         scope = json_request.get('scope', None)
         filters = json_request.get('filters', None)
-        limit = json_request.get('limit', None)
-        page = json_request.get('page', None)
+        limit = json_request.get('limit', 10)
+        page = json_request.get('page', 1)
 
         if category is None:
             raise InvalidParameterException('Missing one or more required request parameters: category')
@@ -100,10 +100,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             raise InvalidParameterException('Category does not have a valid value')
         if (scope is None) and (category != "cfda_programs"):
             raise InvalidParameterException('Missing one or more required request parameters: scope')
-        if limit is None:
-            limit = 10
-        if page is None:
-            page = 1
         if filters is None:
             raise InvalidParameterException('Missing one or more required request parameters: filters')
 
