@@ -1,16 +1,17 @@
 import logging
+import timeit
 
 from django.core.management.base import BaseCommand
-from django.db import connections
-
-from usaspending_api.etl.broker_etl_helpers import PhonyCursor
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 from usaspending_api.broker.models import TransactionNew, TransactionAssistanceNew, TransactionContractNew, TransactionMap
 from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency, LegalEntity
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
+
+# start = timeit.default_timer()
+# function_call
+# end = timeit.default_timer()
+# time elapsed = str(end - start)
 
 
 logger = logging.getLogger('console')
@@ -24,8 +25,8 @@ AWARD_CONTRACT_UPDATE_ID_LIST = []
 class Command(BaseCommand):
     help = "Checks what TASs are in Broker but not in Data Store"
 
-    # TODO: ensure references to old d2 broker model is updated to match D2 model
-    def update_transaction_assistance(self):
+    @staticmethod
+    def update_transaction_assistance():
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -154,7 +155,8 @@ class Command(BaseCommand):
             transaction_map.save()
 
 
-    def update_transaction_contract(self):
+    @staticmethod
+    def update_transaction_contract():
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -270,25 +272,17 @@ class Command(BaseCommand):
             transaction_map.transaction_contract_id = transaction_contract['detached_award_procurement_id']
             transaction_map.save()
 
-
     def handle(self, *args, **options):
-        print('Starting updates to Transactions')
-        # Grab the data broker database connections
-        # if not options.get('test'):
-        #     try:
-        #         db_conn = connections['data_broker']
-        #         db_cursor = db_conn.cursor()
-        #     except Exception as err:
-        #         logger.critical('Could not connect to database. Is DATA_BROKER_DATABASE_URL set?')
-        #         logger.critical(print(err))
-        #         return
-        # else:
-        #     db_cursor = PhonyCursor()
+        logger.info('Starting historical data load...')
 
-        # self.update_transaction_assistance()
-        #
-        # print('Finished updating transaction assistance')
-
+        logger.info('Starting D1 historical data load...')
+        start = timeit.default_timer()
         self.update_transaction_contract()
+        end = timeit.default_timer()
+        logger.info('Finished D1 historical data load in ' + str(end - start) + ' seconds')
 
-        print('Finished updating transaction contract')
+        logger.info('Starting D2 historical data load...')
+        start = timeit.default_timer()
+        self.update_transaction_assistance()
+        end = timeit.default_timer()
+        logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
