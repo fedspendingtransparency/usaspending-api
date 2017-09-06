@@ -39,64 +39,62 @@ def type_filter(_type, filters):
     # Recipient, Award Queryset
     alt_set = FinancialAccountsByAwards.objects.all().exclude(
             transaction_obligated_amount__isnull=True).filter(
-            submission__reporting_fiscal_quarter=fiscal_quarter).annotate(
+            submission__reporting_fiscal_quarter=3).annotate(
             amount=Sum('transaction_obligated_amount'))
 
     # Base Queryset
     queryset = FinancialAccountsByProgramActivityObjectClass.objects.all().exclude(
             obligations_incurred_by_program_object_class_cpe__isnull=True).filter(
-            submission__reporting_fiscal_quarter=fiscal_quarter).annotate(
+            submission__reporting_fiscal_quarter=3).annotate(
             amount=Sum('obligations_incurred_by_program_object_class_cpe'))
 
+    # Annotate and get explorer _type results
+    exp = Explorer(alt_set, queryset)
+
     if _type == 'recipient' or _type == 'award' or _type == 'award_category' or _type == 'agency_sub':
-
-        # Apply filters to queryset and alt_set
-        alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
-
-        # Annotate and get explorer _type data
-        exp = Explorer(alt_set, queryset)
-
         if _type == 'recipient':
-            total, alt_set = exp.recipient()
+            queryset = exp.recipient()
         if _type == 'award':
-            total, alt_set = exp.award()
+            queryset = exp.award()
         if _type == 'award_category':
-            total, alt_set = exp.award_category()
+            queryset = exp.award_category()
         if _type == 'agency_sub':
-            total, alt_set = exp.awarding_sub_tier_agency()
+            queryset = exp.awarding_sub_tier_agency()
 
-        results = {
-            'total': total,
-            'end_date': fiscal_date,
-            'results': alt_set
-        }
+        # Apply filters to queryset results
+        queryset = spending_filter(alt_set, queryset, filters, _type)
+        # Total value of filtered results
+        total = queryset.aggregate(Sum('transaction_obligated_amount'))
+        for key, value in total.items():
+            total = value
 
     else:
-        # Apply filters to queryset and alt_set
-        alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
-        print(queryset.count())
-        # Annotate and get explorer _type data
-        exp = Explorer(alt_set, queryset)
-
         if _type == 'budget_function':
-            total, queryset = exp.budget_function()
+            queryset = exp.budget_function()
         if _type == 'budget_subfunction':
-            total, queryset = exp.budget_subfunction()
+            queryset = exp.budget_subfunction()
         if _type == 'federal_account':
-            total, queryset = exp.federal_account()
+            queryset = exp.federal_account()
         if _type == 'program_activity':
-            total, queryset = exp.program_activity()
+            queryset = exp.program_activity()
         if _type == 'object_class':
-            total, queryset = exp.object_class()
+            queryset = exp.object_class()
         if _type == 'agency':
-            total, queryset = exp.agency()
+            queryset = exp.agency()
         if _type == 'agency_top':
-            total, queryset = exp.awarding_top_tier_agency()
+            queryset = exp.awarding_top_tier_agency()
 
-        results = {
-            'total': total,
-            'end_date': fiscal_date,
-            'results': queryset
-        }
+        # Apply filters to queryset results
+        queryset = spending_filter(alt_set, queryset, filters, _type)
+        # Total value of filtered results
+        total = queryset.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
+        for key, value in total.items():
+            total = value
+
+    results = {
+        'total': total,
+        'end_date': fiscal_date,
+        'results': queryset
+    }
 
     return results
