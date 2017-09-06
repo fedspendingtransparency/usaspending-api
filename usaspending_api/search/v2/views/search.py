@@ -243,7 +243,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for trans in queryset:
                     if "recipient" in trans:
                         r_name = trans["recipient__recipient_name"]
-                        r_obl = trans["federal_action_obligation"]
+                        r_obl = trans["federal_action_obligation"] if trans['federal_action_obligation'] else 0
                         r_lei = trans["recipient__legal_entity_id"]
                         if r_name in name_dict:
                             name_dict[r_name]["aggregated_amount"] += r_obl
@@ -267,7 +267,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for trans in queryset:
                     if "recipient" in trans:
                         r_name = trans["recipient__recipient_name"]
-                        r_obl = trans["federal_action_obligation"]
+                        r_obl = trans["federal_action_obligation"] if trans['federal_action_obligation'] else 0
                         r_prui = trans["recipient__parent_recipient_unique_id"]
                         if r_name in name_dict:
                             name_dict[r_name]["aggregated_amount"] += r_obl
@@ -303,7 +303,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     cfda_program_number = trans['assistance_data__cfda__program_number']
                     cfda_program_name = trans["assistance_data__cfda__popular_name"]
                     cfda_program_title = trans["assistance_data__cfda__program_title"]
-                    cfda_obl = trans["federal_action_obligation"]
+                    cfda_obl = trans["federal_action_obligation"] if trans['federal_action_obligation'] else 0
                     if cfda_program_number in name_dict:
                         name_dict[cfda_program_number]["aggregated_amount"] += cfda_obl
                     else:
@@ -334,7 +334,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for trans in queryset:
                     if "contract_data__product_or_service_code" in trans:
                         psc = trans["contract_data__product_or_service_code"]
-                        psc_obl = trans["federal_action_obligation"]
+                        psc_obl = trans["federal_action_obligation"] if trans['federal_action_obligation'] else 0
                         if psc in name_dict:
                             name_dict[psc] += psc_obl
                         else:
@@ -353,7 +353,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for trans in queryset:
                     if 'contract_data__naics' in trans:
                         naics = trans['contract_data__naics']
-                        naics_obl = trans['federal_action_obligation']
+                        naics_obl = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
                         naics_desc = trans['contract_data__naics_description']
                         if naics in name_dict:
                             name_dict[naics]["aggregated_amount"] += naics_obl
