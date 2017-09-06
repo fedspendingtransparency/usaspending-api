@@ -445,9 +445,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         # build sql query filters
         queryset = award_filter(filters)
 
-        # define what values are needed in the sql query
-        # queryset = queryset.values('action_date', 'federal_action_obligation')
-
         # build response
         response = {'limit': limit, 'page': page, 'results': []}
         results = []
