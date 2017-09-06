@@ -395,8 +395,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         queryset = transaction_filter(filters)
 
         # define what values are needed in the sql query
-        # queryset = queryset.values('action_date', 'federal_action_obligation')
-
+        queryset = queryset.values('federal_action_obligation',
+                                   'recipient',
+                                   'recipient__location__state_code',
+                                   'place_of_performance__state_code')
         # build response
         response = {'scope': scope, 'results': []}
 
@@ -404,22 +406,23 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         name_dict = {}
         if scope == "recipient_location":
             for trans in queryset:
-                if (hasattr(trans, 'recipient') and hasattr(trans.recipient, 'location') and
-                        hasattr(trans.recipient.location, "state_code")):
-                    state_code = trans.recipient.location.state_code
+                if "recipient__location__state_code" in trans:
+                    state_code = trans["recipient__location__state_code"]
+                    obl = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
                     if name_dict.get(state_code):
-                        name_dict[state_code] += trans.federal_action_obligation
+                        name_dict[state_code] += obl
                     else:
-                        name_dict[state_code] = trans.federal_action_obligation
+                        name_dict[state_code] = obl
 
         else:  # place of performance
             for trans in queryset:
-                if hasattr(trans, 'place_of_performance') and hasattr(trans.place_of_performance, "state_code"):
-                    state_code = trans.place_of_performance.state_code
+                if "place_of_performance__state_code" in trans:
+                    state_code = trans["place_of_performance__state_code"]
+                    obl = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
                     if name_dict.get(state_code):
-                        name_dict[state_code] += trans.federal_action_obligation
+                        name_dict[state_code] += obl
                     else:
-                        name_dict[state_code] = trans.federal_action_obligation
+                        name_dict[state_code] = obl
 
         # convert result into expected format
         results = []
