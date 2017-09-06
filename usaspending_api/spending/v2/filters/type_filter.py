@@ -11,7 +11,6 @@ from usaspending_api.spending.v2.views.explorer import Explorer
 
 
 def type_filter(_type, filters):
-    total = None
     fiscal_quarter = None
     fiscal_date = None
 

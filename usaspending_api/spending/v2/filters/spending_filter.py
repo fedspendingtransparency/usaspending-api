@@ -29,9 +29,13 @@ def spending_filter(alt_set, queryset, filters, _type):
         if key == 'budget_function':
             or_queryset = None
             if or_queryset:
-                or_queryset |= or_queryset.filter(treasury_account__budget_function_code=value)
+                or_queryset |= or_queryset.filter(
+                    treasury_account__in=alt_set.filter(
+                        treasury_account__budget_function_code=value).values_list('treasury_account', flat=True))
             else:
-                or_queryset = queryset.filter(treasury_account__budget_function_code=value)
+                or_queryset = queryset.filter(
+                    treasury_account__in=alt_set.filter(
+                        treasury_account__budget_function_code=value).values_list('treasury_account', flat=True))
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -39,9 +43,13 @@ def spending_filter(alt_set, queryset, filters, _type):
         elif key == 'budget_subfunction':
             or_queryset = None
             if or_queryset:
-                or_queryset |= or_queryset.filter(treasury_account__budget_subfunction_code=value)
+                or_queryset |= or_queryset.filter(
+                    treasury_account__in=alt_set.filter(
+                        treasury_account__budget_subfunction_code=value).values_list('treasury_account', flat=True))
             else:
-                or_queryset = queryset.filter(treasury_account__budget_subfunction_code=value)
+                or_queryset = queryset.filter(
+                    treasury_account__in=alt_set.filter(
+                        treasury_account__budget_subfunction_code=value).values_list('treasury_account', flat=True))
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -49,9 +57,15 @@ def spending_filter(alt_set, queryset, filters, _type):
         elif key == 'federal_account':
             or_queryset = None
             if or_queryset:
-                or_queryset |= or_queryset.filter(treasury_account__federal_account__main_account_code=value)
+                or_queryset |= or_queryset.filter(
+                    treasury_account__in=alt_set.filter(
+                        treasury_account__federal_account__main_account_code=value
+                    ).values_list('treasury_account', flat=True))
             else:
-                or_queryset = queryset.filter(treasury_account__federal_account__main_account_code=value)
+                or_queryset = queryset.filter(
+                    treasury_account__in=alt_set.filter(
+                        treasury_account__federal_account__main_account_code=value
+                    ).values_list('treasury_account', flat=True))
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -59,9 +73,13 @@ def spending_filter(alt_set, queryset, filters, _type):
         elif key == 'program_activity':
             or_queryset = None
             if or_queryset:
-                or_queryset |= or_queryset.filter(program_activity__program_activity_code=value)
+                or_queryset |= or_queryset.filter(
+                    program_activity__in=alt_set.filter(
+                        program_activity__program_activity_code=value).values_list('program_activity', flat=True))
             else:
-                or_queryset = queryset.filter(program_activity__program_activity_code=value)
+                or_queryset = queryset.filter(
+                    program_activity__in=alt_set.filter(
+                        program_activity__program_activity_code=value).values_list('program_activity', flat=True))
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -69,9 +87,13 @@ def spending_filter(alt_set, queryset, filters, _type):
         elif key == 'object_class':
             or_queryset = None
             if or_queryset:
-                or_queryset |= or_queryset.filter(object_class__major_object_class=value)
+                or_queryset |= or_queryset.filter(
+                    object_class__in=alt_set.filter(
+                        object_class__major_object_class=value).values_list('object_class', flat=True))
             else:
-                or_queryset = queryset.filter(object_class__major_object_class=value)
+                or_queryset = queryset.filter(
+                    object_class__in=alt_set.filter(
+                        object_class__major_object_class=value).values_list('object_class', flat=True))
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -82,12 +104,12 @@ def spending_filter(alt_set, queryset, filters, _type):
                 or_queryset |= or_queryset.filter(
                     treasury_account__in=alt_set.filter(
                         award__in=Award.objects.all().filter(
-                           recipient__recipient_unique_id=value)).values_list('treasury_account_id', flat=True))
+                           recipient__recipient_unique_id=value)).values_list('treasury_account', flat=True))
             else:
                 or_queryset = queryset.filter(
                     treasury_account__in=alt_set.filter(
                         award__in=Award.objects.all().filter(
-                           recipient__recipient_unique_id=value)).values_list('treasury_account_id', flat=True))
+                           recipient__recipient_unique_id=value)).values_list('treasury_account', flat=True))
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -97,13 +119,11 @@ def spending_filter(alt_set, queryset, filters, _type):
             if or_queryset:
                 or_queryset |= or_queryset.filter(
                     treasury_account__in=alt_set.filter(
-                        award__in=Award.objects.all().filter(
-                           piid=value)).values_list('treasury_account_id', flat=True))
+                        award__piid=value).values_list('treasury_account', flat=True))
             else:
                 or_queryset = queryset.filter(
                     treasury_account__in=alt_set.filter(
-                        award__in=Award.objects.all().filter(
-                           piid=value)).values_list('treasury_account_id', flat=True))
+                        award__piid=value).values_list('treasury_account', flat=True))
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -113,13 +133,11 @@ def spending_filter(alt_set, queryset, filters, _type):
             if or_queryset:
                 or_queryset |= or_queryset.filter(
                     treasury_account__in=alt_set.filter(
-                        award__in=Award.objects.all().filter(
-                           fain=value)).values_list('treasury_account_id', flat=True))
+                        award__fain=value).values_list('treasury_account', flat=True))
             else:
                 or_queryset = queryset.filter(
                     treasury_account__in=alt_set.filter(
-                        award__in=Award.objects.all().filter(
-                           fain=value)).values_list('treasury_account_id', flat=True))
+                        award__fain=value).values_list('treasury_account', flat=True))
             if or_queryset is not None:
                 queryset &= or_queryset
 
@@ -129,10 +147,14 @@ def spending_filter(alt_set, queryset, filters, _type):
             try:
                 if or_queryset:
                     or_queryset |= or_queryset.filter(
-                        treasury_account__awarding_toptier_agency__toptier_agency_id=value)
+                        treasury_account__in=alt_set.filter(
+                            treasury_account_id__awarding_toptier_agency__toptier_agency_id=value
+                        ).values_list('treasury_account', flat=True))
                 else:
                     or_queryset = queryset.filter(
-                        treasury_account__awarding_toptier_agency__toptier_agency_id=value)
+                        treasury_account__in=alt_set.filter(
+                            treasury_account_id__awarding_toptier_agency__toptier_agency_id=value
+                        ).values_list('treasury_account', flat=True))
                 if or_queryset is not None:
                     queryset &= or_queryset
             except urllib.error.HTTPError:
@@ -146,9 +168,15 @@ def spending_filter(alt_set, queryset, filters, _type):
             or_queryset = None
             try:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(treasury_account__awarding_toptier_agency__cgac_code=value)
+                    or_queryset |= or_queryset.filter(
+                        treasury_account__in=alt_set.filter(
+                            treasury_account_id__awarding_toptier_agency__cgac_code=value
+                        ).values_list('treasury_account', flat=True))
                 else:
-                    or_queryset = queryset.filter(treasury_account__awarding_toptier_agency__cgac_code=value)
+                    or_queryset = queryset.filter(
+                        treasury_account__in=alt_set.filter(
+                            treasury_account_id__awarding_toptier_agency__cgac_code=value
+                        ).values_list('treasury_account', flat=True))
                 if or_queryset is not None:
                     queryset &= or_queryset
             except urllib.error.HTTPError:
@@ -164,15 +192,13 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_queryset:
                     or_queryset |= or_queryset.filter(
                         treasury_account__in=alt_set.filter(
-                            award__in=Award.objects.all().filter(
-                                awarding_agency__subtier_agency__subtier_code=value)
-                        ).values_list('treasury_account_id', flat=True))
+                            award__awarding_agency__subtier_agency__subtier_code=value
+                        ).values_list('treasury_account', flat=True))
                 else:
                     or_queryset = queryset.filter(
                         treasury_account__in=alt_set.filter(
-                            award__in=Award.objects.all().filter(
-                                awarding_agency__subtier_agency__subtier_code=value)
-                        ).values_list('treasury_account_id', flat=True))
+                            award__awarding_agency__subtier_agency__subtier_code=value
+                        ).values_list('treasury_account', flat=True))
                 if or_queryset is not None:
                     queryset &= or_queryset
             except urllib.error.HTTPError:
