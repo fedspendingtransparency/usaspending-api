@@ -415,7 +415,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         json_request = request.data
         fields = json_request.get('fields', None)
         filters = json_request.get('filters', None)
-        sort = json_request.get('sort', "asc")
+        order = json_request.get('order', "asc")
         limit = json_request.get('limit', 10)
         page = json_request.get('page', 1)
 
@@ -425,11 +425,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raise InvalidParameterException('Missing one or more required request parameters: filters')
         if "award_type_codes" not in filters:
             raise InvalidParameterException('Missing one or more required request parameters: filters["award_type_codes"]')
-        if sort not in ["asc", "desc"]:
+        if order not in ["asc", "desc"]:
             raise InvalidParameterException('Invalid value for sort: {}'.format(sort))
 
         # defaulting order to the first field provided
-        order = json_request.get('order', fields[0])
+        sort = json_request.get('sort', fields[0])
 
         # build sql query filters
         queryset = award_filter(filters)
