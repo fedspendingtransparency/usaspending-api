@@ -2,6 +2,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from collections import OrderedDict
+from functools import total_ordering
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
@@ -410,6 +411,15 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
 class SpendingByAwardVisualizationViewSet(APIView):
 
+    @total_ordering
+    class MinType(object):
+        def __le__(self, other):
+            return True
+
+        def __eq__(self, other):
+            return (self is other)
+    Min = MinType()
+
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
@@ -426,10 +436,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if "award_type_codes" not in filters:
             raise InvalidParameterException('Missing one or more required request parameters: filters["award_type_codes"]')
         if order not in ["asc", "desc"]:
-            raise InvalidParameterException('Invalid value for sort: {}'.format(sort))
+            raise InvalidParameterException('Invalid value for order: {}'.format(order))
 
-        # defaulting order to the first field provided
         sort = json_request.get('sort', fields[0])
+        if sort not in fields:
+            raise InvalidParameterException('Sort value not found in fields: {}'.format(sort))
 
         # build sql query filters
         queryset = award_filter(filters)
@@ -471,8 +482,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         award_prop = None
                     row[field] = award_prop
             results.append(row)
-        results = get_pagination(results, limit, page)
-        response["results"] = sorted(results, key=lambda result: result[sort], reverse=(order=="asc"))
+        sorted_results = sorted(results, key=lambda result: self.Min if result[sort] is None else result[sort],
+                                reverse=(order == "desc"))
+        response["results"] = get_pagination(sorted_results, limit, page)
         return Response(response)
 
 
