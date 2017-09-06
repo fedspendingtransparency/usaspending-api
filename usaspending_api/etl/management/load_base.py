@@ -14,7 +14,8 @@ from django.conf import settings
 from django.core.cache import caches
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
-from django.db import connections
+from django.db import connection, connections, utils
+from django.core.cache import caches
 
 from usaspending_api.awards.models import (
     Award,
@@ -54,6 +55,13 @@ class Command(BaseCommand):
             default=False,
             help='Runs the submission loader in test mode and uses stored data rather than pulling from a database'
         )
+        parser.add_argument(
+            '--noclean',
+            action='store_true',
+            dest='noclean',
+            default=False,
+            help='Skips the cleanup step to update model description fields'
+        )
 
     def handle(self, *args, **options):
         awards_cache.clear()
@@ -71,18 +79,19 @@ class Command(BaseCommand):
             db_cursor = PhonyCursor()
 
         self.handle_loading(db_cursor=db_cursor, *args, **options)
-        self.post_load_cleanup()
 
-    def post_load_cleanup(self):
-        """Global cleanup/post-load tasks not specific to a submission"""
+        if not options['noclean']:
+            # TODO: If this is slow, add ID limiting as below
+            logger.info('Updating model description fields...')
+            update_model_description_fields()
 
-        # 1. Update the descriptions TODO: If this is slow, add ID limiting as above
-        update_model_description_fields()
-        # 2. Update awards to reflect their latest associated txn info
+        logger.info('Updating awards to reflect their latest associated transaction info...')
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
-        # 3. Update contract-specific award fields to reflect latest txn info
+
+        logger.info('Updating contract-specific awards to reflect their latest transaction info...')
         update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
-        # 4. Update the category variable
+
+        logger.info('Updating award category variables...')
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
 

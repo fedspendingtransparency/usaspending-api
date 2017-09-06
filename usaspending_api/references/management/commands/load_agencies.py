@@ -49,6 +49,7 @@ class Command(BaseCommand):
                 for row in reader:
                     fpds_code = row.get('FPDS DEPARTMENT ID', '')
                     cgac_code = row.get('CGAC AGENCY CODE', '')
+                    frec_code = row.get('FREC', '')
                     department_name = row.get('AGENCY NAME', '')
                     department_abbr = row.get('AGENCY ABBREVIATION', '')
                     subtier_name = row.get('SUBTIER NAME', '')
@@ -60,19 +61,23 @@ class Command(BaseCommand):
 
                     toptier_agency = None
                     subtier_agency = None
+                    toptier_flag = False
 
                     # Toptier agency
                     # First, see if we have a toptier agency that matches our fpds and cgac codes
                     # We use only these codes here to make sure we are idempotent with previous
                     # versions of this agency loader
-                    toptier_agency, created = ToptierAgency.objects.get_or_create(cgac_code=cgac_code, fpds_code=fpds_code)
-
-                    toptier_flag = (subtier_name == department_name)
-
-                    # Set or update the department name and abbreviation
-                    toptier_agency.name = department_name
-                    toptier_agency.abbreviation = department_abbr
-
+                    if (frec_code is not None) & (subtier_name != department_name):
+                        toptier_flag = True
+                        toptier_agency, created = ToptierAgency.objects.get_or_create(cgac_code=frec_code, fpds_code=fpds_code)
+                        toptier_agency.name = subtier_name
+                        toptier_agency.abbreviation = subtier_abbr
+                    else:
+                        toptier_flag = (subtier_name == department_name)
+                        toptier_agency, created = ToptierAgency.objects.get_or_create(cgac_code=cgac_code, fpds_code=fpds_code)
+                        # Set or update the department name and abbreviation
+                        toptier_agency.name = department_name
+                        toptier_agency.abbreviation = department_abbr
                     if toptier_flag:
                         toptier_agency.mission = mission
                         toptier_agency.website = website

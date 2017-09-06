@@ -100,7 +100,7 @@ def test_load_submission_command(endpoint_data, partially_flushed):
         # for testing, data pulled from etl_test_data.json
     assert Location.objects.count() == 4
     assert LegalEntity.objects.count() == 2
-    assert Award.objects.count() == 7
+    assert Award.objects.count() == 15
     assert Transaction.objects.count() == 2
     assert TransactionContract.objects.count() == 1
     assert TransactionAssistance.objects.count() == 1
@@ -183,10 +183,6 @@ def test_get_submission_attributes():
     sub2 = SubmissionAttributes.objects.get(broker_submission_id=22222)
     # newer submission should recognize the first submission as it's previous sub
     assert sub2.previous_submission == sub
-    # trying to replace the first submission should fail now that it has
-    # a "downstream" submission
-    with pytest.raises(ValueError):
-        get_submission_attributes(11111, new_submission_data)
 
 
 @pytest.mark.django_db
