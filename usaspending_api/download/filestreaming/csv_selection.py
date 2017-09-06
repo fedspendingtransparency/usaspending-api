@@ -19,6 +19,7 @@ def write_csv(download_job, file_name, upload_name, header, body):
     s3_handler = S3Handler()
 
     download_job.job_status_id = JOB_STATUS_DICT['running']
+    download_job.number_of_rows = 0
     download_job.save()
 
     try:
@@ -34,9 +35,11 @@ def write_csv(download_job, file_name, upload_name, header, body):
 
         logger.debug(message)
 
+        import pdb; pdb.set_trace()
         with csv_writer as writer:
             for line in body:
                 writer.write(line)
+                download_job.number_of_rows += 1
             writer.finish_batch()
 
     except:
@@ -45,9 +48,35 @@ def write_csv(download_job, file_name, upload_name, header, body):
         download_job.error_message = 'An exception was raised while attempting to write the CSV'
     else:
         download_job.number_of_columns = len(header)
-        download_job.number_of_rows = len(body)
+        # download_job.number_of_rows = len(body)  except when body is a file
         download_job.file_size = os.path.getsize(file_name) if settings.IS_LOCAL else \
             s3_handler.get_file_size(file_name)
         download_job.job_status_id = JOB_STATUS_DICT['finished']
 
     download_job.save()
+
+
+def write_csv_from_querysets(download_job, file_name, upload_name, querysets):
+    """Derive the relevant location and write a CSV to it.
+    :return: the final file name (complete with prefix)"""
+
+    offset = 0
+    header = []
+    offsets = [0, ]
+    widths = []
+
+    for (idx, queryset) in enumerate(querysets):
+        field_names = [q.name for q in queryset.model._meta.fields]
+        widths.append(len(field_names))
+        header.extend(field_names)
+        offsets.append(offset + len(field_names))
+        offset += len(field_names)
+
+    def row_emitter():
+        for (idx, queryset) in enumerate(querysets):
+            leading_empty = [None, ] * offsets[idx]
+            trailing_empty = [None, ] * (len(header) - offsets[idx] - widths[idx])
+            for row in queryset.values():
+                yield leading_empty + list(row.values()) + trailing_empty
+
+    return write_csv(download_job, file_name, upload_name, header=header, body=row_emitter())
