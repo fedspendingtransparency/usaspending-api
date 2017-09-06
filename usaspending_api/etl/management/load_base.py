@@ -84,13 +84,13 @@ class Command(BaseCommand):
             # TODO: If this is slow, add ID limiting as below
             logger.info('Updating model description fields...')
             update_model_description_fields()
-            
+
         logger.info('Updating awards to reflect their latest associated transaction info...')
         update_awards(tuple(AWARD_UPDATE_ID_LIST))
 
         logger.info('Updating contract-specific awards to reflect their latest transaction info...')
         update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
-        
+
         logger.info('Updating award category variables...')
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 

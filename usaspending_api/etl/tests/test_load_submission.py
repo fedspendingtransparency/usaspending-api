@@ -184,6 +184,7 @@ def test_get_submission_attributes():
     # newer submission should recognize the first submission as it's previous sub
     assert sub2.previous_submission == sub
 
+
 @pytest.mark.django_db
 def test_load_submission_command_program_activity_uniqueness(endpoint_data, partially_flushed):
     """

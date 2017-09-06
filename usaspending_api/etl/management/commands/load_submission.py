@@ -409,6 +409,7 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
 
     logger.info('Skipped a total of {} TAS rows for File A'.format(total_tas_skipped))
 
+
 def get_file_b(submission_attributes, db_cursor):
     """
     Get broker File B data for a specific submission.

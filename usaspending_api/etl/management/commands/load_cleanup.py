@@ -23,9 +23,9 @@ class Command(BaseCommand):
 
         logger.info('SKIPPING - Done in load_base - Updating awards to reflect their latest associated transaction info...')
         # update_awards()
-        
+
         logger.info('SKIPPING - Done in load_base - Updating contract-specific awards to reflect their latest transaction info...')
         # update_contract_awards()
-        
+
         logger.info('SKIPPING - Done in load_base - Updating award category variables...')
         # update_award_categories()
