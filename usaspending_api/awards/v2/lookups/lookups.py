@@ -1,3 +1,6 @@
+# Note: For each of the TODO's below, we need to verify that the mapping is correct from the popular name to
+# what it's referred to in the database
+
 transaction_d1_columns = {
     "Award ID": "piid",  # DONE
     "Modification Number": "transaction__modification_number",  # DONE
@@ -581,7 +584,6 @@ transaction_columns = [
     "Historically Underutilized Business Zone HUBZone Firm",
     "SBA Certified 8a Joint Venture",
     "Last Modified Date",
-
     "URI",
     "SAI Number",
     "Federal Action Obligation",
