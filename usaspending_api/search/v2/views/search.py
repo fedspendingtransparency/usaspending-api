@@ -130,7 +130,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     if "awarding_agency__toptier_agency__name" in trans:
                         ttname = trans["awarding_agency__toptier_agency__name"]
                         ttabv = trans["awarding_agency__toptier_agency__abbreviation"]
-                        ttob = trans['federal_action_obligation']
+                        ttob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
                         if ttname in name_dict:
                             name_dict[ttname]["aggregated_amount"] += ttob
                         else:
@@ -141,7 +141,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     if "awarding_agency__subtier_agency__name" in trans:
                         stname = trans["awarding_agency__subtier_agency__name"]
                         stabv = trans["awarding_agency__subtier_agency__abbreviation"]
-                        stob = trans['federal_action_obligation']
+                        stob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
                         if stname in name_dict:
                             name_dict[stname]["aggregated_amount"] += stob
                         else:
@@ -151,7 +151,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     if "awarding_agency__office_agency__name" in trans:
                         oname = trans["awarding_agency__office_agency__name"]
                         oabv = trans["awarding_agency__office_agency__abbreviation"]
-                        oob = trans['federal_action_obligation']
+                        oob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
                         if oname in name_dict:
                             name_dict[oname]["aggregated_amount"] += oob
                         else:
@@ -192,7 +192,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     if "funding_agency__toptier_agency__name" in trans:
                         ttname = trans["funding_agency__toptier_agency__name"]
                         ttabv = trans["funding_agency__toptier_agency__abbreviation"]
-                        ttob = trans['federal_action_obligation']
+                        ttob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
                         if ttname in name_dict:
                             name_dict[ttname]["aggregated_amount"] += ttob
                         else:
@@ -203,7 +203,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     if "funding_agency__subtier_agency__name" in trans:
                         stname = trans["funding_agency__subtier_agency__name"]
                         stabv = trans["funding_agency__subtier_agency__abbreviation"]
-                        stob = trans['federal_action_obligation']
+                        stob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
                         if stname in name_dict:
                             name_dict[stname]["aggregated_amount"] += stob
                         else:
@@ -213,7 +213,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     if "funding_agency__office_agency__name" in trans:
                         oname = trans["funding_agency__office_agency__name"]
                         oabv = trans["funding_agency__office_agency__abbreviation"]
-                        oob = trans['federal_action_obligation']
+                        oob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
                         if oname in name_dict:
                             name_dict[oname]["aggregated_amount"] += oob
                         else:
