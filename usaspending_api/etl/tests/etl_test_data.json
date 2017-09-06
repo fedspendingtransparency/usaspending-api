@@ -4420,7 +4420,7 @@
       "count": 1
     }
   ],
-  "SELECT * FROM tas_lookup WHERE (financial_indicator2 <> 'F' OR financial_indicator2 IS NULL) and account_num = %s": [
+  "SELECT * FROM tas_lookup WHERE (financial_indicator2 <> 'F' OR financial_indicator2 IS NULL) AND account_num = %s": [
     {
       "sub_account_code": "000",
       "main_account_code": "0100",
