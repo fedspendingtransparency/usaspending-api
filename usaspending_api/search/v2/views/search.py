@@ -502,27 +502,23 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         queryset = award_filter(filters)
 
         # define what values are needed in the sql query
-        # queryset = queryset.values('action_date', 'federal_action_obligation')
+        queryset = queryset.values("latest_transaction__type")
 
         # build response
         response = {'results': {}}
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
         for award in queryset:
-            if hasattr(award, "latest_transaction") and hasattr(award.latest_transaction, "contract_data") and \
-                    hasattr(award.latest_transaction, 'type'):
-                if award.latest_transaction.type in contract_type_mapping:
-                    results["contracts"] += 1
-            elif hasattr(award, "latest_transaction") and hasattr(award.latest_transaction, "assistance_data") and \
-                    hasattr(award.latest_transaction, 'type'):
-                if award.latest_transaction.type in grant_type_mapping:  # Grants
-                    results["grants"] += 1
-                elif award.latest_transaction.type in direct_payment_type_mapping:  # Direct Payment
-                    results["direct_payments"] += 1
-                elif award.latest_transaction.type in loan_type_mapping:  # Loans
-                    results["loans"] += 1
-                elif award.latest_transaction.type in other_type_mapping:  # Other
-                    results["other"] += 1
+            if (award["latest_transaction__type"] in contract_type_mapping):
+                results["contracts"] += 1
+            elif (award["latest_transaction__type"] in grant_type_mapping):  # Grants
+                results["grants"] += 1
+            elif award["latest_transaction__type"] in direct_payment_type_mapping:  # Direct Payment
+                results["direct_payments"] += 1
+            elif award["latest_transaction__type"] in loan_type_mapping:  # Loans
+                results["loans"] += 1
+            elif award["latest_transaction__type"] in other_type_mapping:  # Other
+                results["other"] += 1
 
         response["results"] = results
         return Response(response)
