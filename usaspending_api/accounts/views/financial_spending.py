@@ -1,4 +1,4 @@
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Case, Value, When
 from usaspending_api.accounts.serializers import (ObjectClassFinancialSpendingSerializer,
                                                   MinorObjectClassFinancialSpendingSerializer)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
@@ -38,13 +38,18 @@ class ObjectClassFinancialSpendingViewSet(DetailViewSet):
             submission__reporting_fiscal_year=fiscal_year,
             treasury_account__funding_toptier_agency=toptier_agency
         )
+        # Special case: major object class name for class 00 should be reported
+        # as Unknown Object Type, overriding actual value in database
         queryset = queryset.annotate(
-            major_object_class_name=F('object_class__major_object_class_name'),
+            major_object_class_name=Case(
+                When(object_class__major_object_class='00', then=Value('Unknown Object Type')),
+                default='object_class__major_object_class_name'),
             major_object_class_code=F('object_class__major_object_class'))
         # sum obligated_mount by object class
         queryset = queryset.values('major_object_class_name', 'major_object_class_code').annotate(
             obligated_amount=Sum('obligations_incurred_by_program_object_class_cpe'))
         # get minor object class vars
+
         return queryset
 
 

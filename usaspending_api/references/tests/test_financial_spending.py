@@ -37,10 +37,13 @@ def financial_spending_data(db):
                obligations_incurred_by_program_object_class_cpe=2000, submission=submission_2, treasury_account=tas1,
                final_of_fy=True)
 
-    # not reported by api Object
+    # 2018, not reported by 2017 api call
+    object_class_0 = mommy.make('references.ObjectClass', major_object_class="00",
+                                major_object_class_name="Zero object type, override me",
+                                object_class="ocCode2", object_class_name="ocName2")
     tas3 = mommy.make('accounts.TreasuryAppropriationAccount', funding_toptier_agency=ttagency1)
     submission_3 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2018)
-    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=object_class_1,
+    mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', object_class=object_class_0,
                obligations_incurred_by_program_object_class_cpe=1000, submission=submission_3, treasury_account=tas3,
                final_of_fy=True)
 
@@ -70,3 +73,18 @@ def test_award_type_endpoint(client, financial_spending_data):
     # check for bad request due to missing params
     resp = client.get('/api/v2/financial_spending/object_class/')
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_award_type_endpoint_no_object_class(client, financial_spending_data):
+    """Test the award_type endpoint in the major object class 00 special case.
+
+    Object class 00 should be reported as 'Unknown Object Type' despite
+    nme in database."""
+
+    resp = client.get('/api/v2/financial_spending/major_object_class/?fiscal_year=2018&funding_agency_id=1')
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data['results']) == 1
+
+    # verify that object class name has been overriden
+    assert resp.data['results'][0]['major_object_class_name'] == "Unknown Object Type"
