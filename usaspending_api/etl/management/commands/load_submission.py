@@ -403,6 +403,11 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
 
+    total_tas_skipped = 0
+    for key in skipped_tas:
+        total_tas_skipped += skipped_tas[key]['count']
+
+    logger.info('Skipped a total of {} TAS rows for File A'.format(total_tas_skipped))
 
 def get_file_b(submission_attributes, db_cursor):
     """
@@ -588,6 +593,12 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
 
+    total_tas_skipped = 0
+    for key in skipped_tas:
+        total_tas_skipped += skipped_tas[key]['count']
+
+    logger.info('Skipped a total of {} TAS rows for File B'.format(total_tas_skipped))
+
 
 def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     """
@@ -673,3 +684,9 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
+
+    total_tas_skipped = 0
+    for key in skipped_tas:
+        total_tas_skipped += skipped_tas[key]['count']
+
+    logger.info('Skipped a total of {} TAS rows for File C'.format(total_tas_skipped))
