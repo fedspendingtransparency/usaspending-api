@@ -26,7 +26,7 @@ class Command(BaseCommand):
     help = "Checks what TASs are in Broker but not in Data Store"
 
     @staticmethod
-    def update_transaction_assistance():
+    def update_transaction_assistance(fiscal_year):
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -72,7 +72,7 @@ class Command(BaseCommand):
             "description": "award_description",
         }
 
-        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker').values()[:1]
+        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker').values()
 
         for transaction_assistance in all_transaction_assistance:
 
@@ -156,7 +156,7 @@ class Command(BaseCommand):
 
 
     @staticmethod
-    def update_transaction_contract():
+    def update_transaction_contract(fiscal_year):
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -191,7 +191,7 @@ class Command(BaseCommand):
             "description": "award_description"
         }
 
-        all_transaction_contract = TransactionContractNew.objects.using('data_broker').values()[:1]
+        all_transaction_contract = TransactionContractNew.objects.using('data_broker').values()
 
         for transaction_contract in all_transaction_contract:
             legal_entity_location, created = get_or_create_location(
@@ -272,17 +272,47 @@ class Command(BaseCommand):
             transaction_map.transaction_contract_id = transaction_contract['detached_award_procurement_id']
             transaction_map.save()
 
+    def add_arguments(self, parser):
+        
+        parser.add_argument(
+            '--fiscal_year',
+            dest="fiscal_year",
+            nargs='+',
+            type=int,
+            help="Year for which to run the historical load"
+        )
+        
+        parser.add_argument(
+            '--assistance',
+            action='store_true',
+            dest='assistance',
+            default=False,
+            help='Runs the historical loader only for Award Financial Assistance (Assistance) data'
+        )
+        
+        parser.add_argument(
+            '--contracts',
+            action='store_true',
+            dest='contracts',
+            default=False,
+            help='Runs the historical loader only for Award Procurement (Contract) data'
+        )
+            
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
-        logger.info('Starting D1 historical data load...')
-        start = timeit.default_timer()
-        self.update_transaction_contract()
-        end = timeit.default_timer()
-        logger.info('Finished D1 historical data load in ' + str(end - start) + ' seconds')
+        fiscal_year = options.get('fiscal_year', 2017)
+        
+        if not options['assistance']:
+            logger.info('Starting D1 historical data load...')
+            start = timeit.default_timer()
+            self.update_transaction_contract(fiscal_year=fiscal_year)
+            end = timeit.default_timer()
+            logger.info('Finished D1 historical data load in ' + str(end - start) + ' seconds')
 
-        logger.info('Starting D2 historical data load...')
-        start = timeit.default_timer()
-        self.update_transaction_assistance()
-        end = timeit.default_timer()
-        logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
+        if not options['contracts']:
+            logger.info('Starting D2 historical data load...')
+            start = timeit.default_timer()
+            self.update_transaction_assistance(fiscal_year=fiscal_year)
+            end = timeit.default_timer()
+            logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
