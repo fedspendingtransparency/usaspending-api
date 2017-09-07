@@ -56,7 +56,6 @@ def test_spending_by_award_type_success(client, budget_function_data):
         '/api/v2/search/spending_by_award_type_count/',
         content_type='application/json',
         data=json.dumps({
-            "fields": ["id", "piid", "fain", "uri", "recipient__recipient_name"],
             "filters": {
                 "award_type_codes": ["A", "B", "C"]
             }
@@ -116,7 +115,6 @@ def test_spending_by_award_type_success(client, budget_function_data):
         '/api/v2/search/spending_by_award_type',
         content_type='application/json',
         data=json.dumps({
-            "fields": ["id", "piid", "fain", "uri", "recipient__recipient_name"],
             "filters": all_filters
         }))
     # test for similar matches (with no duplicates)
