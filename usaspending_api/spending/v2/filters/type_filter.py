@@ -47,10 +47,13 @@ def type_filter(_type, filters):
             submission__reporting_fiscal_quarter=fiscal_quarter).annotate(
             amount=Sum('obligations_incurred_by_program_object_class_cpe'))
 
-    # Annotate and get explorer _type results
-    exp = Explorer(alt_set, queryset)
+    # Apply filters to queryset results
+    alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
 
     if _type == 'recipient' or _type == 'award' or _type == 'award_category' or _type == 'agency_sub':
+        # Annotate and get explorer _type filtered results
+        exp = Explorer(alt_set, queryset)
+
         if _type == 'recipient':
             alt_set = exp.recipient()
         if _type == 'award':
@@ -60,8 +63,6 @@ def type_filter(_type, filters):
         if _type == 'agency_sub':
             alt_set = exp.awarding_sub_tier_agency()
 
-        # Apply filters to queryset results
-        alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
         # Total value of filtered results
         total = alt_set.aggregate(Sum('transaction_obligated_amount'))
         for key, value in total.items():
@@ -74,6 +75,9 @@ def type_filter(_type, filters):
         }
 
     else:
+        # Annotate and get explorer _type filtered results
+        exp = Explorer(alt_set, queryset)
+
         if _type == 'budget_function':
             queryset = exp.budget_function()
         if _type == 'budget_subfunction':
@@ -89,8 +93,6 @@ def type_filter(_type, filters):
         if _type == 'agency_type':
             queryset = exp.awarding_top_tier_agency()
 
-        # Apply filters to queryset results
-        alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
         # Total value of filtered results
         total = queryset.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
         for key, value in total.items():
