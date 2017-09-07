@@ -55,7 +55,8 @@ def generate_fiscal_month(date):
 def get_pagination(results, limit, page, benchmarks=False):
     if benchmarks:
         start_pagination = time.time()
-    page_metadata = {"next": None, "previous": None, "hasNext": False, "hasPrevious": False}
+    page_metadata = {"page": page, "count": len(results), "next": None, "previous": None, "hasNext": False,
+                     "hasPrevious": False}
     if limit < 1 or page < 1:
         return [], page_metadata
     page_metadata["hasNext"] = (limit*page < len(results))

@@ -171,7 +171,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
             results, page_metadata = get_pagination(results, limit, page)
-            response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results,
+            response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
                         "page_metadata": page_metadata}
             return Response(response)
 
@@ -235,7 +235,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
             results, page_metadata = get_pagination(results, limit, page)
-            response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results,
+            response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
                         "page_metadata": page_metadata}
             return Response(response)
         elif category == "recipient":
@@ -269,7 +269,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                     "aggregated_amount": value["aggregated_amount"]})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
                 results, page_metadata = get_pagination(results, limit, page)
-                response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results,
+                response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
                             "page_metadata": page_metadata}
                 return Response(response)
 
@@ -295,7 +295,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                     "aggregated_amount": value["aggregated_amount"]})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
                 results, page_metadata = get_pagination(results, limit, page)
-                response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results,
+                response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
                             "page_metadata": page_metadata}
                 return Response(response)
             else:  # recipient_type
@@ -332,8 +332,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
             results, page_metadata = get_pagination(results, limit, page)
-            response = {'category': category, 'limit': limit, 'page': page,
-                        'results': results, "page_metadata": page_metadata}
+            response = {'category': category, 'limit': limit, 'results': results, "page_metadata": page_metadata}
             return Response(response)
 
         elif category == "industry_codes":  # industry_codes
@@ -359,8 +358,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                     "aggregated_amount": value})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
                 results, page_metadata = get_pagination(results, limit, page)
-                response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
-                            'results': results, "page_metadata": page_metadata}
+                response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                            "page_metadata": page_metadata}
                 return Response(response)
 
             elif scope == "naics":
@@ -382,8 +381,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                     "naics_description": value["naics_description"]})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
                 results, page_metadata = get_pagination(results, limit, page)
-                response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
-                            'results': results, "page_metadata": page_metadata}
+                response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                            "page_metadata": page_metadata}
                 return Response(response)
 
             else:  # recipient_type
@@ -489,7 +488,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         queryset = award_filter(filters)
 
         # build response
-        response = {'limit': limit, 'page': page, 'results': []}
+        response = {'limit': limit, 'results': []}
         results = []
 
         for award in queryset:
