@@ -24,24 +24,24 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
-        group = json_request.get('group', None)
-        filters = json_request.get('filters', None)
+        group = json_request.get("group", None)
+        filters = json_request.get("filters", None)
 
         if group is None:
-            raise InvalidParameterException('Missing one or more required request parameters: group')
+            raise InvalidParameterException("Missing one or more required request parameters: group")
         if filters is None:
-            raise InvalidParameterException('Missing one or more required request parameters: filters')
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
         potential_groups = ["quarter", "fiscal_year", "month", "fy", "q", "m"]
         if group not in potential_groups:
-            raise InvalidParameterException('group does not have a valid value')
+            raise InvalidParameterException("group does not have a valid value")
 
         # build sql query filters
         queryset = transaction_filter(filters)
         # define what values are needed in the sql query
-        queryset = queryset.values('action_date', 'federal_action_obligation')
+        queryset = queryset.values("action_date", "federal_action_obligation")
 
         # build response
-        response = {'group': group, 'results': []}
+        response = {"group": group, "results": []}
 
         # filter queryset by time
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
@@ -52,7 +52,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             if group == "fy" or group == "fiscal_year":
                 fy = generate_fiscal_year(trans["action_date"])
                 key = {"fiscal_year": str(fy)}
-            elif group == "m" or group == 'month':
+            elif group == "m" or group == "month":
                 fy = generate_fiscal_year(trans["action_date"])
                 m = generate_fiscal_month(trans["action_date"])
                 key = {"fiscal_year": str(fy), "month": str(m)}
@@ -81,7 +81,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             key_dict = ast.literal_eval(key)
             result = {"time_period": key_dict, "aggregated_amount": float(value)}
             results.append(result)
-        response['results'] = results
+        response["results"] = results
 
         return Response(response)
 
@@ -91,21 +91,21 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
-        category = json_request.get('category', None)
-        scope = json_request.get('scope', None)
-        filters = json_request.get('filters', None)
-        limit = json_request.get('limit', 10)
-        page = json_request.get('page', 1)
+        category = json_request.get("category", None)
+        scope = json_request.get("scope", None)
+        filters = json_request.get("filters", None)
+        limit = json_request.get("limit", 10)
+        page = json_request.get("page", 1)
 
         if category is None:
-            raise InvalidParameterException('Missing one or more required request parameters: category')
+            raise InvalidParameterException("Missing one or more required request parameters: category")
         potential_categories = ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"]
         if category not in potential_categories:
-            raise InvalidParameterException('Category does not have a valid value')
+            raise InvalidParameterException("Category does not have a valid value")
         if (scope is None) and (category != "cfda_programs"):
-            raise InvalidParameterException('Missing one or more required request parameters: scope')
+            raise InvalidParameterException("Missing one or more required request parameters: scope")
         if filters is None:
-            raise InvalidParameterException('Missing one or more required request parameters: filters')
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # filter queryset
         queryset = transaction_filter(filters)
@@ -115,35 +115,35 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # TODO: Add "offices" below for office_agency changes
             potential_scopes = ["agency", "subagency"]
             if scope not in potential_scopes:
-                raise InvalidParameterException('scope does not have a valid value')
+                raise InvalidParameterException("scope does not have a valid value")
             # filter the transactions by scope name
             name_dict = {}  # {ttname: {aggregated_amount: 1000, abbreviation: "tt"}
             # define what values are needed in the sql query
             # TODO: Comment back in for office_agency changes
-            queryset = queryset.values('awarding_agency__toptier_agency__name',
-                                       'awarding_agency__subtier_agency__name',
-                                       # 'awarding_agency__office_agency__name',
-                                       'awarding_agency__toptier_agency__abbreviation',
-                                       'awarding_agency__subtier_agency__abbreviation',
-                                       # 'awarding_agency__office_agency__abbreviation',
-                                       'federal_action_obligation')
-            if scope == 'agency':
+            queryset = queryset.values("awarding_agency__toptier_agency__name",
+                                       "awarding_agency__subtier_agency__name",
+                                       # "awarding_agency__office_agency__name",
+                                       "awarding_agency__toptier_agency__abbreviation",
+                                       "awarding_agency__subtier_agency__abbreviation",
+                                       # "awarding_agency__office_agency__abbreviation",
+                                       "federal_action_obligation")
+            if scope == "agency":
                 for trans in queryset:
                     if "awarding_agency__toptier_agency__name" in trans:
                         ttname = trans["awarding_agency__toptier_agency__name"]
                         ttabv = trans["awarding_agency__toptier_agency__abbreviation"]
-                        ttob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
+                        ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         if ttname in name_dict:
                             name_dict[ttname]["aggregated_amount"] += ttob
                         else:
                             name_dict[ttname] = {"aggregated_amount": ttob, "abbreviation": ttabv}
 
-            elif scope == 'subagency':
+            elif scope == "subagency":
                 for trans in queryset:
                     if "awarding_agency__subtier_agency__name" in trans:
                         stname = trans["awarding_agency__subtier_agency__name"]
                         stabv = trans["awarding_agency__subtier_agency__abbreviation"]
-                        stob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
+                        stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         if stname in name_dict:
                             name_dict[stname]["aggregated_amount"] += stob
                         else:
@@ -153,7 +153,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     if "awarding_agency__office_agency__name" in trans:
                         oname = trans["awarding_agency__office_agency__name"]
                         oabv = trans["awarding_agency__office_agency__abbreviation"]
-                        oob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
+                        oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         if oname in name_dict:
                             name_dict[oname]["aggregated_amount"] += oob
                         else:
@@ -171,7 +171,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
             results, page_metadata = get_pagination(results, limit, page)
-            response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+            response = {"category": category, "scope": scope, "limit": limit, "results": results,
                         "page_metadata": page_metadata}
             return Response(response)
 
@@ -179,35 +179,35 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # TODO: Add "offices" below for office_agency changes
             potential_scopes = ["agency", "subagency"]
             if scope not in potential_scopes:
-                raise InvalidParameterException('scope does not have a valid value')
+                raise InvalidParameterException("scope does not have a valid value")
             # filter the transactions by scope name
             name_dict = {}  # {ttname: {aggregated_amount: 1000, abbreviation: "tt"}
             # define what values are needed in the sql query
             # TODO: Comment back in for office_agency changes
-            queryset = queryset.values('funding_agency__toptier_agency__name',
-                                       'funding_agency__subtier_agency__name',
-                                       # 'funding_agency__office_agency__name',
-                                       'funding_agency__toptier_agency__abbreviation',
-                                       'funding_agency__subtier_agency__abbreviation',
-                                       # 'funding_agency__office_agency__abbreviation',
-                                       'federal_action_obligation')
-            if scope == 'agency':
+            queryset = queryset.values("funding_agency__toptier_agency__name",
+                                       "funding_agency__subtier_agency__name",
+                                       # "funding_agency__office_agency__name",
+                                       "funding_agency__toptier_agency__abbreviation",
+                                       "funding_agency__subtier_agency__abbreviation",
+                                       # "funding_agency__office_agency__abbreviation",
+                                       "federal_action_obligation")
+            if scope == "agency":
                 for trans in queryset:
                     if "funding_agency__toptier_agency__name" in trans:
                         ttname = trans["funding_agency__toptier_agency__name"]
                         ttabv = trans["funding_agency__toptier_agency__abbreviation"]
-                        ttob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
+                        ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         if ttname in name_dict:
                             name_dict[ttname]["aggregated_amount"] += ttob
                         else:
                             name_dict[ttname] = {"aggregated_amount": ttob, "abbreviation": ttabv}
 
-            elif scope == 'subagency':
+            elif scope == "subagency":
                 for trans in queryset:
                     if "funding_agency__subtier_agency__name" in trans:
                         stname = trans["funding_agency__subtier_agency__name"]
                         stabv = trans["funding_agency__subtier_agency__abbreviation"]
-                        stob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
+                        stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         if stname in name_dict:
                             name_dict[stname]["aggregated_amount"] += stob
                         else:
@@ -217,7 +217,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     if "funding_agency__office_agency__name" in trans:
                         oname = trans["funding_agency__office_agency__name"]
                         oabv = trans["funding_agency__office_agency__abbreviation"]
-                        oob = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
+                        oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         if oname in name_dict:
                             name_dict[oname]["aggregated_amount"] += oob
                         else:
@@ -235,23 +235,23 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
             results, page_metadata = get_pagination(results, limit, page)
-            response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+            response = {"category": category, "scope": scope, "limit": limit, "results": results,
                         "page_metadata": page_metadata}
             return Response(response)
         elif category == "recipient":
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
             # define what values are needed in the sql query
-            queryset = queryset.values('federal_action_obligation',
-                                       'recipient',
-                                       'recipient__recipient_name',
-                                       'recipient__legal_entity_id',
-                                       'recipient__parent_recipient_unique_id')
+            queryset = queryset.values("federal_action_obligation",
+                                       "recipient",
+                                       "recipient__recipient_name",
+                                       "recipient__legal_entity_id",
+                                       "recipient__parent_recipient_unique_id")
             if scope == "duns":
                 for trans in queryset:
                     if "recipient" in trans:
                         r_name = trans["recipient__recipient_name"]
-                        r_obl = trans["federal_action_obligation"] if trans['federal_action_obligation'] else 0
+                        r_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         r_lei = trans["recipient__legal_entity_id"]
                         if r_name in name_dict:
                             name_dict[r_name]["aggregated_amount"] += r_obl
@@ -269,7 +269,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                     "aggregated_amount": value["aggregated_amount"]})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
                 results, page_metadata = get_pagination(results, limit, page)
-                response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
 
@@ -277,7 +277,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for trans in queryset:
                     if "recipient" in trans:
                         r_name = trans["recipient__recipient_name"]
-                        r_obl = trans["federal_action_obligation"] if trans['federal_action_obligation'] else 0
+                        r_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         r_prui = trans["recipient__parent_recipient_unique_id"]
                         if r_name in name_dict:
                             name_dict[r_name]["aggregated_amount"] += r_obl
@@ -295,27 +295,27 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                     "aggregated_amount": value["aggregated_amount"]})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
                 results, page_metadata = get_pagination(results, limit, page)
-                response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
             else:  # recipient_type
-                raise InvalidParameterException('recipient type is not yet implemented')
+                raise InvalidParameterException("recipient type is not yet implemented")
 
         elif category == "cfda_programs":
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
             # define what values are needed in the sql query
-            queryset = queryset.values('federal_action_obligation',
-                                       'assistance_data__cfda__program_title',
-                                       'assistance_data__cfda__popular_name',
-                                       'assistance_data__cfda__program_number')
+            queryset = queryset.values("federal_action_obligation",
+                                       "assistance_data__cfda__program_title",
+                                       "assistance_data__cfda__popular_name",
+                                       "assistance_data__cfda__program_number")
 
             for trans in queryset:
-                if 'assistance_data__cfda__program_number' in trans:
-                    cfda_program_number = trans['assistance_data__cfda__program_number']
+                if "assistance_data__cfda__program_number" in trans:
+                    cfda_program_number = trans["assistance_data__cfda__program_number"]
                     cfda_program_name = trans["assistance_data__cfda__popular_name"]
                     cfda_program_title = trans["assistance_data__cfda__program_title"]
-                    cfda_obl = trans["federal_action_obligation"] if trans['federal_action_obligation'] else 0
+                    cfda_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                     if cfda_program_number in name_dict:
                         name_dict[cfda_program_number]["aggregated_amount"] += cfda_obl
                     else:
@@ -332,21 +332,21 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
             results, page_metadata = get_pagination(results, limit, page)
-            response = {'category': category, 'limit': limit, 'results': results, "page_metadata": page_metadata}
+            response = {"category": category, "limit": limit, "results": results, "page_metadata": page_metadata}
             return Response(response)
 
         elif category == "industry_codes":  # industry_codes
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
             # define what values are needed in the sql query
-            queryset = queryset.values('federal_action_obligation', 'contract_data__product_or_service_code',
-                                       'contract_data__naics', 'contract_data__naics_description')
+            queryset = queryset.values("federal_action_obligation", "contract_data__product_or_service_code",
+                                       "contract_data__naics", "contract_data__naics_description")
 
             if scope == "psc":
                 for trans in queryset:
                     if "contract_data__product_or_service_code" in trans:
                         psc = trans["contract_data__product_or_service_code"]
-                        psc_obl = trans["federal_action_obligation"] if trans['federal_action_obligation'] else 0
+                        psc_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         if psc in name_dict:
                             name_dict[psc] += psc_obl
                         else:
@@ -358,16 +358,16 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                     "aggregated_amount": value})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
                 results, page_metadata = get_pagination(results, limit, page)
-                response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
 
             elif scope == "naics":
                 for trans in queryset:
-                    if 'contract_data__naics' in trans:
-                        naics = trans['contract_data__naics']
-                        naics_obl = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
-                        naics_desc = trans['contract_data__naics_description']
+                    if "contract_data__naics" in trans:
+                        naics = trans["contract_data__naics"]
+                        naics_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
+                        naics_desc = trans["contract_data__naics_description"]
                         if naics in name_dict:
                             name_dict[naics]["aggregated_amount"] += naics_obl
                         else:
@@ -381,12 +381,12 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                     "naics_description": value["naics_description"]})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
                 results, page_metadata = get_pagination(results, limit, page)
-                response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
 
             else:  # recipient_type
-                raise InvalidParameterException('recipient type is not yet implemented')
+                raise InvalidParameterException("recipient type is not yet implemented")
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):
@@ -394,27 +394,27 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
-        scope = json_request.get('scope', None)
-        filters = json_request.get('filters', None)
+        scope = json_request.get("scope", None)
+        filters = json_request.get("filters", None)
 
         if scope is None:
-            raise InvalidParameterException('Missing one or more required request parameters: scope')
+            raise InvalidParameterException("Missing one or more required request parameters: scope")
         if filters is None:
-            raise InvalidParameterException('Missing one or more required request parameters: filters')
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
         potential_scopes = ["recipient_location", "place_of_performance"]
         if scope not in potential_scopes:
-            raise InvalidParameterException('scope does not have a valid value')
+            raise InvalidParameterException("scope does not have a valid value")
 
         # build sql query filters
         queryset = transaction_filter(filters)
 
         # define what values are needed in the sql query
-        queryset = queryset.values('federal_action_obligation',
-                                   'recipient',
-                                   'recipient__location__state_code',
-                                   'place_of_performance__state_code')
+        queryset = queryset.values("federal_action_obligation",
+                                   "recipient",
+                                   "recipient__location__state_code",
+                                   "place_of_performance__state_code")
         # build response
-        response = {'scope': scope, 'results': []}
+        response = {"scope": scope, "results": []}
 
         # key is time period (defined by group), value is federal_action_obligation
         name_dict = {}
@@ -422,7 +422,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             for trans in queryset:
                 if "recipient__location__state_code" in trans:
                     state_code = trans["recipient__location__state_code"]
-                    obl = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
+                    obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                     if name_dict.get(state_code):
                         name_dict[state_code] += obl
                     else:
@@ -432,7 +432,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             for trans in queryset:
                 if "place_of_performance__state_code" in trans:
                     state_code = trans["place_of_performance__state_code"]
-                    obl = trans['federal_action_obligation'] if trans['federal_action_obligation'] else 0
+                    obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                     if name_dict.get(state_code):
                         name_dict[state_code] += obl
                     else:
@@ -444,7 +444,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         for key, value in name_dict.items():
             result = {"state_code": key, "aggregated_amount": float(value)}
             results.append(result)
-        response['results'] = results
+        response["results"] = results
 
         return Response(response)
 
@@ -463,26 +463,26 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
-        fields = json_request.get('fields', None)
-        filters = json_request.get('filters', None)
-        order = json_request.get('order', "asc")
-        limit = json_request.get('limit', 10)
-        page = json_request.get('page', 1)
+        fields = json_request.get("fields", None)
+        filters = json_request.get("filters", None)
+        order = json_request.get("order", "asc")
+        limit = json_request.get("limit", 10)
+        page = json_request.get("page", 1)
 
         if fields is None:
-            raise InvalidParameterException('Missing one or more required request parameters: fields')
+            raise InvalidParameterException("Missing one or more required request parameters: fields")
         elif fields == []:
-            raise InvalidParameterException('Please provide a field in the fields request parameter.')
+            raise InvalidParameterException("Please provide a field in the fields request parameter.")
         if filters is None:
-            raise InvalidParameterException('Missing one or more required request parameters: filters')
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
         if "award_type_codes" not in filters:
-            raise InvalidParameterException('Missing one or more required request parameters: filters["award_type_codes"]')
+            raise InvalidParameterException("Missing one or more required request parameters: filters['award_type_codes']")
         if order not in ["asc", "desc"]:
-            raise InvalidParameterException('Invalid value for order: {}'.format(order))
+            raise InvalidParameterException("Invalid value for order: {}".format(order))
 
-        sort = json_request.get('sort', fields[0])
+        sort = json_request.get("sort", fields[0])
         if sort not in fields:
-            raise InvalidParameterException('Sort value not found in fields: {}'.format(sort))
+            raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
         # get a list of values to queryset on instead of pinging the database for every field
         values = []
@@ -491,25 +491,25 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 try:
                     values.append(award_contracts_mapping[field])
                 except:
-                    raise InvalidParameterException('Invalid field value: {}'.format(field))
+                    raise InvalidParameterException("Invalid field value: {}".format(field))
         elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
             for field in fields:
                 try:
                     values.append(loan_type_mapping[field])
                 except:
-                    raise InvalidParameterException('Invalid field value: {}'.format(field))
+                    raise InvalidParameterException("Invalid field value: {}".format(field))
         elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
             for field in fields:
                 try:
                     values.append(non_loan_assistance_award_mapping[field])
                 except:
-                    raise InvalidParameterException('Invalid field value: {}'.format(field))
+                    raise InvalidParameterException("Invalid field value: {}".format(field))
 
         # build sql query filters
         queryset = award_filter(filters).values(*values)
 
         # build response
-        response = {'limit': limit, 'results': []}
+        response = {"limit": limit, "results": []}
         results = []
 
         for award in queryset:
@@ -537,10 +537,10 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
-        filters = json_request.get('filters', None)
+        filters = json_request.get("filters", None)
 
         if filters is None:
-            raise InvalidParameterException('Missing one or more required request parameters: filters')
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
         queryset = award_filter(filters)
@@ -549,7 +549,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         queryset = queryset.values("latest_transaction__type")
 
         # build response
-        response = {'results': {}}
+        response = {"results": {}}
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
         for award in queryset:
