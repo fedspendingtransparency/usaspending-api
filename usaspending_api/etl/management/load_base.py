@@ -165,10 +165,14 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
             legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
         )
 
+        recipient_name = row['awardee_or_recipient_legal']
+        if recipient_name is None:
+            recipient_name = ""
+
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.objects.get_or_create(
-            recipient_unique_id=row['awardee_or_recipient_uniqu'],
-            recipient_name = row['awardee_or_recipient_legal'] if row['awardee_or_recipient_legal'] else ''
+            recipient_unique_id = row['awardee_or_recipient_uniqu'],
+            recipient_name = recipient_name
         )
 
         if created:
@@ -336,10 +340,14 @@ def load_file_d2(
             legal_entity_location_field_map, row, legal_entity_location_value_map
         )
 
+        recipient_name = row['awardee_or_recipient_legal']
+        if recipient_name is None:
+            recipient_name = ""
+
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.objects.get_or_create(
-            recipient_unique_id=row['awardee_or_recipient_uniqu'],
-            recipient_name=row['awardee_or_recipient_legal']
+            recipient_unique_id = row['awardee_or_recipient_uniqu'],
+            recipient_name = recipient_name
         )
 
         if created:

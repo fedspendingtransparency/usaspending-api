@@ -199,8 +199,8 @@ def load_subawards(submission_attributes, db_cursor):
 
         # Get or create unique DUNS-recipient pair
         recipient, created = LegalEntity.objects.get_or_create(
-            recipient_unique_id=row['duns'],
-            recipient_name=recipient_name
+            recipient_unique_id = row['duns'],
+            recipient_name = recipient_name
         )
 
         if created:
