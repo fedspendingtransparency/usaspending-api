@@ -41,14 +41,15 @@ def financial_spending_data(db):
 def test_federal_account_object_class_endpoint(client, financial_spending_data):
     """Test the award_type endpoint."""
 
-    resp = client.get('/api/v2/federal_accounts/object_class/1/')
+    resp = client.get('/api/v2/federal_accounts/available_object_classes/1')
     assert resp.status_code == status.HTTP_200_OK
-    assert (resp.data == {'results': [{'major_object_class': 'mocName1', 'minor_object_class': ['ocName1']},
-                                      {'major_object_class': 'mocName2', 'minor_object_class':
-                                          ['ocName2', 'ocName4']}]}) or \
-           (resp.data == {'results': [{'major_object_class': 'mocName2', 'minor_object_class': ['ocName2', 'ocName4']},
-                                      {'major_object_class': 'mocName1', 'minor_object_class': ['ocName1']}]})
+
+    assert resp.data["results"][0] in [
+        {'id': 10, 'name': 'mocName1', 'minor_object_class': [{'id': '111', 'name': 'ocName1'}]},
+        {'id': 20, 'name': 'mocName2', 'minor_object_class': [{'id': '222', 'name': 'ocName2'},
+                                                              {'id': '444', 'name': 'ocName4'}]}
+    ]
 
     # check for bad request due to missing params
-    resp = client.get('/api/v2/federal_accounts/object_class/2/')
+    resp = client.get('/api/v2/federal_accounts/available_object_classes/2')
     assert resp.data == {'results': {}}

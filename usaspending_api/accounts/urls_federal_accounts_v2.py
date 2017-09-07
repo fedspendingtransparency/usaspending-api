@@ -6,5 +6,5 @@ from usaspending_api.accounts.views import federal_accounts_v2 as views
 object_class_federal_accounts = views.ObjectClassFederalAccountsViewSet.as_view()
 
 urlpatterns = [
-    url(r'^available_object_classes/(?P<pk>[0-9]+)/$', object_class_federal_accounts)
+    url(r'^available_object_classes/(?P<pk>[0-9]+)$', object_class_federal_accounts)
 ]
