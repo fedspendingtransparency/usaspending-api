@@ -431,6 +431,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         if fields is None:
             raise InvalidParameterException('Missing one or more required request parameters: fields')
+        elif fields == []:
+            raise InvalidParameterException('Please provide a field in the fields request parameter.')
         if filters is None:
             raise InvalidParameterException('Missing one or more required request parameters: filters')
         if "award_type_codes" not in filters:
