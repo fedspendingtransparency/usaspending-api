@@ -75,9 +75,9 @@ class Agency(models.Model):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
-    toptier_agency = models.ForeignKey('ToptierAgency', models.DO_NOTHING, null=True)
-    subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True)
-    office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
+    toptier_agency = models.ForeignKey('ToptierAgency', models.DO_NOTHING, null=True, db_index=True)
+    subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True, db_index=True)
+    office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True, db_index=True)
 
     # 1182 This flag is true if toptier agency name and subtier agency name are equal.
     # This means the award is at the department level.
@@ -155,7 +155,7 @@ class ToptierAgency(models.Model):
     cgac_code = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Code", db_index=True)
     fpds_code = models.TextField(blank=True, null=True)
     abbreviation = models.TextField(blank=True, null=True, verbose_name="Agency Abbreviation")
-    name = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Name")
+    name = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Name", db_index=True)
     mission = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Mission Statement")
     website = models.URLField(blank=True, null=True, verbose_name="Top-Tier Agency Website")
     icon_filename = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Icon Filename")
@@ -171,7 +171,7 @@ class SubtierAgency(models.Model):
     update_date = models.DateTimeField(auto_now=True, null=True)
     subtier_code = models.TextField(blank=True, null=True, verbose_name="Sub-Tier Agency Code")
     abbreviation = models.TextField(blank=True, null=True, verbose_name="Agency Abbreviation")
-    name = models.TextField(blank=True, null=True, verbose_name="Sub-Tier Agency Name")
+    name = models.TextField(blank=True, null=True, verbose_name="Sub-Tier Agency Name", db_index=True)
 
     class Meta:
         managed = True
@@ -926,7 +926,7 @@ class RefProgramActivity(models.Model):
 
 
 class Cfda(DataSourceTrackedModel):
-    program_number = models.TextField(null=False, unique=True)
+    program_number = models.TextField(null=False, unique=True, db_index=True)
     program_title = models.TextField(blank=True, null=True)
     popular_name = models.TextField(blank=True, null=True)
     federal_agency = models.TextField(blank=True, null=True)
