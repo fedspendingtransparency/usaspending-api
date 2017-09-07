@@ -7,7 +7,7 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.filestreaming.csv_local_writer import CsvLocalWriter
 from usaspending_api.download.filestreaming.csv_s3_writer import CsvS3Writer
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
-
+from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,6 @@ def write_csv(download_job, file_name, upload_name, header, body):
         download_job.error_message = 'An exception was raised while attempting to write the CSV'
     else:
         download_job.number_of_columns = len(header)
-        # download_job.number_of_rows = len(body)  except when body is a file
         download_job.file_size = os.path.getsize(file_name) if settings.IS_LOCAL else \
             s3_handler.get_file_size(file_name)
         download_job.job_status_id = JOB_STATUS_DICT['finished']
@@ -55,7 +54,8 @@ def write_csv(download_job, file_name, upload_name, header, body):
     download_job.save()
 
 
-def write_csv_from_querysets(download_job, file_name, upload_name, querysets):
+def write_csv_from_querysets(download_job, file_name, upload_name, columns,
+                             querysets):
     """Derive the relevant location and write a CSV to it.
 
     Given a list of querysets, mashes them horizontally into one CSV
@@ -64,26 +64,55 @@ def write_csv_from_querysets(download_job, file_name, upload_name, querysets):
 
     offset = 0
     header = []
-    offsets = [0, ]  # `None`s to insert before each result set for horizontal spacing
-    widths = []      # Width of each result set
-    columns = []
+    offsets = [
+        0,
+    ]  # `None`s to insert before each result set for horizontal spacing
+    widths = []  # Width of each result set
+    all_field_names = []
+    querysets_needed = []
+
+    # TODO: the linked transaction table
+    # TODO: how do we detect errors in the thread?
 
     for queryset in querysets:
-        field_names = [q.name for q in queryset.model._meta.fields
-            if q.name in queryset.values()[0].keys()]
+        field_names = [
+            q.name for q in queryset.model._meta.fields
+            if q.name in queryset.values()[0].keys()
+        ]
+        if columns:
+            field_names = [f for f in field_names if f in columns]
+            if not field_names:
+                continue  # no columns requested, omit this queryset entirely
+        querysets_needed.append(queryset)
+        download_job.number_of_rows = (download_job.number_of_rows or 0
+                                       ) + queryset.count()
         widths.append(len(field_names))
         header.extend(field_names)
         offsets.append(offset + len(field_names))
         offset += len(field_names)
-        columns.append(field_names)
+        all_field_names.append(field_names)
+
+    download_job.number_of_columns = len(header)
+    download_job.save()
+
+    missing = set(columns) - set(header)
+    if missing:
+        raise InvalidParameterException('Columns not available: {}'.format(
+            missing))
 
     def row_emitter():
-        for (idx, queryset) in enumerate(querysets):
+        for (idx, queryset) in enumerate(querysets_needed):
             leading_empty = [None, ] * offsets[idx]
-            trailing_empty = [None, ] * (len(header) - offsets[idx] - widths[idx])
+            trailing_empty = [None, ] * (
+                len(header) - offsets[idx] - widths[idx])
             for row in queryset.values():
                 # Make a list of values in the same order as in the headers
-                values = [row.get(f) for f in columns[idx]]
+                values = [row.get(f) for f in all_field_names[idx]]
                 yield leading_empty + values + trailing_empty
 
-    return write_csv(download_job, file_name, upload_name, header=header, body=row_emitter())
+    return write_csv(
+        download_job,
+        file_name,
+        upload_name,
+        header=header,
+        body=row_emitter())
