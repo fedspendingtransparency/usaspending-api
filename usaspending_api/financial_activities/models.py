@@ -336,3 +336,21 @@ class TasProgramActivityObjectClassQuarterly(DataSourceTrackedModel):
             rec_dict = {key: rec_dict[key] for key in rec_dict if key in field_list}
             qtr_list.append(TasProgramActivityObjectClassQuarterly(**rec_dict))
         TasProgramActivityObjectClassQuarterly.objects.bulk_create(qtr_list)
+
+    @classmethod
+    def refresh_downstream_quarterly_numbers(cls, submission):
+        """
+        Recalculate quarterly financial numbers for any downstream submissions
+
+        Use when the given submission has been re-loaded, so that values
+        calculated based on changes in cumulative numbers may need
+        recaclulation.
+
+        "Downstream" means for the following quarter and, in turn, its
+        following quarters (recursively) through the end of the year.
+        """
+
+        for downstream_submission in SubmissionAttributes.objects.filter(previous_submission=submission).all():
+            cls.objects.filter(submission=downstream_submission).delete()
+            cls.insert_quarterly_numbers(submission_id=downstream_submission.submission_id)
+            cls.refresh_downstream_quarterly_numbers(downstream_submission)
