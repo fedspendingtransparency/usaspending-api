@@ -9,10 +9,10 @@ class Explorer(object):
     def budget_function(self):
         # Budget Function Queryset
         queryset = self.queryset.annotate(
-            id=F('treasury_account__budget_function_code'),
+            id=F('treasury_account_id__budget_function_code'),
             type=Value('budget_function', output_field=CharField()),
-            name=F('treasury_account__budget_function_title'),
-            code=F('treasury_account__budget_function_code'),
+            name=F('treasury_account_id__budget_function_title'),
+            code=F('treasury_account_id__budget_function_code'),
         ).values('id', 'type', 'name', 'code', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
@@ -21,10 +21,10 @@ class Explorer(object):
     def budget_subfunction(self):
         # Budget Sub Function Queryset
         queryset = self.queryset.annotate(
-            id=F('treasury_account__budget_subfunction_code'),
+            id=F('treasury_account_id__budget_subfunction_code'),
             type=Value('budget_subfunction', output_field=CharField()),
-            name=F('treasury_account__budget_subfunction_title'),
-            code=F('treasury_account__budget_subfunction_code')
+            name=F('treasury_account_id__budget_subfunction_title'),
+            code=F('treasury_account_id__budget_subfunction_code')
         ).values('id', 'type', 'name', 'code', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
@@ -33,10 +33,10 @@ class Explorer(object):
     def federal_account(self):
         # Federal Account Queryset
         queryset = self.queryset.annotate(
-            id=F('treasury_account__federal_account__main_account_code'),
+            id=F('treasury_account_id__federal_account'),
             type=Value('federal_account', output_field=CharField()),
-            name=F('treasury_account__federal_account__account_title'),
-            code=F('treasury_account__federal_account__main_account_code')
+            name=F('treasury_account_id__federal_account__account_title'),
+            code=F('treasury_account_id__federal_account__main_account_code')
         ).values(
             'id', 'type', 'name', 'code', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
@@ -71,7 +71,7 @@ class Explorer(object):
 
     def recipient(self):
         # Recipients Queryset
-        queryset = self.alt_set.annotate(
+        alt_set = self.alt_set.annotate(
             id=F('award__recipient__recipient_unique_id'),
             type=Value('recipient', output_field=CharField()),
             name=F('award__recipient__recipient_name'),
@@ -79,15 +79,15 @@ class Explorer(object):
         ).values('id', 'type', 'name', 'code', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
 
-        return queryset
+        return alt_set
 
     def agency(self):
         # Awarding Agencies Queryset
         queryset = self.queryset.annotate(
-            id=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
+            id=F('treasury_account__awarding_toptier_agency__cgac_code'),
             type=Value('agency', output_field=CharField()),
             name=F('treasury_account__awarding_toptier_agency__name'),
-            code=F('treasury_account__awarding_toptier_agency__toptier_agency_id')
+            code=F('treasury_account__awarding_toptier_agency__cgac_code')
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
@@ -96,10 +96,10 @@ class Explorer(object):
     def awarding_top_tier_agency(self):
         # Awarding Top Tier Agencies Queryset
         queryset = self.queryset.annotate(
-            id=F('treasury_account__awarding_toptier_agency__cgac_code'),
+            id=F('treasury_account__awarding_toptier_agency'),
             type=Value('top_tier_agency', output_field=CharField()),
             name=F('treasury_account__awarding_toptier_agency__name'),
-            code=F('treasury_account__awarding_toptier_agency__cgac_code')
+            code=F('treasury_account__awarding_toptier_agency')
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
@@ -107,36 +107,36 @@ class Explorer(object):
 
     def awarding_sub_tier_agency(self):
         # Awarding Sub Tier Agencies Queryset
-        queryset = self.alt_set.annotate(
-            id=F('award__awarding_agency__subtier_agency__subtier_code'),
+        alt_set = self.alt_set.annotate(
+            id=F('award__awarding_agency__subtier_agency'),
             type=Value('sub_tier_agency', output_field=CharField()),
             name=F('award__awarding_agency__subtier_agency__name'),
-            code=F('award__awarding_agency__subtier_agency__subtier_code')
+            code=F('award__awarding_agency__subtier_agency')
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
 
-        return queryset
+        return alt_set
 
     def award_category(self):
         # Award Category Queryset
-        queryset = self.alt_set.annotate(
-            id=F('award__fain'),
+        alt_set = self.alt_set.annotate(
+            id=F('award'),
             type=Value('award_category', output_field=CharField()),
             name=F('award__category'),
-            code=F('award__fain')
+            code=F('award')
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
 
-        return queryset
+        return alt_set
 
     def award(self):
         # Awards Queryset
-        queryset = self.alt_set.annotate(
-            id=F('award__piid'),
+        alt_set = self.alt_set.annotate(
+            id=F('award'),
             type=Value('award', output_field=CharField()),
-            name=F('award__type_description'),
-            code=F('award__piid')
+            name=F('award__description'),
+            code=F('award')
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
 
-        return queryset
+        return alt_set

@@ -5,9 +5,9 @@ from django.db.models import Sum
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.spending.v2.filters.explorer import Explorer
 from usaspending_api.spending.v2.filters.fy_filter import fy_filter
 from usaspending_api.spending.v2.filters.spending_filter import spending_filter
-from usaspending_api.spending.v2.views.explorer import Explorer
 
 
 def type_filter(_type, filters):
@@ -15,7 +15,7 @@ def type_filter(_type, filters):
     fiscal_date = None
 
     _types = ['budget_function', 'budget_subfunction', 'federal_account', 'program_activity', 'object_class',
-              'recipient', 'award', 'award_category', 'agency', 'agency_top', 'agency_sub']
+              'recipient', 'award', 'award_category', 'agency', 'agency_type', 'agency_sub']
 
     # Validate explorer _type
     if _type is None:
@@ -25,7 +25,7 @@ def type_filter(_type, filters):
         raise InvalidParameterException(
             'Type does not have a valid value. '
             'Valid Types: budget_function, budget_subfunction, federal_account, program_activity,'
-            'object_class, recipient, award, award_category agency, agency_top, agency_sub')
+            'object_class, recipient, award, award_category agency, agency_type, agency_sub')
 
     # Get fiscal_date and fiscal_quarter
     for key, value in filters.items():
@@ -52,20 +52,26 @@ def type_filter(_type, filters):
 
     if _type == 'recipient' or _type == 'award' or _type == 'award_category' or _type == 'agency_sub':
         if _type == 'recipient':
-            queryset = exp.recipient()
+            alt_set = exp.recipient()
         if _type == 'award':
-            queryset = exp.award()
+            alt_set = exp.award()
         if _type == 'award_category':
-            queryset = exp.award_category()
+            alt_set = exp.award_category()
         if _type == 'agency_sub':
-            queryset = exp.awarding_sub_tier_agency()
+            alt_set = exp.awarding_sub_tier_agency()
 
         # Apply filters to queryset results
-        queryset = spending_filter(alt_set, queryset, filters, _type)
+        alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
         # Total value of filtered results
-        total = queryset.aggregate(Sum('transaction_obligated_amount'))
+        total = alt_set.aggregate(Sum('transaction_obligated_amount'))
         for key, value in total.items():
             total = value
+
+        results = {
+            'total': total,
+            'end_date': fiscal_date,
+            'results': alt_set
+        }
 
     else:
         if _type == 'budget_function':
@@ -80,20 +86,20 @@ def type_filter(_type, filters):
             queryset = exp.object_class()
         if _type == 'agency':
             queryset = exp.agency()
-        if _type == 'agency_top':
+        if _type == 'agency_type':
             queryset = exp.awarding_top_tier_agency()
 
         # Apply filters to queryset results
-        queryset = spending_filter(alt_set, queryset, filters, _type)
+        alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
         # Total value of filtered results
         total = queryset.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
         for key, value in total.items():
             total = value
 
-    results = {
-        'total': total,
-        'end_date': fiscal_date,
-        'results': queryset
-    }
+        results = {
+            'total': total,
+            'end_date': fiscal_date,
+            'results': queryset
+        }
 
     return results
