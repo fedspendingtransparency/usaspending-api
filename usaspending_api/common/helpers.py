@@ -1,7 +1,11 @@
 import datetime
+import logging
+import time
 
 from django.utils.dateparse import parse_date
 from usaspending_api.references.models import Agency
+
+logger = logging.getLogger(__name__)
 
 
 def check_valid_toptier_agency(agency_id):
@@ -46,6 +50,18 @@ def generate_fiscal_month(date):
     if date.month in [10, 11, 12, "10", "11", "12"]:
         return date.month - 9
     return date.month + 3
+
+
+def get_pagination(results, limit, page, benchmarks=False):
+    if benchmarks:
+        start_pagination = time.time()
+    if len(results) < limit*page:
+        paginated_results = results[limit*(page-1):]
+    else:
+        paginated_results = results[limit*(page-1):limit*page]
+    if benchmarks:
+        logger.info("get_pagination took {} seconds".format(time.time() - start_pagination))
+    return paginated_results
 
 
 def fy(raw_date):
