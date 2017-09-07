@@ -2,10 +2,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from collections import OrderedDict
+from functools import total_ordering
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
+from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
+    grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping, \
+    loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
 
 import ast
 from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month, \
@@ -434,4 +438,118 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             results.append(result)
         response['results'] = results
 
+        return Response(response)
+
+
+class SpendingByAwardVisualizationViewSet(APIView):
+
+    @total_ordering
+    class MinType(object):
+        def __le__(self, other):
+            return True
+
+        def __eq__(self, other):
+            return (self is other)
+    Min = MinType()
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        json_request = request.data
+        fields = json_request.get('fields', None)
+        filters = json_request.get('filters', None)
+        order = json_request.get('order', "asc")
+        limit = json_request.get('limit', 10)
+        page = json_request.get('page', 1)
+
+        if fields is None:
+            raise InvalidParameterException('Missing one or more required request parameters: fields')
+        elif fields == []:
+            raise InvalidParameterException('Please provide a field in the fields request parameter.')
+        if filters is None:
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
+        if "award_type_codes" not in filters:
+            raise InvalidParameterException('Missing one or more required request parameters: filters["award_type_codes"]')
+        if order not in ["asc", "desc"]:
+            raise InvalidParameterException('Invalid value for order: {}'.format(order))
+
+        sort = json_request.get('sort', fields[0])
+        if sort not in fields:
+            raise InvalidParameterException('Sort value not found in fields: {}'.format(sort))
+
+        # build sql query filters
+        queryset = award_filter(filters)
+
+        # build response
+        response = {'limit': limit, 'page': page, 'results': []}
+        results = []
+
+        for award in queryset:
+            row = {}
+            if set(filters["award_type_codes"]) < set(contract_type_mapping):
+                for field in fields:
+                    try:
+                        award_prop = award
+                        for prop in award_contracts_mapping[field].split("__"):
+                            award_prop = getattr(award_prop, prop)
+                    except:
+                        award_prop = None
+                    row[field] = award_prop
+            elif set(filters["award_type_codes"]) < set(loan_type_mapping):  # loans
+                for field in fields:
+                    try:
+                        award_prop = award
+                        for prop in loan_award_mapping[field].split("__"):
+                            award_prop = getattr(award_prop, prop)
+                    except:
+                        award_prop = None
+                    row[field] = award_prop
+            elif set(filters["award_type_codes"]) < set(non_loan_assistance_type_mapping):  # assistance data
+                for field in fields:
+                    try:
+                        award_prop = award
+                        for prop in non_loan_assistance_award_mapping[field].split("__"):
+                            award_prop = getattr(award_prop, prop)
+                    except:
+                        award_prop = None
+                    row[field] = award_prop
+            results.append(row)
+        sorted_results = sorted(results, key=lambda result: self.Min if result[sort] is None else result[sort],
+                                reverse=(order == "desc"))
+        response["results"] = get_pagination(sorted_results, limit, page)
+        return Response(response)
+
+
+class SpendingByAwardCountVisualizationViewSet(APIView):
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        json_request = request.data
+        filters = json_request.get('filters', None)
+
+        if filters is None:
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
+
+        # build sql query filters
+        queryset = award_filter(filters)
+
+        # define what values are needed in the sql query
+        queryset = queryset.values("latest_transaction__type")
+
+        # build response
+        response = {'results': {}}
+        results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
+
+        for award in queryset:
+            if (award["latest_transaction__type"] in contract_type_mapping):
+                results["contracts"] += 1
+            elif (award["latest_transaction__type"] in grant_type_mapping):  # Grants
+                results["grants"] += 1
+            elif award["latest_transaction__type"] in direct_payment_type_mapping:  # Direct Payment
+                results["direct_payments"] += 1
+            elif award["latest_transaction__type"] in loan_type_mapping:  # Loans
+                results["loans"] += 1
+            elif award["latest_transaction__type"] in other_type_mapping:  # Other
+                results["other"] += 1
+
+        response["results"] = results
         return Response(response)
