@@ -156,10 +156,11 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
 
     start_time = datetime.now()
     for index, row in enumerate(procurement_data, 1):
-        if not (index % 100):
-            logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
+        if not (index % 1):
+            logger.info('D1 File Load: Loading row {} of {} ({}) ID {}'.format(str(index),
                                                                          str(total_rows),
-                                                                         datetime.now() - start_time))
+                                                                         datetime.now() - start_time,
+                                                                        row['award_procurement_id']))
 
         legal_entity_location, created = get_or_create_location(
             legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
@@ -168,7 +169,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.objects.get_or_create(
             recipient_unique_id=row['awardee_or_recipient_uniqu'],
-            recipient_name=row['awardee_or_recipient_legal']
+            recipient_name = row['awardee_or_recipient_legal'] if row['awardee_or_recipient_legal'] else ''
         )
 
         if created:
