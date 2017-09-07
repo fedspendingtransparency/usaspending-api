@@ -55,20 +55,20 @@ def generate_fiscal_month(date):
 def get_pagination(results, limit, page, benchmarks=False):
     if benchmarks:
         start_pagination = time.time()
-    next_previous_metadata = {"next": None, "previous": None, "hasNext": False, "hasPrevious": False}
+    page_metadata = {"next": None, "previous": None, "hasNext": False, "hasPrevious": False}
     if limit < 1 or page < 1:
-        return [], next_previous_metadata
-    next_previous_metadata["hasNext"] = (limit*page < len(results))
-    next_previous_metadata["hasPrevious"] = (page > 1 and limit*(page-2) < len(results))
-    if not next_previous_metadata["hasNext"]:
+        return [], page_metadata
+    page_metadata["hasNext"] = (limit*page < len(results))
+    page_metadata["hasPrevious"] = (page > 1 and limit*(page-2) < len(results))
+    if not page_metadata["hasNext"]:
         paginated_results = results[limit*(page-1):]
     else:
         paginated_results = results[limit*(page-1):limit*page]
-    next_previous_metadata["next"] = page+1 if next_previous_metadata["hasNext"] else None
-    next_previous_metadata["previous"] = page-1 if next_previous_metadata["hasPrevious"] else None
+    page_metadata["next"] = page+1 if page_metadata["hasNext"] else None
+    page_metadata["previous"] = page-1 if page_metadata["hasPrevious"] else None
     if benchmarks:
         logger.info("get_pagination took {} seconds".format(time.time() - start_pagination))
-    return paginated_results, next_previous_metadata
+    return paginated_results, page_metadata
 
 
 def fy(raw_date):

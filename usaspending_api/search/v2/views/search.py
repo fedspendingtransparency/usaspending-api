@@ -170,9 +170,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-            results, next_previous_metadata = get_pagination(results, limit, page)
+            results, page_metadata = get_pagination(results, limit, page)
             response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results,
-                        **next_previous_metadata}
+                        "page_metadata": page_metadata}
             return Response(response)
 
         elif category == "funding_agency":
@@ -234,9 +234,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-            results, next_previous_metadata = get_pagination(results, limit, page)
+            results, page_metadata = get_pagination(results, limit, page)
             response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results,
-                        **next_previous_metadata}
+                        "page_metadata": page_metadata}
             return Response(response)
         elif category == "recipient":
             # filter the transactions by scope name
@@ -268,9 +268,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     results.append({"recipient_name": key, "legal_entity_id": value["legal_entity_id"],
                                     "aggregated_amount": value["aggregated_amount"]})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-                results, next_previous_metadata = get_pagination(results, limit, page)
+                results, page_metadata = get_pagination(results, limit, page)
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results,
-                            **next_previous_metadata}
+                            "page_metadata": page_metadata}
                 return Response(response)
 
             elif scope == "parent_duns":
@@ -294,9 +294,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     results.append({"recipient_name": key, "parent_recipient_unique_id": value["parent_recipient_unique_id"],
                                     "aggregated_amount": value["aggregated_amount"]})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-                results, next_previous_metadata = get_pagination(results, limit, page)
+                results, page_metadata = get_pagination(results, limit, page)
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page, 'results': results,
-                            **next_previous_metadata}
+                            "page_metadata": page_metadata}
                 return Response(response)
             else:  # recipient_type
                 raise InvalidParameterException('recipient type is not yet implemented')
@@ -331,9 +331,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                 "popular_name": value["popular_name"],
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-            results, next_previous_metadata = get_pagination(results, limit, page)
+            results, page_metadata = get_pagination(results, limit, page)
             response = {'category': category, 'limit': limit, 'page': page,
-                        'results': results, **next_previous_metadata}
+                        'results': results, "page_metadata": page_metadata}
             return Response(response)
 
         elif category == "industry_codes":  # industry_codes
@@ -358,9 +358,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     results.append({"psc_code": key,
                                     "aggregated_amount": value})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-                results, next_previous_metadata = get_pagination(results, limit, page)
+                results, page_metadata = get_pagination(results, limit, page)
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
-                            'results': results, **next_previous_metadata}
+                            'results': results, "page_metadata": page_metadata}
                 return Response(response)
 
             elif scope == "naics":
@@ -381,9 +381,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                     "aggregated_amount": value["aggregated_amount"],
                                     "naics_description": value["naics_description"]})
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-                results, next_previous_metadata = get_pagination(results, limit, page)
+                results, page_metadata = get_pagination(results, limit, page)
                 response = {'category': category, 'scope': scope, 'limit': limit, 'page': page,
-                            'results': results, **next_previous_metadata}
+                            'results': results, "page_metadata": page_metadata}
                 return Response(response)
 
             else:  # recipient_type
@@ -524,9 +524,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             results.append(row)
         sorted_results = sorted(results, key=lambda result: self.Min if result[sort] is None else result[sort],
                                 reverse=(order == "desc"))
-        results, next_previous_metadata = get_pagination(sorted_results, limit, page)
+        results, page_metadata = get_pagination(sorted_results, limit, page)
         response["results"] = results
-        response.update(next_previous_metadata)
+        response["page_metadata"] = page_metadata
         return Response(response)
 
 
