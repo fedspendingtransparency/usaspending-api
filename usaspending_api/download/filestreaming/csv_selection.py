@@ -35,8 +35,6 @@ def write_csv(download_job, file_name, upload_name, header, body):
 
         logger.debug(message)
 
-        import pdb; pdb.set_trace()
-
         with csv_writer as writer:
             for line in body:
                 writer.write(line)
@@ -59,26 +57,33 @@ def write_csv(download_job, file_name, upload_name, header, body):
 
 def write_csv_from_querysets(download_job, file_name, upload_name, querysets):
     """Derive the relevant location and write a CSV to it.
+
+    Given a list of querysets, mashes them horizontally into one CSV
+
     :return: the final file name (complete with prefix)"""
 
     offset = 0
     header = []
-    offsets = [0, ]
-    widths = []
+    offsets = [0, ]  # `None`s to insert before each result set for horizontal spacing
+    widths = []      # Width of each result set
+    columns = []
 
-    for (idx, queryset) in enumerate(querysets):
-        field_names = [q.name for q in queryset.model._meta.fields]
+    for queryset in querysets:
+        field_names = [q.name for q in queryset.model._meta.fields
+            if q.name in queryset.values()[0].keys()]
         widths.append(len(field_names))
         header.extend(field_names)
         offsets.append(offset + len(field_names))
         offset += len(field_names)
+        columns.append(field_names)
 
     def row_emitter():
         for (idx, queryset) in enumerate(querysets):
             leading_empty = [None, ] * offsets[idx]
             trailing_empty = [None, ] * (len(header) - offsets[idx] - widths[idx])
             for row in queryset.values():
-                values = [row.get(f.name) for f in queryset.model._meta.fields]
+                # Make a list of values in the same order as in the headers
+                values = [row.get(f) for f in columns[idx]]
                 yield leading_empty + values + trailing_empty
 
     return write_csv(download_job, file_name, upload_name, header=header, body=row_emitter())
