@@ -156,11 +156,10 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
 
     start_time = datetime.now()
     for index, row in enumerate(procurement_data, 1):
-        if not (index % 1):
-            logger.info('D1 File Load: Loading row {} of {} ({}) ID {}'.format(str(index),
-                                                                         str(total_rows),
-                                                                         datetime.now() - start_time,
-                                                                        row['award_procurement_id']))
+        if not (index % 100):
+            logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                     str(total_rows),
+                                                                     datetime.now() - start_time))
 
         legal_entity_location, created = get_or_create_location(
             legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
