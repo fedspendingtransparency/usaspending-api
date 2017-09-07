@@ -215,10 +215,10 @@ def test_get_or_create_summary_award():
     t4 = Award.get_or_create_summary_award(fain='DUT987', uri='123-abc-456', awarding_agency=a1)[1]
     assert t4 == m4
 
-    # match on awarding agency and fain + uri (fain takes precedence, different uri)
+    # fain + uri are unique on their own
     m5 = mommy.make('awards.award', fain='DUT123456', uri='123-abc-456', awarding_agency=a1)
     t5 = Award.get_or_create_summary_award(fain='DUT123456', uri='123-abc-456-a-different-uri', awarding_agency=a1)[1]
-    assert t5 == m5
+    assert t5 != m5
 
     # match on awarding agency + uri
     m6 = mommy.make('awards.award', uri='abc-123-def', awarding_agency=a1)

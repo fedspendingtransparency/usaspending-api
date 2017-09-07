@@ -17,7 +17,7 @@ def test_threaded_data_loader():
     # actually getting loaded
     field_map = {
         "treasury_account_identifier": "ACCT_NUM",
-        "account_title": "GWA_TAS NAME"
+        "account_title": "GWA_TAS_NAME"
     }
 
     loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, collision_field='treasury_account_identifier', collision_behavior='update')
