@@ -61,9 +61,11 @@ def spending_filter(alt_set, queryset, filters, _type):
             elif key == 'program_activity':
                 or_alt_set = None
                 if or_alt_set:
-                    or_alt_set |= or_alt_set.filter(program_activity=value)
+                    or_alt_set |= or_alt_set.filter(treasury_account__in=queryset.filter(
+                        program_activity=value).values_list('treasury_account_id', flat=True))
                 else:
-                    or_alt_set = alt_set.filter(program_activity=value)
+                    or_alt_set = alt_set.filter(treasury_account__in=queryset.filter(
+                        program_activity=value).values_list('treasury_account_id', flat=True))
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
 
@@ -71,9 +73,13 @@ def spending_filter(alt_set, queryset, filters, _type):
             elif key == 'object_class':
                 or_alt_set = None
                 if or_alt_set:
-                    or_alt_set |= or_alt_set.filter(object_class__major_object_class=value)
+                    or_alt_set |= or_alt_set.filter(
+                        treasury_account__in=queryset.filter(
+                            object_class__major_object_class=value).values_list('treasury_account_id', flat=True))
                 else:
-                    or_alt_set = alt_set.filter(object_class__major_object_class=value)
+                    or_alt_set = alt_set.filter(
+                        treasury_account__in=queryset.filter(
+                            object_class__major_object_class=value).values_list('treasury_account_id', flat=True))
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
 
@@ -88,7 +94,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                     alt_set &= or_alt_set
 
             # award, award_category - DONE
-            elif key == 'award':
+            elif key == 'award' or key == 'award_category':
                 or_alt_set = None
                 if or_alt_set:
                     or_alt_set |= or_alt_set.filter(award=value)

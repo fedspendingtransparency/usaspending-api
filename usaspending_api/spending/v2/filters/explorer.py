@@ -9,10 +9,10 @@ class Explorer(object):
     def budget_function(self):
         # Budget Function Queryset
         queryset = self.queryset.annotate(
-            id=F('treasury_account_id__budget_function_code'),
+            id=F('treasury_account__budget_function_code'),
             type=Value('budget_function', output_field=CharField()),
-            name=F('treasury_account_id__budget_function_title'),
-            code=F('treasury_account_id__budget_function_code'),
+            name=F('treasury_account__budget_function_title'),
+            code=F('treasury_account__budget_function_code'),
         ).values('id', 'type', 'name', 'code', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
@@ -21,10 +21,10 @@ class Explorer(object):
     def budget_subfunction(self):
         # Budget Sub Function Queryset
         queryset = self.queryset.annotate(
-            id=F('treasury_account_id__budget_subfunction_code'),
+            id=F('treasury_account__budget_subfunction_code'),
             type=Value('budget_subfunction', output_field=CharField()),
-            name=F('treasury_account_id__budget_subfunction_title'),
-            code=F('treasury_account_id__budget_subfunction_code')
+            name=F('treasury_account__budget_subfunction_title'),
+            code=F('treasury_account__budget_subfunction_code')
         ).values('id', 'type', 'name', 'code', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
@@ -33,10 +33,10 @@ class Explorer(object):
     def federal_account(self):
         # Federal Account Queryset
         queryset = self.queryset.annotate(
-            id=F('treasury_account_id__federal_account'),
+            id=F('treasury_account__federal_account'),
             type=Value('federal_account', output_field=CharField()),
-            name=F('treasury_account_id__federal_account__account_title'),
-            code=F('treasury_account_id__federal_account__main_account_code')
+            name=F('treasury_account__federal_account__account_title'),
+            code=F('treasury_account__federal_account__main_account_code')
         ).values(
             'id', 'type', 'name', 'code', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
@@ -123,7 +123,7 @@ class Explorer(object):
             id=F('award'),
             type=Value('award_category', output_field=CharField()),
             name=F('award__category'),
-            code=F('award')
+            code=F('award__piid')
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
 
@@ -134,8 +134,8 @@ class Explorer(object):
         alt_set = self.alt_set.annotate(
             id=F('award'),
             type=Value('award', output_field=CharField()),
-            name=F('award__description'),
-            code=F('award')
+            name=F('award__type_description'),
+            code=F('award__piid')
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
 
