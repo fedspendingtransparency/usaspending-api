@@ -484,8 +484,29 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if sort not in fields:
             raise InvalidParameterException('Sort value not found in fields: {}'.format(sort))
 
+        # get a list of values to queryset on instead of pinging the database for every field
+        values = []
+        if set(filters["award_type_codes"]) <= set(contract_type_mapping):
+            for field in fields:
+                try:
+                    values.append(award_contracts_mapping[field])
+                except:
+                    raise InvalidParameterException('Invalid field value: {}'.format(field))
+        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+            for field in fields:
+                try:
+                    values.append(loan_type_mapping[field])
+                except:
+                    raise InvalidParameterException('Invalid field value: {}'.format(field))
+        elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
+            for field in fields:
+                try:
+                    values.append(non_loan_assistance_award_mapping[field])
+                except:
+                    raise InvalidParameterException('Invalid field value: {}'.format(field))
+
         # build sql query filters
-        queryset = award_filter(filters)
+        queryset = award_filter(filters).values(*values)
 
         # build response
         response = {'limit': limit, 'results': []}
@@ -493,33 +514,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         for award in queryset:
             row = {}
-            if set(filters["award_type_codes"]) < set(contract_type_mapping):
+            if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 for field in fields:
-                    try:
-                        award_prop = award
-                        for prop in award_contracts_mapping[field].split("__"):
-                            award_prop = getattr(award_prop, prop)
-                    except:
-                        award_prop = None
-                    row[field] = award_prop
-            elif set(filters["award_type_codes"]) < set(loan_type_mapping):  # loans
+                    row[field] = award[award_contracts_mapping[field]]
+            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
                 for field in fields:
-                    try:
-                        award_prop = award
-                        for prop in loan_award_mapping[field].split("__"):
-                            award_prop = getattr(award_prop, prop)
-                    except:
-                        award_prop = None
-                    row[field] = award_prop
-            elif set(filters["award_type_codes"]) < set(non_loan_assistance_type_mapping):  # assistance data
+                    row[field] = award[loan_type_mapping[field]]
+            elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
                 for field in fields:
-                    try:
-                        award_prop = award
-                        for prop in non_loan_assistance_award_mapping[field].split("__"):
-                            award_prop = getattr(award_prop, prop)
-                    except:
-                        award_prop = None
-                    row[field] = award_prop
+                    row[field] = award[non_loan_assistance_award_mapping[field]]
             results.append(row)
         sorted_results = sorted(results, key=lambda result: self.Min if result[sort] is None else result[sort],
                                 reverse=(order == "desc"))
