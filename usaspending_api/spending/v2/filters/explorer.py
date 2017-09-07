@@ -46,7 +46,7 @@ class Explorer(object):
     def program_activity(self):
         # Program Activity Queryset
         queryset = self.queryset.annotate(
-            id=F('program_activity__program_activity_code'),
+            id=F('program_activity'),
             type=Value('program_activity', output_field=CharField()),
             name=F('program_activity__program_activity_name'),
             code=F('program_activity__program_activity_code')

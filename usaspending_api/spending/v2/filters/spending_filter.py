@@ -61,9 +61,9 @@ def spending_filter(alt_set, queryset, filters, _type):
             elif key == 'program_activity':
                 or_alt_set = None
                 if or_alt_set:
-                    or_alt_set |= or_alt_set.filter(program_activity__program_activity_code=value)
+                    or_alt_set |= or_alt_set.filter(program_activity=value)
                 else:
-                    or_alt_set = alt_set.filter(program_activity__program_activity_code=value)
+                    or_alt_set = alt_set.filter(program_activity=value)
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
 
@@ -181,9 +181,9 @@ def spending_filter(alt_set, queryset, filters, _type):
             elif key == 'program_activity':
                 or_queryset = None
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(program_activity__program_activity_code=value)
+                    or_queryset |= or_queryset.filter(program_activity=value)
                 else:
-                    or_queryset = queryset.filter(program_activity__program_activity_code=value)
+                    or_queryset = queryset.filter(program_activity=value)
                 if or_queryset is not None:
                     queryset &= or_queryset
 
