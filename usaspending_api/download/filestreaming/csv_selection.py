@@ -36,6 +36,7 @@ def write_csv(download_job, file_name, upload_name, header, body):
         logger.debug(message)
 
         import pdb; pdb.set_trace()
+
         with csv_writer as writer:
             for line in body:
                 writer.write(line)
@@ -77,6 +78,7 @@ def write_csv_from_querysets(download_job, file_name, upload_name, querysets):
             leading_empty = [None, ] * offsets[idx]
             trailing_empty = [None, ] * (len(header) - offsets[idx] - widths[idx])
             for row in queryset.values():
-                yield leading_empty + list(row.values()) + trailing_empty
+                values = [row.get(f.name) for f in queryset.model._meta.fields]
+                yield leading_empty + values + trailing_empty
 
     return write_csv(download_job, file_name, upload_name, header=header, body=row_emitter())
