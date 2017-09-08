@@ -21,12 +21,12 @@ class ObjectClassFederalAccountsViewSet(APIView):
             return Response(response)
 
         # get tas related to FA
-        tas_queryset = TreasuryAppropriationAccount.objects.filter(federal_account=fa) \
+        tas_ids = TreasuryAppropriationAccount.objects.filter(federal_account=fa) \
             .values_list('treasury_account_identifier', flat=True)
 
         # get fin based on tas, select oc, make distinct values
         financial_account_queryset = \
-            FinancialAccountsByProgramActivityObjectClass.objects.filter(treasury_account__in=tas_queryset) \
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(treasury_account__in=tas_ids) \
             .select_related('object_class').distinct('object_class')
 
         # Retrieve only unique major class ids and names
