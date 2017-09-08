@@ -513,7 +513,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         results = []
 
         for award in queryset:
-            row = {"id": award["id"]}
+            row = {"internal_id": award["id"]}
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 for field in fields:
                     row[field] = award[award_contracts_mapping[field]]
