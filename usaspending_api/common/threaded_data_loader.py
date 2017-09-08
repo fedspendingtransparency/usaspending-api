@@ -47,7 +47,12 @@ class ThreadedDataLoader():
         self.model_class = model_class
         self.processes = processes
         if self.processes is None:
-            self.processes = multiprocessing.cpu_count() * 2
+            # self.processes = multiprocessing.cpu_count() * 2
+            # self.processes is set to 1 because the logger threading doesn't work, resulting in
+            # a bunch of garbage being spat to console whenever this loader is used.
+            # can change to self.processes = multiprocessing.cpu_count() * 2 or something else if we
+            # fix the logger issue
+            self.processes = 1
             self.logger.info('Setting processes count to ' + str(self.processes))
         self.field_map = field_map
         self.value_map = value_map
