@@ -129,7 +129,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                        "federal_action_obligation")
             if scope == "agency":
                 for trans in queryset:
-                    if "awarding_agency__toptier_agency__name" in trans:
+                    if trans["awarding_agency__toptier_agency__name"]:
                         ttname = trans["awarding_agency__toptier_agency__name"]
                         ttabv = trans["awarding_agency__toptier_agency__abbreviation"]
                         ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -140,7 +140,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "subagency":
                 for trans in queryset:
-                    if "awarding_agency__subtier_agency__name" in trans:
+                    if trans["awarding_agency__subtier_agency__name"]:
                         stname = trans["awarding_agency__subtier_agency__name"]
                         stabv = trans["awarding_agency__subtier_agency__abbreviation"]
                         stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -150,7 +150,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                             name_dict[stname] = {"aggregated_amount": stob, "abbreviation": stabv}
             else:  # offices
                 for trans in queryset:
-                    if "awarding_agency__office_agency__name" in trans:
+                    if trans["awarding_agency__office_agency__name"]:
                         oname = trans["awarding_agency__office_agency__name"]
                         oabv = trans["awarding_agency__office_agency__abbreviation"]
                         oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -193,7 +193,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                        "federal_action_obligation")
             if scope == "agency":
                 for trans in queryset:
-                    if "funding_agency__toptier_agency__name" in trans:
+                    if trans["funding_agency__toptier_agency__name"]:
                         ttname = trans["funding_agency__toptier_agency__name"]
                         ttabv = trans["funding_agency__toptier_agency__abbreviation"]
                         ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -204,7 +204,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "subagency":
                 for trans in queryset:
-                    if "funding_agency__subtier_agency__name" in trans:
+                    if trans["funding_agency__subtier_agency__name"]:
                         stname = trans["funding_agency__subtier_agency__name"]
                         stabv = trans["funding_agency__subtier_agency__abbreviation"]
                         stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -214,7 +214,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                             name_dict[stname] = {"aggregated_amount": stob, "abbreviation": stabv}
             else:  # offices
                 for trans in queryset:
-                    if "funding_agency__office_agency__name" in trans:
+                    if trans["funding_agency__office_agency__name"]:
                         oname = trans["funding_agency__office_agency__name"]
                         oabv = trans["funding_agency__office_agency__abbreviation"]
                         oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -249,7 +249,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                        "recipient__parent_recipient_unique_id")
             if scope == "duns":
                 for trans in queryset:
-                    if "recipient" in trans:
+                    if trans["recipient"]:
                         r_name = trans["recipient__recipient_name"]
                         r_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         r_lei = trans["recipient__legal_entity_id"]
@@ -275,7 +275,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "parent_duns":
                 for trans in queryset:
-                    if "recipient" in trans:
+                    if trans["recipient"]:
                         r_name = trans["recipient__recipient_name"]
                         r_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         r_prui = trans["recipient__parent_recipient_unique_id"]
@@ -311,7 +311,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                        "assistance_data__cfda__program_number")
 
             for trans in queryset:
-                if "assistance_data__cfda__program_number" in trans:
+                if trans["assistance_data__cfda__program_number"]:
                     cfda_program_number = trans["assistance_data__cfda__program_number"]
                     cfda_program_name = trans["assistance_data__cfda__popular_name"]
                     cfda_program_title = trans["assistance_data__cfda__program_title"]
@@ -344,7 +344,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             if scope == "psc":
                 for trans in queryset:
-                    if "contract_data__product_or_service_code" in trans:
+                    if trans["contract_data__product_or_service_code"]:
                         psc = trans["contract_data__product_or_service_code"]
                         psc_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         if psc in name_dict:
@@ -364,7 +364,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "naics":
                 for trans in queryset:
-                    if "contract_data__naics" in trans:
+                    if trans["contract_data__naics"]:
                         naics = trans["contract_data__naics"]
                         naics_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         naics_desc = trans["contract_data__naics_description"]
@@ -420,7 +420,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         name_dict = {}
         if scope == "recipient_location":
             for trans in queryset:
-                if "recipient__location__state_code" in trans:
+                if trans["recipient__location__state_code"]:
                     state_code = trans["recipient__location__state_code"]
                     obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                     if name_dict.get(state_code):
@@ -430,7 +430,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         else:  # place of performance
             for trans in queryset:
-                if "place_of_performance__state_code" in trans:
+                if trans["place_of_performance__state_code"]:
                     state_code = trans["place_of_performance__state_code"]
                     obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                     if name_dict.get(state_code):
