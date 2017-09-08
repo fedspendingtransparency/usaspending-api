@@ -26,7 +26,7 @@ class Command(BaseCommand):
     help = "Checks what TASs are in Broker but not in Data Store"
 
     @staticmethod
-    def update_transaction_assistance(fiscal_year):
+    def update_transaction_assistance(fiscal_year=None):
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -72,7 +72,12 @@ class Command(BaseCommand):
             "description": "award_description",
         }
 
-        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker').values()
+        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker')
+
+        if fiscal_year:
+            all_transaction_assistance = all_transaction_assistance.filter(action_date__fy=fiscal_year)
+
+        all_transaction_assistance = all_transaction_assistance.values()
 
         for transaction_assistance in all_transaction_assistance:
 
@@ -154,7 +159,6 @@ class Command(BaseCommand):
             transaction_map.transaction_assistance_id = transaction_assistance['published_award_financial_assistance_id']
             transaction_map.save()
 
-
     @staticmethod
     def update_transaction_contract(fiscal_year):
 
@@ -191,7 +195,12 @@ class Command(BaseCommand):
             "description": "award_description"
         }
 
-        all_transaction_contract = TransactionContractNew.objects.using('data_broker').values()
+        all_transaction_contract = TransactionContractNew.objects.using('data_broker')
+
+        if fiscal_year:
+            all_transaction_contract = all_transaction_contract.filter(action_date__fy=fiscal_year)
+
+        all_transaction_contract = all_transaction_contract.values()
 
         for transaction_contract in all_transaction_contract:
             legal_entity_location, created = get_or_create_location(
@@ -301,7 +310,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
-        fiscal_year = options.get('fiscal_year', 2017)
+        fiscal_year = options.get('fiscal_year', None)
         
         if not options['assistance']:
             logger.info('Starting D1 historical data load...')
