@@ -485,7 +485,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
         # get a list of values to queryset on instead of pinging the database for every field
-        values = []
+        values = ["id"]
         if set(filters["award_type_codes"]) <= set(contract_type_mapping):
             for field in fields:
                 try:
@@ -513,7 +513,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         results = []
 
         for award in queryset:
-            row = {}
+            row = {"id": award["id"]}
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 for field in fields:
                     row[field] = award[award_contracts_mapping[field]]
