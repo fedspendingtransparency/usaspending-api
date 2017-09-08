@@ -41,7 +41,7 @@ def financial_spending_data(db):
 def test_federal_account_object_class_endpoint(client, financial_spending_data):
     """Test the award_type endpoint."""
 
-    resp = client.get('/api/v2/federal_accounts/available_object_classes/1')
+    resp = client.get('/api/v2/federal_accounts/1/available_object_classes')
     assert resp.status_code == status.HTTP_200_OK
 
     assert resp.data["results"][0] in [
@@ -51,5 +51,5 @@ def test_federal_account_object_class_endpoint(client, financial_spending_data):
     ]
 
     # check for bad request due to missing params
-    resp = client.get('/api/v2/federal_accounts/available_object_classes/2')
+    resp = client.get('/api/v2/federal_accounts/2/available_object_classes')
     assert resp.data == {'results': {}}
