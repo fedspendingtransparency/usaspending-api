@@ -163,7 +163,9 @@ class Command(load_base.Command):
             logger.warning("Error loading subawards for this submission")
 
         logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
+
         # Cleanup not specific to this submission is run in the `.handle` method
+        logger.info('Successfully loaded broker submission {}.'.format(options['submission_id'][0]))
 
 
 def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):

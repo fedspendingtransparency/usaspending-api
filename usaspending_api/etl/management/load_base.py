@@ -95,7 +95,7 @@ class Command(BaseCommand):
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
         # Done!
-        logger.info('FINISHED: Successfully loaded broker submission {}.'.format(options['submission_id'][0]))
+        logger.info('FINISHED')
 
 
 def run_sql_file(file_path, parameters):
