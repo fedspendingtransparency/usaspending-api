@@ -311,6 +311,9 @@ class Command(BaseCommand):
         logger.info('Starting historical data load...')
 
         fiscal_year = options.get('fiscal_year', None)
+
+        if fiscal_year:
+            logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
         
         if not options['assistance']:
             logger.info('Starting D1 historical data load...')
