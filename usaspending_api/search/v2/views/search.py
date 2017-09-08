@@ -249,7 +249,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                        "recipient__parent_recipient_unique_id")
             if scope == "duns":
                 for trans in queryset:
-                    if trans["recipient__legal_entity_id"]:
+                    if trans["recipient"]:
                         r_name = trans["recipient__recipient_name"]
                         r_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         r_lei = trans["recipient__legal_entity_id"]
@@ -275,7 +275,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "parent_duns":
                 for trans in queryset:
-                    if trans["recipient__parent_recipient_unique_id"]:
+                    if trans["recipient"]:
                         r_name = trans["recipient__recipient_name"]
                         r_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                         r_prui = trans["recipient__parent_recipient_unique_id"]
