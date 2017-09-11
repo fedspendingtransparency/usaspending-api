@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from django.db.models import Sum
 
@@ -50,7 +51,8 @@ def type_filter(_type, filters):
     # Apply filters to queryset results
     alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
 
-    if _type == 'recipient' or _type == 'award' or _type == 'award_category' or _type == 'agency_sub':
+    if _type == 'recipient' or _type == 'award' or _type == 'award_category' \
+            or _type == 'agency_type' or _type == 'agency_sub':
         # Annotate and get explorer _type filtered results
         exp = Explorer(alt_set, queryset)
 
@@ -60,8 +62,12 @@ def type_filter(_type, filters):
             alt_set = exp.award()
         if _type == 'award_category':
             alt_set = exp.award_category()
+        if _type == 'agency_type':
+            alt_set = exp.awarding_top_tier_agency()
         if _type == 'agency_sub':
             alt_set = exp.awarding_sub_tier_agency()
+
+        alt_set = alt_set.filter(amount__gt=Decimal('0.00'))
 
         # Total value of filtered results
         total = alt_set.aggregate(Sum('transaction_obligated_amount'))
@@ -90,8 +96,8 @@ def type_filter(_type, filters):
             queryset = exp.object_class()
         if _type == 'agency':
             queryset = exp.agency()
-        if _type == 'agency_type':
-            queryset = exp.awarding_top_tier_agency()
+
+        queryset = queryset.filter(amount__gt=Decimal('0.00'))
 
         # Total value of filtered results
         total = queryset.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
