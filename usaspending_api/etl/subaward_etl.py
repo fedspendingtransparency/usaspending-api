@@ -41,7 +41,9 @@ def load_subawards(submission_attributes, db_cursor):
     # Get a list of PIIDs from this submission
     awards_for_sub = Award.objects.filter(transaction__submission=submission_attributes).distinct()
     piids = list(awards_for_sub.values_list("piid", flat=True))
+    logger.info('PIIDs LIST: {}'.format(piids))
     fains = list(awards_for_sub.values_list("fain", flat=True))
+    logger.info('FAINs LIST: {}'.format(fains))
 
     # This allows us to handle an empty list in the SQL without changing the query
     piids.append(None)
@@ -163,6 +165,8 @@ def load_subawards(submission_attributes, db_cursor):
         # Find the award to attach this sub-award to
         # We perform this lookup by finding the Award containing a transaction with
         # a matching fain and submission. If this fails, try submission and uri
+        logger.info('AWARDING AGENCY: {}, SUBMISSION: {}'.format(agency, submission_attributes))
+
         if row['fain'] and len(row['fain']) > 0:
             award = Award.objects.filter(awarding_agency=agency,
                                          transaction__submission=submission_attributes,
@@ -199,8 +203,8 @@ def load_subawards(submission_attributes, db_cursor):
 
         # Get or create unique DUNS-recipient pair
         recipient, created = LegalEntity.objects.get_or_create(
-            recipient_unique_id = row['duns'],
-            recipient_name = recipient_name
+            recipient_unique_id=row['duns'],
+            recipient_name=recipient_name
         )
 
         if created:
@@ -266,10 +270,12 @@ def load_subawards(submission_attributes, db_cursor):
 
 
 def get_valid_awarding_agency(row):
+
     agency = None
 
     agency_subtier_code = row['awarding_sub_tier_agency_c']
     agency_toptier_code = row['awarding_agency_code']
+    logger.info('SUBTIER_CODE: {}, TOPTIER_CODE: {}'.format(agency_subtier_code, agency_toptier_code))
     valid_subtier_code = (agency_subtier_code and len(agency_subtier_code) > 0)
     valid_toptier_code = (agency_toptier_code and len(agency_toptier_code) > 0)
 
