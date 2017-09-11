@@ -137,7 +137,15 @@ FY_PG_FUNCTION_DEF = '''
             RETURN result;
           END;
         $$ LANGUAGE plpgsql;
+        '''
 
+FY_FROM_TEXT_PG_FUNCTION_DEF = '''
+    CREATE OR REPLACE FUNCTION fy(raw_date TEXT)
+    RETURNS integer AS $$
+          BEGIN
+            RETURN fy(raw_date::DATE);
+          END;
+        $$ LANGUAGE plpgsql;
         '''
 
 """
