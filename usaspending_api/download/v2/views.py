@@ -1,3 +1,4 @@
+import sys
 import threading
 
 from django.conf import settings
@@ -59,22 +60,31 @@ class BaseDownloadViewSet(APIView):
         timestamped_file_name = self.s3_handler.get_timestamped_filename(
             self.DOWNLOAD_NAME + '_download.csv')
 
-        # create download job in database to track progress. Starts at "ready" status by default.
+        # create download job in database to track progress. Starts at "ready"
+        # status by default.
         download_job = DownloadJob(job_status_id=JOB_STATUS_DICT['ready'],
                                    file_name=timestamped_file_name)
         download_job.save()
 
         # TODO: Need to map column names to DAIMS
 
-        t = threading.Thread(target=csv_selection.write_csv_from_querysets,
-                             kwargs={'download_job': download_job,
-                                     'file_name': timestamped_file_name,
-                                     'upload_name': timestamped_file_name,
-                                     'columns': columns,
-                                     'querysets': querysets})
-        t.start()
+        kwargs = {'download_job': download_job,
+                  'file_name': timestamped_file_name,
+                  'upload_name': timestamped_file_name,
+                  'columns': columns,
+                  'querysets': querysets}
+
+        if 'pytest' in sys.modules:
+            # We are testing, and cannot use threads - the testing db connection
+            # is not shared with the thread
+            csv_selection.write_csv_from_querysets(**kwargs)
+        else:
+            t = threading.Thread(target=csv_selection.write_csv_from_querysets,
+                                 kwargs=kwargs)
+            t.start()
 
         return self.get_download_response(file_name=timestamped_file_name)
+
 
 
 class DownloadAwardsViewSet(BaseDownloadViewSet):
