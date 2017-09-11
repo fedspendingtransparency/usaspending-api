@@ -79,6 +79,8 @@ class Command(BaseCommand):
 
         all_transaction_assistance = all_transaction_assistance.values()
 
+        logger.info('Processing transaction assistance => ' + str(len(all_transaction_assistance)) + ' rows')
+
         for transaction_assistance in all_transaction_assistance:
 
             legal_entity_location, created = get_or_create_location(
@@ -202,6 +204,8 @@ class Command(BaseCommand):
 
         all_transaction_contract = all_transaction_contract.values()
 
+        logger.info('Processing transaction contract => ' + str(len(all_transaction_contract)) + ' rows')
+
         for transaction_contract in all_transaction_contract:
             legal_entity_location, created = get_or_create_location(
                 legal_entity_location_field_map, transaction_contract, copy(legal_entity_location_value_map)
@@ -310,10 +314,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
-        fiscal_year = options.get('fiscal_year', 2017)
+        fiscal_year = options.get('fiscal_year')
 
         if fiscal_year:
+            fiscal_year = fiscal_year[0]
             logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
+        else:
+            fiscal_year = 2017
         
         if not options['assistance']:
             logger.info('Starting D1 historical data load...')
