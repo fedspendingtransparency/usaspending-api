@@ -26,7 +26,13 @@ def award_filter(filters):
                     'place_of_performance_scope',
                     'place_of_performance_locations',
                     'award_amounts',
-                    'award_ids'
+                    'award_ids',
+                    'program_numbers',
+                    'naics_codes',
+                    'psc_codes',
+                    'contract_pricing_type_codes',
+                    'set_aside_type_codes',
+                    'extent_competed_type_codes'
                     ]
 
         if key not in key_list:
@@ -198,6 +204,84 @@ def award_filter(filters):
                     or_queryset |= or_queryset.filter(id=v)
                 else:
                     or_queryset = Award.objects.filter(id=v)
+            if or_queryset is not None:
+                queryset &= or_queryset
+
+        # program_numbers
+        elif key == "program_numbers":
+            or_queryset = None
+            for v in value:
+                if or_queryset:
+                    or_queryset |= or_queryset.filter(
+                        latest_transaction__assistance_data__cfda__program_number=v)
+                else:
+                    or_queryset = Award.objects.filter(
+                        latest_transaction__assistance_data__cfda__program_number=v)
+            if or_queryset is not None:
+                queryset &= or_queryset
+
+        # naics_codes
+        elif key == "naics_codes":
+            or_queryset = None
+            for v in value:
+                if or_queryset:
+                    or_queryset |= or_queryset.filter(
+                        latest_transaction__contract_data__naics=v)
+                else:
+                    or_queryset = Award.objects.filter(
+                        latest_transaction__contract_data__naics=v)
+            if or_queryset is not None:
+                queryset &= or_queryset
+
+        # psc_codes
+        elif key == "psc_codes":
+            or_queryset = None
+            for v in value:
+                if or_queryset:
+                    or_queryset |= or_queryset.filter(
+                        latest_transaction__contract_data__product_or_service_code=v)
+                else:
+                    or_queryset = Award.objects.filter(
+                        latest_transaction__contract_data__product_or_service_code=v)
+            if or_queryset is not None:
+                queryset &= or_queryset
+
+        # contract_pricing_type_codes
+        elif key == "contract_pricing_type_codes":
+            or_queryset = None
+            for v in value:
+                if or_queryset:
+                    or_queryset |= or_queryset.filter(
+                        latest_transaction__contract_data__type_of_contract_pricing=v)
+                else:
+                    or_queryset = Award.objects.filter(
+                        latest_transaction__contract_data__type_of_contract_pricing=v)
+            if or_queryset is not None:
+                queryset &= or_queryset
+
+        # set_aside_type_codes
+        elif key == "set_aside_type_codes":
+            or_queryset = None
+            for v in value:
+                if or_queryset:
+                    or_queryset |= or_queryset.filter(
+                        latest_transaction__contract_data__type_set_aside=v)
+                else:
+                    or_queryset = Award.objects.filter(
+                        latest_transaction__contract_data__type_set_aside=v)
+            if or_queryset is not None:
+                queryset &= or_queryset
+
+        # extent_competed_type_codes
+        elif key == "extent_competed_type_codes":
+            or_queryset = None
+            for v in value:
+                if or_queryset:
+                    or_queryset |= or_queryset.filter(
+                        latest_transaction__contract_data__extent_competed=v)
+                else:
+                    or_queryset = Award.objects.filter(
+                        latest_transaction__contract_data__extent_competed=v)
             if or_queryset is not None:
                 queryset &= or_queryset
 
