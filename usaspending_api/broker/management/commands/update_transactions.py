@@ -207,7 +207,7 @@ class Command(BaseCommand):
 
         count = all_transaction_contract.count()
 
-        all_transaction_contract = all_transaction_contract.values()
+        # all_transaction_contract = all_transaction_contract.values()
 
         logger.info('Processing transaction contract => ' + str(count) + ' rows')
 
