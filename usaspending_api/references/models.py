@@ -900,6 +900,13 @@ class ObjectClass(models.Model):
         db_table = 'object_class'
         unique_together = ['object_class', 'direct_reimbursable']
 
+    @property
+    def corrected_major_object_class_name(self):
+        if self.major_object_class == '00':
+            return 'Unknown Object Type'
+        else:
+            return self.major_object_class_name
+
 
 class RefProgramActivity(models.Model):
     id = models.AutoField(primary_key=True)

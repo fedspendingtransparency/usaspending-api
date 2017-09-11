@@ -20,7 +20,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         field_map = {
             "treasury_account_identifier": "ACCT_NUM",
-            "account_title": "GWA_TAS NAME",
+            "account_title": "GWA_TAS_NAME",
             "reporting_agency_id": "Agency AID",
             "reporting_agency_name": "Agency Name",
             "budget_bureau_code": "ADMIN_ORG",
