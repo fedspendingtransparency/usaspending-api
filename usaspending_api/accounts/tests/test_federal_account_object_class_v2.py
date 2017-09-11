@@ -46,13 +46,13 @@ def test_federal_account_object_class_endpoint(client, financial_spending_data):
 
     # test allows for arrays to be ordered in any way
     assert (resp.data["results"][0] in [
-        {'id': 10, 'name': 'mocName1', 'minor_object_class': [{'id': 111, 'name': 'ocName1'}]},
-        {'id': 20, 'name': 'mocName2', 'minor_object_class': [{'id': 222, 'name': 'ocName2'},
-                                                              {'id': 444, 'name': 'ocName4'}]}
+        {'id': "10", 'name': 'mocName1', 'minor_object_class': [{'id': "111", 'name': 'ocName1'}]},
+        {'id': "20", 'name': 'mocName2', 'minor_object_class': [{'id': "222", 'name': 'ocName2'},
+                                                                {'id': "444", 'name': 'ocName4'}]}
     ] or resp.data["results"][0] in [
-        {'id': 10, 'name': 'mocName1', 'minor_object_class': [{'id': 111, 'name': 'ocName1'}]},
-        {'id': 20, 'name': 'mocName2', 'minor_object_class': [{'id': 444, 'name': 'ocName4'},
-                                                              {'id': 222, 'name': 'ocName2'}]}
+        {'id': "10", 'name': 'mocName1', 'minor_object_class': [{'id': "111", 'name': 'ocName1'}]},
+        {'id': "20", 'name': 'mocName2', 'minor_object_class': [{'id': "444", 'name': 'ocName4'},
+                                                                {'id': "222", 'name': 'ocName2'}]}
     ])
 
     # check for bad request due to missing params
