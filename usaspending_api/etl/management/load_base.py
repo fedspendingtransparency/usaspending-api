@@ -94,6 +94,9 @@ class Command(BaseCommand):
         logger.info('Updating award category variables...')
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
 
+        # Done!
+        logger.info('FINISHED')
+
 
 def run_sql_file(file_path, parameters):
     with db.connection.cursor() as cursor:
@@ -158,17 +161,21 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
     for index, row in enumerate(procurement_data, 1):
         if not (index % 100):
             logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
-                                                                         str(total_rows),
-                                                                         datetime.now() - start_time))
+                                                                     str(total_rows),
+                                                                     datetime.now() - start_time))
 
         legal_entity_location, created = get_or_create_location(
             legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
         )
 
+        recipient_name = row['awardee_or_recipient_legal']
+        if recipient_name is None:
+            recipient_name = ""
+
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.objects.get_or_create(
-            recipient_unique_id=row['awardee_or_recipient_uniqu'],
-            recipient_name=row['awardee_or_recipient_legal']
+            recipient_unique_id = row['awardee_or_recipient_uniqu'],
+            recipient_name = recipient_name
         )
 
         if created:
@@ -336,10 +343,14 @@ def load_file_d2(
             legal_entity_location_field_map, row, legal_entity_location_value_map
         )
 
+        recipient_name = row['awardee_or_recipient_legal']
+        if recipient_name is None:
+            recipient_name = ""
+
         # Create the legal entity if it doesn't exist
         legal_entity, created = LegalEntity.objects.get_or_create(
-            recipient_unique_id=row['awardee_or_recipient_uniqu'],
-            recipient_name=row['awardee_or_recipient_legal']
+            recipient_unique_id = row['awardee_or_recipient_uniqu'],
+            recipient_name = recipient_name
         )
 
         if created:
