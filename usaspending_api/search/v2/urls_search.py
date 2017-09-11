@@ -7,6 +7,6 @@ urlpatterns = [
     url(r'^spending_over_time', SpendingOverTimeVisualizationViewSet.as_view()),
     url(r'^spending_by_category', SpendingByCategoryVisualizationViewSet.as_view()),
     url(r'^spending_by_geography', SpendingByGeographyVisualizationViewSet.as_view()),
-    url(r'^spending_by_award_type_count', SpendingByAwardCountVisualizationViewSet.as_view()),
-    url(r'^spending_by_award_type', SpendingByAwardVisualizationViewSet.as_view()),
+    url(r'^spending_by_award_count', SpendingByAwardCountVisualizationViewSet.as_view()),
+    url(r'^spending_by_award', SpendingByAwardVisualizationViewSet.as_view()),
 ]

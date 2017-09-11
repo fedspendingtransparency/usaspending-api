@@ -53,7 +53,7 @@ def test_spending_by_award_type_success(client, budget_function_data):
 
     # test for NAICS_description exact match
     resp = client.post(
-        '/api/v2/search/spending_by_award_type/',
+        '/api/v2/search/spending_by_award/',
         content_type='application/json',
         data=json.dumps({
             "fields": ["Award ID", "Recipient Name"],
@@ -113,7 +113,7 @@ def test_spending_by_award_type_success(client, budget_function_data):
         "extent_competed_type_codes": ["SAMPLECODE_ECTC"]
     }
     resp = client.post(
-        '/api/v2/search/spending_by_award_type',
+        '/api/v2/search/spending_by_award',
         content_type='application/json',
         data=json.dumps({
             "fields": ["Award ID", "Recipient Name"],
@@ -127,7 +127,7 @@ def test_spending_by_award_type_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
-        '/api/v2/search/spending_by_award_type/',
+        '/api/v2/search/spending_by_award/',
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
