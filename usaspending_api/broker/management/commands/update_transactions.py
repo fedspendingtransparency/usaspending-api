@@ -7,6 +7,7 @@ from usaspending_api.broker.models import TransactionNew, TransactionAssistanceN
 from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency, LegalEntity
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 
 # start = timeit.default_timer()
 # function_call
@@ -77,9 +78,11 @@ class Command(BaseCommand):
         if fiscal_year:
             all_transaction_assistance = all_transaction_assistance.filter(action_date__fy=fiscal_year)
 
+        count = all_transaction_assistance.count()
+
         all_transaction_assistance = all_transaction_assistance.values()
 
-        logger.info('Processing transaction assistance => ' + str(len(all_transaction_assistance)) + ' rows')
+        logger.info('Processing transaction assistance => ' + str(count) + ' rows')
 
         for transaction_assistance in all_transaction_assistance:
 
@@ -202,9 +205,11 @@ class Command(BaseCommand):
         if fiscal_year:
             all_transaction_contract = all_transaction_contract.filter(action_date__fy=fiscal_year)
 
+        count = all_transaction_contract.count()
+
         all_transaction_contract = all_transaction_contract.values()
 
-        logger.info('Processing transaction contract => ' + str(len(all_transaction_contract)) + ' rows')
+        logger.info('Processing transaction contract => ' + str(count) + ' rows')
 
         for transaction_contract in all_transaction_contract:
             legal_entity_location, created = get_or_create_location(
@@ -335,3 +340,15 @@ class Command(BaseCommand):
             self.update_transaction_assistance(fiscal_year=fiscal_year)
             end = timeit.default_timer()
             logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
+
+        logger.info('Updating awards to reflect their latest associated transaction info...')
+        update_awards(tuple(AWARD_UPDATE_ID_LIST))
+
+        logger.info('Updating contract-specific awards to reflect their latest transaction info...')
+        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+
+        logger.info('Updating award category variables...')
+        update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+
+        # Done!
+        logger.info('FINISHED')
