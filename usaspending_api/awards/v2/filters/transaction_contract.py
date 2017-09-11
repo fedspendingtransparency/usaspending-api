@@ -41,7 +41,7 @@ def transaction_contract_filter(filters):
                     or_queryset = or_queryset.filter(
                         transaction__award__period_of_performance_start_date__gte=value["start_date"],
                         transaction__award__period_of_performance_current_end_date__lte=value["end_date"])
-                queryset |= or_queryset
+                queryset |= or_queryset  # TODO: really or, not and?
             else:
                 raise InvalidParameterException('Invalid filter: time period value is invalid.')
 
@@ -71,14 +71,14 @@ def transaction_contract_filter(filters):
                         or_queryset |= TransactionContract.objects.filter(transaction__award__awarding_agency__subtier_agency__name=name)
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + name + ' type is invalid.')
-            pass
+            queryset &= or_queryset
 
         # legal_entities - DONE
         elif key == "legal_entities":
             or_queryset = TransactionContract.objects.none()
             for v in value:
                 or_queryset |= TransactionContract.objects.filter(transaction__award__recipient__name=v)
-            queryset = queryset & or_queryset
+            queryset &= or_queryset
 
         # recipient_location_scope (broken till data reload) - Done
         elif key == "recipient_scope":
@@ -89,6 +89,7 @@ def transaction_contract_filter(filters):
                     queryset = queryset.TransactionContract.exclude(transaction__award__recipient__location__country_name="UNITED STATES")
                 else:
                     raise InvalidParameterException('Invalid filter: recipient_location type is invalid.')
+            # TODO: "and" it with queryset?
 
         # recipient_location - DONE
         elif key == "recipient_locations":
@@ -96,7 +97,7 @@ def transaction_contract_filter(filters):
                 or_queryset = TransactionContract.objects.none()
                 for v in value:
                     or_queryset |= TransactionContract.objects.filter(transaction__award__recipient__location__location_id=v)
-                queryset = queryset & or_queryset
+                queryset &= or_queryset
             else:
                 raise InvalidParameterException('Invalid filter: recipient_location object is invalid.')
 
@@ -115,6 +116,7 @@ def transaction_contract_filter(filters):
                 queryset = queryset.TransactionContract.exclude(transaction__award__place_of_performance__country_name="UNITED STATES")
             else:
                 raise InvalidParameterException('Invalid filter: recipient_location type is invalid.')
+            # TODO: "and" it with queryset?
 
         # place_of_performance  - DONE
         elif key == "place_of_performance_locations":

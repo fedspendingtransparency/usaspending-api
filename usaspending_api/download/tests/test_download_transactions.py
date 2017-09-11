@@ -175,8 +175,8 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
         '/api/v2/download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "filters": {"agencies": ["Bureau of Stuff", ]},
-            "columns": ["piid", "fain"]
+            "filters": {"agencies": [{'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Stuff", }, ]},
+            "columns": ["piid", ]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
@@ -187,8 +187,9 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
         '/api/v2/download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "filters": {"agencies": ["Bureau of Things", "Bureau of Stuff", ]},
-            "columns": ["piid", "fain"]
+            "filters": {"agencies": [{'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Stuff", },
+                                     {'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Things", },]},
+            "columns": ["piid", "fain", ]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))

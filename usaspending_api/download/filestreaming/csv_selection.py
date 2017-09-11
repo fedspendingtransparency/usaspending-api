@@ -75,22 +75,23 @@ def write_csv_from_querysets(download_job, file_name, upload_name, columns,
     # TODO: how do we detect errors in the thread?
 
     for queryset in querysets:
-        field_names = [
-            q.name for q in queryset.model._meta.fields
-            if q.name in queryset.values()[0].keys()
-        ]
-        if columns:
-            field_names = [f for f in field_names if f in columns]
-            if not field_names:
-                continue  # no columns requested, omit this queryset entirely
-        querysets_needed.append(queryset)
-        download_job.number_of_rows = (download_job.number_of_rows or 0
-                                       ) + queryset.count()
-        widths.append(len(field_names))
-        header.extend(field_names)
-        offsets.append(offset + len(field_names))
-        offset += len(field_names)
-        all_field_names.append(field_names)
+        if queryset.first():
+            field_names = [
+                q.name for q in queryset.model._meta.fields
+                if q.name in queryset.values()[0].keys()
+            ]
+            if columns:
+                field_names = [f for f in field_names if f in columns]
+                if not field_names:
+                    continue  # no columns requested, omit this queryset entirely
+            querysets_needed.append(queryset)
+            download_job.number_of_rows = (download_job.number_of_rows or 0
+                                           ) + queryset.count()
+            widths.append(len(field_names))
+            header.extend(field_names)
+            offsets.append(offset + len(field_names))
+            offset += len(field_names)
+            all_field_names.append(field_names)
 
     download_job.number_of_columns = len(header)
     download_job.save()
@@ -99,6 +100,7 @@ def write_csv_from_querysets(download_job, file_name, upload_name, columns,
     if missing:
         raise InvalidParameterException('Columns not available: {}'.format(
             missing))
+        # TODO: If column exists, but only in tables which had no results
 
     def row_emitter():
         for (idx, queryset) in enumerate(querysets_needed):
