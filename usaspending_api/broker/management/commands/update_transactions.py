@@ -310,7 +310,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
-        fiscal_year = options.get('fiscal_year', None)
+        fiscal_year = options.get('fiscal_year', 2017)
 
         if fiscal_year:
             logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
