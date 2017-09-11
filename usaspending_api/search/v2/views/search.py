@@ -495,7 +495,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
             for field in fields:
                 try:
-                    values.append(loan_type_mapping[field])
+                    values.append(loan_award_mapping[field])
                 except:
                     raise InvalidParameterException("Invalid field value: {}".format(field))
         elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
@@ -519,7 +519,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     row[field] = award[award_contracts_mapping[field]]
             elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
                 for field in fields:
-                    row[field] = award[loan_type_mapping[field]]
+                    row[field] = award[loan_award_mapping[field]]
             elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
                 for field in fields:
                     row[field] = award[non_loan_assistance_award_mapping[field]]
