@@ -67,8 +67,6 @@ def type_filter(_type, filters):
         if _type == 'agency_sub':
             alt_set = exp.awarding_sub_tier_agency()
 
-        alt_set = alt_set.filter(amount__gt=Decimal('0.00'))
-
         # Total value of filtered results
         total = alt_set.aggregate(Sum('transaction_obligated_amount'))
         for key, value in total.items():
@@ -96,8 +94,6 @@ def type_filter(_type, filters):
             queryset = exp.object_class()
         if _type == 'agency':
             queryset = exp.agency()
-
-        queryset = queryset.filter(amount__gt=Decimal('0.00'))
 
         # Total value of filtered results
         total = queryset.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
