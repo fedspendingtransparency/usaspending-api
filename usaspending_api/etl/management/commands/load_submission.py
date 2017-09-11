@@ -163,7 +163,9 @@ class Command(load_base.Command):
             logger.warning("Error loading subawards for this submission")
 
         logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
+
         # Cleanup not specific to this submission is run in the `.handle` method
+        logger.info('Successfully loaded broker submission {}.'.format(options['submission_id'][0]))
 
 
 def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
@@ -266,8 +268,8 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
-    db_cursor.execute("SELECT * FROM tas_lookup WHERE financial_indicator2 <> 'F' and account_num = %s",
-                      [tas_lookup_id])
+    db_cursor.execute("SELECT * FROM tas_lookup WHERE (financial_indicator2 <> 'F' OR financial_indicator2 IS NULL) "
+                      "AND account_num = %s", [tas_lookup_id])
     tas_data = dictfetchall(db_cursor)
 
     if tas_data is None or len(tas_data) == 0:
@@ -307,16 +309,8 @@ def get_submission_attributes(broker_submission_id, submission_data):
         # do not proceed.
         # TODO: now that we're chaining submisisons together, get clarification on
         # what should happen when a submission in the middle of the chain is deleted
-        downstream_submission = SubmissionAttributes.objects.filter(previous_submission=submission_attributes).first()
-        if downstream_submission is not None:
-            message = (
-                'Broker submission {} (API submission id = {}) has a downstream submission (id={}) and '
-                'cannot be deleted'.format(
-                    broker_submission_id,
-                    submission_attributes.submission_id,
-                    downstream_submission.submission_id)
-            )
-            raise ValueError(message)
+
+        TasProgramActivityObjectClassQuarterly.refresh_downstream_quarterly_numbers(submission_attributes.submission_id)
 
         logger.info('Broker submission id {} already exists. It will be deleted.'.format(broker_submission_id))
         call_command('rm_submission', broker_submission_id)
@@ -410,6 +404,12 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
+
+    total_tas_skipped = 0
+    for key in skipped_tas:
+        total_tas_skipped += skipped_tas[key]['count']
+
+    logger.info('Skipped a total of {} TAS rows for File A'.format(total_tas_skipped))
 
 
 def get_file_b(submission_attributes, db_cursor):
@@ -562,9 +562,9 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
                     skipped_tas[row['tas']]['rows'] = [row['row_number']]
                 else:
                     skipped_tas[row['tas']]['count'] += 1
-                    skipped_tas[row['tas']]['rows'] += row['row_number']
+                    skipped_tas[row['tas']]['rows'] += [row['row_number']]
                 continue
-        except:
+        except:    # TODO: What is this trying to catch, actually?
             continue
 
         # get the corresponding account balances row (aka "File A" record)
@@ -595,6 +595,12 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
+
+    total_tas_skipped = 0
+    for key in skipped_tas:
+        total_tas_skipped += skipped_tas[key]['count']
+
+    logger.info('Skipped a total of {} TAS rows for File B'.format(total_tas_skipped))
 
 
 def load_file_c(submission_attributes, db_cursor, award_financial_frame):
@@ -681,3 +687,9 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
+
+    total_tas_skipped = 0
+    for key in skipped_tas:
+        total_tas_skipped += skipped_tas[key]['count']
+
+    logger.info('Skipped a total of {} TAS rows for File C'.format(total_tas_skipped))

@@ -176,6 +176,14 @@ def load_subawards(submission_attributes, db_cursor):
                                          transaction__assistance_data__isnull=False,
                                          transaction__assistance_data__uri=row['uri']).distinct().first()
 
+        # Try both
+        if not award and row['fain'] and len(row['fain']) > 0 and row['uri'] and len(row['uri']) > 0:
+            award = Award.objects.filter(awarding_agency=agency,
+                                         transaction__submission=submission_attributes,
+                                         transaction__assistance_data__isnull=False,
+                                         transaction__assistance_data__fain=row['fain'],
+                                         transaction__assistance_data__uri=row['uri']).distinct().order_by("-date_signed").first()
+
         # We don't have a matching award for this subcontract, log a warning and continue to the next row
         if not award:
             logger.warn("Subaward number {} cannot find matching award with fain {}, uri {}; skipping...".format(row['subaward_num'], row['fain'], row['uri']))

@@ -1,7 +1,11 @@
 import datetime
+import logging
+import time
 
 from django.utils.dateparse import parse_date
 from usaspending_api.references.models import Agency
+
+logger = logging.getLogger(__name__)
 
 
 def check_valid_toptier_agency(agency_id):
@@ -26,6 +30,46 @@ def get_params_from_req_or_request(request=None, req=None):
         params.update(req.request["data"])
 
     return params
+
+
+def generate_fiscal_year(date):
+    """ Generate fiscal year based on the date provided """
+    year = date.year
+    if date.month in [10, 11, 12]:
+        year += 1
+    return year
+
+
+def generate_fiscal_period(date):
+    """ Generate fiscal period based on the date provided """
+    return ((generate_fiscal_month(date) - 1) // 3) + 1
+
+
+def generate_fiscal_month(date):
+    """ Generate fiscal period based on the date provided """
+    if date.month in [10, 11, 12, "10", "11", "12"]:
+        return date.month - 9
+    return date.month + 3
+
+
+def get_pagination(results, limit, page, benchmarks=False):
+    if benchmarks:
+        start_pagination = time.time()
+    page_metadata = {"page": page, "count": len(results), "next": None, "previous": None, "hasNext": False,
+                     "hasPrevious": False}
+    if limit < 1 or page < 1:
+        return [], page_metadata
+    page_metadata["hasNext"] = (limit*page < len(results))
+    page_metadata["hasPrevious"] = (page > 1 and limit*(page-2) < len(results))
+    if not page_metadata["hasNext"]:
+        paginated_results = results[limit*(page-1):]
+    else:
+        paginated_results = results[limit*(page-1):limit*page]
+    page_metadata["next"] = page+1 if page_metadata["hasNext"] else None
+    page_metadata["previous"] = page-1 if page_metadata["hasPrevious"] else None
+    if benchmarks:
+        logger.info("get_pagination took {} seconds".format(time.time() - start_pagination))
+    return paginated_results, page_metadata
 
 
 def fy(raw_date):
@@ -93,7 +137,15 @@ FY_PG_FUNCTION_DEF = '''
             RETURN result;
           END;
         $$ LANGUAGE plpgsql;
+        '''
 
+FY_FROM_TEXT_PG_FUNCTION_DEF = '''
+    CREATE OR REPLACE FUNCTION fy(raw_date TEXT)
+    RETURNS integer AS $$
+          BEGIN
+            RETURN fy(raw_date::DATE);
+          END;
+        $$ LANGUAGE plpgsql;
         '''
 
 """
