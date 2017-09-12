@@ -174,3 +174,4 @@ class FiscalYear(models.Transform):
 
 models.DateField.register_lookup(FiscalYear)
 models.DateTimeField.register_lookup(FiscalYear)
+models.TextField.register_lookup(FiscalYear)

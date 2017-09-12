@@ -122,14 +122,14 @@ class Award(DataSourceTrackedModel):
     uri = models.TextField(db_index=True, blank=True, null=True, help_text="The uri of the award")
     total_obligation = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True, verbose_name="Total Obligated", help_text="The amount of money the government is obligated to pay for the award")
     total_outlay = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True, help_text="The total amount of money paid out for this award")
-    awarding_agency = models.ForeignKey(Agency, related_name='+', null=True, help_text="The awarding agency for the award")
-    funding_agency = models.ForeignKey(Agency, related_name='+', null=True, help_text="The funding agency for the award")
+    awarding_agency = models.ForeignKey(Agency, related_name='+', null=True, help_text="The awarding agency for the award", db_index=True)
+    funding_agency = models.ForeignKey(Agency, related_name='+', null=True, help_text="The funding agency for the award", db_index=True)
     date_signed = models.DateField(null=True, db_index=True, verbose_name="Award Date", help_text="The date the award was signed")
-    recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient of the award")
-    description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award")
+    recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient of the award", db_index=True)
+    description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award", db_index=True)
     period_of_performance_start_date = models.DateField(null=True, db_index=True, verbose_name="Start Date", help_text="The start date for the period of performance")
     period_of_performance_current_end_date = models.DateField(null=True, db_index=True, verbose_name="End Date", help_text="The current, not original, period of performance end date")
-    place_of_performance = models.ForeignKey(Location, null=True, help_text="The principal place of business, where the majority of the work is performed. For example, in a manufacturing contract, this would be the main plant where items are produced.")
+    place_of_performance = models.ForeignKey(Location, null=True, help_text="The principal place of business, where the majority of the work is performed. For example, in a manufacturing contract, this would be the main plant where items are produced.", db_index=True)
     potential_total_value_of_award = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True, null=True, verbose_name="Potential Total Value of Award", help_text="The sum of the potential_value_of_award from associated transactions")
     last_modified_date = models.DateField(blank=True, null=True, help_text="The date this award was last modified")
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
@@ -173,79 +173,65 @@ class Award(DataSourceTrackedModel):
         """
         # If an award transaction's ID is a piid, it's contract data
         # If the ID is fain or a uri, it's financial assistance. If the award transaction
-        # has both a fain and a uri, fain takes precedence.
-        q_kwargs = {}
-        for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-            if i[0]:
-                q_kwargs[i[1]] = i[0]
-                if parent_award_id:
-                    q_kwargs["parent_award__" + i[1]] = parent_award_id
+        # has both a fain and a uri, include both.
+        try:
+            lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
+            for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+                lookup_kwargs[i[1]] = i[0]
+                if parent_award_id and i[0]:
                     # parent_award__piid, parent_award__fain, parent_award__uri
-                else:
-                    q_kwargs["parent_award"] = None
+                    lookup_kwargs["parent_award__" + i[1]] = parent_award_id
+                    if "parent_award" in lookup_kwargs:
+                        del lookup_kwargs["parent_award"]
 
-                # Now search for it
-                # Do we want to log something if the the query below turns up
-                # more than one award record?
-                if use_cache:
-                    q_kwargs_fixed = list(q_kwargs.items()) + [('awarding_agency', awarding_agency), ]
-                    q_kwargs_fixed.sort()
-                    summary_award = awards_cache.get(q_kwargs_fixed)
-                    if summary_award:
-                        return [], summary_award
-
-                # Look for an existing award record
+            # Look for an existing award record
+            summary_award = Award.objects \
+                .filter(Q(**lookup_kwargs)) \
+                .filter(awarding_agency=awarding_agency) \
+                .first()
+            if (summary_award is None and
+                    awarding_agency is not None and
+                    awarding_agency.toptier_agency.name != awarding_agency.subtier_agency.name):
+                # No award match found when searching by award id info +
+                # awarding subtier agency. Relax the awarding agency
+                # critera to just the toptier agency instead of the subtier
+                # agency and try the search again.
+                awarding_agency_toptier = Agency.get_by_toptier(
+                    awarding_agency.toptier_agency.cgac_code)
                 summary_award = Award.objects \
-                    .filter(Q(**q_kwargs)) \
-                    .filter(awarding_agency=awarding_agency) \
+                    .filter(Q(**lookup_kwargs)) \
+                    .filter(awarding_agency=awarding_agency_toptier) \
                     .first()
-                if (summary_award is None and
-                        awarding_agency is not None and
-                        awarding_agency.toptier_agency.name != awarding_agency.subtier_agency.name):
-                    # No award match found when searching by award id info +
-                    # awarding subtier agency. Relax the awarding agency
-                    # critera to just the toptier agency instead of the subtier
-                    # agency and try the search again.
-                    awarding_agency_toptier = Agency.get_by_toptier(
-                        awarding_agency.toptier_agency.cgac_code)
-                    summary_award = Award.objects \
-                        .filter(Q(**q_kwargs)) \
-                        .filter(awarding_agency=awarding_agency_toptier) \
-                        .first()
 
-                if summary_award:
-                    if use_cache:
-                        awards_cache.set(q_kwargs_fixed, summary_award)
-                    return [], summary_award
+            if summary_award:
+                return [], summary_award
 
-                # We weren't able to match, so create a new award record.
-                if parent_award_id:
-                    # If parent award id was supplied, recursively get/create
-                    # an award record for it
-                    parent_created, parent_award = Award.get_or_create_summary_award(
-                        use_cache=use_cache,
-                        **{i[1]: parent_award_id, 'awarding_agency': awarding_agency})
-                else:
-                    parent_created, parent_award = [], None
+            # We weren't able to match, so create a new award record.
+            if parent_award_id:
+                # If parent award id was supplied, recursively get/create
+                # an award record for it
+                parent_q_kwargs = {'awarding_agency': awarding_agency}
+                for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+                    parent_q_kwargs[i[1]] = parent_award_id if i[0] else None
+                parent_created, parent_award = Award.get_or_create_summary_award(**parent_q_kwargs)
+            else:
+                parent_created, parent_award = [], None
 
-                # Now create the award record for this award transaction
-                summary_award = Award(**{
-                    i[1]: i[0],
-                    "parent_award": parent_award,
-                    "awarding_agency": awarding_agency})
-                created = [summary_award, ]
-                created.extend(parent_created)
+            # Now create the award record for this award transaction
+            create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award}
+            for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+                create_kwargs[i[1]] = i[0]
+            summary_award = Award(**create_kwargs)
+            created = [summary_award, ]
+            created.extend(parent_created)
 
-                if use_cache:
-                    awards_cache.set(q_kwargs_fixed, summary_award)
-                else:
-                    summary_award.save()
-                return created, summary_award
-
-        raise ValueError(
-            'Unable to find or create an award with the provided information: '
-            'piid={}, fain={}, uri={}, parent_id={}, awarding_agency={}'.format(
-                piid, fain, uri, parent_award_id, awarding_agency))
+            summary_award.save()
+            return created, summary_award
+        except:
+            raise ValueError(
+                'Unable to find or create an award with the provided information: '
+                'piid={}, fain={}, uri={}, parent_id={}, awarding_agency={}'.format(
+                    piid, fain, uri, parent_award_id, awarding_agency))
 
     class Meta:
         db_table = 'awards'
@@ -270,7 +256,7 @@ class TransactionAgeComparisonMixin:
 
 
 class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
-    award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
+    award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in", db_index=True)
     usaspending_unique_transaction_id = models.TextField(blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
     type = models.TextField(verbose_name="Action Type", null=True, help_text="The type for this transaction. For example, A, B, C, D", db_index=True)
@@ -282,11 +268,11 @@ class Transaction(DataSourceTrackedModel, TransactionAgeComparisonMixin):
     action_type_description = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True, null=True, help_text="The obligation of the federal government for this transaction")
     modification_number = models.TextField(blank=True, null=True, verbose_name="Modification Number", help_text="The modification number for this transaction")
-    awarding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_awarding_agency', null=True, help_text="The agency which awarded this transaction")
-    funding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_funding_agency', null=True, help_text="The agency which is funding this transaction")
-    recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient for this transaction")
-    description = models.TextField(null=True, help_text="The description of this transaction")
-    place_of_performance = models.ForeignKey(Location, null=True, help_text="The location where the work on this transaction was performed")
+    awarding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_awarding_agency', null=True, help_text="The agency which awarded this transaction", db_index=True)
+    funding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_funding_agency', null=True, help_text="The agency which is funding this transaction", db_index=True)
+    recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient for this transaction", db_index=True)
+    description = models.TextField(null=True, help_text="The description of this transaction", db_index=True)
+    place_of_performance = models.ForeignKey(Location, null=True, help_text="The location where the work on this transaction was performed", db_index=True)
     drv_award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_potential_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
@@ -335,9 +321,9 @@ class TransactionContract(DataSourceTrackedModel):
     parent_award_id = models.TextField(blank=True, null=True, verbose_name="Parent Award ID", db_index=True, help_text="The parent award id for this transaction. This is generally the piid of an IDV")
     cost_or_pricing_data = models.TextField(blank=True, null=True, help_text="")
     cost_or_pricing_data_description = models.TextField(blank=True, null=True)
-    type_of_contract_pricing = models.TextField(default="UN", blank=True, null=True, verbose_name="Type of Contract Pricing", help_text="The type of contract pricing data, as a code")
+    type_of_contract_pricing = models.TextField(default="UN", blank=True, null=True, verbose_name="Type of Contract Pricing", help_text="The type of contract pricing data, as a code", db_index=True)
     type_of_contract_pricing_description = models.TextField(blank=True, null=True, verbose_name="Type of Contract Pricing Description", help_text="A plain text description of the type of contract pricing data")
-    naics = models.TextField(blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code")
+    naics = models.TextField(blank=True, null=True, verbose_name="NAICS", help_text="Specified which industry the work for this transaction falls into. A 6-digit code", db_index=True)
     naics_description = models.TextField(blank=True, null=True, verbose_name="NAICS Description", help_text="A plain text description of the NAICS code")
     period_of_performance_potential_end_date = models.DateField(max_length=10, verbose_name="Period of Performance Potential End Date", null=True, help_text="The potential end date of the period of performance")
     ordering_period_end_date = models.DateField(blank=True, null=True, help_text="The end date for the ordering period")
@@ -371,7 +357,7 @@ class TransactionContract(DataSourceTrackedModel):
     davis_bacon_act_description = models.TextField(null=True, blank=True)
     evaluated_preference = models.TextField(blank=True, null=True)
     evaluated_preference_description = models.TextField(null=True, blank=True)
-    extent_competed = models.TextField(blank=True, null=True)
+    extent_competed = models.TextField(blank=True, null=True, db_index=True)
     extent_competed_description = models.TextField(null=True, blank=True)
     fed_biz_opps = models.TextField(blank=True, null=True)
     fed_biz_opps_description = models.TextField(null=True, blank=True)
@@ -396,7 +382,7 @@ class TransactionContract(DataSourceTrackedModel):
     place_of_manufacture = models.TextField(blank=True, null=True)
     place_of_manufacture_description = models.TextField(null=True, blank=True)
     price_evaluation_adjustment_preference_percent_difference = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    product_or_service_code = models.TextField(blank=True, null=True)
+    product_or_service_code = models.TextField(blank=True, null=True, db_index=True)
     program_acronym = models.TextField(blank=True, null=True)
     other_than_full_and_open_competition = models.TextField(blank=True, null=True)
     recovered_materials_sustainability = models.TextField(blank=True, null=True)
@@ -416,7 +402,7 @@ class TransactionContract(DataSourceTrackedModel):
     subcontracting_plan = models.TextField(blank=True, null=True)
     subcontracting_plan_description = models.TextField(null=True, blank=True)
     program_system_or_equipment_code = models.TextField(blank=True, null=True)
-    type_set_aside = models.TextField(blank=True, null=True, verbose_name="Type Set Aside")
+    type_set_aside = models.TextField(blank=True, null=True, verbose_name="Type Set Aside", db_index=True)
     type_set_aside_description = models.TextField(null=True, blank=True)
     epa_designated_product = models.TextField(blank=True, null=True)
     epa_designated_product_description = models.TextField(null=True, blank=True)
@@ -460,7 +446,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     fain = models.TextField(blank=True, null=True, db_index=True)
     uri = models.TextField(blank=True, null=True, db_index=True)
-    cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_assistance", null=True)
+    cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_assistance", null=True, db_index=True)
     business_funds_indicator = models.TextField()
     business_funds_indicator_description = models.TextField(blank=True, null=True)
     non_federal_funding_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
