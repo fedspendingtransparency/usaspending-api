@@ -350,7 +350,7 @@ award_column_map.update({
     k: v[len('transaction__')]
     for (k, v) in transaction_d1_columns.items()
     if v.startswith('transaction__recipient__') or
-       v.startswith('transaction__place_of_performance__')
+    v.startswith('transaction__place_of_performance__')
 })
 
 award_column_map.update({
