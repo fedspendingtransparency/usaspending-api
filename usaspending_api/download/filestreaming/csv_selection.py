@@ -71,7 +71,7 @@ class CsvSource:
          [valA2, None, valB2]]
         """
         col_names = [c for c in self.db_col_names if c]
-        rows = self.queryset.values_list(*col_names)
+        rows = self.queryset.values_list(*col_names).iterator()
         for row in rows:
             yield [(row[i] if c else None) for (i, c) in enumerate(self.db_col_names)]
 
