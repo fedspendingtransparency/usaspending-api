@@ -2,6 +2,7 @@ import logging
 import timeit
 
 from django.core.management.base import BaseCommand
+from django import db
 
 from usaspending_api.broker.models import TransactionNew, TransactionAssistanceNew, TransactionContractNew, TransactionMap
 from usaspending_api.awards.models import Award
@@ -208,11 +209,11 @@ class Command(BaseCommand):
         # limit = 100000
         # all_transaction_contract = all_transaction_contract[:limit]
 
-        # count = all_transaction_contract.count()
+        count = all_transaction_contract.count()
 
-        # all_transaction_contract = all_transaction_contract.values()
+        all_transaction_contract = all_transaction_contract.values()
 
-        # logger.info('Processing transaction contract => ' + str(count) + ' rows')
+        logger.info('Processing transaction contract => ' + str(count) + ' rows')
 
         for transaction_contract in all_transaction_contract:
             legal_entity_location, created = get_or_create_location(
@@ -292,6 +293,8 @@ class Command(BaseCommand):
             transaction_map.transaction_id = transaction.id
             transaction_map.transaction_contract_id = transaction_contract['detached_award_procurement_id']
             transaction_map.save()
+
+            db.reset_queries()
 
     def add_arguments(self, parser):
         
