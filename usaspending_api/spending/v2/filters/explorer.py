@@ -83,12 +83,12 @@ class Explorer(object):
         return alt_set
 
     def agency(self):
-        # Awarding Top Tier Agencies Queryset
+        # Funding Top Tier Agencies Queryset
         queryset = self.queryset.annotate(
-            id=F('treasury_account__awarding_toptier_agency__toptier_agency_id'),
+            id=F('treasury_account__funding_toptier_agency__toptier_agency_id'),
             type=Value('agency', output_field=CharField()),
-            name=F('treasury_account__awarding_toptier_agency__name'),
-            code=F('treasury_account__awarding_toptier_agency__cgac_code')
+            name=F('treasury_account__funding_toptier_agency__name'),
+            code=F('treasury_account__funding_toptier_agency__cgac_code')
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
