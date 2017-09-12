@@ -135,7 +135,7 @@ class Explorer(object):
         alt_set = self.alt_set.annotate(
             id=F('award__id'),
             type=Value('award', output_field=CharField()),
-            name=F('award__type_description'),
+            name=F('award__piid'),
             code=F('award__piid')
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
