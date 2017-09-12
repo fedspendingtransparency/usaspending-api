@@ -28,7 +28,7 @@ def spending_filter(alt_set, queryset, filters, _type):
         alt_set_keys = ['recipient', 'award', 'award_category', 'agency_type', 'agency_sub']
         if _type in alt_set_keys:
             # Apply filters
-            # budget_function - DONE
+            # budget_function
             if key == 'budget_function':
                 or_alt_set = None
                 if or_alt_set:
@@ -44,7 +44,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
 
-            # budget_subfunction - DONE
+            # budget_subfunction
             elif key == 'budget_subfunction':
                 or_alt_set = None
                 if or_alt_set:
@@ -60,7 +60,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
 
-            # federal_account - DONE
+            # federal_account
             elif key == 'federal_account':
                 or_alt_set = None
                 if or_alt_set:
@@ -76,7 +76,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
 
-            # program_activity - DONE
+            # program_activity
             elif key == 'program_activity':
                 or_alt_set = None
                 if or_alt_set:
@@ -92,7 +92,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
 
-            # object_class - DONE
+            # object_class
             elif key == 'object_class':
                 or_alt_set = None
                 if or_alt_set:
@@ -108,7 +108,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
 
-            # recipient - DONE
+            # recipient
             elif key == 'recipient':
                 or_alt_set = None
                 if or_alt_set:
@@ -118,7 +118,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
 
-            # award, award_category - DONE
+            # award, award_category
             elif key == 'award' or key == 'award_category':
                 or_alt_set = None
                 if or_alt_set:
@@ -128,7 +128,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_alt_set is not None:
                     alt_set &= or_alt_set
 
-            # agency - DONE
+            # agency
             elif key == 'agency':
                 or_alt_set = None
                 try:
@@ -150,7 +150,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                     if or_alt_set is not None:
                         alt_set &= or_alt_set
 
-            # agency_type - DONE
+            # agency_type
             elif key == 'agency_type':
                 or_alt_set = None
                 try:
@@ -168,7 +168,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                     if or_alt_set is not None:
                         alt_set &= or_alt_set
 
-            # agency_sub - DONE
+            # agency_sub
             elif key == 'agency_sub':
                 or_alt_set = None
                 try:
@@ -188,7 +188,7 @@ def spending_filter(alt_set, queryset, filters, _type):
 
         # All other _type
         else:
-            # budget_function - DONE
+            # budget_function
             if key == 'budget_function':
                 or_queryset = None
                 if or_queryset:
@@ -198,7 +198,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_queryset is not None:
                     queryset &= or_queryset
 
-            # budget_subfunction - DONE
+            # budget_subfunction
             elif key == 'budget_subfunction':
                 or_queryset = None
                 if or_queryset:
@@ -208,7 +208,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_queryset is not None:
                     queryset &= or_queryset
 
-            # federal_account - DONE
+            # federal_account
             elif key == 'federal_account':
                 or_queryset = None
                 if or_queryset:
@@ -218,7 +218,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_queryset is not None:
                     queryset &= or_queryset
 
-            # program_activity - DONE
+            # program_activity
             elif key == 'program_activity':
                 or_queryset = None
                 if or_queryset:
@@ -228,7 +228,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_queryset is not None:
                     queryset &= or_queryset
 
-            # object_class - DONE
+            # object_class
             elif key == 'object_class':
                 or_queryset = None
                 if or_queryset:
@@ -238,7 +238,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_queryset is not None:
                     queryset &= or_queryset
 
-            # recipient - DONE
+            # recipient
             elif key == 'recipient':
                 or_queryset = None
                 if or_queryset:
@@ -252,7 +252,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_queryset is not None:
                     queryset &= or_queryset
 
-            # award, award_category - DONE
+            # award, award_category
             elif key == 'award' or key == 'award_category':
                 or_queryset = None
                 if or_queryset:
@@ -266,7 +266,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 if or_queryset is not None:
                     queryset &= or_queryset
 
-            # agency - DONE
+            # agency
             elif key == 'agency':
                 or_queryset = None
                 try:
@@ -284,7 +284,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                     if or_queryset is not None:
                         queryset &= or_queryset
 
-            # agency_type - DONE
+            # agency_type
             elif key == 'agency_type':
                 or_queryset = None
                 try:
@@ -306,7 +306,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                     if or_queryset is not None:
                         queryset &= or_queryset
 
-            # agency_sub - DONE
+            # agency_sub
             elif key == 'agency_sub':
                 or_queryset = None
                 try:
