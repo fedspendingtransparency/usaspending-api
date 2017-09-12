@@ -76,8 +76,8 @@ transaction_d1_columns = {
     "Number of Actions": "number_of_actions",  # DONE
     "Product or Service Code (PSC)": "product_or_service_code",  # DONE
     # "Product or Service Code (PSC) Description": "product_or_service_code_description",  # TODO
-    "Contract Bundling Code": "contract_bundling",  # DONE
-    "Contract Bundling": "contract_bundling__description",  # DONE
+    # "Contract Bundling Code": "contract_bundling",  # DONE
+    # "Contract Bundling": "contract_bundling__description",  # DONE
     "DoD Claimant Program Code": "dod_claimant_program_code",  # DONE
     # "DoD Claimant Program Description": "dod_claimant_program_description",  # TODO
     "NAICS Code": "naics",  # DONE
@@ -252,7 +252,7 @@ transaction_d1_columns = {
     "Self-Certified Small Disadvantaged Business": "transaction__recipient__self_certified_small_disadvantaged_business",  # DONE
     "Small Disadvantaged Business": "transaction__recipient__small_disadvantaged_business",  # DONE
     "8a Program Participant": "transaction__recipient__c8a_program_participant",  # DONE
-    "Historically Underutilized Business Zone HUBZone Firm": "transaction__recipient__historically_underutilized_business_zone _hubzone_firm",  # TODO
+    # "Historically Underutilized Business Zone HUBZone Firm": "transaction__recipient__historically_underutilized_business_zone _hubzone_firm",  # TODO
     "SBA Certified 8a Joint Venture": "transaction__recipient__sba_certified_8a_joint_venture",  # DONE
     "Last Modified Date": "last_modified_date"  # DONE
 }
