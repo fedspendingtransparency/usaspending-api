@@ -16,3 +16,4 @@ usaspending_api/financial_activities/.idea/*
 .idea/workspace.xml
 .idea/modules.xml
 .idea/vcs.xml
+.idea/dbnavigator.xml
