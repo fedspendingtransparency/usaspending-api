@@ -70,10 +70,13 @@ class CsvSource:
         [[valA1, None, valB1],
          [valA2, None, valB2]]
         """
-        rows = self.queryset.values_list(*[c for c in self.db_col_names if c])
+        col_names = [c for c in self.db_col_names if c]
+        rows = self.queryset.values_list(*col_names)
         for row in rows:
             yield [(row[i] if c else None) for (i, c) in enumerate(self.db_col_names)]
 
+# possible renamings
+# col_names -> query_paths
 
 class TransactionContractCsvSource(CsvSource):
 

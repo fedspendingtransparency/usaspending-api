@@ -108,7 +108,7 @@ def test_download_awards_v2_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": {},
+            "columns": [],
         }))
 
     assert resp.status_code == status.HTTP_200_OK
@@ -124,7 +124,7 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": {},
+            "columns": [],
         }))
 
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -133,7 +133,26 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 3
     assert resp.json()['total_columns'] > 100
-    # TODO: needs mappings to be fixed
+
+
+@pytest.mark.django_db
+def test_download_awards_v2_status_endpoint(client, award_data):
+    """Test the transaction status endpoint."""
+
+    dl_resp = client.post(
+        '/api/v2/download/awards',
+        content_type='application/json',
+        data=json.dumps({
+            "filters": {},
+            "columns": [],
+        }))
+
+    resp = client.get('/api/v2/download/status/?file_name={}'
+                      .format(dl_resp.json()['file_name']))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()['total_rows'] == 2
+    assert resp.json()['total_columns'] > 100
 
 
 @pytest.mark.django_db
