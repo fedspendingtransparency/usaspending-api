@@ -53,7 +53,7 @@ def award_filter(filters):
                     kwargs["period_of_performance_start_date__lte"] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(**kwargs)
+                    or_queryset |= Award.objects.filter(**kwargs)
                 else:
                     or_queryset = Award.objects.filter(**kwargs)
             if or_queryset is not None:
@@ -64,7 +64,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(type=v)
+                    or_queryset |= Award.objects.filter(type=v)
                 else:
                     or_queryset = Award.objects.filter(type=v)
             if or_queryset is not None:
@@ -80,12 +80,12 @@ def award_filter(filters):
                 if type == "funding":
                     if tier == "toptier":
                         if or_queryset:
-                            or_queryset |= or_queryset.filter(funding_agency__toptier_agency__name=name)
+                            or_queryset |= Award.objects.filter(funding_agency__toptier_agency__name=name)
                         else:
                             or_queryset = Award.objects.filter(funding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
                         if or_queryset:
-                            or_queryset |= or_queryset.filter(funding_agency__subtier_agency__name=name)
+                            or_queryset |= Award.objects.filter(funding_agency__subtier_agency__name=name)
                         else:
                             or_queryset = Award.objects.filter(funding_agency__subtier_agency__name=name)
                     else:
@@ -93,12 +93,12 @@ def award_filter(filters):
                 elif type == "awarding":
                     if tier == "toptier":
                         if or_queryset:
-                            or_queryset |= or_queryset.filter(awarding_agency__toptier_agency__name=name)
+                            or_queryset |= Award.objects.filter(awarding_agency__toptier_agency__name=name)
                         else:
                             or_queryset = Award.objects.filter(awarding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
                         if or_queryset:
-                            or_queryset |= or_queryset.filter(awarding_agency__subtier_agency__name=name)
+                            or_queryset |= Award.objects.filter(awarding_agency__subtier_agency__name=name)
                         else:
                             or_queryset = Award.objects.filter(awarding_agency__subtier_agency__name=name)
                     else:
@@ -113,7 +113,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(recipient__legal_entity_id=v)
+                    or_queryset |= Award.objects.filter(recipient__legal_entity_id=v)
                 else:
                     or_queryset = Award.objects.filter(recipient__legal_entity_id=v)
             if or_queryset is not None:
@@ -133,7 +133,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(recipient__location__location_id=v)
+                    or_queryset |= Award.objects.filter(recipient__location__location_id=v)
                 else:
                     or_queryset = Award.objects.filter(recipient__location__location_id=v)
             if or_queryset is not None:
@@ -144,7 +144,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(recipient__business_types_description=v)
+                    or_queryset |= Award.objects.filter(recipient__business_types_description=v)
                 else:
                     or_queryset = Award.objects.filter(recipient__business_types_description=v)
             if or_queryset is not None:
@@ -164,7 +164,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(place_of_performance__location_id=v)
+                    or_queryset |= Award.objects.filter(place_of_performance__location_id=v)
                 else:
                     or_queryset = Award.objects.filter(place_of_performance__location_id=v)
             if or_queryset is not None:
@@ -176,19 +176,19 @@ def award_filter(filters):
             for v in value:
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(total_obligation__gt=v["lower_bound"],
-                                                          total_obligation__lt=v["upper_bound"])
+                        or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"],
+                                                            total_obligation__lt=v["upper_bound"])
                     else:
                         or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"],
                                                            total_obligation__lt=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(total_obligation__gt=v["lower_bound"])
+                        or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"])
                     else:
                         or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"])
                 elif v.get("upper_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(total_obligation__lt=v["upper_bound"])
+                        or_queryset |= Award.objects.filter(total_obligation__lt=v["upper_bound"])
                     else:
                         or_queryset = Award.objects.filter(total_obligation__lt=v["upper_bound"])
                 else:
@@ -201,7 +201,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(id=v)
+                    or_queryset |= Award.objects.filter(id=v)
                 else:
                     or_queryset = Award.objects.filter(id=v)
             if or_queryset is not None:
@@ -212,7 +212,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(
+                    or_queryset |= Award.objects.filter(
                         latest_transaction__assistance_data__cfda__program_number=v)
                 else:
                     or_queryset = Award.objects.filter(
@@ -225,7 +225,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(
+                    or_queryset |= Award.objects.filter(
                         latest_transaction__contract_data__naics=v)
                 else:
                     or_queryset = Award.objects.filter(
@@ -238,7 +238,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(
+                    or_queryset |= Award.objects.filter(
                         latest_transaction__contract_data__product_or_service_code=v)
                 else:
                     or_queryset = Award.objects.filter(
@@ -251,7 +251,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(
+                    or_queryset |= Award.objects.filter(
                         latest_transaction__contract_data__type_of_contract_pricing=v)
                 else:
                     or_queryset = Award.objects.filter(
@@ -264,7 +264,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(
+                    or_queryset |= Award.objects.filter(
                         latest_transaction__contract_data__type_set_aside=v)
                 else:
                     or_queryset = Award.objects.filter(
@@ -277,7 +277,7 @@ def award_filter(filters):
             or_queryset = None
             for v in value:
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(
+                    or_queryset |= Award.objects.filter(
                         latest_transaction__contract_data__extent_competed=v)
                 else:
                     or_queryset = Award.objects.filter(
