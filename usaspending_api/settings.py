@@ -32,7 +32,7 @@ ALLOWED_HOSTS = ['*']
 IS_LOCAL = not os.getenv('DOWNLOAD_TO_S3')
 
 # AWS locations for CSV files
-CSV_LOCAL_PATH = "/Volumes/exlinux/Users/catherine/werk/dataact/usaspending-api/downloads/"
+CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'downloads', '')
 CSV_S3_ROLE = ""
 CSV_S3_BUCKET_NAME = ""
 CSV_SQS_QUEUE_NAME = ""
