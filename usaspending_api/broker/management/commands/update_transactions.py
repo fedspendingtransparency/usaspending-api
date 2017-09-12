@@ -205,14 +205,14 @@ class Command(BaseCommand):
         if fiscal_year:
             all_transaction_contract = all_transaction_contract.filter(action_date__fy=fiscal_year)
 
-        limit = 100000
-        all_transaction_contract = all_transaction_contract[:limit]
+        # limit = 100000
+        # all_transaction_contract = all_transaction_contract[:limit]
 
-        count = all_transaction_contract.count()
+        # count = all_transaction_contract.count()
 
         # all_transaction_contract = all_transaction_contract.values()
 
-        logger.info('Processing transaction contract => ' + str(count) + ' rows')
+        # logger.info('Processing transaction contract => ' + str(count) + ' rows')
 
         for transaction_contract in all_transaction_contract:
             legal_entity_location, created = get_or_create_location(
