@@ -108,6 +108,7 @@ def test_download_awards_v2_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
+            "columns": {},
         }))
 
     assert resp.status_code == status.HTTP_200_OK
