@@ -123,9 +123,8 @@ class Explorer(object):
         alt_set = self.alt_set.annotate(
             id=F('award__id'),
             type=Value('award_category', output_field=CharField()),
-            name=F('award__category'),
-            code=F('award__piid')
-        ).values('id', 'type', 'code', 'name', 'amount').annotate(
+            name=F('award__category')
+        ).values('id', 'type', 'piid', 'fain', 'uri', 'name', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
 
         return alt_set
@@ -134,10 +133,8 @@ class Explorer(object):
         # Awards Queryset
         alt_set = self.alt_set.annotate(
             id=F('award__id'),
-            type=Value('award', output_field=CharField()),
-            name=F('award__piid'),
-            code=F('award__piid')
-        ).values('id', 'type', 'code', 'name', 'amount').annotate(
+            type=Value('award', output_field=CharField())
+        ).values('id', 'type', 'piid', 'fain', 'uri', 'amount').annotate(
             total=Sum('transaction_obligated_amount')).order_by('-total')
 
         return alt_set

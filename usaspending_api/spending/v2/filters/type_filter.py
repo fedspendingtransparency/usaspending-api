@@ -72,6 +72,21 @@ def type_filter(_type, filters):
         for key, value in total.items():
             total = value
 
+        if _type in ['award', 'award_category']:
+            results = alt_set.all()
+            for award in results:
+                code = None
+                for code_type in ('piid', 'fain', 'uri'):
+                    if award[code_type]:
+                        code = award[code_type]
+                        break
+                for code_type in ('piid', 'fain', 'uri'):
+                    del award[code_type]
+                award["code"] = code
+                if _type == 'award':
+                    award["name"] = code
+            alt_set = results
+
         results = {
             'total': total,
             'end_date': fiscal_date,
