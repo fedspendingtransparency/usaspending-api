@@ -104,21 +104,19 @@ def write_csv_from_querysets(download_job, file_name, upload_name, columns,
     headers = columns or sources[0].all_column_list
     unfound = set(headers)
 
-    # Populate `source.db_col_names` with list of db source columns,
-    # or `None` for columns
     for source in sources:
         source.db_col_names = []
-        for header in headers:
+        for (i, header) in enumerate(headers[:]):
             db_col_name = source.column_name_lookups.get(header)
-            if db_col_name:
+            if db_col_name:  # Col requested with downloadable name
                 source.db_col_names.append(db_col_name)
                 unfound -= set([header, ])
-            # else:  # perhaps the raw, database version was supplied
-            #     full_name = source.column_name_lookups.inv.get(header)
-            #     if full_name:
-            #         source.db_col_names.append(header)
-            #         unfound -= set([full_name, ])
-            #         # should not mutate the headers while looping through them
+            else:
+                full_name = source.column_name_lookups.inv.get(header)
+                if full_name:  # Col requested with db-side name
+                    source.db_col_names.append(header)
+                    unfound -= set([header, ])
+                    headers[i] = full_name
 
     if unfound:
         raise InvalidParameterException('Columns {} not available'.format(unfound))

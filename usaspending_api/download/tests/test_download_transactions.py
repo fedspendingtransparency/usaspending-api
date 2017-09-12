@@ -155,6 +155,19 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
     assert resp.json()['total_rows'] == 3
     assert resp.json()['total_columns'] == 2
 
+    # db-side column name specifications also work
+    dl_resp = client.post(
+        '/api/v2/download/transactions',
+        content_type='application/json',
+        data=json.dumps({
+            "filters": {},
+            "columns": ["piid", "transaction__modification_number"]
+        }))
+    resp = client.get('/api/v2/download/status/?file_name={}'
+                      .format(dl_resp.json()['file_name']))
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()['total_rows'] == 3
+    assert resp.json()['total_columns'] == 2
     # columns only from transaction_contract
     dl_resp = client.post(
         '/api/v2/download/transactions',
