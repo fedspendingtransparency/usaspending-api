@@ -225,8 +225,14 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
     assert resp.json()['total_rows'] == 3
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_download_transactions_v2_endpoint_check_all_mappings(client, award_data):
+    """
+    One-by-one checking on validity of columns
+
+    For manual troubleshooting rather than automated run; this, skipped
+    """
     for key in download_column_lookups.transaction_columns:
         resp = client.post(
             '/api/v2/download/transactions',

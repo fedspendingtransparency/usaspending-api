@@ -38,3 +38,4 @@ sqlparse==0.2.1
 unicodecsv==0.14.1
 urllib3==1.18
 xlrd==1.0.0
+boto==2.48.0

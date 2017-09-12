@@ -75,25 +75,25 @@ transaction_d1_columns = {
     "Solicitation Identifier": "solicitation_identifier",  # DONE
     "Number of Actions": "number_of_actions",  # DONE
     "Product or Service Code (PSC)": "product_or_service_code",  # DONE
-    # "Product or Service Code (PSC) Description": "product_or_service_code_description",  # TODO
-    # "Contract Bundling Code": "contract_bundling",  # DONE
-    # "Contract Bundling": "contract_bundling__description",  # DONE
+    # "Product or Service Code (PSC) Description": "product_or_service_code_description",  # TODO   we don't have
+    "Contract Bundling Code": "contract_bundling",  # DONE
+    "Contract Bundling": "contract_bundling_description",  # DONE
     "DoD Claimant Program Code": "dod_claimant_program_code",  # DONE
-    # "DoD Claimant Program Description": "dod_claimant_program_description",  # TODO
+    # "DoD Claimant Program Description": "dod_claimant_program_description",  # TODO   we don't have
     "NAICS Code": "naics",  # DONE
     "NAICS Description": "naics_description",  # DONE
     "Recovered Materials/Sustainability Code": "recovered_materials_sustainability",  # DONE
     "Recovered Materials/Sustainability": "recovered_materials_sustainability_description",  # DONE
-    # "Domestic or Foreign Entity Code": "domestic_or_foreign_entity_code",  # TODO  # this exists in location - is it for recipeint or place of performance?
-    # "Domestic or Foreign Entity": "domestic_or_foreign_entity",  # TODO
+    "Domestic or Foreign Entity Code": "transaction__award__recipient__domestic_or_foreign_entity",
+    "Domestic or Foreign Entity": "transaction__award__recipient__domestic_or_foreign_entity_description",
     "DoD Acquisition Program Code": "program_system_or_equipment_code",  # DONE
-    # "DoD Acquisition Program Description": "dod_acquisition_program_description",  # TODO
+    # "DoD Acquisition Program Description": "dod_acquisition_program_description",  # TODO    we dont' have
     "Information Technology Commercial Item Category Code": "information_technology_commercial_item_category",  # DONE
     "Information Technology Commercial Item Category": "information_technology_commercial_item_category_description",  # DONE
     "EPA-Designated Product Code": "epa_designated_product",  # DONE
     "EPA-Designated Product": "epa_designated_product_description",  # DONE
-    # "Country of Product or Service Origin Code": "country_of_product_or_service_origin",  # TODO not quite right
-    # "Country of Product or Service Origin": "country_of_product_or_service_origin",  # TODO not quite right
+    "Country of Product or Service Origin Code": "country_of_product_or_service_origin",  # TODO not quite right
+    # "Country of Product or Service Origin": "country_of_product_or_service_origin",  # TODO not quite right   we don't have
     "Place of Manufacture Code": "place_of_manufacture",  # DONE
     "Place of Manufacture": "place_of_manufacture_description",  # DONE
     "Subcontracting Plan Code": "subcontracting_plan",  # DONE
@@ -110,25 +110,25 @@ transaction_d1_columns = {
     "Research": "research_description",  # DONE
     "Fair Opportunity Limited Sources Code": "fair_opportunity_limited_sources",  # DONE
     "Fair Opportunity Limited Sources": "fair_opportunity_limited_sources_description",  # DONE
-    # "Other than Full and Open Competition Code": "other_than_full_and_open_competition",  # TODO: Code or description?
-    # "Other than Full and Open Competition": "other_than_full_and_open_competition",  # TODO: Code or description?
+    "Other than Full and Open Competition Code": "other_than_full_and_open_competition",  # TODO: Code or description?
+    # "Other than Full and Open Competition": "other_than_full_and_open_competition",  # TODO: Code or description?   we don't have
     "Number of Offers Received": "number_of_offers_received",  # DONE
     "Commercial Item Acquisition Procedures Code": "commercial_item_acquisition_procedures",  # DONE
     "Commercial Item Acquisition Procedures": "commercial_item_acquisition_procedures_description",  # DONE
     "Small Business Competitiveness Demonstration Program": "small_business_competitiveness_demonstration_program",  # DONE
-    # "Commercial Item Test Program Code": "commercial_item_test_program",  # TODO
-    # "Commercial Item Test Program": "commercial_item_test_program_description",  # TODO
-    # "A-76 FAIR Act Action Code": "a76_fair_act_action_code",  # TODO
-    # "A-76 FAIR Act Action": "a76_fair_act_action_description",  # TODO
+    "Commercial Item Test Program Code": "commercial_item_test_program",
+    # "Commercial Item Test Program": "commercial_item_test_program_description",  # TODO   we don't have
+    "A-76 FAIR Act Action Code": "a76_fair_act_action",
+    # "A-76 FAIR Act Action": "a76_fair_act_action_description",  # TODO   we don't have
     "FedBizOpps Code": "fed_biz_opps",  # DONE
     "FedBizOpps": "fed_biz_opps_description",  # DONE
-    # "Local Area Set Aside Code": "local_area_set_aside_code",  # TODO
-    # "Local Area Set Aside": "local_area_set_aside_description",  # TODO
+    "Local Area Set Aside Code": "local_area_set_aside",
+    # "Local Area Set Aside": "local_area_set_aside_description",  # TODO   we don't have
     "Price Evaluation Adjustment Preference Percent Difference": "price_evaluation_adjustment_preference_percent_difference",  # DONE
-    # "Clinger-Cohen Act Planning Compliance Code": "clinger_cohen_act_planning_code",  # TODO
-    # "Clinger-Cohen Act Planning Compliance": "clinger_cohen_act_planning_description",  # TODO
-    # "Walsh Healey Act Code": "walsh_healey_act_code",  # TODO
-    # "Walsh Healey Act": "walsh_healey_act_description",  # TODO
+    "Clinger-Cohen Act Planning Compliance Code": "clinger_cohen_act_planning",
+    # "Clinger-Cohen Act Planning Compliance": "clinger_cohen_act_planning_description",  # TODO   we don't have
+    "Walsh Healey Act Code": "walsh_healey_act",
+    # "Walsh Healey Act": "walsh_healey_act_description",  # TODO   we don't have
     "Service Contract Act Code": "service_contract_act",  # DONE
     "Service Contract Act": "service_contract_act_description",  # DONE
     "Davis Bacon Act Code": "davis_bacon_act",  # DONE
@@ -252,7 +252,7 @@ transaction_d1_columns = {
     "Self-Certified Small Disadvantaged Business": "transaction__recipient__self_certified_small_disadvantaged_business",  # DONE
     "Small Disadvantaged Business": "transaction__recipient__small_disadvantaged_business",  # DONE
     "8a Program Participant": "transaction__recipient__c8a_program_participant",  # DONE
-    "Historically Underutilized Business Zone HUBZone Firm": "transaction__recipient__historically_underutilized_business_zone _hubzone_firm", 
+    # "Historically Underutilized Business Zone HUBZone Firm": "transaction__recipient__historically_underutilized_business_zone_hubzone_firm",
     "SBA Certified 8a Joint Venture": "transaction__recipient__sba_certified_8a_joint_venture",  # DONE
     "Last Modified Date": "last_modified_date"  # DONE
 }
