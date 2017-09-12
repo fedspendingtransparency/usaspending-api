@@ -25,8 +25,8 @@ def spending_filter(alt_set, queryset, filters, _type):
                                                   'agency, agency_type, agency_sub fy.')
 
         # Check _type to filter on correct set (alt_set or queryset)
-        if _type == 'recipient' or _type == 'award' or _type == 'award_category' \
-                or _type == 'agency_type' or _type == 'agency_sub':
+        alt_set_keys = ['recipient', 'award', 'award_category', 'agency_type', 'agency_sub']
+        if _type in alt_set_keys:
             # Apply filters
             # budget_function - DONE
             if key == 'budget_function':
