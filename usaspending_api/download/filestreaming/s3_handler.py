@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+import time
 import boto
 from boto import sts
 
@@ -78,8 +78,8 @@ class S3Handler:
         """
         Gets a Timestamped file name to prevent conflicts on S3 Uploading
         """
-        seconds = int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
-        return str(seconds) + "_" + filename
+        seconds = str(time.time() - 1500000000).replace('.', '_')
+        return '{}_{}'.format(seconds, filename)
 
     @staticmethod
     def get_temporary_credentials(user):

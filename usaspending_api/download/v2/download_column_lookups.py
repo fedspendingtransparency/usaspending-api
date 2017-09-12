@@ -1,38 +1,40 @@
+from bidict import bidict
+
 transaction_d1_columns = {
     "Award ID": "piid",  # DONE
     "Modification Number": "transaction__modification_number",  # DONE
     "Transaction Number": "transaction_number",  # DONE
     "Parent Award Agency ID": "referenced_idv_agency_identifier",  # DONE
-    "Parent Award Agency Name": "parent_award_agency_name",  # TODO
+    # "Parent Award Agency Name": "transaction__award__parent_award__name",  # TODO  # not in spreadsheet
     "Parent Award ID": "parent_award_id",  # DONE
-    "Parent Award Modification Number": "parent_award_modification_number",  # TODO
+    # "Parent Award Modification Number": "parent_award_modification_number",  # TODO
     "Federal Action Obligation": "transaction__federal_action_obligation",  # DONE
-    "Change in Current Award Amount": "change_in_current_award_amount",  # TODO
-    "Change in Potential Award Amount": "change_in_potential_award_amount",  # TODO
+    # "Change in Current Award Amount": "change_in_current_award_amount",  # TODO
+    # "Change in Potential Award Amount": "change_in_potential_award_amount",  # TODO
     "Action Date": "transaction__action_date",  # DONE
     "Period of Performance Start Date": "transaction__period_of_performance_start_date",  # DONE
     "Period of Performance Current End Date": "transaction__period_of_performance_current_end_date",  # DONE
     "Period of Performance Potential End Date": "period_of_performance_potential_end_date",  # DONE
     "Ordering Period End Date": "ordering_period_end_date",  # DONE
-    "Awarding Agency Code": "awarding_agency_code",  # TODO drv_parent_award_awarding_agency_code
-    "Awarding Agency Name": "transaction_awarding_agency__toptier_agency_name",  # TODO
-    "Awarding Sub Agency Code": "awarding_sub_agency_code",  # TODO
-    "Awarding Sub Agency Name": "awarding_sub_agency_name",  # TODO
-    "Awarding Office Code": "awarding_office_code",  # TODO
-    "Awarding Office Name": "awarding_office_name",  # TODO
-    "Funding Agency Code": "funding_agency_code",  # TODO
-    "Funding Agency Name": "funding_agency_name",  # TODO
-    "Funding Sub Agency Code": "funding_sub_agency_code",  # TODO
-    "Funding Sub Agency Name": "funding_sub_agency_name",  # TODO
-    "Funding Office Code": "funding_office_code",  # TODO
-    "Funding Office Name": "funding_office_name",  # TODO
+    "Awarding Agency Code": "transaction__award__awarding_agency__toptier_agency__cgac_code",  #CDone
+    "Awarding Agency Name": "transaction__award__awarding_agency__toptier_agency__name",  #CDone
+    "Awarding Sub Agency Code": "transaction__award__awarding_agency__subtier_agency__subtier_code",  # CDone
+    "Awarding Sub Agency Name": "transaction__award__awarding_agency__subtier_agency__name",  # CDone
+    # "Awarding Office Code": "awarding_office_code",  # TODO
+    # "Awarding Office Name": "awarding_office_name",  # TODO
+    "Funding Agency Code": "transaction__award__funding_agency__toptier_agency__cgac_code",  #CDone
+    "Funding Agency Name": "transaction__award__funding_agency__toptier_agency__name",  #CDone
+    "Funding Sub Agency Code": "transaction__award__funding_agency__subtier_agency__subtier_code",  # CDone
+    "Funding Sub Agency Name": "transaction__award__funding_agency__subtier_agency__name",  # CDone
+    # "Funding Office Code": "funding_office_code",  # TODO
+    # "Funding Office Name": "funding_office_name",  # TODO
     "Foreign Funding Code": "foreign_funding",  # DONE
     "Foreign Funding": "foreign_funding_description",  # DONE
-    "SAM Exception": "sam_exception",  # TODO
+    # "SAM Exception": "sam_exception",  # TODO
     "Recipient DUNS": "transaction__recipient__recipient_unique_id",  # DONE
     "Recipient Name": "transaction__recipient__recipient_name",  # DONE
     "Recipient Doing Business As Name": "transaction__recipient__vendor_doing_as_business_name",  # DONE
-    "Recipient Parent Name": "recipient_parent_name",  # TODO
+    # "Recipient Parent Name": "recipient_parent_name",  # TODO
     "Recipient Parent DUNS": "transaction__recipient__parent_recipient_unique_id",  # DONE
     "Recipient Country Code": "transaction__recipient__location__location_country_code",  # DONE
     "Recipient Country Name": "transaction__recipient__location__country_name",  # DONE
@@ -43,7 +45,7 @@ transaction_d1_columns = {
     "Recipient State Code": "transaction__recipient__location__state_code",  # DONE
     "Recipient State Name": "transaction__recipient__location__state_name",  # DONE
     "Recipient Foreign State Name": "transaction__recipient__location__foreign_province",  # TODO probably right
-    "Recipient Zip+4 Code": "transaction__recipient__location__zip4",  # TODO probably right
+    # "Recipient Zip+4 Code": "transaction__recipient__location__zip4",  # TODO probably right
     "Recipient Congressional District": "transaction__recipient__location__congressional_code",  # TODO probably right
     "Recipient Phone Number": "transaction__recipient__vendor_phone_number",  # DONE
     "Recipient Fax Number": "transaction__recipient__vendor_fax_number",  # DONE
@@ -55,8 +57,8 @@ transaction_d1_columns = {
     "Primary Place of Performance Congressional District": "transaction__place_of_performance__congressional_code",  # TODO probably right
     "Primary Place of Performance Country Code": "transaction__place_of_performance__location_country_code",  # DONE
     "Primary Place of Performance Country Name": "transaction__place_of_performance__country_name",  # DONE
-    "Primary Place of Performance Location Code": "transaction__place_of_performance__location_code",  # TODO
-    "Award or Parent Award Flag": "award_or_parent_award_flag",  # TODO wut
+    # "Primary Place of Performance Location Code": "transaction__place_of_performance__location_code",  # TODO
+    # "Award or Parent Award Flag": "award_or_parent_award_flag",  # TODO wut
     "Award Type Code": "transaction__award__type",  # DONE
     "Award Type": "transaction__award__type_description",  # DONE
     "IDV Type Code": "idv_type",  # DONE
@@ -67,31 +69,31 @@ transaction_d1_columns = {
     "Type of IDC": "type_of_idc_description",  # DONE
     "Type of Contract Pricing Code": "type_of_contract_pricing",  # DONE
     "Type of Contract Pricing": "type_of_contract_pricing_description",  # DONE
-    "Award Description": "transaction__award_description",
+    "Award Description": "transaction__award__description",
     "Action Type Code": "transaction__action_type",  # DONE
     "Action Type": "transaction__action_type_description",  # DONE
     "Solicitation Identifier": "solicitation_identifier",  # DONE
     "Number of Actions": "number_of_actions",  # DONE
     "Product or Service Code (PSC)": "product_or_service_code",  # DONE
-    "Product or Service Code (PSC) Description": "product_or_service_code_description",  # TODO
+    # "Product or Service Code (PSC) Description": "product_or_service_code_description",  # TODO
     "Contract Bundling Code": "contract_bundling",  # DONE
     "Contract Bundling": "contract_bundling__description",  # DONE
     "DoD Claimant Program Code": "dod_claimant_program_code",  # DONE
-    "DoD Claimant Program Description": "dod_claimant_program_description",  # TODO
+    # "DoD Claimant Program Description": "dod_claimant_program_description",  # TODO
     "NAICS Code": "naics",  # DONE
     "NAICS Description": "naics_description",  # DONE
     "Recovered Materials/Sustainability Code": "recovered_materials_sustainability",  # DONE
     "Recovered Materials/Sustainability": "recovered_materials_sustainability_description",  # DONE
-    "Domestic or Foreign Entity Code": "domestic_or_foreign_entity_code",  # TODO
-    "Domestic or Foreign Entity": "domestic_or_foreign_entity",  # TODO
+    # "Domestic or Foreign Entity Code": "domestic_or_foreign_entity_code",  # TODO
+    # "Domestic or Foreign Entity": "domestic_or_foreign_entity",  # TODO
     "DoD Acquisition Program Code": "program_system_or_equipment_code",  # DONE
-    "DoD Acquisition Program Description": "dod_acquisition_program_description",  # TODO
+    # "DoD Acquisition Program Description": "dod_acquisition_program_description",  # TODO
     "Information Technology Commercial Item Category Code": "information_technology_commercial_item_category",  # DONE
     "Information Technology Commercial Item Category": "information_technology_commercial_item_category_description",  # DONE
     "EPA-Designated Product Code": "epa_designated_product",  # DONE
     "EPA-Designated Product": "epa_designated_product_description",  # DONE
-    "Country of Product or Service Origin Code": "country_of_product_or_service_origin",  # TODO not quite right
-    "Country of Product or Service Origin": "country_of_product_or_service_origin",  # TODO not quite right
+    # "Country of Product or Service Origin Code": "country_of_product_or_service_origin",  # TODO not quite right
+    # "Country of Product or Service Origin": "country_of_product_or_service_origin",  # TODO not quite right
     "Place of Manufacture Code": "place_of_manufacture",  # DONE
     "Place of Manufacture": "place_of_manufacture_description",  # DONE
     "Subcontracting Plan Code": "subcontracting_plan",  # DONE
@@ -108,25 +110,25 @@ transaction_d1_columns = {
     "Research": "research_description",  # DONE
     "Fair Opportunity Limited Sources Code": "fair_opportunity_limited_sources",  # DONE
     "Fair Opportunity Limited Sources": "fair_opportunity_limited_sources_description",  # DONE
-    "Other than Full and Open Competition Code": "other_than_full_and_open_competition",  # TODO: Code or description?
-    "Other than Full and Open Competition": "other_than_full_and_open_competition",  # TODO: Code or description?
+    # "Other than Full and Open Competition Code": "other_than_full_and_open_competition",  # TODO: Code or description?
+    # "Other than Full and Open Competition": "other_than_full_and_open_competition",  # TODO: Code or description?
     "Number of Offers Received": "number_of_offers_received",  # DONE
     "Commercial Item Acquisition Procedures Code": "commercial_item_acquisition_procedures",  # DONE
     "Commercial Item Acquisition Procedures": "commercial_item_acquisition_procedures_description",  # DONE
     "Small Business Competitiveness Demonstration Program": "small_business_competitiveness_demonstration_program",  # DONE
-    "Commercial Item Test Program Code": "commercial_item_test_program",  # TODO
-    "Commercial Item Test Program": "commercial_item_test_program_description",  # TODO
-    "A-76 FAIR Act Action Code": "a76_fair_act_action_code",  # TODO
-    "A-76 FAIR Act Action": "a76_fair_act_action_description",  # TODO
+    # "Commercial Item Test Program Code": "commercial_item_test_program",  # TODO
+    # "Commercial Item Test Program": "commercial_item_test_program_description",  # TODO
+    # "A-76 FAIR Act Action Code": "a76_fair_act_action_code",  # TODO
+    # "A-76 FAIR Act Action": "a76_fair_act_action_description",  # TODO
     "FedBizOpps Code": "fed_biz_opps",  # DONE
     "FedBizOpps": "fed_biz_opps_description",  # DONE
-    "Local Area Set Aside Code": "local_area_set_aside_code",  # TODO
-    "Local Area Set Aside": "local_area_set_aside_description",  # TODO
+    # "Local Area Set Aside Code": "local_area_set_aside_code",  # TODO
+    # "Local Area Set Aside": "local_area_set_aside_description",  # TODO
     "Price Evaluation Adjustment Preference Percent Difference": "price_evaluation_adjustment_preference_percent_difference",  # DONE
-    "Clinger-Cohen Act Planning Compliance Code": "clinger_cohen_act_planning_code",  # TODO
-    "Clinger-Cohen Act Planning Compliance": "clinger_cohen_act_planning_description",  # TODO
-    "Walsh Healey Act Code": "walsh_healey_act_code",  # TODO
-    "Walsh Healey Act": "walsh_healey_act_description",  # TODO
+    # "Clinger-Cohen Act Planning Compliance Code": "clinger_cohen_act_planning_code",  # TODO
+    # "Clinger-Cohen Act Planning Compliance": "clinger_cohen_act_planning_description",  # TODO
+    # "Walsh Healey Act Code": "walsh_healey_act_code",  # TODO
+    # "Walsh Healey Act": "walsh_healey_act_description",  # TODO
     "Service Contract Act Code": "service_contract_act",  # DONE
     "Service Contract Act": "service_contract_act_description",  # DONE
     "Davis Bacon Act Code": "davis_bacon_act",  # DONE
@@ -135,59 +137,59 @@ transaction_d1_columns = {
     "Interagency Contracting Authority": "interagency_contracting_authority_description",  # DONE
     "Other Statutory Authority": "other_statutory_authority",  # DONE
     "Program Acronym": "program_acronym",  # DONE
-    "Parent Award Type Code": "parent_award_type_code",  # TODO
-    "Parent Award Type": "parent_award_type",  # TODO
-    "Parent Award Single or Multiple Code": "parent_award_single_or_multiple_code",  # TODO
-    "Parent Award Single or Multiple": "parent_award_single_or_multiple",  # TODO
+    # "Parent Award Type Code": "parent_award_type_code",  # TODO
+    # "Parent Award Type": "parent_award_type",  # TODO
+    # "Parent Award Single or Multiple Code": "parent_award_single_or_multiple_code",  # TODO
+    # "Parent Award Single or Multiple": "parent_award_single_or_multiple",  # TODO
     "Major Program": "major_program",  # DONE
     "National Interest Action Code": "national_interest_action",  # DONE
     "National Interest Action": "national_interest_action_description",  # DONE
     "Cost or Pricing Data Code": "cost_or_pricing_data",  # DONE
     "Cost or Pricing Data": "cost_or_pricing_data_description",  # DONE
-    "Cost Accounting Standards Clause Code": "cost_accounting_standards_clause_code",  # TODO
-    "Cost Accounting Standards Clause": "cost_accounting_standards_clause_description",  # TODO
-    "GFE and GFP Code": "gfe_gfp",  # TODO: Code or description?
-    "GFE and GFP": "gfe_gfp",  # TODO: Code or description?
+    # "Cost Accounting Standards Clause Code": "cost_accounting_standards_clause_code",  # TODO
+    # "Cost Accounting Standards Clause": "cost_accounting_standards_clause_description",  # TODO
+    # "GFE and GFP Code": "gfe_gfp",  # TODO: Code or description?
+    # "GFE and GFP": "gfe_gfp",  # TODO: Code or description?
     "Sea Transportation Code": "sea_transportation",  # DONE
     "Sea Transportation": "sea_transportation_description",  # DONE
-    "Undefinitized Action Code": "undefinitized_action_code",  # TODO
-    "Undefinitized Action": "undefinitized_action_description",  # TODO
-    "Consolidated Contract Code": "consolidated_contract_code",  # TODO: Code or description?
-    "Consolidated Contract": "consolidated_contract_description",  # TODO: Code or description?
+    # "Undefinitized Action Code": "undefinitized_action_code",  # TODO
+    # "Undefinitized Action": "undefinitized_action_description",  # TODO
+    # "Consolidated Contract Code": "consolidated_contract_code",  # TODO: Code or description?
+    # "Consolidated Contract": "consolidated_contract_description",  # TODO: Code or description?
     "Performance-Based Service Acquisition Code": "performance_based_service_acquisition",  # DONE
     "Performance-Based Service Acquisition": "performance_based_service_acquisition_description",  # DONE
-    "Multi Year Contract Code": "multi_year_contract",  # TODO: Code or description?
-    "Multi Year Contract": "multi_year_contract",  # TODO: Code or description?
+    # "Multi Year Contract Code": "multi_year_contract",  # TODO: Code or description?
+    # "Multi Year Contract": "multi_year_contract",  # TODO: Code or description?
     "Contract Financing Code": "contract_financing",  # DONE
     "Contract Financing": "contract_financing_description",  # DONE
-    "Purchase Card as Payment Method Code": "purchase_card_as_payment_method_code",  # TODO: Code or description?
-    "Purchase Card as Payment Method": "purchase_card_as_payment_method_description",  # TODO: Code or description?
+    # "Purchase Card as Payment Method Code": "purchase_card_as_payment_method_code",  # TODO: Code or description?
+    # "Purchase Card as Payment Method": "purchase_card_as_payment_method_description",  # TODO: Code or description?
     "Contingency Humanitarian or Peacekeeping Operation Code": "contingency_humanitarian_or_peacekeeping_operation",  # DONE
-    "Contingency Humanitarian or Peacekeeping Operation": "contingency_humanitarian_or_peacekeeping_operation_description",  # DONE
-    "Alaskan Native Owned Corporation or Firm": "alaskan_native_owned_corporation_or_firm",  # TODO: Special Legal Entity business type
-    "American Indian Owned Business": "american_indian_owned_business",  # TODO: Special Legal Entity business type
-    "Indian Tribe Federally Recognized": "indian_tribe_federally_recognized",  # TODO: Special Legal Entity business type
-    "Native Hawaiian Owned Business": "native_hawaiian_owned_business",  # TODO: Special Legal Entity business type
-    "Tribally Owned Business": "tribally_owned_business",  # TODO: Special Legal Entity business type
-    "Veteran Owned Business": "veteran_owned_business",  # TODO: Special Legal Entity business type, MAYBE service_disabled_veteran_owned_business
-    "Service Disabled Veteran Owned Business": "service_disabled_veteran_owned_business",  # TODO: Special Legal Entity business type
-    "Woman Owned Business": "woman_owned_business",  # TODO: Special Legal Entity business type
-    "Women Owned Small Business": "women_owned_small_business",  # TODO: Special Legal Entity business type
-    "Economically Disadvantaged Women Owned Small Business": "economically_disadvantaged_women_owned_small_business",  # TODO: Special Legal Entity business type
-    "Joint Venture Women Owned Small Business": "joint_venture_women_owned_small_business",  # TODO: Special Legal Entity business type
-    "Joint Venture Economically Disadvantaged Women Owned Small Business": "joint_venture_economic_disadvantaged_women_owned_small_bus",  # TODO: Special Legal Entity business type
-    "Minority Owned Business": "minority_owned_business",  # TODO: Special Legal Entity business type
-    "Subcontinent Asian Asian - Indian American Owned Business": "subcontinent_asian_asian_indian_american_owned_business",  # TODO: Special Legal Entity business type
-    "Asian Pacific American Owned Business": "asian_pacific_american_owned_business",  # TODO: Special Legal Entity business type
-    "Black American Owned Business": "black_american_owned_business",  # TODO: Special Legal Entity business type
-    "Hispanic American Owned Business": "hispanic_american_owned_business",  # TODO: Special Legal Entity business type
-    "Native American Owned Business": "native_american_owned_business",  # TODO: Special Legal Entity business type
-    "Other Minority Owned Business": "other_minority_owned_business",  # TODO: Special Legal Entity business type
-    "Contracting Officer's Determination of Business Size": "contracting_officers_determination_of_business_size",
-    "Contracting Officer's Determination of Business Size Code": "contracting_officers_determination_of_business_size_code",
-    "Emerging Small Business": "emerging_small_business",  # TODO: Special Legal Entity business type
-    "Community Developed Corporation Owned Firm": "community_developed_corporation_owned_firm",  # TODO: Special Legal Entity business type
-    "Labor Surplus Area Firm": "labor_surplus_area_firm",  # TODO: Special Legal Entity business type
+    # "Contingency Humanitarian or Peacekeeping Operation": "contingency_humanitarian_or_peacekeeping_operation_description",  # DONE
+    # "Alaskan Native Owned Corporation or Firm": "alaskan_native_owned_corporation_or_firm",  # TODO: Special Legal Entity business type
+    # "American Indian Owned Business": "american_indian_owned_business",  # TODO: Special Legal Entity business type
+    # "Indian Tribe Federally Recognized": "indian_tribe_federally_recognized",  # TODO: Special Legal Entity business type
+    # "Native Hawaiian Owned Business": "native_hawaiian_owned_business",  # TODO: Special Legal Entity business type
+    # "Tribally Owned Business": "tribally_owned_business",  # TODO: Special Legal Entity business type
+    # "Veteran Owned Business": "veteran_owned_business",  # TODO: Special Legal Entity business type, MAYBE service_disabled_veteran_owned_business
+    # "Service Disabled Veteran Owned Business": "service_disabled_veteran_owned_business",  # TODO: Special Legal Entity business type
+    # "Woman Owned Business": "woman_owned_business",  # TODO: Special Legal Entity business type
+    # "Women Owned Small Business": "women_owned_small_business",  # TODO: Special Legal Entity business type
+    # "Economically Disadvantaged Women Owned Small Business": "economically_disadvantaged_women_owned_small_business",  # TODO: Special Legal Entity business type
+    # "Joint Venture Women Owned Small Business": "joint_venture_women_owned_small_business",  # TODO: Special Legal Entity business type
+    # "Joint Venture Economically Disadvantaged Women Owned Small Business": "joint_venture_economic_disadvantaged_women_owned_small_bus",  # TODO: Special Legal Entity business type
+    # "Minority Owned Business": "minority_owned_business",  # TODO: Special Legal Entity business type
+    # "Subcontinent Asian Asian - Indian American Owned Business": "subcontinent_asian_asian_indian_american_owned_business",  # TODO: Special Legal Entity business type
+    # "Asian Pacific American Owned Business": "asian_pacific_american_owned_business",  # TODO: Special Legal Entity business type
+    # "Black American Owned Business": "black_american_owned_business",  # TODO: Special Legal Entity business type
+    # "Hispanic American Owned Business": "hispanic_american_owned_business",  # TODO: Special Legal Entity business type
+    # "Native American Owned Business": "native_american_owned_business",  # TODO: Special Legal Entity business type
+    # "Other Minority Owned Business": "other_minority_owned_business",  # TODO: Special Legal Entity business type
+    # "Contracting Officer's Determination of Business Size": "contracting_officers_determination_of_business_size",
+    # "Contracting Officer's Determination of Business Size Code": "contracting_officers_determination_of_business_size_code",
+    # "Emerging Small Business": "emerging_small_business",  # TODO: Special Legal Entity business type
+    # "Community Developed Corporation Owned Firm": "community_developed_corporation_owned_firm",  # TODO: Special Legal Entity business type
+    # "Labor Surplus Area Firm": "labor_surplus_area_firm",  # TODO: Special Legal Entity business type
     "U.S. Federal Government": "transaction__recipient__us_federal_government",  # DONE
     "Federally Funded Research and Development Corp": "transaction__recipient__federally_funded_research_and_development_corp",
     "Federal Agency": "transaction__recipient__federal_agency",  # DONE
@@ -217,8 +219,8 @@ transaction_d1_columns = {
     "Manufacturer of Goods": "transaction__recipient__manufacturer_of_goods",  # DONE
     "Veterinary Hospital": "transaction__recipient__veterinary_hospital",  # DONE
     "Hispanic Servicing Institution": "transaction__recipient__hispanic_servicing_institution",  # DONE
-    "Receives Contracts": "receives_contracts",  # TODO receives_contracts_and_grants
-    "Receives Grants": "receives_grants",  # TODO receives_contracts_and_grants
+    # "Receives Contracts": "receives_contracts",  # TODO receives_contracts_and_grants
+    # "Receives Grants": "receives_grants",  # TODO receives_contracts_and_grants
     "Receives Contracts and Grants": "transaction__recipient__receives_contracts_and_grants",  # DONE
     "Airport Authority": "transaction__recipient__airport_authority",  # DONE
     "Council of Governments": "transaction__recipient__council_of_governments",  # DONE
@@ -257,73 +259,78 @@ transaction_d1_columns = {
 
 transaction_d2_columns = {
     "Award ID": "fain",
-    "Modification Number": "modification_number",
+    "Modification Number": "transaction__modification_number",
     "URI": "uri",
     "SAI Number": "sai_number",
-    "Federal Action Obligation": "federal_action_obligation",
+    "Federal Action Obligation": "transaction__federal_action_obligation",  #CDone
     "Non Federal Funding Amount": "non_federal_funding_amount",
     "Total Funding Amount": "total_funding_amount",
-    "Face Value of Loan": "face_value_of_loan",
-    "Original Subsidy Cost": "original_subsidy_cost",
-    "Action Date": "action_date",
+    # "Face Value of Loan": "face_value_of_loan",
+    # "Original Subsidy Cost": "original_subsidy_cost",
+    "Action Date": "transaction__action_date",
     "Period of Performance Start Date": "period_of_performance_start_date",
     "Period of Performance Current End Date": "period_of_performance_current_end_date",
-    "Awarding Agency Code": "awarding_agency_code",
-    "Awarding Agency Name": "awarding_agency_name",
-    "Awarding Sub Agency Code": "awarding_sub_agency_code",
-    "Awarding Sub Agency Name": "awarding_sub_agency_name",
-    "Awarding Office Code": "awarding_office_code",
-    "Awarding Office Name": "awarding_office_name",
-    "Funding Agency Code": "funding_agency_code",
-    "Funding Agency Name": "funding_agency_name",
-    "Funding Sub Agency Code": "funding_sub_agency_code",
-    "Funding Sub Agency Name": "funding_sub_agency_name",
-    "Funding Office Code": "funding_office_code",
-    "Funding Office Name": "funding_office_name",
-    "Recipient DUNS": "recipient_duns",
-    "Recipient Name": "recipient_name",
-    "Recipient Country Code": "recipient_country_code",
-    "Recipient Country Name": "recipient_country_name",
-    "Recipient Address Line 1": "recipient_address_line_1",
-    "Recipient Address Line 2": "recipient_address_line_2",
-    "Recipient Address Line 3": "recipient_address_line_3",
-    "Recipient City Code": "recipient_city_code",
-    "Recipient City Name": "recipient_city_name",
-    "Recipient Country Code": "recipient_country_code",
-    "Recipient Country Name": "recipient_country_name",
-    "Recipient State Code": "recipient_state_code",
-    "Recipient State Name": "recipient_state_name",
-    "Recipient Zip Code": "recipient_zip_code",
-    "Recipient Zip Last 4 Code": "recipient_zip_last_4_code",
-    "Recipient Congressional District": "recipient_congressional_district",
-    "Recipient Foreign City Name": "recipient_foreign_city_name",
-    "Recipient Foreign Province Name": "recipient_foreign_province_name",
-    "Recipient Foreign Postal Code": "recipient_foreign_postal_code",
-    "Primary Place of Performance Country Code": "primary_place_of_performance_country_code",
-    "Primary Place of Performance Country Name": "primary_place_of_performance_country_name",
-    "Primary Place of Performance Code": "primary_place_of_performance_code",
-    "Primary Place of Performance City Name": "primary_place_of_performance_city_name",
-    "Primary Place of Performance County Code": "primary_place_of_performance_county_code",
-    "Primary Place of Performance County Name": "primary_place_of_performance_county_name",
-    "Primary Place of Performance State Name": "primary_place_of_performance_state_name",
-    "Primary Place of Performance Zip+4": "primary_place_of_performance_zip_4",
-    "Primary Place of Performance Congressional District": "primary_place_of_performance_congressional_district",
-    "Primary Place of Performance Foreign Location": "primary_place_of_performance_foreign_location",
-    "CFDA Number": "cfda_number",
-    "CFDA Title": "cfda_title",
-    "Assistance Type Code": "assistance_type_code",
-    "Assistance Type": "assistance_type",
-    "Award Description": "award_description",
-    "Business Funds Indicator Code": "business_funds_indicator_code",
-    "Business Funds Indicator": "business_funds_indicator",
-    "Business Types Code": "business_types_code",
-    "Business Types": "Business Types",
-    "Action Type Code": "action_type_code",
-    "Action Type": "action_type",
-    "Record Type Code": "record_type_code",
-    "Record Type": "record_type",
-    "Submitted Type": "submitted_type",
-    "Fiscal Year and Quarter Correction": "fiscal_year_and_quarter_correction",
+    "Awarding Agency Code": "transaction__award__awarding_agency__toptier_agency__cgac_code",  #CDone
+    "Awarding Agency Name": "transaction__award__awarding_agency__toptier_agency__name",  #CDone
+    "Awarding Sub Agency Code": "transaction__award__awarding_agency__subtier_agency__subtier_code",  #CDone
+    "Awarding Sub Agency Name": "transaction__award__awarding_agency__subtier_agency__name",  #CDone
+    # "Awarding Office Code": "awarding_office_code",
+    # "Awarding Office Name": "awarding_office_name",
+    "Funding Agency Code": "transaction__award__funding_agency__toptier_agency__cgac_code",  #CDone
+    "Funding Agency Name": "transaction__award__funding_agency__toptier_agency__name",  #CDone
+    "Funding Sub Agency Code": "transaction__award__funding_agency__subtier_agency__subtier_code",  #CDone
+    "Funding Sub Agency Name": "transaction__award__funding_agency__subtier_agency__name",  #CDone
+    # "Funding Office Code": "funding_office_code",
+    # "Funding Office Name": "funding_office_name",
+    "Recipient DUNS": "transaction__recipient__recipient_unique_id",  # DONE
+    "Recipient Name": "transaction__recipient__recipient_name",  # DONE
+    "Recipient Country Code": "transaction__recipient__location__location_country_code",  # DONE
+    "Recipient Country Name": "transaction__recipient__location__country_name",  # DONE
+    "Recipient Address Line 1": "transaction__recipient__location__address_line1",  # DONE
+    "Recipient Address Line 2": "transaction__recipient__location__address_line2",  # DONE
+    "Recipient Address Line 3": "transaction__recipient__location__address_line3",  # DONE
+    # "Recipient City Code": "recipient_city_code",
+    "Recipient City Name": "transaction__recipient__location__city_name",  # DONE
+    # "Recipient Country Code": "recipient_country_code",
+    # "Recipient Country Name": "recipient_country_name",
+    "Recipient State Code": "transaction__recipient__location__state_code",  # DONE
+    "Recipient State Name": "transaction__recipient__location__state_name",  # DONE
+    "Recipient Foreign State Name": "transaction__recipient__location__foreign_province",  # TODO probably right
+    "Recipient Zip+4 Code": "transaction__recipient__location__zip4",  # TODO probably right
+    "Recipient Congressional District": "transaction__recipient__location__congressional_code",  # TODO probably right
+    "Recipient Phone Number": "transaction__recipient__vendor_phone_number",  # DONE
+    "Recipient Fax Number": "transaction__recipient__vendor_fax_number",  # DONE
+    # "Recipient Zip Code": "recipient_zip_code",
+    # "Recipient Zip Last 4 Code": "recipient_zip_last_4_code",
+    # "Recipient Congressional District": "recipient_congressional_district",
+    # "Recipient Foreign City Name": "recipient_foreign_city_name",
+    # "Recipient Foreign Province Name": "recipient_foreign_province_name",
+    # "Recipient Foreign Postal Code": "recipient_foreign_postal_code",
+    # "Primary Place of Performance Country Code": "primary_place_of_performance_country_code",
+    "Primary Place of Performance Country Name": "transaction__place_of_performance__country_name",
+    # "Primary Place of Performance Code": "primary_place_of_performance_code",
+    "Primary Place of Performance City Name": "transaction__place_of_performance__city_name",
+    "Primary Place of Performance County Code": "transaction__place_of_performance__county_code",
+    "Primary Place of Performance County Name": "transaction__place_of_performance__county_name",
+    "Primary Place of Performance State Name": "transaction__place_of_performance__state_name",
+    "Primary Place of Performance Zip+4": "transaction__place_of_performance__zip4",  # TODO: or 4a?
+    # "Primary Place of Performance Congressional District": "primary_place_of_performance_congressional_district",
+    # "Primary Place of Performance Foreign Location": "primary_place_of_performance_foreign_location",
+    # "CFDA Number": "cfda_number",
+    # "CFDA Title": "cfda_title",
+    # "Assistance Type Code": "assistance_type_code",
+    # "Assistance Type": "assistance_type",
+    "Award Description": "transaction__award__description",
+    # "Business Funds Indicator Code": "business_funds_indicator_code",
+    # "Business Funds Indicator": "business_funds_indicator",
+    # "Business Types Code": "business_types_code",
+    # "Business Types": "Business Types",
+    # "Action Type Code": "action_type_code",
+    # "Action Type": "action_type",
+    # "Record Type Code": "record_type_code",
+    # "Record Type": "record_type",
+    # "Submitted Type": "submitted_type",
+    # "Fiscal Year and Quarter Correction": "fiscal_year_and_quarter_correction",
     "Last Modified Date": "last_modified_date"
 }
 
@@ -332,7 +339,7 @@ transaction_columns = [
     "Modification Number",
     "Transaction Number",
     "Parent Award Agency ID",
-    "Parent Award Agency Name",
+    # "Parent Award Agency Name",  not in spreadsheet
     "Parent Award ID",
     "Parent Award Modification Number",
     "Federal Action Obligation",
@@ -650,6 +657,9 @@ transaction_columns = [
     "Fiscal Year and Quarter Correction",
     "Last Modified Date"
 ]
+
+# Temporarily omit columns that we have not yet worked out the mappings for.
+transaction_columns = [c for c in transaction_columns if c in transaction_d1_columns or c in transaction_d2_columns]
 
 transaction_columns_unique = [
     "1862 Land Grant College",

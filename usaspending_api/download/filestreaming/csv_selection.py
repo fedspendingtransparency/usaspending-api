@@ -4,6 +4,7 @@ import os
 from django.conf import settings
 
 from usaspending_api.download.lookups import JOB_STATUS_DICT
+from usaspending_api.download.v2 import download_column_lookups
 from usaspending_api.download.filestreaming.csv_local_writer import CsvLocalWriter
 from usaspending_api.download.filestreaming.csv_s3_writer import CsvS3Writer
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
@@ -54,67 +55,74 @@ def write_csv(download_job, file_name, upload_name, header, body):
     download_job.save()
 
 
+
+class CsvSource:
+
+    def __init__(self, queryset):
+        self.queryset = queryset
+
+    def values_from_db_col_names(self):
+        """Yields list of values from queryset, interspersed with None
+
+        `db_col_names` is a list of `None`s and column names.
+        Each row yields either None or the
+
+        >>> list(values_from_db_col_names(qry, ['colA', None, 'colB']))
+        [[valA1, None, valB1],
+         [valA2, None, valB2]]
+        """
+        rows = self.queryset.values_list(*[c for c in self.db_col_names if c])
+        for row in rows:
+            yield [(row[i] if c else None) for (i, c) in enumerate(self.db_col_names)]
+
+
+class TransactionContractCsvSource(CsvSource):
+
+    column_name_lookups = download_column_lookups.transaction_d1_columns
+
+
+class TransactionAssistanceCsvSource(CsvSource):
+
+    column_name_lookups = download_column_lookups.transaction_d2_columns
+
+
+class AwardCsvSource(CsvSource):
+
+    column_name_lookups = download_column_lookups.transaction_d2_columns
+
+
 def write_csv_from_querysets(download_job, file_name, upload_name, columns,
-                             querysets):
+                             sources):
+                            #  querysets):
     """Derive the relevant location and write a CSV to it.
 
     Given a list of querysets, mashes them horizontally into one CSV
 
     :return: the final file name (complete with prefix)"""
 
-    offset = 0
-    header = []
-    offsets = [
-        0,
-    ]  # `None`s to insert before each result set for horizontal spacing
-    widths = []  # Width of each result set
-    all_field_names = []
-    querysets_needed = []
+    headers = columns or download_column_lookups.transaction_columns
+    unfound = set(headers)
 
-    # TODO: the linked transaction table
-    # TODO: how do we detect errors in the thread?
+    # Populate `source.db_col_names` with list of db source columns,
+    # or `None` for columns
+    for source in sources:
+        source.db_col_names = []
+        for header in headers:
+            db_col_name = source.column_name_lookups.get(header)
+            if db_col_name:
+                source.db_col_names.append(db_col_name)
+                unfound -= set([header, ])
 
-    for queryset in querysets:
-        if queryset.first():
-            field_names = [
-                q.name for q in queryset.model._meta.fields
-                if q.name in queryset.values()[0].keys()
-            ]
-            if columns:
-                field_names = [f for f in field_names if f in columns]
-                if not field_names:
-                    continue  # no columns requested, omit this queryset entirely
-            querysets_needed.append(queryset)
-            download_job.number_of_rows = (download_job.number_of_rows or 0
-                                           ) + queryset.count()
-            widths.append(len(field_names))
-            header.extend(field_names)
-            offsets.append(offset + len(field_names))
-            offset += len(field_names)
-            all_field_names.append(field_names)
-
-    download_job.number_of_columns = len(header)
-    download_job.save()
-
-    missing = set(columns) - set(header)
-    if missing:
-        raise InvalidParameterException('Columns not available: {}'.format(
-            missing))
-        # TODO: If column exists, but only in tables which had no results
+    if unfound:
+        raise InvalidParameterException('Columns {} not available'.format(unfound))
 
     def row_emitter():
-        for (idx, queryset) in enumerate(querysets_needed):
-            leading_empty = [None, ] * offsets[idx]
-            trailing_empty = [None, ] * (
-                len(header) - offsets[idx] - widths[idx])
-            for row in queryset.values():
-                # Make a list of values in the same order as in the headers
-                values = [row.get(f) for f in all_field_names[idx]]
-                yield leading_empty + values + trailing_empty
+        for source in sources:
+            yield from source.values_from_db_col_names()
 
     return write_csv(
         download_job,
         file_name,
         upload_name,
-        header=header,
+        header=headers,
         body=row_emitter())

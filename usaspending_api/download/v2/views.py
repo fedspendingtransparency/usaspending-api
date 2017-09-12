@@ -5,6 +5,7 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.download.v2 import download_column_lookups
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.transaction_assistance import transaction_assistance_filter
 from usaspending_api.awards.v2.filters.transaction_contract import transaction_contract_filter
@@ -54,7 +55,8 @@ class BaseDownloadViewSet(APIView):
         columns = json_request['columns']
 
         # filter Transactions based on filter input
-        querysets = self.get_querysets(json_request)
+        # querysets = self.get_querysets(json_request)
+        csv_sources = self.get_csv_sources(json_request)
 
         # get timestamped name to provide unique file name
         timestamped_file_name = self.s3_handler.get_timestamped_filename(
@@ -72,7 +74,7 @@ class BaseDownloadViewSet(APIView):
                   'file_name': timestamped_file_name,
                   'upload_name': timestamped_file_name,
                   'columns': columns,
-                  'querysets': querysets}
+                  'sources': csv_sources}
 
         if 'pytest' in sys.modules:
             # We are testing, and cannot use threads - the testing db connection
@@ -87,22 +89,28 @@ class BaseDownloadViewSet(APIView):
 
 
 
+
+
+
 class DownloadAwardsViewSet(BaseDownloadViewSet):
-    def get_querysets(self, json_request):
+    def get_csv_sources(self, json_request):
         filters = json_request['filters']
         queryset = award_filter(filters)
-        return (queryset, )
+        source = csv_selection.AwardCsvSource(queryset)
+        return (source, )
 
     DOWNLOAD_NAME = 'awards'
 
 
 class DownloadTransactionsViewSet(BaseDownloadViewSet):
-    def get_querysets(self, json_request):
+    def get_csv_sources(self, json_request):
         filters = json_request['filters']
         transaction_contract_queryset = transaction_contract_filter(filters)
         transaction_assistance_queryset = transaction_assistance_filter(
             filters)
-        return (transaction_contract_queryset, transaction_assistance_queryset)
+        sources = (csv_selection.TransactionContractCsvSource(transaction_contract_queryset),
+                   csv_selection.TransactionAssistanceCsvSource(transaction_assistance_queryset))
+        return sources
 
     DOWNLOAD_NAME = 'transactions'
 

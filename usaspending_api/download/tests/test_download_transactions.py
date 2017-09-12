@@ -7,6 +7,7 @@ from rest_framework import status
 
 from usaspending_api.awards.models import Transaction, TransactionAssistance, TransactionContract
 from usaspending_api.download.lookups import JOB_STATUS
+from usaspending_api.download.v2 import download_column_lookups
 
 
 @pytest.fixture
@@ -71,8 +72,8 @@ def award_data(db):
         'awards.Award', category='contracts', awarding_agency=aa2)
 
     # Create Transactions
-    tran1 = mommy.make(Transaction, award=award1)
-    tran2 = mommy.make(Transaction, award=award2)
+    tran1 = mommy.make(Transaction, award=award1, modification_number=1)
+    tran2 = mommy.make(Transaction, award=award2, modification_number=1)
 
     # Create TransactionContract
     tc1 = mommy.make(TransactionContract, transaction=tran1, piid='tc1piid')
@@ -82,7 +83,6 @@ def award_data(db):
     ta1 = mommy.make(TransactionAssistance, transaction=tran1, fain='ta1fain')
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_download_transactions_v2_endpoint(client, award_data):
     """Test the transaction endpoint."""
@@ -92,7 +92,7 @@ def test_download_transactions_v2_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": {}
+            "columns": ["Award ID", "Modification Number"]
         }))
 
     assert resp.status_code == status.HTTP_200_OK
@@ -109,7 +109,7 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": {}
+            "columns": ["Award ID", "Modification Number"]
         }))
 
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -118,6 +118,7 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 3
     assert resp.json()['total_columns'] > 100
+    # TODO: needs mappings to be fixed
 
 
 @pytest.mark.django_db
@@ -130,7 +131,7 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": ["piid", "fain"]
+            "columns": ["Award ID", "Modification Number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
@@ -145,7 +146,7 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": ["piid", "naics", "idv_type"]
+            "columns": ["Foreign Funding", "Foreign Funding Code"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
@@ -164,7 +165,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {"agencies": [{'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Things", }, ]},
-            "columns": ["piid", "fain"]
+            "columns": ["Award ID", "Modification Number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
@@ -176,7 +177,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {"agencies": [{'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Stuff", }, ]},
-            "columns": ["piid", ]
+            "columns": ["Award ID", "Modification Number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
@@ -189,9 +190,27 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
         data=json.dumps({
             "filters": {"agencies": [{'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Stuff", },
                                      {'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Things", },]},
-            "columns": ["piid", "fain", ]
+            "columns": ["Award ID", "Modification Number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 3
+
+
+@pytest.mark.skip
+@pytest.mark.django_db
+def test_download_transactions_v2_endpoint_check_all_mappings(client, award_data):
+    for key in download_column_lookups.transaction_columns:
+        resp = client.post(
+            '/api/v2/download/transactions',
+            content_type='application/json',
+            data=json.dumps({
+                "filters": {},
+                "columns": [key, ]
+            }))
+        assert resp.status_code == status.HTTP_200_OK
+        message = resp.json()['message']
+        if message:
+            assert 'exception was raised' not in message
+        # TODO: this should not 200
