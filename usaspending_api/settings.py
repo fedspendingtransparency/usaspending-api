@@ -29,7 +29,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 # Define local flag to affect location of downloads
-IS_LOCAL = True
+IS_LOCAL = bool(os.getenv('DOWNLOAD_LOCALLY'))
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = "/Volumes/exlinux/Users/catherine/werk/dataact/usaspending-api/downloads/"

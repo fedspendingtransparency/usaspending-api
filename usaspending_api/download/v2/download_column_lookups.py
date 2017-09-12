@@ -20,14 +20,14 @@ transaction_d1_columns = {
     "Awarding Agency Name": "transaction__award__awarding_agency__toptier_agency__name",  # CDone
     "Awarding Sub Agency Code": "transaction__award__awarding_agency__subtier_agency__subtier_code",  # CDone
     "Awarding Sub Agency Name": "transaction__award__awarding_agency__subtier_agency__name",  # CDone
-    # "Awarding Office Code": "awarding_office_code",  # TODO
-    # "Awarding Office Name": "awarding_office_name",  # TODO
+    "Awarding Office Code": "transaction__award__awarding_agency__office_agency__aac_code",  # CDone
+    "Awarding Office Name": "transaction__award__awarding_agency__office_agency__name",  # CDone
     "Funding Agency Code": "transaction__award__funding_agency__toptier_agency__cgac_code",  # CDone
     "Funding Agency Name": "transaction__award__funding_agency__toptier_agency__name",  # CDone
     "Funding Sub Agency Code": "transaction__award__funding_agency__subtier_agency__subtier_code",  # CDone
     "Funding Sub Agency Name": "transaction__award__funding_agency__subtier_agency__name",  # CDone
-    # "Funding Office Code": "funding_office_code",  # TODO
-    # "Funding Office Name": "funding_office_name",  # TODO
+    "Funding Office Code": "transaction__award__funding_agency__office_agency__aac_code",  # CDone
+    "Funding Office Name": "transaction__award__funding_agency__office_agency__name",  # CDone
     "Foreign Funding Code": "foreign_funding",  # DONE
     "Foreign Funding": "foreign_funding_description",  # DONE
     # "SAM Exception": "sam_exception",  # TODO
@@ -84,7 +84,7 @@ transaction_d1_columns = {
     "NAICS Description": "naics_description",  # DONE
     "Recovered Materials/Sustainability Code": "recovered_materials_sustainability",  # DONE
     "Recovered Materials/Sustainability": "recovered_materials_sustainability_description",  # DONE
-    # "Domestic or Foreign Entity Code": "domestic_or_foreign_entity_code",  # TODO
+    # "Domestic or Foreign Entity Code": "domestic_or_foreign_entity_code",  # TODO  # this exists in location - is it for recipeint or place of performance?
     # "Domestic or Foreign Entity": "domestic_or_foreign_entity",  # TODO
     "DoD Acquisition Program Code": "program_system_or_equipment_code",  # DONE
     # "DoD Acquisition Program Description": "dod_acquisition_program_description",  # TODO
@@ -165,31 +165,31 @@ transaction_d1_columns = {
     # "Purchase Card as Payment Method Code": "purchase_card_as_payment_method_code",  # TODO: Code or description?
     # "Purchase Card as Payment Method": "purchase_card_as_payment_method_description",  # TODO: Code or description?
     "Contingency Humanitarian or Peacekeeping Operation Code": "contingency_humanitarian_or_peacekeeping_operation",  # DONE
-    # "Contingency Humanitarian or Peacekeeping Operation": "contingency_humanitarian_or_peacekeeping_operation_description",  # DONE
-    # "Alaskan Native Owned Corporation or Firm": "alaskan_native_owned_corporation_or_firm",  # TODO: Special Legal Entity business type
-    # "American Indian Owned Business": "american_indian_owned_business",  # TODO: Special Legal Entity business type
-    # "Indian Tribe Federally Recognized": "indian_tribe_federally_recognized",  # TODO: Special Legal Entity business type
-    # "Native Hawaiian Owned Business": "native_hawaiian_owned_business",  # TODO: Special Legal Entity business type
-    # "Tribally Owned Business": "tribally_owned_business",  # TODO: Special Legal Entity business type
-    # "Veteran Owned Business": "veteran_owned_business",  # TODO: Special Legal Entity business type, MAYBE service_disabled_veteran_owned_business
-    # "Service Disabled Veteran Owned Business": "service_disabled_veteran_owned_business",  # TODO: Special Legal Entity business type
-    # "Woman Owned Business": "woman_owned_business",  # TODO: Special Legal Entity business type
-    # "Women Owned Small Business": "women_owned_small_business",  # TODO: Special Legal Entity business type
-    # "Economically Disadvantaged Women Owned Small Business": "economically_disadvantaged_women_owned_small_business",  # TODO: Special Legal Entity business type
-    # "Joint Venture Women Owned Small Business": "joint_venture_women_owned_small_business",  # TODO: Special Legal Entity business type
-    # "Joint Venture Economically Disadvantaged Women Owned Small Business": "joint_venture_economic_disadvantaged_women_owned_small_bus",  # TODO: Special Legal Entity business type
-    # "Minority Owned Business": "minority_owned_business",  # TODO: Special Legal Entity business type
-    # "Subcontinent Asian Asian - Indian American Owned Business": "subcontinent_asian_asian_indian_american_owned_business",  # TODO: Special Legal Entity business type
-    # "Asian Pacific American Owned Business": "asian_pacific_american_owned_business",  # TODO: Special Legal Entity business type
-    # "Black American Owned Business": "black_american_owned_business",  # TODO: Special Legal Entity business type
-    # "Hispanic American Owned Business": "hispanic_american_owned_business",  # TODO: Special Legal Entity business type
-    # "Native American Owned Business": "native_american_owned_business",  # TODO: Special Legal Entity business type
-    # "Other Minority Owned Business": "other_minority_owned_business",  # TODO: Special Legal Entity business type
+    "Contingency Humanitarian or Peacekeeping Operation": "contingency_humanitarian_or_peacekeeping_operation_description",  # DONE
+    "Alaskan Native Owned Corporation or Firm": "transaction__award__recipient__alaskan_native_owned_corporation_or_firm",
+    "American Indian Owned Business": "transaction__award__recipient__american_indian_owned_business",
+    "Indian Tribe Federally Recognized": "transaction__award__recipient__indian_tribe_federally_recognized",
+    "Native Hawaiian Owned Business": "transaction__award__recipient__native_hawaiian_owned_business",
+    "Tribally Owned Business": "transaction__award__recipient__tribally_owned_business",
+    "Veteran Owned Business": "transaction__award__recipient__veteran_owned_business",
+    "Service Disabled Veteran Owned Business": "transaction__award__recipient__service_disabled_veteran_owned_business",
+    "Woman Owned Business": "transaction__award__recipient__woman_owned_business",
+    "Women Owned Small Business": "transaction__award__recipient__women_owned_small_business",
+    "Economically Disadvantaged Women Owned Small Business": "transaction__award__recipient__economically_disadvantaged_women_owned_small_business",
+    "Joint Venture Women Owned Small Business": "transaction__award__recipient__joint_venture_women_owned_small_business",
+    "Joint Venture Economically Disadvantaged Women Owned Small Business": "transaction__award__recipient__joint_venture_economic_disadvantaged_women_owned_small_bus",
+    "Minority Owned Business": "transaction__award__recipient__minority_owned_business",
+    "Subcontinent Asian Asian - Indian American Owned Business": "transaction__award__recipient__subcontinent_asian_asian_indian_american_owned_business",
+    "Asian Pacific American Owned Business": "transaction__award__recipient__asian_pacific_american_owned_business",
+    "Black American Owned Business": "transaction__award__recipient__black_american_owned_business",
+    "Hispanic American Owned Business": "transaction__award__recipient__hispanic_american_owned_business",
+    "Native American Owned Business": "transaction__award__recipient__native_american_owned_business",
+    "Other Minority Owned Business": "transaction__award__recipient__other_minority_owned_business",
     # "Contracting Officer's Determination of Business Size": "contracting_officers_determination_of_business_size",
     # "Contracting Officer's Determination of Business Size Code": "contracting_officers_determination_of_business_size_code",
-    # "Emerging Small Business": "emerging_small_business",  # TODO: Special Legal Entity business type
-    # "Community Developed Corporation Owned Firm": "community_developed_corporation_owned_firm",  # TODO: Special Legal Entity business type
-    # "Labor Surplus Area Firm": "labor_surplus_area_firm",  # TODO: Special Legal Entity business type
+    "Emerging Small Business": "transaction__award__recipient__emerging_small_business",
+    "Community Developed Corporation Owned Firm": "transaction__award__recipient__community_developed_corporation_owned_firm",
+    "Labor Surplus Area Firm": "transaction__award__recipient__labor_surplus_area_firm",
     "U.S. Federal Government": "transaction__recipient__us_federal_government",  # DONE
     "Federally Funded Research and Development Corp": "transaction__recipient__federally_funded_research_and_development_corp",
     "Federal Agency": "transaction__recipient__federal_agency",  # DONE
@@ -252,7 +252,7 @@ transaction_d1_columns = {
     "Self-Certified Small Disadvantaged Business": "transaction__recipient__self_certified_small_disadvantaged_business",  # DONE
     "Small Disadvantaged Business": "transaction__recipient__small_disadvantaged_business",  # DONE
     "8a Program Participant": "transaction__recipient__c8a_program_participant",  # DONE
-    # "Historically Underutilized Business Zone HUBZone Firm": "transaction__recipient__historically_underutilized_business_zone _hubzone_firm",  # TODO
+    "Historically Underutilized Business Zone HUBZone Firm": "transaction__recipient__historically_underutilized_business_zone _hubzone_firm", 
     "SBA Certified 8a Joint Venture": "transaction__recipient__sba_certified_8a_joint_venture",  # DONE
     "Last Modified Date": "last_modified_date"  # DONE
 }
