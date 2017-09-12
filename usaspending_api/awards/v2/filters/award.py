@@ -177,7 +177,7 @@ def award_filter(filters):
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if or_queryset:
                         or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"],
-                                                          total_obligation__lt=v["upper_bound"])
+                                                            total_obligation__lt=v["upper_bound"])
                     else:
                         or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"],
                                                            total_obligation__lt=v["upper_bound"])
