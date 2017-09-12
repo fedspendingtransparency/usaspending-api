@@ -1,51 +1,3 @@
-
-
-DROP SCHEMA IF EXISTS local_broker CASCADE
-
-
-CREATE SCHEMA local_broker
-
-
-CREATE TABLE local_broker.award_financial_assistance AS
-  SELECT * FROM broker.award_financial_assistance
-  WHERE submission_id = %(broker_submission_id)s
-
-
-CREATE UNIQUE INDEX references_location_uniq_nullable_idx ON references_location
-(
-  coalesce(location_country_code, ''),
-  coalesce(country_name, ''),
-  coalesce(state_code, ''),
-  coalesce(state_name, ''),
-  coalesce(state_description, ''),
-  coalesce(city_name, ''),
-  coalesce(city_code, ''),
-  coalesce(county_name, ''),
-  coalesce(county_code, ''),
-  coalesce(address_line1, ''),
-  coalesce(address_line2, ''),
-  coalesce(address_line3, ''),
-  coalesce(foreign_location_description, ''),
-  coalesce(zip4, ''),
-  coalesce(congressional_code, ''),
-  coalesce(performance_code, ''),
-  coalesce(zip_last4, ''),
-  coalesce(zip5, ''),
-  coalesce(foreign_postal_code, ''),
-  coalesce(foreign_province, ''),
-  coalesce(foreign_city_name, ''),
-  coalesce(reporting_period_start, '1900-01-01'::DATE),
-  coalesce(reporting_period_end, '1900-01-01'::DATE),
-  recipient_flag,
-  place_of_performance_flag
-);
-
-
-
-
-ALTER TABLE references_location ADD COLUMN award_financial_assistance_ids INTEGER[];
-
-
 -- recipient locations from financial assistance
 INSERT INTO public.references_location (
     data_source,
@@ -85,11 +37,11 @@ SELECT
     'DBR', -- ==> data_source
     ref_country_code.country_name, -- ==> country_name
     REPLACE(fa.legal_entity_state_code, '.', ''), -- ==> state_code
-    legal_entity_state_name, -- ==> state_name
+    COALESCE(sa.name, legal_entity_state_name), -- ==> state_name
     NULL::text, -- ==> state_description
     legal_entity_city_name, -- ==> city_name
     legal_entity_city_code, -- ==> city_code
-    legal_entity_county_name, -- ==> county_name
+    UPPER(legal_entity_county_name), -- ==> county_name
     legal_entity_county_code, -- ==> county_code
     legal_entity_address_line1, -- ==> address_line1
     legal_entity_address_line2, -- ==> address_line2
@@ -108,14 +60,15 @@ SELECT
     NULL::date, -- ==> reporting_period_end
     NULL::date, -- ==> last_modified_date  # TODO:
     NULL::date, -- ==> certified_date
-    NULL::timestamp with time zone, -- ==> create_date
-    NULL::timestamp with time zone, -- ==> update_date
+    current_timestamp, -- ==> create_date
+    current_timestamp, -- ==> update_date
     false, -- ==> place_of_performance_flag
     true, -- ==> recipient_flag
     legal_entity_country_code, -- ==> location_country_code
     ARRAY_AGG(fa.award_financial_assistance_id) -- ==> location_award_procurement_ids
 FROM     local_broker.award_financial_assistance fa
-JOIN     ref_country_code ON (ref_country_code.country_code = fa.legal_entity_country_code)
+LEFT OUTER JOIN ref_country_code ON (ref_country_code.country_code = fa.legal_entity_country_code)
+LEFT OUTER JOIN references_stateabbreviation sa ON (sa.abbrev = REPLACE(fa.legal_entity_state_code, '.', '') AND legal_entity_country_code = 'USA')
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
 ON CONFLICT
 (
@@ -147,9 +100,6 @@ ON CONFLICT
 )
 DO UPDATE
 SET award_financial_assistance_ids = EXCLUDED.award_financial_assistance_ids;
-
-
-ALTER TABLE references_location ADD COLUMN place_of_performance_award_financial_assistance_ids INTEGER[];
 
 
 -- place of performance locations from financial assistance
@@ -189,9 +139,9 @@ INSERT INTO references_location (
       )
 SELECT
         'DBR', -- ==> data_source
-        place_of_perform_county_na, -- ==> country_name
-        NULL::text, -- ==> state_code  TODO: fetch from reference table by name?
-        place_of_perform_state_nam, -- ==> state_name
+        ref_country_code.country_name, -- ==> country_name
+        sa.abbrev, -- ==> state_code
+        UPPER(place_of_perform_state_nam), -- ==> state_name
         NULL::text, -- ==> state_description
         place_of_performance_city, -- ==> city_name
         NULL::text, -- ==> city_code
@@ -214,13 +164,15 @@ SELECT
         NULL::date, -- ==> reporting_period_end
         NULL::date, -- ==> last_modified_date
         NULL::date, -- ==> certified_date
-        NULL::timestamp with time zone, -- ==> create_date
-        NULL::timestamp with time zone, -- ==> update_date
+        current_timestamp, -- ==> create_date
+        current_timestamp, -- ==> update_date
         true, -- ==> place_of_performance_flag
         false, -- ==> recipient_flag
         place_of_perform_country_c, -- ==> location_country_code
         ARRAY_AGG(fa.award_financial_assistance_id) -- ==> place_of_performance_award_financial_assistance_ids
 FROM    local_broker.award_financial_assistance fa
+LEFT OUTER JOIN ref_country_code ON (ref_country_code.country_code = fa.place_of_perform_country_c)
+LEFT OUTER JOIN references_stateabbreviation sa ON (sa.name = UPPER(fa.place_of_perform_state_nam) AND fa.place_of_perform_country_c = 'USA')
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
          11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
          21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -254,36 +206,6 @@ ON CONFLICT
 )
   DO UPDATE
   SET place_of_performance_award_financial_assistance_ids = EXCLUDED.place_of_performance_award_financial_assistance_ids;
-
-
-
-drop index if exists legal_entity_unique_nullable;
-
-
-create unique index if not exists legal_entity_unique_nullable on legal_entity (
-      COALESCE(data_source, ''),
-      COALESCE(parent_recipient_unique_id, ''),
-      COALESCE(recipient_name, ''),
-      COALESCE(vendor_doing_as_business_name, ''),
-      COALESCE(vendor_phone_number, ''),
-      COALESCE(vendor_fax_number, ''),
-      COALESCE(business_types, ''),
-      COALESCE(business_types_description, ''),
-      COALESCE(recipient_unique_id, ''),
-      COALESCE(domestic_or_foreign_entity_description, ''),
-      COALESCE(division_name, ''),
-      COALESCE(division_number, ''),
-      COALESCE(city_township_government, ''),
-      COALESCE(special_district_government, ''),
-      COALESCE(small_business, ''),
-      COALESCE(small_business_description, ''),
-      COALESCE(individual, ''),
-      COALESCE(location_id, -1)
-    );
-
-
-
-ALTER TABLE legal_entity ADD COLUMN award_financial_assistance_ids INTEGER[];
 
 
 -- legal entities from financial assistance
@@ -547,43 +469,9 @@ DO UPDATE
 SET award_financial_assistance_ids = EXCLUDED.award_financial_assistance_ids;
 
 
-drop index if exists awards_unique_nullable;
-
-
-create unique index if not exists awards_unique_nullable on awards (
-  COALESCE(data_source, ''),
-  COALESCE(type, ''),
-  COALESCE(type_description, ''),
-  COALESCE(piid, ''),
-  COALESCE(fain, ''),
-  COALESCE(uri, ''),
-  COALESCE(total_obligation, -1),
-  COALESCE(total_outlay, -1),
-  COALESCE(date_signed, '1900-01-01'::DATE),
-  COALESCE(description, ''),
-  COALESCE(period_of_performance_start_date, '1900-01-01'::DATE),
-  COALESCE(period_of_performance_current_end_date, '1900-01-01'::DATE),
-  COALESCE(potential_total_value_of_award, -1),
-  COALESCE(last_modified_date, '1900-01-01'::DATE),
-  COALESCE(certified_date, '1900-01-01'::DATE),
-  -- COALESCE(create_date, '1900-01-01'::DATE),
-  -- COALESCE(update_date, '1900-01-01'::DATE),
-  COALESCE(total_subaward_amount, -1),
-  COALESCE(subaward_count, -1),
-  COALESCE(awarding_agency_id, -1),
-  COALESCE(funding_agency_id, -1),
-  COALESCE(latest_transaction_id, -1),
-  COALESCE(parent_award_id, -1),
-  COALESCE(place_of_performance_id, -1),
-  COALESCE(recipient_id, -1),
-  COALESCE(category, '')
-);
-
-
-
-
-ALTER TABLE awards ADD COLUMN award_financial_assistance_ids INTEGER[];
-
+UPDATE legal_entity
+SET    business_categories = FIND_BUSINESS_TYPE_CATEGORIES(legal_entity)
+WHERE  award_financial_assistance_ids IS NOT NULL;  -- TODO: best way to find the new additions?
 
 
 -- awards from financial assistance
@@ -685,9 +573,6 @@ DO UPDATE
 SET award_financial_assistance_ids = EXCLUDED.award_financial_assistance_ids;
 
 
-ALTER TABLE transaction ADD COLUMN award_financial_assistance_id INTEGER;
-
-
         -- From here on, it does not need to be idempotent,
         -- because submission load starts by deleting records from that submission
         --
@@ -723,7 +608,6 @@ ALTER TABLE transaction ADD COLUMN award_financial_assistance_id INTEGER;
                 award_financial_assistance_id
               )
             SELECT
-                DISTINCT
                 'DBR', -- ==> data_source
                 NULL::text, -- ==> usaspending_unique_transaction_id
                 NULL::text, -- ==> type
@@ -749,7 +633,7 @@ ALTER TABLE transaction ADD COLUMN award_financial_assistance_id INTEGER;
                 a.place_of_performance_id, -- ==> place_of_performance_id
                 a.recipient_id, -- ==> recipient_id
                 s.submission_id, -- ==> submission_id
-                NULL::INTEGER, -- ==> fiscal_year  TODO
+                FY(action_date::date), -- ==> fiscal_year
                 fa.award_financial_assistance_id -- ==> award_financial_assistance_id
             FROM    local_broker.award_financial_assistance fa
             JOIN    awards a ON (fa.award_financial_assistance_id = ANY(a.award_financial_assistance_ids))
@@ -789,7 +673,6 @@ ALTER TABLE transaction ADD COLUMN award_financial_assistance_id INTEGER;
             cfda_id
             )
         SELECT
-          DISTINCT
             'DBR', -- ==> data_source
             transaction_ins.id, -- ==> transaction_id
             fa.fain, -- ==> fain

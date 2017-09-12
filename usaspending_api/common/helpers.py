@@ -97,6 +97,7 @@ FY_PG_FUNCTION_DEF = '''
           DECLARE result INTEGER;
           DECLARE month_num INTEGER;
           BEGIN
+            -- Defined in usaspending_api/common/helpers.py
             month_num := EXTRACT(MONTH from raw_date);
             result := EXTRACT(YEAR FROM raw_date);
             IF month_num > 9
@@ -112,6 +113,7 @@ FY_PG_FUNCTION_DEF = '''
           DECLARE result INTEGER;
           DECLARE month_num INTEGER;
           BEGIN
+            -- Defined in usaspending_api/common/helpers.py
             month_num := EXTRACT(MONTH from raw_date);
             result := EXTRACT(YEAR FROM raw_date);
             IF month_num > 9
@@ -128,6 +130,7 @@ FY_PG_FUNCTION_DEF = '''
           DECLARE result INTEGER;
           DECLARE month_num INTEGER;
           BEGIN
+            -- Defined in usaspending_api/common/helpers.py
             month_num := EXTRACT(MONTH from raw_date);
             result := EXTRACT(YEAR FROM raw_date);
             IF month_num > 9

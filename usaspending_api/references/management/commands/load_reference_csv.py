@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from usaspending_api.references.models import RefCityCountyCode, RefCountryCode, ObjectClass, RefProgramActivity
+from usaspending_api.references.models import RefCityCountyCode, RefCountryCode, ObjectClass, RefProgramActivity, StateAbbreviation
 from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
 import logging
 
@@ -20,7 +20,8 @@ class Command(BaseCommand):
             "RefCityCountyCode": RefCityCountyCode,
             "RefCountryCode": RefCountryCode,
             "ObjectClass": ObjectClass,
-            "RefProgramActivity": RefProgramActivity
+            "RefProgramActivity": RefProgramActivity,
+            "StateAbbreviation": StateAbbreviation,
         }
 
         model = options['model'][0]
@@ -28,7 +29,7 @@ class Command(BaseCommand):
         encoding = options['encoding'][0]
 
         if options['model'][0] not in possible_models.keys():
-            logger.error("Model " + model + " is not supported")
+            self.logger.error("Model " + model + " is not supported")
 
         loader = ThreadedDataLoader(model_class=possible_models[model], collision_behavior='update')
         loader.load_from_file(path, encoding)

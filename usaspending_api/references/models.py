@@ -1021,3 +1021,11 @@ class FrecMap(models.Model):
 
     class Meta:
         db_table = 'frec_map'
+
+
+class StateAbbreviation(models.Model):
+    "Postal abbreviations and full names of US states and territories"
+
+    id = models.AutoField(primary_key=True)
+    abbrev = models.TextField(null=False, db_index=True)
+    name = models.TextField(null=False, db_index=True)

@@ -1,14 +1,3 @@
-CREATE TABLE local_broker.award_procurement AS
-   SELECT * FROM broker.award_procurement ap
-   WHERE ap.submission_id = %(broker_submission_id)s
-
-
-
-
-ALTER TABLE references_location ADD COLUMN location_award_procurement_ids INTEGER[];
-
-
-
 -- recipient locations from contracts
 INSERT INTO references_location (
         data_source,
@@ -42,13 +31,13 @@ INSERT INTO references_location (
         place_of_performance_flag,
         recipient_flag,
         location_country_code,
-        location_award_procurement_ids
+        award_procurement_ids
       )
 SELECT
         'DBR', -- ==> data_source
         ref_country_code.country_name, -- ==> country_name
         REPLACE(p.legal_entity_state_code, '.', ''), -- ==> state_code
-        NULL, -- ==> state_name  TODO: read from the mapping usaspending_api.references.abbreviations import code_to_state, state_to_code
+        sa.name, -- ==> state_name
         NULL, -- ==> state_description
         p.legal_entity_city_name, -- ==> city_name
         NULL, -- ==> city_code
@@ -76,9 +65,10 @@ SELECT
         false, -- ==> place_of_performance_flag
         true, -- ==> recipient_flag
         p.legal_entity_country_code, -- ==> location_country_code
-        ARRAY_AGG(p.award_procurement_id) -- ==> location_award_procurement_ids
+        ARRAY_AGG(p.award_procurement_id) -- ==> award_procurement_ids
 FROM    local_broker.award_procurement p
-JOIN    ref_country_code ON (ref_country_code.country_code = p.legal_entity_country_code)
+LEFT OUTER JOIN ref_country_code ON (ref_country_code.country_code = p.legal_entity_country_code)
+LEFT OUTER JOIN references_stateabbreviation sa ON (sa.abbrev = REPLACE(p.legal_entity_state_code, '.', '') AND legal_entity_country_code = 'USA')
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
          11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
          21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -111,11 +101,7 @@ ON CONFLICT
   place_of_performance_flag
 )
 DO UPDATE
-SET location_award_procurement_ids = EXCLUDED.location_award_procurement_ids;
-
-
-ALTER TABLE references_location ADD COLUMN place_of_performance_award_procurement_ids INTEGER[];
-
+SET award_procurement_ids = EXCLUDED.award_procurement_ids;
 
 
 -- place of performance locations from contracts
@@ -157,7 +143,7 @@ SELECT
         'DBR', -- ==> data_source
         ref_country_code.country_name, -- ==> country_name
         REPLACE(p.place_of_performance_state, '.', ''), -- ==> state_code
-        NULL, -- ==> state_name  TODO: read from the mapping - perhaps during the save
+        sa.name, -- ==> state_name
         NULL, -- ==> state_description
         p.place_of_performance_locat, -- ==> city_name
         NULL, -- ==> city_code
@@ -187,7 +173,8 @@ SELECT
         p.place_of_perform_country_c, -- ==> location_country_code
         ARRAY_AGG(p.award_procurement_id) -- ==> place_of_performance_award_procurement_ids
 FROM    local_broker.award_procurement p
-JOIN    ref_country_code ON (ref_country_code.country_code = p.place_of_perform_country_c)
+LEFT OUTER JOIN    ref_country_code ON (ref_country_code.country_code = p.place_of_perform_country_c)
+LEFT OUTER JOIN references_stateabbreviation sa ON (sa.abbrev = REPLACE(p.place_of_performance_state, '.', '') AND p.place_of_perform_country_c = 'USA')
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
          11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
          21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
@@ -223,11 +210,37 @@ ON CONFLICT
   SET place_of_performance_award_procurement_ids = EXCLUDED.place_of_performance_award_procurement_ids;
 
 
-
-ALTER TABLE legal_entity ADD COLUMN award_procurement_ids INTEGER[];
-
-
-
+  -- replaces self.load_city_county_data() in Loction.save()
+  WITH cte AS
+    ( SELECT l.location_id,
+             rccc.city_code,
+             rccc.county_code,
+             rccc.state_code,
+             rccc.city_name,
+             rccc.county_name,
+             COUNT(*)
+      FROM   ref_city_county_code rccc
+      JOIN   references_location l ON (
+             (l.city_code IS NULL OR l.city_code = '' OR l.city_code = rccc.city_code)
+         AND (l.county_code IS NULL OR l.county_code = '' OR l.county_code = rccc.county_code)
+         AND (l.state_code IS NULL OR l.state_code = '' OR UPPER(l.state_code) = UPPER(rccc.state_code))
+         AND (l.city_name IS NULL OR l.city_name = '' OR UPPER(l.city_name) = UPPER(rccc.city_name))
+         AND (l.county_name IS NULL OR l.county_name = '' OR UPPER(l.county_name) = UPPER(rccc.county_name))
+       )
+      WHERE l.award_financial_assistance_ids IS NOT NULL
+      OR    l.place_of_performance_award_financial_assistance_ids IS NOT NULL
+      OR    l.place_of_performance_award_procurement_ids IS NOT NULL
+      OR    l.award_procurement_ids IS NOT NULL
+      GROUP BY 1, 2, 3, 4, 5, 6
+      HAVING COUNT(*) = 1  -- only if the match is unambiguous
+    )
+  UPDATE references_location rl
+  SET    city_code = cte.city_code,
+         county_code = cte.county_code,
+         state_code = cte.state_code,
+         city_name = cte.city_name,
+         county_name = cte.county_name
+  FROM   cte WHERE cte.location_id = rl.location_id;
 
 
 -- legal entities from contracts
@@ -464,7 +477,7 @@ SELECT
     ARRAY[]::TEXT[], -- ==> business_categories   TODO: will need to run legal_entity.update_business_type_categories - it's in legalentity.save()
     ARRAY_AGG(p.award_procurement_id) -- ==> award_procurement_ids
 FROM    local_broker.award_procurement p
-JOIN    references_location l ON (p.award_procurement_id = ANY(l.location_award_procurement_ids))
+JOIN    references_location l ON (p.award_procurement_id = ANY(l.award_procurement_ids))
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9,
     99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, location_id
 ON CONFLICT (
@@ -489,10 +502,6 @@ ON CONFLICT (
 )
 DO UPDATE
 SET award_procurement_ids = EXCLUDED.award_procurement_ids;
-
-
-
-ALTER TABLE awards ADD COLUMN award_procurement_ids INTEGER[];
 
 
 -- awards from contracts
@@ -626,10 +635,10 @@ SET award_procurement_ids = EXCLUDED.award_procurement_ids;
                 place_of_performance_id,
                 recipient_id,
                 submission_id,
-                fiscal_year
+                fiscal_year,
+                award_procurement_id
               )
             SELECT
-                DISTINCT
                 'DBR', -- ==> data_source
                 NULL, -- ==> usaspending_unique_transaction_id
                 p.contract_award_type, -- ==> type
@@ -655,7 +664,8 @@ SET award_procurement_ids = EXCLUDED.award_procurement_ids;
                 a.place_of_performance_id, -- ==> place_of_performance_id
                 a.recipient_id, -- ==> recipient_id
                 s.submission_id, -- ==> submission_id
-                NULL::INTEGER -- ==> fiscal_year  TODO
+                FY(p.action_date::date), -- ==> fiscal_year  TODO
+                p.award_procurement_id -- ==> award_procurement_id
             FROM    local_broker.award_procurement p
             JOIN    awards a ON (p.award_procurement_id = ANY(a.award_procurement_ids))
             JOIN    submission_attributes s ON (s.broker_submission_id = p.submission_id)
@@ -774,7 +784,6 @@ SET award_procurement_ids = EXCLUDED.award_procurement_ids;
           submission_id
         )
       SELECT
-          DISTINCT
           'DBR', -- ==> data_source
           transaction_ins.id, -- ==> transaction_id
           p.piid, -- ==> piid
@@ -884,7 +893,7 @@ SET award_procurement_ids = EXCLUDED.award_procurement_ids;
           s.reporting_period_start, -- ==> reporting_period_start
           s.reporting_period_end, -- ==> reporting_period_end
           s.submission_id -- ==> submission_id
-      FROM local_broker.award_procurement p
-      CROSS JOIN transaction_ins   -- has only one row, dont' panic
+      FROM    local_broker.award_procurement p
+      JOIN    transaction_ins ON (p.award_procurement_id = transaction_ins.award_procurement_id)
       JOIN    awards a ON (transaction_ins.award_id = a.id)
       JOIN    submission_attributes s ON (s.broker_submission_id = p.submission_id)
