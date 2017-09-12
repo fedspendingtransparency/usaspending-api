@@ -205,6 +205,9 @@ class Command(BaseCommand):
         if fiscal_year:
             all_transaction_contract = all_transaction_contract.filter(action_date__fy=fiscal_year)
 
+        limit = 100000
+        all_transaction_contract = all_transaction_contract[:limit]
+
         count = all_transaction_contract.count()
 
         # all_transaction_contract = all_transaction_contract.values()
