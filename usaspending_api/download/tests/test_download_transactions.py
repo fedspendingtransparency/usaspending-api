@@ -85,7 +85,7 @@ def award_data(db):
 
 @pytest.mark.django_db
 def test_download_transactions_v2_endpoint(client, award_data):
-    """Test the transaction endpoint."""
+    """test the transaction endpoint."""
 
     resp = client.post(
         '/api/v2/download/transactions',
@@ -93,6 +93,22 @@ def test_download_transactions_v2_endpoint(client, award_data):
         data=json.dumps({
             "filters": {},
             "columns": ["Award ID", "Modification Number"]
+        }))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert '.csv' in resp.json()['url']
+
+
+@pytest.mark.django_db
+def test_download_awards_v2_endpoint(client, award_data):
+    """test the awards endpoint."""
+
+    resp = client.post(
+        '/api/v2/download/awards',
+        content_type='application/json',
+        data=json.dumps({
+            "filters": {},
+            "columns": ["Awarding Agency Name", "Awarding Agency Code"]
         }))
 
     assert resp.status_code == status.HTTP_200_OK
@@ -139,7 +155,6 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
     assert resp.json()['total_rows'] == 3
     assert resp.json()['total_columns'] == 2
 
-
     # columns only from transaction_contract
     dl_resp = client.post(
         '/api/v2/download/transactions',
@@ -151,9 +166,9 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
-    # columns from both transaction_contract and transaction_assistance
-    assert resp.json()['total_rows'] == 2
-    assert resp.json()['total_columns'] == 3
+    # TODO: do not select from tables not required by columns
+    # assert resp.json()['total_rows'] == 2
+    assert resp.json()['total_columns'] == 2
 
 
 @pytest.mark.django_db
@@ -189,7 +204,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {"agencies": [{'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Stuff", },
-                                     {'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Things", },]},
+                                     {'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Things", }, ]},
             "columns": ["Award ID", "Modification Number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'

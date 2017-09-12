@@ -155,7 +155,7 @@ def award_filter(filters):
                                                           total_obligation__lt=v["upper_bound"])
                     else:
                         or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"],
-                                                                 total_obligation__lt=v["upper_bound"])
+                                                           total_obligation__lt=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if or_queryset:
                         or_queryset |= or_queryset.filter(total_obligation__gt=v["lower_bound"])
@@ -183,7 +183,7 @@ def award_filter(filters):
         # program_numbers  - REMOVED FOR AWARD
 
         elif key == "program_numbers":
-             pass
+            pass
 
         #     or_queryset = None
         #     for v in value:

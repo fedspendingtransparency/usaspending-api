@@ -16,14 +16,14 @@ transaction_d1_columns = {
     "Period of Performance Current End Date": "transaction__period_of_performance_current_end_date",  # DONE
     "Period of Performance Potential End Date": "period_of_performance_potential_end_date",  # DONE
     "Ordering Period End Date": "ordering_period_end_date",  # DONE
-    "Awarding Agency Code": "transaction__award__awarding_agency__toptier_agency__cgac_code",  #CDone
-    "Awarding Agency Name": "transaction__award__awarding_agency__toptier_agency__name",  #CDone
+    "Awarding Agency Code": "transaction__award__awarding_agency__toptier_agency__cgac_code",  # CDone
+    "Awarding Agency Name": "transaction__award__awarding_agency__toptier_agency__name",  # CDone
     "Awarding Sub Agency Code": "transaction__award__awarding_agency__subtier_agency__subtier_code",  # CDone
     "Awarding Sub Agency Name": "transaction__award__awarding_agency__subtier_agency__name",  # CDone
     # "Awarding Office Code": "awarding_office_code",  # TODO
     # "Awarding Office Name": "awarding_office_name",  # TODO
-    "Funding Agency Code": "transaction__award__funding_agency__toptier_agency__cgac_code",  #CDone
-    "Funding Agency Name": "transaction__award__funding_agency__toptier_agency__name",  #CDone
+    "Funding Agency Code": "transaction__award__funding_agency__toptier_agency__cgac_code",  # CDone
+    "Funding Agency Name": "transaction__award__funding_agency__toptier_agency__name",  # CDone
     "Funding Sub Agency Code": "transaction__award__funding_agency__subtier_agency__subtier_code",  # CDone
     "Funding Sub Agency Name": "transaction__award__funding_agency__subtier_agency__name",  # CDone
     # "Funding Office Code": "funding_office_code",  # TODO
@@ -257,12 +257,14 @@ transaction_d1_columns = {
     "Last Modified Date": "last_modified_date"  # DONE
 }
 
+transaction_d1_columns = bidict(transaction_d1_columns)
+
 transaction_d2_columns = {
     "Award ID": "fain",
     "Modification Number": "transaction__modification_number",
     "URI": "uri",
     "SAI Number": "sai_number",
-    "Federal Action Obligation": "transaction__federal_action_obligation",  #CDone
+    "Federal Action Obligation": "transaction__federal_action_obligation",  # CDone
     "Non Federal Funding Amount": "non_federal_funding_amount",
     "Total Funding Amount": "total_funding_amount",
     # "Face Value of Loan": "face_value_of_loan",
@@ -270,16 +272,16 @@ transaction_d2_columns = {
     "Action Date": "transaction__action_date",
     "Period of Performance Start Date": "period_of_performance_start_date",
     "Period of Performance Current End Date": "period_of_performance_current_end_date",
-    "Awarding Agency Code": "transaction__award__awarding_agency__toptier_agency__cgac_code",  #CDone
-    "Awarding Agency Name": "transaction__award__awarding_agency__toptier_agency__name",  #CDone
-    "Awarding Sub Agency Code": "transaction__award__awarding_agency__subtier_agency__subtier_code",  #CDone
-    "Awarding Sub Agency Name": "transaction__award__awarding_agency__subtier_agency__name",  #CDone
+    "Awarding Agency Code": "transaction__award__awarding_agency__toptier_agency__cgac_code",  # CDone
+    "Awarding Agency Name": "transaction__award__awarding_agency__toptier_agency__name",  # CDone
+    "Awarding Sub Agency Code": "transaction__award__awarding_agency__subtier_agency__subtier_code",  # CDone
+    "Awarding Sub Agency Name": "transaction__award__awarding_agency__subtier_agency__name",  # CDone
     # "Awarding Office Code": "awarding_office_code",
     # "Awarding Office Name": "awarding_office_name",
-    "Funding Agency Code": "transaction__award__funding_agency__toptier_agency__cgac_code",  #CDone
-    "Funding Agency Name": "transaction__award__funding_agency__toptier_agency__name",  #CDone
-    "Funding Sub Agency Code": "transaction__award__funding_agency__subtier_agency__subtier_code",  #CDone
-    "Funding Sub Agency Name": "transaction__award__funding_agency__subtier_agency__name",  #CDone
+    "Funding Agency Code": "transaction__award__funding_agency__toptier_agency__cgac_code",  # CDone
+    "Funding Agency Name": "transaction__award__funding_agency__toptier_agency__name",  # CDone
+    "Funding Sub Agency Code": "transaction__award__funding_agency__subtier_agency__subtier_code",  # CDone
+    "Funding Sub Agency Name": "transaction__award__funding_agency__subtier_agency__name",  # CDone
     # "Funding Office Code": "funding_office_code",
     # "Funding Office Name": "funding_office_name",
     "Recipient DUNS": "transaction__recipient__recipient_unique_id",  # DONE
@@ -333,6 +335,16 @@ transaction_d2_columns = {
     # "Fiscal Year and Quarter Correction": "fiscal_year_and_quarter_correction",
     "Last Modified Date": "last_modified_date"
 }
+
+transaction_d2_columns = bidict(transaction_d2_columns)
+
+AWARD_PREFIX = 'transaction__award__'
+
+award_column_map = {
+    k: v[len(AWARD_PREFIX):]
+    for (k, v) in transaction_d1_columns.items()
+    if v.startswith(AWARD_PREFIX)
+    }
 
 transaction_columns = [
     "Award ID",
@@ -657,6 +669,11 @@ transaction_columns = [
     "Fiscal Year and Quarter Correction",
     "Last Modified Date"
 ]
+
+award_columns = [
+    c for c in transaction_columns
+    if c in award_column_map
+    ]
 
 # Temporarily omit columns that we have not yet worked out the mappings for.
 transaction_columns = [c for c in transaction_columns if c in transaction_d1_columns or c in transaction_d2_columns]

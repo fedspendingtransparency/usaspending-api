@@ -88,10 +88,6 @@ class BaseDownloadViewSet(APIView):
         return self.get_download_response(file_name=timestamped_file_name)
 
 
-
-
-
-
 class DownloadAwardsViewSet(BaseDownloadViewSet):
     def get_csv_sources(self, json_request):
         filters = json_request['filters']

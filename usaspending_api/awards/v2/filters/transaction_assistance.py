@@ -142,7 +142,7 @@ def transaction_assistance_filter(filters):
             for v in value:
                 if v["lower_bound"] is not None and v["upper_bound"] is not None:
                     or_queryset |= TransactionAssistance.objects.filter(transaction__award__total_obligation__gt=v["lower_bound"],
-                                                              total_obligation__lt=v["upper_bound"])
+                                                                        total_obligation__lt=v["upper_bound"])
                 elif v["lower_bound"] is not None:
                     or_queryset |= TransactionAssistance.objects.filter(transaction__award__total_obligation__gt=v["lower_bound"])
                 elif v["upper_bound"] is not None:
