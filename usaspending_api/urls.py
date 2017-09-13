@@ -42,7 +42,7 @@ urlpatterns = [
     url(r'^api/v2/financial_spending/', include('usaspending_api.accounts.urls_financial_spending')),
     url(r'^api/v2/references/', include('usaspending_api.references.v2.urls')),
     url(r'^api/v2/search/', include('usaspending_api.search.v2.urls_search')),
-    url(r'^api/v2/spending/', include('usaspending_api.spending.v2.urls.urls_explorer')),
+    url(r'^api/v2/spending/', include('usaspending_api.spending_explorer.v2.urls')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^docs/', include('usaspending_api.api_docs.urls')),
     url(r'^status/', views.StatusView.as_view()),
