@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.spending.v2.filters.type_filter import type_filter
+from usaspending_api.spending_explorer.v2.filters.type_filter import type_filter
 
 
 class SpendingExplorerViewSet(APIView):

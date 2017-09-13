@@ -1,4 +1,3 @@
-from decimal import Decimal
 from django.db.models import F, Sum, Value, CharField
 
 

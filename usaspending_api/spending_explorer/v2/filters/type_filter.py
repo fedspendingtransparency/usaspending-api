@@ -1,14 +1,13 @@
 from datetime import datetime
-from decimal import Decimal
 
 from django.db.models import Sum
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.spending.v2.filters.explorer import Explorer
-from usaspending_api.spending.v2.filters.fy_filter import fy_filter
-from usaspending_api.spending.v2.filters.spending_filter import spending_filter
+from usaspending_api.spending_explorer.v2.filters.explorer import Explorer
+from usaspending_api.spending_explorer.v2.filters.fy_filter import fy_filter
+from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
 
 
 def type_filter(_type, filters):
