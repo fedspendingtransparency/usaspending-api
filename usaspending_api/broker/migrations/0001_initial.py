@@ -64,6 +64,7 @@ class Migration(migrations.Migration):
                 ('current_total_value_award', models.TextField(blank=True, null=True)),
                 ('base_exercised_options_val', models.TextField(blank=True, null=True)),
                 ('potential_total_value_awar', models.TextField(blank=True, null=True)),
+                ('base_and_all_options_value', models.TextField(blank=True, null=True)),
                 ('funding_sub_tier_agency_co', models.TextField(blank=True, null=True)),
                 ('funding_sub_tier_agency_na', models.TextField(blank=True, null=True)),
                 ('funding_office_code', models.TextField(blank=True, null=True)),
