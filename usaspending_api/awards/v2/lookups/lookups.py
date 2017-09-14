@@ -947,6 +947,7 @@ award_contracts_mapping = {
     'Contract Award Type': 'type_description',
     'Contract Description': 'description',
     'Signed Date': 'date_signed',
+    'Base and all Options Value': 'base_and_all_options_value',
     'Potential Award Amount': 'potential_total_value_of_award',
     'Awarding Agency': 'awarding_agency__toptier_agency__name',
     'Awarding Sub Agency': 'awarding_agency__subtier_agency__name',
