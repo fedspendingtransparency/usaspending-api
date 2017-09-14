@@ -6,7 +6,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.spending_explorer.v2.filters.explorer import Explorer
-from usaspending_api.spending_explorer.v2.filters.fy_filter import fy_filter
+from usaspending_api.common.helpers import generate_last_completed_fiscal_quarter
 from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
 
 
@@ -31,7 +31,7 @@ def type_filter(_type, filters):
     for key, value in filters.items():
         if key == 'fy':
             if value is not None:
-                fiscal_date, fiscal_quarter = fy_filter(value, datetime.now().date())
+                fiscal_date, fiscal_quarter = generate_last_completed_fiscal_quarter(fiscal_year=value)
             else:
                 raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
 

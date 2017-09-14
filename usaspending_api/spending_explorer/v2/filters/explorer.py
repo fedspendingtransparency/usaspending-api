@@ -83,8 +83,8 @@ class Explorer(object):
 
     def agency(self):
         # Funding Top Tier Agencies Queryset
-        queryset = self.queryset.annotate(
-            id=F('treasury_account__funding_toptier_agency__toptier_agency_id'),
+        queryset = self.queryset.filter(treasury_account__funding_toptier_agency__isnull=False).annotate(
+            id=F('treasury_account__funding_toptier_agency_id'),
             type=Value('agency', output_field=CharField()),
             name=F('treasury_account__funding_toptier_agency__name'),
             code=F('treasury_account__funding_toptier_agency__cgac_code')

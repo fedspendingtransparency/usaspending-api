@@ -17,6 +17,7 @@ class FinancialAccountsByProgramActivityObjectClassManager(models.Manager):
 
 
 class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
+    """ Model corresponding to Agency File B """
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, null=True, db_index=True)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
