@@ -81,6 +81,7 @@ class Command(BaseCommand):
                 "piid": row['piid'],
                 "parent_award_id": row['idvpiid'],
                 "current_total_value_award": h.parse_numeric_value(row["baseandexercisedoptionsvalue"]),
+                "base_exercised_options_val": h.parse_numeric_value(row["baseandexercisedoptionsvalue"]),
                 "period_of_performance_potential_end_date": h.convert_date(row['ultimatecompletiondate']),
                 "potential_total_value_of_award": h.parse_numeric_value(row["baseandalloptionsvalue"]),
                 "base_and_all_options_value": h.parse_numeric_value(row["baseandalloptionsvalue"]),
