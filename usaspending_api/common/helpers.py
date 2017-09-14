@@ -80,7 +80,7 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
     else:
         raise InvalidParameterException("Cannot obtain data for future fiscal years.")
 
-    fiscal_date = datetime.strftime(fiscal_date, '%B %d, %Y')
+    fiscal_date = datetime.strftime(fiscal_date, '%Y-%m-%d')
 
     return fiscal_date, fiscal_quarter
 
