@@ -16,16 +16,16 @@ def spending_filter(alt_set, queryset, filters, _type):
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
         key_list = ['budget_function', 'budget_subfunction', 'federal_account', 'program_activity', 'object_class',
-                    'recipient', 'award', 'award_category', 'agency', 'agency_type', 'agency_sub', 'fy']
+                    'recipient', 'award', 'award_category', 'agency', 'agency_type', 'fy']
 
         if key not in key_list:
             raise InvalidParameterException(key + ' filter does not exist. '
                                                   'Valid Filters: budget_function, budget_subfunction, federal_account,'
                                                   'program_activity, object_class, recipient, award, award_category,'
-                                                  'agency, agency_type, agency_sub fy.')
+                                                  'agency, agency_type, fy.')
 
         # Check _type to filter on correct set (alt_set or queryset)
-        alt_set_keys = ['recipient', 'award', 'award_category', 'agency_type', 'agency_sub']
+        alt_set_keys = ['recipient', 'award', 'award_category', 'agency_type']
         if _type in alt_set_keys:
             # Apply filters
             # budget_function
@@ -55,7 +55,7 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # recipient
             elif key == 'recipient':
-                and_alt_set = alt_set.filter(award__recipient__legal_entity_id=value)
+                and_alt_set = alt_set.filter(award__recipient_id=value)
                 alt_set &= and_alt_set
 
             # award, award_category
@@ -65,6 +65,9 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # agency
             elif key == 'agency':
+                # TODO: Will need to incorporate "agency_type" here to filter based on toptier or subtier.
+
+                # Currently default to filtering on toptier
                 and_alt_set = alt_set.filter(treasury_account__funding_toptier_agency=value)
                 alt_set &= and_alt_set
 
@@ -100,7 +103,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 and_queryset = queryset.\
                     filter(treasury_account__in=alt_set.
                            filter(award__in=Award.objects.all().
-                                  filter(recipient__legal_entity_id=value)).
+                                  filter(recipient_id=value)).
                            values_list('treasury_account_id', flat=True))
                 queryset &= and_queryset
 
@@ -114,6 +117,9 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # agency
             elif key == 'agency':
+                # TODO: Will need to incorporate "agency_type" here to filter based on toptier or subtier.
+
+                # Currently default to filtering on toptier
                 and_queryset = queryset.filter(treasury_account__funding_toptier_agency=value)
                 queryset &= and_queryset
 

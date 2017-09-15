@@ -51,7 +51,7 @@ def type_filter(_type, filters):
     alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
 
     if _type == 'recipient' or _type == 'award' or _type == 'award_category' \
-            or _type == 'agency_type' or _type == 'agency_sub':
+            or _type == 'agency_type':
         # Annotate and get explorer _type filtered results
         exp = Explorer(alt_set, queryset)
 
@@ -63,8 +63,9 @@ def type_filter(_type, filters):
             alt_set = exp.award_category()
 
         # Total value of filtered results
-        total = alt_set.aggregate(Sum('transaction_obligated_amount'))
-        for key, value in total.items():
+        total = alt_set.aggregate(Sum('total'))
+        # There's only one item, we don't care about the key and just want the value
+        for _, value in total.items():
             total = value
 
         if _type in ['award', 'award_category']:
