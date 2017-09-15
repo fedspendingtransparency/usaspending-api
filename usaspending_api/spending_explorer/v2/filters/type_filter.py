@@ -61,10 +61,6 @@ def type_filter(_type, filters):
             alt_set = exp.award()
         if _type == 'award_category':
             alt_set = exp.award_category()
-        if _type == 'agency_type':
-            alt_set = exp.awarding_top_tier_agency()
-        if _type == 'agency_sub':
-            alt_set = exp.awarding_sub_tier_agency()
 
         # Total value of filtered results
         total = alt_set.aggregate(Sum('transaction_obligated_amount'))
