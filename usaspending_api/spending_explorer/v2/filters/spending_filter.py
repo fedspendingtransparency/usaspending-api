@@ -40,7 +40,7 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # federal_account
             elif key == 'federal_account':
-                and_alt_set = alt_set.filter(reasury_account__federal_account=value)
+                and_alt_set = alt_set.filter(treasury_account__federal_account=value)
                 alt_set &= and_alt_set
 
             # program_activity
