@@ -1,10 +1,13 @@
 import logging
 import timeit
+from datetime import datetime
 
 from django.core.management.base import BaseCommand
-from django import db
+from django.db import connections
 
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.broker.models import TransactionNew, TransactionAssistanceNew, TransactionContractNew, TransactionMap
+from usaspending_api.awards.models import Transaction, TransactionAssistance, TransactionContract, Award
 from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency, LegalEntity
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
@@ -28,7 +31,14 @@ class Command(BaseCommand):
     help = "Checks what TASs are in Broker but not in Data Store"
 
     @staticmethod
-    def update_transaction_assistance(fiscal_year=None):
+    def update_transaction_assistance(db_cursor, fiscal_year=None):
+        query = 'SELECT * FROM award_financial_assistance'
+        arguments = []
+        if fiscal_year:
+            query += ' WHERE FY(action_date) = %s'
+            arguments = [fiscal_year]
+        db_cursor.execute(query, arguments)
+        award_financial_assistance_data = dictfetchall(db_cursor)
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -74,65 +84,61 @@ class Command(BaseCommand):
             "description": "award_description",
         }
 
-        all_transaction_assistance = TransactionAssistanceNew.objects.using('data_broker')
+        total_rows = len(award_financial_assistance_data)
 
-        if fiscal_year:
-            all_transaction_assistance = all_transaction_assistance.filter(action_date__fy=fiscal_year)
-
-        count = all_transaction_assistance.count()
-
-        all_transaction_assistance = all_transaction_assistance.values()
-
-        logger.info('Processing transaction assistance => ' + str(count) + ' rows')
-
-        for transaction_assistance in all_transaction_assistance:
+        start_time = datetime.now()
+        for index, row in enumerate(award_financial_assistance_data, 1):
+            if not (index % 100):
+                logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                             str(total_rows),
+                                                                             datetime.now() - start_time))
 
             legal_entity_location, created = get_or_create_location(
-                legal_entity_location_field_map, transaction_assistance, legal_entity_location_value_map
+                legal_entity_location_field_map, row, legal_entity_location_value_map
             )
 
             # Create the legal entity if it doesn't exist
             legal_entity, created = LegalEntity.objects.get_or_create(
-                recipient_unique_id=transaction_assistance['awardee_or_recipient_uniqu'],
-                recipient_name=transaction_assistance['awardee_or_recipient_legal']
+                recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                recipient_name=row['awardee_or_recipient_legal']
             )
 
             if created:
                 legal_entity_value_map = {
                     "location": legal_entity_location,
                 }
-                legal_entity = load_data_into_model(legal_entity, transaction_assistance, value_map=legal_entity_value_map, save=True)
+                legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
             pop_location, created = get_or_create_location(
-                place_of_performance_field_map, transaction_assistance, place_of_performance_value_map
+                place_of_performance_field_map, row, place_of_performance_value_map
             )
 
             # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
             # use the sub tier code to look it up. This code assumes that all incoming
             # records will supply an awarding subtier agency code
-            if transaction_assistance['awarding_agency_code'] is None or len(transaction_assistance['awarding_agency_code'].strip()) < 1:
-                transaction_assistance['awarding_agency_code'] = Agency.get_by_subtier(
-                    transaction_assistance["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
+            if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
+                row['awarding_agency_code'] = Agency.get_by_subtier(
+                    row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
             # If funding toptier agency code (aka CGAC) is empty, try using the sub
             # tier funding code to look it up. Unlike the awarding agency, we can't
             # assume that the funding agency subtier code will always be present.
-            if transaction_assistance['funding_agency_code'] is None or len(transaction_assistance['funding_agency_code'].strip()) < 1:
-                funding_agency = Agency.get_by_subtier(transaction_assistance["funding_sub_tier_agency_co"])
-                transaction_assistance['funding_agency_code'] = (
+            if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+                funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
+                row['funding_agency_code'] = (
                     funding_agency.toptier_agency.cgac_code if funding_agency is not None
                     else None)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
             awarding_agency = Agency.get_by_toptier_subtier(
-                transaction_assistance['awarding_agency_code'],
-                transaction_assistance["awarding_sub_tier_agency_c"]
+                row['awarding_agency_code'],
+                row["awarding_sub_tier_agency_c"]
             )
             created, award = Award.get_or_create_summary_award(
                 awarding_agency=awarding_agency,
                 # piid=transaction_assistance.get('piid'), # not found
-                fain=transaction_assistance.get('fain'),
-                uri=transaction_assistance.get('uri'))
+                fain=row.get('fain'),
+                uri=row.get('uri'))
                 # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
             award.save()
 
@@ -141,18 +147,18 @@ class Command(BaseCommand):
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": awarding_agency,
-                "funding_agency": Agency.get_by_toptier_subtier(transaction_assistance['funding_agency_code'],
-                                                                transaction_assistance["funding_sub_tier_agency_co"]),
+                "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
+                                                                row["funding_sub_tier_agency_co"]),
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
-                "period_of_performance_start_date": format_date(transaction_assistance['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(transaction_assistance['period_of_performance_curr']),
-                "action_date": format_date(transaction_assistance['action_date']),
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "action_date": format_date(row['action_date']),
             }
 
             transaction_dict = load_data_into_model(
                 TransactionNew(),  # thrown away
-                transaction_assistance,
+                row,
                 field_map=fad_field_map,
                 value_map=parent_txn_value_map,
                 as_dict=True)
@@ -160,13 +166,25 @@ class Command(BaseCommand):
             transaction = TransactionNew.get_or_create_transaction(**transaction_dict)
             transaction.save()
 
-            transaction_map = TransactionMap()
-            transaction_map.transaction_id = transaction.id
-            transaction_map.transaction_assistance_id = transaction_assistance['published_award_financial_assistance_id']
-            transaction_map.save()
+            financial_assistance_data = load_data_into_model(
+                TransactionAssistanceNew(),  # thrown away
+                row,
+                as_dict=True)
+
+            transaction_assistance = TransactionAssistanceNew.get_or_create_2(transaction=transaction,
+                                                                           **financial_assistance_data)
+            transaction_assistance.save()
+
 
     @staticmethod
-    def update_transaction_contract(fiscal_year):
+    def update_transaction_contract(db_cursor, fiscal_year=None):
+        query = 'SELECT * FROM award_procurement'
+        arguments = []
+        if fiscal_year:
+            query += ' WHERE FY(action_date) = %s'
+            arguments = [fiscal_year]
+        db_cursor.execute(query, arguments)
+        procurement_data = dictfetchall(db_cursor)
 
         legal_entity_location_field_map = {
             "address_line1": "legal_entity_address_line1",
@@ -201,67 +219,61 @@ class Command(BaseCommand):
             "description": "award_description"
         }
 
-        all_transaction_contract = TransactionContractNew.objects.using('data_broker')
+        total_rows = len(procurement_data)
 
-        if fiscal_year:
-            all_transaction_contract = all_transaction_contract.filter(action_date__fy=fiscal_year)
+        start_time = datetime.now()
+        for index, row in enumerate(procurement_data, 1):
+            if not (index % 100):
+                logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                             str(total_rows),
+                                                                             datetime.now() - start_time))
 
-        # limit = 100000
-        # all_transaction_contract = all_transaction_contract[:limit]
-
-        count = all_transaction_contract.count()
-
-        all_transaction_contract = all_transaction_contract.values()
-
-        logger.info('Processing transaction contract => ' + str(count) + ' rows')
-
-        for transaction_contract in all_transaction_contract:
             legal_entity_location, created = get_or_create_location(
-                legal_entity_location_field_map, transaction_contract, copy(legal_entity_location_value_map)
+                legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
             )
 
             # Create the legal entity if it doesn't exist
             legal_entity, created = LegalEntity.objects.get_or_create(
-                recipient_unique_id=transaction_contract['awardee_or_recipient_uniqu'],
-                recipient_name=transaction_contract['awardee_or_recipient_legal']
+                recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                recipient_name=row['awardee_or_recipient_legal']
             )
 
             if created:
                 legal_entity_value_map = {
                     "location": legal_entity_location,
                 }
-                legal_entity = load_data_into_model(legal_entity, transaction_contract, value_map=legal_entity_value_map, save=True)
+                legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
             pop_location, created = get_or_create_location(
-                place_of_performance_field_map, transaction_contract, copy(place_of_performance_value_map))
+                place_of_performance_field_map, row, copy(place_of_performance_value_map))
 
             # If awarding toptier agency code (aka CGAC) is not supplied on the D1 record,
             # use the sub tier code to look it up. This code assumes that all incoming
             # records will supply an awarding subtier agency code
-            if transaction_contract['awarding_agency_code'] is None or len(transaction_contract['awarding_agency_code'].strip()) < 1:
-                transaction_contract['awarding_agency_code'] = Agency.get_by_subtier(
-                    transaction_contract["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
+            if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
+                row['awarding_agency_code'] = Agency.get_by_subtier(
+                    row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
             # If funding toptier agency code (aka CGAC) is empty, try using the sub
             # tier funding code to look it up. Unlike the awarding agency, we can't
             # assume that the funding agency subtier code will always be present.
-            if transaction_contract['funding_agency_code'] is None or len(transaction_contract['funding_agency_code'].strip()) < 1:
-                funding_agency = Agency.get_by_subtier(transaction_contract["funding_sub_tier_agency_co"])
-                transaction_contract['funding_agency_code'] = (
+            if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+                funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
+                row['funding_agency_code'] = (
                     funding_agency.toptier_agency.cgac_code if funding_agency is not None
                     else None)
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
             awarding_agency = Agency.get_by_toptier_subtier(
-                transaction_contract['awarding_agency_code'],
-                transaction_contract["awarding_sub_tier_agency_c"]
+                row['awarding_agency_code'],
+                row["awarding_sub_tier_agency_c"]
             )
             created, award = Award.get_or_create_summary_award(
                 awarding_agency=awarding_agency,
-                piid=transaction_contract.get('piid'),
-                fain=transaction_contract.get('fain'),
-                uri=transaction_contract.get('uri'),
-                parent_award_id=transaction_contract.get('parent_award_id'))
+                piid=row.get('piid'),
+                fain=row.get('fain'),
+                uri=row.get('uri'),
+                parent_award_id=row.get('parent_award_id'))
             award.save()
 
             AWARD_UPDATE_ID_LIST.append(award.id)
@@ -270,18 +282,18 @@ class Command(BaseCommand):
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": awarding_agency,
-                "funding_agency": Agency.get_by_toptier_subtier(transaction_contract['funding_agency_code'],
-                                                                transaction_contract["funding_sub_tier_agency_co"]),
+                "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
+                                                                row["funding_sub_tier_agency_co"]),
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
-                "period_of_performance_start_date": format_date(transaction_contract['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(transaction_contract['period_of_performance_curr']),
-                "action_date": format_date(transaction_contract['action_date']),
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "action_date": format_date(row['action_date']),
             }
 
             transaction_dict = load_data_into_model(
-                TransactionNew(),  # thrown away
-                transaction_contract,
+                Transaction(),  # thrown away
+                row,
                 field_map=contract_field_map,
                 value_map=parent_txn_value_map,
                 as_dict=True)
@@ -289,12 +301,13 @@ class Command(BaseCommand):
             transaction = TransactionNew.get_or_create_transaction(**transaction_dict)
             transaction.save()
 
-            transaction_map = TransactionMap()
-            transaction_map.transaction_id = transaction.id
-            transaction_map.transaction_contract_id = transaction_contract['detached_award_procurement_id']
-            transaction_map.save()
+            contract_instance = load_data_into_model(
+                TransactionContract(),  # thrown away
+                row,
+                as_dict=True)
 
-            db.reset_queries()
+            transaction_contract = TransactionContractNew(transaction=transaction, **contract_instance)
+            transaction_contract.save()
 
     def add_arguments(self, parser):
         
@@ -325,6 +338,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
+        db_cursor = connections['data_broker']
         fiscal_year = options.get('fiscal_year')
 
         if fiscal_year:
@@ -336,14 +350,14 @@ class Command(BaseCommand):
         if not options['assistance']:
             logger.info('Starting D1 historical data load...')
             start = timeit.default_timer()
-            self.update_transaction_contract(fiscal_year=fiscal_year)
+            self.update_transaction_contract(db_cursor = db_cursor, fiscal_year=fiscal_year)
             end = timeit.default_timer()
             logger.info('Finished D1 historical data load in ' + str(end - start) + ' seconds')
 
         if not options['contracts']:
             logger.info('Starting D2 historical data load...')
             start = timeit.default_timer()
-            self.update_transaction_assistance(fiscal_year=fiscal_year)
+            self.update_transaction_assistance(db_cursor = db_cursor, fiscal_year=fiscal_year)
             end = timeit.default_timer()
             logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
 
