@@ -3,7 +3,7 @@ import timeit
 from datetime import datetime
 
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction
+from django.db import connections, transaction as db_transaction
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.broker.models import TransactionNew, TransactionAssistanceNew, TransactionContractNew
@@ -192,7 +192,7 @@ class Command(BaseCommand):
         if fiscal_year:
             query += ' AND FY(action_date) = %s'
             arguments += [fiscal_year]
-        query += ' ORDER BY detached_award_proc_unique'
+        # query += ' ORDER BY detached_award_proc_unique'
         db_cursor.execute(query, arguments)
         procurement_data = dictfetchall(db_cursor)
 
@@ -235,95 +235,96 @@ class Command(BaseCommand):
 
         start_time = datetime.now()
         for index, row in enumerate(procurement_data, start_row):
-            if not (index % 100):
-                logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
-                                                                             str(total_rows),
-                                                                             datetime.now() - start_time))
+            with db_transaction.atomic():
+                if not (index % 100):
+                    logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                                 str(total_rows),
+                                                                                 datetime.now() - start_time))
 
-            recipient_name = row['awardee_or_recipient_legal']
-            if recipient_name is None:
-                recipient_name = ""
+                recipient_name = row['awardee_or_recipient_legal']
+                if recipient_name is None:
+                    recipient_name = ""
 
-            legal_entity_location, created = get_or_create_location(
-                legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
-            )
+                legal_entity_location, created = get_or_create_location(
+                    legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
+                )
 
-            # Create the legal entity if it doesn't exist
-            legal_entity, created = LegalEntity.objects.get_or_create(
-                recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                recipient_name=recipient_name
-            )
+                # Create the legal entity if it doesn't exist
+                legal_entity, created = LegalEntity.objects.get_or_create(
+                    recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                    recipient_name=recipient_name
+                )
 
-            if created:
-                legal_entity_value_map = {
-                    "location": legal_entity_location,
+                if created:
+                    legal_entity_value_map = {
+                        "location": legal_entity_location,
+                    }
+                    legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
+
+                # Create the place of performance location
+                pop_location, created = get_or_create_location(
+                    place_of_performance_field_map, row, copy(place_of_performance_value_map))
+
+                # If awarding toptier agency code (aka CGAC) is not supplied on the D1 record,
+                # use the sub tier code to look it up. This code assumes that all incoming
+                # records will supply an awarding subtier agency code
+                if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
+                    row['awarding_agency_code'] = Agency.get_by_subtier(
+                        row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
+                # If funding toptier agency code (aka CGAC) is empty, try using the sub
+                # tier funding code to look it up. Unlike the awarding agency, we can't
+                # assume that the funding agency subtier code will always be present.
+                if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+                    funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
+                    row['funding_agency_code'] = (
+                        funding_agency.toptier_agency.cgac_code if funding_agency is not None
+                        else None)
+
+                # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+                awarding_agency = Agency.get_by_toptier_subtier(
+                    row['awarding_agency_code'],
+                    row["awarding_sub_tier_agency_c"]
+                )
+                created, award = Award.get_or_create_summary_award(
+                    awarding_agency=awarding_agency,
+                    piid=row.get('piid'),
+                    fain=row.get('fain'),
+                    uri=row.get('uri'),
+                    parent_award_id=row.get('parent_award_id'))
+                award.save()
+
+                AWARD_UPDATE_ID_LIST.append(award.id)
+                AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
+
+                parent_txn_value_map = {
+                    "award": award,
+                    "awarding_agency": awarding_agency,
+                    "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
+                                                                    row["funding_sub_tier_agency_co"]),
+                    "recipient": legal_entity,
+                    "place_of_performance": pop_location,
+                    "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                    "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                    "action_date": format_date(row['action_date']),
                 }
-                legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
-            # Create the place of performance location
-            pop_location, created = get_or_create_location(
-                place_of_performance_field_map, row, copy(place_of_performance_value_map))
+                transaction_dict = load_data_into_model(
+                    TransactionNew(),  # thrown away
+                    row,
+                    field_map=contract_field_map,
+                    value_map=parent_txn_value_map,
+                    as_dict=True)
 
-            # If awarding toptier agency code (aka CGAC) is not supplied on the D1 record,
-            # use the sub tier code to look it up. This code assumes that all incoming
-            # records will supply an awarding subtier agency code
-            if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
-                row['awarding_agency_code'] = Agency.get_by_subtier(
-                    row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
-            # If funding toptier agency code (aka CGAC) is empty, try using the sub
-            # tier funding code to look it up. Unlike the awarding agency, we can't
-            # assume that the funding agency subtier code will always be present.
-            if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
-                funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
-                row['funding_agency_code'] = (
-                    funding_agency.toptier_agency.cgac_code if funding_agency is not None
-                    else None)
+                transaction = TransactionNew.get_or_create_transaction(**transaction_dict)
+                transaction.save()
 
-            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = Agency.get_by_toptier_subtier(
-                row['awarding_agency_code'],
-                row["awarding_sub_tier_agency_c"]
-            )
-            created, award = Award.get_or_create_summary_award(
-                awarding_agency=awarding_agency,
-                piid=row.get('piid'),
-                fain=row.get('fain'),
-                uri=row.get('uri'),
-                parent_award_id=row.get('parent_award_id'))
-            award.save()
+                contract_instance = load_data_into_model(
+                    TransactionContractNew(),  # thrown away
+                    row,
+                    as_dict=True)
 
-            AWARD_UPDATE_ID_LIST.append(award.id)
-            AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
-
-            parent_txn_value_map = {
-                "award": award,
-                "awarding_agency": awarding_agency,
-                "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                                                row["funding_sub_tier_agency_co"]),
-                "recipient": legal_entity,
-                "place_of_performance": pop_location,
-                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                "action_date": format_date(row['action_date']),
-            }
-
-            transaction_dict = load_data_into_model(
-                TransactionNew(),  # thrown away
-                row,
-                field_map=contract_field_map,
-                value_map=parent_txn_value_map,
-                as_dict=True)
-
-            transaction = TransactionNew.get_or_create_transaction(**transaction_dict)
-            transaction.save()
-
-            contract_instance = load_data_into_model(
-                TransactionContractNew(),  # thrown away
-                row,
-                as_dict=True)
-
-            transaction_contract = TransactionContractNew(transaction=transaction, **contract_instance)
-            transaction_contract.save()
+                transaction_contract = TransactionContractNew(transaction=transaction, **contract_instance)
+                transaction_contract.save()
 
     def add_arguments(self, parser):
         
