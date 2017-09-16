@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def update_transaction_assistance(db_cursor, fiscal_year=None):
-        query = 'SELECT * FROM award_financial_assistance'
+        query = 'SELECT * FROM published_award_financial_assistance'
         arguments = []
         if fiscal_year:
             query += ' WHERE FY(action_date) = %s'
@@ -178,7 +178,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def update_transaction_contract(db_cursor, fiscal_year=None):
-        query = 'SELECT * FROM award_procurement'
+        query = 'SELECT * FROM detached_award_procurement'
         arguments = []
         if fiscal_year:
             query += ' WHERE FY(action_date) = %s'
