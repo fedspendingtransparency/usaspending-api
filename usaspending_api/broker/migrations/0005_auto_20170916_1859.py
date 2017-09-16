@@ -120,16 +120,16 @@ class Migration(migrations.Migration):
             name='vendor_site_code',
             field=models.TextField(blank=True, null=True),
         ),
-        migrations.AlterField(
-            model_name='transactionassistancenew',
-            name='published_award_financial_assistance_id',
-            field=models.AutoField(primary_key=True),
-        ),
-        migrations.AlterField(
-            model_name='transactioncontractnew',
-            name='detached_award_procurement_id',
-            field=models.AutoField(primary_key=True),
-        ),
+        # migrations.AlterField(
+        #     model_name='transactionassistancenew',
+        #     name='published_award_financial_assistance_id',
+        #     field=models.AutoField(primary_key=True),
+        # ),
+        # migrations.AlterField(
+        #     model_name='transactioncontractnew',
+        #     name='detached_award_procurement_id',
+        #     field=models.AutoField(primary_key=True),
+        # ),
         migrations.AlterField(
             model_name='transactioncontractnew',
             name='federal_action_obligation',
