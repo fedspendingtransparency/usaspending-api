@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.db import connections
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.broker.models import TransactionNew, TransactionAssistanceNew, TransactionContractNew, TransactionMap
+from usaspending_api.broker.models import TransactionNew, TransactionAssistanceNew, TransactionContractNew
 from usaspending_api.awards.models import Transaction, TransactionAssistance, TransactionContract, Award
 from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency, LegalEntity
