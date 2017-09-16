@@ -338,8 +338,8 @@ class Command(BaseCommand):
         )
 
     @transaction.atomic
-    @transaction.commit_manually
     def handle(self, *args, **options):
+        transaction.set_autocommit(False)
         logger.info('Starting historical data load...')
 
         db_cursor = connections['data_broker'].cursor()
@@ -384,6 +384,7 @@ class Command(BaseCommand):
         logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
 
         transaction.commit()
+        transaction.set_autocommit(True)
 
         # Done!
         logger.info('FINISHED')
