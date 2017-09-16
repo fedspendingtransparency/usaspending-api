@@ -356,7 +356,6 @@ class TransactionContractNew(models.Model):
     updated_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'detached_award_procurement'
 
 
@@ -432,7 +431,6 @@ class TransactionAssistanceNew(models.Model):
     updated_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'published_award_financial_assistance'
         unique_together = (('awarding_sub_tier_agency_c', 'award_modification_amendme', 'fain', 'uri'),)
 
