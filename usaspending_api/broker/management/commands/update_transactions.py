@@ -338,6 +338,7 @@ class Command(BaseCommand):
         )
 
     @transaction.atomic
+    @transaction.commit_manually
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
@@ -381,6 +382,8 @@ class Command(BaseCommand):
         update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
         end = timeit.default_timer()
         logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+
+        transaction.commit()
 
         # Done!
         logger.info('FINISHED')
