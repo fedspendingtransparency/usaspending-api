@@ -338,7 +338,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
-        db_cursor = connections['data_broker']
+        db_cursor = connections['data_broker'].cursor()
         fiscal_year = options.get('fiscal_year')
 
         if fiscal_year:
