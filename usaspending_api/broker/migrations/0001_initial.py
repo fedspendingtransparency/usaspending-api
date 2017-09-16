@@ -462,11 +462,6 @@ class Migration(migrations.Migration):
             name='recipient',
             field=models.ForeignKey(help_text='The recipient for this transaction', null=True, on_delete=django.db.models.deletion.CASCADE, to='references.LegalEntity'),
         ),
-        migrations.AddField(
-            model_name='transactionmap',
-            name='transaction',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='broker.TransactionNew'),
-        ),
         migrations.AlterIndexTogether(
             name='transactionnew',
             index_together=set([('award', 'action_date')]),
