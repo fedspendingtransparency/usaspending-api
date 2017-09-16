@@ -294,7 +294,7 @@ class Command(BaseCommand):
             }
 
             transaction_dict = load_data_into_model(
-                Transaction(),  # thrown away
+                TransactionNew(),  # thrown away
                 row,
                 field_map=contract_field_map,
                 value_map=parent_txn_value_map,
@@ -304,7 +304,7 @@ class Command(BaseCommand):
             transaction.save()
 
             contract_instance = load_data_into_model(
-                TransactionContract(),  # thrown away
+                TransactionContractNew(),  # thrown away
                 row,
                 as_dict=True)
 
