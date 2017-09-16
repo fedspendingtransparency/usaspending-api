@@ -78,7 +78,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'published_award_financial_assistance',
-                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -346,7 +345,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'detached_award_procurement',
-                'managed': False,
             },
         ),
         migrations.CreateModel(
