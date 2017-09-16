@@ -237,7 +237,7 @@ class Command(BaseCommand):
             # Create the legal entity if it doesn't exist
             legal_entity, created = LegalEntity.objects.get_or_create(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                recipient_name=row.get('awardee_or_recipient_legal', '')
+                recipient_name=row['awardee_or_recipient_legal'] if row['awardee_or_recipient_legal'] != 'null' else ''
             )
 
             if created:
