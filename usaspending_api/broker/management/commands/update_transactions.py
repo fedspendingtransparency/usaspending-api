@@ -31,12 +31,13 @@ class Command(BaseCommand):
     help = "Checks what TASs are in Broker but not in Data Store"
 
     @staticmethod
-    def update_transaction_assistance(db_cursor, fiscal_year=None):
+    def update_transaction_assistance(db_cursor, fiscal_year=None, start_row=1):
         query = 'SELECT * FROM published_award_financial_assistance'
         arguments = []
         if fiscal_year:
             query += ' WHERE FY(action_date) = %s'
             arguments = [fiscal_year]
+        query += ' ORDER BY afa_generated_unique'
         db_cursor.execute(query, arguments)
         award_financial_assistance_data = dictfetchall(db_cursor)
 
@@ -87,7 +88,7 @@ class Command(BaseCommand):
         total_rows = len(award_financial_assistance_data)
 
         start_time = datetime.now()
-        for index, row in enumerate(award_financial_assistance_data, 1):
+        for index, row in enumerate(award_financial_assistance_data, start_row):
             if not (index % 100):
                 logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
                                                                              str(total_rows),
@@ -177,12 +178,13 @@ class Command(BaseCommand):
 
 
     @staticmethod
-    def update_transaction_contract(db_cursor, fiscal_year=None):
+    def update_transaction_contract(db_cursor, fiscal_year=None, start_row=1):
         query = "SELECT COALESCE(awardee_or_recipient_legal, ''), * FROM detached_award_procurement"
         arguments = []
         if fiscal_year:
             query += ' WHERE FY(action_date) = %s'
             arguments = [fiscal_year]
+        query += ' ORDER BY detached_award_proc_unique'
         db_cursor.execute(query, arguments)
         procurement_data = dictfetchall(db_cursor)
 
@@ -224,7 +226,7 @@ class Command(BaseCommand):
         logger.info("Processing " + str(total_rows) + " rows of procurement data")
 
         start_time = datetime.now()
-        for index, row in enumerate(procurement_data, 1):
+        for index, row in enumerate(procurement_data, start_row):
             if not (index % 100):
                 logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
                                                                              str(total_rows),
@@ -337,30 +339,51 @@ class Command(BaseCommand):
             help='Runs the historical loader only for Award Procurement (Contract) data'
         )
 
+        parser.add_argument(
+            '--contracts_row',
+            dest="contracts_row",
+            nargs='+',
+            type=int,
+            help="Row to start contracts"
+        )
+
+        parser.add_argument(
+            '--assistance_row',
+            dest="assistance_row",
+            nargs='+',
+            type=int,
+            help="Row to start assistance"
+        )
+
     @transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
         db_cursor = connections['data_broker'].cursor()
         fiscal_year = options.get('fiscal_year')
+        contracts_row = options.get('contracts_row')
+        assistance_row = options.get('assistance_row')
 
         if fiscal_year:
             fiscal_year = fiscal_year[0]
             logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
         else:
             fiscal_year = 2017
+
+        contracts_row = contracts_row[0] if contracts_row else 1
+        assistance_row = assistance_row[0] if assistance_row else 1
         
         if not options['assistance']:
             logger.info('Starting D1 historical data load...')
             start = timeit.default_timer()
-            self.update_transaction_contract(db_cursor = db_cursor, fiscal_year=fiscal_year)
+            self.update_transaction_contract(db_cursor = db_cursor, fiscal_year=fiscal_year, start_row=contracts_row)
             end = timeit.default_timer()
             logger.info('Finished D1 historical data load in ' + str(end - start) + ' seconds')
 
         if not options['contracts']:
             logger.info('Starting D2 historical data load...')
             start = timeit.default_timer()
-            self.update_transaction_assistance(db_cursor = db_cursor, fiscal_year=fiscal_year)
+            self.update_transaction_assistance(db_cursor = db_cursor, fiscal_year=fiscal_year, start_row=assistance_row)
             end = timeit.default_timer()
             logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
 
