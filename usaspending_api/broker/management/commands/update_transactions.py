@@ -105,7 +105,7 @@ class Command(BaseCommand):
             # Create the legal entity if it doesn't exist
             legal_entity, created = LegalEntity.objects.get_or_create(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                recipient_name=row['awardee_or_recipient_legal']
+                recipient_name=recipient_name
             )
 
             if created:
@@ -183,11 +183,15 @@ class Command(BaseCommand):
 
     @staticmethod
     def update_transaction_contract(db_cursor, fiscal_year=None, start_row=1):
-        query = "SELECT COALESCE(awardee_or_recipient_legal, ''), * FROM detached_award_procurement"
-        arguments = []
+
+        current_ids = TransactionContractNew.objects.values_list('detached_award_procurement_id', flat=True)
+        current_ids_str = str(tuple(current_ids))  # str(current_ids).replace('[', '(').replace(']', ')')
+
+        query = "SELECT * FROM detached_award_procurement WHERE detached_award_procurement_id NOT IN %s"
+        arguments = [current_ids_str]
         if fiscal_year:
-            query += ' WHERE FY(action_date) = %s'
-            arguments = [fiscal_year]
+            query += ' AND FY(action_date) = %s'
+            arguments += [fiscal_year]
         query += ' ORDER BY detached_award_proc_unique'
         db_cursor.execute(query, arguments)
         procurement_data = dictfetchall(db_cursor)
@@ -247,7 +251,7 @@ class Command(BaseCommand):
             # Create the legal entity if it doesn't exist
             legal_entity, created = LegalEntity.objects.get_or_create(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                recipient_name=row['awardee_or_recipient_legal']
+                recipient_name=recipient_name
             )
 
             if created:
@@ -363,7 +367,7 @@ class Command(BaseCommand):
             help="Row to start assistance"
         )
 
-    @transaction.atomic
+    # @transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
