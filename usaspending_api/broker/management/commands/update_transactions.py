@@ -221,6 +221,8 @@ class Command(BaseCommand):
 
         total_rows = len(procurement_data)
 
+        logger.info("Processing " + str(total_rows) + " rows of procurement data")
+
         start_time = datetime.now()
         for index, row in enumerate(procurement_data, 1):
             if not (index % 100):
