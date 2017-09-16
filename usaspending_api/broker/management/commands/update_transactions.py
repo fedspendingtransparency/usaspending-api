@@ -3,7 +3,7 @@ import timeit
 from datetime import datetime
 
 from django.core.management.base import BaseCommand
-from django.db import connections
+from django.db import connections, transaction
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.broker.models import TransactionNew, TransactionAssistanceNew, TransactionContractNew
@@ -336,7 +336,8 @@ class Command(BaseCommand):
             default=False,
             help='Runs the historical loader only for Award Procurement (Contract) data'
         )
-            
+
+    @transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
