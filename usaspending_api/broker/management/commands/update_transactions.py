@@ -178,7 +178,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def update_transaction_contract(db_cursor, fiscal_year=None):
-        query = 'SELECT COALESCE(awardee_or_recipient_legal, ''), * FROM detached_award_procurement'
+        query = "SELECT COALESCE(awardee_or_recipient_legal, ''), * FROM detached_award_procurement"
         arguments = []
         if fiscal_year:
             query += ' WHERE FY(action_date) = %s'
