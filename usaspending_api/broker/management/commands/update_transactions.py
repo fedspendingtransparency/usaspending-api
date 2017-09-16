@@ -187,10 +187,19 @@ class Command(BaseCommand):
         current_ids = TransactionContractNew.objects.values_list('detached_award_procurement_id', flat=True)
         current_ids_str = str(tuple(current_ids))  # str(current_ids).replace('[', '(').replace(']', ')')
 
-        query = "SELECT * FROM detached_award_procurement WHERE detached_award_procurement_id NOT IN %s"
-        arguments = [current_ids_str]
+        query = "SELECT * FROM detached_award_procurement"
+        arguments = []
+
+        if current_ids:
+            query += " WHERE detached_award_procurement_id NOT IN %s"
+            arguments += [current_ids_str]
+
         if fiscal_year:
-            query += ' AND FY(action_date) = %s'
+            if arguments:
+                query += " AND"
+            else:
+                query += " WHERE"
+            query += ' FY(action_date) = %s'
             arguments += [fiscal_year]
         # query += ' ORDER BY detached_award_proc_unique'
         db_cursor.execute(query, arguments)
