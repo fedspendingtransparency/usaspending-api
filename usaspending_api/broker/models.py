@@ -82,7 +82,7 @@ class TransactionContractNew(models.Model):
         TransactionNew, on_delete=models.CASCADE,
         primary_key=True, related_name='contract_data',
         help_text="Non-specific transaction data, fields shared among both assistance and contract transactions")
-    detached_award_procurement_id = models.AutoField(primary_key=True)
+    detached_award_procurement_id = models.IntegerField(blank=True, null=True)
     detached_award_proc_unique = models.TextField(unique=True, null=False)
     piid = models.TextField(blank=True, null=True)
     agency_id = models.TextField(blank=True, null=True)
@@ -363,7 +363,7 @@ class TransactionAssistanceNew(models.Model):
     transaction = models.OneToOneField(
         TransactionNew, on_delete=models.CASCADE,
         primary_key=True, related_name='assistance_data')
-    published_award_financial_assistance_id = models.AutoField(primary_key=True)
+    published_award_financial_assistance_id = models.IntegerField(blank=True, null=True)
     afa_generated_unique = models.TextField(blank=True, null=False)
     action_date = models.TextField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)
@@ -433,9 +433,3 @@ class TransactionAssistanceNew(models.Model):
     class Meta:
         db_table = 'published_award_financial_assistance'
         unique_together = (('awarding_sub_tier_agency_c', 'award_modification_amendme', 'fain', 'uri'),)
-
-
-class TransactionMap(models.Model):
-    transaction = models.ForeignKey(TransactionNew, on_delete=models.CASCADE)
-    transaction_assistance_id = models.IntegerField(blank=True, null=True)
-    transaction_contract_id = models.IntegerField(blank=True, null=True)

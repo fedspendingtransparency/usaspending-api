@@ -58,14 +58,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='TransactionMap',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('transaction_assistance_id', models.IntegerField(blank=True, null=True)),
-                ('transaction_contract_id', models.IntegerField(blank=True, null=True)),
-            ],
-        ),
-        migrations.CreateModel(
             name='TransactionNew',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -97,7 +89,7 @@ class Migration(migrations.Migration):
             name='TransactionAssistanceNew',
             fields=[
                 ('transaction', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='assistance_data', serialize=False, to='broker.TransactionNew')),
-                ('published_award_financial_assistance_id', models.AutoField(primary_key=True)),
+                ('published_award_financial_assistance_id', models.IntegerField(blank=True, null=True)),
                 ('afa_generated_unique', models.TextField(blank=True)),
                 ('action_date', models.TextField(blank=True, null=True)),
                 ('action_type', models.TextField(blank=True, null=True)),
@@ -170,7 +162,7 @@ class Migration(migrations.Migration):
             name='TransactionContractNew',
             fields=[
                 ('transaction', models.OneToOneField(help_text='Non-specific transaction data, fields shared among both assistance and contract transactions', on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='contract_data', serialize=False, to='broker.TransactionNew')),
-                ('detached_award_procurement_id', models.AutoField(primary_key=True)),
+                ('detached_award_procurement_id', models.IntegerField(blank=True, null=True)),
                 ('detached_award_proc_unique', models.TextField(unique=True)),
                 ('piid', models.TextField(blank=True, null=True)),
                 ('agency_id', models.TextField(blank=True, null=True)),
