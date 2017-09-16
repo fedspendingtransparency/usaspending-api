@@ -98,6 +98,10 @@ class Command(BaseCommand):
                 legal_entity_location_field_map, row, legal_entity_location_value_map
             )
 
+            recipient_name = row['awardee_or_recipient_legal']
+            if recipient_name is None:
+                recipient_name = ""
+
             # Create the legal entity if it doesn't exist
             legal_entity, created = LegalEntity.objects.get_or_create(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
@@ -231,6 +235,10 @@ class Command(BaseCommand):
                 logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
                                                                              str(total_rows),
                                                                              datetime.now() - start_time))
+
+            recipient_name = row['awardee_or_recipient_legal']
+            if recipient_name is None:
+                recipient_name = ""
 
             legal_entity_location, created = get_or_create_location(
                 legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
