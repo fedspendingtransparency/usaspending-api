@@ -213,7 +213,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
             piid=row.get('piid'),
             fain=row.get('fain'),
             uri=row.get('uri'),
-            parent_award_id=row.get('parent_award_id'))  # but why would the row include the ID on our side?
+            parent_award_id=row.get('parent_award_id'))  # It is a FAIN/PIID/URI, not our db's pk
         award.save()
 
         AWARD_UPDATE_ID_LIST.append(award.id)

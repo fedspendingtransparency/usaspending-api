@@ -42,8 +42,8 @@ class BaseDownloadViewSet(APIView):
             'total_size': download_job.file_size / 1000
             if download_job.file_size else None,
             'total_columns': download_job.number_of_columns,
-            'total_rows': download_job.number_of_rows
-            # TODO: How about a nice status check URL right here?
+            'total_rows': download_job.number_of_rows,
+            'time_elapsed': download_job.time_elapsed()
         }
 
         return Response(response)
@@ -51,16 +51,11 @@ class BaseDownloadViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
 
-        json_request = request.data
-        columns = json_request['columns']
-
-        # filter Transactions based on filter input
-        # querysets = self.get_querysets(json_request)
-        csv_sources = self.get_csv_sources(json_request)
+        csv_sources = self.get_csv_sources(request.data)
 
         # get timestamped name to provide unique file name
         timestamped_file_name = self.s3_handler.get_timestamped_filename(
-            self.DOWNLOAD_NAME + '_download.csv')
+            self.DOWNLOAD_NAME + '_download')
 
         # create download job in database to track progress. Starts at "ready"
         # status by default.
@@ -73,7 +68,7 @@ class BaseDownloadViewSet(APIView):
         kwargs = {'download_job': download_job,
                   'file_name': timestamped_file_name,
                   'upload_name': timestamped_file_name,
-                  'columns': columns,
+                  'columns': request.data['columns'],
                   'sources': csv_sources}
 
         if 'pytest' in sys.modules:
@@ -92,8 +87,9 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
     def get_csv_sources(self, json_request):
         filters = json_request['filters']
         queryset = award_filter(filters)
-        source = csv_selection.AwardCsvSource(queryset)
-        return (source, )
+        d1_source = csv_selection.CsvSource(queryset, 'award', 'd1')
+        d2_source = csv_selection.CsvSource(queryset, 'award', 'd2')
+        return (d1_source, d2_source)
 
     DOWNLOAD_NAME = 'awards'
 
@@ -104,9 +100,8 @@ class DownloadTransactionsViewSet(BaseDownloadViewSet):
         transaction_contract_queryset = transaction_contract_filter(filters)
         transaction_assistance_queryset = transaction_assistance_filter(
             filters)
-        sources = (csv_selection.TransactionContractCsvSource(transaction_contract_queryset),
-                   csv_selection.TransactionAssistanceCsvSource(transaction_assistance_queryset))
-        return sources
+        return (csv_selection.CsvSource(transaction_contract_queryset, 'transaction', 'd1'),
+                csv_selection.CsvSource(transaction_assistance_queryset, 'transaction', 'd2'))
 
     DOWNLOAD_NAME = 'transactions'
 

@@ -25,7 +25,7 @@ def write_csv(download_job, file_name, upload_name, header, body):
 
     try:
         if settings.IS_LOCAL:
-            file_name = settings.CSV_LOCAL_PATH + file_name
+            file_name = settings.CSV_LOCAL_PATH + file_name + '.csv'
             csv_writer = CsvLocalWriter(file_name, header)
             message = 'Writing file locally...'
         else:
@@ -57,43 +57,14 @@ def write_csv(download_job, file_name, upload_name, header, body):
 
 class CsvSource:
 
-    def __init__(self, queryset):
+    def __init__(self, queryset, model_type, file_type):
         self.queryset = queryset
+        self.human_names = download_column_lookups.human_names[model_type][file_type]
+        self.query_paths = download_column_lookups.query_paths[model_type][file_type]
 
-    def values_from_db_col_names(self):
-        """Yields list of values from queryset, interspersed with None
-
-        `db_col_names` is a list of `None`s and column names.
-        Each row yields either None or the
-
-        >>> list(values_from_db_col_names(qry, ['colA', None, 'colB']))
-        [[valA1, None, valB1],
-         [valA2, None, valB2]]
-        """
-        col_names = [c for c in self.db_col_names if c]
-        rows = self.queryset.values_list(*col_names).iterator()
-        for row in rows:
-            yield [(row[i] if c else None) for (i, c) in enumerate(self.db_col_names)]
-
-# possible renamings
-# col_names -> query_paths
-
-class TransactionContractCsvSource(CsvSource):
-
-    all_column_list = download_column_lookups.transaction_columns
-    column_name_lookups = download_column_lookups.transaction_d1_columns
-
-
-class TransactionAssistanceCsvSource(CsvSource):
-
-    all_column_list = download_column_lookups.transaction_columns
-    column_name_lookups = download_column_lookups.transaction_d2_columns
-
-
-class AwardCsvSource(CsvSource):
-
-    all_column_list = download_column_lookups.award_columns
-    column_name_lookups = download_column_lookups.award_column_map
+    def values(self, header):
+        query_paths = [self.query_paths[hn] for hn in header]
+        return self.queryset.values_list(query_paths).iterator()
 
 
 def write_csv_from_querysets(download_job, file_name, upload_name, columns,
@@ -104,29 +75,25 @@ def write_csv_from_querysets(download_job, file_name, upload_name, columns,
 
     :return: the final file name (complete with prefix)"""
 
-    headers = columns or sources[0].all_column_list
-    unfound = set(headers)
-
-    for source in sources:
-        source.db_col_names = []
-        for (i, header) in enumerate(headers[:]):
-            db_col_name = source.column_name_lookups.get(header)
-            if db_col_name:  # Col requested with downloadable name
-                source.db_col_names.append(db_col_name)
-                unfound -= set([header, ])
+    source = sources[0]  # TODO: do this for both, then zip
+    if columns:
+        headers = []
+        for column in columns:
+            if column in source.human_names:
+                headers.append(column)
+            elif column in source.human_names.inv:  # given query path, get human name
+                headers.append(source.human_names.inv[column])
             else:
-                full_name = source.column_name_lookups.inv.get(header)
-                if full_name:  # Col requested with db-side name
-                    source.db_col_names.append(header)
-                    unfound -= set([header, ])
-                    headers[i] = full_name
+                raise InvalidParameterException('{} not a known field name'.format(column))
+    else:
+        headers = source.human_names
 
-    if unfound:
-        raise InvalidParameterException('Columns {} not available'.format(unfound))
+    # remove headers that we don't have a query path for
+    headers = [h for h in headers if h in source.query_paths]
 
     def row_emitter():
-        for source in sources:
-            yield from source.values_from_db_col_names()
+        query_paths = [source.query_paths[hn] for hn in headers]
+        yield from source.queryset.values_list(*query_paths).iterator()
 
     return write_csv(
         download_job,
