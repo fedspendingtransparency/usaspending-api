@@ -246,8 +246,9 @@ class Command(BaseCommand):
 
         logger.info("Getting total rows")
         total_rows = len(procurement_data)
+        rows_loaded = len(current_ids)
 
-        logger.info("Processing " + str(total_rows) + " rows of procurement data")
+        logger.info("Processing " + str(total_rows-rows_loaded) + " rows of procurement data")
 
         start_time = datetime.now()
         for index, row in enumerate(procurement_data, start_row):
