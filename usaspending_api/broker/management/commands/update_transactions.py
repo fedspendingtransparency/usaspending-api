@@ -196,7 +196,7 @@ class Command(BaseCommand):
                      "(SELECT * FROM detached_award_procurement WHERE FY(action_date) = %s) "
             arguments += [fiscal_year]
 
-        query += "SELECT * FROM detached_award_procurement"
+        query += "SELECT * FROM fy_filtered_detached_award_procurement"
 
         if current_ids:
             query += " WHERE detached_award_procurement_id NOT IN %s"
