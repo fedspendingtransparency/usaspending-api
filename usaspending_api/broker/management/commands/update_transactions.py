@@ -184,6 +184,7 @@ class Command(BaseCommand):
     @staticmethod
     def update_transaction_contract(db_cursor, fiscal_year=None, start_row=1):
 
+        logger.info("Getting IDs for what's currently in the DB...")
         current_ids = TransactionContractNew.objects.values_list('detached_award_procurement_id', flat=True)
         current_ids_str = tuple(current_ids)  # str(current_ids).replace('[', '(').replace(']', ')')
 
@@ -202,7 +203,12 @@ class Command(BaseCommand):
             query += ' FY(action_date) = %s'
             arguments += [fiscal_year]
         # query += ' ORDER BY detached_award_proc_unique'
+
+        logger.info("Executing query on Broker DB => " + query)
+
         db_cursor.execute(query, arguments)
+
+        logger.info("Running dictfetchall on db_cursor")
         procurement_data = dictfetchall(db_cursor)
 
         legal_entity_location_field_map = {
@@ -238,6 +244,7 @@ class Command(BaseCommand):
             "description": "award_description"
         }
 
+        logger.info("Getting total rows")
         total_rows = len(procurement_data)
 
         logger.info("Processing " + str(total_rows) + " rows of procurement data")
