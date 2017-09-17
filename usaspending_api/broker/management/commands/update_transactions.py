@@ -186,22 +186,22 @@ class Command(BaseCommand):
 
         logger.info("Getting IDs for what's currently in the DB...")
         current_ids = TransactionContractNew.objects.values_list('detached_award_procurement_id', flat=True)
-        current_ids_str = tuple(current_ids)  # str(current_ids).replace('[', '(').replace(']', ')')
+        # current_ids_str = tuple(current_ids)  # str(current_ids).replace('[', '(').replace(']', ')')
 
-        query = ""
+        query = "SELECT * FROM detached_award_procurement"
         arguments = []
 
+        # if current_ids:
+        #     query += " WHERE detached_award_procurement_id NOT IN %s"
+        #     arguments += [current_ids_str]
+
         if fiscal_year:
-            query += "WITH fy_filtered_detached_award_procurement AS " \
-                     "(SELECT * FROM detached_award_procurement WHERE FY(action_date) = %s) "
+            if arguments:
+                query += " AND"
+            else:
+                query += " WHERE"
+            query += ' FY(action_date) = %s'
             arguments += [fiscal_year]
-
-        query += "SELECT * FROM fy_filtered_detached_award_procurement"
-
-        if current_ids:
-            query += " WHERE detached_award_procurement_id NOT IN %s"
-            arguments += [current_ids_str]
-
         # query += ' ORDER BY detached_award_proc_unique'
 
         logger.info("Executing query on Broker DB => " + query)
@@ -252,6 +252,9 @@ class Command(BaseCommand):
         start_time = datetime.now()
         for index, row in enumerate(procurement_data, start_row):
             with db_transaction.atomic():
+                if row['detached_award_procurement_id'] in current_ids:
+                    continue
+
                 if not (index % 100):
                     logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
                                                                                  str(total_rows),
