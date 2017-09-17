@@ -185,7 +185,7 @@ class Command(BaseCommand):
     def update_transaction_contract(db_cursor, fiscal_year=None, start_row=1):
 
         current_ids = TransactionContractNew.objects.values_list('detached_award_procurement_id', flat=True)
-        current_ids_str = str(tuple(current_ids))  # str(current_ids).replace('[', '(').replace(']', ')')
+        current_ids_str = tuple(current_ids)  # str(current_ids).replace('[', '(').replace(']', ')')
 
         query = "SELECT * FROM detached_award_procurement"
         arguments = []

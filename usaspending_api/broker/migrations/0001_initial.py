@@ -162,7 +162,7 @@ class Migration(migrations.Migration):
             name='TransactionContractNew',
             fields=[
                 ('transaction', models.OneToOneField(help_text='Non-specific transaction data, fields shared among both assistance and contract transactions', on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='contract_data', serialize=False, to='broker.TransactionNew')),
-                ('detached_award_procurement_id', models.IntegerField(blank=True, null=True)),
+                ('detached_award_procurement_id', models.TextField(blank=True, null=True)),
                 ('detached_award_proc_unique', models.TextField(unique=True)),
                 ('piid', models.TextField(blank=True, null=True)),
                 ('agency_id', models.TextField(blank=True, null=True)),
@@ -204,7 +204,7 @@ class Migration(migrations.Migration):
                 ('action_date', models.TextField(blank=True, null=True)),
                 ('action_type', models.TextField(blank=True, null=True)),
                 ('action_type_description', models.TextField(blank=True, null=True)),
-                ('federal_action_obligation', models.IntegerField(blank=True, null=True)),
+                ('federal_action_obligation', models.TextField(blank=True, null=True)),
                 ('current_total_value_award', models.TextField(blank=True, null=True)),
                 ('potential_total_value_awar', models.TextField(blank=True, null=True)),
                 ('funding_sub_tier_agency_co', models.TextField(blank=True, null=True)),
