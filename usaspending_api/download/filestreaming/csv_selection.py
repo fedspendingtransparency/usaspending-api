@@ -116,6 +116,8 @@ def write_csvs(download_job, file_name, upload_name, columns, sources):
             for chunk in zstream:
                 stream.write(chunk)
             download_job.file_size = stream.total_size
+            stream.close()
+            # TODO: wrap this in a context manager to always close
 
     except Exception as e:
         # TODO: Add proper exception logging

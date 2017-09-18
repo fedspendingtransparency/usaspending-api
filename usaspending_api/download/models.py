@@ -1,6 +1,7 @@
 import datetime
 
 from django.db import models
+from django.utils import timezone
 
 
 class JobStatus(models.Model):
@@ -32,6 +33,6 @@ class DownloadJob(models.Model):
 
     def seconds_elapsed(self):
         if self.job_status.name == 'running':
-            return datetime.datetime.now() - self.create_date
+            return timezone.now() - self.create_date
         elif self.job_status.name in ('finished', 'failed'):
             return self.update_date - self.create_date
