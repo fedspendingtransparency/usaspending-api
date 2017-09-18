@@ -13,9 +13,8 @@ all_query_paths = {
     "parent_award_id",  # TODO: Need to actually get the PIID/FAIN/ID from the parent award, NOT the surrogate PK
     "Parent Award Modification Number": "referenced_idv_modification_number",
     "Federal Action Obligation": "transaction__federal_action_obligation",
-    # Per Ross, BaseAndExercisedOptionsValue is "Change in Current Award Amount" and BaseAndAllOptionsValue is "Change in Potential Award Amount" - Alisa has just finished a story to add these to the broker side
-    # "Change in Current Award Amount": "change_in_current_award_amount",  # e fields were just added - BaseAndExercisedOptionsValue is "Change in Current Award Amount" and BaseAndAllOptionsValue is "Change in Potential Award Amount" -  alisa since she just finished this story - should be present in all FPDS data going forward
-    # "Change in Potential Award Amount": "change_in_potential_award_amount",
+    "Change in Current Award Amount": "base_exercised_options_val",
+    "Change in Potential Award Amount": "base_and_all_options_value",
     "Action Date": "transaction__action_date",
     "Period of Performance Start Date":
     "transaction__period_of_performance_start_date",

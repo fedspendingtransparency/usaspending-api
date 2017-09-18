@@ -8,10 +8,6 @@ import zipstream
 from django.conf import settings
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.download.filestreaming.csv_local_writer import (CsvLocalWriter,
-                                                                     ZippedCsvLocalWriter)
-from usaspending_api.download.filestreaming.csv_s3_writer import CsvS3Writer
-from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.v2 import download_column_lookups
 
