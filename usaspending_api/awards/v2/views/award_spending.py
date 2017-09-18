@@ -1,6 +1,6 @@
 from django.db.models import F, Sum
 
-from usaspending_api.awards.models import Transaction
+from usaspending_api.broker.models import TransactionNormalized
 from usaspending_api.awards.serializers_v2.serializers import AwardTypeAwardSpendingSerializer, \
     RecipientAwardSpendingSerializer
 from usaspending_api.common.exceptions import InvalidParameterException

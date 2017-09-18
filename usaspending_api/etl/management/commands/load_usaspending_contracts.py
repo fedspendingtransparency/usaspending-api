@@ -3,8 +3,8 @@ from datetime import datetime
 
 from django.core.management.base import BaseCommand
 
-from usaspending_api.awards.models import (Award,
-                                           Transaction, TransactionContract)
+from usaspending_api.awards.models import Award
+from usaspending_api.broker.models import TransactionNormalized, TransactionFPDS
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
 from usaspending_api.etl.helpers import update_model_description_fields
 from usaspending_api.etl.csv_data_reader import CsvDataReader

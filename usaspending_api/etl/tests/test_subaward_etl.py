@@ -5,7 +5,8 @@ from django.core.management import call_command
 
 from model_mommy import mommy
 
-from usaspending_api.awards.models import Award, Transaction, Subaward, TransactionContract, TransactionAssistance
+from usaspending_api.awards.models import Award, Subaward
+from usaspending_api.broker.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.submissions.models import SubmissionAttributes
 
 

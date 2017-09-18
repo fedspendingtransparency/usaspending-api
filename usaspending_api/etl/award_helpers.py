@@ -1,6 +1,7 @@
 from django.db import connection
 
-from usaspending_api.awards.models import Transaction, Award, Agency
+from usaspending_api.awards.models import Award, Agency
+from usaspending_api.broker.models import TransactionNormalized
 from django.db.models import Case, Value, When, TextField
 
 
