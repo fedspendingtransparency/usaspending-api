@@ -4,6 +4,7 @@ import logging
 import os
 
 import boto
+import smart_open
 import zipstream
 from django.conf import settings
 
@@ -109,13 +110,12 @@ def write_csvs(download_job, file_name, upload_name, columns, sources):
         else:
             bucket = settings.CSV_S3_BUCKET_NAME
             region = settings.CSV_AWS_REGION
-            with boto.s3.connect_to_region(region).get_bucket(bucket).new_key(
-                    filename) as conn:
-                stream = smart_open.smart_open(
-                    conn, 'w', min_part_size=BUFFER_SIZE)
-                for chunk in zstream:
-                    stream.write(chunk)
-                download_job.file_size = stream.tell()  # TODO: test
+            s3_bucket = boto.s3.connect_to_region(region).get_bucket(bucket)
+            conn = s3_bucket.new_key(file_name)
+            stream = smart_open.smart_open(conn, 'w', min_part_size=BUFFER_SIZE)
+            for chunk in zstream:
+                stream.write(chunk)
+            download_job.file_size = stream.total_size
 
     except Exception as e:
         # TODO: Add proper exception logging

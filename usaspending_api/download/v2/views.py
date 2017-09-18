@@ -31,6 +31,8 @@ class BaseDownloadViewSet(APIView):
         # compile url to file
         file_path = settings.CSV_LOCAL_PATH + file_name if settings.IS_LOCAL else \
             self.s3_handler.get_signed_url(path='', file_name=file_name)
+            # TODO: this is including the AWSAccessKeyId, which we don't want to 
+            # end up in the output!
 
         # add additional response elements that should be part of anything calling this function
         response = {
