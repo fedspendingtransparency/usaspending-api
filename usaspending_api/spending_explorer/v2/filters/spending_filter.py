@@ -3,6 +3,7 @@ import urllib
 from urllib.error import HTTPError
 
 from usaspending_api.awards.models import Award
+from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)
@@ -68,7 +69,11 @@ def spending_filter(alt_set, queryset, filters, _type):
                 # TODO: Will need to incorporate "agency_type" here to filter based on toptier or subtier.
 
                 # Currently default to filtering on toptier
-                and_alt_set = alt_set.filter(treasury_account__funding_toptier_agency=value)
+                agency = Agency.objects.get(toptier_flag=True, id=value)
+                if agency is None:
+                    raise InvalidParameterException('Agency ID provided does not correspond to a toptier agency')
+
+                and_alt_set = alt_set.filter(treasury_account__funding_toptier_agency=agency.toptier_agency)
                 alt_set &= and_alt_set
 
         # All other _type
@@ -120,7 +125,11 @@ def spending_filter(alt_set, queryset, filters, _type):
                 # TODO: Will need to incorporate "agency_type" here to filter based on toptier or subtier.
 
                 # Currently default to filtering on toptier
-                and_queryset = queryset.filter(treasury_account__funding_toptier_agency=value)
+                agency = Agency.objects.get(toptier_flag=True, id=value)
+                if agency is None:
+                    raise InvalidParameterException('Agency ID provided does not correspond to a toptier agency')
+
+                and_queryset = queryset.filter(treasury_account__funding_toptier_agency=agency.toptier_agency)
                 queryset &= and_queryset
 
     return alt_set, queryset
