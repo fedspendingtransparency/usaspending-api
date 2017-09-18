@@ -69,7 +69,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 # TODO: Will need to incorporate "agency_type" here to filter based on toptier or subtier.
 
                 # Currently default to filtering on toptier
-                agency = Agency.objects.get(toptier_flag=True, id=value)
+                agency = Agency.objects.filter(toptier_flag=True, id=value).first()
                 if agency is None:
                     raise InvalidParameterException('Agency ID provided does not correspond to a toptier agency')
 
@@ -125,7 +125,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 # TODO: Will need to incorporate "agency_type" here to filter based on toptier or subtier.
 
                 # Currently default to filtering on toptier
-                agency = Agency.objects.get(toptier_flag=True, id=value)
+                agency = Agency.objects.filter(toptier_flag=True, id=value).first()
                 if agency is None:
                     raise InvalidParameterException('Agency ID provided does not correspond to a toptier agency')
 
