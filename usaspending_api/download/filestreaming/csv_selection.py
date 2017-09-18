@@ -116,8 +116,6 @@ def write_csvs(download_job, file_name, upload_name, columns, sources):
             for chunk in zstream:
                 stream.write(chunk)
             download_job.file_size = stream.total_size
-            stream.close()
-            # TODO: wrap this in a context manager to always close
 
     except Exception as e:
         # TODO: Add proper exception logging
@@ -127,6 +125,13 @@ def write_csvs(download_job, file_name, upload_name, columns, sources):
             download_job.error_message += '\n' + str(e)
     else:
         download_job.job_status_id = JOB_STATUS_DICT['finished']
+    finally:
+        try:
+            stream.close()
+            s3_bucket.lookup(conn.key).set_acl('public-read')
+        except NameError:
+            # there was no stream to close
+            pass
 
     download_job.save()
 

@@ -1,6 +1,5 @@
 import logging
 import time
-from urllib.parse import urlparse, urlunparse
 import boto
 from boto import sts
 
@@ -8,12 +7,6 @@ from django.conf import settings
 
 
 logger = logging.getLogger(__name__)
-
-
-def strip_parameters(raw_url):
-    'Returns URL without query parameters'
-
-    return (urlparse(raw_url)[:3] + ('', )*3)
 
 
 class S3Handler:
@@ -56,14 +49,21 @@ class S3Handler:
         if S3Handler.ENABLE_S3:
             s3connection = boto.s3.connect_to_region(S3Handler.REGION)
             if method == "PUT":
-                generated = s3connection.generate_url(S3Handler.URL_LIFETIME, method,
+                return s3connection.generate_url(S3Handler.URL_LIFETIME, method,
                                                  bucket_route, "/" + path + "/" + file_name,
                                                  headers={'Content-Type': 'application/octet-stream'})
-                return strip_parameters(generated)
-            generated = s3connection.generate_url(S3Handler.URL_LIFETIME, method,
-                                                  bucket_route, "/" + path + "/" + file_name)
-            return strip_parameters(generated)
+            return s3connection.generate_url(S3Handler.URL_LIFETIME, method,
+                                             bucket_route, "/" + path + "/" + file_name)
         return S3Handler.BASE_URL + "/" + self.bucketRoute + "/" + path + "/" + file_name
+
+    def get_simple_url(self, file_name):
+        """
+        Gets URL for read
+        """
+
+        s3connection = boto.s3.connect_to_region(S3Handler.REGION)
+        generated = "https://{}/{}/{}".format(s3connection.server_name(), self.bucketRoute, file_name)
+        return generated
 
     def get_signed_url(self, path, file_name, bucket_route=None, method="PUT"):
         """
