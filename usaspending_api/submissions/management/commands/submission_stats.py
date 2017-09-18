@@ -53,9 +53,9 @@ def get_submission_stats(submission):
         AppropriationAccountBalancesQuarterly,
         FinancialAccountsByProgramActivityObjectClass,
         TasProgramActivityObjectClassQuarterly,
-        Transaction,
-        TransactionAssistance,
-        TransactionContract,
+        TransactionNormalized,
+        TransactionFABS,
+        TransactionFPDS,
         FinancialAccountsByAwards]
 
     stats = [(m._meta.model_name, m.objects.filter(
