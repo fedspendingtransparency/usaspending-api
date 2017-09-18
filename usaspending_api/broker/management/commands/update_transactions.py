@@ -32,12 +32,21 @@ class Command(BaseCommand):
 
     @staticmethod
     def update_transaction_assistance(db_cursor, fiscal_year=None, start_row=1):
-        query = 'SELECT * FROM published_award_financial_assistance'
+
+        logger.info("Getting IDs for what's currently in the DB...")
+        current_ids = TransactionAssistanceNew.objects.values_list('published_award_financial_assistance_id', flat=True)
+
+        query = "SELECT * FROM published_award_financial_assistance"
         arguments = []
+
         if fiscal_year:
-            query += ' WHERE FY(action_date) = %s'
-            arguments = [fiscal_year]
-        query += ' ORDER BY afa_generated_unique'
+            if arguments:
+                query += " AND"
+            else:
+                query += " WHERE"
+            query += ' FY(action_date) = %s'
+            arguments += [fiscal_year]
+
         db_cursor.execute(query, arguments)
         award_financial_assistance_data = dictfetchall(db_cursor)
 
@@ -89,111 +98,109 @@ class Command(BaseCommand):
 
         start_time = datetime.now()
         for index, row in enumerate(award_financial_assistance_data, start_row):
-            if not (index % 100):
-                logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
-                                                                             str(total_rows),
-                                                                             datetime.now() - start_time))
+            with db_transaction.atomic():
+                if row['published_award_financial_assistance_id'] not in current_ids:
+                    continue
 
-            legal_entity_location, created = get_or_create_location(
-                legal_entity_location_field_map, row, legal_entity_location_value_map
-            )
+                if not (index % 100):
+                    logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                                 str(total_rows),
+                                                                                 datetime.now() - start_time))
 
-            recipient_name = row['awardee_or_recipient_legal']
-            if recipient_name is None:
-                recipient_name = ""
+                legal_entity_location, created = get_or_create_location(
+                    legal_entity_location_field_map, row, legal_entity_location_value_map
+                )
 
-            # Create the legal entity if it doesn't exist
-            legal_entity, created = LegalEntity.objects.get_or_create(
-                recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                recipient_name=recipient_name
-            )
+                recipient_name = row['awardee_or_recipient_legal']
+                if recipient_name is None:
+                    recipient_name = ""
 
-            if created:
-                legal_entity_value_map = {
-                    "location": legal_entity_location,
+                # Create the legal entity if it doesn't exist
+                legal_entity, created = LegalEntity.objects.get_or_create(
+                    recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                    recipient_name=recipient_name
+                )
+
+                if created:
+                    legal_entity_value_map = {
+                        "location": legal_entity_location,
+                    }
+                    legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
+
+                # Create the place of performance location
+                pop_location, created = get_or_create_location(
+                    place_of_performance_field_map, row, place_of_performance_value_map
+                )
+
+                # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
+                # use the sub tier code to look it up. This code assumes that all incoming
+                # records will supply an awarding subtier agency code
+                if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
+                    row['awarding_agency_code'] = Agency.get_by_subtier(
+                        row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
+                # If funding toptier agency code (aka CGAC) is empty, try using the sub
+                # tier funding code to look it up. Unlike the awarding agency, we can't
+                # assume that the funding agency subtier code will always be present.
+                if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+                    funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
+                    row['funding_agency_code'] = (
+                        funding_agency.toptier_agency.cgac_code if funding_agency is not None
+                        else None)
+
+                # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+                awarding_agency = Agency.get_by_toptier_subtier(
+                    row['awarding_agency_code'],
+                    row["awarding_sub_tier_agency_c"]
+                )
+                created, award = Award.get_or_create_summary_award(
+                    awarding_agency=awarding_agency,
+                    # piid=transaction_assistance.get('piid'), # not found
+                    fain=row.get('fain'),
+                    uri=row.get('uri'))
+                    # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
+                award.save()
+
+                AWARD_UPDATE_ID_LIST.append(award.id)
+
+                parent_txn_value_map = {
+                    "award": award,
+                    "awarding_agency": awarding_agency,
+                    "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
+                                                                    row["funding_sub_tier_agency_co"]),
+                    "recipient": legal_entity,
+                    "place_of_performance": pop_location,
+                    "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                    "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                    "action_date": format_date(row['action_date']),
                 }
-                legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
-            # Create the place of performance location
-            pop_location, created = get_or_create_location(
-                place_of_performance_field_map, row, place_of_performance_value_map
-            )
+                transaction_dict = load_data_into_model(
+                    TransactionNew(),  # thrown away
+                    row,
+                    field_map=fad_field_map,
+                    value_map=parent_txn_value_map,
+                    as_dict=True)
 
-            # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
-            # use the sub tier code to look it up. This code assumes that all incoming
-            # records will supply an awarding subtier agency code
-            if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
-                row['awarding_agency_code'] = Agency.get_by_subtier(
-                    row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
-            # If funding toptier agency code (aka CGAC) is empty, try using the sub
-            # tier funding code to look it up. Unlike the awarding agency, we can't
-            # assume that the funding agency subtier code will always be present.
-            if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
-                funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
-                row['funding_agency_code'] = (
-                    funding_agency.toptier_agency.cgac_code if funding_agency is not None
-                    else None)
+                transaction = TransactionNew.get_or_create_transaction(**transaction_dict)
+                transaction.save()
 
-            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = Agency.get_by_toptier_subtier(
-                row['awarding_agency_code'],
-                row["awarding_sub_tier_agency_c"]
-            )
-            created, award = Award.get_or_create_summary_award(
-                awarding_agency=awarding_agency,
-                # piid=transaction_assistance.get('piid'), # not found
-                fain=row.get('fain'),
-                uri=row.get('uri'))
-                # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
-            award.save()
+                financial_assistance_data = load_data_into_model(
+                    TransactionAssistanceNew(),  # thrown away
+                    row,
+                    as_dict=True)
 
-            AWARD_UPDATE_ID_LIST.append(award.id)
-
-            parent_txn_value_map = {
-                "award": award,
-                "awarding_agency": awarding_agency,
-                "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                                                row["funding_sub_tier_agency_co"]),
-                "recipient": legal_entity,
-                "place_of_performance": pop_location,
-                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                "action_date": format_date(row['action_date']),
-            }
-
-            transaction_dict = load_data_into_model(
-                TransactionNew(),  # thrown away
-                row,
-                field_map=fad_field_map,
-                value_map=parent_txn_value_map,
-                as_dict=True)
-
-            transaction = TransactionNew.get_or_create_transaction(**transaction_dict)
-            transaction.save()
-
-            financial_assistance_data = load_data_into_model(
-                TransactionAssistanceNew(),  # thrown away
-                row,
-                as_dict=True)
-
-            transaction_assistance = TransactionAssistanceNew.get_or_create_2(transaction=transaction,
-                                                                           **financial_assistance_data)
-            transaction_assistance.save()
-
+                transaction_assistance = TransactionAssistanceNew.get_or_create_2(transaction=transaction,
+                                                                               **financial_assistance_data)
+                transaction_assistance.save()
 
     @staticmethod
     def update_transaction_contract(db_cursor, fiscal_year=None, start_row=1):
 
         logger.info("Getting IDs for what's currently in the DB...")
         current_ids = TransactionContractNew.objects.values_list('detached_award_procurement_id', flat=True)
-        # current_ids_str = tuple(current_ids)  # str(current_ids).replace('[', '(').replace(']', ')')
 
         query = "SELECT * FROM detached_award_procurement"
         arguments = []
-
-        # if current_ids:
-        #     query += " WHERE detached_award_procurement_id NOT IN %s"
-        #     arguments += [current_ids_str]
 
         if fiscal_year:
             if arguments:
@@ -202,7 +209,6 @@ class Command(BaseCommand):
                 query += " WHERE"
             query += ' FY(action_date) = %s'
             arguments += [fiscal_year]
-        # query += ' ORDER BY detached_award_proc_unique'
 
         logger.info("Executing query on Broker DB => " + query)
 
@@ -420,23 +426,23 @@ class Command(BaseCommand):
             end = timeit.default_timer()
             logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
 
-        logger.info('Updating awards to reflect their latest associated transaction info...')
-        start = timeit.default_timer()
-        update_awards(tuple(AWARD_UPDATE_ID_LIST))
-        end = timeit.default_timer()
-        logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
-
-        logger.info('Updating contract-specific awards to reflect their latest transaction info...')
-        start = timeit.default_timer()
-        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
-        end = timeit.default_timer()
-        logger.info('Finished updating contract specific awards in ' + str(end - start) + ' seconds')
-
-        logger.info('Updating award category variables...')
-        start = timeit.default_timer()
-        update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
-        end = timeit.default_timer()
-        logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+        # logger.info('Updating awards to reflect their latest associated transaction info...')
+        # start = timeit.default_timer()
+        # update_awards(tuple(AWARD_UPDATE_ID_LIST))
+        # end = timeit.default_timer()
+        # logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+        #
+        # logger.info('Updating contract-specific awards to reflect their latest transaction info...')
+        # start = timeit.default_timer()
+        # update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+        # end = timeit.default_timer()
+        # logger.info('Finished updating contract specific awards in ' + str(end - start) + ' seconds')
+        #
+        # logger.info('Updating award category variables...')
+        # start = timeit.default_timer()
+        # update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+        # end = timeit.default_timer()
+        # logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
 
         # Done!
         logger.info('FINISHED')
