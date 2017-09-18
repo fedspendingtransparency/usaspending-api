@@ -5,7 +5,7 @@ from usaspending_api.references.models import Agency, LegalEntity, Location
 from usaspending_api.common.helpers import fy
 
 
-class TransactionNew(models.Model):
+class TransactionNormalized(models.Model):
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.TextField(blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")
     # submission = models.ForeignKey(SubmissionAttributes, models.CASCADE, help_text="The submission which created this record")
@@ -73,13 +73,13 @@ class TransactionNew(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        db_table = 'transaction_new'
+        db_table = 'transaction_normalized'
         index_together = ['award', 'action_date']
 
 
-class TransactionContractNew(models.Model):
+class TransactionFPDS(models.Model):
     transaction = models.OneToOneField(
-        TransactionNew, on_delete=models.CASCADE,
+        TransactionNormalized, on_delete=models.CASCADE,
         primary_key=True, related_name='contract_data',
         help_text="Non-specific transaction data, fields shared among both assistance and contract transactions")
     detached_award_procurement_id = models.TextField(blank=True, null=True)
@@ -356,12 +356,12 @@ class TransactionContractNew(models.Model):
     updated_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = 'detached_award_procurement'
+        db_table = 'transaction_fpds'
 
 
-class TransactionAssistanceNew(models.Model):
+class TransactionFABS(models.Model):
     transaction = models.OneToOneField(
-        TransactionNew, on_delete=models.CASCADE,
+        TransactionNormalized, on_delete=models.CASCADE,
         primary_key=True, related_name='assistance_data')
     published_award_financial_assistance_id = models.TextField(blank=True, null=True)
     afa_generated_unique = models.TextField(blank=True, null=False)
@@ -431,5 +431,5 @@ class TransactionAssistanceNew(models.Model):
     updated_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = 'published_award_financial_assistance'
+        db_table = 'transaction_fabs'
         unique_together = (('awarding_sub_tier_agency_c', 'award_modification_amendme', 'fain', 'uri'),)

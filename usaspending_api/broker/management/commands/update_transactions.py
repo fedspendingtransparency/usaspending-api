@@ -6,8 +6,7 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.broker.models import TransactionNew, TransactionAssistanceNew, TransactionContractNew
-from usaspending_api.awards.models import Transaction, TransactionAssistance, TransactionContract, Award
+from usaspending_api.broker.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency, LegalEntity
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
@@ -34,7 +33,7 @@ class Command(BaseCommand):
     def update_transaction_assistance(db_cursor, fiscal_year=None, page=1, limit=500000):
 
         logger.info("Getting IDs for what's currently in the DB...")
-        current_ids = TransactionAssistanceNew.objects.values_list('published_award_financial_assistance_id', flat=True)
+        current_ids = TransactionFABS.objects.values_list('published_award_financial_assistance_id', flat=True)
 
         query = "SELECT * FROM published_award_financial_assistance"
         arguments = []
@@ -177,21 +176,21 @@ class Command(BaseCommand):
                 }
 
                 transaction_dict = load_data_into_model(
-                    TransactionNew(),  # thrown away
+                    TransactionNormalized(),  # thrown away
                     row,
                     field_map=fad_field_map,
                     value_map=parent_txn_value_map,
                     as_dict=True)
 
-                transaction = TransactionNew.get_or_create_transaction(**transaction_dict)
+                transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
                 transaction.save()
 
                 financial_assistance_data = load_data_into_model(
-                    TransactionAssistanceNew(),  # thrown away
+                    TransactionFABS(),  # thrown away
                     row,
                     as_dict=True)
 
-                transaction_assistance = TransactionAssistanceNew.get_or_create_2(transaction=transaction,
+                transaction_assistance = TransactionFABS.get_or_create_2(transaction=transaction,
                                                                                **financial_assistance_data)
                 transaction_assistance.save()
 
@@ -199,7 +198,7 @@ class Command(BaseCommand):
     def update_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000):
 
         logger.info("Getting IDs for what's currently in the DB...")
-        current_ids = TransactionContractNew.objects.values_list('detached_award_procurement_id', flat=True)
+        current_ids = TransactionFPDS.objects.values_list('detached_award_procurement_id', flat=True)
 
         query = "SELECT * FROM detached_award_procurement"
         arguments = []
@@ -339,21 +338,21 @@ class Command(BaseCommand):
                 }
 
                 transaction_dict = load_data_into_model(
-                    TransactionNew(),  # thrown away
+                    TransactionNormalized(),  # thrown away
                     row,
                     field_map=contract_field_map,
                     value_map=parent_txn_value_map,
                     as_dict=True)
 
-                transaction = TransactionNew.get_or_create_transaction(**transaction_dict)
+                transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
                 transaction.save()
 
                 contract_instance = load_data_into_model(
-                    TransactionContractNew(),  # thrown away
+                    TransactionFPDS(),  # thrown away
                     row,
                     as_dict=True)
 
-                transaction_contract = TransactionContractNew(transaction=transaction, **contract_instance)
+                transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)
                 transaction_contract.save()
 
     def add_arguments(self, parser):
