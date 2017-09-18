@@ -12,8 +12,8 @@ all_query_paths = {
     # "Parent Award Agency Name": "transaction__award__parent_award__name",  # TODO  # not in spreadsheet
     "Parent Award Modification Number": "referenced_idv_modification_number",
     "Federal Action Obligation": "transaction__federal_action_obligation",
-    "Change in Current Award Amount": "base_exercised_options_val",
-    "Change in Potential Award Amount": "base_and_all_options_value",
+    # "Change in Current Award Amount": "base_exercised_options_val",
+    # "Change in Potential Award Amount": "base_and_all_options_value",
     "Action Date": "transaction__action_date",
     "Period of Performance Start Date":
     "transaction__period_of_performance_start_date",
@@ -155,8 +155,8 @@ all_query_paths = {
     "Fair Opportunity Limited Sources":
     "fair_opportunity_limited_sources_description",
     "Other than Full and Open Competition Code":
-    "other_than_full_and_open_competition",  # TODO: Code or description?
-    # "Other than Full and Open Competition": "other_than_full_and_open_competition",  # TODO: Code or description?   we don't have
+    "other_than_full_and_open_competition",
+    # "Other than Full and Open Competition": "other_than_full_and_open_competition",  # TODO: we don't have
     "Number of Offers Received": "number_of_offers_received",
     "Commercial Item Acquisition Procedures Code":
     "commercial_item_acquisition_procedures",
@@ -189,9 +189,9 @@ all_query_paths = {
     "Other Statutory Authority": "other_statutory_authority",
     "Program Acronym": "program_acronym",
     # "Parent Award Type Code": "referenced_idv_type",
-    # "Parent Award Type": "parent_award_type",  # TODO
+    # "Parent Award Type": "parent_award_type",  # TODO - referenced_idv_type and referenced_idv_type_desc exist in broker db, but never in submission download
     # "Parent Award Single or Multiple Code": "multiple_or_single_award_idv",
-    # "Parent Award Single or Multiple": "multiple_or_single_award_idv_description",
+    # "Parent Award Single or Multiple": "multiple_or_single_award_idv_description",  referenced_mult_or_single exists in db
     "Major Program": "major_program",
     "National Interest Action Code": "national_interest_action",
     "National Interest Action": "national_interest_action_description",
