@@ -8,7 +8,7 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount, Federa
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import RefProgramActivity, \
-    ObjectClass, LegalEntity, ToptierAgency
+    ObjectClass, LegalEntity, ToptierAgency, Agency
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -141,23 +141,36 @@ def budget_function_data(db):
     """
     fiscal_quarter = mommy.make(SubmissionAttributes, reporting_fiscal_quarter='2')
 
-    agency1 = mommy.make(
+    agencyTopTier1 = mommy.make(
         ToptierAgency,
         toptier_agency_id=10,
         name='Agency One',
         cgac_code='001'
     )
-    agency2 = mommy.make(
+    agencyTopTier2 = mommy.make(
         ToptierAgency,
         toptier_agency_id=20,
         name='Agency Two',
         cgac_code='002'
     )
-    agency3 = mommy.make(
+    agencyTopTier3 = mommy.make(
         ToptierAgency,
         toptier_agency_id=30,
         name='Agency Three',
         cgac_code='003'
+    )
+
+    agency1 = mommy.make(
+        Agency,
+        toptier_agency=agencyTopTier1
+    )
+    agency2 = mommy.make(
+        Agency,
+        toptier_agency=agencyTopTier2
+    )
+    agency3 = mommy.make(
+        Agency,
+        toptier_agency=agencyTopTier3
     )
 
     rec1 = mommy.make(
@@ -236,7 +249,7 @@ def budget_function_data(db):
         budget_function_title='Budget Function One',
         budget_subfunction_code='101',
         budget_subfunction_title='Budget Sub Function One',
-        awarding_toptier_agency=agency1
+        awarding_toptier_agency=agencyTopTier1
     )
     bf2 = mommy.make(
         TreasuryAppropriationAccount,
@@ -245,7 +258,7 @@ def budget_function_data(db):
         budget_function_title='Budget Function Two',
         budget_subfunction_code='202',
         budget_subfunction_title='Budget Sub Function Two',
-        awarding_toptier_agency=agency2
+        awarding_toptier_agency=agencyTopTier2
     )
     bf3 = mommy.make(
         TreasuryAppropriationAccount,
@@ -254,7 +267,7 @@ def budget_function_data(db):
         budget_function_title='Budget Function Three',
         budget_subfunction_code='303',
         budget_subfunction_title='Budget Sub Function Three',
-        awarding_toptier_agency=agency3
+        awarding_toptier_agency=agencyTopTier3
     )
 
     result1 = mommy.make(
@@ -444,8 +457,7 @@ def test_object_class_filter_success(client, budget_function_data):
                 "type": "federal_account",
                 "filters": {
                     "fy": "2017",
-                    "object_class": "20",
-                    "agency": 78
+                    "object_class": "20"
                 }}))
     assert resp.status_code == status.HTTP_200_OK
 
@@ -459,7 +471,6 @@ def test_object_class_filter_success(client, budget_function_data):
                 "filters": {
                     "fy": "2017",
                     "object_class": "20",
-                    "agency": 78,
                     "federal_account": 2358
                 }}))
     assert resp.status_code == status.HTTP_200_OK
@@ -474,7 +485,6 @@ def test_object_class_filter_success(client, budget_function_data):
                 "filters": {
                     "fy": "2017",
                     "object_class": "20",
-                    "agency": 78,
                     "federal_account": 2358,
                     "program_activity": 15103
                 }}))
@@ -490,7 +500,6 @@ def test_object_class_filter_success(client, budget_function_data):
                 "filters": {
                     "fy": "2017",
                     "object_class": "20",
-                    "agency": 78,
                     "federal_account": 2358,
                     "program_activity": 15103,
                     "recipient": 301773
@@ -532,8 +541,7 @@ def test_agency_filter_success(client, budget_function_data):
             {
                 "type": "federal_account",
                 "filters": {
-                    "fy": "2017",
-                    "agency": 35
+                    "fy": "2017"
                 }}))
     assert resp.status_code == status.HTTP_200_OK
 
@@ -546,7 +554,6 @@ def test_agency_filter_success(client, budget_function_data):
                 "type": "program_activity",
                 "filters": {
                     "fy": "2017",
-                    "agency": 35,
                     "federal_account": 1500
                 }}))
     assert resp.status_code == status.HTTP_200_OK
@@ -560,7 +567,6 @@ def test_agency_filter_success(client, budget_function_data):
                 "type": "object_class",
                 "filters": {
                     "fy": "2017",
-                    "agency": 35,
                     "federal_account": 1500,
                     "program_activity": 12697
                 }}))
@@ -575,7 +581,6 @@ def test_agency_filter_success(client, budget_function_data):
                 "type": "recipient",
                 "filters": {
                     "fy": "2017",
-                    "agency": 35,
                     "federal_account": 1500,
                     "program_activity": 12697,
                     "object_class": "40"
@@ -591,7 +596,6 @@ def test_agency_filter_success(client, budget_function_data):
                 "type": "award",
                 "filters": {
                     "fy": "2017",
-                    "agency": 35,
                     "federal_account": 1500,
                     "program_activity": 12697,
                     "object_class": "40",
