@@ -31,7 +31,7 @@ class Command(BaseCommand):
     help = "Checks what TASs are in Broker but not in Data Store"
 
     @staticmethod
-    def update_transaction_assistance(db_cursor, fiscal_year=None, start_row=1):
+    def update_transaction_assistance(db_cursor, fiscal_year=None, page=1, limit=500000):
 
         logger.info("Getting IDs for what's currently in the DB...")
         current_ids = TransactionAssistanceNew.objects.values_list('published_award_financial_assistance_id', flat=True)
@@ -46,6 +46,8 @@ class Command(BaseCommand):
                 query += " WHERE"
             query += ' FY(action_date) = %s'
             arguments += [fiscal_year]
+        query += ' ORDER BY published_award_financial_assistance_id LIMIT %s OFFSET %s'
+        arguments += [limit, (page-1)*limit]
 
         db_cursor.execute(query, arguments)
         award_financial_assistance_data = dictfetchall(db_cursor)
@@ -97,7 +99,7 @@ class Command(BaseCommand):
         total_rows = len(award_financial_assistance_data)
 
         start_time = datetime.now()
-        for index, row in enumerate(award_financial_assistance_data, start_row):
+        for index, row in enumerate(award_financial_assistance_data, 1):
             with db_transaction.atomic():
                 if row['published_award_financial_assistance_id'] not in current_ids:
                     continue
@@ -194,7 +196,7 @@ class Command(BaseCommand):
                 transaction_assistance.save()
 
     @staticmethod
-    def update_transaction_contract(db_cursor, fiscal_year=None, start_row=1):
+    def update_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000):
 
         logger.info("Getting IDs for what's currently in the DB...")
         current_ids = TransactionContractNew.objects.values_list('detached_award_procurement_id', flat=True)
@@ -209,6 +211,8 @@ class Command(BaseCommand):
                 query += " WHERE"
             query += ' FY(action_date) = %s'
             arguments += [fiscal_year]
+        query += ' ORDER BY detached_award_procurement_id LIMIT %s OFFSET %s'
+        arguments += [limit, (page-1)*limit]
 
         logger.info("Executing query on Broker DB => " + query)
 
@@ -257,7 +261,7 @@ class Command(BaseCommand):
         logger.info("Processing " + str(total_rows) + " rows of procurement data")
 
         start_time = datetime.now()
-        for index, row in enumerate(procurement_data, start_row):
+        for index, row in enumerate(procurement_data, 1):
             with db_transaction.atomic():
                 if row['detached_award_procurement_id'] in current_ids:
                     continue
@@ -379,19 +383,19 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            '--contracts_row',
-            dest="contracts_row",
+            '--page',
+            dest="page",
             nargs='+',
             type=int,
-            help="Row to start contracts"
+            help="Page for batching and parallelization"
         )
 
         parser.add_argument(
-            '--assistance_row',
-            dest="assistance_row",
+            '--limit',
+            dest="limit",
             nargs='+',
             type=int,
-            help="Row to start assistance"
+            help="Limit for batching and parallelization"
         )
 
     # @transaction.atomic
@@ -400,8 +404,8 @@ class Command(BaseCommand):
 
         db_cursor = connections['data_broker'].cursor()
         fiscal_year = options.get('fiscal_year')
-        contracts_row = options.get('contracts_row')
-        assistance_row = options.get('assistance_row')
+        page = options.get('page')
+        limit = options.get('limit')
 
         if fiscal_year:
             fiscal_year = fiscal_year[0]
@@ -409,20 +413,20 @@ class Command(BaseCommand):
         else:
             fiscal_year = 2017
 
-        contracts_row = contracts_row[0] if contracts_row else 1
-        assistance_row = assistance_row[0] if assistance_row else 1
+        page = page[0] if page else 1
+        limit = limit[0] if limit else 500000
         
         if not options['assistance']:
             logger.info('Starting D1 historical data load...')
             start = timeit.default_timer()
-            self.update_transaction_contract(db_cursor = db_cursor, fiscal_year=fiscal_year, start_row=contracts_row)
+            self.update_transaction_contract(db_cursor = db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
             end = timeit.default_timer()
             logger.info('Finished D1 historical data load in ' + str(end - start) + ' seconds')
 
         if not options['contracts']:
             logger.info('Starting D2 historical data load...')
             start = timeit.default_timer()
-            self.update_transaction_assistance(db_cursor = db_cursor, fiscal_year=fiscal_year, start_row=assistance_row)
+            self.update_transaction_assistance(db_cursor = db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
             end = timeit.default_timer()
             logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
 
