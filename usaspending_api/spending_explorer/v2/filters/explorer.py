@@ -1,5 +1,6 @@
 from django.db.models import F, Sum, Value, CharField, Q
 from decimal import Decimal
+from usaspending_api.references.models import Agency
 
 
 class Explorer(object):
@@ -82,7 +83,11 @@ class Explorer(object):
         return alt_set
 
     def agency(self):
-        # Funding Top Tier Agencies Queryset
+        # Funding Top Tier Agencies Querysets
+
+        agency_queryet = Agency.objects.filter(toptier_flag=True).values('id', 'toptier_agency_id')
+        agency_ids = {agency['toptier_agency_id']: agency['id'] for agency in agency_queryet}
+
         queryset = self.queryset.filter(treasury_account__funding_toptier_agency__isnull=False).annotate(
             id=F('treasury_account__funding_toptier_agency_id'),
             type=Value('agency', output_field=CharField()),
@@ -91,31 +96,10 @@ class Explorer(object):
         ).values('id', 'type', 'code', 'name', 'amount').annotate(
             total=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-total')
 
+        for element in queryset:
+            element['id'] = agency_ids[element['id']]
+
         return queryset
-
-    def awarding_top_tier_agency(self):
-        # Awarding Agencies Queryset
-        alt_set = self.alt_set.annotate(
-            id=F('award__awarding_agency__toptier_agency__toptier_agency_id'),
-            type=Value('top_tier_agency', output_field=CharField()),
-            name=F('award__awarding_agency__toptier_agency__name'),
-            code=F('award__awarding_agency__toptier_agency__cgac_code')
-        ).values('id', 'type', 'code', 'name', 'amount').annotate(
-            total=Sum('transaction_obligated_amount')).order_by('-total')
-
-        return alt_set
-
-    def awarding_sub_tier_agency(self):
-        # Awarding Sub Tier Agencies Queryset
-        alt_set = self.alt_set.annotate(
-            id=F('award__awarding_agency__subtier_agency__subtier_agency_id'),
-            type=Value('sub_tier_agency', output_field=CharField()),
-            name=F('award__awarding_agency__subtier_agency__name'),
-            code=F('award__awarding_agency__subtier_agency__subtier_code')
-        ).values('id', 'type', 'code', 'name', 'amount').annotate(
-            total=Sum('transaction_obligated_amount')).order_by('-total')
-
-        return alt_set
 
     def award_category(self):
         # Award Category Queryset
