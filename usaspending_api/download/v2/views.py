@@ -39,11 +39,11 @@ class BaseDownloadViewSet(APIView):
             'message': download_job.error_message,
             'file_name': file_name,
             # converting size from bytes to kilobytes if file_size isn't None
-            'total_size': download_job.file_size / 1000
+            'total_size': download_job.file_size / 1000  # TODO: 1000 or 1024?  Put units in name?
             if download_job.file_size else None,
             'total_columns': download_job.number_of_columns,
             'total_rows': download_job.number_of_rows,
-            'time_elapsed': download_job.time_elapsed()
+            'seconds_elapsed': download_job.seconds_elapsed()
         }
 
         return Response(response)
@@ -55,7 +55,7 @@ class BaseDownloadViewSet(APIView):
 
         # get timestamped name to provide unique file name
         timestamped_file_name = self.s3_handler.get_timestamped_filename(
-            self.DOWNLOAD_NAME + '_download')
+            self.DOWNLOAD_NAME + '.zip')
 
         # create download job in database to track progress. Starts at "ready"
         # status by default.
@@ -74,9 +74,9 @@ class BaseDownloadViewSet(APIView):
         if 'pytest' in sys.modules:
             # We are testing, and cannot use threads - the testing db connection
             # is not shared with the thread
-            csv_selection.write_csv_from_querysets(**kwargs)
+            csv_selection.write_csvs(**kwargs)
         else:
-            t = threading.Thread(target=csv_selection.write_csv_from_querysets,
+            t = threading.Thread(target=csv_selection.write_csvs,
                                  kwargs=kwargs)
             t.start()
 
@@ -87,7 +87,10 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
     def get_csv_sources(self, json_request):
         filters = json_request['filters']
         queryset = award_filter(filters)
-        d1_source = csv_selection.CsvSource(queryset, 'award', 'd1')
+        from usaspending_api.awards.models import Award
+        d1_queryset = queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False)
+        d1_source = csv_selection.CsvSource(d1_queryset, 'award', 'd1')
+        d2_queryset = queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False)
         d2_source = csv_selection.CsvSource(queryset, 'award', 'd2')
         return (d1_source, d2_source)
 

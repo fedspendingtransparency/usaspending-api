@@ -47,8 +47,10 @@ def award_data(db):
     asa1 = mommy.make('references.SubtierAgency', name="Bureau of Things")
 
     # Create Awarding Agencies
-    aa1 = mommy.make('references.Agency', id=1, toptier_agency=ata1, toptier_flag=False)
-    aa2 = mommy.make('references.Agency', id=2, toptier_agency=ata2, toptier_flag=False)
+    aa1 = mommy.make(
+        'references.Agency', id=1, toptier_agency=ata1, toptier_flag=False)
+    aa2 = mommy.make(
+        'references.Agency', id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
     fta = mommy.make(
@@ -96,7 +98,7 @@ def test_download_transactions_v2_endpoint(client, award_data):
         }))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert '.csv' in resp.json()['url']
+    assert '.zip' in resp.json()['url']
 
 
 @pytest.mark.django_db
@@ -112,7 +114,7 @@ def test_download_awards_v2_endpoint(client, award_data):
         }))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert '.csv' in resp.json()['url']
+    assert '.zip' in resp.json()['url']
 
 
 @pytest.mark.django_db
@@ -173,44 +175,23 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
     assert resp.json()['total_rows'] == 3
     assert resp.json()['total_columns'] == 2
 
-    # db-side column name specifications also work
-    dl_resp = client.post(
-        '/api/v2/download/transactions',
-        content_type='application/json',
-        data=json.dumps({
-            "filters": {},
-            "columns": ["piid", "transaction__modification_number"]
-        }))
-    resp = client.get('/api/v2/download/status/?file_name={}'
-                      .format(dl_resp.json()['file_name']))
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()['total_rows'] == 3
-    assert resp.json()['total_columns'] == 2
-    # columns only from transaction_contract
-    dl_resp = client.post(
-        '/api/v2/download/transactions',
-        content_type='application/json',
-        data=json.dumps({
-            "filters": {},
-            "columns": ["Foreign Funding", "Foreign Funding Code"]
-        }))
-    resp = client.get('/api/v2/download/status/?file_name={}'
-                      .format(dl_resp.json()['file_name']))
-    assert resp.status_code == status.HTTP_200_OK
-    # TODO: do not select from tables not required by columns
-    # assert resp.json()['total_rows'] == 2
-    assert resp.json()['total_columns'] == 2
-
 
 @pytest.mark.django_db
-def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
+def test_download_transactions_v2_endpoint_column_filtering(client,
+                                                            award_data):
     """Test the transaction status endpoint's filtering."""
 
     dl_resp = client.post(
         '/api/v2/download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "filters": {"agencies": [{'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Things", }, ]},
+            "filters": {
+                "agencies": [{
+                    'type': 'awarding',
+                    'tier': 'toptier',
+                    'name': "Bureau of Things",
+                }, ]
+            },
             "columns": ["Award ID", "Modification Number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -222,7 +203,13 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
         '/api/v2/download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "filters": {"agencies": [{'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Stuff", }, ]},
+            "filters": {
+                "agencies": [{
+                    'type': 'awarding',
+                    'tier': 'toptier',
+                    'name': "Bureau of Stuff",
+                }, ]
+            },
             "columns": ["Award ID", "Modification Number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -234,8 +221,20 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
         '/api/v2/download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "filters": {"agencies": [{'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Stuff", },
-                                     {'type': 'awarding', 'tier': 'toptier', 'name': "Bureau of Things", }, ]},
+            "filters": {
+                "agencies": [
+                    {
+                        'type': 'awarding',
+                        'tier': 'toptier',
+                        'name': "Bureau of Stuff",
+                    },
+                    {
+                        'type': 'awarding',
+                        'tier': 'toptier',
+                        'name': "Bureau of Things",
+                    },
+                ]
+            },
             "columns": ["Award ID", "Modification Number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -246,7 +245,8 @@ def test_download_transactions_v2_endpoint_column_filtering(client, award_data):
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_download_transactions_v2_endpoint_check_all_mappings(client, award_data):
+def test_download_transactions_v2_endpoint_check_all_mappings(client,
+                                                              award_data):
     """
     One-by-one checking on validity of columns
 

@@ -2,6 +2,7 @@ import datetime
 
 from django.db import models
 
+
 class JobStatus(models.Model):
     job_status_id = models.AutoField(primary_key=True)
     name = models.TextField(blank=False, null=False)
@@ -29,7 +30,7 @@ class DownloadJob(models.Model):
         managed = True
         db_table = 'download_job'
 
-    def time_elapsed(self):
+    def seconds_elapsed(self):
         if self.job_status.name == 'running':
             return datetime.datetime.now() - self.create_date
         elif self.job_status.name in ('finished', 'failed'):
