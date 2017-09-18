@@ -1,16 +1,15 @@
 from bidict import bidict
 
+from django.db.models.functions import Coalesce
+
 from usaspending_api.awards.models import (Award, TransactionAssistance,
                                            TransactionContract)
 
 all_query_paths = {
-    "Award ID": "piid",  # TODO : differs for contract, assistance; fain ...
     "Modification Number": "transaction__modification_number",
     "Transaction Number": "transaction_number",
     "Parent Award Agency ID": "referenced_idv_agency_identifier",
     # "Parent Award Agency Name": "transaction__award__parent_award__name",  # TODO  # not in spreadsheet
-    "Parent Award ID":
-    "parent_award_id",  # TODO: Need to actually get the PIID/FAIN/ID from the parent award, NOT the surrogate PK
     "Parent Award Modification Number": "referenced_idv_modification_number",
     "Federal Action Obligation": "transaction__federal_action_obligation",
     "Change in Current Award Amount": "base_exercised_options_val",
@@ -394,14 +393,13 @@ for (human_name, query_path) in all_query_paths.items():
 
 # a few fields should be reported for both contracts and assistance,
 # but differently
-query_paths['transaction']['d2']['Award ID'] = 'fain'  # TODO: or uri?
 query_paths['transaction']['d2'][
     'Period of Performance Current End Date'] = 'period_of_performance_current_end_date'
 query_paths['transaction']['d2'][
     'Period of Performance Start Date'] = 'period_of_performance_start_date'
 
 # These fields have the same paths from either the transaction or the award
-unmodified_path_for_award = ('piid', 'fain', 'last_modified_date',
+unmodified_path_for_award = ('last_modified_date',
                              'period_of_performance_start_date',
                              'period_of_performance_current_end_date')
 
@@ -423,6 +421,16 @@ for (txn_source, detail_path) in (('d1', 'contract'), ('d2', 'assistance')):
             path_from_award = 'latest_transaction__{}_data__{}'.format(
                 detail_path, query_path)
         query_paths['award'][txn_source][human_name] = path_from_award
+
+# Award IDs are complex, we'll do them separately
+query_paths['transaction']['d1']['Award ID'] = 'piid'
+query_paths['award']['d1']['Award ID'] = 'piid'
+query_paths['transaction']['d2']['Award ID'] = Coalesce('fain', 'uri')
+query_paths['award']['d2']['Award ID'] = Coalesce('fain', 'uri')
+query_paths['transaction']['d1']['Parent Award ID'] = 'transaction__award__parent_award__piid'
+query_paths['award']['d1']['Parent Award ID'] = 'parent_award__piid'
+query_paths['transaction']['d2']['Parent Award ID'] = Coalesce('transaction__award__parent_award__fain', 'ttransaction__award__parent_award__uri')
+query_paths['award']['d2']['Parent Award ID'] = Coalesce('parent_award__fain', 'parent_award__uri')
 
 # now prune out those not called for, by human name
 
