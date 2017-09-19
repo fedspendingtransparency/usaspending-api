@@ -39,8 +39,8 @@ def transaction_assistance_filter(filters):
                 for v in value:
                     # (may have to cast to date) (oct 1 to sept 30)
                     or_queryset = or_queryset.filter(
-                        transaction__award__period_of_performance_start_date__gte=value["start_date"],
-                        transaction__award__period_of_performance_current_end_date__lte=value["end_date"])
+                        transaction__award__period_of_performance_start_date__gte=v["start_date"],
+                        transaction__award__period_of_performance_current_end_date__lte=v["end_date"])
                 queryset |= or_queryset  # TODO: really or, not and?
             else:
                 raise InvalidParameterException('Invalid filter: time period value is invalid.')
