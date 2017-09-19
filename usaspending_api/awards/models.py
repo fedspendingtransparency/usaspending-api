@@ -135,7 +135,7 @@ class Award(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True, help_text="The date this record was created in the API")
     update_date = models.DateTimeField(auto_now=True, null=True, help_text="The last time this record was updated in the API")
-    latest_transaction = models.ForeignKey("broker.TransactionNormalized", related_name="latest_for_award", null=True, help_text="The latest transaction by action_date associated with this award")
+    latest_transaction = models.ForeignKey("awards.Transaction", related_name="latest_for_award", null=True, help_text="The latest transaction by action_date associated with this award")
 
     # Subaward aggregates
     total_subaward_amount = models.DecimalField(max_digits=20, decimal_places=2, null=True)

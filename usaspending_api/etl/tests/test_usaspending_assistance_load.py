@@ -38,7 +38,7 @@ def test_award_and_txn_uniqueness():
     # agency records from reference_fixture are a prereq
 
     awards_before_loads = Award.objects.count()
-    txn_before_loads = TransactionNormalized.objects.count()
+    txn_before_loads = Transaction.objects.count()
     call_command('load_agencies')
     filepath = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                             'usaspending_fin_assist_direct_payments.csv')
@@ -47,7 +47,7 @@ def test_award_and_txn_uniqueness():
     # we record the # of records created by uploading the CSV
     # in awards_in_csv and txn_in_csv
     awards_in_csv = Award.objects.count() - awards_before_loads
-    txn_in_csv = TransactionNormalized.objects.count() - txn_before_loads
+    txn_in_csv = Transaction.objects.count() - txn_before_loads
 
     def new_fain(row):
         row['federal_award_id'] = '{}-fain2'.format(row['federal_award_id'])
@@ -89,14 +89,14 @@ def test_award_and_txn_uniqueness():
         return row
 
     awards_before_test = Award.objects.count()
-    txn_before_test = TransactionNormalized.objects.count()
+    txn_before_test = Transaction.objects.count()
 
     # Loading the original CSV again, but with a different
     # modification number for each row
     with mutated_csv(filepath, increase_mod_num) as mutant_file:
         call_command('load_usaspending_assistance', mutant_file.name)
     assert Award.objects.count() == awards_before_test
-    assert TransactionNormalized.objects.count() == txn_before_test + txn_in_csv
+    assert Transaction.objects.count() == txn_before_test + txn_in_csv
 
 
 @pytest.mark.parametrize('row,expected', [

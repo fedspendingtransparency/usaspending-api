@@ -57,7 +57,7 @@ def mock_data():
                 description='LARGE BUSINESS ADMINISTRATION',
                 date_signed=date(2012, 3, 1))
 
-    mommy.make('broker.TransactionNormalized', description="Cool new tools", award=award)
+    mommy.make('awards.Transaction', description="Cool new tools", award=award)
 
 
 @pytest.mark.django_db

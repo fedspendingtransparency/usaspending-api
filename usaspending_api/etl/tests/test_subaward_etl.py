@@ -28,19 +28,19 @@ def test_subaward_etl_fixture():
     prime_award_2 = mommy.make(Award, description="prime_award_2", awarding_agency=agency)
     prime_award_3 = mommy.make(Award, description="prime_award_3")  # NO AGENCY HERE!
 
-    # TransactionNormalized with subcontract
-    txn1 = mommy.make(TransactionNormalized, award=prime_award_1)
-    mommy.make(TransactionFPDS, transaction=txn1, piid=test_piid, parent_award_id=test_parent_award_id)
+    # Transaction with subcontract
+    txn1 = mommy.make(Transaction, award=prime_award_1, submission=submission)
+    mommy.make(TransactionContract, transaction=txn1, piid=test_piid, parent_award_id=test_parent_award_id)
 
-    # TransactionNormalized with subaward, by FAIN
-    txn2 = mommy.make(TransactionNormalized, award=prime_award_2)
-    txn3 = mommy.make(TransactionNormalized, award=prime_award_2)
-    mommy.make(TransactionFABS, transaction=txn2, fain=test_fain, uri=None)
-    mommy.make(TransactionFABS, transaction=txn3, fain=None, uri=test_uri)
+    # Transaction with subaward, by FAIN
+    txn2 = mommy.make(Transaction, award=prime_award_2, submission=submission)
+    txn3 = mommy.make(Transaction, award=prime_award_2, submission=submission)
+    mommy.make(TransactionAssistance, transaction=txn2, fain=test_fain, uri=None)
+    mommy.make(TransactionAssistance, transaction=txn3, fain=None, uri=test_uri)
 
     # Give our agency-less award a transaction that should map to a subaward, to test that agency restricts
-    txn4 = mommy.make(TransactionNormalized, award=prime_award_3)
-    mommy.make(TransactionFPDS, transaction=txn1, piid=test_piid, parent_award_id=test_parent_award_id)
+    txn4 = mommy.make(Transaction, award=prime_award_3, submission=submission)
+    mommy.make(TransactionContract, transaction=txn1, piid=test_piid, parent_award_id=test_parent_award_id)
 
 
 @pytest.mark.django_db

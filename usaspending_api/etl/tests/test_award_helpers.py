@@ -24,7 +24,7 @@ def test_award_update_from_latest_transaction():
 
     # adding transaction with same info should not change award values
     transaction = mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=award,
         awarding_agency=award.awarding_agency,
         period_of_performance_current_end_date=award.period_of_performance_current_end_date,
@@ -44,7 +44,7 @@ def test_award_update_from_latest_transaction():
     # obligation amt and the description (which is sourced from the
     # earliest txn), but other info remains unchanged
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=award,
         awarding_agency=agency2,
         period_of_performance_current_end_date=datetime.date(2017, 1, 1),
@@ -61,7 +61,7 @@ def test_award_update_from_latest_transaction():
     # adding an newer transaction with different info updates award's total
     # obligation amt and also overrides other values
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         id=999,
         award=award,
         awarding_agency=agency2,
@@ -85,7 +85,7 @@ def test_award_update_from_earliest_transaction():
 
     award = mommy.make('awards.Award')
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=award,
         # since this is the award's first transaction,
         # the txn action_date will become the award
@@ -95,7 +95,7 @@ def test_award_update_from_earliest_transaction():
 
     # adding later transaction should not change award values
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=award,
         action_date=datetime.date(2017, 1, 1)
     )
@@ -107,7 +107,7 @@ def test_award_update_from_earliest_transaction():
 
     # adding earlier transaction should update award values
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=award,
         action_date=datetime.date(2010, 1, 1)
     )
@@ -124,7 +124,7 @@ def test_award_update_obligated_amt():
 
     award = mommy.make('awards.Award', total_obligation=1000)
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=award,
         federal_action_obligation=1000,
         _quantity=5
@@ -144,7 +144,7 @@ def test_award_update_with_list():
 
     # test a single award update
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=test_award,
         federal_action_obligation=1000,
         _quantity=5
@@ -160,13 +160,13 @@ def test_award_update_with_list():
 
     # test updating several awards
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=awards[0],
         federal_action_obligation=2000,
         _quantity=2
     )
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=awards[1],
         federal_action_obligation=-1000,
         _quantity=3
@@ -191,17 +191,17 @@ def test_award_update_from_contract_transaction():
     # the potential_total_value_of_award field
     # should updte the corresponding field on the award table
     award = mommy.make('awards.Award')
-    txn = mommy.make('broker.TransactionNormalized', award=award)
-    txn2 = mommy.make('broker.TransactionNormalized', award=award)
+    txn = mommy.make('awards.Transaction', award=award)
+    txn2 = mommy.make('awards.Transaction', award=award)
     mommy.make(
-        'broker.TransactionFPDS',
+        'awards.TransactionContract',
         transaction=txn,
-        potential_total_value_awar=1000
+        potential_total_value_of_award=1000
     )
     mommy.make(
-        'broker.TransactionFPDS',
+        'awards.TransactionContract',
         transaction=txn2,
-        potential_total_value_awar=1001
+        potential_total_value_of_award=1001
     )
 
     update_contract_awards()
@@ -215,11 +215,11 @@ def test_award_update_contract_txn_with_list():
     """Test optional parameter to update specific awards from txn contract."""
 
     awards = mommy.make('awards.Award', _quantity=5)
-    txn = mommy.make('broker.TransactionNormalized', award=awards[0])
+    txn = mommy.make('awards.Transaction', award=awards[0])
     mommy.make(
-        'broker.TransactionFPDS',
+        'awards.TransactionContract',
         transaction=txn,
-        potential_total_value_awar=1000
+        potential_total_value_of_award=1000
     )
     # single award is updated
     count = update_contract_awards((awards[0].id,))
@@ -228,17 +228,17 @@ def test_award_update_contract_txn_with_list():
     assert awards[0].potential_total_value_of_award == 1000
 
     # update multipe awards
-    txn1 = mommy.make('broker.TransactionNormalized', award=awards[1])
+    txn1 = mommy.make('awards.Transaction', award=awards[1])
     mommy.make(
-        'broker.TransactionFPDS',
+        'awards.TransactionContract',
         transaction=txn1,
-        potential_total_value_awar=4000
+        potential_total_value_of_award=4000
     )
-    txn2 = mommy.make('broker.TransactionNormalized', award=awards[2])
+    txn2 = mommy.make('awards.Transaction', award=awards[2])
     mommy.make(
-        'broker.TransactionFPDS',
+        'awards.TransactionContract',
         transaction=txn2,
-        potential_total_value_awar=5000
+        potential_total_value_of_award=5000
     )
     # multiple awards updated
     count = update_contract_awards((awards[1].id, awards[2].id))
@@ -254,7 +254,7 @@ def test_award_update_contract_txn_with_list():
 def test_deleted_transactions():
     """Test that award values are updated correctly when a txn is deleted."""
     # writing these tests revealed that we're not updating awards fields
-    # when transactions are deleted. since the TransactionNormalized model's delete()
+    # when transactions are deleted. since the Transaction model's delete()
     # method may not fire during a bulk deletion, we may want to use a signal
     # rather than override delete()
 
@@ -278,33 +278,33 @@ def test_get_award_financial_transaction():
     toptier = mommy.make('references.ToptierAgency', cgac_code=cgac)
     agency = mommy.make('references.Agency', toptier_agency=toptier)
 
-    txn1 = mommy.make('broker.TransactionNormalized', awarding_agency=agency, id=1)
+    txn1 = mommy.make('awards.Transaction', awarding_agency=agency, id=1)
     mommy.make(
-        'broker.TransactionFPDS', transaction=txn1, piid='abc')
+        'awards.TransactionContract', transaction=txn1, piid='abc')
 
     txn2 = mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         awarding_agency=agency,
         action_date=datetime.date(2017, 5, 1),
         id=2)
     mommy.make(
-        'broker.TransactionFPDS',
+        'awards.TransactionContract',
         transaction=txn2,
         piid='abc',
         parent_award_id='def'
     )
 
-    txn3 = mommy.make('broker.TransactionNormalized', awarding_agency=agency, id=3)
+    txn3 = mommy.make('awards.Transaction', awarding_agency=agency, id=3)
     mommy.make(
-        'broker.TransactionFABS', transaction=txn3, fain='123')
+        'awards.TransactionAssistance', transaction=txn3, fain='123')
 
-    txn4 = mommy.make('broker.TransactionNormalized', awarding_agency=agency, id=4)
+    txn4 = mommy.make('awards.Transaction', awarding_agency=agency, id=4)
     mommy.make(
-        'broker.TransactionFABS', transaction=txn4, uri='456')
+        'awards.TransactionAssistance', transaction=txn4, uri='456')
 
-    txn5 = mommy.make('broker.TransactionNormalized', awarding_agency=agency, id=5)
+    txn5 = mommy.make('awards.Transaction', awarding_agency=agency, id=5)
     mommy.make(
-        'broker.TransactionFABS', transaction=txn5, fain='789', uri='nah')
+        'awards.TransactionAssistance', transaction=txn5, fain='789', uri='nah')
 
     # match on piid
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid='abc'))
@@ -342,12 +342,12 @@ def test_get_award_financial_transaction():
     # if there is more than one txn match, we should get the one with
     # the most recent action date
     txn6 = mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         awarding_agency=agency,
         action_date=datetime.date(2017, 5, 8),
         id=6)
     mommy.make(
-        'broker.TransactionFPDS',
+        'awards.TransactionContract',
         transaction=txn6,
         piid='abc',
         parent_award_id='def'

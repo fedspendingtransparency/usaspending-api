@@ -110,6 +110,8 @@ def load_subawards(submission_attributes, db_cursor):
         d1_f_dict = {
             'award': award,
             'recipient': recipient,
+            'submission': submission_attributes,
+            'data_source': "DBR",
             'cfda': None,
             'awarding_agency': award.awarding_agency,
             'funding_agency': award.funding_agency,
@@ -215,6 +217,8 @@ def load_subawards(submission_attributes, db_cursor):
         d2_f_dict = {
             'award': award,
             'recipient': recipient,
+            'submission': submission_attributes,
+            'data_source': "DBR",
             'cfda': cfda,
             'awarding_agency': award.awarding_agency,
             'funding_agency': award.funding_agency,

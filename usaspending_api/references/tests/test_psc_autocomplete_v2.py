@@ -10,16 +10,16 @@ from usaspending_api.broker.models import TransactionFPDS
 @pytest.fixture
 def budget_function_data(db):
     mommy.make(
-        TransactionFPDS,
+        TransactionContract,
         product_or_service_code="12121212")
     mommy.make(
-        TransactionFPDS,
+        TransactionContract,
         product_or_service_code="23232323")
     mommy.make(
-        TransactionFPDS,
+        TransactionContract,
         product_or_service_code="34343434")
     mommy.make(
-        TransactionFPDS,
+        TransactionContract,
         product_or_service_code="34343434")
 
 

@@ -15,6 +15,9 @@ from usaspending_api.references.models import Location
 
 SUBMISSION_MODELS = [AppropriationAccountBalances,
                      FinancialAccountsByAwards,
+                     TransactionNormalized,
+                     TransactionFPDS,
+                     TransactionFABS,
                      FinancialAccountsByProgramActivityObjectClass,
                      TasProgramActivityObjectClassQuarterly,
                      AppropriationAccountBalancesQuarterly, ]
@@ -30,10 +33,12 @@ def submission_data():
     loc1 = mommy.make("references.Location", city_name='city1', )
     loc2 = mommy.make("references.Location", city_name='city2', )
     # Making child transaction items creates the parent by default
-    mommy.make("broker.TransactionFABS", transaction__place_of_performance=loc1,
+    mommy.make("awards.TransactionFABS", submission=submission_123, transaction__submission=submission_123,
+               transaction__place_of_performance=loc1,
                transaction__award__piid='ABC123', transaction__award__parent_award__piid='DEF455',
                _quantity=10)
-    mommy.make("broker.TransactionFPDS", transaction__place_of_performance=loc2, _quantity=10)
+    mommy.make("awards.TransactionFPDS", submission=submission_123, transaction__submission=submission_123,
+               transaction__place_of_performance=loc2, _quantity=10)
     mommy.make("financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_123, _quantity=10)
     mommy.make("financial_activities.TasProgramActivityObjectClassQuarterly", submission=submission_123, _quantity=10)
     mommy.make("accounts.AppropriationAccountBalancesQuarterly", submission=submission_123, _quantity=10)
@@ -42,8 +47,10 @@ def submission_data():
     mommy.make("awards.FinancialAccountsByAwards", submission=submission_456, _quantity=10)
     loc3 = mommy.make("references.Location", city_name='city3', )
     # Making child transaction items creates the parent by default
-    mommy.make("broker.TransactionFPDS", transaction__place_of_performance=loc2, _quantity=10)
-    mommy.make("broker.TransactionFABS", transaction__place_of_performance=loc3, _quantity=10)
+    mommy.make("awards.TransactionFPDS", submission=submission_456, transaction__submission=submission_456,
+               transaction__place_of_performance=loc2, _quantity=10)
+    mommy.make("awards.TransactionFABS", submission=submission_456, transaction__submission=submission_456,
+               transaction__place_of_performance=loc3, _quantity=10)
     mommy.make("financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_456, _quantity=10)
     mommy.make("financial_activities.TasProgramActivityObjectClassQuarterly", submission=submission_456, _quantity=10)
     mommy.make("accounts.AppropriationAccountBalancesQuarterly", submission=submission_456, _quantity=10)

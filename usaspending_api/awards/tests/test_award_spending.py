@@ -11,7 +11,7 @@ def award_spending_data(db):
     award1 = mommy.make('awards.Award', category='contracts', awarding_agency=agency)
     award2 = mommy.make('awards.Award', category=None, awarding_agency=agency)
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=award,
         awarding_agency=agency,
         federal_action_obligation=10,
@@ -19,7 +19,7 @@ def award_spending_data(db):
         recipient=legal_entity
     )
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=award1,
         awarding_agency=agency,
         federal_action_obligation=20,
@@ -27,7 +27,7 @@ def award_spending_data(db):
         recipient=legal_entity
     )
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=award1,
         awarding_agency=agency,
         federal_action_obligation=20,
@@ -35,7 +35,7 @@ def award_spending_data(db):
         recipient=legal_entity
     )
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.Transaction',
         award=award2,
         awarding_agency=agency,
         federal_action_obligation=20,

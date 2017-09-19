@@ -232,13 +232,13 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
         }
 
         transaction_dict = load_data_into_model(
-            TransactionNormalized(),  # thrown away
+            Transaction(),  # thrown away
             row,
             field_map=contract_field_map,
             value_map=parent_txn_value_map,
             as_dict=True)
 
-        transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
+        transaction = Transaction.get_or_create_transaction(**transaction_dict)
         transaction.save()
 
         contract_value_map = {
@@ -249,13 +249,13 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
         }
 
         contract_instance = load_data_into_model(
-            TransactionFPDS(),  # thrown away
+            TransactionContract(),  # thrown away
             row,
             field_map=contract_field_map,
             value_map=contract_value_map,
             as_dict=True)
 
-        transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)
+        transaction_contract = TransactionContract(transaction=transaction, **contract_instance)
         transaction_contract.save()
     logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
 
@@ -407,13 +407,13 @@ def load_file_d2(
         }
 
         transaction_dict = load_data_into_model(
-            TransactionNormalized(),  # thrown away
+            Transaction(),  # thrown away
             row,
             field_map=fad_field_map,
             value_map=parent_txn_value_map,
             as_dict=True)
 
-        transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
+        transaction = Transaction.get_or_create_transaction(**transaction_dict)
         transaction.save()
 
         fad_value_map = {
@@ -426,13 +426,13 @@ def load_file_d2(
         }
 
         financial_assistance_data = load_data_into_model(
-            TransactionFABS(),  # thrown away
+            TransactionAssistance(),  # thrown away
             row,
             field_map=fad_field_map,
             value_map=fad_value_map,
             as_dict=True)
 
-        transaction_assistance = TransactionFABS.get_or_create_2(transaction=transaction, **financial_assistance_data)
+        transaction_assistance = TransactionAssistance.get_or_create_2(transaction=transaction, **financial_assistance_data)
         transaction_assistance.save()
 
     logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
