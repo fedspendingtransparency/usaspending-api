@@ -33,7 +33,12 @@ class Command(BaseCommand):
     def update_transaction_assistance(db_cursor, fiscal_year=None, page=1, limit=500000):
 
         logger.info("Getting IDs for what's currently in the DB...")
-        current_ids = TransactionFABS.objects.values_list('published_award_financial_assistance_id', flat=True)
+        current_ids = TransactionFABS.objects
+
+        if fiscal_year:
+            current_ids = current_ids.filter(action_date__fy=fiscal_year)
+
+        current_ids.values_list('published_award_financial_assistance_id', flat=True)
 
         query = "SELECT * FROM published_award_financial_assistance"
         arguments = []
@@ -205,7 +210,12 @@ class Command(BaseCommand):
     def update_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000):
 
         logger.info("Getting IDs for what's currently in the DB...")
-        current_ids = TransactionFPDS.objects.values_list('detached_award_procurement_id', flat=True)
+        current_ids = TransactionFPDS.objects
+
+        if fiscal_year:
+            current_ids = current_ids.filter(action_date__fy=fiscal_year)
+
+        current_ids = current_ids.values_list('detached_award_procurement_id', flat=True)
 
         query = "SELECT * FROM detached_award_procurement"
         arguments = []
