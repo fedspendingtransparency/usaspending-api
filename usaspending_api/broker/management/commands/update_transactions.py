@@ -108,7 +108,7 @@ class Command(BaseCommand):
         start_time = datetime.now()
         for index, row in enumerate(award_financial_assistance_data, 1):
             with db_transaction.atomic():
-                if row['published_award_financial_assistance_id'] not in current_ids:
+                if row['published_award_financial_assistance_id'] in current_ids:
                     continue
 
                 if not (index % 100):
