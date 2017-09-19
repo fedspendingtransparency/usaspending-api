@@ -48,7 +48,11 @@ class Command(BaseCommand):
         query += ' ORDER BY published_award_financial_assistance_id LIMIT %s OFFSET %s'
         arguments += [limit, (page-1)*limit]
 
+        logger.info("Executing query on Broker DB => " + query)
+
         db_cursor.execute(query, arguments)
+
+        logger.info("Running dictfetchall on db_cursor")
         award_financial_assistance_data = dictfetchall(db_cursor)
 
         legal_entity_location_field_map = {
@@ -95,7 +99,11 @@ class Command(BaseCommand):
             "description": "award_description",
         }
 
-        total_rows = len(award_financial_assistance_data)
+        logger.info("Getting total rows")
+        rows_loaded = len(current_ids)
+        total_rows = len(award_financial_assistance_data) - rows_loaded
+
+        logger.info("Processing " + str(total_rows) + " rows of procurement data")
 
         start_time = datetime.now()
         for index, row in enumerate(award_financial_assistance_data, 1):
