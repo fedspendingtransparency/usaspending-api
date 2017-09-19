@@ -33,7 +33,7 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
         # change user provided PK (awarding_agency_id) to toptier_agency_id,
         # filter and include all subtier_agency_id(s).
         top_tier_agency_id = Agency.objects.filter(id=awarding_agency_id).first().toptier_agency_id
-        queryset = Transaction.objects.all()
+        queryset = TransactionNormalized.objects.all()
         # Filter based on fiscal year and agency id
         queryset = queryset.filter(
             fiscal_year=fiscal_year,
@@ -72,7 +72,7 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
             raise InvalidParameterException('Awarding Agency ID provided must correspond to a toptier agency')
 
         top_tier_agency_id = Agency.objects.filter(id=awarding_agency_id).first().toptier_agency_id
-        queryset = Transaction.objects.all()
+        queryset = TransactionNormalized.objects.all()
 
         queryset = queryset.filter(
             # Filter based on fiscal_year and awarding_category_id

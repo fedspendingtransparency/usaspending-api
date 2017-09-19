@@ -10,19 +10,19 @@ from usaspending_api.broker.models import TransactionFPDS
 @pytest.fixture
 def budget_function_data(db):
     mommy.make(
-        TransactionContract,
+        TransactionFPDS,
         naics="12121212",
         naics_description="NAICS_DESCRIPTION")
     mommy.make(
-        TransactionContract,
+        TransactionFPDS,
         naics="23232323",
         naics_description="test1")
     mommy.make(
-        TransactionContract,
+        TransactionFPDS,
         naics="34343434",
         naics_description="tes2")
     mommy.make(
-        TransactionContract,
+        TransactionFPDS,
         naics="34343434",
         naics_description="tes2")
 

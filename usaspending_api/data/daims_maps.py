@@ -12,7 +12,7 @@ models.
 Example 2: For the "type_description" field to be automatically updated, we need
 to uniquely identify the maps on a per-model basis as this field exists on multiple
 models, but cannot share enumeration maps. Thus, we will make two maps:
-"Award.type_map" and "Transaction.type_map".
+"Award.type_map" and "TransactionNormalized.type_map".
 
 Each map has a key of enumerable values, paired with the description field for
 that value.
@@ -25,7 +25,7 @@ CASES:
 If you have a need to specify a different mapping based upon other fields on the
 same model, you can do so by specify cases. These must be numbered from 1, and
 store conditions in the "case_<INT>" and the mappings in "case_<INT>_map".
-For an example, see Transaction.action_type_map
+For an example, see TransactionNormalized.action_type_map
 """
 
 daims_maps = {
@@ -33,7 +33,7 @@ daims_maps = {
 
     # This map is an example of how to have TWO different maps for the same field,
     # on the same object, separated by a case.
-    "Transaction.action_type_map": {
+    "TransactionNormalized.action_type_map": {
         # When we are financial assistance
         "case_1": {
             "assistance_data__isnull": False,
@@ -241,7 +241,7 @@ daims_maps = {
         "X": "Not Applicable",
     },
 
-    "multiple_or_single_award_idv_map": {
+    "multiple_or_single_award_i_map": {
         "M": "Multiple Award",
         "S": "Single Award",
     },

@@ -23,7 +23,7 @@ def test_contract_load():
     # Test that historic USAspending award/contract fields are being mapped
     # correctly to DATA Act schema
     # TODO: fill this out a bit
-    assert Transaction.objects.filter(action_type__isnull=False).count() > 0
+    assert TransactionNormalized.objects.filter(action_type__isnull=False).count() > 0
 
 
 @pytest.mark.django_db(transaction=True)
@@ -55,12 +55,12 @@ def test_award_and_txn_uniqueness():
 
     # Each transaction is unique on award + mod number
     attribs = ('award', 'modification_number')
-    distincts = Transaction.objects.values(*attribs).distinct().count()
-    assert distincts == Transaction.objects.count()
+    distincts = TransactionNormalized.objects.values(*attribs).distinct().count()
+    assert distincts == TransactionNormalized.objects.count()
 
     # But not unique simply on award
-    less_distinct = Transaction.objects.values('award').distinct().count()
-    assert less_distinct < Transaction.objects.count()
+    less_distinct = TransactionNormalized.objects.values('award').distinct().count()
+    assert less_distinct < TransactionNormalized.objects.count()
 
 
 @pytest.mark.parametrize(
