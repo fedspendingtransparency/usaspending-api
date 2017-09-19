@@ -29,7 +29,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 # Define local flag to affect location of downloads
-IS_LOCAL = not os.getenv('DOWNLOAD_TO_S3')
+IS_LOCAL = True
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'downloads', '')
