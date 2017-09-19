@@ -38,7 +38,8 @@ class Command(BaseCommand):
         if fiscal_year:
             current_ids = current_ids.filter(action_date__fy=fiscal_year)
 
-        current_ids = current_ids.values_list('published_award_financial_assistance_id', flat=True)
+        current_ids = current_ids.order_by('published_award_financial_assistance_id').\
+                          values_list('published_award_financial_assistance_id', flat=True)[(page-1)*limit:(page*limit)]
 
         query = "SELECT * FROM published_award_financial_assistance"
         arguments = []
@@ -215,7 +216,8 @@ class Command(BaseCommand):
         if fiscal_year:
             current_ids = current_ids.filter(action_date__fy=fiscal_year)
 
-        current_ids = current_ids.values_list('detached_award_procurement_id', flat=True)
+        current_ids = current_ids.order_by('detached_award_procurement_id').\
+                          values_list('detached_award_procurement_id', flat=True)[(page-1)*limit:(page*limit)]
 
         query = "SELECT * FROM detached_award_procurement"
         arguments = []
