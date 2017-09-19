@@ -38,7 +38,7 @@ class Command(BaseCommand):
         if fiscal_year:
             current_ids = current_ids.filter(action_date__fy=fiscal_year)
 
-        current_ids.values_list('published_award_financial_assistance_id', flat=True)
+        current_ids = current_ids.values_list('published_award_financial_assistance_id', flat=True)
 
         query = "SELECT * FROM published_award_financial_assistance"
         arguments = []
