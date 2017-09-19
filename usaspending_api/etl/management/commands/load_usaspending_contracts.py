@@ -55,7 +55,6 @@ class Command(BaseCommand):
                 "action_date": h.convert_date(row['signeddate']),
                 "award": self.get_or_create_award(row, awarding_agency_id),
                 "awarding_agency_id": awarding_agency_id,
-                "data_source": "USA",
                 "description": row["descriptionofcontractrequirement"],
                 "federal_action_obligation": row["dollarsobligated"],
                 "funding_agency_id": self.get_agency_id(row["fundingrequestingagencyid"], subtier_agency_dict),
@@ -66,23 +65,21 @@ class Command(BaseCommand):
                 "period_of_performance_current_end_date": h.convert_date(row['currentcompletiondate']),
                 "period_of_performance_start_date": h.convert_date(row['effectivedate']),
                 "recipient": self.get_or_create_recipient(row),
-                "submission": subattr,
                 "type": evaluate_contract_award_type(row),
                 "action_type": h.up2colon(row['reasonformodification']),
                 "usaspending_unique_transaction_id": row["unique_transaction_id"]
             }
-            txn = Transaction(**txn_dict)
+            txn = TransactionNormalized(**txn_dict)
             txn.fiscal_year = fy(txn.action_date)
             txn_list.append(txn)
 
             # Create the transaction contract object for this row
             txn_contract_dict = {
-                "submission": subattr,
                 "piid": row['piid'],
                 "parent_award_id": row['idvpiid'],
                 "current_total_value_award": h.parse_numeric_value(row["baseandexercisedoptionsvalue"]),
-                "period_of_performance_potential_end_date": h.convert_date(row['ultimatecompletiondate']),
-                "potential_total_value_of_award": h.parse_numeric_value(row["baseandalloptionsvalue"]),
+                "period_of_perf_potential_e": h.convert_date(row['ultimatecompletiondate']),
+                "potential_total_value_awar": h.parse_numeric_value(row["baseandalloptionsvalue"]),
                 "epa_designated_product": self.parse_first_character(row['useofepadesignatedproducts']),
                 "gfe_gfp": h.up2colon(row['gfe_gfp']),
                 "cost_or_pricing_data": h.up2colon(row['costorpricingdata']),
@@ -141,24 +138,24 @@ class Command(BaseCommand):
                 "transaction_number": self.parse_first_character(row['transactionnumber']),
                 "solicitation_identifier": self.parse_first_character(row['solicitationid'])
             }
-            txn_contract = TransactionContract(**txn_contract_dict)
+            txn_contract = TransactionFPDS(**txn_contract_dict)
             txn_contract_list.append(txn_contract)
 
         # Bulk insert transaction rows
         self.logger.info("Starting Transaction bulk insert ({} records)".format(len(txn_list)))
-        Transaction.objects.bulk_create(txn_list)
+        TransactionNormalized.objects.bulk_create(txn_list)
         self.logger.info("Completed Transaction bulk insert")
         # Update txn contract list with newly-inserted transactions
         award_id_list = []  # we'll need this when updating the awards later on
         for idx, t in enumerate(txn_contract_list):
-            # add transaction info to this TransactionContract object
+            # add transaction info to this TransactionFPDS object
             t.transaction = txn_list[idx]
             # add the corresponding award id to a list we'll use when batch-updating award data
             award_id_list.append(txn_list[idx].award_id)
         # Bulk insert transaction contract rows
-        self.logger.info("Starting TransactionContract bulk insert ({} records)".format(len(txn_contract_list)))
-        TransactionContract.objects.bulk_create(txn_contract_list)
-        self.logger.info("Completed TransactionContract bulk insert")
+        self.logger.info("Starting TransactionFPDS bulk insert ({} records)".format(len(txn_contract_list)))
+        TransactionFPDS.objects.bulk_create(txn_contract_list)
+        self.logger.info("Completed TransactionFPDS bulk insert")
 
         # Update awards to reflect latest transaction information
         # (note that this can't be done via signals or a save()

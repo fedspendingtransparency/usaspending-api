@@ -52,13 +52,11 @@ class Command(BaseCommand):
 
             # Create the transaction object for this row
             txn_dict = {
-                "submission": subattr,
                 "action_date": h.convert_date(row['obligation_action_date']),
                 "action_type": h.up2colon(row['action_type']),
                 "award": self.get_or_create_award(row, awarding_agency=awarding_agency),
                 "awarding_agency": awarding_agency,
                 "description": row["project_description"],  # ?? account_title is anther contender?
-                "data_source": "USA",
                 "federal_action_obligation": row["fed_funding_amount"],
                 "last_modified_date": h.convert_date(row['last_modified_date']),
                 "modification_number": row["federal_award_mod"],  # ??
@@ -73,13 +71,12 @@ class Command(BaseCommand):
                 # ?? "certified date":
 
             }
-            txn = Transaction(**txn_dict)
+            txn = TransactionNormalized(**txn_dict)
             txn.fiscal_year = fy(txn.action_date)
             txn_list.append(txn)
 
             # Create the transaction contract object for this row
             txn_assistance_dict = {
-                "submission": subattr,
                 "fain": row["federal_award_id"],
                 "uri": row["uri"],
                 "cfda": Cfda.objects.filter(program_number=row["cfda_program_num"]).first(),
@@ -95,12 +92,12 @@ class Command(BaseCommand):
             # ?? business_funds_indicator
             # ?? reporting period start/end??
 
-            txn_assistance = TransactionAssistance(**txn_assistance_dict)
+            txn_assistance = TransactionFABS(**txn_assistance_dict)
             txn_assistance_list.append(txn_assistance)
 
         # Bulk insert transaction rows
         self.logger.info("Starting Transaction bulk insert ({} records)".format(len(txn_list)))
-        Transaction.objects.bulk_create(txn_list)
+        TransactionNormalized.objects.bulk_create(txn_list)
         self.logger.info("Completed Transaction bulk insert")
         # Update txn assistance list with newly-inserted transactions
         award_id_list = []  # we'll need this when updating the awards later on
@@ -108,9 +105,9 @@ class Command(BaseCommand):
             t.transaction = txn_list[idx]
             award_id_list.append(txn_list[idx].award_id)
         # Bulk insert transaction assistance rows
-        self.logger.info("Starting TransactionAssistance bulk insert ({} records)".format(len(txn_assistance_list)))
-        TransactionAssistance.objects.bulk_create(txn_assistance_list)
-        self.logger.info("Completed TransactionAssistance bulk insert")
+        self.logger.info("Starting TransactionFABS bulk insert ({} records)".format(len(txn_assistance_list)))
+        TransactionFABS.objects.bulk_create(txn_assistance_list)
+        self.logger.info("Completed TransactionFABS bulk insert")
 
         # Update awards to reflect latest transaction information
         # (note that this can't be done via signals or a save()

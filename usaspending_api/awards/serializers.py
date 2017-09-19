@@ -89,12 +89,12 @@ class SubawardSerializer(LimitableSerializer):
         }
 
 
-class TransactionAssistanceSerializer(LimitableSerializer):
+class TransactionFABSSerializer(LimitableSerializer):
 
     prefetchable = False
 
     class Meta:
-        model = TransactionAssistance
+        model = TransactionFABS
         fields = '__all__'
         default_fields = [
             "fain",
@@ -114,12 +114,12 @@ class TransactionAssistanceSerializer(LimitableSerializer):
         }
 
 
-class TransactionContractSerializer(LimitableSerializer):
+class TransactionFPDSSerializer(LimitableSerializer):
 
     prefetchable = False
 
     class Meta:
-        model = TransactionContract
+        model = TransactionFPDS
         fields = '__all__'
         default_fields = [
             "piid",
@@ -135,14 +135,14 @@ class TransactionContractSerializer(LimitableSerializer):
         ]
 
 
-class TransactionSerializer(LimitableSerializer):
+class TransactionNormalizedSerializer(LimitableSerializer):
     """Serialize complete transactions, including assistance and contract data."""
 
     prefetchable = False
 
     class Meta:
 
-        model = Transaction
+        model = TransactionNormalized
         fields = '__all__'
         default_fields = [
             "id",
@@ -161,18 +161,18 @@ class TransactionSerializer(LimitableSerializer):
             "recipient",
             "description",
             "place_of_performance",
-            "contract_data",  # must match related_name in TransactionContract
-            "assistance_data"  # must match related_name in TransactionAssistance
+            "contract_data",  # must match related_name in TransactionFPDS
+            "assistance_data"  # must match related_name in TransactionFABS
         ]
         nested_serializers = {
-            # name below must match related_name in TransactionAssistance
+            # name below must match related_name in TransactionFABS
             "assistance_data": {
-                "class": TransactionAssistanceSerializer,
+                "class": TransactionFABSSerializer,
                 "kwargs": {"read_only": True}
             },
-            # name below must match related_name in TransactionContract
+            # name below must match related_name in TransactionFPDS
             "contract_data": {
-                "class": TransactionContractSerializer,
+                "class": TransactionFPDSSerializer,
                 "kwargs": {"read_only": True}
             },
             "recipient": {
@@ -241,7 +241,7 @@ class AwardSerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             },
             "latest_transaction": {
-                "class": TransactionSerializer,
+                "class": TransactionNormalizedSerializer,
                 "kwargs": {"read_only": True}
             }
         }

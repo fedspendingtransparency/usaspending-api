@@ -22,13 +22,13 @@ def endpoint_data():
 @pytest.fixture()
 @pytest.mark.django_db
 def partially_flushed():
-    TransactionContract.objects.all().delete()
+    TransactionFPDS.objects.all().delete()
     SubmissionAttributes.objects.all().delete()
     AppropriationAccountBalances.objects.all().delete()
     FinancialAccountsByProgramActivityObjectClass.objects.all().delete()
     FinancialAccountsByAwards.objects.all().delete()
-    TransactionAssistance.objects.all().delete()
-    Transaction.objects.all().delete()
+    TransactionFABS.objects.all().delete()
+    TransactionNormalized.objects.all().delete()
     Location.objects.all().delete()
     LegalEntity.objects.all().delete()
     Award.objects.all().delete()
@@ -40,7 +40,7 @@ def test_load_historical_command_contracts(endpoint_data, partially_flushed):
     Test process to load detached historical contract info, not part of a submission
     """
     assert Award.objects.count() == 0
-    assert TransactionContract.objects.count() == 0
+    assert TransactionFPDS.objects.count() == 0
     assert LegalEntity.objects.count() == 0
     assert Location.objects.count() == 0
     call_command('load_historical', '--test', '--contracts',
@@ -48,7 +48,7 @@ def test_load_historical_command_contracts(endpoint_data, partially_flushed):
                  '--action_date_end', '2017-05-02',
                  '--cgac', '015')
     assert Award.objects.count() == 9
-    assert TransactionContract.objects.count() == 10
+    assert TransactionFPDS.objects.count() == 10
     assert LegalEntity.objects.count() == 9
     assert Location.objects.count() == 9
 
@@ -58,7 +58,7 @@ def test_load_historical_command_contracts(endpoint_data, partially_flushed):
                  '--action_date_end', '2017-05-02',
                  '--cgac', '015')
     assert Award.objects.count() == 9
-    assert TransactionContract.objects.count() == 10
+    assert TransactionFPDS.objects.count() == 10
     assert LegalEntity.objects.count() == 9
     assert Location.objects.count() == 9
 
@@ -70,7 +70,7 @@ def test_load_historical_command_financial_assistance(endpoint_data, partially_f
     Test historical loader for financial assistance
     """
     assert Award.objects.count() == 0
-    assert TransactionAssistance.objects.count() == 0
+    assert TransactionFABS.objects.count() == 0
     assert LegalEntity.objects.count() == 0
     assert Location.objects.count() == 0
     call_command('load_historical', '--test', '--financial_assistance',
@@ -78,7 +78,7 @@ def test_load_historical_command_financial_assistance(endpoint_data, partially_f
                  '--action_date_end', '2016-04-30',
                  '--awarding_agency_code', '031')
     assert Award.objects.count() == 9
-    assert TransactionAssistance.objects.count() == 10
+    assert TransactionFABS.objects.count() == 10
     assert LegalEntity.objects.count() == 9
     assert Location.objects.count() == 10
 
@@ -100,9 +100,9 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     assert Location.objects.count() == 4
     assert LegalEntity.objects.count() == 2
     assert Award.objects.count() == 15
-    assert Transaction.objects.count() == 2
-    assert TransactionContract.objects.count() == 1
-    assert TransactionAssistance.objects.count() == 1
+    assert TransactionNormalized.objects.count() == 2
+    assert TransactionFPDS.objects.count() == 1
+    assert TransactionFABS.objects.count() == 1
 
     # Verify that sign has been reversed during load where appropriate
     assert AppropriationAccountBalances.objects.filter(gross_outlay_amount_by_tas_cpe__lt=0).count() == 1

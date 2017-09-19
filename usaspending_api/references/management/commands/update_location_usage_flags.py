@@ -26,7 +26,7 @@ class Command(BaseCommand):
         # is greater than or equal to 1
         # Referencing models: award, procurement, financialassistanceaward
         q1 = Q(location_id__in=Award.objects.values('place_of_performance'))
-        q2 = Q(location_id__in=Transaction.objects.values('place_of_performance'))
+        q2 = Q(location_id__in=TransactionNormalized.objects.values('place_of_performance'))
 
         final_q = q1 | q2
 

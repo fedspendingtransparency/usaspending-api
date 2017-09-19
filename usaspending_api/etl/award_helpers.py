@@ -26,7 +26,7 @@ def update_awards(award_tuple=None):
     sql_txn_latest = (
         'txn_latest AS ('
         'SELECT DISTINCT ON (award_id) * '
-        'FROM transaction ')
+        'FROM transaction_normalized ')
     if award_tuple:
         sql_txn_latest += 'WHERE award_id IN %s '
     sql_txn_latest += 'ORDER BY award_id, action_date DESC) '
@@ -35,7 +35,7 @@ def update_awards(award_tuple=None):
     sql_txn_earliest = (
         'txn_earliest AS ('
         'SELECT DISTINCT ON (award_id) * '
-        'FROM transaction ')
+        'FROM transaction_normalized ')
     if award_tuple:
         sql_txn_earliest += 'WHERE award_id IN %s '
     sql_txn_earliest += 'ORDER BY award_id, action_date) '
@@ -46,7 +46,7 @@ def update_awards(award_tuple=None):
     sql_txn_totals = (
         'txn_totals AS ('
         'SELECT award_id, SUM(federal_action_obligation) AS total_obligation '
-        'FROM transaction ')
+        'FROM transaction_normalized ')
     if award_tuple:
         sql_txn_totals += 'WHERE award_id IN %s '
     sql_txn_totals += 'GROUP BY award_id) '
@@ -60,7 +60,6 @@ def update_awards(award_tuple=None):
         'UPDATE awards a '
         'SET awarding_agency_id = l.awarding_agency_id, '
         'certified_date = l.certified_date, '
-        'data_source = l.data_source, '
         'date_signed = e.action_date, '
         'description = e.description, '
         'funding_agency_id = l.funding_agency_id, '
@@ -95,9 +94,9 @@ def update_contract_awards(award_tuple=None):
     # sum the potential_total_value_of_award from contract_data for an award
     sql_txn_totals = (
         'txn_totals AS ('
-        'SELECT tx.award_id, SUM(potential_total_value_of_award) AS total_potential_award '
-        'FROM transaction_contract INNER JOIN transaction as tx on '
-        'transaction_contract.transaction_id = tx.id ')
+        'SELECT tx.award_id, SUM(CAST(potential_total_value_awar as double precision)) AS total_potential_award '
+        'FROM transaction_fpds INNER JOIN transaction_normalized as tx on '
+        'transaction_fpds.transaction_id = tx.id ')
     if award_tuple:
         sql_txn_totals += 'WHERE tx.award_id IN %s '
     sql_txn_totals += 'GROUP BY tx.award_id) '
@@ -203,14 +202,14 @@ def get_award_financial_transaction(row):
         row.uri: uri from File C (assistance awards only)
 
     Returns:
-        A Transaction model instance
+        A TransactionNormalized model instance
     """
-    # @todo: refactor this into methods on the TransactionAssistance
-    # and TransactionContract models
+    # @todo: refactor this into methods on the TransactionFABS
+    # and TransactionFPDS models
 
     if row.fain is not None and row.uri is not None:
         # this is an assistance award id'd by fain
-        txn = Transaction.objects.filter(
+        txn = TransactionNormalized.objects.filter(
             awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
             assistance_data__fain=row.fain,
             assistance_data__uri=row.uri) \
@@ -218,21 +217,21 @@ def get_award_financial_transaction(row):
 
     elif row.fain is not None:
         # this is an assistance award id'd by fain
-        txn = Transaction.objects.filter(
+        txn = TransactionNormalized.objects.filter(
             awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
             assistance_data__fain=row.fain) \
             .order_by('-action_date').values("awarding_agency").first()
 
     elif row.uri is not None:
         # this is an assistance award id'd by uri
-        txn = Transaction.objects.filter(
+        txn = TransactionNormalized.objects.filter(
             awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
             assistance_data__uri=row.uri) \
             .order_by('-action_date').values("awarding_agency").first()
 
     else:
         # this is a contract award
-        txn = Transaction.objects.filter(
+        txn = TransactionNormalized.objects.filter(
             awarding_agency__toptier_agency__cgac_code=row.agency_identifier,
             contract_data__piid=row.piid,
             contract_data__parent_award_id=row.parent_award_id) \
