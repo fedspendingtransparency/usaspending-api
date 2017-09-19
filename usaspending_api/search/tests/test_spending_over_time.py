@@ -42,7 +42,7 @@ def budget_function_data(db):
         total_obligation=1000000.10)
 
     trans1 = mommy.make(
-        TransactionNormalized,
+        Transaction,
         action_date="2222-2-22",
         id=1,
         award=award1,
