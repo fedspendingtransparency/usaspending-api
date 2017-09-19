@@ -113,11 +113,11 @@ class Command(BaseCommand):
         start_time = datetime.now()
         for index, row in enumerate(award_financial_assistance_data, 1):
             with db_transaction.atomic():
-                if row['published_award_financial_assistance_id'] in current_ids:
+                if str(row['published_award_financial_assistance_id']) in current_ids:
                     continue
 
                 if not (index % 100):
-                    logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
+                    logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index-rows_loaded),
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
 
@@ -279,11 +279,11 @@ class Command(BaseCommand):
         start_time = datetime.now()
         for index, row in enumerate(procurement_data, 1):
             with db_transaction.atomic():
-                if row['detached_award_procurement_id'] in current_ids:
+                if str(row['detached_award_procurement_id']) in current_ids:
                     continue
 
                 if not (index % 100):
-                    logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
+                    logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index-rows_loaded),
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
 
