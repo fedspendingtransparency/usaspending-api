@@ -1,4 +1,4 @@
-from usaspending_api.awards.models import Transaction
+from usaspending_api.broker.models import TransactionNormalized
 from django.core.management.base import BaseCommand
 import logging
 

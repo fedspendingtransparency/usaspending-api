@@ -1,9 +1,8 @@
 from rest_framework import serializers
 
 from usaspending_api.accounts.serializers import TasSerializer
-from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards,
-    Transaction, TransactionAssistance, TransactionContract, Subaward)
+from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Subaward
+from usaspending_api.broker.models import TransactionNormalized, TransactionFPDS, TransactionFABS
 from usaspending_api.common.helpers import fy
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.v1.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer, \
