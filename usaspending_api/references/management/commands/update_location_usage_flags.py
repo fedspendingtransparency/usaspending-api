@@ -4,8 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Q
 
 from usaspending_api.references.models import Location, LegalEntity
-from usaspending_api.awards.models import Award
-from usaspending_api.broker.models import TransactionNormalized
+from usaspending_api.awards.models import Award, Transaction
 
 
 class Command(BaseCommand):

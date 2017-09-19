@@ -3,8 +3,9 @@ from decimal import Decimal
 from django.core.management import call_command, CommandError
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
-from usaspending_api.awards.models import Award, FinancialAccountsByAwards
-from usaspending_api.broker.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.awards.models import (
+    Award, FinancialAccountsByAwards, TransactionAssistance,
+    TransactionContract, Transaction)
 from usaspending_api.etl.management.commands.load_submission import get_submission_attributes, get_or_create_program_activity
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import LegalEntity, Location, RefProgramActivity

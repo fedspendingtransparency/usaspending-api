@@ -5,7 +5,8 @@ from model_mommy import mommy
 import pytest
 from rest_framework import status
 
-from usaspending_api.broker.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.awards.models import (
+    Transaction, TransactionAssistance, TransactionContract)
 
 
 @pytest.mark.django_db

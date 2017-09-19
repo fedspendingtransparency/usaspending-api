@@ -1,7 +1,6 @@
 from collections import namedtuple
 
-from usaspending_api.awards.models import Award, Subaward
-from usaspending_api.broker.models import TransactionNormalized
+from usaspending_api.awards.models import Award, Transaction, Subaward
 from usaspending_api.awards.serializers import AwardSerializer, SubawardSerializer, TransactionSerializer
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin, AggregateQuerysetMixin
 from usaspending_api.common.serializers import AggregateSerializer

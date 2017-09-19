@@ -5,8 +5,9 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from usaspending_api.accounts.models import (
     AppropriationAccountBalances, AppropriationAccountBalancesQuarterly)
-from usaspending_api.awards.models import Award, FinancialAccountsByAwards
-from usaspending_api.broker.models import TransactionNormalized, TransactionFPDS, TransactionFABS
+from usaspending_api.awards.models import (
+    Award, FinancialAccountsByAwards, Transaction, TransactionAssistance,
+    TransactionContract)
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly
 )

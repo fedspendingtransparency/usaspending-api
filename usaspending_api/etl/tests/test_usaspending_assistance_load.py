@@ -6,8 +6,7 @@ import pytest
 
 from usaspending_api.etl.management.commands import load_usaspending_assistance
 from usaspending_api.etl.tests.test_helpers import mutated_csv
-from usaspending_api.awards.models import Award
-from usaspending_api.broker.models import TransactionNormalized
+from usaspending_api.awards.models import Award, Transaction
 from usaspending_api.references.models import Agency
 
 
