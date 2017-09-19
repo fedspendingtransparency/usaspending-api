@@ -167,7 +167,7 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": ["Award ID", "Modification Number"]
+            "columns": ["award_id_piid", "modification_number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
@@ -235,7 +235,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                     },
                 ]
             },
-            "columns": ["Award ID", "Modification Number"]
+            "columns": ["award_id_piid", "modification_number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))

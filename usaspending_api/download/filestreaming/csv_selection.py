@@ -60,8 +60,6 @@ class CsvSource:
             for column in requested:
                 if column in self.human_names:
                     result.append(column)
-                elif column in self.human_names.inv:  # given query path, get human name
-                    headers.append(self.human_names.inv[column])
         else:
             result = self.human_names
 
