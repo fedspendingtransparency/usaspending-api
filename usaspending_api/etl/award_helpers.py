@@ -91,10 +91,10 @@ def update_awards(award_tuple=None):
 def update_contract_awards(award_tuple=None):
     """Update contract-specific award data based on the info in child transactions."""
 
-    # sum the potential_total_value_of_award from contract_data for an award
+    # sum the base_and_all_options_value from contract_data for an award
     sql_txn_totals = (
         'txn_totals AS ('
-        'SELECT tx.award_id, SUM(potential_total_value_of_award) AS total_potential_award '
+        'SELECT tx.award_id, SUM(base_and_all_options_value) AS total_base_and_options_value '
         'FROM transaction_contract INNER JOIN transaction as tx on '
         'transaction_contract.transaction_id = tx.id ')
     if award_tuple:
@@ -105,11 +105,11 @@ def update_contract_awards(award_tuple=None):
     # expression above and joins it to the corresopnding
     # award. that joined data is used to update awards fields as appropriate
     # (currently, there's only one trasnaction_contract field that trickles
-    # up and updates an award record: potential_total_value_of_award)
+    # up and updates an award record: base_and_all_options_value)
     sql_update = 'WITH {}'.format(sql_txn_totals)
     sql_update += (
         'UPDATE awards a '
-        'SET potential_total_value_of_award = t.total_potential_award '
+        'SET base_and_all_options_value = t.total_base_and_options_value '
         'FROM txn_totals t '
         'WHERE t.award_id = a.id'
     )
