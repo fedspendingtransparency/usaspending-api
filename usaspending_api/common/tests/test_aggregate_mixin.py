@@ -9,7 +9,7 @@ from model_mommy.recipe import Recipe
 from model_mommy import mommy
 
 from usaspending_api.awards.models import Award
-from usaspending_api.broker.models import TransactionNormalized
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.mixins import AggregateQuerysetMixin
 from usaspending_api.common.models import RequestCatalog
 

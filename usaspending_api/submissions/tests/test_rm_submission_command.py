@@ -7,8 +7,8 @@ from rest_framework import status
 from django.core.management import call_command
 from django.db.models import Q
 
-from usaspending_api.broker.models import TransactionNormalized, TransactionFABS, TransactionFPDS
-from usaspending_api.awards.models import Award, FinancialAccountsByAwards
+from usaspending_api.awards.models import (TransactionNormalized, TransactionFABS, TransactionFPDS, Award,
+                                           FinancialAccountsByAwards)
 from usaspending_api.accounts.models import AppropriationAccountBalances, AppropriationAccountBalancesQuarterly
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly
 from usaspending_api.references.models import Location

@@ -1,4 +1,4 @@
-from usaspending_api.broker.models import TransactionNormalized
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.exceptions import InvalidParameterException
 
 import logging

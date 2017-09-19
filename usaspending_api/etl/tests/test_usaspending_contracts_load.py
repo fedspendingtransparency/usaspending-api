@@ -3,7 +3,7 @@ import os
 from django.conf import settings
 from django.core.management import call_command
 from usaspending_api.awards.models import Award
-from usaspending_api.broker.models import TransactionNormalized
+from usaspending_api.awards.models import TransactionNormalized
 import pytest
 
 from usaspending_api.etl.management.commands import load_usaspending_contracts

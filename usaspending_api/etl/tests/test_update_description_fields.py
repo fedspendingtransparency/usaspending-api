@@ -3,7 +3,7 @@ import pytest
 from model_mommy import mommy
 from itertools import cycle
 
-from usaspending_api.broker.models import TransactionNormalized, TransactionFPDS, TransactionFABS
+from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS, TransactionFABS
 from usaspending_api.etl.helpers import update_model_description_fields
 from usaspending_api.data.daims_maps import daims_maps
 from model_mommy.recipe import Recipe
