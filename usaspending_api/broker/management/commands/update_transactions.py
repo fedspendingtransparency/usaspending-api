@@ -198,8 +198,7 @@ class Command(BaseCommand):
                     row,
                     as_dict=True)
 
-                transaction_assistance = TransactionFABS.get_or_create_2(transaction=transaction,
-                                                                               **financial_assistance_data)
+                transaction_assistance = TransactionFABS(transaction=transaction, **financial_assistance_data)
                 transaction_assistance.save()
 
     @staticmethod
