@@ -32,13 +32,13 @@ class Command(BaseCommand):
     @staticmethod
     def update_transaction_assistance(db_cursor, fiscal_year=None, page=1, limit=500000):
 
-        logger.info("Getting IDs for what's currently in the DB...")
-        current_ids = TransactionFABS.objects
-
-        if fiscal_year:
-            current_ids = current_ids.filter(action_date__fy=fiscal_year)
-
-        current_ids = current_ids.values_list('published_award_financial_assistance_id', flat=True)
+        # logger.info("Getting IDs for what's currently in the DB...")
+        # current_ids = TransactionFABS.objects
+        #
+        # if fiscal_year:
+        #     current_ids = current_ids.filter(action_date__fy=fiscal_year)
+        #
+        # current_ids = current_ids.values_list('published_award_financial_assistance_id', flat=True)
 
         query = "SELECT * FROM published_award_financial_assistance"
         arguments = []
@@ -105,19 +105,23 @@ class Command(BaseCommand):
         }
 
         logger.info("Getting total rows")
-        rows_loaded = len(current_ids)
-        total_rows = len(award_financial_assistance_data) - rows_loaded
+        # rows_loaded = len(current_ids)
+        total_rows = len(award_financial_assistance_data)  # - rows_loaded
 
         logger.info("Processing " + str(total_rows) + " rows of procurement data")
 
         start_time = datetime.now()
         for index, row in enumerate(award_financial_assistance_data, 1):
             with db_transaction.atomic():
-                if str(row['published_award_financial_assistance_id']) in current_ids:
+                if TransactionFABS.objects.values('published_award_financial_assistance_id').\
+                        filter(published_award_financial_assistance_id=str(row['published_award_financial_assistance_id'])).first():
+                    logger.info('Record for index {} already exists, '
+                                'skipping published_award_financial_assistance_id of {}'.
+                                format(str(index), str(row['published_award_financial_assistance_id'])))
                     continue
 
                 if not (index % 100):
-                    logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index-rows_loaded),
+                    logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
 
@@ -209,13 +213,13 @@ class Command(BaseCommand):
     @staticmethod
     def update_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000):
 
-        logger.info("Getting IDs for what's currently in the DB...")
-        current_ids = TransactionFPDS.objects
-
-        if fiscal_year:
-            current_ids = current_ids.filter(action_date__fy=fiscal_year)
-
-        current_ids = current_ids.values_list('detached_award_procurement_id', flat=True)
+        # logger.info("Getting IDs for what's currently in the DB...")
+        # current_ids = TransactionFPDS.objects
+        #
+        # if fiscal_year:
+        #     current_ids = current_ids.filter(action_date__fy=fiscal_year)
+        #
+        # current_ids = current_ids.values_list('detached_award_procurement_id', flat=True)
 
         query = "SELECT * FROM detached_award_procurement"
         arguments = []
@@ -271,19 +275,22 @@ class Command(BaseCommand):
         }
 
         logger.info("Getting total rows")
-        rows_loaded = len(current_ids)
-        total_rows = len(procurement_data) - rows_loaded
+        # rows_loaded = len(current_ids)
+        total_rows = len(procurement_data)  # - rows_loaded
 
         logger.info("Processing " + str(total_rows) + " rows of procurement data")
 
         start_time = datetime.now()
         for index, row in enumerate(procurement_data, 1):
             with db_transaction.atomic():
-                if str(row['detached_award_procurement_id']) in current_ids:
-                    continue
+                if TransactionFPDS.objects.values('detached_award_procurement_id').\
+                        filter(detached_award_procurement_id=str(row['detached_award_procurement_id'])).first():
+                    logger.info('Record for index {} already exists, '
+                                'skipping detached_award_procurement_id of {}'.
+                                format(str(index), str(row['detached_award_procurement_id'])))
 
                 if not (index % 100):
-                    logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index-rows_loaded),
+                    logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
 
