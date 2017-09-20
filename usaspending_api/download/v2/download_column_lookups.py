@@ -10,6 +10,7 @@ all_query_paths = {
     'award_id_piid': 'piid',
     'award_id_fain': 'fain',
     'award_id_uri': 'uri',
+    'parent_award_id': 'parent_award_id',
     '1862_land_grant_college':
     'transaction__recipient__c1862_land_grant_college',
     '1890_land_grant_college':

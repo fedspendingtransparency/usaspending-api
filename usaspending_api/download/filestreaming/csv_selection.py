@@ -13,7 +13,6 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.v2 import download_column_lookups
 
 BUFFER_SIZE = (5 * 1024**2)
-BATCH_SIZE = 100
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +74,8 @@ class CsvSource:
         yield from self.queryset.values_list(*query_paths).iterator()
 
 
-def write_csvs(download_job, file_name, upload_name, columns, sources):
-    """Derive the relevant location and write a CSV to it.
+def write_csvs(download_job, file_name, columns, sources):
+    """Derive the relevant location and write CSVs to it.
 
     :return: the final file name (complete with prefix)"""
 

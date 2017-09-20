@@ -1,4 +1,3 @@
-from copy import deepcopy
 from datetime import date
 import json
 
@@ -9,6 +8,7 @@ from rest_framework import status
 from usaspending_api.awards.models import Transaction, TransactionAssistance, TransactionContract
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.download.v2 import download_column_lookups
+from usaspending_api.etl.award_helpers import update_awards
 
 
 @pytest.fixture
@@ -70,13 +70,13 @@ def award_data(db):
 
     # Create Awards
     award1 = mommy.make(
-        'awards.Award', category='contracts', awarding_agency=aa1)
+        'awards.Award', category='contracts')
     award2 = mommy.make(
-        'awards.Award', category='contracts', awarding_agency=aa2)
+        'awards.Award', category='contracts')
 
     # Create Transactions
-    tran1 = mommy.make(Transaction, award=award1, modification_number=1)
-    tran2 = mommy.make(Transaction, award=award2, modification_number=1)
+    tran1 = mommy.make(Transaction, award=award1, modification_number=1, awarding_agency=aa1)
+    tran2 = mommy.make(Transaction, award=award2, modification_number=1, awarding_agency=aa2)
 
     # Create TransactionContract
     tc1 = mommy.make(TransactionContract, transaction=tran1, piid='tc1piid')
@@ -84,6 +84,9 @@ def award_data(db):
 
     # Create TransactionAssistance
     ta1 = mommy.make(TransactionAssistance, transaction=tran1, fain='ta1fain')
+
+    # Set latest_award for each award
+    update_awards()
 
 
 @pytest.mark.django_db
@@ -154,7 +157,7 @@ def test_download_awards_v2_status_endpoint(client, award_data):
                       .format(dl_resp.json()['file_name']))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()['total_rows'] == 2
+    assert resp.json()['total_rows'] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1``0`
     assert resp.json()['total_columns'] > 100
 
 
@@ -242,29 +245,6 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                       .format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 3
-
-
-@pytest.mark.django_db
-def test_download_transactions_v2_filter_errors(client, award_data):
-    """Test that bad filter inputs raise appropriate responses."""
-
-    good_payload = {
-        "filters": {
-            "agencies": [
-                {
-                    'type': 'awarding',
-                    'tier': 'toptier',
-                    'name': "Bureau of Stuff",
-                },
-                {
-                    'type': 'awarding',
-                    'tier': 'toptier',
-                    'name': "Bureau of Things",
-                },
-            ]
-        },
-        "columns": ["award_id_piid", "modification_number"]
-    }
 
 
 def test_download_transactions_v2_bad_filter_raises(client):

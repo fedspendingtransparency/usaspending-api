@@ -13,7 +13,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.filestreaming import csv_selection
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.download.lookups import AWARD_DOWNLOAD_COLUMNS, JOB_STATUS_DICT
+from usaspending_api.download.lookups import JOB_STATUS_DICT
 
 
 class BaseDownloadViewSet(APIView):
@@ -67,7 +67,6 @@ class BaseDownloadViewSet(APIView):
 
         kwargs = {'download_job': download_job,
                   'file_name': timestamped_file_name,
-                  'upload_name': timestamped_file_name,
                   'columns': request.data['columns'],
                   'sources': csv_sources}
 
@@ -91,7 +90,7 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
         d1_queryset = queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False)
         d1_source = csv_selection.CsvSource(d1_queryset, 'award', 'd1')
         d2_queryset = queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False)
-        d2_source = csv_selection.CsvSource(queryset, 'award', 'd2')
+        d2_source = csv_selection.CsvSource(d2_queryset, 'award', 'd2')
         return (d1_source, d2_source)
 
     DOWNLOAD_NAME = 'awards'
