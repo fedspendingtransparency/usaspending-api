@@ -191,6 +191,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             for key, value in name_dict.items():
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
+            results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
             page_metadata = get_pagination_metadata(total_return_count, limit, page)
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
                         "page_metadata": page_metadata}
@@ -274,6 +275,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             for key, value in name_dict.items():
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
+            results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
             page_metadata = get_pagination_metadata(total_return_count, limit, page)
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
                         "page_metadata": page_metadata}
