@@ -1,6 +1,6 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from django.db.models import Sum
 from collections import OrderedDict
 from functools import total_ordering
 
@@ -127,37 +127,59 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                        "awarding_agency__subtier_agency__abbreviation",
                                        # "awarding_agency__office_agency__abbreviation",
                                        "federal_action_obligation")
+
+            total_return_count = 0
+
             if scope == "agency":
-                for trans in queryset:
-                    if trans["awarding_agency__toptier_agency__name"]:
-                        ttname = trans["awarding_agency__toptier_agency__name"]
-                        ttabv = trans["awarding_agency__toptier_agency__abbreviation"]
-                        ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                        if ttname in name_dict:
-                            name_dict[ttname]["aggregated_amount"] += ttob
-                        else:
-                            name_dict[ttname] = {"aggregated_amount": ttob, "abbreviation": ttabv}
+                agency_set = queryset.filter(awarding_agency__toptier_agency__name__isnull=False) \
+                        .values('awarding_agency__toptier_agency__name', 'awarding_agency__toptier_agency__abbreviation') \
+                        .annotate(federal_action_obligation=Sum('federal_action_obligation'))\
+                        .order_by('-federal_action_obligation')
+
+                total_return_count = agency_set.count()
+
+                for trans in agency_set[((page - 1) * limit):(page * limit)]:
+                    ttname = trans["awarding_agency__toptier_agency__name"]
+                    ttabv = trans["awarding_agency__toptier_agency__abbreviation"]
+                    ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
+                    if ttname in name_dict:
+                        name_dict[ttname]["aggregated_amount"] += ttob
+                    else:
+                        name_dict[ttname] = {"aggregated_amount": ttob, "abbreviation": ttabv}
 
             elif scope == "subagency":
-                for trans in queryset:
-                    if trans["awarding_agency__subtier_agency__name"]:
-                        stname = trans["awarding_agency__subtier_agency__name"]
-                        stabv = trans["awarding_agency__subtier_agency__abbreviation"]
-                        stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                        if stname in name_dict:
-                            name_dict[stname]["aggregated_amount"] += stob
-                        else:
-                            name_dict[stname] = {"aggregated_amount": stob, "abbreviation": stabv}
+                subagency_set = queryset.filter(awarding_agency__subtier_agency__name__isnull=False) \
+                        .values('awarding_agency__subtier_agency__name', 'awarding_agency__subtier_agency__abbreviation') \
+                        .annotate(federal_action_obligation=Sum('federal_action_obligation'))\
+                        .order_by('-federal_action_obligation')
+
+                total_return_count = subagency_set.count()
+
+                for trans in subagency_set[((page - 1) * limit):(page * limit)]:
+                    stname = trans["awarding_agency__subtier_agency__name"]
+                    stabv = trans["awarding_agency__subtier_agency__abbreviation"]
+                    stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
+                    if stname in name_dict:
+                        name_dict[stname]["aggregated_amount"] += stob
+                    else:
+                        name_dict[stname] = {"aggregated_amount": stob, "abbreviation": stabv}
+
             else:  # offices
-                for trans in queryset:
-                    if trans["awarding_agency__office_agency__name"]:
-                        oname = trans["awarding_agency__office_agency__name"]
-                        oabv = trans["awarding_agency__office_agency__abbreviation"]
-                        oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                        if oname in name_dict:
-                            name_dict[oname]["aggregated_amount"] += oob
-                        else:
-                            name_dict[oname] = {"aggregated_amount": oob, "abbreviation": oabv}
+                office_set = queryset.filter(awarding_agency__office_agency__name__isnull=False) \
+                        .values('awarding_agency__office_agency__name', 'awarding_agency__office_agency__abbreviation') \
+                        .annotate(federal_action_obligation=Sum('federal_action_obligation'))\
+                        .order_by('-federal_action_obligation')
+
+                total_return_count = office_set.count()
+
+                for trans in office_set[((page - 1) * limit):(page * limit)]:
+                    oname = trans["awarding_agency__office_agency__name"]
+                    oabv = trans["awarding_agency__office_agency__abbreviation"]
+                    oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
+                    if oname in name_dict:
+                        name_dict[oname]["aggregated_amount"] += oob
+                    else:
+                        name_dict[oname] = {"aggregated_amount": oob, "abbreviation": oabv}
 
             # build response
             results = []
@@ -169,13 +191,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             for key, value in name_dict.items():
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
-            results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-            results, page_metadata = get_pagination(results, limit, page)
+            page_metadata = get_pagination_metadata(total_return_count, limit, page)
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
                         "page_metadata": page_metadata}
             return Response(response)
 
         elif category == "funding_agency":
+
             # TODO: Add "offices" below for office_agency changes
             potential_scopes = ["agency", "subagency"]
             if scope not in potential_scopes:
@@ -192,36 +214,55 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                        # "funding_agency__office_agency__abbreviation",
                                        "federal_action_obligation")
             if scope == "agency":
-                for trans in queryset:
-                    if trans["funding_agency__toptier_agency__name"]:
-                        ttname = trans["funding_agency__toptier_agency__name"]
-                        ttabv = trans["funding_agency__toptier_agency__abbreviation"]
-                        ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                        if ttname in name_dict:
-                            name_dict[ttname]["aggregated_amount"] += ttob
-                        else:
-                            name_dict[ttname] = {"aggregated_amount": ttob, "abbreviation": ttabv}
+                agency_set = queryset.filter(funding_agency__toptier_agency__name__isnull=False) \
+                    .values('funding_agency__toptier_agency__name', 'funding_agency__toptier_agency__abbreviation') \
+                    .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
+                    .order_by('-federal_action_obligation')
+
+                total_return_count = agency_set.count()
+
+                for trans in agency_set[((page - 1) * limit):(page * limit)]:
+                    ttname = trans["funding_agency__toptier_agency__name"]
+                    ttabv = trans["funding_agency__toptier_agency__abbreviation"]
+                    ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
+                    if ttname in name_dict:
+                        name_dict[ttname]["aggregated_amount"] += ttob
+                    else:
+                        name_dict[ttname] = {"aggregated_amount": ttob, "abbreviation": ttabv}
 
             elif scope == "subagency":
-                for trans in queryset:
-                    if trans["funding_agency__subtier_agency__name"]:
-                        stname = trans["funding_agency__subtier_agency__name"]
-                        stabv = trans["funding_agency__subtier_agency__abbreviation"]
-                        stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                        if stname in name_dict:
-                            name_dict[stname]["aggregated_amount"] += stob
-                        else:
-                            name_dict[stname] = {"aggregated_amount": stob, "abbreviation": stabv}
+                subagency_set = queryset.filter(funding_agency__subtier_agency__name__isnull=False) \
+                    .values('funding_agency__subtier_agency__name', 'funding_agency__subtier_agency__abbreviation') \
+                    .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
+                    .order_by('-federal_action_obligation')
+
+                total_return_count = subagency_set.count()
+
+                for trans in subagency_set[((page - 1) * limit):(page * limit)]:
+                    stname = trans["funding_agency__subtier_agency__name"]
+                    stabv = trans["funding_agency__subtier_agency__abbreviation"]
+                    stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
+                    if stname in name_dict:
+                        name_dict[stname]["aggregated_amount"] += stob
+                    else:
+                        name_dict[stname] = {"aggregated_amount": stob, "abbreviation": stabv}
+
             else:  # offices
-                for trans in queryset:
-                    if trans["funding_agency__office_agency__name"]:
-                        oname = trans["funding_agency__office_agency__name"]
-                        oabv = trans["funding_agency__office_agency__abbreviation"]
-                        oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                        if oname in name_dict:
-                            name_dict[oname]["aggregated_amount"] += oob
-                        else:
-                            name_dict[oname] = {"aggregated_amount": oob, "abbreviation": oabv}
+                office_set = queryset.filter(funding_agency__office_agency__name=False) \
+                    .values('funding_agency__office_agency__name', 'funding_agency__office_agency__abbreviation') \
+                    .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
+                    .order_by('-federal_action_obligation')
+
+                total_return_count = office_set.count()
+
+                for trans in office_set[((page - 1) * limit):(page * limit)]:
+                    oname = trans["funding_agency__office_agency__name"]
+                    oabv = trans["funding_agency__office_agency__abbreviation"]
+                    oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
+                    if oname in name_dict:
+                        name_dict[oname]["aggregated_amount"] += oob
+                    else:
+                        name_dict[oname] = {"aggregated_amount": oob, "abbreviation": oabv}
 
             # build response
             results = []
@@ -233,11 +274,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             for key, value in name_dict.items():
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
-            results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-            results, page_metadata = get_pagination(results, limit, page)
+            page_metadata = get_pagination_metadata(total_return_count, limit, page)
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
                         "page_metadata": page_metadata}
             return Response(response)
+
         elif category == "recipient":
             # filter the transactions by scope name
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
