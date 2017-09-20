@@ -108,7 +108,7 @@ class Command(BaseCommand):
         # rows_loaded = len(current_ids)
         total_rows = len(award_financial_assistance_data)  # - rows_loaded
 
-        logger.info("Processing " + str(total_rows) + " rows of procurement data")
+        logger.info("Processing " + str(total_rows) + " rows of assistance data")
 
         skip_count = 0
 
