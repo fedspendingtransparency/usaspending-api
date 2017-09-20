@@ -188,7 +188,7 @@ def test_award_update_from_contract_transaction():
     """Test award updates specific to contract transactions."""
 
     # for contract type transactions,
-    # the potential_total_value_of_award field
+    # the base_and_all_options_value field
     # should updte the corresponding field on the award table
     award = mommy.make('awards.Award')
     txn = mommy.make('awards.TransactionNormalized', award=award)
@@ -196,18 +196,18 @@ def test_award_update_from_contract_transaction():
     mommy.make(
         'awards.TransactionFPDS',
         transaction=txn,
-        potential_total_value_awar=1000
+        base_and_all_options_value=1000
     )
     mommy.make(
         'awards.TransactionFPDS',
         transaction=txn2,
-        potential_total_value_awar=1001
+        base_and_all_options_value=1001
     )
 
     update_contract_awards()
     award.refresh_from_db()
 
-    assert award.potential_total_value_of_award == 2001
+    assert award.base_and_all_options_value == 2001
 
 
 @pytest.mark.django_db
@@ -219,34 +219,34 @@ def test_award_update_contract_txn_with_list():
     mommy.make(
         'awards.TransactionFPDS',
         transaction=txn,
-        potential_total_value_awar=1000
+        base_and_all_options_value=1000
     )
     # single award is updated
     count = update_contract_awards((awards[0].id,))
     awards[0].refresh_from_db()
     assert count == 1
-    assert awards[0].potential_total_value_of_award == 1000
+    assert awards[0].base_and_all_options_value == 1000
 
     # update multipe awards
     txn1 = mommy.make('awards.TransactionNormalized', award=awards[1])
     mommy.make(
         'awards.TransactionFPDS',
         transaction=txn1,
-        potential_total_value_awar=4000
+        base_and_all_options_value=4000
     )
     txn2 = mommy.make('awards.TransactionNormalized', award=awards[2])
     mommy.make(
         'awards.TransactionFPDS',
         transaction=txn2,
-        potential_total_value_awar=5000
+        base_and_all_options_value=5000
     )
     # multiple awards updated
     count = update_contract_awards((awards[1].id, awards[2].id))
     awards[1].refresh_from_db()
     awards[2].refresh_from_db()
     assert count == 2
-    assert awards[1].potential_total_value_of_award == 4000
-    assert awards[2].potential_total_value_of_award == 5000
+    assert awards[1].base_and_all_options_value == 4000
+    assert awards[2].base_and_all_options_value == 5000
 
 
 @pytest.mark.skip(reason="deletion feature not yet implemented")

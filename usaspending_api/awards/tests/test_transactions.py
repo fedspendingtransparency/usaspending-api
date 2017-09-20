@@ -204,7 +204,7 @@ def test_txn_contract_get_or_create():
         'awards.TransactionFPDS',
         transaction=txn1,
         piid='abc',
-        potential_total_value_awar=1000,
+        base_and_all_options_value=1000
     )
     assert TransactionFPDS.objects.all().count() == 1
 
@@ -212,7 +212,7 @@ def test_txn_contract_get_or_create():
     # data, not insert a new record
     tc_dict = {
         'piid': 'abc',
-        'potential_total_value_awar': 5000
+        'base_and_all_options_value': 5000,
     }
     tc2 = TransactionFPDS.get_or_create_2(txn1, **tc_dict)
     tc2.save()
@@ -224,7 +224,7 @@ def test_txn_contract_get_or_create():
     # a new transaction gets a new TransactionFABS record
     tc_dict = {
         'piid': 'xyz',
-        'potential_total_value_awar': 5555
+        'base_and_all_options_value': 5555,
     }
     tc3 = TransactionFPDS.get_or_create_2(
         mommy.make('awards.TransactionNormalized'), **tc_dict)
