@@ -90,12 +90,17 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
+        # TODO: check logic in name_dict[x]["aggregated_amount"] statements
+
         json_request = request.data
         category = json_request.get("category", None)
         scope = json_request.get("scope", None)
         filters = json_request.get("filters", None)
         limit = json_request.get("limit", 10)
         page = json_request.get("page", 1)
+
+        lower_limit = (page - 1) * limit
+        upper_limit = page * limit
 
         if category is None:
             raise InvalidParameterException("Missing one or more required request parameters: category")
@@ -138,7 +143,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                 total_return_count = agency_set.count()
 
-                for trans in agency_set[((page - 1) * limit):(page * limit)]:
+                for trans in agency_set[lower_limit:upper_limit]:
                     ttname = trans["awarding_agency__toptier_agency__name"]
                     ttabv = trans["awarding_agency__toptier_agency__abbreviation"]
                     ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -155,7 +160,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                 total_return_count = subagency_set.count()
 
-                for trans in subagency_set[((page - 1) * limit):(page * limit)]:
+                for trans in subagency_set[lower_limit:upper_limit]:
                     stname = trans["awarding_agency__subtier_agency__name"]
                     stabv = trans["awarding_agency__subtier_agency__abbreviation"]
                     stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -172,7 +177,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                 total_return_count = office_set.count()
 
-                for trans in office_set[((page - 1) * limit):(page * limit)]:
+                for trans in office_set[lower_limit:upper_limit]:
                     oname = trans["awarding_agency__office_agency__name"]
                     oabv = trans["awarding_agency__office_agency__abbreviation"]
                     oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -222,7 +227,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                 total_return_count = agency_set.count()
 
-                for trans in agency_set[((page - 1) * limit):(page * limit)]:
+                for trans in agency_set[lower_limit:upper_limit]:
                     ttname = trans["funding_agency__toptier_agency__name"]
                     ttabv = trans["funding_agency__toptier_agency__abbreviation"]
                     ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -239,7 +244,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                 total_return_count = subagency_set.count()
 
-                for trans in subagency_set[((page - 1) * limit):(page * limit)]:
+                for trans in subagency_set[lower_limit:upper_limit]:
                     stname = trans["funding_agency__subtier_agency__name"]
                     stabv = trans["funding_agency__subtier_agency__abbreviation"]
                     stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -256,7 +261,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                 total_return_count = office_set.count()
 
-                for trans in office_set[((page - 1) * limit):(page * limit)]:
+                for trans in office_set[lower_limit:upper_limit]:
                     oname = trans["funding_agency__office_agency__name"]
                     oabv = trans["funding_agency__office_agency__abbreviation"]
                     oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -512,6 +517,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         limit = json_request.get("limit", 10)
         page = json_request.get("page", 1)
 
+        lower_limit = (page - 1) * limit
+        upper_limit = page * limit
+
         if fields is None:
             raise InvalidParameterException("Missing one or more required request parameters: fields")
         elif fields == []:
@@ -568,7 +576,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         total_return_count = queryset.count()
         page_metadata = get_pagination_metadata(total_return_count, limit, page)
 
-        for award in queryset.order_by(sort_string)[((page - 1) * limit):(page * limit)]:
+        for award in queryset.order_by(sort_string)[lower_limit:upper_limit]:
             row = {"internal_id": award["id"]}
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 for field in fields:
