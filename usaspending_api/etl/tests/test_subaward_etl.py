@@ -10,6 +10,7 @@ from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
+@pytest.mark.skip(reason="subaward loading is on hold until broker resolves data anomalies")
 @pytest.fixture
 def test_subaward_etl_fixture():
     test_submission_id = 2727
@@ -43,6 +44,7 @@ def test_subaward_etl_fixture():
     mommy.make(TransactionFPDS, transaction=txn1, piid=test_piid, parent_award_id=test_parent_award_id)
 
 
+@pytest.mark.skip(reason="subaward loading is on hold until broker resolves data anomalies")
 @pytest.mark.django_db
 def test_subaward_etl_award_linkages(test_subaward_etl_fixture):
     # First, run the command
