@@ -203,19 +203,19 @@ def update_model_description_fields():
         # It is initialized with a blank filter and empty list, which is where
         # default updates are stored
         model_filtered_update_case_map = [(Q(), {})]
-        #
-        # desc_fields = [field for field in model_fields if field.split('_')[-1] == "description"[:len(field.split('_')[-1])]]
-        # non_desc_fields = [field for field in model_fields if field not in desc_fields]
-        # desc_fields_mapping = {}
-        # for desc_field in desc_fields:
-        #     actual_field_short = "_".join(desc_field.split('_')[:-1])
-        #     actual_field = None
-        #     for field in non_desc_fields:
-        #         if actual_field_short == field:
-        #             actual_field = field
-        #         elif actual_field_short == field[:len(actual_field_short)]:
-        #             actual_field = field
-        #     desc_fields_mapping[desc_field] = actual_field
+
+        desc_fields = [field for field in model_fields if field.split('_')[-1] == "description"[:len(field.split('_')[-1])]]
+        non_desc_fields = [field for field in model_fields if field not in desc_fields]
+        desc_fields_mapping = {}
+        for desc_field in desc_fields:
+            actual_field_short = "_".join(desc_field.split('_')[:-1])
+            actual_field = None
+            for field in non_desc_fields:
+                if actual_field_short == field:
+                    actual_field = field
+                elif actual_field_short == field[:len(actual_field_short)]:
+                    actual_field = field
+            desc_fields_mapping[desc_field] = actual_field
 
         # Loop through each of the models fields to construct a case for each
         # applicable field
@@ -231,7 +231,7 @@ def update_model_description_fields():
             destination_field = field
             # This is the map name, prefixed by model name for when there are
             # non-unique description fields
-            # actual_field_name = desc_fields_mapping[source_field] if source_field in desc_fields_mapping else source_field
+            source_field = desc_fields_mapping[field] if field in desc_fields_mapping else source_field
             model_map_name = "{}.{}_map".format(model.__name__, source_field)
             map_name = "{}_map".format(source_field)
 

@@ -46,10 +46,9 @@ def test_description_fields(description_updatable_models):
     update_model_description_fields()
 
     for item in TransactionFPDS.objects.all():
-        print({a:b for a,b in item.__dict__.items() if b})
         assert item.cost_or_pricing_data_desc == daims_maps["cost_or_pricing_data_map"][item.cost_or_pricing_data]
         assert item.multiple_or_single_aw_desc == daims_maps["multiple_or_single_award_i_map"][item.multiple_or_single_award_i]
-        assert item.cost_accounting_standards_description == daims_maps["cost_accounting_standards_map"][item.cost_accounting_standards]
+        assert item.cost_accounting_stand_desc == daims_maps["cost_accounting_standards_map"][item.cost_accounting_standards]
         assert item.fed_biz_opps_description == daims_maps["fed_biz_opps_map"][item.fed_biz_opps]
 
     contract_transactions = TransactionNormalized.objects.filter(assistance_data__isnull=False, contract_data__isnull=True)

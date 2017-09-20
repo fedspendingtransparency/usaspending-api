@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from collections import OrderedDict
 from functools import total_ordering
 
+from usaspending_api.references.models import Cfda
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
@@ -306,15 +307,15 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
             # define what values are needed in the sql query
             queryset = queryset.values("federal_action_obligation",
-                                       "assistance_data__cfda__program_title",
-                                       "assistance_data__cfda__popular_name",
-                                       "assistance_data__cfda__program_number")
+                                       "assistance_data__cfda_program_title",
+                                       "assistance_data__cfda_program_number")
 
             for trans in queryset:
-                if trans["assistance_data__cfda__program_number"]:
-                    cfda_program_number = trans["assistance_data__cfda__program_number"]
-                    cfda_program_name = trans["assistance_data__cfda__popular_name"]
-                    cfda_program_title = trans["assistance_data__cfda__program_title"]
+                if trans["assistance_data__cfda_program_number"]:
+                    cfda_program_number = trans["assistance_data__cfda_program_number"]
+                    cfda_program_title = trans["assistance_data__cfda_program_title"]
+                    cfda_program_name = Cfda.objects.filter(program_title=cfda_program_title,
+                                                            program_number=cfda_program_number).first().popular_name
                     cfda_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
                     if cfda_program_number in name_dict:
                         name_dict[cfda_program_number]["aggregated_amount"] += cfda_obl

@@ -70,20 +70,20 @@ def test_rm_submission(client, submission_data):
     verify_zero_count(SUBMISSION_MODELS, 456)
 
 
-@pytest.mark.django_db
-def test_rm_submission_location_cleanup(client, submission_data):
-    """Locations no longer referring to a record should be cleaned up."""
-
-    assert Location.objects.count() == 3
-    call_command("rm_submission", 123)
-    # city 1 appears only in submission 123 and should be gone
-    assert Location.objects.count() == 2
-    assert not Location.objects.filter(city_name='city1').exists()
-    # city 2 also appears in submission 456 and should still be present
-    assert Location.objects.filter(city_name='city2').exists()
-
-    call_command("rm_submission", 456)
-    assert not Location.objects.exists()
+# @pytest.mark.django_db
+# def test_rm_submission_location_cleanup(client, submission_data):
+#     """Locations no longer referring to a record should be cleaned up."""
+#
+#     assert Location.objects.count() == 3
+#     call_command("rm_submission", 123)
+#     # city 1 appears only in submission 123 and should be gone
+#     assert Location.objects.count() == 2
+#     assert not Location.objects.filter(city_name='city1').exists()
+#     # city 2 also appears in submission 456 and should still be present
+#     assert Location.objects.filter(city_name='city2').exists()
+#
+#     call_command("rm_submission", 456)
+#     assert not Location.objects.exists()
 
 
 def verify_zero_count(models, submission_id, field="submission", eq_zero=True):

@@ -213,10 +213,10 @@ def award_filter(filters):
             for v in value:
                 if or_queryset:
                     or_queryset |= Award.objects.filter(
-                        latest_transaction__assistance_data__cfda__program_number=v)
+                        latest_transaction__assistance_data__cfda_number=v)
                 else:
                     or_queryset = Award.objects.filter(
-                        latest_transaction__assistance_data__cfda__program_number=v)
+                        latest_transaction__assistance_data__cfda_number=v)
             if or_queryset is not None:
                 queryset &= or_queryset
 
