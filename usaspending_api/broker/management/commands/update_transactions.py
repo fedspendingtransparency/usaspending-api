@@ -108,20 +108,20 @@ class Command(BaseCommand):
         # rows_loaded = len(current_ids)
         total_rows = len(award_financial_assistance_data)  # - rows_loaded
 
-        logger.info("Processing " + str(total_rows) + " rows of procurement data")
+        logger.info("Processing " + str(total_rows) + " rows of assistance data")
 
-        skip_count = 0
+        # skip_count = 0
 
         start_time = datetime.now()
         for index, row in enumerate(award_financial_assistance_data, 1):
             with db_transaction.atomic():
-                if TransactionFABS.objects.values('published_award_financial_assistance_id').\
-                        filter(published_award_financial_assistance_id=str(row['published_award_financial_assistance_id'])).first():
-                    skip_count += 1
-
-                    if not (skip_count % 100):
-                        logger.info('Skipped {} records so far'.format(str(skip_count)))
-                    continue
+                # if TransactionFABS.objects.values('published_award_financial_assistance_id').\
+                #         filter(published_award_financial_assistance_id=str(row['published_award_financial_assistance_id'])).first():
+                #     skip_count += 1
+                #
+                #     if not (skip_count % 100):
+                #         logger.info('Skipped {} records so far'.format(str(skip_count)))
+                #     continue
 
                 if not (index % 100):
                     logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
@@ -283,17 +283,17 @@ class Command(BaseCommand):
 
         logger.info("Processing " + str(total_rows) + " rows of procurement data")
 
-        skip_count = 0
+        # skip_count = 0
 
         start_time = datetime.now()
         for index, row in enumerate(procurement_data, 1):
             with db_transaction.atomic():
-                if TransactionFPDS.objects.values('detached_award_procurement_id').\
-                        filter(detached_award_procurement_id=str(row['detached_award_procurement_id'])).first():
-                    skip_count += 1
-
-                    if not (skip_count % 100):
-                        logger.info('Skipped {} records so far'.format(str(skip_count)))
+                # if TransactionFPDS.objects.values('detached_award_procurement_id').\
+                #         filter(detached_award_procurement_id=str(row['detached_award_procurement_id'])).first():
+                #     skip_count += 1
+                #
+                #     if not (skip_count % 100):
+                #         logger.info('Skipped {} records so far'.format(str(skip_count)))
 
                 if not (index % 100):
                     logger.info('D1 File Load: Loading row {} of {} ({})'.format(str(index),

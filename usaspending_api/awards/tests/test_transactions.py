@@ -219,7 +219,7 @@ def test_txn_contract_get_or_create():
     assert TransactionFPDS.objects.all().count() == 1
     t = TransactionNormalized.objects.get(id=txn1.id)
     assert t.contract_data.piid == 'abc'
-    assert t.contract_data.potential_total_value_awar == '5000'
+    assert t.contract_data.base_and_all_options_value == '5000'
 
     # a new transaction gets a new TransactionFABS record
     tc_dict = {
