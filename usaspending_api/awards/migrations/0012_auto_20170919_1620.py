@@ -17,39 +17,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='HistoricalTransactionNormalized',
-            fields=[
-                ('id', models.IntegerField(auto_created=True, blank=True, db_index=True, verbose_name='ID')),
-                ('usaspending_unique_transaction_id', models.TextField(blank=True, help_text='If this record is legacy USASpending data, this is the unique transaction identifier from that system', null=True)),
-                ('type', models.TextField(db_index=True, help_text='The type for this transaction. For example, A, B, C, D', null=True, verbose_name='Action Type')),
-                ('type_description', models.TextField(blank=True, help_text='The plain text description of the transaction type', null=True, verbose_name='Action Type Description')),
-                ('period_of_performance_start_date', models.DateField(help_text='The period of performance start date', null=True, verbose_name='Period of Performance Start Date')),
-                ('period_of_performance_current_end_date', models.DateField(help_text='The current end date of the period of performance', null=True, verbose_name='Period of Performance Current End Date')),
-                ('action_date', models.DateField(db_index=True, help_text='The date this transaction was actioned', verbose_name='Transaction Date')),
-                ('action_type', models.TextField(blank=True, help_text='The type of transaction. For example, A, B, C, D', null=True)),
-                ('action_type_description', models.TextField(blank=True, null=True)),
-                ('federal_action_obligation', models.DecimalField(blank=True, db_index=True, decimal_places=2, help_text='The obligation of the federal government for this transaction', max_digits=20, null=True)),
-                ('modification_number', models.TextField(blank=True, help_text='The modification number for this transaction', null=True, verbose_name='Modification Number')),
-                ('description', models.TextField(help_text='The description of this transaction', null=True)),
-                ('drv_award_transaction_usaspend', models.DecimalField(blank=True, decimal_places=2, max_digits=20, null=True)),
-                ('drv_current_total_award_value_amount_adjustment', models.DecimalField(blank=True, decimal_places=2, max_digits=20, null=True)),
-                ('drv_potential_total_award_value_amount_adjustment', models.DecimalField(blank=True, decimal_places=2, max_digits=20, null=True)),
-                ('last_modified_date', models.DateField(blank=True, help_text='The date this transaction was last modified', null=True)),
-                ('certified_date', models.DateField(blank=True, help_text='The date this transaction was certified', null=True)),
-                ('create_date', models.DateTimeField(blank=True, editable=False, help_text='The date this transaction was created in the API', null=True)),
-                ('update_date', models.DateTimeField(blank=True, editable=False, help_text='The last time this transaction was updated in the API', null=True)),
-                ('fiscal_year', models.IntegerField(blank=True, help_text='Fiscal Year calculated based on Action Date', null=True)),
-                ('history_id', models.AutoField(primary_key=True, serialize=False)),
-                ('history_date', models.DateTimeField()),
-                ('history_type', models.CharField(choices=[('+', 'Created'), ('~', 'Changed'), ('-', 'Deleted')], max_length=1)),
-            ],
-            options={
-                'verbose_name': 'historical transaction normalized',
-                'ordering': ('-history_date', '-history_id'),
-                'get_latest_by': 'history_date',
-            },
-        ),
-        migrations.CreateModel(
             name='TransactionNormalized',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -76,11 +43,6 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'transaction_normalized',
             },
-        ),
-        migrations.AlterField(
-            model_name='award',
-            name='latest_transaction',
-            field=models.ForeignKey(help_text='The latest transaction by action_date associated with this award', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='latest_for_award_2', to='awards.TransactionNormalized'),
         ),
         migrations.CreateModel(
             name='TransactionFABS',
@@ -435,68 +397,5 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'transaction_fpds',
             },
-        ),
-        migrations.AddField(
-            model_name='transactionnormalized',
-            name='award',
-            field=models.ForeignKey(help_text='The award which this transaction is contained in', on_delete=django.db.models.deletion.CASCADE, to='awards.Award'),
-        ),
-        migrations.AddField(
-            model_name='transactionnormalized',
-            name='awarding_agency',
-            field=models.ForeignKey(help_text='The agency which awarded this transaction', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='awards_transactionnormalized_awarding_agency', to='references.Agency'),
-        ),
-        migrations.AddField(
-            model_name='transactionnormalized',
-            name='funding_agency',
-            field=models.ForeignKey(help_text='The agency which is funding this transaction', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='awards_transactionnormalized_funding_agency', to='references.Agency'),
-        ),
-        migrations.AddField(
-            model_name='transactionnormalized',
-            name='place_of_performance',
-            field=models.ForeignKey(help_text='The location where the work on this transaction was performed', null=True, on_delete=django.db.models.deletion.CASCADE, to='references.Location'),
-        ),
-        migrations.AddField(
-            model_name='transactionnormalized',
-            name='recipient',
-            field=models.ForeignKey(help_text='The recipient for this transaction', null=True, on_delete=django.db.models.deletion.CASCADE, to='references.LegalEntity'),
-        ),
-        migrations.AddField(
-            model_name='historicaltransactionnormalized',
-            name='award',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='awards.Award'),
-        ),
-        migrations.AddField(
-            model_name='historicaltransactionnormalized',
-            name='awarding_agency',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='references.Agency'),
-        ),
-        migrations.AddField(
-            model_name='historicaltransactionnormalized',
-            name='funding_agency',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='references.Agency'),
-        ),
-        migrations.AddField(
-            model_name='historicaltransactionnormalized',
-            name='history_user',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='historicaltransactionnormalized',
-            name='place_of_performance',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='references.Location'),
-        ),
-        migrations.AddField(
-            model_name='historicaltransactionnormalized',
-            name='recipient',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='references.LegalEntity'),
-        ),
-        migrations.AlterIndexTogether(
-            name='transactionnormalized',
-            index_together=set([('award', 'action_date')]),
-        ),
-        migrations.AlterUniqueTogether(
-            name='transactionfabs',
-            unique_together=set([('awarding_sub_tier_agency_c', 'award_modification_amendme', 'fain', 'uri')]),
         ),
     ]
