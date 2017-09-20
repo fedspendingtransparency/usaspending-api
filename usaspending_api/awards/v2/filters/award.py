@@ -99,9 +99,9 @@ def award_filter(filters):
             if len(funding_subtier) != 0:
                 queryset &= Award.objects.filter(funding_agency__subtier_agency__name__in=funding_subtier)
             if len(awarding_toptier) != 0:
-                queryset &= Award.objects.filter(funding_agency__toptier_agency__name__in=awarding_toptier)
+                queryset &= Award.objects.filter(awarding_agency__toptier_agency__name__in=awarding_toptier)
             if len(awarding_subtier) != 0:
-                queryset &= Award.objects.filter(funding_agency__subtier_agency__name__in=awarding_subtier)
+                queryset &= Award.objects.filter(awarding_agency__subtier_agency__name__in=awarding_subtier)
 
         # legal_entities
         elif key == "legal_entities":
