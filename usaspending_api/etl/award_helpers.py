@@ -1,6 +1,6 @@
 from django.db import connection
 
-from usaspending_api.awards.models import Award, Agency
+from usaspending_api.awards.models import Award, Subaward, Agency
 from usaspending_api.awards.models import TransactionNormalized
 from django.db.models import Case, Value, When, TextField
 
@@ -127,7 +127,22 @@ def update_award_subawards(award_tuple=None):
     """
     Updates awards' subaward counts and totals
     """
+    # Alternative Django implementation for possible speedup/simplicity
     # Sum and count subaward_amounts
+    # for a_id in award_tuple:
+    #     a = Award.objects.filter(id=a_id).first()
+    #     rows = 0
+    #     sas = Subaward.objects.filter(award=a)
+    #     count = sas.count()
+    #     if a.subaward_count != count:
+    #         a.subaward_count = count
+    #         rows += 1
+    #     a.total_subaward_amount = 0
+    #     for sa in sas:
+    #         a.total_subaward_amount += sa.amount
+    #     a.save()
+    # return rows
+
     sql_sub_totals = (
         'subaward_totals AS ('
         'SELECT award_id, SUM(amount) AS total_subaward_amount, COUNT(*) AS subaward_count '

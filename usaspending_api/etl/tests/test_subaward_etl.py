@@ -10,7 +10,7 @@ from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-@pytest.mark.skip(reason="subaward loading is on hold until broker resolves data anomalies")
+# @pytest.mark.skip(reason="subaward loading is on hold until broker resolves data anomalies")
 @pytest.fixture
 def test_subaward_etl_fixture():
     test_submission_id = 2727
@@ -26,8 +26,8 @@ def test_subaward_etl_fixture():
     st_agency = mommy.make('references.SubtierAgency', subtier_code=test_awarding_subtier)
     agency = mommy.make('references.Agency', toptier_agency=tt_agency, subtier_agency=st_agency)
     prime_award_1 = mommy.make(Award, description="prime_award_1", awarding_agency=agency, piid=test_piid)
-    prime_award_2 = mommy.make(Award, description="prime_award_2", awarding_agency=agency, fain=test_fain)
-    prime_award_3 = mommy.make(Award, description="prime_award_3", uri=test_uri)  # NO AGENCY HERE!
+    prime_award_2 = mommy.make(Award, description="prime_award_2", awarding_agency=agency, fain=test_fain, uri=test_uri)
+    prime_award_3 = mommy.make(Award, description="prime_award_3")  # NO AGENCY HERE!
 
     # TransactionNormalized with subcontract
     txn1 = mommy.make(TransactionNormalized, award=prime_award_1)
@@ -36,21 +36,27 @@ def test_subaward_etl_fixture():
     # TransactionNormalized with subaward, by FAIN
     txn2 = mommy.make(TransactionNormalized, award=prime_award_2)
     txn3 = mommy.make(TransactionNormalized, award=prime_award_2)
-    mommy.make(TransactionFABS, transaction=txn2, fain=test_fain, uri=None)
-    mommy.make(TransactionFABS, transaction=txn3, fain=None, uri=test_uri)
+    mommy.make(TransactionFABS, transaction=txn2, fain=test_fain, uri=test_uri)
+    mommy.make(TransactionFABS, transaction=txn3, fain=test_fain, uri=test_uri)
 
     # Give our agency-less award a transaction that should map to a subaward, to test that agency restricts
     txn4 = mommy.make(TransactionNormalized, award=prime_award_3)
     mommy.make(TransactionFPDS, transaction=txn1, piid=test_piid, parent_award_id=test_parent_award_id)
 
 
-@pytest.mark.skip(reason="subaward loading is on hold until broker resolves data anomalies")
+# @pytest.mark.skip(reason="subaward loading is on hold until broker resolves data anomalies")
 @pytest.mark.django_db
 def test_subaward_etl_award_linkages(test_subaward_etl_fixture):
     # First, run the command
     prime_award_1 = Award.objects.filter(description="prime_award_1").first()
+    prime_award_1.latest_transaction = TransactionNormalized.objects.filter(award=prime_award_1).first()
+    prime_award_1.save()
     prime_award_2 = Award.objects.filter(description="prime_award_2").first()
+    prime_award_2.latest_transaction = TransactionNormalized.objects.filter(award=prime_award_2).first()
+    prime_award_2.save()
     prime_award_3 = Award.objects.filter(description="prime_award_3").first()
+    prime_award_3.latest_transaction = TransactionNormalized.objects.filter(award=prime_award_3).first()
+    prime_award_3.save()
     call_command("load_subawards", "-s", "2727", "-at", str(prime_award_1.id), str(prime_award_2.id),
                  str(prime_award_3.id), "--test")
 
@@ -59,6 +65,7 @@ def test_subaward_etl_award_linkages(test_subaward_etl_fixture):
 
     # Check that we have our subcontract
     subcontract = Subaward.objects.filter(subaward_number="33118").first()
+    prime_award_1 = Award.objects.filter(description="prime_award_1").first()
     assert subcontract is not None
     assert subcontract.award == prime_award_1
     assert prime_award_1.subaward_count == 1
@@ -69,6 +76,8 @@ def test_subaward_etl_award_linkages(test_subaward_etl_fixture):
     subaward1 = Subaward.objects.filter(subaward_number="SBG-02-04-2011").first()
     # This one matches on URI
     subaward2 = Subaward.objects.filter(subaward_number="SBG-02-04-2011-2").first()
+    prime_award_2 = Award.objects.filter(description="prime_award_2").first()
+    prime_award_3 = Award.objects.filter(description="prime_award_3").first()
     assert subaward1 is not None
     assert subaward2 is not None
     assert subaward1.award == prime_award_2

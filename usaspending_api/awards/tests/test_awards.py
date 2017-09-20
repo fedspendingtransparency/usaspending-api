@@ -155,14 +155,16 @@ def test_award_hash_ineq_fain():
 
 @pytest.mark.django_db
 def test_transaction_changes_logged():
+    # LEGACY CODE: History is not required for TransactionNormalized, TransactionFPDS, TransactionFABS
+
     "test that changes to a transaction are logged in the history file"
-    t1 = mommy.make('awards.transactionnormalized', description='bought some stuff', _fill_optional=True,)
-    assert t1.history.count() == 1
-    t1.description = 'Procured mission-critical resources'
-    t1.save()
-    assert t1.history.count() == 2
-    assert t1.history.filter(description='bought some stuff').count() == 1
-    assert t1.history.filter(description='this never happened').count() == 0
+    # t1 = mommy.make('awards.transactionnormalized', description='bought some stuff', _fill_optional=True,)
+    # assert t1.history.count() == 1
+    # t1.description = 'Procured mission-critical resources'
+    # t1.save()
+    # assert t1.history.count() == 2
+    # assert t1.history.filter(description='bought some stuff').count() == 1
+    # assert t1.history.filter(description='this never happened').count() == 0
 
     # tc1 = mommy.make('awards.transactionfpds', transaction=t1, current_total_value_award=1000.00)
     # assert tc1.history.count() == 1
