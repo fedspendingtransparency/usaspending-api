@@ -137,10 +137,19 @@ class Command(BaseCommand):
                     recipient_name = ""
 
                 # Create the legal entity if it doesn't exist
-                legal_entity, created = LegalEntity.objects.get_or_create(
-                    recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                    recipient_name=recipient_name
-                )
+                created = False
+                legal_entity = LegalEntity.objects.filter(recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                                                recipient_name=recipient_name).first()
+
+                if legal_entity is None:
+                    created = True
+                    legal_entity = LegalEntity(recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                                               recipient_name=recipient_name)
+
+                # legal_entity, created = LegalEntity.objects.get_or_create(
+                #     recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                #     recipient_name=recipient_name
+                # )
 
                 if created:
                     legal_entity_value_map = {
