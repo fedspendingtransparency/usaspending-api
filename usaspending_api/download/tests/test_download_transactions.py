@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import date
 import json
 
@@ -241,6 +242,77 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                       .format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 3
+
+
+@pytest.mark.django_db
+def test_download_transactions_v2_filter_errors(client, award_data):
+    """Test that bad filter inputs raise appropriate responses."""
+
+    good_payload = {
+        "filters": {
+            "agencies": [
+                {
+                    'type': 'awarding',
+                    'tier': 'toptier',
+                    'name': "Bureau of Stuff",
+                },
+                {
+                    'type': 'awarding',
+                    'tier': 'toptier',
+                    'name': "Bureau of Things",
+                },
+            ]
+        },
+        "columns": ["award_id_piid", "modification_number"]
+    }
+
+
+def test_download_transactions_v2_bad_filter_raises(client):
+    """Test that bad filter inputs raise appropriate responses."""
+
+    # Nonexistent filter
+    payload = {"filters": {"blort_codes": ['01', ], }, "columns": []}
+    resp = client.post(
+        '/api/v2/download/transactions',
+        content_type='application/json',
+        data=json.dumps(payload))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'Invalid filter' in resp.json()['detail']
+
+
+@pytest.mark.skip
+def test_download_transactions_v2_bad_filter_type_raises(client):
+    """Test filters sent as wrong data type"""
+
+    # Non-dictionary for filters
+    payload = {"filters": '01', "columns": []}
+    resp = client.post(
+        '/api/v2/download/transactions',
+        content_type='application/json',
+        data=json.dumps(payload))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'Invalid filter' in resp.json()['detail']
+
+
+def test_download_transactions_v2_bad_filter_shape_raises(client):
+    """Test filter with wrong internal shape"""
+
+    payload = {
+        "filters": {
+            "agencies": [{
+                'type': 'not a valid type',
+                'tier': 'nor a valid tier',
+                'name': "Bureau of Stuff",
+            }, ]
+        },
+        "columns": []
+    }
+    resp = client.post(
+        '/api/v2/download/transactions',
+        content_type='application/json',
+        data=json.dumps(payload))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'Invalid filter' in resp.json()['detail']
 
 
 @pytest.mark.skip

@@ -106,6 +106,7 @@ class S3Handler:
         }
         return credentials
 
+    # TODO: delete as unneeded?
     @staticmethod
     def get_file_size(filename):
         """ Returns file size in number of bytes for specified filename, or False if file doesn't exist """
@@ -124,6 +125,7 @@ class S3Handler:
         else:
             return key.size
 
+    # TODO: delete as unneeded?
     def get_file_urls(self, bucket_name, path):
         try:
             S3Handler.REGION

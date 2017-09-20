@@ -60,7 +60,7 @@ def test_filter_time_period(client, awards_data):
         'time_period': [{
             'start_date': '2016-01-01',
             'end_date': '2016-02-01'
-        },]
+        }, ]
     })
     assert result.count() == 0
 
@@ -69,7 +69,7 @@ def test_filter_time_period(client, awards_data):
         'time_period': [{
             'start_date': '2010-01-01',
             'end_date': '2020-02-01'
-        },]
+        }, ]
     })
     assert result.count() == 4
 
