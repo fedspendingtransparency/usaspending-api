@@ -27,7 +27,7 @@ def test_transaction_endpoint_award_fk(client):
 
     awd = mommy.make('awards.Award', id=10, total_obligation="2000", _fill_optional=True)
     mommy.make(
-        'broker.TransactionNormalized',
+        'awards.TransactionNormalized',
         award=awd)
 
     assert client.post(
@@ -57,7 +57,7 @@ def test_txn_get_or_create():
     agency2 = mommy.make('references.Agency')
     awd1 = mommy.make('awards.Award', awarding_agency=agency1)
     txn1 = mommy.make(
-        'broker.TransactionNormalized',
+        'awards.TransactionNormalized',
         award=awd1,
         modification_number='1',
         awarding_agency=agency1,
@@ -145,14 +145,14 @@ def test_txn_assistance_get_or_create():
     agency1 = mommy.make('references.Agency')
     awd1 = mommy.make('awards.Award', awarding_agency=agency1)
     txn1 = mommy.make(
-        'broker.TransactionNormalized',
+        'awards.TransactionNormalized',
         award=awd1,
         modification_number='1',
         awarding_agency=agency1,
         last_modified_date=date(2012, 3, 1),
     )
     mommy.make(
-        'broker.TransactionFABS',
+        'awards.TransactionFABS',
         transaction=txn1,
         business_funds_indicator='a',
         record_type=1,
@@ -182,7 +182,7 @@ def test_txn_assistance_get_or_create():
         'total_funding_amount': 8000,
     }
     ta3 = TransactionFABS.get_or_create_2(
-        mommy.make('broker.TransactionNormalized'), **ta_dict)
+        mommy.make('awards.TransactionNormalized'), **ta_dict)
     ta3.save()
     assert TransactionFABS.objects.all().count() == 2
 
@@ -194,14 +194,14 @@ def test_txn_contract_get_or_create():
     agency1 = mommy.make('references.Agency')
     awd1 = mommy.make('awards.Award', awarding_agency=agency1)
     txn1 = mommy.make(
-        'broker.TransactionNormalized',
+        'awards.TransactionNormalized',
         award=awd1,
         modification_number='1',
         awarding_agency=agency1,
         last_modified_date=date(2012, 3, 1),
     )
     mommy.make(
-        'broker.TransactionFPDS',
+        'awards.TransactionFPDS',
         transaction=txn1,
         piid='abc',
         potential_total_value_awar=1000,
@@ -227,6 +227,6 @@ def test_txn_contract_get_or_create():
         'potential_total_value_awar': 5555
     }
     tc3 = TransactionFPDS.get_or_create_2(
-        mommy.make('broker.TransactionNormalized'), **tc_dict)
+        mommy.make('awards.TransactionNormalized'), **tc_dict)
     tc3.save()
     assert TransactionFPDS.objects.all().count() == 2

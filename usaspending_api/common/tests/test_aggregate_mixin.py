@@ -63,9 +63,9 @@ def aggregate_models():
 
 @pytest.fixture
 def aggregate_models_with_nulls():
-    mommy.make("broker.TransactionFPDS", transaction__federal_action_obligation=10, naics="ABCD", _quantity=3)
-    mommy.make("broker.TransactionFPDS", transaction__federal_action_obligation=None, naics="WXYZ")
-    mommy.make("broker.TransactionFABS", transaction__federal_action_obligation=10, cfda_number="10.001")
+    mommy.make("awards.TransactionFPDS", transaction__federal_action_obligation=10, naics="ABCD", _quantity=3)
+    mommy.make("awards.TransactionFPDS", transaction__federal_action_obligation=None, naics="WXYZ")
+    mommy.make("awards.TransactionFABS", transaction__federal_action_obligation=10, cfda_number="10.001")
 
 
 @pytest.mark.django_db

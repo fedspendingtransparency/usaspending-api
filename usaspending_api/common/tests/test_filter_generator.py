@@ -57,7 +57,7 @@ def mock_data():
                 description='LARGE BUSINESS ADMINISTRATION',
                 date_signed=date(2012, 3, 1))
 
-    mommy.make('broker.TransactionNormalized', description="Cool new tools", award=award)
+    mommy.make('awards.TransactionNormalized', description="Cool new tools", award=award)
 
 
 @pytest.mark.django_db
@@ -240,7 +240,7 @@ def test_filter_generator_fk_traversal(client, mock_data):
 def test_filter_generator_reverse_fk(client, mock_data):
     filters = [
         {
-            "field": "transaction__description",
+            "field": "transactionnormalized__description",
             "operation": "search",
             "value": "cool"
         }

@@ -203,6 +203,19 @@ def update_model_description_fields():
         # It is initialized with a blank filter and empty list, which is where
         # default updates are stored
         model_filtered_update_case_map = [(Q(), {})]
+        #
+        # desc_fields = [field for field in model_fields if field.split('_')[-1] == "description"[:len(field.split('_')[-1])]]
+        # non_desc_fields = [field for field in model_fields if field not in desc_fields]
+        # desc_fields_mapping = {}
+        # for desc_field in desc_fields:
+        #     actual_field_short = "_".join(desc_field.split('_')[:-1])
+        #     actual_field = None
+        #     for field in non_desc_fields:
+        #         if actual_field_short == field:
+        #             actual_field = field
+        #         elif actual_field_short == field[:len(actual_field_short)]:
+        #             actual_field = field
+        #     desc_fields_mapping[desc_field] = actual_field
 
         # Loop through each of the models fields to construct a case for each
         # applicable field
@@ -211,13 +224,14 @@ def update_model_description_fields():
             split_name = field.split("_")
 
             # If the last element in our split name isn't description, skip it
-            if len(split_name) == 1 or split_name[-1] != "description":
+            if len(split_name) == 1 or split_name[-1] != "description"[:len(split_name[-1])]:
                 continue
 
             source_field = "_".join(split_name[:-1])
             destination_field = field
             # This is the map name, prefixed by model name for when there are
             # non-unique description fields
+            # actual_field_name = desc_fields_mapping[source_field] if source_field in desc_fields_mapping else source_field
             model_map_name = "{}.{}_map".format(model.__name__, source_field)
             map_name = "{}_map".format(source_field)
 
@@ -282,7 +296,7 @@ def update_model_description_fields():
         for filter_tuple in model_filtered_update_case_map:
             # For each filter tuple, check if the dictionary has any entries
             if len(filter_tuple[1].keys()) > 0:
-                logger.debug("Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".format(model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())))
+                print("Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".format(model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())))
                 try:
                     model.objects.filter(filter_tuple[0]).update(**filter_tuple[1])
                 except django.db.utils.ProgrammingError as e:
