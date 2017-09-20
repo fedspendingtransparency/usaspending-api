@@ -13,7 +13,7 @@ from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, c
 
 import ast
 from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month, \
-    get_pagination
+    get_pagination, get_pagination_metadata
 
 import logging
 logger = logging.getLogger(__name__)
@@ -512,7 +512,20 @@ class SpendingByAwardVisualizationViewSet(APIView):
         response = {"limit": limit, "results": []}
         results = []
 
-        for award in queryset:
+        if set(filters["award_type_codes"]) <= set(contract_type_mapping):
+            sort_string = award_contracts_mapping[sort]
+        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+            sort_string = loan_award_mapping[sort]
+        elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
+            sort_string = non_loan_assistance_award_mapping[sort]
+
+        if order == 'desc':
+            sort_string = '-' + sort_string
+
+        total_return_count = queryset.count()
+        page_metadata = get_pagination_metadata(total_return_count, limit, page)
+
+        for award in queryset.order_by(sort_string)[((page - 1) * limit):(page * limit)]:
             row = {"internal_id": award["id"]}
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 for field in fields:
@@ -524,11 +537,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 for field in fields:
                     row[field] = award[non_loan_assistance_award_mapping[field]]
             results.append(row)
+
         sorted_results = sorted(results, key=lambda result: self.Min if result[sort] is None else result[sort],
                                 reverse=(order == "desc"))
-        results, page_metadata = get_pagination(sorted_results, limit, page)
-        response["results"] = results
+
+        response["results"] = sorted_results
         response["page_metadata"] = page_metadata
+
         return Response(response)
 
 
