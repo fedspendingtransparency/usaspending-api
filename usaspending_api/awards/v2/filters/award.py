@@ -70,40 +70,38 @@ def award_filter(filters):
         # agencies
         elif key == "agencies":
             or_queryset = None
+            funding_toptier = []
+            funding_subtier = []
+            awarding_toptier = []
+            awarding_subtier = []
             for v in value:
                 type = v["type"]
                 tier = v["tier"]
                 name = v["name"]
                 if type == "funding":
                     if tier == "toptier":
-                        if or_queryset:
-                            or_queryset |= Award.objects.filter(funding_agency__toptier_agency__name=name)
-                        else:
-                            or_queryset = Award.objects.filter(funding_agency__toptier_agency__name=name)
+                        funding_toptier.append(name)
                     elif tier == "subtier":
-                        if or_queryset:
-                            or_queryset |= Award.objects.filter(funding_agency__subtier_agency__name=name)
-                        else:
-                            or_queryset = Award.objects.filter(funding_agency__subtier_agency__name=name)
+                        funding_subtier.append(name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
-                        if or_queryset:
-                            or_queryset |= Award.objects.filter(awarding_agency__toptier_agency__name=name)
-                        else:
-                            or_queryset = Award.objects.filter(awarding_agency__toptier_agency__name=name)
+                        awarding_toptier.append(name)
                     elif tier == "subtier":
-                        if or_queryset:
-                            or_queryset |= Award.objects.filter(awarding_agency__subtier_agency__name=name)
-                        else:
-                            or_queryset = Award.objects.filter(awarding_agency__subtier_agency__name=name)
+                        awarding_subtier.append(name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
-            if or_queryset is not None:
-                queryset &= or_queryset
+            if len(funding_toptier) != 0:
+                queryset &= Award.objects.filter(funding_agency__toptier_agency__name__in=funding_toptier)
+            if len(funding_subtier) != 0:
+                queryset &= Award.objects.filter(funding_agency__subtier_agency__name__in=funding_subtier)
+            if len(awarding_toptier) != 0:
+                queryset &= Award.objects.filter(funding_agency__toptier_agency__name__in=awarding_toptier)
+            if len(awarding_subtier) != 0:
+                queryset &= Award.objects.filter(funding_agency__subtier_agency__name__in=awarding_subtier)
 
         # legal_entities
         elif key == "legal_entities":
