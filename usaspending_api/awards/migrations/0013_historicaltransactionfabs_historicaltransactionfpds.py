@@ -15,48 +15,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-
-        migrations.AddField(
-            model_name='transactionnormalized',
-            name='award',
-            field=models.ForeignKey(help_text='The award which this transaction is contained in',
-                                    on_delete=django.db.models.deletion.CASCADE, to='awards.Award'),
-        ),
-        migrations.AddField(
-            model_name='transactionnormalized',
-            name='awarding_agency',
-            field=models.ForeignKey(help_text='The agency which awarded this transaction', null=True,
-                                    on_delete=django.db.models.deletion.CASCADE,
-                                    related_name='awards_transactionnormalized_awarding_agency',
-                                    to='references.Agency'),
-        ),
-        migrations.AddField(
-            model_name='transactionnormalized',
-            name='funding_agency',
-            field=models.ForeignKey(help_text='The agency which is funding this transaction', null=True,
-                                    on_delete=django.db.models.deletion.CASCADE,
-                                    related_name='awards_transactionnormalized_funding_agency', to='references.Agency'),
-        ),
-        migrations.AddField(
-            model_name='transactionnormalized',
-            name='place_of_performance',
-            field=models.ForeignKey(help_text='The location where the work on this transaction was performed',
-                                    null=True, on_delete=django.db.models.deletion.CASCADE, to='references.Location'),
-        ),
-        migrations.AddField(
-            model_name='transactionnormalized',
-            name='recipient',
-            field=models.ForeignKey(help_text='The recipient for this transaction', null=True,
-                                    on_delete=django.db.models.deletion.CASCADE, to='references.LegalEntity'),
-        ),
-        migrations.AlterIndexTogether(
-            name='transactionnormalized',
-            index_together=set([('award', 'action_date')]),
-        ),
-        migrations.AlterUniqueTogether(
-            name='transactionfabs',
-            unique_together=set([('awarding_sub_tier_agency_c', 'award_modification_amendme', 'fain', 'uri')]),
-        ),
         migrations.AlterField(
             model_name='award',
             name='base_and_all_options_value',
