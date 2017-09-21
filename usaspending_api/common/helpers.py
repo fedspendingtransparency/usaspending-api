@@ -2,8 +2,12 @@ import datetime
 import logging
 import time
 
+from fiscalyear import *
+from datetime import datetime
+
 from django.utils.dateparse import parse_date
 from usaspending_api.references.models import Agency
+from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +56,35 @@ def generate_fiscal_month(date):
     return date.month + 3
 
 
+def generate_last_completed_fiscal_quarter(fiscal_year):
+    """ Generate the most recently completed fiscal quarter """
+
+    # Get the current fiscal year so that it can be compared against the FY in the request
+    current_fiscal_date = FiscalDate.today()
+    requested_fiscal_year = FiscalYear(fiscal_year)
+
+    if requested_fiscal_year.fiscal_year == current_fiscal_date.fiscal_year:
+        current_fiscal_quarter = current_fiscal_date.quarter
+        # If attempting to get data for the current year and we're still in quarter 1, error out because no quarter
+        # has yet completed for the current year
+        if current_fiscal_quarter == 1:
+            raise InvalidParameterException("Cannot obtain data for current fiscal year. At least one quarter must be "
+                                            "completed.")
+        else:
+            fiscal_quarter = current_fiscal_quarter - 1  # can also do: current_fiscal_date.prev_quarter.quarter
+            fiscal_date = FiscalQuarter(fiscal_year, fiscal_quarter).end
+    elif requested_fiscal_year.fiscal_year < current_fiscal_date.fiscal_year:
+        # If the retrieving a previous FY, get the date for the end of the final quarter
+        fiscal_quarter = requested_fiscal_year.end.quarter
+        fiscal_date = requested_fiscal_year.end
+    else:
+        raise InvalidParameterException("Cannot obtain data for future fiscal years.")
+
+    fiscal_date = datetime.strftime(fiscal_date, '%Y-%m-%d')
+
+    return fiscal_date, fiscal_quarter
+
+
 def get_pagination(results, limit, page, benchmarks=False):
     if benchmarks:
         start_pagination = time.time()
@@ -70,6 +103,18 @@ def get_pagination(results, limit, page, benchmarks=False):
     if benchmarks:
         logger.info("get_pagination took {} seconds".format(time.time() - start_pagination))
     return paginated_results, page_metadata
+
+
+def get_pagination_metadata(total_return_count, limit, page):
+    page_metadata = {"page": page, "count": total_return_count, "next": None, "previous": None, "hasNext": False,
+                     "hasPrevious": False}
+    if limit < 1 or page < 1:
+        return page_metadata
+    page_metadata["hasNext"] = (limit * page < total_return_count)
+    page_metadata["hasPrevious"] = (page > 1 and limit*(page-2) < total_return_count)
+    page_metadata["next"] = page+1 if page_metadata["hasNext"] else None
+    page_metadata["previous"] = page-1 if page_metadata["hasPrevious"] else None
+    return page_metadata
 
 
 def fy(raw_date):
