@@ -563,20 +563,24 @@ class SpendingByAwardVisualizationViewSet(APIView):
         response = {"limit": limit, "results": []}
         results = []
 
-        if set(filters["award_type_codes"]) <= set(contract_type_mapping):
-            sort_string = award_contracts_mapping[sort]
-        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
-            sort_string = loan_award_mapping[sort]
-        elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
-            sort_string = non_loan_assistance_award_mapping[sort]
-
-        if order == 'desc':
-            sort_string = '-' + sort_string
-
         total_return_count = queryset.count()
         page_metadata = get_pagination_metadata(total_return_count, limit, page)
 
-        for award in queryset.order_by(sort_string)[lower_limit:upper_limit]:
+        # Modify queryset to be ordered if we specify "sort" in the request
+        if sort:
+            sort_string = ''
+            if set(filters["award_type_codes"]) <= set(contract_type_mapping):
+                sort_string = award_contracts_mapping[sort]
+            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+                sort_string = loan_award_mapping[sort]
+            else:  # assistance data
+                sort_string = non_loan_assistance_award_mapping[sort]
+            if order == 'desc':
+                sort_string = '-' + sort_string
+            if sort_string != '':
+                queryset = queryset.order_by(sort_string)
+
+        for award in queryset[lower_limit:upper_limit]:
             row = {"internal_id": award["id"]}
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 for field in fields:
