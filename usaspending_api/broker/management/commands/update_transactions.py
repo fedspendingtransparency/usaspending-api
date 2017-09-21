@@ -55,7 +55,7 @@ class Command(BaseCommand):
             arguments += [fy_begin]
             arguments += [fy_end]
         query += ' ORDER BY published_award_financial_assistance_id LIMIT %s OFFSET %s'
-        arguments += [limit]
+        arguments += [limit, (page-1)*limit]
 
         logger.info("Executing query on Broker DB => " + query % (arguments[0], arguments[1],
                                                                   arguments[2], arguments[3]))
