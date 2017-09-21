@@ -43,17 +43,22 @@ class Command(BaseCommand):
         query = "SELECT * FROM published_award_financial_assistance"
         arguments = []
 
+        fy_begin = '10/01/' + str(fiscal_year - 1)
+        fy_end = '09/30/' + str(fiscal_year)
+
         if fiscal_year:
             if arguments:
                 query += " AND"
             else:
                 query += " WHERE"
-            query += ' FY(action_date) = %s'
-            arguments += [fiscal_year]
+            query += ' action_date::Date BETWEEN %s AND %s'
+            arguments += [fy_begin]
+            arguments += [fy_end]
         query += ' ORDER BY published_award_financial_assistance_id LIMIT %s OFFSET %s'
-        arguments += [limit, (page-1)*limit]
+        arguments += [limit]
 
-        logger.info("Executing query on Broker DB => " + query % (arguments[0], arguments[1], arguments[2]))
+        logger.info("Executing query on Broker DB => " + query % (arguments[0], arguments[1],
+                                                                  arguments[2], arguments[3]))
 
         db_cursor.execute(query, arguments)
 
