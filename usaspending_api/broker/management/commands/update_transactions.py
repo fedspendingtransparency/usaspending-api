@@ -11,7 +11,7 @@ from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency, LegalEntity
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
-
+import sys
 # start = timeit.default_timer()
 # function_call
 # end = timeit.default_timer()
@@ -53,7 +53,9 @@ class Command(BaseCommand):
         query += ' ORDER BY published_award_financial_assistance_id LIMIT %s OFFSET %s'
         arguments += [limit, (page-1)*limit]
 
-        logger.info("Executing query on Broker DB => " + query)
+        logger.info("Executing query on Broker DB => " + query % (arguments[0], arguments[1], arguments[2]))
+        print(arguments[0])
+        sys.exit(1)
 
         db_cursor.execute(query, arguments)
 
