@@ -54,8 +54,6 @@ class Command(BaseCommand):
         arguments += [limit, (page-1)*limit]
 
         logger.info("Executing query on Broker DB => " + query % (arguments[0], arguments[1], arguments[2]))
-        print(arguments[0])
-        sys.exit(1)
 
         db_cursor.execute(query, arguments)
 
