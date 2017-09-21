@@ -3,7 +3,7 @@ import timeit
 from datetime import datetime
 
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction as db_transaction
+from django.db import connections, transaction as db_transaction, IntegrityError
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
@@ -137,10 +137,19 @@ class Command(BaseCommand):
                     recipient_name = ""
 
                 # Create the legal entity if it doesn't exist
-                legal_entity, created = LegalEntity.objects.get_or_create(
-                    recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                    recipient_name=recipient_name
-                )
+                created = False
+                legal_entity = LegalEntity.objects.filter(recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                                                recipient_name=recipient_name).first()
+
+                if legal_entity is None:
+                    created = True
+                    legal_entity = LegalEntity(recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                                               recipient_name=recipient_name)
+
+                # legal_entity, created = LegalEntity.objects.get_or_create(
+                #     recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                #     recipient_name=recipient_name
+                # )
 
                 if created:
                     legal_entity_value_map = {
@@ -181,7 +190,7 @@ class Command(BaseCommand):
                     # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
                 award.save()
 
-                AWARD_UPDATE_ID_LIST.append(award.id)
+                # AWARD_UPDATE_ID_LIST.append(award.id)
 
                 parent_txn_value_map = {
                     "award": award,
@@ -211,7 +220,12 @@ class Command(BaseCommand):
                     as_dict=True)
 
                 transaction_assistance = TransactionFABS(transaction=transaction, **financial_assistance_data)
-                transaction_assistance.save()
+                # catch exception and do nothing if we see
+                # "django.db.utils.IntegrityError: duplicate key value violates unique constraint"
+                try:
+                    transaction_assistance.save()
+                except IntegrityError:
+                    pass
 
     @staticmethod
     def update_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000):
@@ -352,8 +366,8 @@ class Command(BaseCommand):
                     parent_award_id=row.get('parent_award_id'))
                 award.save()
 
-                AWARD_UPDATE_ID_LIST.append(award.id)
-                AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
+                # AWARD_UPDATE_ID_LIST.append(award.id)
+                # AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
 
                 parent_txn_value_map = {
                     "award": award,
@@ -383,7 +397,12 @@ class Command(BaseCommand):
                     as_dict=True)
 
                 transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)
-                transaction_contract.save()
+                # catch exception and do nothing if we see
+                # "django.db.utils.IntegrityError: duplicate key value violates unique constraint"
+                try:
+                    transaction_contract.save()
+                except IntegrityError:
+                    pass
 
     def add_arguments(self, parser):
         
