@@ -190,7 +190,7 @@ class Command(BaseCommand):
                     # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
                 award.save()
 
-                AWARD_UPDATE_ID_LIST.append(award.id)
+                # AWARD_UPDATE_ID_LIST.append(award.id)
 
                 parent_txn_value_map = {
                     "award": award,
@@ -366,8 +366,8 @@ class Command(BaseCommand):
                     parent_award_id=row.get('parent_award_id'))
                 award.save()
 
-                AWARD_UPDATE_ID_LIST.append(award.id)
-                AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
+                # AWARD_UPDATE_ID_LIST.append(award.id)
+                # AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
 
                 parent_txn_value_map = {
                     "award": award,
