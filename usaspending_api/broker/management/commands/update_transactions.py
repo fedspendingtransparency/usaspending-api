@@ -8,7 +8,7 @@ from django.db import connections, transaction as db_transaction, IntegrityError
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency, LegalEntity
+from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 
@@ -25,6 +25,9 @@ exception_logger = logging.getLogger("exceptions")
 AWARD_UPDATE_ID_LIST = []
 AWARD_CONTRACT_UPDATE_ID_LIST = []
 
+subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
+subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
+toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
 
 class Command(BaseCommand):
     help = "Checks what TASs are in Broker but not in Data Store"
@@ -166,16 +169,22 @@ class Command(BaseCommand):
                 # use the sub tier code to look it up. This code assumes that all incoming
                 # records will supply an awarding subtier agency code
                 if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
-                    row['awarding_agency_code'] = Agency.get_by_subtier(
-                        row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
+                    awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
+                    awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
+                    awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
+                    row['awarding_agency_code'] = awarding_cgac_code
+
                 # If funding toptier agency code (aka CGAC) is empty, try using the sub
                 # tier funding code to look it up. Unlike the awarding agency, we can't
                 # assume that the funding agency subtier code will always be present.
                 if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
-                    funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
-                    row['funding_agency_code'] = (
-                        funding_agency.toptier_agency.cgac_code if funding_agency is not None
-                        else None)
+                    funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
+                    if funding_subtier_agency_id is not None:
+                        funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
+                        funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
+                    else:
+                        funding_cgac_code = None
+                    row['funding_agency_code'] = funding_cgac_code
 
                 # Find the award that this award transaction belongs to. If it doesn't exist, create it.
                 awarding_agency = Agency.get_by_toptier_subtier(
@@ -338,20 +347,26 @@ class Command(BaseCommand):
                 pop_location, created = get_or_create_location(
                     place_of_performance_field_map, row, copy(place_of_performance_value_map))
 
-                # If awarding toptier agency code (aka CGAC) is not supplied on the D1 record,
+                # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
                 # use the sub tier code to look it up. This code assumes that all incoming
                 # records will supply an awarding subtier agency code
                 if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
-                    row['awarding_agency_code'] = Agency.get_by_subtier(
-                        row["awarding_sub_tier_agency_c"]).toptier_agency.cgac_code
+                    awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
+                    awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
+                    awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
+                    row['awarding_agency_code'] = awarding_cgac_code
+
                 # If funding toptier agency code (aka CGAC) is empty, try using the sub
                 # tier funding code to look it up. Unlike the awarding agency, we can't
                 # assume that the funding agency subtier code will always be present.
                 if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
-                    funding_agency = Agency.get_by_subtier(row["funding_sub_tier_agency_co"])
-                    row['funding_agency_code'] = (
-                        funding_agency.toptier_agency.cgac_code if funding_agency is not None
-                        else None)
+                    funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
+                    if funding_subtier_agency_id is not None:
+                        funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
+                        funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
+                    else:
+                        funding_cgac_code = None
+                    row['funding_agency_code'] = funding_cgac_code
 
                 # Find the award that this award transaction belongs to. If it doesn't exist, create it.
                 awarding_agency = Agency.get_by_toptier_subtier(
