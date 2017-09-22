@@ -42,8 +42,7 @@ def csv_row_emitter(body, download_job):
 
 
 class CsvSource:
-    def __init__(self, queryset, model_type, file_type):
-        self.queryset = queryset
+    def __init__(self, model_type, file_type):
         self.human_names = download_column_lookups.human_names[model_type][
             file_type]
         self.query_paths = download_column_lookups.query_paths[model_type][
@@ -80,8 +79,6 @@ def write_csvs(download_job, file_name, columns, sources):
     """Derive the relevant location and write CSVs to it.
 
     :return: the final file name (complete with prefix)"""
-
-    # TODO: raise InvalidParameterException('{} not a known field name'.format(column))
 
     download_job.job_status_id = JOB_STATUS_DICT['running']
     download_job.number_of_rows = 0

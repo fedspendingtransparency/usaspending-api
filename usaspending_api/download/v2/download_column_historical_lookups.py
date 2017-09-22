@@ -29,8 +29,8 @@ query_paths = {'transaction': {'d1': d1_txn, 'd2': d2_txn},
 
 """
 
-query_paths = \
-{'award': {'d1': {'1862_land_grant_college': 'c1862_land_grant_college',
+query_paths = {
+ 'award': {'d1': {'1862_land_grant_college': 'c1862_land_grant_college',
                   '1890_land_grant_college': 'c1890_land_grant_college',
                   '1994_land_grant_college': 'c1994_land_grant_college',
                   'a76_fair_act_action': '',

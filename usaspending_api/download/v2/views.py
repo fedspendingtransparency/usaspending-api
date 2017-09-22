@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.transaction_assistance import transaction_assistance_filter
 from usaspending_api.awards.v2.filters.transaction_contract import transaction_contract_filter
+from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.filestreaming import csv_selection
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
@@ -62,8 +63,6 @@ class BaseDownloadViewSet(APIView):
                                    file_name=timestamped_file_name)
         download_job.save()
 
-        # TODO: Need to map column names to DAIMS
-
         kwargs = {'download_job': download_job,
                   'file_name': timestamped_file_name,
                   'columns': request.data['columns'],
@@ -81,15 +80,23 @@ class BaseDownloadViewSet(APIView):
         return self.get_download_response(file_name=timestamped_file_name)
 
 
+def verify_requested_columns_available(sources, requested):
+    bad_cols = set(requested)
+    for source in sources:
+        bad_cols -= set(source.columns(requested))
+    if bad_cols:
+        raise InvalidParameterException('Unknown columns: {}'.format(bad_cols))
+
+
 class DownloadAwardsViewSet(BaseDownloadViewSet):
     def get_csv_sources(self, json_request):
+        d1_source = csv_selection.CsvSource('award', 'd1')
+        d2_source = csv_selection.CsvSource('award', 'd2')
+        verify_requested_columns_available((d1_source, d2_source), json_request['columns'])
         filters = json_request['filters']
         queryset = award_filter(filters)
-        from usaspending_api.awards.models import Award
-        d1_queryset = queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False)
-        d1_source = csv_selection.CsvSource(d1_queryset, 'award', 'd1')
-        d2_queryset = queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False)
-        d2_source = csv_selection.CsvSource(d2_queryset, 'award', 'd2')
+        d1_source.queryset = queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False)
+        d2_source.queryset = queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False)
         return (d1_source, d2_source)
 
     DOWNLOAD_NAME = 'awards'
@@ -97,12 +104,13 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
 
 class DownloadTransactionsViewSet(BaseDownloadViewSet):
     def get_csv_sources(self, json_request):
+        contract_source = csv_selection.CsvSource('transaction', 'd1')
+        assistance_source = csv_selection.CsvSource('transaction', 'd2')
+        verify_requested_columns_available((contract_source, assistance_source), json_request['columns'])
         filters = json_request['filters']
-        transaction_contract_queryset = transaction_contract_filter(filters)
-        transaction_assistance_queryset = transaction_assistance_filter(
-            filters)
-        return (csv_selection.CsvSource(transaction_contract_queryset, 'transaction', 'd1'),
-                csv_selection.CsvSource(transaction_assistance_queryset, 'transaction', 'd2'))
+        contract_source.queryset = transaction_contract_filter(filters)
+        assistance_source.queryset = transaction_assistance_filter(filters)
+        return (contract_source, assistance_source)
 
     DOWNLOAD_NAME = 'transactions'
 

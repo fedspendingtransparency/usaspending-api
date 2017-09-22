@@ -196,7 +196,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                     'name': "Bureau of Things",
                 }, ]
             },
-            "columns": ["Award ID", "Modification Number"]
+            "columns": ["award_id_piid", "modification_number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
@@ -214,7 +214,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                     'name': "Bureau of Stuff",
                 }, ]
             },
-            "columns": ["Award ID", "Modification Number"]
+            "columns": ["award_id_piid", "modification_number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
@@ -245,6 +245,21 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                       .format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 3
+
+
+def test_download_transactions_v2_bad_column_list_raises(client):
+    """Test that bad column list inputs raise appropriate responses."""
+
+    # Nonexistent filter
+    payload = {"filters": {}, "columns": ["modification_number", "bogus_column"]}
+    resp = client.post(
+        '/api/v2/download/transactions',
+        content_type='application/json',
+        data=json.dumps(payload))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'Unknown columns' in resp.json()['detail']
+    assert 'bogus_column' in resp.json()['detail']
+    assert 'modification_number' not in resp.json()['detail']
 
 
 def test_download_transactions_v2_bad_filter_raises(client):
