@@ -105,6 +105,18 @@ def get_pagination(results, limit, page, benchmarks=False):
     return paginated_results, page_metadata
 
 
+def get_pagination_metadata(total_return_count, limit, page):
+    page_metadata = {"page": page, "count": total_return_count, "next": None, "previous": None, "hasNext": False,
+                     "hasPrevious": False}
+    if limit < 1 or page < 1:
+        return page_metadata
+    page_metadata["hasNext"] = (limit * page < total_return_count)
+    page_metadata["hasPrevious"] = (page > 1 and limit*(page-2) < total_return_count)
+    page_metadata["next"] = page+1 if page_metadata["hasNext"] else None
+    page_metadata["previous"] = page-1 if page_metadata["hasPrevious"] else None
+    return page_metadata
+
+
 def fy(raw_date):
     'Federal fiscal year corresponding to date'
 
