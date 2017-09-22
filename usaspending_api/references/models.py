@@ -289,11 +289,14 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
 
         if self.state_code and self.state_name:
             return
-        if self.country_name == 'UNITED STATES':
+        # Making sure states are domestic
+        try:
             if (not self.state_code):
                 self.state_code = state_to_code.get(self.state_name)
             elif (not self.state_name):
                 self.state_name = code_to_state.get(self.state_code)
+        except KeyError:
+            pass
 
     def load_country_data(self):
         if self.location_country_code:
