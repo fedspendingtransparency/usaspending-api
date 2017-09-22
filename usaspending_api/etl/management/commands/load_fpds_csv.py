@@ -34,10 +34,26 @@ class Command(load_base.Command):
 
     def add_arguments(self, parser):
         parser.add_argument('fpds_csv', nargs=1, help='the data broker submission id to load', type=str)
+
+        parser.add_argument(
+            '--fiscal_year',
+            dest="fiscal_year",
+            nargs='+',
+            type=int,
+            help="Year for which to run the historical load"
+        )
+
         super(Command, self).add_arguments(parser)
 
     @transaction.atomic
     def handle_loading(self, db_cursor, *args, **options):
+        fiscal_year = options.get('fiscal_year')
+
+        if fiscal_year:
+            fiscal_year = fiscal_year[0]
+            logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
+        else:
+            fiscal_year = 2017
 
         def signal_handler(signal, frame):
             transaction.set_rollback(True)
@@ -57,12 +73,24 @@ class Command(load_base.Command):
         }
         column_header_mapping_ordered = OrderedDict(sorted(column_header_mapping.items(), key=lambda c: c[1]))
 
+        logger.info('Getting FPDS data from CSV...')
+
         fpds_data = pd.read_csv(fpds_csv, usecols=column_header_mapping_ordered.values(), names=column_header_mapping_ordered.keys(), header=None)
 
-        models = {transaction_fpds.detached_award_proc_unique: transaction_fpds for transaction_fpds in TransactionFPDS.objects.all()}
+        logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
+        models = {transaction_fpds.detached_award_proc_unique: transaction_fpds for transaction_fpds in
+                  TransactionFPDS.objects.filter(action_date__fy=fiscal_year)}
 
         new_transactions_found = []
-        for _, row in fpds_data.iterrows():
+        total_rows = len(fpds_data)
+        logger.info('Iterating through FPDS data from CSV...')
+        start_time = datetime.now()
+        for index, row in fpds_data.iterrows():
+            if not (index % 100):
+                logger.info('Processing FPDS CSV Data: Processing row {} of {} ({}))'.format(str(index),
+                                                                                             str(total_rows),
+                                                                                             datetime.now() - start_time))
+
             detached_award_proc_unique = row['detached_award_proc_unique']
             if detached_award_proc_unique not in models:
                 new_transactions_found.append(detached_award_proc_unique)
@@ -70,5 +98,5 @@ class Command(load_base.Command):
             for field, value in row.items():
                 setattr(models[detached_award_proc_unique], field, value)
             models[detached_award_proc_unique].save()
-        if new_transactions_found:
-            print("Found new transactions: {}. Please inform the broker team.".format(new_transactions_found))
+        # if new_transactions_found:
+        #     print("Found new transactions: {}. Please inform the broker team.".format(new_transactions_found))
