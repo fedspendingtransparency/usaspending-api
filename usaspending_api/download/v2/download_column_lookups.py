@@ -1,10 +1,13 @@
 """
 Sets up mappings from column names used in downloads to the
 query paths used to get the data from django.
+
+When we switch to pulling CSV downloads from the historical
+tables TransactionFPDS and TransactionFABS, import from
+download_column_historical_lookups instead.
 """
 
 from bidict import bidict
-
 
 all_query_paths = {
     'award_id_piid': 'piid',
@@ -277,8 +280,7 @@ all_query_paths = {
     'recipient_foreign_state_name':
     'transaction__recipient__location__foreign_province',
     'recipient_name': 'transaction__recipient__recipient_name',
-    'recipient_parent_name':
-    'transaction__recipient__parent_recipient_unique_id',
+    'recipient_parent_duns': 'transaction__recipient__parent_recipient_unique_id',
     'recipient_phone_number': 'transaction__recipient__vendor_phone_number',
     'recipient_state_code': 'transaction__recipient__location__state_code',
     'recipient_state_name': 'transaction__recipient__location__state_name',

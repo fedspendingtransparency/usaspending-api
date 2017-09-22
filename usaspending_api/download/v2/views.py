@@ -5,7 +5,6 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.download.v2 import download_column_lookups
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.transaction_assistance import transaction_assistance_filter
 from usaspending_api.awards.v2.filters.transaction_contract import transaction_contract_filter

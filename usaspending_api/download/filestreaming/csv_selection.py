@@ -10,6 +10,8 @@ from django.conf import settings
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import JOB_STATUS_DICT
+# To switch to historical tables, do this instead:
+# from usaspending_api.download.v2 import download_column_lookups
 from usaspending_api.download.v2 import download_column_lookups
 
 BUFFER_SIZE = (5 * 1024**2)
