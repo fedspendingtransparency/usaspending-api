@@ -33,7 +33,13 @@ class Command(load_base.Command):
     help = "Updates the TransactionFPDS with the correct data from the fpds csv"
 
     def add_arguments(self, parser):
-        parser.add_argument('fpds_csv', nargs=1, help='the data broker submission id to load', type=str)
+        parser.add_argument(
+            '--file',
+            dest='fpds_csv',
+            nargs='+',
+            type=str,
+            help='the data broker submission id to load'
+        )
 
         parser.add_argument(
             '--fiscal_year',
@@ -43,7 +49,7 @@ class Command(load_base.Command):
             help="Year for which to run the historical load"
         )
 
-        super(Command, self).add_arguments(parser)
+        # super(Command, self).add_arguments(parser)
 
     @transaction.atomic
     def handle_loading(self, db_cursor, *args, **options):
