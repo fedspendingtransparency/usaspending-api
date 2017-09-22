@@ -33,7 +33,7 @@ class Command(BaseCommand):
             action='store_true',
             dest='update_all',
             default=False,
-            help='Update all DUNS present in the datastore',
+            help='Update for all DUNS already present in our datastore',
         )
 
         parser.add_argument(
