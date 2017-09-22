@@ -72,11 +72,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         else: # quarterly, take months and add them up
 
-            quarter_set = queryset.annotate(month=ExtractMonth('action_date')) \
+            month_set = queryset.annotate(month=ExtractMonth('action_date')) \
                 .values('fiscal_year', 'month') \
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
-            for trans in quarter_set:
+            for trans in month_set:
                 # Convert month to quarter
                 month = int(trans['month'])
                 if   1 <= month <= 3: quarter = 2  # Jan-Mar
