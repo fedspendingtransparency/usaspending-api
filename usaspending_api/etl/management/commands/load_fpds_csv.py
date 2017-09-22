@@ -11,7 +11,7 @@ from django.core.cache import caches
 import pandas as pd
 
 from usaspending_api.awards.models import TransactionFPDS
-from usaspending_api.etl.management import load_base
+from django.core.management.base import BaseCommand
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 # keep hitting the databroker DB for account data
@@ -24,7 +24,7 @@ awards_cache = caches['awards']
 logger = logging.getLogger('console')
 
 
-class Command(load_base.Command):
+class Command(BaseCommand):
     """
     This command will load a single submission from the DATA Act broker. If
     we've already loaded the specified broker submisison, this command
@@ -52,7 +52,7 @@ class Command(load_base.Command):
         # super(Command, self).add_arguments(parser)
 
     @transaction.atomic
-    def handle_loading(self, db_cursor, *args, **options):
+    def handle(self, *args, **options):
         fiscal_year = options.get('fiscal_year')
 
         if fiscal_year:
