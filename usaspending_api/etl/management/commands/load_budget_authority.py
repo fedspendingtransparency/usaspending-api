@@ -82,7 +82,7 @@ class Command(BaseCommand):
         for i in range(4, sheet.nrows):
             row = dict(zip(headers, (cell.value for cell in sheet.row(i))))
 
-            logger.info('Load FREC Map: AID {} / MAC {} / TAS {}'.format(row['AID'], row['MAIN'],row['GWA_TAS_NAME']))
+            logger.info('Load FREC Map: AID {} / MAC {} / TAS {}'.format(row['AID'], row['MAIN'], row['GWA_TAS_NAME']))
             instance = FrecMap(
                 agency_identifier=row['AID'],
                 main_account_code=row['MAIN'],
