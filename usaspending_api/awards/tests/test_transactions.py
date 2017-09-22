@@ -310,7 +310,7 @@ def test_txn_contract_get_or_create():
         'awards.TransactionContract',
         transaction=txn1,
         piid='abc',
-        base_and_all_options_value=1000,
+        potential_total_value_of_award=1000,
     )
     assert TransactionContract.objects.all().count() == 1
 
@@ -319,20 +319,20 @@ def test_txn_contract_get_or_create():
     tc_dict = {
         'submission': sub,
         'piid': 'abc',
-        'base_and_all_options_value': 5000,
+        'potential_total_value_of_award': 5000,
     }
     tc2 = TransactionContract.get_or_create_2(txn1, **tc_dict)
     tc2.save()
     assert TransactionContract.objects.all().count() == 1
     t = Transaction.objects.get(id=txn1.id)
     assert t.contract_data.piid == 'abc'
-    assert t.contract_data.base_and_all_options_value == 5000
+    assert t.contract_data.potential_total_value_of_award == 5000
 
     # a new transaction gets a new TransactionAssistance record
     tc_dict = {
         'submission': sub,
         'piid': 'xyz',
-        'base_and_all_options_value': 5555,
+        'potential_total_value_of_award': 5555,
     }
     tc3 = TransactionContract.get_or_create_2(
         mommy.make('awards.Transaction'), **tc_dict)

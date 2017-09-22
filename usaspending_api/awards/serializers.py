@@ -216,7 +216,6 @@ class AwardSerializer(LimitableSerializer):
             "period_of_performance_start_date",
             "period_of_performance_current_end_date",
             "potential_total_value_of_award",
-            "base_and_all_options_value",
             "place_of_performance",
             "awarding_agency",
             "funding_agency",
