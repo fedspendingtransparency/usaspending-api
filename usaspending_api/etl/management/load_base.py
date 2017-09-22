@@ -574,7 +574,9 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
                 if found_location:
                     return found_location, False
                 else:
-                    location_object, created = Location.objects.get_or_create(**location_data_dict, defaults={'data_source': 'DBR'})
+                    location_data_dict['data_source'] = 'DBR'
+                    location_object = Location.objects.create(**location_data_dict)
+                    created = True
                     location_object.save()
         except MultipleObjectsReturned:
             # incoming location data is so sparse that comparing it to existing locations
