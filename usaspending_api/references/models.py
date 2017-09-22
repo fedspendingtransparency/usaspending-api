@@ -232,7 +232,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
-    location_unique = models.TextField(blank=True, null=True)
+    location_unique = models.TextField(blank=True, null=True, db_index=True)
 
     # Tags whether this location is used as a place of performance or a recipient
     # location, or both
@@ -247,8 +247,6 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
         super(Location, self).save(*args, **kwargs)
 
     def populate_location_unique(self):
-
-        ret_val = ""
         unique_columns = \
             ["location_country_code",
              "country_name",
@@ -275,16 +273,15 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
              "reporting_period_end"
              ]
 
+        ret_vals = []
         for col in unique_columns:
             col_val = getattr(self, col)
             if col_val is None:
-                ret_val += "none"
+                ret_val = "none"
             else:
-                ret_val += col_val
-            ret_val += '_'
-        self.location_unique = ret_val
-
-
+                ret_val = str(col_val)
+            ret_vals += [ret_val]
+        self.location_unique = "_".join(ret_vals)
 
 
     def fill_missing_state_data(self):
