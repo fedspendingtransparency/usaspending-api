@@ -203,25 +203,25 @@ class FilterHash(models.Model):
 
 class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     location_id = models.AutoField(primary_key=True)
-    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code", db_index=True)
-    country_name = models.TextField(blank=True, null=True, verbose_name="Country Name", db_index=True)
-    state_code = models.TextField(blank=True, null=True, verbose_name="State Code", db_index=True)
+    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
+    country_name = models.TextField(blank=True, null=True, verbose_name="Country Name")
+    state_code = models.TextField(blank=True, null=True, verbose_name="State Code")
     state_name = models.TextField(blank=True, null=True, verbose_name="State Name")
     state_description = models.TextField(blank=True, null=True, verbose_name="State Description")
-    city_name = models.TextField(blank=True, null=True, verbose_name="City Name", db_index=True)
+    city_name = models.TextField(blank=True, null=True, verbose_name="City Name")
     city_code = models.TextField(blank=True, null=True)
-    county_name = models.TextField(blank=True, null=True, db_index=True)
-    county_code = models.TextField(blank=True, null=True, db_index=True)
-    address_line1 = models.TextField(blank=True, null=True, verbose_name="Address Line 1", db_index=True)
-    address_line2 = models.TextField(blank=True, null=True, verbose_name="Address Line 2", db_index=True)
-    address_line3 = models.TextField(blank=True, null=True, verbose_name="Address Line 3", db_index=True)
+    county_name = models.TextField(blank=True, null=True)
+    county_code = models.TextField(blank=True, null=True)
+    address_line1 = models.TextField(blank=True, null=True, verbose_name="Address Line 1")
+    address_line2 = models.TextField(blank=True, null=True, verbose_name="Address Line 2")
+    address_line3 = models.TextField(blank=True, null=True, verbose_name="Address Line 3")
     foreign_location_description = models.TextField(blank=True, null=True)
-    zip4 = models.TextField(blank=True, null=True, verbose_name="ZIP+4", db_index=True)
-    zip_4a = models.TextField(blank=True, null=True, db_index=True)
-    congressional_code = models.TextField(blank=True, null=True, verbose_name="Congressional District Code", db_index=True)
+    zip4 = models.TextField(blank=True, null=True, verbose_name="ZIP+4")
+    zip_4a = models.TextField(blank=True, null=True)
+    congressional_code = models.TextField(blank=True, null=True, verbose_name="Congressional District Code")
     performance_code = models.TextField(blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
-    zip_last4 = models.TextField(blank=True, null=True, db_index=True)
-    zip5 = models.TextField(blank=True, null=True, db_index=True)
+    zip_last4 = models.TextField(blank=True, null=True)
+    zip5 = models.TextField(blank=True, null=True)
     foreign_postal_code = models.TextField(blank=True, null=True)
     foreign_province = models.TextField(blank=True, null=True)
     foreign_city_name = models.TextField(blank=True, null=True)
@@ -232,6 +232,8 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    location_unique = models.TextField(blank=True, null=True)
+
     # Tags whether this location is used as a place of performance or a recipient
     # location, or both
     place_of_performance_flag = models.BooleanField(default=False, verbose_name="Location used as place of performance")
@@ -241,7 +243,49 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
         self.load_country_data()
         self.load_city_county_data()
         self.fill_missing_state_data()
+        self.populate_location_unique()
         super(Location, self).save(*args, **kwargs)
+
+    def populate_location_unique(self):
+
+        ret_val = ""
+        unique_columns = \
+            ["location_country_code",
+             "country_name",
+             "state_code",
+             "state_name",
+             "state_description",
+             "city_name",
+             "city_code",
+             "county_name",
+             "county_code",
+             "address_line1",
+             "address_line2",
+             "address_line3",
+             "foreign_location_description",
+             "zip4",
+             "congressional_code",
+             "performance_code",
+             "zip_last4",
+             "zip5",
+             "foreign_postal_code",
+             "foreign_province",
+             "foreign_city_name",
+             "reporting_period_start",
+             "reporting_period_end"
+             ]
+
+        for col in unique_columns:
+            col_val = getattr(self, col)
+            if col_val is None:
+                ret_val += "none"
+            else:
+                ret_val += col_val
+            ret_val += '_'
+        self.location_unique = ret_val
+
+
+
 
     def fill_missing_state_data(self):
         """Fills in blank US state names or codes from its counterpart"""
@@ -283,33 +327,6 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
                 self.county_name = matched_reference.county_name
             else:
                 logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" + str(q_kwargs) + "; got " + str(matched_reference.count()))
-
-    class Meta:
-        # Let's make almost every column unique together so we don't have to
-        # perform heavy lifting on checking if a location already exists or not
-        unique_together = ("location_country_code",
-                           "country_name",
-                           "state_code",
-                           "state_name",
-                           "state_description",
-                           "city_name",
-                           "city_code",
-                           "county_name",
-                           "county_code",
-                           "address_line1",
-                           "address_line2",
-                           "address_line3",
-                           "foreign_location_description",
-                           "zip4",
-                           "congressional_code",
-                           "performance_code",
-                           "zip_last4",
-                           "zip5",
-                           "foreign_postal_code",
-                           "foreign_province",
-                           "foreign_city_name",
-                           "reporting_period_start",
-                           "reporting_period_end")
 
 
 class LegalEntity(DataSourceTrackedModel):
