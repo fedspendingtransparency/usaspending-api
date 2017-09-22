@@ -68,7 +68,7 @@ class Command(BaseCommand):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-        fpds_csv = options["fpds_csv"][0]
+        fpds_csv = options["fpds_csv"]
         if not os.path.exists(fpds_csv):
             raise Exception('FPDS CSV doesn\'t exist')
 
