@@ -44,6 +44,9 @@ class Command(BaseCommand):
         all_records_flag = options.get('all')
         fiscal_year = options.get('fiscal_year')
 
+        AWARD_UPDATE_ID_LIST = []
+        AWARD_CONTRACT_UPDATE_ID_LIST = []
+
         if not all_records_flag:
             if fiscal_year:
                 fiscal_year = fiscal_year[0]
