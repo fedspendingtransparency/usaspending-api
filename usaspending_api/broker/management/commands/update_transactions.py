@@ -204,7 +204,7 @@ class Command(BaseCommand):
                     # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
                 award.save()
 
-                # AWARD_UPDATE_ID_LIST.append(award.id)
+                AWARD_UPDATE_ID_LIST.append(award.id)
 
                 parent_txn_value_map = {
                     "award": award,
@@ -391,8 +391,8 @@ class Command(BaseCommand):
                     parent_award_id=row.get('parent_award_id'))
                 award.save()
 
-                # AWARD_UPDATE_ID_LIST.append(award.id)
-                # AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
+                AWARD_UPDATE_ID_LIST.append(award.id)
+                AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
 
                 parent_txn_value_map = {
                     "award": award,
@@ -503,23 +503,23 @@ class Command(BaseCommand):
             end = timeit.default_timer()
             logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
 
-        # logger.info('Updating awards to reflect their latest associated transaction info...')
-        # start = timeit.default_timer()
-        # update_awards(tuple(AWARD_UPDATE_ID_LIST))
-        # end = timeit.default_timer()
-        # logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
-        #
-        # logger.info('Updating contract-specific awards to reflect their latest transaction info...')
-        # start = timeit.default_timer()
-        # update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
-        # end = timeit.default_timer()
-        # logger.info('Finished updating contract specific awards in ' + str(end - start) + ' seconds')
-        #
-        # logger.info('Updating award category variables...')
-        # start = timeit.default_timer()
-        # update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
-        # end = timeit.default_timer()
-        # logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+        logger.info('Updating awards to reflect their latest associated transaction info...')
+        start = timeit.default_timer()
+        update_awards(tuple(AWARD_UPDATE_ID_LIST))
+        end = timeit.default_timer()
+        logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+
+        logger.info('Updating contract-specific awards to reflect their latest transaction info...')
+        start = timeit.default_timer()
+        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+        end = timeit.default_timer()
+        logger.info('Finished updating contract specific awards in ' + str(end - start) + ' seconds')
+
+        logger.info('Updating award category variables...')
+        start = timeit.default_timer()
+        update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+        end = timeit.default_timer()
+        logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
 
         # Done!
         logger.info('FINISHED')
