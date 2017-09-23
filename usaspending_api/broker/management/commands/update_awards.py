@@ -58,7 +58,7 @@ class Command(BaseCommand):
             AWARD_UPDATE_ID_LIST = TransactionNormalized.objects.filter(action_date__fy=fiscal_year).\
                 values_list('award_id', flat=True)
             AWARD_CONTRACT_UPDATE_ID_LIST = TransactionFPDS.objects.filter(action_date__fy=fiscal_year).\
-                values_list('transaction_normalized__award_id', flat=True)
+                values_list('award_id', flat=True)
 
         logger.info('Updating awards to reflect their latest associated transaction info...')
         start = timeit.default_timer()
