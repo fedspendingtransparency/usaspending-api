@@ -51,7 +51,7 @@ def transaction_filter(filters):
                     kwargs["action_date__lte"] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(**kwargs)
+                    or_queryset |= Transaction.objects.filter(**kwargs)
                 else:
                     or_queryset = Transaction.objects.filter(**kwargs)
             if or_queryset is not None:
@@ -157,19 +157,19 @@ def transaction_filter(filters):
             for v in value:
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(award__total_obligation__gt=v["lower_bound"],
-                                                          award__total_obligation__lt=v["upper_bound"])
+                        or_queryset |= Transaction.objects.filter(award__total_obligation__gt=v["lower_bound"],
+                                                                  award__total_obligation__lt=v["upper_bound"])
                     else:
                         or_queryset = Transaction.objects.filter(award__total_obligation__gt=v["lower_bound"],
                                                                  award__total_obligation__lt=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(award__total_obligation__gt=v["lower_bound"])
+                        or_queryset |= Transaction.objects.filter(award__total_obligation__gt=v["lower_bound"])
                     else:
                         or_queryset = Transaction.objects.filter(award__total_obligation__gt=v["lower_bound"])
                 elif v.get("upper_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(award__total_obligation__lt=v["upper_bound"])
+                        or_queryset |= Transaction.objects.filter(award__total_obligation__lt=v["upper_bound"])
                     else:
                         or_queryset = Transaction.objects.filter(award__total_obligation__lt=v["upper_bound"])
                 else:

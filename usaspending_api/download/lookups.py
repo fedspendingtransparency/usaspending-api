@@ -17,33 +17,3 @@ JOB_STATUS = [
 ]
 JOB_STATUS_DICT = {item.name: item.id for item in JOB_STATUS}
 JOB_STATUS_DICT_ID = {item.id: item.name for item in JOB_STATUS}
-
-# TODO: Wrap dict with bidict() call
-AWARD_DOWNLOAD_COLUMNS = {
-    'id': '',
-    'type': '',
-    'type_description': '',
-    'category': '',
-    'piid': '',
-    'parent_award_id': '',
-    'fain': '',
-    'uri': '',
-    'total_obligation': '',
-    'total_outlay': '',
-    'awarding_agency_id': '',
-    'funding_agency_id': '',
-    'date_signed': '',
-    'recipient_id': '',
-    'description': '',
-    'period_of_performance_start_date': '',
-    'period_of_performance_current_end_date': '',
-    'place_of_performance_id': '',
-    'potential_total_value_of_award': '',
-    'last_modified_date': '',
-    'certified_date': '',
-    'create_date': '',
-    'update_date': '',
-    'latest_transaction_id': '',
-    'total_subaward_amount': '',
-    'subaward_count': ''
-}

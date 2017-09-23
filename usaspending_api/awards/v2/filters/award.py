@@ -53,7 +53,7 @@ def award_filter(filters):
                     kwargs["period_of_performance_start_date__lte"] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if or_queryset:
-                    or_queryset |= or_queryset.filter(**kwargs)
+                    or_queryset |= Award.objects.filter(**kwargs)
                 else:
                     or_queryset = Award.objects.filter(**kwargs)
             if or_queryset is not None:
@@ -159,19 +159,19 @@ def award_filter(filters):
             for v in value:
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(total_obligation__gt=v["lower_bound"],
-                                                          total_obligation__lt=v["upper_bound"])
+                        or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"],
+                                                            total_obligation__lt=v["upper_bound"])
                     else:
                         or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"],
                                                            total_obligation__lt=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(total_obligation__gt=v["lower_bound"])
+                        or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"])
                     else:
                         or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"])
                 elif v.get("upper_bound") is not None:
                     if or_queryset:
-                        or_queryset |= or_queryset.filter(total_obligation__lt=v["upper_bound"])
+                        or_queryset |= Award.objects.filter(total_obligation__lt=v["upper_bound"])
                     else:
                         or_queryset = Award.objects.filter(total_obligation__lt=v["upper_bound"])
                 else:
