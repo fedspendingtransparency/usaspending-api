@@ -4,14 +4,11 @@ from django.db.models import Sum
 from django.db.models.functions import ExtractMonth
 from collections import OrderedDict
 from functools import total_ordering
-<<<<<<< HEAD
-
 from usaspending_api.references.models import Cfda
-=======
-from fiscalyear import *
+
 from datetime import date
-from usaspending_api.common.helpers import generate_fiscal_month
->>>>>>> dev
+from fiscalyear import *
+
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
@@ -20,7 +17,7 @@ from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, c
     loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
 
 import ast
-from usaspending_api.common.helpers import generate_fiscal_year, generate_fiscal_period, generate_fiscal_month, \
+from usaspending_api.common.helpers import generate_fiscal_month, \
     get_pagination, get_pagination_metadata
 
 import logging
