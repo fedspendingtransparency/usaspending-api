@@ -327,6 +327,12 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
                 self.county_name = matched_reference.county_name
             else:
                 logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" + str(q_kwargs) + "; got " + str(matched_reference.count()))
+    class Meta:
+        unique_together = ['location_country_code', 'country_name', 'state_code', 'state_name', 'state_description', 'city_name',
+                            'city_code', 'county_name', 'county_code', 'address_line1', 'address_line2', 'address_line3',
+                            'foreign_location_description', 'zip4', 'congressional_code', 'performance_code', 'zip_last4', 'zip5',
+                            'foreign_postal_code', 'foreign_province', 'foreign_city_name', 'reporting_period_start',
+                            'reporting_period_end']
 
 
 class LegalEntity(DataSourceTrackedModel):
