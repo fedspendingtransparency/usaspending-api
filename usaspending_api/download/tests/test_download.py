@@ -310,6 +310,15 @@ def test_download_transactions_v2_bad_filter_shape_raises(client):
     assert 'Invalid filter' in resp.json()['detail']
 
 
+@pytest.mark.django_db
+def test_download_status_nonexistent_file_404(client):
+    """Requesting status of nonexistent file should produce HTTP 404"""
+
+    resp = client.get('/api/v2/download/status/?file_name=there_is_no_such_file.zip')
+
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+
 @pytest.mark.skip
 @pytest.mark.django_db
 def test_download_transactions_v2_endpoint_check_all_mappings(client,

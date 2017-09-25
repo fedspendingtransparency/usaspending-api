@@ -4,6 +4,7 @@ import threading
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import NotFound
 
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.transaction_assistance import transaction_assistance_filter
@@ -26,7 +27,7 @@ class BaseDownloadViewSet(APIView):
 
         download_job = DownloadJob.objects.filter(file_name=file_name).first()
         if not download_job:
-            raise Exception('Download job does not exist.')
+            raise NotFound('Download job with filename {} does not exist.'.format(file_name))
 
         # compile url to file
         file_path = settings.CSV_LOCAL_PATH + file_name if settings.IS_LOCAL else \
