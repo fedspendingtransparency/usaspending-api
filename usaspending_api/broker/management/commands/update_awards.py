@@ -44,8 +44,8 @@ class Command(BaseCommand):
         all_records_flag = options.get('all')
         fiscal_year = options.get('fiscal_year')
 
-        AWARD_UPDATE_ID_LIST = []
-        AWARD_CONTRACT_UPDATE_ID_LIST = []
+        award_update_id_list = []
+        award_contract_update_id_list = []
 
         if not all_records_flag:
             if fiscal_year:
@@ -55,26 +55,26 @@ class Command(BaseCommand):
                 fiscal_year = 2017
 
             # Lists to store for update_awards and update_contract_awards
-            AWARD_UPDATE_ID_LIST = TransactionNormalized.objects.filter(action_date__fy=fiscal_year).\
+            award_update_id_list = TransactionNormalized.objects.filter(action_date__fy=fiscal_year).\
                 values_list('award_id', flat=True)
-            AWARD_CONTRACT_UPDATE_ID_LIST = TransactionFPDS.objects.filter(action_date__fy=fiscal_year).\
+            award_contract_update_id_list = TransactionFPDS.objects.filter(action_date__fy=fiscal_year).\
                 values_list('transaction__award_id', flat=True)
 
         logger.info('Updating awards to reflect their latest associated transaction info...')
         start = timeit.default_timer()
-        update_awards() if all_records_flag else update_awards(tuple(AWARD_UPDATE_ID_LIST))
+        update_awards() if all_records_flag else update_awards(tuple(award_update_id_list))
         end = timeit.default_timer()
         logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
 
         logger.info('Updating contract-specific awards to reflect their latest transaction info...')
         start = timeit.default_timer()
-        update_contract_awards() if all_records_flag else update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+        update_contract_awards() if all_records_flag else update_contract_awards(tuple(award_contract_update_id_list))
         end = timeit.default_timer()
         logger.info('Finished updating contract specific awards in ' + str(end - start) + ' seconds')
 
         logger.info('Updating award category variables...')
         start = timeit.default_timer()
-        update_award_categories() if all_records_flag else update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+        update_award_categories() if all_records_flag else update_award_categories(tuple(award_update_id_list))
         end = timeit.default_timer()
         logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
 

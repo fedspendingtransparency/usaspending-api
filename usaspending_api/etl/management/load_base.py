@@ -29,8 +29,8 @@ from usaspending_api.references.models import (
     Agency, LegalEntity, Cfda, Location, RefCountryCode, )
 
 # Lists to store for update_awards and update_contract_awards
-AWARD_UPDATE_ID_LIST = []
-AWARD_CONTRACT_UPDATE_ID_LIST = []
+award_update_id_list = []
+award_contract_update_id_list = []
 
 awards_cache = caches['awards']
 logger = logging.getLogger('console')
@@ -85,13 +85,13 @@ class Command(BaseCommand):
             update_model_description_fields()
 
         logger.info('Updating awards to reflect their latest associated transaction info...')
-        update_awards(tuple(AWARD_UPDATE_ID_LIST))
+        update_awards(tuple(award_update_id_list))
 
         logger.info('Updating contract-specific awards to reflect their latest transaction info...')
-        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+        update_contract_awards(tuple(award_contract_update_id_list))
 
         logger.info('Updating award category variables...')
-        update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+        update_award_categories(tuple(award_update_id_list))
 
         # Done!
         logger.info('FINISHED')
@@ -215,8 +215,8 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
             parent_award_id=row.get('parent_award_id'))  # but why would the row include the ID on our side?
         award.save()
 
-        AWARD_UPDATE_ID_LIST.append(award.id)
-        AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
+        award_update_id_list.append(award.id)
+        award_contract_update_id_list.append(award.id)
 
         parent_txn_value_map = {
             "award": award,
@@ -391,7 +391,7 @@ def load_file_d2(
             parent_award_id=row.get('parent_award_id'))
         award.save()
 
-        AWARD_UPDATE_ID_LIST.append(award.id)
+        award_update_id_list.append(award.id)
 
         parent_txn_value_map = {
             "award": award,
@@ -581,7 +581,7 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
     else:
         # record had no location information at all
         return None, None
-    
+
 
 def store_value(model_instance_or_dict, field, value, reverse=None):
     if value is None:

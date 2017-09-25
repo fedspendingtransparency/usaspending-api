@@ -22,12 +22,13 @@ logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
 # Lists to store for update_awards and update_contract_awards
-AWARD_UPDATE_ID_LIST = []
-AWARD_CONTRACT_UPDATE_ID_LIST = []
+award_update_id_list = []
+award_contract_update_id_list = []
 
 subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
 subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
 toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
+
 
 class Command(BaseCommand):
     help = "Checks what TASs are in Broker but not in Data Store"
@@ -204,7 +205,7 @@ class Command(BaseCommand):
                     # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
                 award.save()
 
-                AWARD_UPDATE_ID_LIST.append(award.id)
+                award_update_id_list.append(award.id)
 
                 parent_txn_value_map = {
                     "award": award,
@@ -391,8 +392,8 @@ class Command(BaseCommand):
                     parent_award_id=row.get('parent_award_id'))
                 award.save()
 
-                AWARD_UPDATE_ID_LIST.append(award.id)
-                AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
+                award_update_id_list.append(award.id)
+                award_contract_update_id_list.append(award.id)
 
                 parent_txn_value_map = {
                     "award": award,
@@ -505,19 +506,19 @@ class Command(BaseCommand):
 
         logger.info('Updating awards to reflect their latest associated transaction info...')
         start = timeit.default_timer()
-        update_awards(tuple(AWARD_UPDATE_ID_LIST))
+        update_awards(tuple(award_update_id_list))
         end = timeit.default_timer()
         logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
 
         logger.info('Updating contract-specific awards to reflect their latest transaction info...')
         start = timeit.default_timer()
-        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+        update_contract_awards(tuple(award_contract_update_id_list))
         end = timeit.default_timer()
         logger.info('Finished updating contract specific awards in ' + str(end - start) + ' seconds')
 
         logger.info('Updating award category variables...')
         start = timeit.default_timer()
-        update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+        update_award_categories(tuple(award_update_id_list))
         end = timeit.default_timer()
         logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
 
