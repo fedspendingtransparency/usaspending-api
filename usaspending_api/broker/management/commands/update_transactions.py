@@ -31,7 +31,7 @@ toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_
 
 
 class Command(BaseCommand):
-    help = "Checks what TASs are in Broker but not in Data Store"
+    help = "Update historical transaction data for a fiscal year from the Broker."
 
     @staticmethod
     def update_transaction_assistance(db_cursor, fiscal_year=None, page=1, limit=500000):
