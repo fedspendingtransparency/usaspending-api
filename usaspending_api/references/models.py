@@ -243,7 +243,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
         self.load_country_data()
         self.load_city_county_data()
         self.fill_missing_state_data()
-        self.populate_location_unique()
+        # self.populate_location_unique()
         super(Location, self).save(*args, **kwargs)
 
     def populate_location_unique(self):
