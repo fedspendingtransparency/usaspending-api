@@ -93,13 +93,13 @@ def transaction_filter(filters):
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
             if len(funding_toptier) != 0:
-                queryset &= Transaction.objects.filter(funding_agency__toptier_agency__name__in=funding_toptier)
+                queryset &= TransactionNormalized.objects.filter(funding_agency__toptier_agency__name__in=funding_toptier)
             if len(funding_subtier) != 0:
-                queryset &= Transaction.objects.filter(funding_agency__subtier_agency__name__in=funding_subtier)
+                queryset &= TransactionNormalized.objects.filter(funding_agency__subtier_agency__name__in=funding_subtier)
             if len(awarding_toptier) != 0:
-                queryset &= Transaction.objects.filter(awarding_agency__toptier_agency__name__in=awarding_toptier)
+                queryset &= TransactionNormalized.objects.filter(awarding_agency__toptier_agency__name__in=awarding_toptier)
             if len(awarding_subtier) != 0:
-                queryset &= Transaction.objects.filter(awarding_agency__subtier_agency__name__in=awarding_subtier)
+                queryset &= TransactionNormalized.objects.filter(awarding_agency__subtier_agency__name__in=awarding_subtier)
 
         # legal_entities
         elif key == "legal_entities":
@@ -192,7 +192,7 @@ def transaction_filter(filters):
                 or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= TransactionNormalized.objects.filter(
-                        assistance_data__cfda__program_number__in=or_queryset)
+                        assistance_data__cfda_number__in=or_queryset)
 
         # naics_codes
         elif key == "naics_codes":
