@@ -194,7 +194,7 @@ def award_filter(filters):
                 or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= Award.objects.filter(
-                        latest_transaction__assistance_data__cfda__program_number__in=or_queryset)
+                        latest_transaction__assistance_data__cfda_number__in=or_queryset)
 
         # naics_codes
         elif key == "naics_codes":

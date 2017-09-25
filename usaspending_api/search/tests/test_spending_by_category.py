@@ -4,7 +4,7 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.awards.models import Award, Transaction
+from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.references.models import Location, Agency, ToptierAgency, SubtierAgency
 
 
@@ -41,7 +41,7 @@ def budget_function_data(db):
         total_obligation=1000000.10)
 
     trans1 = mommy.make(
-        Transaction,
+        TransactionNormalized,
         action_date="2222-2-22",
         id=1,
         award=award1,

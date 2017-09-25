@@ -4,7 +4,8 @@ from django.core.management.base import BaseCommand
 from django.db.models import Q
 
 from usaspending_api.references.models import Location, LegalEntity
-from usaspending_api.awards.models import Award, Transaction
+from usaspending_api.awards.models import Award
+from usaspending_api.awards.models import TransactionNormalized
 
 
 class Command(BaseCommand):
@@ -25,7 +26,7 @@ class Command(BaseCommand):
         # is greater than or equal to 1
         # Referencing models: award, procurement, financialassistanceaward
         q1 = Q(location_id__in=Award.objects.values('place_of_performance'))
-        q2 = Q(location_id__in=Transaction.objects.values('place_of_performance'))
+        q2 = Q(location_id__in=TransactionNormalized.objects.values('place_of_performance'))
 
         final_q = q1 | q2
 

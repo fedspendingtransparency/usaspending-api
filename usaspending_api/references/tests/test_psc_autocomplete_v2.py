@@ -4,22 +4,22 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.awards.models import TransactionContract
+from usaspending_api.awards.models import TransactionFPDS
 
 
 @pytest.fixture
 def budget_function_data(db):
     mommy.make(
-        TransactionContract,
+        TransactionFPDS,
         product_or_service_code="12121212")
     mommy.make(
-        TransactionContract,
+        TransactionFPDS,
         product_or_service_code="23232323")
     mommy.make(
-        TransactionContract,
+        TransactionFPDS,
         product_or_service_code="34343434")
     mommy.make(
-        TransactionContract,
+        TransactionFPDS,
         product_or_service_code="34343434")
 
 

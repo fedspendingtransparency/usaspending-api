@@ -203,7 +203,7 @@ class FilterHash(models.Model):
 
 class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     location_id = models.AutoField(primary_key=True)
-    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code", db_index=True)
+    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
     country_name = models.TextField(blank=True, null=True, verbose_name="Country Name", db_index=True)
     state_code = models.TextField(blank=True, null=True, verbose_name="State Code", db_index=True)
     state_name = models.TextField(blank=True, null=True, verbose_name="State Name")
@@ -232,6 +232,8 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    # location_unique = models.TextField(blank=True, null=True, db_index=True)
+
     # Tags whether this location is used as a place of performance or a recipient
     # location, or both
     place_of_performance_flag = models.BooleanField(default=False, verbose_name="Location used as place of performance")
@@ -241,7 +243,46 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
         self.load_country_data()
         self.load_city_county_data()
         self.fill_missing_state_data()
+        # self.populate_location_unique()
         super(Location, self).save(*args, **kwargs)
+
+    def populate_location_unique(self):
+        unique_columns = \
+            ["location_country_code",
+             "country_name",
+             "state_code",
+             "state_name",
+             "state_description",
+             "city_name",
+             "city_code",
+             "county_name",
+             "county_code",
+             "address_line1",
+             "address_line2",
+             "address_line3",
+             "foreign_location_description",
+             "zip4",
+             "congressional_code",
+             "performance_code",
+             "zip_last4",
+             "zip5",
+             "foreign_postal_code",
+             "foreign_province",
+             "foreign_city_name",
+             "reporting_period_start",
+             "reporting_period_end"
+             ]
+
+        ret_vals = []
+        for col in unique_columns:
+            col_val = getattr(self, col)
+            if col_val is None:
+                ret_val = "none"
+            else:
+                ret_val = str(col_val)
+            ret_vals += [ret_val]
+        self.location_unique = "_".join(ret_vals)
+
 
     def fill_missing_state_data(self):
         """Fills in blank US state names or codes from its counterpart"""
@@ -283,33 +324,12 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
                 self.county_name = matched_reference.county_name
             else:
                 logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" + str(q_kwargs) + "; got " + str(matched_reference.count()))
-
     class Meta:
-        # Let's make almost every column unique together so we don't have to
-        # perform heavy lifting on checking if a location already exists or not
-        unique_together = ("location_country_code",
-                           "country_name",
-                           "state_code",
-                           "state_name",
-                           "state_description",
-                           "city_name",
-                           "city_code",
-                           "county_name",
-                           "county_code",
-                           "address_line1",
-                           "address_line2",
-                           "address_line3",
-                           "foreign_location_description",
-                           "zip4",
-                           "congressional_code",
-                           "performance_code",
-                           "zip_last4",
-                           "zip5",
-                           "foreign_postal_code",
-                           "foreign_province",
-                           "foreign_city_name",
-                           "reporting_period_start",
-                           "reporting_period_end")
+        unique_together = ['location_country_code', 'country_name', 'state_code', 'state_name', 'state_description', 'city_name',
+                            'city_code', 'county_name', 'county_code', 'address_line1', 'address_line2', 'address_line3',
+                            'foreign_location_description', 'zip4', 'congressional_code', 'performance_code', 'zip_last4', 'zip5',
+                            'foreign_postal_code', 'foreign_province', 'foreign_city_name', 'reporting_period_start',
+                            'reporting_period_end']
 
 
 class LegalEntity(DataSourceTrackedModel):

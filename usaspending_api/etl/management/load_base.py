@@ -17,9 +17,8 @@ from django.core.management.base import BaseCommand
 from django.db import connection, connections, utils
 from django.core.cache import caches
 
-from usaspending_api.awards.models import (
-    Award,
-    TransactionAssistance, TransactionContract, Transaction)
+from usaspending_api.awards.models import Award
+from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.etl.award_helpers import (
     update_awards, update_contract_awards,
     update_award_categories, )
@@ -30,8 +29,8 @@ from usaspending_api.references.models import (
     Agency, LegalEntity, Cfda, Location, RefCountryCode, )
 
 # Lists to store for update_awards and update_contract_awards
-AWARD_UPDATE_ID_LIST = []
-AWARD_CONTRACT_UPDATE_ID_LIST = []
+award_update_id_list = []
+award_contract_update_id_list = []
 
 awards_cache = caches['awards']
 logger = logging.getLogger('console')
@@ -86,13 +85,13 @@ class Command(BaseCommand):
             update_model_description_fields()
 
         logger.info('Updating awards to reflect their latest associated transaction info...')
-        update_awards(tuple(AWARD_UPDATE_ID_LIST))
+        update_awards(tuple(award_update_id_list))
 
         logger.info('Updating contract-specific awards to reflect their latest transaction info...')
-        update_contract_awards(tuple(AWARD_CONTRACT_UPDATE_ID_LIST))
+        update_contract_awards(tuple(award_contract_update_id_list))
 
         logger.info('Updating award category variables...')
-        update_award_categories(tuple(AWARD_UPDATE_ID_LIST))
+        update_award_categories(tuple(award_update_id_list))
 
         # Done!
         logger.info('FINISHED')
@@ -216,8 +215,8 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
             parent_award_id=row.get('parent_award_id'))  # It is a FAIN/PIID/URI, not our db's pk
         award.save()
 
-        AWARD_UPDATE_ID_LIST.append(award.id)
-        AWARD_CONTRACT_UPDATE_ID_LIST.append(award.id)
+        award_update_id_list.append(award.id)
+        award_contract_update_id_list.append(award.id)
 
         parent_txn_value_map = {
             "award": award,
@@ -233,13 +232,13 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
         }
 
         transaction_dict = load_data_into_model(
-            Transaction(),  # thrown away
+            TransactionNormalized(),  # thrown away
             row,
             field_map=contract_field_map,
             value_map=parent_txn_value_map,
             as_dict=True)
 
-        transaction = Transaction.get_or_create_transaction(**transaction_dict)
+        transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
         transaction.save()
 
         contract_value_map = {
@@ -250,13 +249,13 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
         }
 
         contract_instance = load_data_into_model(
-            TransactionContract(),  # thrown away
+            TransactionFPDS(),  # thrown away
             row,
             field_map=contract_field_map,
             value_map=contract_value_map,
             as_dict=True)
 
-        transaction_contract = TransactionContract(transaction=transaction, **contract_instance)
+        transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)
         transaction_contract.save()
     logger.info('\n\n\n\nFile D1 time elapsed: {}'.format(time.time() - d_start_time))
 
@@ -392,7 +391,7 @@ def load_file_d2(
             parent_award_id=row.get('parent_award_id'))
         award.save()
 
-        AWARD_UPDATE_ID_LIST.append(award.id)
+        award_update_id_list.append(award.id)
 
         parent_txn_value_map = {
             "award": award,
@@ -408,13 +407,13 @@ def load_file_d2(
         }
 
         transaction_dict = load_data_into_model(
-            Transaction(),  # thrown away
+            TransactionNormalized(),  # thrown away
             row,
             field_map=fad_field_map,
             value_map=parent_txn_value_map,
             as_dict=True)
 
-        transaction = Transaction.get_or_create_transaction(**transaction_dict)
+        transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
         transaction.save()
 
         fad_value_map = {
@@ -427,13 +426,13 @@ def load_file_d2(
         }
 
         financial_assistance_data = load_data_into_model(
-            TransactionAssistance(),  # thrown away
+            TransactionFABS(),  # thrown away
             row,
             field_map=fad_field_map,
             value_map=fad_value_map,
             as_dict=True)
 
-        transaction_assistance = TransactionAssistance.get_or_create_2(transaction=transaction, **financial_assistance_data)
+        transaction_assistance = TransactionFABS.get_or_create_2(transaction=transaction, **financial_assistance_data)
         transaction_assistance.save()
 
     logger.info('\n\n\n\nFile D2 time elapsed: {}'.format(time.time() - d_start_time))
@@ -564,11 +563,13 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
     del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
     if len(location_data):
         try:
-            if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
+            if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data[
+                "place_of_performance_flag"]:
                 location_object = None
                 created = False
             else:
-                location_object, created = Location.objects.get_or_create(**location_data, defaults={'data_source': 'DBR'})
+                location_object, created = Location.objects.get_or_create(**location_data,
+                                                                          defaults={'data_source': 'DBR'})
         except MultipleObjectsReturned:
             # incoming location data is so sparse that comparing it to existing locations
             # yielded multiple records. create a new location with this limited info.

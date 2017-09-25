@@ -14,9 +14,8 @@ import numpy as np
 from usaspending_api.accounts.models import (
     AppropriationAccountBalances, AppropriationAccountBalancesQuarterly,
     TreasuryAppropriationAccount)
-from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards,
-    TransactionAssistance, Transaction)
+from usaspending_api.awards.models import Award, FinancialAccountsByAwards
+from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
@@ -48,11 +47,19 @@ class Command(load_base.Command):
     we've already loaded the specified broker submisison, this command
     will remove the existing records before loading them again.
     """
-    help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable must set so we can pull submission data from their db."
+    help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable \
+                must set so we can pull submission data from their db."
 
     def add_arguments(self, parser):
         parser.add_argument('submission_id', nargs=1, help='the data broker submission id to load', type=int)
         parser.add_argument('-q', '--quick', action='store_true', help='experimental SQL-based load')
+        parser.add_argument(
+            '--nosubawards',
+            action='store_true',
+            dest='nosubawards',
+            default=False,
+            help='Skips the D1/D2 subaward load for this submission.'
+        )
         super(Command, self).add_arguments(parser)
 
     @transaction.atomic
@@ -149,21 +156,21 @@ class Command(load_base.Command):
                     .format(submission_id, award_financial_frame.shape[0]))
         logger.info('Loading File C data')
         start_time = datetime.now()
-        load_file_c(submission_attributes, db_cursor, award_financial_frame)
+        awards_touched = load_file_c(submission_attributes, db_cursor, award_financial_frame)
         logger.info('Finished loading File C data, took {}'.format(datetime.now() - start_time))
 
-        logger.info('Loading subaward data')
-        # Once all the files have been processed, run any global
-        # cleanup/post-load tasks.
-        # 1. Load subawards
-        start_time = datetime.now()
-        try:
-            load_subawards(submission_attributes, db_cursor)
-        except:
-            logger.warning("Error loading subawards for this submission")
+        if not options['nosubawards']:
+            try:
+                start_time = datetime.now()
+                logger.info('Loading subaward data...')
+                load_subawards(submission_attributes, awards_touched, db_cursor)
+                logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
+            except:
+                logger.warning("Error loading subawards for this submission")
+        else:
+            logger.info('Skipping subawards due to flags...')
 
-        logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
-
+        # Once all the files have been processed, run any global cleanup/post-load tasks.
         # Cleanup not specific to this submission is run in the `.handle` method
         logger.info('Successfully loaded broker submission {}.'.format(options['submission_id'][0]))
 
@@ -635,6 +642,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     total_rows = award_financial_frame.shape[0]
     start_time = datetime.now()
+    awards_touched = []
 
     # for row in award_financial_data:
     for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
@@ -668,6 +676,8 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             parent_award_id=row.get('parent_award_id'),
             use_cache=False)
 
+        awards_touched += [award]
+
         award_financial_data = FinancialAccountsByAwards()
 
         value_map = {
@@ -693,3 +703,4 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         total_tas_skipped += skipped_tas[key]['count']
 
     logger.info('Skipped a total of {} TAS rows for File C'.format(total_tas_skipped))
+    return [id for award.id in awards_touched]
