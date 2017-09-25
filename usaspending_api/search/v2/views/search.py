@@ -4,7 +4,9 @@ from django.db.models import Sum
 from django.db.models.functions import ExtractMonth
 from collections import OrderedDict
 from functools import total_ordering
-
+from fiscalyear import *
+from datetime import date
+from usaspending_api.common.helpers import generate_fiscal_month
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
@@ -63,9 +65,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
             for trans in month_set:
-                # Make month the 'fiscal month'
-                month = int(trans['month'])
-                fiscal_month = month + 3 if (month >= 1 and month <= 9) else month - 9
+                # Convert month to fiscal month
+                fiscal_month = generate_fiscal_month(date(year=2017, day=1, month=trans['month']))
+
                 key = {'fiscal_year': str(trans['fiscal_year']), 'month': str(fiscal_month)}
                 key = str(key)
                 group_results[key] = trans['federal_action_obligation']
@@ -78,13 +80,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
             for trans in month_set:
                 # Convert month to quarter
-                month = int(trans['month'])
-                if   1 <= month <= 3: quarter = 2  # Jan-Mar
-                elif 4 <= month <= 6: quarter = 3  # Apr-Jun
-                elif 7 <= month <= 9: quarter = 4  # Jul-Sep
-                else:                             quarter = 1  # Oct-Dec
+                quarter = FiscalDate(2017, trans['month'], 1).quarter
+
                 key = {'fiscal_year': str(trans['fiscal_year']), 'quarter': str(quarter)}
                 key = str(key)
+
                 # If key exists {fy : quarter}, aggregate
                 if group_results.get(key) is None:
                     group_results[key] = trans['federal_action_obligation']
@@ -94,7 +94,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     else:
                         group_results[key] = group_results.get(key)
 
-        # convert result into expected format
+        # convert result into expected format, sort by key to meet front-end specs
         results = []
         # Expected results structure
         # [{
