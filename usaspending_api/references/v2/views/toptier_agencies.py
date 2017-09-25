@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
+from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY
+
 
 class ToptierAgenciesViewSet(APIView):
 
@@ -65,17 +67,18 @@ class ToptierAgenciesViewSet(APIView):
                 obligated_amount=Coalesce(Sum('obligations_incurred_total_by_tas_cpe'), 0),
                 outlay_amount=Coalesce(Sum('gross_outlay_amount_by_tas_cpe'), 0))
 
-            # get the overall total government budget authority (to craft a budget authority percentage)
-            total_budget_authority_queryset = OverallTotals.objects.all()
-            total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
-
-            total_budget_authority_submission = total_budget_authority_queryset.first()
-            total_budget_authority_amount = -1
-            percentage = -1
-
-            if total_budget_authority_submission is not None:
-                total_budget_authority_amount = total_budget_authority_submission.total_budget_authority
-                percentage = (float(aggregate_dict['budget_authority_amount']) / float(total_budget_authority_amount))
+            # TODO: Rework this block to calculate the total once consumption of the latest GTAS file is implemented
+            # # get the overall total government budget authority (to craft a budget authority percentage)
+            # total_budget_authority_queryset = OverallTotals.objects.all()
+            # total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
+            #
+            # total_budget_authority_submission = total_budget_authority_queryset.first()
+            # total_budget_authority_amount = -1
+            # percentage = -1
+            #
+            # if total_budget_authority_submission is not None:
+            #     total_budget_authority_amount = total_budget_authority_submission.total_budget_authority
+            #     percentage = (float(aggregate_dict['budget_authority_amount']) / float(total_budget_authority_amount))
 
             abbreviation = ""
             if toptier_agency.abbreviation is not None:
@@ -90,8 +93,11 @@ class ToptierAgenciesViewSet(APIView):
                                         'outlay_amount': float(aggregate_dict['outlay_amount']),
                                         'obligated_amount': float(aggregate_dict['obligated_amount']),
                                         'budget_authority_amount': float(aggregate_dict['budget_authority_amount']),
-                                        'current_total_budget_authority_amount': float(total_budget_authority_amount),
-                                        'percentage_of_total_budget_authority': percentage
+                                        'current_total_budget_authority_amount': TOTAL_BUDGET_AUTHORITY,
+                                        'percentage_of_total_budget_authority': (
+                                            float(aggregate_dict['budget_authority_amount']) /
+                                            float(TOTAL_BUDGET_AUTHORITY)
+                                        )
                                         })
 
         response['results'] = sorted(response['results'], key=lambda k: k[sort], reverse=(order == 'desc'))

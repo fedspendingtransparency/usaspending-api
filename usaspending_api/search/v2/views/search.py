@@ -1,10 +1,17 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Sum
+from django.db.models.functions import ExtractMonth
 from collections import OrderedDict
 from functools import total_ordering
+<<<<<<< HEAD
 
 from usaspending_api.references.models import Cfda
+=======
+from fiscalyear import *
+from datetime import date
+from usaspending_api.common.helpers import generate_fiscal_month
+>>>>>>> dev
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
@@ -25,64 +32,85 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
-        group = json_request.get("group", None)
-        filters = json_request.get("filters", None)
+        group = json_request.get('group', None)
+        filters = json_request.get('filters', None)
 
         if group is None:
-            raise InvalidParameterException("Missing one or more required request parameters: group")
+            raise InvalidParameterException('Missing one or more required request parameters: group')
         if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
-        potential_groups = ["quarter", "fiscal_year", "month", "fy", "q", "m"]
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
+        potential_groups = ['quarter', 'fiscal_year', 'month', 'fy', 'q', 'm']
         if group not in potential_groups:
-            raise InvalidParameterException("group does not have a valid value")
+            raise InvalidParameterException('group does not have a valid value')
 
         # build sql query filters
         queryset = transaction_filter(filters)
         # define what values are needed in the sql query
-        queryset = queryset.values("action_date", "federal_action_obligation")
+        queryset = queryset.values('action_date', 'federal_action_obligation')
 
         # build response
-        response = {"group": group, "results": []}
+        response = {'group': group, 'results': []}
 
-        # filter queryset by time
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
-        queryset = queryset.order_by("action_date").values("action_date", "federal_action_obligation")
 
-        for trans in queryset:
-            key = {}
-            if group == "fy" or group == "fiscal_year":
-                fy = generate_fiscal_year(trans["action_date"])
-                key = {"fiscal_year": str(fy)}
-            elif group == "m" or group == "month":
-                fy = generate_fiscal_year(trans["action_date"])
-                m = generate_fiscal_month(trans["action_date"])
-                key = {"fiscal_year": str(fy), "month": str(m)}
-            else:  # quarter
-                fy = generate_fiscal_year(trans["action_date"])
-                q = generate_fiscal_period(trans["action_date"])
-                key = {"fiscal_year": str(fy), "quarter": str(q)}
+        if group == 'fy' or group == 'fiscal_year':
 
-            key = str(key)
-            if group_results.get(key) is None:
-                group_results[key] = trans["federal_action_obligation"]
-            else:
-                if trans["federal_action_obligation"]:
-                    group_results[key] = group_results.get(key) + trans["federal_action_obligation"]
+            fy_set = queryset.values('fiscal_year')\
+                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+            for trans in fy_set:
+                key = {'fiscal_year': str(trans['fiscal_year'])}
+                key = str(key)
+                group_results[key] = trans['federal_action_obligation']
+
+        elif group == 'm' or group == 'month':
+
+            month_set = queryset.annotate(month=ExtractMonth('action_date')) \
+                .values('fiscal_year', 'month') \
+                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+            for trans in month_set:
+                # Convert month to fiscal month
+                fiscal_month = generate_fiscal_month(date(year=2017, day=1, month=trans['month']))
+
+                key = {'fiscal_year': str(trans['fiscal_year']), 'month': str(fiscal_month)}
+                key = str(key)
+                group_results[key] = trans['federal_action_obligation']
+
+        else: # quarterly, take months and add them up
+
+            month_set = queryset.annotate(month=ExtractMonth('action_date')) \
+                .values('fiscal_year', 'month') \
+                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+            for trans in month_set:
+                # Convert month to quarter
+                quarter = FiscalDate(2017, trans['month'], 1).quarter
+
+                key = {'fiscal_year': str(trans['fiscal_year']), 'quarter': str(quarter)}
+                key = str(key)
+
+                # If key exists {fy : quarter}, aggregate
+                if group_results.get(key) is None:
+                    group_results[key] = trans['federal_action_obligation']
                 else:
-                    group_results[key] = group_results.get(key)
+                    if trans['federal_action_obligation']:
+                        group_results[key] = group_results.get(key) + trans['federal_action_obligation']
+                    else:
+                        group_results[key] = group_results.get(key)
 
-        # convert result into expected format
+        # convert result into expected format, sort by key to meet front-end specs
         results = []
         # Expected results structure
         # [{
-        # "time_period": {"fy": "2017", "quarter": "3"},
-        # 	"aggregated_amount": "200000000"
+        # 'time_period': {'fy': '2017', 'quarter': '3'},
+        # 	'aggregated_amount': '200000000'
         # }]
-        for key, value in group_results.items():
+        for key, value in sorted(group_results.items()):
             key_dict = ast.literal_eval(key)
-            result = {"time_period": key_dict, "aggregated_amount": float(value)}
+            result = {'time_period': key_dict, 'aggregated_amount': float(value)}
             results.append(result)
-        response["results"] = results
+        response['results'] = results
 
         return Response(response)
 
