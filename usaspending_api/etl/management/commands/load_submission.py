@@ -14,9 +14,8 @@ import numpy as np
 from usaspending_api.accounts.models import (
     AppropriationAccountBalances, AppropriationAccountBalancesQuarterly,
     TreasuryAppropriationAccount)
-from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards,
-    TransactionAssistance, Transaction)
+from usaspending_api.awards.models import Award, FinancialAccountsByAwards
+from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
@@ -157,14 +156,14 @@ class Command(load_base.Command):
                     .format(submission_id, award_financial_frame.shape[0]))
         logger.info('Loading File C data')
         start_time = datetime.now()
-        load_file_c(submission_attributes, db_cursor, award_financial_frame)
+        awards_touched = load_file_c(submission_attributes, db_cursor, award_financial_frame)
         logger.info('Finished loading File C data, took {}'.format(datetime.now() - start_time))
 
         if not options['nosubawards']:
             try:
                 start_time = datetime.now()
                 logger.info('Loading subaward data...')
-                load_subawards(submission_attributes, db_cursor)
+                load_subawards(submission_attributes, awards_touched, db_cursor)
                 logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
             except:
                 logger.warning("Error loading subawards for this submission")
@@ -643,6 +642,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     total_rows = award_financial_frame.shape[0]
     start_time = datetime.now()
+    awards_touched = []
 
     # for row in award_financial_data:
     for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
@@ -676,6 +676,8 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             parent_award_id=row.get('parent_award_id'),
             use_cache=False)
 
+        awards_touched += [award]
+
         award_financial_data = FinancialAccountsByAwards()
 
         value_map = {
@@ -701,3 +703,4 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         total_tas_skipped += skipped_tas[key]['count']
 
     logger.info('Skipped a total of {} TAS rows for File C'.format(total_tas_skipped))
+    return [id for award.id in awards_touched]

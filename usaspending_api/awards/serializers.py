@@ -1,9 +1,8 @@
 from rest_framework import serializers
 
 from usaspending_api.accounts.serializers import TasSerializer
-from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards,
-    Transaction, TransactionAssistance, TransactionContract, Subaward)
+from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Subaward
+from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS, TransactionFABS
 from usaspending_api.common.helpers import fy
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.v1.serializers import AgencySerializer, LegalEntitySerializer, LocationSerializer, \
@@ -90,12 +89,12 @@ class SubawardSerializer(LimitableSerializer):
         }
 
 
-class TransactionAssistanceSerializer(LimitableSerializer):
+class TransactionFABSSerializer(LimitableSerializer):
 
     prefetchable = False
 
     class Meta:
-        model = TransactionAssistance
+        model = TransactionFABS
         fields = '__all__'
         default_fields = [
             "fain",
@@ -115,12 +114,12 @@ class TransactionAssistanceSerializer(LimitableSerializer):
         }
 
 
-class TransactionContractSerializer(LimitableSerializer):
+class TransactionFPDSSerializer(LimitableSerializer):
 
     prefetchable = False
 
     class Meta:
-        model = TransactionContract
+        model = TransactionFPDS
         fields = '__all__'
         default_fields = [
             "piid",
@@ -136,14 +135,14 @@ class TransactionContractSerializer(LimitableSerializer):
         ]
 
 
-class TransactionSerializer(LimitableSerializer):
+class TransactionNormalizedSerializer(LimitableSerializer):
     """Serialize complete transactions, including assistance and contract data."""
 
     prefetchable = False
 
     class Meta:
 
-        model = Transaction
+        model = TransactionNormalized
         fields = '__all__'
         default_fields = [
             "id",
@@ -162,18 +161,18 @@ class TransactionSerializer(LimitableSerializer):
             "recipient",
             "description",
             "place_of_performance",
-            "contract_data",  # must match related_name in TransactionContract
-            "assistance_data"  # must match related_name in TransactionAssistance
+            "contract_data",  # must match related_name in TransactionFPDS
+            "assistance_data"  # must match related_name in TransactionFABS
         ]
         nested_serializers = {
-            # name below must match related_name in TransactionAssistance
+            # name below must match related_name in TransactionFABS
             "assistance_data": {
-                "class": TransactionAssistanceSerializer,
+                "class": TransactionFABSSerializer,
                 "kwargs": {"read_only": True}
             },
-            # name below must match related_name in TransactionContract
+            # name below must match related_name in TransactionFPDS
             "contract_data": {
-                "class": TransactionContractSerializer,
+                "class": TransactionFPDSSerializer,
                 "kwargs": {"read_only": True}
             },
             "recipient": {
@@ -216,6 +215,7 @@ class AwardSerializer(LimitableSerializer):
             "period_of_performance_start_date",
             "period_of_performance_current_end_date",
             "potential_total_value_of_award",
+            "base_and_all_options_value",
             "place_of_performance",
             "awarding_agency",
             "funding_agency",
@@ -242,7 +242,7 @@ class AwardSerializer(LimitableSerializer):
                 "kwargs": {"read_only": True}
             },
             "latest_transaction": {
-                "class": TransactionSerializer,
+                "class": TransactionNormalizedSerializer,
                 "kwargs": {"read_only": True}
             }
         }

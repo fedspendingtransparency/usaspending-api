@@ -17,8 +17,7 @@ FROM   fsrs_procurement
        LEFT OUTER JOIN award_procurement ON fsrs_procurement.contract_number = award_procurement.piid
                                          AND fsrs_procurement.idv_reference_number = award_procurement.parent_award_id
        LEFT OUTER JOIN fsrs_subcontract  ON fsrs_subcontract.parent_id = fsrs_procurement.id
-WHERE  award_procurement.submission_id = %s
-       AND award_procurement.piid IN %s
+WHERE  award_procurement.submission_id = %s AND award_procurement.piid IN %s
 """
 
 D2_FILE_F_QUERY = """
@@ -31,7 +30,7 @@ WHERE  award_financial_assistance.submission_id = %s
 """
 
 
-def load_subawards(submission_attributes, db_cursor):
+def load_subawards(submission_attributes, awards_touched, db_cursor):
     """
     Loads File F from the broker. db_cursor should be the db_cursor for Broker
     """
@@ -39,9 +38,11 @@ def load_subawards(submission_attributes, db_cursor):
     award_ids_to_update = set()
 
     # Get a list of PIIDs from this submission
-    awards_for_sub = Award.objects.filter(transaction__submission=submission_attributes).distinct()
-    piids = list(awards_for_sub.values_list("piid", flat=True))
-    fains = list(awards_for_sub.values_list("fain", flat=True))
+    # TODO: URIS
+    awards_touched = [Award.objects.filter(id=award_id).first() for award_id in awards_touched]
+    piids = list([award.piid for award in awards_touched if award.piid])
+    fains = list([award.fain for award in awards_touched if award.fain])
+    uris = list([award.uri for award in awards_touched if award.uri])
 
     # This allows us to handle an empty list in the SQL without changing the query
     piids.append(None)
@@ -78,10 +79,8 @@ def load_subawards(submission_attributes, db_cursor):
         # a matching parent award id, piid, and submission attributes
         award = Award.objects.filter(
             awarding_agency=agency,
-            transaction__submission=submission_attributes,
-            transaction__contract_data__piid=row['piid'],
-            transaction__contract_data__isnull=False,
-            transaction__contract_data__parent_award_id=row['parent_award_id']).distinct().order_by(
+            latest_transaction__contract_data__piid=row['piid'],
+            latest_transaction__contract_data__parent_award_id=row['parent_award_id']).distinct().order_by(
             "-date_signed").first()
 
         # We don't have a matching award for this subcontract, log a warning and continue to the next row
@@ -138,7 +137,7 @@ def load_subawards(submission_attributes, db_cursor):
             d1_update_count += 1
 
     # D2 File F
-    db_cursor.execute(D2_FILE_F_QUERY, [submission_attributes.broker_submission_id, tuple(fains)])
+    db_cursor.execute(D2_FILE_F_QUERY, [tuple(fains), tuple(uris)])
     d2_f_data = dictfetchall(db_cursor)
     logger.info("Creating D2 F File Entries (Subawards): {}".format(len(d2_f_data)))
     d2_create_count = 0
@@ -165,24 +164,18 @@ def load_subawards(submission_attributes, db_cursor):
         # a matching fain and submission. If this fails, try submission and uri
         if row['fain'] and len(row['fain']) > 0:
             award = Award.objects.filter(awarding_agency=agency,
-                                         transaction__submission=submission_attributes,
-                                         transaction__assistance_data__isnull=False,
-                                         transaction__assistance_data__fain=row['fain']).distinct().order_by("-date_signed").first()
+                                         latest_transaction__assistance_data__fain=row['fain']).distinct().order_by("-date_signed").first()
 
         # Couldn't find a match on FAIN, try URI if it exists
         if not award and row['uri'] and len(row['uri']) > 0:
             award = Award.objects.filter(awarding_agency=agency,
-                                         transaction__submission=submission_attributes,
-                                         transaction__assistance_data__isnull=False,
-                                         transaction__assistance_data__uri=row['uri']).distinct().first()
+                                         latest_transaction__assistance_data__uri=row['uri']).distinct().first()
 
         # Try both
         if not award and row['fain'] and len(row['fain']) > 0 and row['uri'] and len(row['uri']) > 0:
             award = Award.objects.filter(awarding_agency=agency,
-                                         transaction__submission=submission_attributes,
-                                         transaction__assistance_data__isnull=False,
-                                         transaction__assistance_data__fain=row['fain'],
-                                         transaction__assistance_data__uri=row['uri']).distinct().order_by("-date_signed").first()
+                                         latest_transaction__assistance_data__fain=row['fain'],
+                                         latest_transaction__assistance_data__uri=row['uri']).distinct().order_by("-date_signed").first()
 
         # We don't have a matching award for this subcontract, log a warning and continue to the next row
         if not award:
