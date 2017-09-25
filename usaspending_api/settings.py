@@ -32,7 +32,7 @@ ALLOWED_HOSTS = ['*']
 IS_LOCAL = True
 
 # AWS locations for CSV files
-CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'downloads', '')
+CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'csv_downloads', '')
 CSV_S3_ROLE = ""
 CSV_S3_BUCKET_NAME = ""
 CSV_SQS_QUEUE_NAME = ""
