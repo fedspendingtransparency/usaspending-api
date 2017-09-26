@@ -4,12 +4,13 @@ from rest_framework.exceptions import ParseError
 from usaspending_api.accounts.serializers import AgenciesFinancialBalancesSerializer
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import Agency
+from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.views import DetailViewSet
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class AgenciesFinancialBalancesViewSet(DetailViewSet):
-    """Returns financial balances by agency and fiscal year."""
+    """Returns financial balances by agency and the latest quarter for the given fiscal year."""
 
     serializer_class = AgenciesFinancialBalancesSerializer
 
@@ -24,6 +25,19 @@ class AgenciesFinancialBalancesViewSet(DetailViewSet):
         if not (fiscal_year and funding_agency_id):
             raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, funding_agency_id')
 
+        toptier_agency = Agency.objects.filter(id=funding_agency_id).first().toptier_agency
+        submission_queryset = SubmissionAttributes.objects.all()
+        submission_queryset = submission_queryset.filter(cgac_code=toptier_agency.cgac_code,
+                                                         reporting_fiscal_year=fiscal_year).\
+            order_by('-reporting_fiscal_year', '-reporting_fiscal_quarter').\
+            annotate(fiscal_year=F('reporting_fiscal_year'), fiscal_quarter=F('reporting_fiscal_quarter'))
+        submission = submission_queryset.first()
+
+        if submission is None:
+            return AppropriationAccountBalances.objects.none()
+        active_fiscal_year = submission.reporting_fiscal_year
+        active_fiscal_quarter = submission.fiscal_quarter
+
         # using final_objects below ensures that we're only pulling the latest
         # set of financial information for each fiscal year
         queryset = AppropriationAccountBalances.final_objects.all()
@@ -31,9 +45,10 @@ class AgenciesFinancialBalancesViewSet(DetailViewSet):
         # need to filter on
         # (used filter() instead of get() b/c we likely don't want to raise an
         # error on a bad agency id)
-        toptier_agency = Agency.objects.filter(id=funding_agency_id).first().toptier_agency
+
         queryset = queryset.filter(
-            submission__reporting_fiscal_year=fiscal_year,
+            submission__reporting_fiscal_year=active_fiscal_year,
+            submission__reporting_fiscal_quarter=active_fiscal_quarter,
             treasury_account_identifier__funding_toptier_agency=toptier_agency
         )
 
