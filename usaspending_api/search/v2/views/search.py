@@ -74,7 +74,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 key = str(key)
                 group_results[key] = trans['federal_action_obligation']
 
-        else: # quarterly, take months and add them up
+        else:  # quarterly, take months and add them up
 
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
                 .values('fiscal_year', 'month') \

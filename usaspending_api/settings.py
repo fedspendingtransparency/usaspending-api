@@ -28,7 +28,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Define local flag to affect location of downloads
+IS_LOCAL = True
+
 # AWS locations for CSV files
+CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'csv_downloads', '')
+CSV_S3_ROLE = ""
 CSV_S3_BUCKET_NAME = ""
 CSV_SQS_QUEUE_NAME = ""
 CSV_AWS_REGION = ""
@@ -58,6 +63,7 @@ INSTALLED_APPS = [
     'usaspending_api.financial_activities',
     'usaspending_api.api_docs',
     'usaspending_api.broker',
+    'usaspending_api.download',
     'django_spaghetti',
     'simple_history',
 ]
@@ -378,9 +384,7 @@ TERSE_TO_LONG_LABELS = {
     "action_type": "action_type",
     "federal_action_obligation": "federal_action_obligation",
     "current_total_value_award": "current_total_value_of_award",
-    "base_exercised_options_val": "base_exercised_options_value",
     "potential_total_value_awar": "potential_total_value_of_award",
-    "base_and_all_options_value": "base_and_all_options_value",
     "funding_sub_tier_agency_co": "funding_sub_tier_agency_code",
     "funding_sub_tier_agency_na": "funding_sub_tier_agency_name",
     "funding_office_code": "funding_office_code",
@@ -685,9 +689,7 @@ LONG_TO_TERSE_LABELS = {
     "action_type": "action_type",
     "federal_action_obligation": "federal_action_obligation",
     "current_total_value_of_award": "current_total_value_award",
-    "base_exercised_options_value": "base_exercised_options_val",
     "potential_total_value_of_award": "potential_total_value_awar",
-    "base_and_all_options_value": "base_and_all_options_value",
     "funding_sub_tier_agency_code": "funding_sub_tier_agency_co",
     "funding_sub_tier_agency_name": "funding_sub_tier_agency_na",
     "funding_office_code": "funding_office_code",

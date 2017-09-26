@@ -158,10 +158,10 @@ def transaction_filter(filters):
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if or_queryset:
                         or_queryset |= TransactionNormalized.objects.filter(award__total_obligation__gt=v["lower_bound"],
-                                                                  award__total_obligation__lt=v["upper_bound"])
+                                                                            award__total_obligation__lt=v["upper_bound"])
                     else:
                         or_queryset = TransactionNormalized.objects.filter(award__total_obligation__gt=v["lower_bound"],
-                                                                 award__total_obligation__lt=v["upper_bound"])
+                                                                           award__total_obligation__lt=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if or_queryset:
                         or_queryset |= TransactionNormalized.objects.filter(award__total_obligation__gt=v["lower_bound"])
