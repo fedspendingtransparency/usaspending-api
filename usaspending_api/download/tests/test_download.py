@@ -6,6 +6,7 @@ import pytest
 from rest_framework import status
 
 from usaspending_api.awards.models import Transaction, TransactionAssistance, TransactionContract
+from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.download.v2 import download_column_lookups
 from usaspending_api.etl.award_helpers import update_awards
@@ -75,14 +76,19 @@ def award_data(db):
         'awards.Award', category='contracts')
 
     # Create Transactions
+    trann1 = mommy.make(TransactionNormalized, award=award1, modification_number=1, awarding_agency=aa1)
+    trann2 = mommy.make(TransactionNormalized, award=award2, modification_number=1, awarding_agency=aa2)
     tran1 = mommy.make(Transaction, award=award1, modification_number=1, awarding_agency=aa1)
     tran2 = mommy.make(Transaction, award=award2, modification_number=1, awarding_agency=aa2)
 
     # Create TransactionContract
+    tfpds1 = mommy.make(TransactionFPDS, transaction=trann1, piid='tc1piid')
+    tfpds2 = mommy.make(TransactionFPDS, transaction=trann2, piid='tc2piid')
     tc1 = mommy.make(TransactionContract, transaction=tran1, piid='tc1piid')
     tc2 = mommy.make(TransactionContract, transaction=tran2, piid='tc2piid')
 
     # Create TransactionAssistance
+    tfabs1 = mommy.make(TransactionFABS, transaction=trann1, fain='ta1fain')
     ta1 = mommy.make(TransactionAssistance, transaction=tran1, fain='ta1fain')
 
     # Set latest_award for each award
