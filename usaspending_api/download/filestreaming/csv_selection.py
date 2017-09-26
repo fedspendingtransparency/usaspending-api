@@ -53,10 +53,10 @@ class CsvSource:
             self.query_paths = download_column_lookups.query_paths[model_type][
                 file_type]
         else:
-             self.human_names = download_column_historical_lookups.human_names[model_type][
-                 file_type]
-             self.query_paths = download_column_historical_lookups.query_paths[model_type][
-                 file_type]
+            self.human_names = download_column_historical_lookups.human_names[
+                model_type][file_type]
+            self.query_paths = download_column_historical_lookups.query_paths[
+                model_type][file_type]
 
     def values(self, header):
         query_paths = [self.query_paths[hn] for hn in header]
@@ -118,7 +118,8 @@ def write_csvs(download_job, file_name, columns, sources):
             region = settings.CSV_AWS_REGION
             s3_bucket = boto.s3.connect_to_region(region).get_bucket(bucket)
             conn = s3_bucket.new_key(file_name)
-            stream = smart_open.smart_open(conn, 'w', min_part_size=BUFFER_SIZE)
+            stream = smart_open.smart_open(
+                conn, 'w', min_part_size=BUFFER_SIZE)
             for chunk in zstream:
                 stream.write(chunk)
             download_job.file_size = stream.total_size
