@@ -212,7 +212,7 @@ def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False
             piid=row.get('piid'),
             fain=row.get('fain'),
             uri=row.get('uri'),
-            parent_award_id=row.get('parent_award_id'))  # but why would the row include the ID on our side?
+            parent_award_id=row.get('parent_award_id'))  # It is a FAIN/PIID/URI, not our db's pk
         award.save()
 
         award_update_id_list.append(award.id)
@@ -563,8 +563,7 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
     del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
     if len(location_data):
         try:
-            if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data[
-                "place_of_performance_flag"]:
+            if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
                 location_object = None
                 created = False
             else:

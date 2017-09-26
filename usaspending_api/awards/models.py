@@ -492,6 +492,7 @@ class TransactionAssistance(DataSourceTrackedModel):
     class Meta:
         db_table = 'transaction_assistance'
 
+
 class TransactionNormalized(models.Model):
     award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.TextField(blank=True, null=True, help_text="If this record is legacy USASpending data, this is the unique transaction identifier from that system")

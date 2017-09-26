@@ -148,7 +148,7 @@ class Command(BaseCommand):
                 # Create the legal entity if it doesn't exist
                 created = False
                 legal_entity = LegalEntity.objects.filter(recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                                                recipient_name=recipient_name).first()
+                                                          recipient_name=recipient_name).first()
 
                 if legal_entity is None:
                     created = True
@@ -202,7 +202,7 @@ class Command(BaseCommand):
                     # piid=transaction_assistance.get('piid'), # not found
                     fain=row.get('fain'),
                     uri=row.get('uri'))
-                    # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
+                # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
                 award.save()
 
                 award_update_id_list.append(award.id)
@@ -431,7 +431,7 @@ class Command(BaseCommand):
                     pass
 
     def add_arguments(self, parser):
-        
+
         parser.add_argument(
             '--fiscal_year',
             dest="fiscal_year",
@@ -439,7 +439,7 @@ class Command(BaseCommand):
             type=int,
             help="Year for which to run the historical load"
         )
-        
+
         parser.add_argument(
             '--assistance',
             action='store_true',
@@ -447,7 +447,7 @@ class Command(BaseCommand):
             default=False,
             help='Runs the historical loader only for Award Financial Assistance (Assistance) data'
         )
-        
+
         parser.add_argument(
             '--contracts',
             action='store_true',
@@ -489,18 +489,18 @@ class Command(BaseCommand):
 
         page = page[0] if page else 1
         limit = limit[0] if limit else 500000
-        
+
         if not options['assistance']:
             logger.info('Starting D1 historical data load...')
             start = timeit.default_timer()
-            self.update_transaction_contract(db_cursor = db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
+            self.update_transaction_contract(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
             end = timeit.default_timer()
             logger.info('Finished D1 historical data load in ' + str(end - start) + ' seconds')
 
         if not options['contracts']:
             logger.info('Starting D2 historical data load...')
             start = timeit.default_timer()
-            self.update_transaction_assistance(db_cursor = db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
+            self.update_transaction_assistance(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
             end = timeit.default_timer()
             logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
 
