@@ -46,6 +46,7 @@ class AgencyViewSet(APIView):
         # error on a bad agency id)
         queryset = queryset.filter(
             submission__reporting_fiscal_year=active_fiscal_year,
+            submission__reporting_fiscal_quarter=active_fiscal_quarter,
             treasury_account_identifier__funding_toptier_agency=toptier_agency
         )
         aggregate_dict = queryset.aggregate(
