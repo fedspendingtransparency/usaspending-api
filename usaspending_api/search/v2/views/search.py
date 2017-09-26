@@ -493,24 +493,24 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # key is time period (defined by group), value is federal_action_obligation
         name_dict = {}
         if scope == "recipient_location":
-            for trans in queryset:
-                if trans["recipient__location__state_code"]:
-                    state_code = trans["recipient__location__state_code"]
-                    obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                    if name_dict.get(state_code):
-                        name_dict[state_code] += obl
-                    else:
-                        name_dict[state_code] = obl
+
+            geo_queryset = queryset.filter(recipient__location__state_code__isnull=False) \
+                .values('recipient__location__state_code') \
+                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+            for trans in geo_queryset:
+                state_code = trans["recipient__location__state_code"]
+                name_dict[state_code] = trans["federal_action_obligation"]
 
         else:  # place of performance
-            for trans in queryset:
-                if trans["place_of_performance__state_code"]:
-                    state_code = trans["place_of_performance__state_code"]
-                    obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                    if name_dict.get(state_code):
-                        name_dict[state_code] += obl
-                    else:
-                        name_dict[state_code] = obl
+
+            geo_queryset = queryset.filter(place_of_performance__state_code__isnull=False) \
+                .values('place_of_performance__state_code') \
+                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+            for trans in geo_queryset:
+                state_code = trans["place_of_performance__state_code"]
+                name_dict[state_code] = trans["federal_action_obligation"]
 
         # convert result into expected format
         results = []
