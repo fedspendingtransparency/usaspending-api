@@ -25,7 +25,11 @@ class AgenciesFinancialBalancesViewSet(DetailViewSet):
         if not (fiscal_year and funding_agency_id):
             raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, funding_agency_id')
 
-        toptier_agency = Agency.objects.filter(id=funding_agency_id).first().toptier_agency
+        toptier_agency = Agency.objects.filter(id=funding_agency_id).first()
+        if toptier_agency is None:
+            return AppropriationAccountBalances.objects.none()
+        toptier_agency = toptier_agency.toptier_agency
+
         submission_queryset = SubmissionAttributes.objects.all()
         submission_queryset = submission_queryset.filter(cgac_code=toptier_agency.cgac_code,
                                                          reporting_fiscal_year=fiscal_year).\
