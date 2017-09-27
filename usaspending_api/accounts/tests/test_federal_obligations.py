@@ -9,8 +9,8 @@ def financial_obligations_models():
     fiscal_year = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016)
     top_tier_id = mommy.make('references.Agency', id=654, toptier_agency_id=987).toptier_agency_id
     top_tier = mommy.make('references.ToptierAgency', toptier_agency_id=top_tier_id)
-    federal_id_awesome = mommy.make('accounts.FederalAccount', id=6969)
-    federal_id_lame = mommy.make('accounts.FederalAccount', id=1234)
+    federal_id_awesome = mommy.make('accounts.FederalAccount', id=6969, account_title='Turtlenecks and Chains')
+    federal_id_lame = mommy.make('accounts.FederalAccount', id=1234, account_title='Suits and Ties')
     """
         Until this gets updated with mock.Mock(),
         the following cascade of variables applied to parameters,
