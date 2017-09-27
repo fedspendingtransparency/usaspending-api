@@ -45,7 +45,7 @@ def test_award_type_endpoint(client, financial_spending_data):
     assert resp.data == {'results': {'agency_name': 'tta_name', 'active_fy': '2017', 'active_fq': '2',
                                      'outlay_amount': '2.00', 'obligated_amount': '2.00',
                                      'budget_authority_amount': '2.00',
-                                     'current_total_budget_authority_amount': '3860000000.00',
+                                     'current_total_budget_authority_amount': '8361447130497.72',
                                      'website': 'http://test.com',
                                      'mission': 'test',
                                      'icon_filename': 'test'}}

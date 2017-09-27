@@ -5,9 +5,8 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from usaspending_api.accounts.models import (
     AppropriationAccountBalances, AppropriationAccountBalancesQuarterly)
-from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards, Transaction, TransactionAssistance,
-    TransactionContract)
+from usaspending_api.awards.models import (Award, FinancialAccountsByAwards,
+                                           TransactionNormalized, TransactionFPDS, TransactionFABS)
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly
 )
@@ -54,9 +53,9 @@ def get_submission_stats(submission):
         AppropriationAccountBalancesQuarterly,
         FinancialAccountsByProgramActivityObjectClass,
         TasProgramActivityObjectClassQuarterly,
-        Transaction,
-        TransactionAssistance,
-        TransactionContract,
+        TransactionNormalized,
+        TransactionFABS,
+        TransactionFPDS,
         FinancialAccountsByAwards]
 
     stats = [(m._meta.model_name, m.objects.filter(

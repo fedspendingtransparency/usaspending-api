@@ -6,7 +6,7 @@ specifically, by using `.using('data_broker')`.
 """
 from rest_framework import viewsets
 
-from usaspending_api.broker.models import DetachedAwardProcurement, PublishedAwardFinancialAssistance
+from usaspending_api.broker.models_old import DetachedAwardProcurement, PublishedAwardFinancialAssistance
 from usaspending_api.broker.serializers import DetachedAwardProcurementSerializer, PublishedAwardFinancialAssistanceSerializer
 from rest_framework import viewsets
 

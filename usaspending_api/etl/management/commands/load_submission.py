@@ -14,9 +14,8 @@ import numpy as np
 from usaspending_api.accounts.models import (
     AppropriationAccountBalances, AppropriationAccountBalancesQuarterly,
     TreasuryAppropriationAccount)
-from usaspending_api.awards.models import (
-    Award, FinancialAccountsByAwards,
-    TransactionAssistance, Transaction)
+from usaspending_api.awards.models import Award, FinancialAccountsByAwards
+from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
 from usaspending_api.references.models import (
@@ -48,11 +47,19 @@ class Command(load_base.Command):
     we've already loaded the specified broker submisison, this command
     will remove the existing records before loading them again.
     """
-    help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable must set so we can pull submission data from their db."
+    help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable \
+                must set so we can pull submission data from their db."
 
     def add_arguments(self, parser):
         parser.add_argument('submission_id', nargs=1, help='the data broker submission id to load', type=int)
         parser.add_argument('-q', '--quick', action='store_true', help='experimental SQL-based load')
+        parser.add_argument(
+            '--nosubawards',
+            action='store_true',
+            dest='nosubawards',
+            default=False,
+            help='Skips the D1/D2 subaward load for this submission.'
+        )
         super(Command, self).add_arguments(parser)
 
     @transaction.atomic
@@ -149,21 +156,23 @@ class Command(load_base.Command):
                     .format(submission_id, award_financial_frame.shape[0]))
         logger.info('Loading File C data')
         start_time = datetime.now()
-        load_file_c(submission_attributes, db_cursor, award_financial_frame)
+        awards_touched = load_file_c(submission_attributes, db_cursor, award_financial_frame)
         logger.info('Finished loading File C data, took {}'.format(datetime.now() - start_time))
 
-        logger.info('Loading subaward data')
-        # Once all the files have been processed, run any global
-        # cleanup/post-load tasks.
-        # 1. Load subawards
-        start_time = datetime.now()
-        try:
-            load_subawards(submission_attributes, db_cursor)
-        except:
-            logger.warning("Error loading subawards for this submission")
+        if not options['nosubawards']:
+            try:
+                start_time = datetime.now()
+                logger.info('Loading subaward data...')
+                load_subawards(submission_attributes, awards_touched, db_cursor)
+                logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
+            except:
+                logger.warning("Error loading subawards for this submission")
+        else:
+            logger.info('Skipping subawards due to flags...')
 
-        logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
+        # Once all the files have been processed, run any global cleanup/post-load tasks.
         # Cleanup not specific to this submission is run in the `.handle` method
+        logger.info('Successfully loaded broker submission {}.'.format(options['submission_id'][0]))
 
 
 def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger):
@@ -266,8 +275,8 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     if tas_lookup_id in TAS_ID_TO_ACCOUNT:
         return TAS_ID_TO_ACCOUNT[tas_lookup_id]
     # Checks the broker DB tas_lookup table for the tas_id and returns the matching TAS object in the datastore
-    db_cursor.execute("SELECT * FROM tas_lookup WHERE financial_indicator2 <> 'F' and account_num = %s",
-                      [tas_lookup_id])
+    db_cursor.execute("SELECT * FROM tas_lookup WHERE (financial_indicator2 <> 'F' OR financial_indicator2 IS NULL) "
+                      "AND account_num = %s", [tas_lookup_id])
     tas_data = dictfetchall(db_cursor)
 
     if tas_data is None or len(tas_data) == 0:
@@ -307,16 +316,8 @@ def get_submission_attributes(broker_submission_id, submission_data):
         # do not proceed.
         # TODO: now that we're chaining submisisons together, get clarification on
         # what should happen when a submission in the middle of the chain is deleted
-        downstream_submission = SubmissionAttributes.objects.filter(previous_submission=submission_attributes).first()
-        if downstream_submission is not None:
-            message = (
-                'Broker submission {} (API submission id = {}) has a downstream submission (id={}) and '
-                'cannot be deleted'.format(
-                    broker_submission_id,
-                    submission_attributes.submission_id,
-                    downstream_submission.submission_id)
-            )
-            raise ValueError(message)
+
+        TasProgramActivityObjectClassQuarterly.refresh_downstream_quarterly_numbers(submission_attributes.submission_id)
 
         logger.info('Broker submission id {} already exists. It will be deleted.'.format(broker_submission_id))
         call_command('rm_submission', broker_submission_id)
@@ -410,6 +411,12 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
+
+    total_tas_skipped = 0
+    for key in skipped_tas:
+        total_tas_skipped += skipped_tas[key]['count']
+
+    logger.info('Skipped a total of {} TAS rows for File A'.format(total_tas_skipped))
 
 
 def get_file_b(submission_attributes, db_cursor):
@@ -562,9 +569,9 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
                     skipped_tas[row['tas']]['rows'] = [row['row_number']]
                 else:
                     skipped_tas[row['tas']]['count'] += 1
-                    skipped_tas[row['tas']]['rows'] += row['row_number']
+                    skipped_tas[row['tas']]['rows'] += [row['row_number']]
                 continue
-        except:
+        except:    # TODO: What is this trying to catch, actually?
             continue
 
         # get the corresponding account balances row (aka "File A" record)
@@ -595,6 +602,12 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
+
+    total_tas_skipped = 0
+    for key in skipped_tas:
+        total_tas_skipped += skipped_tas[key]['count']
+
+    logger.info('Skipped a total of {} TAS rows for File B'.format(total_tas_skipped))
 
 
 def load_file_c(submission_attributes, db_cursor, award_financial_frame):
@@ -629,6 +642,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     total_rows = award_financial_frame.shape[0]
     start_time = datetime.now()
+    awards_touched = []
 
     # for row in award_financial_data:
     for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
@@ -662,6 +676,8 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             parent_award_id=row.get('parent_award_id'),
             use_cache=False)
 
+        awards_touched += [award]
+
         award_financial_data = FinancialAccountsByAwards()
 
         value_map = {
@@ -681,3 +697,10 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
+
+    total_tas_skipped = 0
+    for key in skipped_tas:
+        total_tas_skipped += skipped_tas[key]['count']
+
+    logger.info('Skipped a total of {} TAS rows for File C'.format(total_tas_skipped))
+    return [id for award.id in awards_touched]

@@ -28,7 +28,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Define local flag to affect location of downloads
+IS_LOCAL = True
+
 # AWS locations for CSV files
+CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'csv_downloads', '')
+CSV_S3_ROLE = ""
 CSV_S3_BUCKET_NAME = ""
 CSV_SQS_QUEUE_NAME = ""
 CSV_AWS_REGION = ""
@@ -58,6 +63,7 @@ INSTALLED_APPS = [
     'usaspending_api.financial_activities',
     'usaspending_api.api_docs',
     'usaspending_api.broker',
+    'usaspending_api.download',
     'django_spaghetti',
     'simple_history',
 ]
