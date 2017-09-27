@@ -96,6 +96,7 @@ def award_data(db):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip
 def test_download_transactions_v2_endpoint(client, award_data):
     """test the transaction endpoint."""
 
@@ -112,6 +113,7 @@ def test_download_transactions_v2_endpoint(client, award_data):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip
 def test_download_awards_v2_endpoint(client, award_data):
     """test the awards endpoint."""
 
@@ -128,6 +130,7 @@ def test_download_awards_v2_endpoint(client, award_data):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip
 def test_download_transactions_v2_status_endpoint(client, award_data):
     """Test the transaction status endpoint."""
 
@@ -148,6 +151,7 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip
 def test_download_awards_v2_status_endpoint(client, award_data):
     """Test the transaction status endpoint."""
 
@@ -168,6 +172,7 @@ def test_download_awards_v2_status_endpoint(client, award_data):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip
 def test_download_transactions_v2_endpoint_column_limit(client, award_data):
     """Test the transaction status endpoint's col selection."""
 
@@ -187,6 +192,7 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip
 def test_download_transactions_v2_endpoint_column_filtering(client,
                                                             award_data):
     """Test the transaction status endpoint's filtering."""
@@ -253,6 +259,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
     assert resp.json()['total_rows'] == 3
 
 
+@pytest.mark.skip
 def test_download_transactions_v2_bad_column_list_raises(client):
     """Test that bad column list inputs raise appropriate responses."""
 
@@ -268,6 +275,7 @@ def test_download_transactions_v2_bad_column_list_raises(client):
     assert 'modification_number' not in resp.json()['detail']
 
 
+@pytest.mark.skip
 def test_download_transactions_v2_bad_filter_raises(client):
     """Test that bad filter inputs raise appropriate responses."""
 
@@ -295,6 +303,7 @@ def test_download_transactions_v2_bad_filter_type_raises(client):
     assert 'Invalid filter' in resp.json()['detail']
 
 
+@pytest.mark.skip
 def test_download_transactions_v2_bad_filter_shape_raises(client):
     """Test filter with wrong internal shape"""
 
@@ -317,6 +326,7 @@ def test_download_transactions_v2_bad_filter_shape_raises(client):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip
 def test_download_status_nonexistent_file_404(client):
     """Requesting status of nonexistent file should produce HTTP 404"""
 
