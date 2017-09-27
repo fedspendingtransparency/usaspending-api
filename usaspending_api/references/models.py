@@ -301,12 +301,29 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     def load_city_county_data(self):
         # Here we fill in missing information from the ref city county code data
         if self.location_country_code_id == "USA":
+
+            # TODO: this should be checked to see if this is even necessary... are these fields always uppercased?
+            if self.state_code:
+                temp_state_code = self.state_code.upper()
+            else:
+                temp_state_code = None
+
+            if self.city_name:
+                temp_city_name = self.city_name.upper()
+            else:
+                temp_city_name = None
+
+            if self.county_name:
+                temp_county_name = self.county_name.upper()
+            else:
+                temp_county_name = None
+
             q_kwargs = {
                 "city_code": self.city_code,
                 "county_code": self.county_code,
-                "state_code__iexact": self.state_code,
-                "city_name__iexact": self.city_name,
-                "county_name__iexact": self.county_name
+                "state_code": temp_state_code,
+                "city_name": temp_city_name,
+                "county_name": temp_county_name
             }
             # Clear out any blank or None values in our filter, so we can find the best match
             q_kwargs = dict((k, v) for k, v in q_kwargs.items() if v)
