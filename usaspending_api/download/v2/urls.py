@@ -5,8 +5,8 @@ from usaspending_api.download.v2 import views
 
 
 urlpatterns = [
-    url(r'^awards', views.DownloadAwardsViewSet.as_view()),
+    # url(r'^awards', views.DownloadAwardsViewSet.as_view()),
     # url(r'^columns', DownloadColumnsViewSet.as_view()),
-    url(r'^status', views.DownloadStatusViewSet.as_view()),
-    url(r'^transactions', views.DownloadTransactionsViewSet.as_view()),
+    # url(r'^status', views.DownloadStatusViewSet.as_view()),
+    # url(r'^transactions', views.DownloadTransactionsViewSet.as_view()),
 ]
