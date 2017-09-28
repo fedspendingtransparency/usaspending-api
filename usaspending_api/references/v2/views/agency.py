@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
+from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY
+
 
 class AgencyViewSet(APIView):
     """Return an agency name and active fy"""
@@ -54,15 +56,16 @@ class AgencyViewSet(APIView):
             obligated_amount=Sum('obligations_incurred_total_by_tas_cpe'),
             outlay_amount=Sum('gross_outlay_amount_by_tas_cpe'))
 
-        # get the overall total government budget authority (to craft a budget authority percentage)
-        total_budget_authority_queryset = OverallTotals.objects.all()
-        total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
-
-        total_budget_authority_submission = total_budget_authority_queryset.first()
-        total_budget_authority_amount = "-1"
-
-        if total_budget_authority_submission is not None:
-            total_budget_authority_amount = str(total_budget_authority_submission.total_budget_authority)
+        # TODO: Rework this block to calculate the total once consumption of the latest GTAS file is implemented
+        # # get the overall total government budget authority (to craft a budget authority percentage)
+        # total_budget_authority_queryset = OverallTotals.objects.all()
+        # total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
+        #
+        # total_budget_authority_submission = total_budget_authority_queryset.first()
+        # total_budget_authority_amount = "-1"
+        #
+        # if total_budget_authority_submission is not None:
+        #     total_budget_authority_amount = str(total_budget_authority_submission.total_budget_authority)
 
         # craft response
         response['results'] = {'agency_name': toptier_agency.name,
@@ -71,7 +74,7 @@ class AgencyViewSet(APIView):
                                'outlay_amount': str(aggregate_dict['outlay_amount']),
                                'obligated_amount': str(aggregate_dict['obligated_amount']),
                                'budget_authority_amount': str(aggregate_dict['budget_authority_amount']),
-                               'current_total_budget_authority_amount': total_budget_authority_amount,
+                               'current_total_budget_authority_amount': str(TOTAL_BUDGET_AUTHORITY),
                                'mission': toptier_agency.mission,
                                'website': toptier_agency.website,
                                'icon_filename': toptier_agency.icon_filename

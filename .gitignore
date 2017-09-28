@@ -7,12 +7,9 @@
 
 log/*
 csv_downloads/*
+tmp/*
 usaspending_api/logs/*
 usaspending_api/.idea/*
 usaspending_api/references/.idea/*
 usaspending_api/financial_activities/.idea/*
-.idea/misc.xml
-.idea/usaspending-api.iml
-.idea/workspace.xml
-.idea/modules.xml
-.idea/vcs.xml
+.idea/*

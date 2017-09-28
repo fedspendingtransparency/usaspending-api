@@ -1,4 +1,4 @@
-from usaspending_api.broker.models import DetachedAwardProcurement, PublishedAwardFinancialAssistance
+from usaspending_api.broker.models_old import DetachedAwardProcurement, PublishedAwardFinancialAssistance
 from usaspending_api.common.serializers import LimitableSerializer
 
 
