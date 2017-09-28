@@ -7,7 +7,6 @@ Until we switch to pulling CSV downloads from the historical
 tables TransactionFPDS and TransactionFABS, import download_column_lookups.py
 instad.
 """
-
 """
 Code to generate these from spreadsheets:
 
@@ -36,7 +35,7 @@ def set_if_found(dl_name, path, model, file):
         human_names[model][file].append(dl_name)
     else:
         print('Not found: {}: {}: {}'.format(model, file, dl_name))
-                      
+
 for row in d1:
     if len(row['Download Name']) <= 1:
         continue
@@ -46,10 +45,10 @@ for row in d1:
         path = find_column(row['Database Tag'], models_award_d1)
         set_if_found(row['Download Name'], path, 'award', 'd1')
     if row['Transaction Level'] == 'Y':
-        path = find_column(row['Database Tag'], models_transaction_d1)  
+        path = find_column(row['Database Tag'], models_transaction_d1)
         set_if_found(row['Download Name'], path, 'transaction', 'd1')
 
-# no database tags supplied for d2  
+# no database tags supplied for d2
 for row in d2:
     if len(row['Download Name']) <= 1:
         continue
@@ -69,10 +68,10 @@ for row in d2:
             path = query_paths['transaction']['d1'].get(row['Download Name'])
             if path:
                 col_name = path.split('__')[-1]
-                path = find_column(col_name, models_transaction_d2)        
+                path = find_column(col_name, models_transaction_d2)
         set_if_found(row['Download Name'], path, 'transaction', 'd2')
 
-                
+
 
 
 """
