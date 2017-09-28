@@ -22,6 +22,36 @@ pop_bulk = []
 lel_lookup = {}
 lel_bulk = []
 
+pop_field_map = {
+    "city_name": "place_of_performance_city",
+    "performance_code": "place_of_performance_code",
+    "congressional_code": "place_of_performance_congr",
+    "county_name": "place_of_perform_county_na",
+    "foreign_location_description": "place_of_performance_forei",
+    "state_name": "place_of_perform_state_nam",
+    "zip4": "place_of_performance_zip4a",
+    "location_country_code": "place_of_perform_country_c"
+
+}
+
+le_field_map = {
+    "address_line1": "legal_entity_address_line1",
+    "address_line2": "legal_entity_address_line2",
+    "address_line3": "legal_entity_address_line3",
+    "city_name": "legal_entity_city_name",
+    "congressional_code": "legal_entity_congressional",
+    "county_code": "legal_entity_county_code",
+    "county_name": "legal_entity_county_name",
+    "foreign_city_name": "legal_entity_foreign_city",
+    "foreign_postal_code": "legal_entity_foreign_posta",
+    "foreign_province": "legal_entity_foreign_provi",
+    "state_code": "legal_entity_state_code",
+    "state_name": "legal_entity_state_name",
+    "zip5": "legal_entity_zip5",
+    "zip_last4": "legal_entity_zip_last4",
+    "location_country_code": "legal_entity_country_code"
+}
+
 class Command(BaseCommand):
     help = "Update historical transaction data for a fiscal year from the Broker."
 
@@ -75,19 +105,7 @@ class Command(BaseCommand):
 
 
     @staticmethod
-    def load_pop_locations(fabs_broker_data, total_rows):
-
-        pop_field_map = {
-            "city_name": "place_of_performance_city",
-            "performance_code": "place_of_performance_code",
-            "congressional_code": "place_of_performance_congr",
-            "county_name": "place_of_perform_county_na",
-            "foreign_location_description": "place_of_performance_forei",
-            "state_name": "place_of_perform_state_nam",
-            "zip4": "place_of_performance_zip4a",
-            "location_country_code": "place_of_perform_country_c"
-
-        }
+    def load_locations(fabs_broker_data, total_rows, pop_flag=False):
 
         start_time = datetime.now()
         for index, row in enumerate(fabs_broker_data, 1):
@@ -95,24 +113,30 @@ class Command(BaseCommand):
                 logger.info('Locations: Loading row {} of {} ({})'.format(str(index),
                                                                              str(total_rows),
                                                                              datetime.now() - start_time))
-            location_value_map = {"place_of_performance_flag": True}
+            if pop_flag:
+                location_value_map = {"place_of_performance_flag": True}
+                field_map = pop_field_map
+            else:
+                location_value_map = {'recipient_flag': True}
+                field_map = le_field_map
+
             row = canonicalize_location_dict(row)
 
-            country_code = row[pop_field_map.get('location_country_code')]
-            pop_code = row[pop_field_map.get('performance_code')]
+            country_code = row[field_map.get('location_country_code')]
+            pop_code = row[field_map.get('performance_code')] if pop_flag else None
 
             # We can assume that if the country code is blank and the place of performance code is NOT '00FORGN', then
             # the country code is USA
-            if not country_code and pop_code != '00FORGN':
-                row[pop_field_map.get('location_country_code')] = 'USA'
+            if pop_flag and not country_code and pop_code != '00FORGN':
+                row[field_map.get('location_country_code')] = 'USA'
 
             # Get country code obj
-            location_country_code = country_code_map.get(row[pop_field_map.get('location_country_code')])
+            location_country_code = country_code_map.get(row[field_map.get('location_country_code')])
 
             # Fix state code periods
-            state_code = row.get(pop_field_map.get('state_code'))
+            state_code = row.get(field_map.get('state_code'))
             if state_code is not None:
-                pop_field_map.update({'state_code': state_code.replace('.', '')})
+                field_map.update({'state_code': state_code.replace('.', '')})
 
             if location_country_code:
                 location_value_map.update({
@@ -132,20 +156,24 @@ class Command(BaseCommand):
                     'country_name': None
                 })
 
-            pop_instance_data = load_data_into_model(
+            location_instance_data = load_data_into_model(
                 Location(),
                 row,
                 value_map=location_value_map,
-                field_map=pop_field_map,
+                field_map=field_map,
                 as_dict=True)
 
-            pop_instance = Location(**pop_instance_data)
-            pop_instance.load_country_data()
-            pop_instance.load_city_county_data()
-            pop_instance.fill_missing_state_data()
+            loc_instance = Location(**location_instance_data)
+            loc_instance.load_country_data()
+            loc_instance.load_city_county_data()
+            loc_instance.fill_missing_state_data()
 
-            pop_bulk.append(pop_instance)
-            pop_lookup[index] = pop_instance
+            if pop_flag:
+                pop_bulk.append(loc_instance)
+                pop_lookup[index] = loc_instance
+            else:
+                lel_bulk.append(loc_instance)
+                lel_lookup[index] = loc_instance
 
         with db_transaction.atomic():
             logger.info('Bulk creating Place of Performance Locations...')
@@ -209,6 +237,12 @@ class Command(BaseCommand):
 
         logger.info('Loading POP Location data...')
         start = timeit.default_timer()
-        self.load_pop_locations(fabs_broker_data, total_rows)
+        self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows, pop_flag=True)
         end = timeit.default_timer()
         logger.info('Finished POP Location bulk data load in ' + str(end - start) + ' seconds')
+
+        logger.info('Loading LE Location data...')
+        start = timeit.default_timer()
+        self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+        end = timeit.default_timer()
+        logger.info('Finished LE Location bulk data load in ' + str(end - start) + ' seconds')
