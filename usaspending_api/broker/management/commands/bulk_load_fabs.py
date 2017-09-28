@@ -107,7 +107,7 @@ class Command(BaseCommand):
                 row[pop_field_map.get('location_country_code')] = 'USA'
 
             # Get country code obj
-            location_country_code = country_code_map.get(row[pop_field_map.get('location_country_code')])
+            location_country_code = row[pop_field_map.get('location_country_code')]
 
             # Fix state code periods
             state_code = row.get(pop_field_map.get('state_code'))
