@@ -14,7 +14,7 @@ from usaspending_api.references.models import RefCountryCode, Location, RefCityC
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
-country_code_map = {country['country_code']: country for country in RefCountryCode.objects.values('country_code', 'country_name')}
+country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
 
 pop_lookup = {}
 pop_bulk = []
@@ -117,7 +117,7 @@ class Command(BaseCommand):
             if location_country_code:
                 location_value_map.update({
                     'location_country_code': location_country_code,
-                    'country_name': location_country_code['country_name']
+                    'country_name': location_country_code.country_name
                 })
 
                 if location_country_code != 'USA':
