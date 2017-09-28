@@ -7,79 +7,73 @@ Until we switch to pulling CSV downloads from the historical
 tables TransactionFPDS and TransactionFABS, import download_column_lookups.py
 instad.
 """
+
 """
 Code to generate these from spreadsheets:
 
 tail -n +3 'usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D2-Award (Financial Assistance)-Table 1.csv' > d2_columns.csv
 
-import csv
 
-from usaspending_api.awards.models import *
-import csv
-with open('usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D1-Award (Procurement)-Table 1.csv') as infile:
-    reader = csv.DictReader(infile)
-    d1 = list(reader)
-with open('d2_columns.csv') as infile:
-    reader = csv.DictReader(infile)
-    d2 = list(reader)
-
-def find_in_tree(col_name, model_classes):
-    result = col_name
-    pieces = []
+def find_column(col_name, model_classes):
     for (model_class, prefix) in model_classes:
-        if prefix:
-            pieces.append(prefix)
         if hasattr(model_class, col_name):
-            pieces.append(col_name)
-            return '__'.join(pieces)
+            return '{}{}'.format(prefix, col_name)
     return None
 
 query_paths = {'transaction': {'d1': {}, 'd2': {}}, 'award': {'d1': {}, 'd2': {}}}
 human_names = {'transaction': {'d1': [], 'd2': []}, 'award': {'d1': [], 'd2': []}}
 
-models_award_d1 = ((Award, ''), (TransactionNormalized, 'latest_transaction'), (TransactionFPDS, 'contract_data'))
-models_transaction_d1 = ((TransactionNormalized, ''), (TransactionFPDS, 'contract_data'))
-models_award_d2 = ((Award, ''), (TransactionNormalized, 'latest_transaction'), (TransactionFABS, 'assistance_data'))
-models_transaction_d2 = ((TransactionNormalized, ''), (TransactionFABS, 'assistance_data'))
+models_award_d1 = ((Award, ''), (TransactionNormalized, 'latest_transaction__'), (TransactionFPDS, 'latest_transaction__contract_data__'))
+models_transaction_d1 = ((TransactionNormalized, ''), (TransactionFPDS, 'contract_data__'), (Award, 'award__'))
+models_award_d2 = ((Award, ''), (TransactionNormalized, 'latest_transaction__'), (TransactionFABS, 'latest_transaction__assistance_data__'))
+models_transaction_d2 = ((TransactionNormalized, ''), (TransactionFABS, 'assistance_data__'), (Award, 'award__'))
 
+def set_if_found(dl_name, path, model, file):
+    if path:
+        if dl_name in ('fain', 'piid', 'uri'):
+            dl_name = 'award_id_' + dl_name
+        query_paths[model][file][dl_name] = path
+        human_names[model][file].append(dl_name)
+    else:
+        print('Not found: {}: {}: {}'.format(model, file, dl_name))
+                      
 for row in d1:
     if len(row['Download Name']) <= 1:
         continue
     if len(row['Database Tag']) <= 1:
         continue
     if row['Award Level'] == 'Y':
-        path = find_in_tree(row['Database Tag'], models_award_d1)
-        query_paths['award']['d1'][row['Download Name']] = path
-        human_names['award']['d1'].append(row['Download Name'])
+        path = find_column(row['Database Tag'], models_award_d1)
+        set_if_found(row['Download Name'], path, 'award', 'd1')
     if row['Transaction Level'] == 'Y':
-        path = find_in_tree(row['Database Tag'], models_transaction_d1)
-        query_paths['transaction']['d1'][row['Download Name']] = path
-        human_names['transaction']['d1'].append(row['Download Name'])
+        path = find_column(row['Database Tag'], models_transaction_d1)  
+        set_if_found(row['Download Name'], path, 'transaction', 'd1')
 
-# no database tags supplied for d2
+# no database tags supplied for d2  
 for row in d2:
     if len(row['Download Name']) <= 1:
         continue
     if row['Award Level?'] == 'Y':
-        path = find_in_tree(row['Download Name'], models_award_d2)
+        path = find_column(row['Download Name'], models_award_d2)
         if not path:
+            # try what it was for D1
             path = query_paths['award']['d1'].get(row['Download Name'])
             if path:
                 col_name = path.split('__')[-1]
-                path = find_in_tree(col_name, models_award_d2)
-        if path:
-            query_paths['award']['d2'][row['Download Name']] = path
-            human_names['award']['d2'].append(row['Download Name'])
+                path = find_column(col_name, models_award_d2)
+        set_if_found(row['Download Name'], path, 'award', 'd2')
     if row['Transaction Level?'] == 'Y':
-        path = find_in_tree(row['Download Name'], models_transaction_d2)
+        path = find_column(row['Download Name'], models_transaction_d2)
         if not path:
+            # try what it was for D1
             path = query_paths['transaction']['d1'].get(row['Download Name'])
             if path:
                 col_name = path.split('__')[-1]
-                path = find_in_tree(col_name, models_transaction_d2)
-        if path:
-            query_paths['transaction']['d2'][row['Download Name']] = path
-            human_names['transaction']['d2'].append(row['Download Name'])
+                path = find_column(col_name, models_transaction_d2)        
+        set_if_found(row['Download Name'], path, 'transaction', 'd2')
+
+                
+
 
 """
 
@@ -453,6 +447,8 @@ query_paths = {
             'latest_transaction__assistance_data__assistance_type',
             'award_description':
             'latest_transaction__assistance_data__award_description',
+            'award_id_fain': 'fain',
+            'award_id_uri': 'uri',
             'awarding_agency_code':
             'latest_transaction__assistance_data__awarding_agency_code',
             'awarding_agency_name':
@@ -518,285 +514,370 @@ query_paths = {
     },
     'transaction': {
         'd1': {
-            '1862_land_grant_college': 'c1862_land_grant_college',
-            '1890_land_grant_college': 'c1890_land_grant_college',
-            '1994_land_grant_college': 'c1994_land_grant_college',
-            'a76_fair_act_action_code': 'a_76_fair_act_action',
+            '1862_land_grant_college':
+            'contract_data__c1862_land_grant_college',
+            '1890_land_grant_college':
+            'contract_data__c1890_land_grant_college',
+            '1994_land_grant_college':
+            'contract_data__c1994_land_grant_college',
+            'a76_fair_act_action_code': 'contract_data__a_76_fair_act_action',
             'action_date': 'action_date',
             'action_type_code': 'action_type',
-            'airport_authority': 'airport_authority',
+            'airport_authority': 'contract_data__airport_authority',
             'alaskan_native_owned_corporation_or_firm':
-            'alaskan_native_owned_corpo',
+            'contract_data__alaskan_native_owned_corpo',
             'alaskan_native_servicing_institution':
-            'alaskan_native_servicing_i',
-            'american_indian_owned_business': 'american_indian_owned_busi',
+            'contract_data__alaskan_native_servicing_i',
+            'american_indian_owned_business':
+            'contract_data__american_indian_owned_busi',
             'asian_pacific_american_owned_business':
-            'asian_pacific_american_own',
-            'award_description': 'award_description',
-            'award_id_piid': 'piid',
-            'award_type_code': 'contract_award_type',
-            'awarding_agency_code': 'awarding_agency_code',
-            'awarding_agency_name': 'awarding_agency_name',
-            'awarding_office_code': 'awarding_office_code',
-            'awarding_office_name': 'awarding_office_name',
-            'awarding_sub_agency_code': 'awarding_sub_tier_agency_c',
-            'awarding_sub_agency_name': 'awarding_sub_tier_agency_n',
-            'black_american_owned_business': 'black_american_owned_busin',
-            'c8a_program_participant': 'c8a_program_participant',
-            'city_local_government': 'city_local_government',
-            'clinger_cohen_act_planning_code': 'clinger_cohen_act_planning',
+            'contract_data__asian_pacific_american_own',
+            'award_description': 'contract_data__award_description',
+            'award_id_piid': 'contract_data__piid',
+            'award_type_code': 'contract_data__contract_award_type',
+            'awarding_agency_code': 'contract_data__awarding_agency_code',
+            'awarding_agency_name': 'contract_data__awarding_agency_name',
+            'awarding_office_code': 'contract_data__awarding_office_code',
+            'awarding_office_name': 'contract_data__awarding_office_name',
+            'awarding_sub_agency_code':
+            'contract_data__awarding_sub_tier_agency_c',
+            'awarding_sub_agency_name':
+            'contract_data__awarding_sub_tier_agency_n',
+            'black_american_owned_business':
+            'contract_data__black_american_owned_busin',
+            'c8a_program_participant':
+            'contract_data__c8a_program_participant',
+            'city_local_government': 'contract_data__city_local_government',
+            'clinger_cohen_act_planning_code':
+            'contract_data__clinger_cohen_act_planning',
             'commercial_item_acquisition_procedures_code':
-            'commercial_item_acquisitio',
-            'commercial_item_test_program_code': 'commercial_item_test_progr',
+            'contract_data__commercial_item_acquisitio',
+            'commercial_item_test_program_code':
+            'contract_data__commercial_item_test_progr',
             'community_developed_corporation_owned_firm':
-            'community_developed_corpor',
-            'community_development_corporation': 'community_development_corp',
-            'consolidated_contract_code': 'consolidated_contract',
+            'contract_data__community_developed_corpor',
+            'community_development_corporation':
+            'contract_data__community_development_corp',
+            'consolidated_contract_code':
+            'contract_data__consolidated_contract',
             'contingency_humanitarian_or_peacekeeping_operation_code':
-            'contingency_humanitarian_o',
-            'contract_bundling_code': 'contract_bundling',
-            'contract_financing_code': 'contract_financing',
+            'contract_data__contingency_humanitarian_o',
+            'contract_bundling_code': 'contract_data__contract_bundling',
+            'contract_financing_code': 'contract_data__contract_financing',
             'contracting_officers_determination_of_business_size':
-            'contracting_officers_deter',
-            'corporate_entity_not_tax_exempt': 'corporate_entity_not_tax_e',
-            'corporate_entity_tax_exempt': 'corporate_entity_tax_exemp',
+            'contract_data__contracting_officers_deter',
+            'corporate_entity_not_tax_exempt':
+            'contract_data__corporate_entity_not_tax_e',
+            'corporate_entity_tax_exempt':
+            'contract_data__corporate_entity_tax_exemp',
             'cost_accounting_standards_clause_code':
-            'cost_accounting_standards',
-            'cost_or_pricing_data_code': 'cost_or_pricing_data',
-            'council_of_governments': 'council_of_governments',
+            'contract_data__cost_accounting_standards',
+            'cost_or_pricing_data_code': 'contract_data__cost_or_pricing_data',
+            'council_of_governments': 'contract_data__council_of_governments',
             'country_of_product_or_service_origin_code':
-            'country_of_product_or_serv',
-            'county_local_government': 'county_local_government',
-            'davis_bacon_act_code': 'davis_bacon_act',
-            'dod_acquisition_program_code': 'program_system_or_equipmen',
-            'dod_claimant_program_code': 'dod_claimant_program_code',
-            'domestic_or_foreign_entity_code': 'domestic_or_foreign_entity',
-            'domestic_shelter': 'domestic_shelter',
-            'dot_certified_disadvantage': 'dot_certified_disadvantage',
+            'contract_data__country_of_product_or_serv',
+            'county_local_government':
+            'contract_data__county_local_government',
+            'davis_bacon_act_code': 'contract_data__davis_bacon_act',
+            'dod_acquisition_program_code':
+            'contract_data__program_system_or_equipmen',
+            'dod_claimant_program_code':
+            'contract_data__dod_claimant_program_code',
+            'domestic_or_foreign_entity_code':
+            'contract_data__domestic_or_foreign_entity',
+            'domestic_shelter': 'contract_data__domestic_shelter',
+            'dot_certified_disadvantage':
+            'contract_data__dot_certified_disadvantage',
             'economically_disadvantaged_women_owned_small_business':
-            'economically_disadvantaged',
-            'educational_institution': 'educational_institution',
-            'emerging_small_business': 'emerging_small_business',
-            'epa_designated_product_code': 'epa_designated_product',
-            'evaluated_preference_code': 'evaluated_preference',
-            'extent_competed_code': 'extent_competed',
+            'contract_data__economically_disadvantaged',
+            'educational_institution':
+            'contract_data__educational_institution',
+            'emerging_small_business':
+            'contract_data__emerging_small_business',
+            'epa_designated_product_code':
+            'contract_data__epa_designated_product',
+            'evaluated_preference_code': 'contract_data__evaluated_preference',
+            'extent_competed_code': 'contract_data__extent_competed',
             'fair_opportunity_limited_sources_code':
-            'fair_opportunity_limited_s',
-            'fed_biz_opps_code': 'fed_biz_opps',
+            'contract_data__fair_opportunity_limited_s',
+            'fed_biz_opps_code': 'contract_data__fed_biz_opps',
             'federal_action_obligation': 'federal_action_obligation',
-            'federal_agency': 'federal_agency',
+            'federal_agency': 'contract_data__federal_agency',
             'federally_funded_research_and_development_corp':
-            'federally_funded_research',
-            'for_profit_organization': 'for_profit_organization',
-            'foreign_government': 'foreign_government',
-            'foreign_owned_and_located': 'foreign_owned_and_located',
-            'foundation': 'foundation',
-            'funding_agency_code': 'funding_agency_code',
-            'funding_agency_name': 'funding_agency_name',
-            'funding_office_code': 'funding_office_code',
-            'funding_office_name': 'funding_office_name',
-            'funding_sub_agency_code': 'funding_sub_tier_agency_co',
-            'funding_sub_agency_name': 'funding_sub_tier_agency_na',
-            'gfe_gfp_code': 'government_furnished_equip',
-            'hispanic_american_owned_business': 'hispanic_american_owned_bu',
-            'hispanic_servicing_institution': 'hispanic_servicing_institu',
-            'historically_black_college': 'historically_black_college',
+            'contract_data__federally_funded_research',
+            'for_profit_organization':
+            'contract_data__for_profit_organization',
+            'foreign_government': 'contract_data__foreign_government',
+            'foreign_owned_and_located':
+            'contract_data__foreign_owned_and_located',
+            'foundation': 'contract_data__foundation',
+            'funding_agency_code': 'contract_data__funding_agency_code',
+            'funding_agency_name': 'contract_data__funding_agency_name',
+            'funding_office_code': 'contract_data__funding_office_code',
+            'funding_office_name': 'contract_data__funding_office_name',
+            'funding_sub_agency_code':
+            'contract_data__funding_sub_tier_agency_co',
+            'funding_sub_agency_name':
+            'contract_data__funding_sub_tier_agency_na',
+            'gfe_gfp_code': 'contract_data__government_furnished_equip',
+            'hispanic_american_owned_business':
+            'contract_data__hispanic_american_owned_bu',
+            'hispanic_servicing_institution':
+            'contract_data__hispanic_servicing_institu',
+            'historically_black_college':
+            'contract_data__historically_black_college',
             'historically_underutilized_business_zone _hubzone_firm':
-            'historically_underutilized',
-            'hospital_flag': 'hospital_flag',
-            'housing_authorities_public_tribal': 'housing_authorities_public',
-            'idv_type_code': 'idv_type',
-            'indian_tribe_federally_recognized': 'indian_tribe_federally_rec',
+            'contract_data__historically_underutilized',
+            'hospital_flag': 'contract_data__hospital_flag',
+            'housing_authorities_public_tribal':
+            'contract_data__housing_authorities_public',
+            'idv_type_code': 'contract_data__idv_type',
+            'indian_tribe_federally_recognized':
+            'contract_data__indian_tribe_federally_rec',
             'information_technology_commercial_item_category_code':
-            'information_technology_com',
-            'inter_municipal_local_government': 'inter_municipal_local_gove',
+            'contract_data__information_technology_com',
+            'inter_municipal_local_government':
+            'contract_data__inter_municipal_local_gove',
             'interagency_contracting_authority_code':
-            'interagency_contracting_au',
-            'international_organization': 'international_organization',
-            'interstate_entity': 'interstate_entity',
+            'contract_data__interagency_contracting_au',
+            'international_organization':
+            'contract_data__international_organization',
+            'interstate_entity': 'contract_data__interstate_entity',
             'joint_venture_economic_disadvantaged_women_owned_small_bus':
-            'joint_venture_economically',
+            'contract_data__joint_venture_economically',
             'joint_venture_women_owned_small_business':
-            'joint_venture_women_owned',
-            'labor_surplus_area_firm': 'labor_surplus_area_firm',
-            'limited_liability_corporation': 'limited_liability_corporat',
-            'local_area_set_aside_code': 'local_area_set_aside',
-            'local_government_owned': 'local_government_owned',
-            'major_program': 'major_program',
-            'manufacturer_of_goods': 'manufacturer_of_goods',
-            'minority_institution': 'minority_institution',
-            'minority_owned_business': 'minority_owned_business',
-            'modification_number': 'award_modification_amendme',
-            'multi_year_contract_code': 'multi_year_contract',
-            'multiple_or_single_award_idv_code': 'multiple_or_single_award_i',
-            'municipality_local_government': 'municipality_local_governm',
-            'naics_code': 'naics',
-            'naics_description': 'naics_description',
-            'national_interest_action_code': 'national_interest_action',
-            'native_american_owned_business': 'native_american_owned_busi',
-            'native_hawaiian_owned_business': 'native_hawaiian_owned_busi',
+            'contract_data__joint_venture_women_owned',
+            'labor_surplus_area_firm':
+            'contract_data__labor_surplus_area_firm',
+            'limited_liability_corporation':
+            'contract_data__limited_liability_corporat',
+            'local_area_set_aside_code': 'contract_data__local_area_set_aside',
+            'local_government_owned': 'contract_data__local_government_owned',
+            'major_program': 'contract_data__major_program',
+            'manufacturer_of_goods': 'contract_data__manufacturer_of_goods',
+            'minority_institution': 'contract_data__minority_institution',
+            'minority_owned_business':
+            'contract_data__minority_owned_business',
+            'modification_number': 'contract_data__award_modification_amendme',
+            'multi_year_contract_code': 'contract_data__multi_year_contract',
+            'multiple_or_single_award_idv_code':
+            'contract_data__multiple_or_single_award_i',
+            'municipality_local_government':
+            'contract_data__municipality_local_governm',
+            'naics_code': 'contract_data__naics',
+            'naics_description': 'contract_data__naics_description',
+            'national_interest_action_code':
+            'contract_data__national_interest_action',
+            'native_american_owned_business':
+            'contract_data__native_american_owned_busi',
+            'native_hawaiian_owned_business':
+            'contract_data__native_hawaiian_owned_busi',
             'native_hawaiian_servicing_institution':
-            'native_hawaiian_servicing',
-            'nonprofit_organization': 'nonprofit_organization',
-            'number_of_actions': 'number_of_actions',
-            'number_of_offers_received': 'number_of_offers_received',
-            'ordering_period_end_date': 'ordering_period_end_date',
-            'other_minority_owned_business': 'other_minority_owned_busin',
-            'other_not_for_profit_organization': 'other_not_for_profit_organ',
-            'other_statutory_authority': 'other_statutory_authority',
+            'contract_data__native_hawaiian_servicing',
+            'nonprofit_organization': 'contract_data__nonprofit_organization',
+            'number_of_actions': 'contract_data__number_of_actions',
+            'number_of_offers_received':
+            'contract_data__number_of_offers_received',
+            'ordering_period_end_date':
+            'contract_data__ordering_period_end_date',
+            'other_minority_owned_business':
+            'contract_data__other_minority_owned_busin',
+            'other_not_for_profit_organization':
+            'contract_data__other_not_for_profit_organ',
+            'other_statutory_authority':
+            'contract_data__other_statutory_authority',
             'other_than_full_and_open_competition_code':
-            'other_than_full_and_open_c',
-            'parent_award_agency_id': 'referenced_idv_agency_iden',
-            'parent_award_id': 'parent_award_id',
-            'parent_award_modification_number': 'referenced_idv_modificatio',
+            'contract_data__other_than_full_and_open_c',
+            'parent_award_agency_id':
+            'contract_data__referenced_idv_agency_iden',
+            'parent_award_id': 'contract_data__parent_award_id',
+            'parent_award_modification_number':
+            'contract_data__referenced_idv_modificatio',
             'parent_award_single_or_multiple_code':
-            'referenced_mult_or_single',
-            'parent_award_type_code': 'referenced_idv_type',
+            'contract_data__referenced_mult_or_single',
+            'parent_award_type_code': 'contract_data__referenced_idv_type',
             'partnership_or_limited_liability_partnership':
-            'partnership_or_limited_lia',
+            'contract_data__partnership_or_limited_lia',
             'performance_based_service_acquisition_code':
-            'performance_based_service',
+            'contract_data__performance_based_service',
             'period_of_performance_current_end_date':
-            'period_of_performance_curr',
+            'contract_data__period_of_performance_curr',
             'period_of_performance_potential_end_date':
-            'period_of_perf_potential_e',
-            'period_of_performance_start_date': 'period_of_performance_star',
-            'place_of_manufacture_code': 'place_of_manufacture',
-            'planning_commission': 'planning_commission',
-            'port_authority': 'port_authority',
+            'contract_data__period_of_perf_potential_e',
+            'period_of_performance_start_date':
+            'contract_data__period_of_performance_star',
+            'place_of_manufacture_code': 'contract_data__place_of_manufacture',
+            'planning_commission': 'contract_data__planning_commission',
+            'port_authority': 'contract_data__port_authority',
             'price_evaluation_adjustment_preference_percent_difference':
-            'price_evaluation_adjustmen',
+            'contract_data__price_evaluation_adjustmen',
             'primary_place_of_performance_city_name':
-            'place_of_perform_city_name',
+            'contract_data__place_of_perform_city_name',
             'primary_place_of_performance_congressional_district':
-            'place_of_performance_congr',
+            'contract_data__place_of_performance_congr',
             'primary_place_of_performance_country_code':
-            'place_of_perform_country_c',
+            'contract_data__place_of_perform_country_c',
             'primary_place_of_performance_location_code':
-            'place_of_performance_locat',
+            'contract_data__place_of_performance_locat',
             'primary_place_of_performance_state_code':
-            'place_of_performance_state',
-            'primary_place_of_performance_zip_4': 'place_of_performance_zip4a',
-            'private_university_or_college': 'private_university_or_coll',
-            'product_or_service_code': 'product_or_service_code',
-            'program_acronym': 'program_acronym',
+            'contract_data__place_of_performance_state',
+            'primary_place_of_performance_zip_4':
+            'contract_data__place_of_performance_zip4a',
+            'private_university_or_college':
+            'contract_data__private_university_or_coll',
+            'product_or_service_code':
+            'contract_data__product_or_service_code',
+            'program_acronym': 'contract_data__program_acronym',
             'purchase_card_as_payment_method_code':
-            'purchase_card_as_payment_m',
-            'receives_contracts': 'contracts',
-            'receives_contracts_and_grants': 'receives_contracts_and_gra',
-            'receives_grants': 'grants',
-            'recipient_address_line_1': 'legal_entity_address_line1',
-            'recipient_address_line_2': 'legal_entity_address_line2',
-            'recipient_address_line_3': 'legal_entity_address_line3',
-            'recipient_city_name': 'legal_entity_city_name',
-            'recipient_congressional_district': 'legal_entity_congressional',
-            'recipient_country_code': 'legal_entity_country_code',
-            'recipient_country_name': 'legal_entity_country_name',
-            'recipient_doing_business_as_name': 'vendor_doing_as_business_n',
-            'recipient_duns': 'awardee_or_recipient_uniqu',
-            'recipient_fax_number': 'vendor_fax_number',
-            'recipient_foreign_state_name': 'legal_entity_state_descrip',
-            'recipient_name': 'awardee_or_recipient_legal',
-            'recipient_parent_duns': 'ultimate_parent_legal_enti',
-            'recipient_parent_name': 'ultimate_parent_unique_ide',
-            'recipient_phone_number': 'vendor_phone_number',
-            'recipient_state_code': 'legal_entity_state_code',
-            'recipient_zip_4_code': 'legal_entity_zip4',
+            'contract_data__purchase_card_as_payment_m',
+            'receives_contracts': 'contract_data__contracts',
+            'receives_contracts_and_grants':
+            'contract_data__receives_contracts_and_gra',
+            'receives_grants': 'contract_data__grants',
+            'recipient_address_line_1':
+            'contract_data__legal_entity_address_line1',
+            'recipient_address_line_2':
+            'contract_data__legal_entity_address_line2',
+            'recipient_address_line_3':
+            'contract_data__legal_entity_address_line3',
+            'recipient_city_name': 'contract_data__legal_entity_city_name',
+            'recipient_congressional_district':
+            'contract_data__legal_entity_congressional',
+            'recipient_country_code':
+            'contract_data__legal_entity_country_code',
+            'recipient_country_name':
+            'contract_data__legal_entity_country_name',
+            'recipient_doing_business_as_name':
+            'contract_data__vendor_doing_as_business_n',
+            'recipient_duns': 'contract_data__awardee_or_recipient_uniqu',
+            'recipient_fax_number': 'contract_data__vendor_fax_number',
+            'recipient_foreign_state_name':
+            'contract_data__legal_entity_state_descrip',
+            'recipient_name': 'contract_data__awardee_or_recipient_legal',
+            'recipient_parent_duns':
+            'contract_data__ultimate_parent_legal_enti',
+            'recipient_parent_name':
+            'contract_data__ultimate_parent_unique_ide',
+            'recipient_phone_number': 'contract_data__vendor_phone_number',
+            'recipient_state_code': 'contract_data__legal_entity_state_code',
+            'recipient_zip_4_code': 'contract_data__legal_entity_zip4',
             'recovered_materials_sustainability_code':
-            'recovered_materials_sustai',
-            'research_code': 'research',
-            'sba_certified_8a_joint_venture': 'sba_certified_8_a_joint_ve',
-            'school_district_local_government': 'school_district_local_gove',
-            'school_of_forestry': 'school_of_forestry',
-            'sea_transportation_code': 'sea_transportation',
+            'contract_data__recovered_materials_sustai',
+            'research_code': 'contract_data__research',
+            'sba_certified_8a_joint_venture':
+            'contract_data__sba_certified_8_a_joint_ve',
+            'school_district_local_government':
+            'contract_data__school_district_local_gove',
+            'school_of_forestry': 'contract_data__school_of_forestry',
+            'sea_transportation_code': 'contract_data__sea_transportation',
             'self_certified_small_disadvantaged_business':
-            'self_certified_small_disad',
-            'service_contract_act_code': 'service_contract_act',
+            'contract_data__self_certified_small_disad',
+            'service_contract_act_code': 'contract_data__service_contract_act',
             'service_disabled_veteran_owned_business':
-            'service_disabled_veteran_o',
-            'small_agricultural_cooperative': 'small_agricultural_coopera',
+            'contract_data__service_disabled_veteran_o',
+            'small_agricultural_cooperative':
+            'contract_data__small_agricultural_coopera',
             'small_business_competitiveness_demonstration _program':
-            'small_business_competitive',
-            'small_disadvantaged_business': 'small_disadvantaged_busine',
-            'sole_proprietorship': 'sole_proprietorship',
-            'solicitation_identifier': 'solicitation_identifier',
-            'solicitation_procedures_code': 'solicitation_procedures',
+            'contract_data__small_business_competitive',
+            'small_disadvantaged_business':
+            'contract_data__small_disadvantaged_busine',
+            'sole_proprietorship': 'contract_data__sole_proprietorship',
+            'solicitation_identifier': 'contract_data__solicitation_identifier',
+            'solicitation_procedures_code':
+            'contract_data__solicitation_procedures',
             'state_controlled_institution_of_higher_learning':
-            'state_controlled_instituti',
-            'subchapter_scorporation': 'subchapter_s_corporation',
+            'contract_data__state_controlled_instituti',
+            'subchapter_scorporation':
+            'contract_data__subchapter_s_corporation',
             'subcontinent_asian_asian_indian_american_owned_business':
-            'subcontinent_asian_asian_i',
-            'subcontracting_plan_code': 'subcontracting_plan',
-            'the_ability_one_program': 'the_ability_one_program',
-            'township_local_government': 'township_local_government',
-            'transaction_number': 'transaction_number',
-            'transit_authority': 'transit_authority',
-            'tribal_college': 'tribal_college',
-            'tribally_owned_business': 'tribally_owned_business',
-            'type_of_contract_pricing_code': 'type_of_contract_pricing',
-            'type_of_idc_code': 'type_of_idc',
-            'type_of_set_aside_code': 'type_set_aside',
-            'undefinitized_action_code': 'undefinitized_action',
-            'us_federal_government': 'us_federal_government',
-            'us_government_entity': 'us_government_entity',
-            'us_local_government': 'us_local_government',
-            'us_state_government': 'us_state_government',
-            'us_tribal_government': 'us_tribal_government',
-            'veteran_owned_business': 'veteran_owned_business',
-            'veterinary_college': 'veterinary_college',
-            'veterinary_hospital': 'veterinary_hospital',
-            'walsh_healey_act_code': 'walsh_healey_act',
-            'woman_owned_business': 'woman_owned_business',
-            'women_owned_small_business': 'women_owned_small_business'
+            'contract_data__subcontinent_asian_asian_i',
+            'subcontracting_plan_code': 'contract_data__subcontracting_plan',
+            'the_ability_one_program': 'contract_data__the_ability_one_program',
+            'township_local_government':
+            'contract_data__township_local_government',
+            'transaction_number': 'contract_data__transaction_number',
+            'transit_authority': 'contract_data__transit_authority',
+            'tribal_college': 'contract_data__tribal_college',
+            'tribally_owned_business': 'contract_data__tribally_owned_business',
+            'type_of_contract_pricing_code':
+            'contract_data__type_of_contract_pricing',
+            'type_of_idc_code': 'contract_data__type_of_idc',
+            'type_of_set_aside_code': 'contract_data__type_set_aside',
+            'undefinitized_action_code': 'contract_data__undefinitized_action',
+            'us_federal_government': 'contract_data__us_federal_government',
+            'us_government_entity': 'contract_data__us_government_entity',
+            'us_local_government': 'contract_data__us_local_government',
+            'us_state_government': 'contract_data__us_state_government',
+            'us_tribal_government': 'contract_data__us_tribal_government',
+            'veteran_owned_business': 'contract_data__veteran_owned_business',
+            'veterinary_college': 'contract_data__veterinary_college',
+            'veterinary_hospital': 'contract_data__veterinary_hospital',
+            'walsh_healey_act_code': 'contract_data__walsh_healey_act',
+            'woman_owned_business': 'contract_data__woman_owned_business',
+            'women_owned_small_business':
+            'contract_data__women_owned_small_business'
         },
         'd2': {
             'action_date': 'action_date',
             'action_type': 'action_type',
             'action_type_code': 'action_type',
-            'assistance_type': 'assistance_type',
-            'award_description': 'award_description',
-            'awarding_agency_code': 'awarding_agency_code',
-            'awarding_agency_name': 'awarding_agency_name',
-            'awarding_office_code': 'awarding_office_code',
-            'awarding_sub_agency_code': 'awarding_sub_tier_agency_c',
-            'awarding_sub_agency_name': 'awarding_sub_tier_agency_n',
-            'business_funds_indicator': 'business_funds_indicator',
-            'cfda_number': 'cfda_number',
-            'cfda_title': 'cfda_title',
+            'assistance_type': 'assistance_data__assistance_type',
+            'award_description': 'assistance_data__award_description',
+            'award_id_fain': 'assistance_data__fain',
+            'award_id_uri': 'assistance_data__uri',
+            'awarding_agency_code': 'assistance_data__awarding_agency_code',
+            'awarding_agency_name': 'assistance_data__awarding_agency_name',
+            'awarding_office_code': 'assistance_data__awarding_office_code',
+            'awarding_sub_agency_code':
+            'assistance_data__awarding_sub_tier_agency_c',
+            'awarding_sub_agency_name':
+            'assistance_data__awarding_sub_tier_agency_n',
+            'business_funds_indicator':
+            'assistance_data__business_funds_indicator',
+            'cfda_number': 'assistance_data__cfda_number',
+            'cfda_title': 'assistance_data__cfda_title',
             'federal_action_obligation': 'federal_action_obligation',
-            'funding_agency_code': 'funding_agency_code',
-            'funding_agency_name': 'funding_agency_name',
-            'funding_office_code': 'funding_office_code',
-            'funding_sub_agency_code': 'funding_sub_tier_agency_co',
-            'funding_sub_agency_name': 'funding_sub_tier_agency_na',
-            'last_modified_date': 'transaction__last_modified_date',
-            'modification_number': 'transaction__modification_number',
-            'non_federal_funding_amount': 'non_federal_funding_amount',
+            'funding_agency_code': 'assistance_data__funding_agency_code',
+            'funding_agency_name': 'assistance_data__funding_agency_name',
+            'funding_office_code': 'assistance_data__funding_office_code',
+            'funding_sub_agency_code':
+            'assistance_data__funding_sub_tier_agency_co',
+            'funding_sub_agency_name':
+            'assistance_data__funding_sub_tier_agency_na',
+            'last_modified_date': 'last_modified_date',
+            'modification_number': 'modification_number',
+            'non_federal_funding_amount':
+            'assistance_data__non_federal_funding_amount',
             'period_of_performance_current_end_date':
-            'transaction__period_of_performance_current_end_date',
+            'period_of_performance_current_end_date',
             'period_of_performance_start_date':
-            'transaction__period_of_performance_start_date',
+            'period_of_performance_start_date',
             'primary_place_of_performance_congressional_district':
-            'place_of_performance_congr',
+            'assistance_data__place_of_performance_congr',
             'primary_place_of_performance_country_code':
-            'place_of_perform_country_c',
-            'primary_place_of_performance_zip_4': 'place_of_performance_zip4a',
-            'recipient_address_line_1': 'legal_entity_address_line1',
-            'recipient_address_line_2': 'legal_entity_address_line2',
-            'recipient_address_line_3': 'legal_entity_address_line3',
-            'recipient_city_name': 'legal_entity_city_name',
-            'recipient_congressional_district': 'legal_entity_congressional',
-            'recipient_country_code': 'legal_entity_country_code',
-            'recipient_duns': 'awardee_or_recipient_uniqu',
-            'recipient_name': 'awardee_or_recipient_legal',
-            'recipient_state_code': 'legal_entity_state_code',
-            'record_type': 'record_type',
-            'sai_number': 'sai_number',
-            'total_funding_amount': 'total_funding_amount'
+            'assistance_data__place_of_perform_country_c',
+            'primary_place_of_performance_zip_4':
+            'assistance_data__place_of_performance_zip4a',
+            'recipient_address_line_1':
+            'assistance_data__legal_entity_address_line1',
+            'recipient_address_line_2':
+            'assistance_data__legal_entity_address_line2',
+            'recipient_address_line_3':
+            'assistance_data__legal_entity_address_line3',
+            'recipient_city_name': 'assistance_data__legal_entity_city_name',
+            'recipient_congressional_district':
+            'assistance_data__legal_entity_congressional',
+            'recipient_country_code':
+            'assistance_data__legal_entity_country_code',
+            'recipient_duns': 'assistance_data__awardee_or_recipient_uniqu',
+            'recipient_name': 'assistance_data__awardee_or_recipient_legal',
+            'recipient_state_code': 'assistance_data__legal_entity_state_code',
+            'record_type': 'assistance_data__record_type',
+            'sai_number': 'assistance_data__sai_number',
+            'total_funding_amount': 'assistance_data__total_funding_amount'
         }
     }
 }
-
 human_names = {
     'award': {
         'd1': [
@@ -915,9 +996,9 @@ human_names = {
             'sba_certified_8a_joint_venture'
         ],
         'd2': [
-            'sai_number', 'federal_action_obligation',
-            'non_federal_funding_amount', 'total_funding_amount',
-            'period_of_performance_start_date',
+            'award_id_fain', 'award_id_uri', 'sai_number',
+            'federal_action_obligation', 'non_federal_funding_amount',
+            'total_funding_amount', 'period_of_performance_start_date',
             'period_of_performance_current_end_date', 'awarding_agency_code',
             'awarding_agency_name', 'awarding_sub_agency_code',
             'awarding_sub_agency_name', 'awarding_office_code',
@@ -1057,7 +1138,8 @@ human_names = {
             '_hubzone_firm', 'sba_certified_8a_joint_venture'
         ],
         'd2': [
-            'modification_number', 'sai_number', 'federal_action_obligation',
+            'award_id_fain', 'modification_number', 'award_id_uri',
+            'sai_number', 'federal_action_obligation',
             'non_federal_funding_amount', 'total_funding_amount',
             'action_date', 'period_of_performance_start_date',
             'period_of_performance_current_end_date', 'awarding_agency_code',

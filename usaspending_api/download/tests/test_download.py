@@ -8,7 +8,6 @@ from rest_framework import status
 from usaspending_api.awards.models import Transaction, TransactionAssistance, TransactionContract
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.download.lookups import JOB_STATUS
-from usaspending_api.download.v2 import download_column_lookups
 from usaspending_api.etl.award_helpers import update_awards
 
 
@@ -323,28 +322,3 @@ def test_download_status_nonexistent_file_404(client):
     resp = client.get('/api/v2/download/status/?file_name=there_is_no_such_file.zip')
 
     assert resp.status_code == status.HTTP_404_NOT_FOUND
-
-
-@pytest.mark.skip
-@pytest.mark.django_db
-def test_download_transactions_v2_endpoint_check_all_mappings(client,
-                                                              award_data):
-    """
-    One-by-one checking on validity of columns
-
-    For manual troubleshooting rather than automated run; this, skipped
-    """
-    for key in download_column_lookups.transaction_columns:
-        resp = client.post(
-            '/api/v2/download/transactions',
-            content_type='application/json',
-            data=json.dumps({
-                "filters": {},
-                "columns": [key, ]
-            }))
-        assert resp.status_code == status.HTTP_200_OK
-        message = resp.json()['message']
-        if message:
-            if 'exception was raised' in message:
-                pytest.set_trace()
-            pass

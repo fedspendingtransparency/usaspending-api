@@ -7,9 +7,8 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
 
 from usaspending_api.awards.v2.filters.award import award_filter
-from usaspending_api.awards.v2.filters.transaction_assistance import transaction_assistance_filter
-from usaspending_api.awards.v2.filters.transaction_contract import transaction_contract_filter
-from usaspending_api.awards.models import Award
+from usaspending_api.awards.v2.filters.transaction import transaction_filter
+from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.filestreaming import csv_selection
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
@@ -109,8 +108,9 @@ class DownloadTransactionsViewSet(BaseDownloadViewSet):
         assistance_source = csv_selection.CsvSource('transaction', 'd2')
         verify_requested_columns_available((contract_source, assistance_source), json_request['columns'])
         filters = json_request['filters']
-        contract_source.queryset = transaction_contract_filter(filters)
-        assistance_source.queryset = transaction_assistance_filter(filters)
+        queryset = transaction_filter(filters)
+        contract_source.queryset = queryset & TransactionNormalized.objects.filter(contract_data__isnull=False)
+        assistance_source.queryset = queryset & TransactionNormalized.objects.filter(assistance_data__isnull=False)
         return (contract_source, assistance_source)
 
     DOWNLOAD_NAME = 'transactions'

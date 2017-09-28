@@ -7,7 +7,7 @@ Don't laugh.  It's pretty simple, but there are a few things that could go wrong
 import pytest
 from rest_framework import status
 
-from usaspending_api.download.v2 import download_column_lookups
+from usaspending_api.download.v2 import download_column_historical_lookups
 
 
 def test_query_paths_setup():
