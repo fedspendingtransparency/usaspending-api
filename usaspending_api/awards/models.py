@@ -162,7 +162,7 @@ class Award(DataSourceTrackedModel):
 
     @staticmethod
     def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None,
-                                    uri=None, parent_award_id=None, use_cache=False, save=True):
+                                    uri=None, parent_award_id=None, use_cache=False, save=True, agency_toptier_map=None):
         """
         Given a set of award identifiers and awarding agency information,
         find a corresponding Award record. If we can't find one, create it.
@@ -197,8 +197,12 @@ class Award(DataSourceTrackedModel):
                 # awarding subtier agency. Relax the awarding agency
                 # critera to just the toptier agency instead of the subtier
                 # agency and try the search again.
-                awarding_agency_toptier = Agency.get_by_toptier(
-                    awarding_agency.toptier_agency.cgac_code)
+                if agency_toptier_map:
+                    awarding_agency_toptier = agency_toptier_map[awarding_agency.toptier_agency.cgac_code]
+                else:
+                    awarding_agency_toptier = Agency.get_by_toptier(
+                        awarding_agency.toptier_agency.cgac_code)
+
                 summary_award = Award.objects \
                     .filter(Q(**lookup_kwargs)) \
                     .filter(awarding_agency=awarding_agency_toptier) \
