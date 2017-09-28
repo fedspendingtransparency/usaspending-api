@@ -15,6 +15,8 @@ from usaspending_api.etl.management.load_base import copy, load_data_into_model
 
 from usaspending_api.references.helpers import canonicalize_location_dict
 
+from usaspending_api.awards.models import TransactionNormalized
+
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
@@ -70,47 +72,9 @@ class Command(BaseCommand):
     @staticmethod
     def update_location_transaction_assistance(db_cursor, fiscal_year=2017, page=1, limit=500000, save=True):
 
-        legal_entity_location_field_map = {
-            "address_line1": "legal_entity_address_line1",
-            "address_line2": "legal_entity_address_line2",
-            "address_line3": "legal_entity_address_line3",
-            # "city_code": "legal_entity_city_code", # NOT PRESENT IN FABS!
-            "city_name": "legal_entity_city_name",
-            "congressional_code": "legal_entity_congressional",
-            "county_code": "legal_entity_county_code",
-            "county_name": "legal_entity_county_name",
-            "foreign_city_name": "legal_entity_foreign_city",
-            "foreign_postal_code": "legal_entity_foreign_posta",
-            "foreign_province": "legal_entity_foreign_provi",
-            "state_code": "legal_entity_state_code",
-            "state_name": "legal_entity_state_name",
-            "zip5": "legal_entity_zip5",
-            "zip_last4": "legal_entity_zip_last4",
-            "location_country_code": "legal_entity_country_code"
-        }
+        list_of_columns = (', '.join(['fain', 'url', 'modification_number']))
 
-        legal_entity_location_value_map = {
-            "recipient_flag": True
-        }
-
-        place_of_performance_field_map = {
-            "city_name": "place_of_performance_city",
-            "performance_code": "place_of_performance_code",
-            "congressional_code": "place_of_performance_congr",
-            "county_name": "place_of_perform_county_na",
-            "foreign_location_description": "place_of_performance_forei",
-            "state_name": "place_of_perform_state_nam",
-            "zip4": "place_of_performance_zip4a",
-            "location_country_code": "place_of_perform_country_c"
-
-        }
-
-        place_of_performance_value_map = {
-            "place_of_performance_flag": True
-        }
-
-        list_of_columns = (', '.join(legal_entity_location_field_map.values())) + ', ' + \
-                          (', '.join(place_of_performance_field_map.values()))
+        # get the transaction values we need
 
         query = "SELECT {} FROM published_award_financial_assistance".format(list_of_columns)
         arguments = []
@@ -152,88 +116,21 @@ class Command(BaseCommand):
                     logger.info('Location Load: Loading row {} of {} ({})'.format(str(index),
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
+                # Could also use contract_data__fain
+                transaction = TransactionNormalized.objects.filter(award__fain=row['fain'],award__uri=row['uri'],modification_number=row['modification_number'])
 
-                lel = get_location_pre_bulk_update(
-                    legal_entity_location_field_map, row, legal_entity_location_value_map
-                )
+                if transaction.recipient and transaction.recipient.location:
+                    lel = transaction.recipient.location
+                    lel.save()
 
-                # Create the place of performance location
-                pop = get_location_pre_bulk_update(
-                    place_of_performance_field_map, row, place_of_performance_value_map
-                )
-
-                if lel:
-                    bulk_array.append(lel)
-                if pop:
-                    bulk_array.append(pop)
-
-        logger.info('Bulk creating...')
-        logger.info('BULK ARRAY: {}'.format(bulk_array))
-        try:
-            Location.objects.bulk_create(bulk_array)
-        except IntegrityError:
-            logger.info('Some dupes skipped...')
-
+                if transaction.place_of_performance:
+                    pop = transaction.place_of_performance
+                    pop.save()
 
     @staticmethod
     def update_location_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000, save=True):
 
-        # legal_entity_location_field_map = {
-        #     "address_line1": "legal_entity_address_line1",
-        #     "address_line2": "legal_entity_address_line2",
-        #     "address_line3": "legal_entity_address_line3",
-        #     "location_country_code": "legal_entity_country_code",
-        #     "city_name": "legal_entity_city_name",
-        #     "congressional_code": "legal_entity_congressional",
-        #     "state_code": "legal_entity_state_code",
-        #     "zip4": "legal_entity_zip4"
-        # }
-
-        legal_entity_location_field_map = {
-                "address_line1": "legal_entity_address_line1",
-                "address_line2": "legal_entity_address_line2",
-                "address_line3": "legal_entity_address_line3",
-                "location_country_code": "legal_entity_country_code",
-                "country_name": "legal_entity_country_name",
-                "city_name": "legal_entity_city_name",
-                "congressional_code": "legal_entity_congressional",
-                "state_code": "legal_entity_state_code",
-                "state_name": "legal_entity_state_descrip",
-                "zip4": "legal_entity_zip4"
-        }
-
-        legal_entity_location_value_map = {
-            "recipient_flag": True
-        }
-
-        # place_of_performance_field_map = {
-        #     # not sure place_of_performance_locat maps exactly to city name
-        #     # "city_name": "place_of_performance_locat", # location id doesn't mean it's a city. Can't use this mapping
-        #     "congressional_code": "place_of_performance_congr",
-        #     "state_code": "place_of_performance_state",
-        #     "zip4": "place_of_performance_zip4a",
-        #     "location_country_code": "place_of_perform_country_c"
-        # }
-
-        place_of_performance_field_map = {
-            # not sure place_of_performance_locat maps exactly to city name
-            # TODO: place_of_performance_locat vs place_of_perform_city_name
-            "location_country_code": "place_of_perform_country_c",
-            "country_name": "place_of_perf_country_desc",
-            "city_name": "place_of_performance_locat",
-            "congressional_code": "place_of_performance_congr",
-            "state_code": "place_of_performance_state",
-            "state_name": "place_of_perfor_state_desc",
-            "zip4": "place_of_performance_zip4a",
-            "county_name": "place_of_perform_county_na"
-        }
-
-        place_of_performance_value_map = {
-            "place_of_performance_flag": True
-        }
-
-        list_of_columns = (', '.join(legal_entity_location_field_map.values())) + ', ' +  \
-                          (', '.join(place_of_performance_field_map.values()))
+        list_of_columns = (', '.join(['piid', 'modification_number']))
 
         query = "SELECT {} FROM detached_award_procurement".format(list_of_columns)
         arguments = []
@@ -277,15 +174,14 @@ class Command(BaseCommand):
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
 
-                lel = get_location_pre_update(
-                    legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
-                )
-                if lel:
+                transaction = TransactionNormalized.objects.filter(award__piid=row['piid'],modification_number=row['modification_number'])
+
+                if transaction.recipient and transaction.recipient.location:
+                    lel = transaction.recipient.location
                     lel.save()
 
-                pop = get_location_pre_update(
-                    place_of_performance_field_map, row, copy(place_of_performance_value_map))
-                if pop:
+                if transaction.place_of_performance:
+                    pop = transaction.place_of_performance
                     pop.save()
 
         logger.info('saving locations')
@@ -373,57 +269,3 @@ class Command(BaseCommand):
             logger.info('Finished D2 historical data location insert in ' + str(end - start) + ' seconds')
 
         logger.info('FINISHED')
-
-
-def get_location_pre_update(location_map, row, location_value_map):
-    """
-    Retrieve or create a location object
-
-    Input parameters:
-        - location_map: a dictionary with key = field name on the location model
-            and value = corresponding field name on the current row of data
-        - row: the row of data currently being loaded
-    """
-    if location_value_map is None:
-        location_value_map = {}
-
-    row = canonicalize_location_dict(row)
-
-    location_country = RefCountryCode.objects.filter(
-        country_code=row[location_map.get('location_country_code')]).first()
-
-    state_code = row.get(location_map.get('state_code'))
-    if state_code is not None:
-        # Remove . in state names (i.e. D.C.)
-        location_value_map.update({'state_code': state_code.replace('.', '')})
-
-    if location_country:
-        location_value_map.update({
-            'location_country_code': location_country,
-            'country_name': location_country.country_name,
-            'state_code': None,  # expired
-            'state_name': None,
-        })
-    else:
-        # no country found for this code
-        location_value_map.update({
-            'location_country_code': None,
-            'country_name': None
-        })
-
-    location_data = load_data_into_model(
-        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
-
-    del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
-    if len(location_data):
-        if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
-            location_object = None
-        else:
-            location_data['data_source'] = 'DBR'
-            location_object = Location.objects.filter(**location_data)
-        return location_object
-    else:
-        # record had no location information at all
-        return None
-
-
