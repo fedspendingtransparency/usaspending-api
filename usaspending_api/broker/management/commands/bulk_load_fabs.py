@@ -64,6 +64,7 @@ class Command(BaseCommand):
             fabs_bulk.append(fabs_instance)
 
         with db_transaction.atomic():
+            logger.info('Bulk creating...')
             TransactionFABS.objects.bulk_create(fabs_bulk)
 
     def add_arguments(self, parser):
