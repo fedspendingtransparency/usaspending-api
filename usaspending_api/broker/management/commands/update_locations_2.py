@@ -1,70 +1,14 @@
 import logging
 import timeit
 from datetime import datetime
-import sys
-import re
-from django.db.models import F, Q
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
-from usaspending_api.references.abbreviations import state_to_code, code_to_state
-from django.db.utils import IntegrityError
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency, Location, \
-    RefCountryCode, RefCityCountyCode
-from usaspending_api.etl.management.load_base import copy, load_data_into_model
-
-from usaspending_api.references.helpers import canonicalize_location_dict
 
 from usaspending_api.awards.models import TransactionNormalized
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
-
-# Lists to store for update_awards and update_contract_awards
-award_update_id_list = []
-award_contract_update_id_list = []
-
-subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in
-                      SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
-subtier_to_agency_map = {
-agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in
-Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
-toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in
-                      ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
-
-"""
-This is a county code map that needs to be created anytime this file is loaded so that references can be pulled
-from memory.
-"""
-county_code_columns = ['city_code', 'county_code', 'state_code', 'city_name', 'county_name']
-
-regex_solution = True
-dict_subset_solution = False
-
-if dict_subset_solution:
-    county_code_map = {}
-    for _city in RefCityCountyCode.objects.all():
-        _key = ''
-        _value = {}
-        for _column in county_code_columns:
-            _column_value = getattr(_city, _column, '')
-            _value[_column] = _column_value
-            if _column_value:
-                _key += _column_value.lower()
-        county_code_map[_key] = _value
-elif regex_solution:
-    county_code_map = {}
-    for _city in RefCityCountyCode.objects.all():
-        key = "_".join([getattr(_city, col, '') for col in county_code_columns])
-        dict = {col: getattr(_city, col, '') for col in county_code_columns}
-        county_code_map[key] = dict
-
-
-def dict_is_subset(d1, d2):
-    return set(d1.items()) <= set(d2.items())
-
-def dict_in_mapping(regex, mapping):
-    return regex if re.match(regex, mapping) else None
 
 class Command(BaseCommand):
     help = "Create Locations from Location data in the Broker."
