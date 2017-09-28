@@ -8,7 +8,7 @@ from django.db import connections, transaction as db_transaction, IntegrityError
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency
+from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency, Location
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 import sys
@@ -73,7 +73,6 @@ class Command(BaseCommand):
             "address_line1": "legal_entity_address_line1",
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
-            # "city_code": "legal_entity_city_code", # NOT PRESENT IN FABS!
             "city_name": "legal_entity_city_name",
             "congressional_code": "legal_entity_congressional",
             "county_code": "legal_entity_county_code",
@@ -126,24 +125,75 @@ class Command(BaseCommand):
 
         transaction_assistance_bulk = []
         transaction_normalized_bulk = []
+        legal_entity_bulk = []
+        place_of_performance_bulk = []
 
         start_time = datetime.now()
 
-        # Legal Entity / Location / PoP
+        pop_map = []
+        lel_bulk = []
+
+        # Legal Entity /Location
         for index, row in enumerate(award_financial_assistance_data, 1):
-            if not (index % 100):
-                logger.info('LeL File Load: Loading row {} of {} ({})'.format(str(index),
-                                                                             str(total_rows),
-                                                                             datetime.now() - start_time))
 
-                legal_entity_location, created = get_or_create_location(
-                    legal_entity_location_field_map, row, legal_entity_location_value_map
-                )
+            legal_entity_location = get_or_create_location(
+                legal_entity_location_field_map, row, legal_entity_location_value_map, save=False
+            )
+
+            lel_bulk.append(legal_entity_location) # :-(
+
+        # Load LeL
+        logger.info('Bulk creating {} LeL rows...'.format(len(lel_bulk)))
+        print(lel_bulk[1])
+        try:
+            Location.objects.bulk_create(lel_bulk)
+        except IntegrityError:
+            logger.info('Continuing... ')
+
+        pop_bulk = []
+
+        # Pop
+        for index, row in enumerate(award_financial_assistance_data, 1):
+
+            # Create the place of performance location
+            pop_location = get_or_create_location(
+                place_of_performance_field_map, row, place_of_performance_value_map, save=False
+            )
+
+            pop_bulk.append(pop_location)
+
+        logger.info('Bulk creating PoP rows...')
+        try:
+            Location.objects.bulk_create(pop_bulk)
+        except IntegrityError:
+            logger.info('Continuing... ')
+
+        # Legal Entity
+        for index, row in enumerate(award_financial_assistance_data, 1):
+            recipient_name = row.get('awardee_or_recipient_legal', '')
 
 
+            legal_entity = LegalEntity.objects.filter(recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                                                      recipient_name=recipient_name).first()
 
+            if legal_entity is None:
+                legal_entity = LegalEntity(recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                                           recipient_name=recipient_name)
+                legal_entity_value_map = {
+                    "location": lel_bulk[index - 1],
+                }
+                legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=False)
 
+            legal_entity_bulk.append(legal_entity)
 
+        logger.info('Bulk creating legal entity rows...')
+        try:
+            LegalEntity.objects.bulk_create(legal_entity_bulk)
+        except IntegrityError:
+            logger.info('Continuing... ')
+
+        award_bulk = []
+        # Award Bulk
         for index, row in enumerate(award_financial_assistance_data, 1):
             with db_transaction.atomic():
 
@@ -152,28 +202,6 @@ class Command(BaseCommand):
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
 
-                legal_entity_location, created = get_or_create_location(
-                    legal_entity_location_field_map, row, legal_entity_location_value_map
-                )
-
-                recipient_name = row.get('awardee_or_recipient_legal', '')
-
-                # Create the legal entity if it doesn't exist
-                legal_entity = LegalEntity.objects.filter(recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                                                          recipient_name=recipient_name).first()
-
-                if legal_entity is None:
-                    legal_entity = LegalEntity(recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                                               recipient_name=recipient_name)
-                    legal_entity_value_map = {
-                        "location": legal_entity_location,
-                    }
-                    legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
-
-                # Create the place of performance location
-                pop_location, created = get_or_create_location(
-                    place_of_performance_field_map, row, place_of_performance_value_map
-                )
 
                 # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
                 # use the sub tier code to look it up. This code assumes that all incoming
@@ -206,36 +234,78 @@ class Command(BaseCommand):
                     row["funding_sub_tier_agency_co"]
                 )
 
+                # award.save() is called in Award.get_or_create_summary_award by default
                 created, award = Award.get_or_create_summary_award(
                     awarding_agency=awarding_agency,
                     fain=row.get('fain'),
-                    uri=row.get('uri'))
+                    uri=row.get('uri'),
+                    save=False
+                )
 
-                # award.save() is called in Award.get_or_create_summary_award
-
+                award_bulk.append(award)
                 award_update_id_list.append(award.id)
 
-                parent_txn_value_map = {
-                    "award": award,
-                    "awarding_agency": awarding_agency,
-                    "funding_agency": funding_agency,
-                    "recipient": legal_entity,
-                    "place_of_performance": pop_location,
-                    "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                    "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                    "action_date": format_date(row['action_date']),
-                }
+        logger.info('Bulk creating awards...')
+        try:
+            Award.objects.bulk_create(award_bulk)
+        except IntegrityError:
+            logger.info('*** Tried and failed ')
 
-                transaction_dict = load_data_into_model(
-                    TransactionNormalized(),  # thrown away
-                    row,
-                    field_map=fad_field_map,
-                    value_map=parent_txn_value_map,
-                    as_dict=True)
+        # Txn
+        for index, row in enumerate(award_financial_assistance_data, 1):
 
-                transaction_normalized = TransactionNormalized.get_or_create_transaction(**transaction_dict)
-                transaction_normalized.fiscal_year = fy(transaction_normalized.action_date)
-                transaction_normalized_bulk.append(transaction_normalized)
+            # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
+            # use the sub tier code to look it up. This code assumes that all incoming
+            # records will supply an awarding subtier agency code
+            if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
+                awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
+                awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
+                awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
+                row['awarding_agency_code'] = awarding_cgac_code
+
+            # If funding toptier agency code (aka CGAC) is empty, try using the sub
+            # tier funding code to look it up. Unlike the awarding agency, we can't
+            # assume that the funding agency subtier code will always be present.
+            if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+                funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
+                if funding_subtier_agency_id is not None:
+                    funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
+                    funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
+                else:
+                    funding_cgac_code = None
+                row['funding_agency_code'] = funding_cgac_code
+
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            awarding_agency = Agency.get_by_toptier_subtier(
+                row['awarding_agency_code'],
+                row["awarding_sub_tier_agency_c"]
+            )
+            funding_agency = Agency.get_by_toptier_subtier(
+                row['funding_agency_code'],
+                row["funding_sub_tier_agency_co"]
+            )
+
+            parent_txn_value_map = {
+                "award": award_bulk[index - 1],
+                "awarding_agency": awarding_agency,
+                "funding_agency": funding_agency,
+                "recipient": legal_entity_bulk[index - 1],
+                "place_of_performance": pop_bulk[index - 1],
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "action_date": format_date(row['action_date']),
+            }
+
+            transaction_dict = load_data_into_model(
+                TransactionNormalized(),  # thrown away
+                row,
+                field_map=fad_field_map,
+                value_map=parent_txn_value_map,
+                as_dict=True)
+
+            transaction_normalized = TransactionNormalized.get_or_create_transaction(**transaction_dict)
+            transaction_normalized.fiscal_year = fy(transaction_normalized.action_date)
+            transaction_normalized_bulk.append(transaction_normalized)
 
         logger.info('Bulk creating TransactionNormalized rows...')
         try:

@@ -162,7 +162,7 @@ class Award(DataSourceTrackedModel):
 
     @staticmethod
     def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None,
-                                    uri=None, parent_award_id=None, use_cache=False):
+                                    uri=None, parent_award_id=None, use_cache=False, save=True):
         """
         Given a set of award identifiers and awarding agency information,
         find a corresponding Award record. If we can't find one, create it.
@@ -226,7 +226,9 @@ class Award(DataSourceTrackedModel):
             created = [summary_award, ]
             created.extend(parent_created)
 
-            summary_award.save()
+            if save:
+                summary_award.save()
+
             return created, summary_award
 
         except:
