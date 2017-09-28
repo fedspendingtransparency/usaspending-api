@@ -4,7 +4,7 @@ import threading
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ParseError
 
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
@@ -80,6 +80,21 @@ class BaseDownloadViewSet(APIView):
         return self.get_download_response(file_name=timestamped_file_name)
 
 
+def parse_limit(json_request):
+    """Extracts the `limit` from a request and validates"""
+
+    limit = json_request.get('limit')
+    if limit:
+        try:
+            limit = int(json_request['limit'])
+        except (ValueError, TypeError):
+            raise ParseError('limit must be integer; {} given'.format(limit))
+        if limit > settings.MAX_DOWNLOAD_LIMIT:
+            msg = 'Requested limit {} beyond max supported ({})'
+            raise ParseError(msg.format(limit, settings.MAX_DOWNLOAD_LIMIT))
+    return limit   # None is a workable slice argument
+
+
 def verify_requested_columns_available(sources, requested):
     bad_cols = set(requested)
     for source in sources:
@@ -104,13 +119,16 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
 
 class DownloadTransactionsViewSet(BaseDownloadViewSet):
     def get_csv_sources(self, json_request):
+        limit = parse_limit(json_request)
         contract_source = csv_selection.CsvSource('transaction', 'd1')
         assistance_source = csv_selection.CsvSource('transaction', 'd2')
         verify_requested_columns_available((contract_source, assistance_source), json_request['columns'])
         filters = json_request['filters']
-        queryset = transaction_filter(filters)
-        contract_source.queryset = queryset & TransactionNormalized.objects.filter(contract_data__isnull=False)
-        assistance_source.queryset = queryset & TransactionNormalized.objects.filter(assistance_data__isnull=False)
+        base_qset = transaction_filter(filters)
+        queryset = base_qset & TransactionNormalized.objects.filter(contract_data__isnull=False)
+        contract_source.queryset = queryset[:limit]
+        queryset = base_qset & TransactionNormalized.objects.filter(assistance_data__isnull=False)
+        assistance_source.queryset = queryset[:limit]
         return (contract_source, assistance_source)
 
     DOWNLOAD_NAME = 'transactions'
