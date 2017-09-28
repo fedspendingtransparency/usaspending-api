@@ -239,7 +239,7 @@ class Command(BaseCommand):
     def load_awards(fabs_broker_data, total_rows):
         start_time = datetime.now()
         for index, row in enumerate(fabs_broker_data, 1):
-            if not (index % 1000):
+            if not (index % 10000):
                 logger.info('Awards: Loading row {} of {} ({})'.format(str(index),
                                                                           str(total_rows),
                                                                           datetime.now() - start_time))
