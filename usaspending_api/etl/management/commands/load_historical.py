@@ -3,6 +3,7 @@ import logging
 
 from django.utils.dateparse import parse_date
 from django.db import transaction
+from django.core.management.base import CommandError
 
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
