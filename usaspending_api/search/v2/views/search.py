@@ -649,6 +649,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
         for award in queryset:
+            print(award)
             if (award["latest_transaction__type"] in contract_type_mapping):
                 results["contracts"] += 1
             elif (award["latest_transaction__type"] in grant_type_mapping):  # Grants

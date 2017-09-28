@@ -1,7 +1,7 @@
 import logging
 import timeit
 from datetime import datetime
-
+from usaspending_api.common.helpers import fy
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction, IntegrityError
 
@@ -121,16 +121,31 @@ class Command(BaseCommand):
 
         # skip_count = 0
 
+
+##### ROW ITERATION STARTS HERE
+
+        transaction_assistance_bulk = []
+        transaction_normalized_bulk = []
+
         start_time = datetime.now()
+
+        # Legal Entity / Location / PoP
+        for index, row in enumerate(award_financial_assistance_data, 1):
+            if not (index % 100):
+                logger.info('LeL File Load: Loading row {} of {} ({})'.format(str(index),
+                                                                             str(total_rows),
+                                                                             datetime.now() - start_time))
+
+                legal_entity_location, created = get_or_create_location(
+                    legal_entity_location_field_map, row, legal_entity_location_value_map
+                )
+
+
+
+
+
         for index, row in enumerate(award_financial_assistance_data, 1):
             with db_transaction.atomic():
-                # if TransactionFABS.objects.values('published_award_financial_assistance_id').\
-                #         filter(published_award_financial_assistance_id=str(row['published_award_financial_assistance_id'])).first():
-                #     skip_count += 1
-                #
-                #     if not (skip_count % 100):
-                #         logger.info('Skipped {} records so far'.format(str(skip_count)))
-                #     continue
 
                 if not (index % 100):
                     logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
@@ -141,26 +156,15 @@ class Command(BaseCommand):
                     legal_entity_location_field_map, row, legal_entity_location_value_map
                 )
 
-                recipient_name = row['awardee_or_recipient_legal']
-                if recipient_name is None:
-                    recipient_name = ""
+                recipient_name = row.get('awardee_or_recipient_legal', '')
 
                 # Create the legal entity if it doesn't exist
-                created = False
                 legal_entity = LegalEntity.objects.filter(recipient_unique_id=row['awardee_or_recipient_uniqu'],
                                                           recipient_name=recipient_name).first()
 
                 if legal_entity is None:
-                    created = True
                     legal_entity = LegalEntity(recipient_unique_id=row['awardee_or_recipient_uniqu'],
                                                recipient_name=recipient_name)
-
-                # legal_entity, created = LegalEntity.objects.get_or_create(
-                #     recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                #     recipient_name=recipient_name
-                # )
-
-                if created:
                     legal_entity_value_map = {
                         "location": legal_entity_location,
                     }
@@ -197,21 +201,24 @@ class Command(BaseCommand):
                     row['awarding_agency_code'],
                     row["awarding_sub_tier_agency_c"]
                 )
+                funding_agency = Agency.get_by_toptier_subtier(
+                    row['funding_agency_code'],
+                    row["funding_sub_tier_agency_co"]
+                )
+
                 created, award = Award.get_or_create_summary_award(
                     awarding_agency=awarding_agency,
-                    # piid=transaction_assistance.get('piid'), # not found
                     fain=row.get('fain'),
                     uri=row.get('uri'))
-                # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
-                award.save()
+
+                # award.save() is called in Award.get_or_create_summary_award
 
                 award_update_id_list.append(award.id)
 
                 parent_txn_value_map = {
                     "award": award,
                     "awarding_agency": awarding_agency,
-                    "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                                                    row["funding_sub_tier_agency_co"]),
+                    "funding_agency": funding_agency,
                     "recipient": legal_entity,
                     "place_of_performance": pop_location,
                     "period_of_performance_start_date": format_date(row['period_of_performance_star']),
@@ -226,21 +233,34 @@ class Command(BaseCommand):
                     value_map=parent_txn_value_map,
                     as_dict=True)
 
-                transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
-                transaction.save()
+                transaction_normalized = TransactionNormalized.get_or_create_transaction(**transaction_dict)
+                transaction_normalized.fiscal_year = fy(transaction_normalized.action_date)
+                transaction_normalized_bulk.append(transaction_normalized)
 
-                financial_assistance_data = load_data_into_model(
-                    TransactionFABS(),  # thrown away
-                    row,
-                    as_dict=True)
+        logger.info('Bulk creating TransactionNormalized rows...')
+        try:
+            TransactionNormalized.objects.bulk_create(transaction_normalized_bulk)
+        except IntegrityError:
+            logger.info('Tried and failed to insert duplicate transaction_normalized row. Continuing... ')
 
-                transaction_assistance = TransactionFABS(transaction=transaction, **financial_assistance_data)
-                # catch exception and do nothing if we see
-                # "django.db.utils.IntegrityError: duplicate key value violates unique constraint"
-                try:
-                    transaction_assistance.save()
-                except IntegrityError:
-                    pass
+        for index, row in enumerate(award_financial_assistance_data, 1):
+            financial_assistance_data = load_data_into_model(
+                TransactionFABS(),  # thrown away
+                row,
+                as_dict=True)
+
+            transaction_assistance = TransactionFABS(transaction=transaction_normalized_bulk[index - 1], **financial_assistance_data)
+            transaction_assistance_bulk.append(transaction_assistance)
+
+        logger.info('Bulk creating TransactionFABS rows...')
+        try:
+            TransactionFABS.objects.bulk_create(transaction_assistance_bulk)
+        except IntegrityError:
+            logger.info('Tried and failed to insert duplicate transaction_assistance row. Continuing... ')
+
+
+######################################################
+
 
     @staticmethod
     def update_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000):

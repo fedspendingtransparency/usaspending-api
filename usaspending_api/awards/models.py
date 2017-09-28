@@ -228,6 +228,7 @@ class Award(DataSourceTrackedModel):
 
             summary_award.save()
             return created, summary_award
+
         except:
             raise ValueError(
                 'Unable to find or create an award with the provided information: '
@@ -551,7 +552,9 @@ class TransactionNormalized(models.Model):
         if transaction:
             if not transaction.newer_than(kwargs):
                 for (k, v) in kwargs.items():
+
                     setattr(transaction, k, v)
+
             return transaction
         return cls(**kwargs)
 

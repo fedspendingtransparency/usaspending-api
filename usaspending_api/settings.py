@@ -285,7 +285,7 @@ CACHES = {
 }
 
 # Cache environment - 'local', 'disabled', or 'elasticache'
-CACHE_ENVIRONMENT = 'local'
+CACHE_ENVIRONMENT = 'disabled'
 
 # Set up the appropriate elasticache for our environment
 CACHE_ENVIRONMENTS = {
