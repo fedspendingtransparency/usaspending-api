@@ -17,7 +17,7 @@ class Command(BaseCommand):
     help = "Updates empty awarding and funding agency fields on transactions and awards due to subtier/toptier mapping"
 
     @staticmethod
-    def update_awarding_funding_agency(fiscal_year=2017, file_type=None):
+    def update_awarding_funding_agency(fiscal_year=None, file_type=None):
 
         """
         Uses the TransactionFPDS or TransactionFABS is present to update missing awarding and funding agency
