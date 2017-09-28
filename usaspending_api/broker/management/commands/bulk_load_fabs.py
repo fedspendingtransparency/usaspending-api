@@ -3,24 +3,46 @@ import timeit
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
+from usaspending_api.common.helpers import fy
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.awards.models import TransactionFABS
-from usaspending_api.etl.management.load_base import load_data_into_model
+from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
+from usaspending_api.etl.management.load_base import load_data_into_model, format_date
 from usaspending_api.references.helpers import canonicalize_location_dict
-from usaspending_api.references.models import RefCountryCode, Location, RefCityCountyCode
+from usaspending_api.references.models import RefCountryCode, Location, LegalEntity, Agency, ToptierAgency, SubtierAgency
 
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
 country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
+subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
+subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
+toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
+agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
+agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
+agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
+
+fabs_bulk = []
 
 pop_lookup = {}
 pop_bulk = []
 
 lel_lookup = {}
 lel_bulk = []
+
+legal_entity_bulk = []
+
+awarding_agency_list = []
+funding_agency_list = []
+
+award_lookup = []
+
+transaction_normalized_bulk = []
+
+# Lists to store for update_awards and update_contract_awards
+award_update_id_list = []
+award_contract_update_id_list = []
 
 pop_field_map = {
     "city_name": "place_of_performance_city",
@@ -82,8 +104,6 @@ class Command(BaseCommand):
     def load_transaction_fabs(fabs_broker_data, total_rows):
         logger.info('Starting bulk loading for FABS data')
 
-        fabs_bulk = []
-
         start_time = datetime.now()
         for index, row in enumerate(fabs_broker_data, 1):
             if not (index % 10000):
@@ -136,7 +156,7 @@ class Command(BaseCommand):
             # Fix state code periods
             state_code = row.get(field_map.get('state_code'))
             if state_code is not None:
-                field_map.update({'state_code': state_code.replace('.', '')})
+                location_value_map.update({'state_code': state_code.replace('.', '')})
 
             if location_country_code:
                 location_value_map.update({
@@ -176,8 +196,161 @@ class Command(BaseCommand):
                 lel_lookup[index] = loc_instance
 
         with db_transaction.atomic():
-            logger.info('Bulk creating Place of Performance Locations...')
-            Location.objects.bulk_create(pop_bulk)
+            if pop_flag:
+                logger.info('Bulk creating POP Locations...')
+                Location.objects.bulk_create(pop_bulk)
+            else:
+                logger.info('Bulk creating LE Locations...')
+                Location.objects.bulk_create(lel_bulk)
+
+    @staticmethod
+    def load_legal_entity(fabs_broker_data, total_rows):
+
+        start_time = datetime.now()
+        for index, row in enumerate(fabs_broker_data, 1):
+            if not (index % 10000):
+                logger.info('Legal Entity: Loading row {} of {} ({})'.format(str(index),
+                                                                          str(total_rows),
+                                                                          datetime.now() - start_time))
+
+            recipient_name = row.get('awardee_or_recipient_legal', '')
+
+            legal_entity = LegalEntity(
+                recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                recipient_name=recipient_name
+            )
+
+            legal_entity = load_data_into_model(
+                legal_entity,
+                row,
+                value_map={"location": lel_lookup[index]},
+                save=False)
+
+            LegalEntity.update_business_type_categories(legal_entity)
+
+            legal_entity_bulk.append(legal_entity)
+
+        with db_transaction.atomic():
+            logger.info('Bulk creating Legal Entities...')
+            LegalEntity.objects.bulk_create(legal_entity_bulk)
+
+    @staticmethod
+    @db_transaction.atomic()
+    def load_awards(fabs_broker_data, total_rows):
+        start_time = datetime.now()
+        for index, row in enumerate(fabs_broker_data, 1):
+            if not (index % 1000):
+                logger.info('Awards: Loading row {} of {} ({})'.format(str(index),
+                                                                          str(total_rows),
+                                                                          datetime.now() - start_time))
+
+            # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
+            # use the sub tier code to look it up. This code assumes that all incoming
+            # records will supply an awarding subtier agency code
+            if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
+                awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
+                awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
+                awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
+                row['awarding_agency_code'] = awarding_cgac_code
+
+            # If funding toptier agency code (aka CGAC) is empty, try using the sub
+            # tier funding code to look it up. Unlike the awarding agency, we can't
+            # assume that the funding agency subtier code will always be present.
+            if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
+                funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
+                if funding_subtier_agency_id is not None:
+                    funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id][
+                        'toptier_agency_id']
+                    funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
+                else:
+                    funding_cgac_code = None
+                row['funding_agency_code'] = funding_cgac_code
+
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            awarding_agency = agency_no_sub_map.get((
+                row['awarding_agency_code'],
+                row["awarding_sub_tier_agency_c"]
+            ))
+
+            if awarding_agency is None:
+                awarding_agency = agency_sub_only_map.get(row['awarding_agency_code'])
+
+            funding_agency = agency_no_sub_map.get((
+                row['funding_agency_code'],
+                row["funding_sub_tier_agency_co"]
+            ))
+
+            if funding_agency is None:
+                funding_agency = agency_sub_only_map.get(row['funding_agency_code'])
+
+            awarding_agency_list.append(awarding_agency)
+            funding_agency_list.append(funding_agency)
+
+            # award.save() is called in Award.get_or_create_summary_award by default
+            created, award = Award.get_or_create_summary_award(
+                awarding_agency=awarding_agency,
+                fain=row.get('fain'),
+                uri=row.get('uri'),
+                save=True,
+                agency_toptier_map=agency_toptier_map
+            )
+
+            award_lookup.append(award)
+            award_update_id_list.append(award.id)
+
+    @staticmethod
+    def load_transaction_normalized(fabs_broker_data, total_rows):
+        start_time = datetime.now()
+        for index, row in enumerate(fabs_broker_data, 1):
+            if not (index % 10000):
+                logger.info('Awards: Loading row {} of {} ({})'.format(str(index),
+                                                                          str(total_rows),
+                                                                          datetime.now() - start_time))
+
+            parent_txn_value_map = {
+                "award": award_lookup[index - 1],
+                "awarding_agency": awarding_agency_list[index - 1],
+                "funding_agency": funding_agency_list[index - 1],
+                "recipient": legal_entity_bulk[index - 1],
+                "place_of_performance": pop_bulk[index - 1],
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "action_date": format_date(row['action_date']),
+            }
+
+            fad_field_map = {
+                "type": "assistance_type",
+                "description": "award_description",
+            }
+
+            transaction_dict = load_data_into_model(
+                TransactionNormalized(),
+                row,
+                field_map=fad_field_map,
+                value_map=parent_txn_value_map,
+                as_dict=True)
+
+            transaction_normalized = TransactionNormalized.get_or_create_transaction(**transaction_dict)
+            transaction_normalized.fiscal_year = fy(transaction_normalized.action_date)
+            transaction_normalized_bulk.append(transaction_normalized)
+
+        with db_transaction.atomic():
+            logger.info('Bulk creating Transaction Normalized...')
+            TransactionNormalized.objects.bulk_create(transaction_normalized_bulk)
+
+    @staticmethod
+    @db_transaction.atomic()
+    def update_transaction_links(total_rows):
+        start_time = datetime.now()
+        for index in range(total_rows):
+            if not (index % 10000):
+                logger.info('Transaction links: Loading row {} of {} ({})'.format(str(index),
+                                                                          str(total_rows),
+                                                                          datetime.now() - start_time))
+
+            TransactionFABS.objects.\
+                filter(published_award_financial_assistance_id=fabs_bulk[index].published_award_financial_assistance_id).\
+                update(transaction=transaction_normalized_bulk[index])
 
     def add_arguments(self, parser):
 
@@ -246,3 +419,27 @@ class Command(BaseCommand):
         self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
         end = timeit.default_timer()
         logger.info('Finished LE Location bulk data load in ' + str(end - start) + ' seconds')
+
+        logger.info('Loading Legal Entity data...')
+        start = timeit.default_timer()
+        self.load_legal_entity(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+        end = timeit.default_timer()
+        logger.info('Finished Legal Entity bulk data load in ' + str(end - start) + ' seconds')
+
+        logger.info('Loading Award data...')
+        start = timeit.default_timer()
+        self.load_awards(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+        end = timeit.default_timer()
+        logger.info('Finished Award bulk data load in ' + str(end - start) + ' seconds')
+
+        logger.info('Loading Transaction Normalized data...')
+        start = timeit.default_timer()
+        self.load_transaction_normalized(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+        end = timeit.default_timer()
+        logger.info('Finished Transaction Normalized bulk data load in ' + str(end - start) + ' seconds')
+
+        logger.info('Updating Transaction links...')
+        start = timeit.default_timer()
+        self.update_transaction_links(total_rows=total_rows)
+        end = timeit.default_timer()
+        logger.info('Finished updating Transaction links in ' + str(end - start) + ' seconds')
