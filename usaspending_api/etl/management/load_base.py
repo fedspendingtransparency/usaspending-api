@@ -535,6 +535,10 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
 
     row = canonicalize_location_dict(row)
 
+    if ('recipient_flag' in location_value_map and location_value_map['recipient_flag'] and location_map.get('location_country_code') is None) or \
+            ('place_of_performance_flag' in location_value_map and location_value_map['place_of_performance_flag'] and location_map.get('location_country_code') is None and location_map["performance_code"] != '00FORGN'):
+        location_map["location_country_code"] = 'USA'
+
     location_country = RefCountryCode.objects.filter(
         country_code=row[location_map.get('location_country_code')]).first()
 
