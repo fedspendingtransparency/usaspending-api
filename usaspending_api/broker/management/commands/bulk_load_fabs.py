@@ -79,9 +79,9 @@ class Command(BaseCommand):
     help = "Update historical transaction data for a fiscal year from the Broker."
 
     @staticmethod
-    def get_fabs_data(db_cursor, fiscal_year=None, page=1, limit=500000):
-        query = "SELECT * FROM published_award_financial_assistance WHERE is_active=TRUE"
-        arguments = []
+    def get_fabs_data(db_cursor, fiscal_year=None, page=1, limit=500000, before_date='2017-09-20'):
+        query = "SELECT * FROM published_award_financial_assistance WHERE is_active=TRUE AND updated_at < %s"
+        arguments = [before_date]
 
         fy_begin = '10/01/' + str(fiscal_year - 1)
         fy_end = '09/30/' + str(fiscal_year)
@@ -91,6 +91,7 @@ class Command(BaseCommand):
             query += ' action_date::Date BETWEEN %s AND %s'
             arguments += [fy_begin]
             arguments += [fy_end]
+
         query += ' ORDER BY published_award_financial_assistance_id LIMIT %s OFFSET %s'
         arguments += [limit, (page-1)*limit]
 
@@ -379,6 +380,14 @@ class Command(BaseCommand):
             help="Limit for batching and parallelization"
         )
 
+        parser.add_argument(
+            '--before_date',
+            dest="limit",
+            nargs='+',
+            type=str,
+            help="Limit for batching and parallelization"
+        )
+
     def handle(self, *args, **options):
         logger.info('Starting FABS bulk data load...')
 
@@ -386,6 +395,7 @@ class Command(BaseCommand):
         fiscal_year = options.get('fiscal_year')
         page = options.get('page')
         limit = options.get('limit')
+        before_date = options.get('before_date')
 
         if fiscal_year:
             fiscal_year = fiscal_year[0]
@@ -395,10 +405,11 @@ class Command(BaseCommand):
 
         page = page[0] if page else 1
         limit = limit[0] if limit else 500000
+        before_date = before_date[0] if before_date else '2017-09-20'
 
         logger.info('Get Broker FABS data...')
         start = timeit.default_timer()
-        fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
+        fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit, before_date=before_date)
         total_rows = len(fabs_broker_data)
         end = timeit.default_timer()
         logger.info('Finished getting Broker FABS data in ' + str(end - start) + ' seconds')
