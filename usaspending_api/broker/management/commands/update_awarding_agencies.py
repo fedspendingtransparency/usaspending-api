@@ -30,8 +30,10 @@ class Command(BaseCommand):
             transaction_cgac_subtier_map = [
                                                {
                                                 'transaction_id': transaction['transaction_id'],
-                                                'cgac_code': transaction['awarding_agency_code'],
-                                                'subtier_code': transaction['awarding_sub_tier_agency_c'],
+                                                'awarding_cgac_code': transaction['awarding_agency_code'],
+                                                'funding_cgac_code': transaction['funding_agency_code'],
+                                                'awarding_subtier_code': transaction['awarding_sub_tier_agency_c'],
+                                                'funding_subtier_code': transaction['funding_sub_tier_agency_co']
                                                }
                                                for transaction in TransactionFPDS.objects
                                                .filter(Q(transaction__fiscal_year=fiscal_year) &
@@ -40,7 +42,9 @@ class Command(BaseCommand):
                                                        )
                                                .values('transaction_id',
                                                        'awarding_agency_code',
-                                                       'awarding_sub_tier_agency_c'
+                                                       'funding_agency_code',
+                                                       'awarding_sub_tier_agency_c',
+                                                       'funding_sub_tier_agency_co'
                                                        )
                                             ]
         elif file_type == 'D2':
@@ -49,8 +53,10 @@ class Command(BaseCommand):
             transaction_cgac_subtier_map = [
                                                 {
                                                  'transaction_id': transaction['transaction_id'],
-                                                 'cgac_code': transaction['awarding_agency_code'],
-                                                 'subtier_code': transaction['awarding_sub_tier_agency_c']
+                                                 'awarding_cgac_code': transaction['awarding_agency_code'],
+                                                 'funding_cgac_code': transaction['funding_agency_code'],
+                                                 'awarding_subtier_code': transaction['awarding_sub_tier_agency_c'],
+                                                 'funding_subtier_code': transaction['funding_sub_tier_agency_co']
                                                 }
                                                 for transaction in TransactionFABS.objects
                                                 .filter(Q(transaction__fiscal_year=fiscal_year) &
@@ -59,7 +65,9 @@ class Command(BaseCommand):
                                                         )
                                                 .values('transaction_id',
                                                         'awarding_agency_code',
-                                                        'awarding_sub_tier_agency_c'
+                                                        'funding_agency_code',
+                                                        'awarding_sub_tier_agency_c',
+                                                        'funding_sub_tier_agency_co'
                                                         )
                                             ]
 
@@ -77,22 +85,46 @@ class Command(BaseCommand):
                 logger.error('Unable to find Transaction {}'.format(str(row['transaction_id'])))
                 continue
 
+            # Since funding codes are an optional field for data entry, we will substitute the funding codes
+            # with the awarding codes when empty
+            if row['funding_cgac_code'] is None:
+                row['funding_cgac_code'] = row['awarding_cgac_code']
+
+            if row['funding_subtier_code'] is None:
+                row['funding_subtier_code'] = row['awarding_subtier_code']
+
             # Update awarding and funding agency if awarding of funding agency is empty
-            agency = Agency.get_by_toptier_subtier(row['cgac_code'], row['subtier_code'])
+            awarding_agency = Agency.get_by_toptier_subtier(row['awarding_cgac_code'], row['awarding_subtier_code'])
+            funding_agency = Agency.get_by_toptier_subtier(row['funding_cgac_code'], row['funding_subtier_code'])
 
             # If unable to get agency moves on to the next transaction
-            if agency is None:
-                logger.error('Unable to find Agency for CGAC {}, Subtier {}'.format(
-                                                                                    row['cgac_code'],
-                                                                                    row['subtier_code']))
+            if awarding_agency is None and funding_agency is None:
+                logger.error('Unable to find awarding agency CGAC {} Subtier {} and funding agency CGAC {} Subtier {}'
+                             .format(
+                                row['awarding_cgac_code'],
+                                row['awarding_subtier_code'],
+                                row['funding_cgac_code'],
+                                row['awarding_subtier_code'])
+                            )
                 continue
+            elif awarding_agency is None:
+                logger.error('Unable to find awarding agency for CGAC {} Subtier {}'.format(
+                                                                                            row['awarding_cgac_code'],
+                                                                                            row['awarding_subtier_code']
+                                                                                            ))
+
+            elif funding_agency is None:
+                logger.error('Unable to find funding agency for CGAC {} Subtier {}'.format(
+                                                                                            row['awarding_cgac_code'],
+                                                                                            row['funding_subtier_code']
+                                                                                            ))
 
             # Update awarding/funding agency connected to transaction
-            if transaction.awarding_agency is None:
-                transaction.awarding_agency = agency
+            if transaction.awarding_agency is None and awarding_agency is not None:
+                transaction.awarding_agency = awarding_agency
 
-            if transaction.funding_agency is None:
-                transaction.funding_agency = agency
+            if transaction.funding_agency is None and funding_agency is not None:
+                transaction.funding_agency = funding_agency
 
             # Update awarding/funding agency connected to transaction's award
             award = Award.objects.filter(id=transaction.award.id).first()
@@ -101,11 +133,11 @@ class Command(BaseCommand):
                 logger.error('Unable to find Award {}'.format(str(transaction.award.id)))
                 continue
 
-            if award.awarding_agency is None:
-                award.awarding_agency = agency
+            if award.awarding_agency is None and awarding_agency is not None:
+                award.awarding_agency = awarding_agency
 
-            if award.funding_agency is None:
-                award.funding_agency = agency
+            if award.funding_agency is None and funding_agency is not None:
+                award.funding_agency = funding_agency
 
             try:
                 # Save updates to Database
