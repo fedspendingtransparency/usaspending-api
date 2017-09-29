@@ -98,9 +98,9 @@ def test_assistance_command(transaction_data):
     assert fpds_award_2017.funding_agency is None
 
     assert fabs_transaction_2017.awarding_agency == awarding_agency
-    assert fabs_transaction_2017.funding_agency == awarding_agency
+    assert fabs_transaction_2017.funding_agency is None
     assert fabs_award_2017.awarding_agency == awarding_agency
-    assert fabs_award_2017.funding_agency == awarding_agency
+    assert fabs_award_2017.funding_agency is None
 
 
 

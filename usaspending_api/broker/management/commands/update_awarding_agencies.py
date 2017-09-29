@@ -85,14 +85,6 @@ class Command(BaseCommand):
                 logger.error('Unable to find Transaction {}'.format(str(row['transaction_id'])))
                 continue
 
-            # Since funding codes are an optional field for data entry, we will substitute the funding codes
-            # with the awarding codes when empty
-            if row['funding_cgac_code'] is None:
-                row['funding_cgac_code'] = row['awarding_cgac_code']
-
-            if row['funding_subtier_code'] is None:
-                row['funding_subtier_code'] = row['awarding_subtier_code']
-
             # Update awarding and funding agency if awarding of funding agency is empty
             awarding_agency = Agency.get_by_toptier_subtier(row['awarding_cgac_code'], row['awarding_subtier_code'])
             funding_agency = Agency.get_by_toptier_subtier(row['funding_cgac_code'], row['funding_subtier_code'])
@@ -105,19 +97,23 @@ class Command(BaseCommand):
                                 row['awarding_subtier_code'],
                                 row['funding_cgac_code'],
                                 row['awarding_subtier_code'])
-                            )
+                             )
                 continue
-            elif awarding_agency is None:
+
+            if awarding_agency is None:
                 logger.error('Unable to find awarding agency for CGAC {} Subtier {}'.format(
                                                                                             row['awarding_cgac_code'],
                                                                                             row['awarding_subtier_code']
                                                                                             ))
 
+            if funding_agency is None and row['funding_cgac_code'] is None and row['funding_subtier_code'] is None:
+                logger.info('No funding agency for transaction'.format(str(row['transaction_id'])))
+
             elif funding_agency is None:
-                logger.error('Unable to find funding agency for CGAC {} Subtier {}'.format(
-                                                                                            row['awarding_cgac_code'],
-                                                                                            row['funding_subtier_code']
-                                                                                            ))
+                logger.error('Unable to find awarding agency for CGAC {} Subtier {}'.format(
+                    row['funding_cgac_code'],
+                    row['funding_subtier_code']
+                ))
 
             # Update awarding/funding agency connected to transaction
             if transaction.awarding_agency is None and awarding_agency is not None:
