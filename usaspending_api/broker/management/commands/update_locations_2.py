@@ -6,9 +6,27 @@ from django.db import connections, transaction as db_transaction
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.references.models import RefCountryCode
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
+
+
+def update_country_code(location, country_code, place_of_performance_code = None):
+    updated_location_country_code = None
+    if (location.recipient_flag and (country_code is None or country_code == 'UNITED STATES')) or \
+                            (location.place_of_performance_flag and country_code is None and place_of_performance_code and place_of_performance_code != '00FORGN') or \
+                            (location.place_of_performance_flag and country_code is None and not place_of_performance_code):
+        updated_location_country_code = 'USA'
+
+    location.location_country = RefCountryCode.objects.filter(
+        country_code=updated_location_country_code).first()
+
+    if location.location_country:
+        location.location_country_code = location.location_country
+        location.country_name = location.location_country.country_name
+
+    return location
 
 class Command(BaseCommand):
     help = "Create Locations from Location data in the Broker."
@@ -16,7 +34,7 @@ class Command(BaseCommand):
     @staticmethod
     def update_location_transaction_assistance(db_cursor, fiscal_year=2017, page=1, limit=500000, save=True):
 
-        list_of_columns = (', '.join(['fain', 'url', 'modification_number']))
+        list_of_columns = (', '.join(['fain', 'uri', 'award_modification_amendme', 'legal_entity_country_code', 'place_of_perform_country_c', 'place_of_performance_code']))
 
         # get the transaction values we need
 
@@ -57,24 +75,31 @@ class Command(BaseCommand):
             with db_transaction.atomic():
 
                 if not (index % 100):
-                    logger.info('Location Load: Loading row {} of {} ({})'.format(str(index),
+                    logger.info('Location Fix: Fixing row {} of {} ({})'.format(str(index),
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
                 # Could also use contract_data__fain
-                transaction = TransactionNormalized.objects.filter(award__fain=row['fain'],award__uri=row['uri'],modification_number=row['modification_number'])
+                transaction = TransactionNormalized.objects.filter(award__fain=row['fain'],award__uri=row['uri'],modification_number=row['award_modification_amendme']).first()
+                if not transaction:
+                    logger.info('Couldn\'t find transaction with fain ({}), uri({}), and modification_number({}). Skipping.'.format(row['fain'], row['uri'], row['award_modification_amendme']))
 
                 if transaction.recipient and transaction.recipient.location:
                     lel = transaction.recipient.location
+                    location_country_code = row['legal_entity_country_code']
+                    lel = update_country_code(lel, location_country_code)
                     lel.save()
 
                 if transaction.place_of_performance:
                     pop = transaction.place_of_performance
+                    location_country_code = row['place_of_perform_country_c']
+                    place_of_perform_code = row['place_of_performance_code']
+                    pop = update_country_code(pop, location_country_code, place_of_performance_code=place_of_perform_code)
                     pop.save()
 
     @staticmethod
     def update_location_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000, save=True):
 
-        list_of_columns = (', '.join(['piid', 'modification_number']))
+        list_of_columns = (', '.join(['piid', 'award_modification_amendme', 'legal_entity_country_code', 'place_of_perform_country_c']))
 
         query = "SELECT {} FROM detached_award_procurement".format(list_of_columns)
         arguments = []
@@ -114,18 +139,24 @@ class Command(BaseCommand):
             with db_transaction.atomic():
 
                 if not (index % 100):
-                    logger.info('D1 File Load: Added row {} of {} ({})'.format(str(index),
+                    logger.info('D1 File Fix: Fixing row {} of {} ({})'.format(str(index),
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
 
-                transaction = TransactionNormalized.objects.filter(award__piid=row['piid'],modification_number=row['modification_number'])
+                transaction = TransactionNormalized.objects.filter(award__piid=row['piid'],modification_number=row['award_modification_amendme']).first()
+                if not transaction:
+                    logger.info('Couldn\'t find transaction with piid ({}) and modification_number({}). Skipping.'.format(row['piid'], row['award_modification_amendme']))
 
                 if transaction.recipient and transaction.recipient.location:
                     lel = transaction.recipient.location
+                    location_country_code = row['legal_entity_country_code']
+                    lel = update_country_code(lel, location_country_code)
                     lel.save()
 
                 if transaction.place_of_performance:
                     pop = transaction.place_of_performance
+                    location_country_code = row['place_of_perform_country_c']
+                    pop = update_country_code(pop, location_country_code)
                     pop.save()
 
         logger.info('saving locations')
@@ -201,14 +232,14 @@ class Command(BaseCommand):
         if not options['assistance']:
             logger.info('Starting D1 historical data location insert...')
             start = timeit.default_timer()
-            self.update_locations_transaction_contract(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit, save=save)
+            self.update_location_transaction_contract(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit, save=save)
             end = timeit.default_timer()
             logger.info('Finished D1 historical data location insert in ' + str(end - start) + ' seconds')
 
         if not options['contracts']:
             logger.info('Starting D2 historical data location insert...')
             start = timeit.default_timer()
-            self.update_locations_transaction_assistance(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit, save=save)
+            self.update_location_transaction_assistance(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit, save=save)
             end = timeit.default_timer()
             logger.info('Finished D2 historical data location insert in ' + str(end - start) + ' seconds')
 
