@@ -121,7 +121,7 @@ class Command(BaseCommand):
             fabs_bulk.append(fabs_instance)
 
         with db_transaction.atomic():
-            logger.info('Bulk creating Transaction FABS...')
+            logger.info('Bulk creating Transaction FABS (batch_size: {})...'.format(BATCH_SIZE))
             TransactionFABS.objects.bulk_create(fabs_bulk, batch_size=BATCH_SIZE)
 
 
@@ -198,10 +198,10 @@ class Command(BaseCommand):
 
         with db_transaction.atomic():
             if pop_flag:
-                logger.info('Bulk creating POP Locations...')
+                logger.info('Bulk creating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
                 Location.objects.bulk_create(pop_bulk, batch_size=BATCH_SIZE)
             else:
-                logger.info('Bulk creating LE Locations...')
+                logger.info('Bulk creating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
                 Location.objects.bulk_create(lel_bulk, batch_size=BATCH_SIZE)
 
     @staticmethod
@@ -232,7 +232,7 @@ class Command(BaseCommand):
             legal_entity_bulk.append(legal_entity)
 
         with db_transaction.atomic():
-            logger.info('Bulk creating Legal Entities...')
+            logger.info('Bulk creating Legal Entities (batch_size: {})...'.format(BATCH_SIZE))
             LegalEntity.objects.bulk_create(legal_entity_bulk, batch_size=BATCH_SIZE)
 
     @staticmethod
@@ -336,7 +336,7 @@ class Command(BaseCommand):
             transaction_normalized_bulk.append(transaction_normalized)
 
         with db_transaction.atomic():
-            logger.info('Bulk creating Transaction Normalized...')
+            logger.info('Bulk creating Transaction Normalized (batch_size: {})...'.format(BATCH_SIZE))
             TransactionNormalized.objects.bulk_create(transaction_normalized_bulk, batch_size=BATCH_SIZE)
 
     @staticmethod
