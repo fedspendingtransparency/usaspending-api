@@ -80,7 +80,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_fabs_data(db_cursor, fiscal_year=None, page=1, limit=500000, before_date='2017-09-20'):
-        query = "SELECT * FROM published_award_financial_assistance WHERE is_active=TRUE AND updated_at < %s"
+        query = 'SELECT * FROM published_award_financial_assistance WHERE is_active=TRUE AND updated_at < %s'
         arguments = [before_date]
 
         fy_begin = '10/01/' + str(fiscal_year - 1)
@@ -382,10 +382,10 @@ class Command(BaseCommand):
 
         parser.add_argument(
             '--before_date',
-            dest="limit",
+            dest="before_date",
             nargs='+',
             type=str,
-            help="Limit for batching and parallelization"
+            help="Date for which to get everything prior to"
         )
 
     def handle(self, *args, **options):
