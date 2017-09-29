@@ -34,7 +34,7 @@ class FederalAccountByObligationViewSet(DetailViewSet):
             treasury_account__funding_toptier_agency=top_tier_agency_id
         ).annotate(
             agency_name=F('treasury_account__reporting_agency_name'),
-            account_title=F('treasury_account__account_title'),
+            account_title=F('treasury_account__federal_account__account_title'),
             id=F('treasury_account__federal_account')
 
         )
