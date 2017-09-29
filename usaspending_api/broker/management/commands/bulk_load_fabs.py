@@ -11,7 +11,7 @@ from usaspending_api.etl.management.load_base import load_data_into_model, forma
 from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.references.models import RefCountryCode, Location, LegalEntity, Agency, ToptierAgency, SubtierAgency
 
-BATCH_SIZE = 50000
+BATCH_SIZE = 500000
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
