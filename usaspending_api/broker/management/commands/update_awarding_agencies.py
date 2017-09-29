@@ -110,7 +110,7 @@ class Command(BaseCommand):
                 logger.info('No funding agency for transaction'.format(str(row['transaction_id'])))
 
             elif funding_agency is None:
-                logger.error('Unable to find awarding agency for CGAC {} Subtier {}'.format(
+                logger.error('Unable to find funding agency for CGAC {} Subtier {}'.format(
                     row['funding_cgac_code'],
                     row['funding_subtier_code']
                 ))
@@ -180,18 +180,18 @@ class Command(BaseCommand):
         fiscal_year = options.get('fiscal_year')[0]
 
         if options.get('contracts', None):
-            logger.info('Starting D1 awarding agencies updates')
+            logger.info('Starting D1 awarding/funding agencies updates')
             start = timeit.default_timer()
             self.update_awarding_funding_agency(fiscal_year, 'D1')
             end = timeit.default_timer()
             logger.info('Finished D1 awarding agencies updates in ' + str(end - start) + ' seconds')
 
         elif options.get('assistance', None):
-            logger.info('Starting D2 awarding agencies updates')
+            logger.info('Starting D2 awarding/funding agencies updates')
             start = timeit.default_timer()
             self.update_awarding_funding_agency(fiscal_year, 'D2')
             end = timeit.default_timer()
-            logger.info('Finished D2 awarding agencies updates in ' + str(end - start) + ' seconds')
+            logger.info('Finished D2 awarding/funding agencies updates in ' + str(end - start) + ' seconds')
 
         else:
             logger.error('Not a valid data type: --assistance,--contracts')
