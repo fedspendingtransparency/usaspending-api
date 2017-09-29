@@ -143,9 +143,10 @@ class Command(BaseCommand):
                 logger.info('Transaction {}: Awarding and funding agency fields updated'.format(str(transaction.id)))
                 logger.info('Award {}: Awarding and funding agency fields updated'.format(str(award.id)))
 
-            except:
-                logger.error('Unable to save Transaction {} and Award {}'.format(str(transaction.id),
-                                                                                 str(award.id)))
+            except Exception as e:
+                logger.error('Unable to save Transaction {} and Award {}:{}'.format(str(transaction.id),
+                                                                                    str(award.id),
+                                                                                    str(e)))
 
     def add_arguments(self, parser):
 
