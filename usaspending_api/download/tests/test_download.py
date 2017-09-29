@@ -114,7 +114,7 @@ def test_download_transactions_v2_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": {},
+            "columns": {}
         }))
 
     assert resp.status_code == status.HTTP_200_OK
@@ -131,7 +131,7 @@ def test_download_awards_v2_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": [],
+            "columns": []
         }))
 
     assert resp.status_code == status.HTTP_200_OK
@@ -148,7 +148,7 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": [],
+            "columns": []
         }))
 
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -169,7 +169,7 @@ def test_download_awards_v2_status_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": [],
+            "columns": []
         }))
 
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -215,8 +215,8 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                 "agencies": [{
                     'type': 'awarding',
                     'tier': 'toptier',
-                    'name': "Bureau of Things",
-                }, ]
+                    'name': "Bureau of Things"
+                } ]
             },
             "columns": ["award_id_piid", "modification_number"]
         }))
@@ -233,7 +233,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                 "agencies": [{
                     'type': 'awarding',
                     'tier': 'toptier',
-                    'name': "Bureau of Stuff",
+                    'name': "Bureau of Stuff"
                 }, ]
             },
             "columns": ["award_id_piid", "modification_number"]
@@ -252,13 +252,13 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                     {
                         'type': 'awarding',
                         'tier': 'toptier',
-                        'name': "Bureau of Stuff",
+                        'name': "Bureau of Stuff"
                     },
                     {
                         'type': 'awarding',
                         'tier': 'toptier',
-                        'name': "Bureau of Things",
-                    },
+                        'name': "Bureau of Things"
+                    }
                 ]
             },
             "columns": ["award_id_piid", "modification_number"]
@@ -325,8 +325,8 @@ def test_download_transactions_v2_bad_filter_shape_raises(client):
             "agencies": [{
                 'type': 'not a valid type',
                 'tier': 'nor a valid tier',
-                'name': "Bureau of Stuff",
-            }, ]
+                'name': "Bureau of Stuff"
+            } ]
         },
         "columns": []
     }
@@ -359,7 +359,7 @@ def test_download_transactions_limit(client, award_data):
         data=json.dumps({
             "limit": 1,
             "filters": {},
-            "columns": [],
+            "columns": []
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
@@ -376,7 +376,7 @@ def test_download_transactions_bad_limit(client, award_data):
         data=json.dumps({
             "limit": "wombats",
             "filters": {},
-            "columns": [],
+            "columns": []
         }))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -390,6 +390,6 @@ def test_download_transactions_excessive_limit(client, award_data):
         data=json.dumps({
             "limit": settings.MAX_DOWNLOAD_LIMIT + 1,
             "filters": {},
-            "columns": [],
+            "columns": []
         }))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
