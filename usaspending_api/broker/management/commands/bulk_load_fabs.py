@@ -103,30 +103,6 @@ class Command(BaseCommand):
         return dictfetchall(db_cursor)
 
     @staticmethod
-    def load_transaction_fabs(fabs_broker_data, total_rows):
-        logger.info('Starting bulk loading for FABS data')
-
-        start_time = datetime.now()
-        for index, row in enumerate(fabs_broker_data, 1):
-            if not (index % 10000):
-                logger.info('Transaction FABS: Loading row {} of {} ({})'.format(str(index),
-                                                                             str(total_rows),
-                                                                             datetime.now() - start_time))
-
-            fab_instance_data = load_data_into_model(
-                TransactionFABS(),  # thrown away
-                row,
-                as_dict=True)
-
-            fabs_instance = TransactionFABS(**fab_instance_data)
-            fabs_bulk.append(fabs_instance)
-
-        with db_transaction.atomic():
-            logger.info('Bulk creating Transaction FABS (batch_size: {})...'.format(BATCH_SIZE))
-            TransactionFABS.objects.bulk_create(fabs_bulk, batch_size=BATCH_SIZE)
-
-
-    @staticmethod
     def load_locations(fabs_broker_data, total_rows, pop_flag=False):
 
         start_time = datetime.now()
@@ -341,18 +317,28 @@ class Command(BaseCommand):
             TransactionNormalized.objects.bulk_create(transaction_normalized_bulk, batch_size=BATCH_SIZE)
 
     @staticmethod
-    @db_transaction.atomic()
-    def update_transaction_links(total_rows):
-        start_time = datetime.now()
-        for index in range(total_rows):
-            if not (index % 10000):
-                logger.info('Transaction links: Loading row {} of {} ({})'.format(str(index),
-                                                                          str(total_rows),
-                                                                          datetime.now() - start_time))
+    def load_transaction_fabs(fabs_broker_data, total_rows):
+        logger.info('Starting bulk loading for FABS data')
 
-            TransactionFABS.objects.\
-                filter(published_award_financial_assistance_id=fabs_bulk[index].published_award_financial_assistance_id).\
-                update(transaction=transaction_normalized_bulk[index])
+        start_time = datetime.now()
+        for index, row in enumerate(fabs_broker_data, 1):
+            if not (index % 10000):
+                logger.info('Transaction FABS: Loading row {} of {} ({})'.format(str(index),
+                                                                             str(total_rows),
+                                                                             datetime.now() - start_time))
+
+            fab_instance_data = load_data_into_model(
+                TransactionFABS(),  # thrown away
+                row,
+                as_dict=True)
+
+            fabs_instance = TransactionFABS(**fab_instance_data)
+            fabs_instance.transaction = transaction_normalized_bulk[index-1]
+            fabs_bulk.append(fabs_instance)
+
+        with db_transaction.atomic():
+            logger.info('Bulk creating Transaction FABS (batch_size: {})...'.format(BATCH_SIZE))
+            TransactionFABS.objects.bulk_create(fabs_bulk, batch_size=BATCH_SIZE)
 
     def add_arguments(self, parser):
 
@@ -414,12 +400,6 @@ class Command(BaseCommand):
         end = timeit.default_timer()
         logger.info('Finished getting Broker FABS data in ' + str(end - start) + ' seconds')
 
-        logger.info('Loading Transaction FABS data...')
-        start = timeit.default_timer()
-        self.load_transaction_fabs(fabs_broker_data, total_rows)
-        end = timeit.default_timer()
-        logger.info('Finished FABS bulk data load in ' + str(end - start) + ' seconds')
-
         logger.info('Loading POP Location data...')
         start = timeit.default_timer()
         self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows, pop_flag=True)
@@ -450,8 +430,8 @@ class Command(BaseCommand):
         end = timeit.default_timer()
         logger.info('Finished Transaction Normalized bulk data load in ' + str(end - start) + ' seconds')
 
-        logger.info('Updating Transaction links...')
+        logger.info('Loading Transaction FABS data...')
         start = timeit.default_timer()
-        self.update_transaction_links(total_rows=total_rows)
+        self.load_transaction_fabs(fabs_broker_data, total_rows)
         end = timeit.default_timer()
-        logger.info('Finished updating Transaction links in ' + str(end - start) + ' seconds')
+        logger.info('Finished FABS bulk data load in ' + str(end - start) + ' seconds')
