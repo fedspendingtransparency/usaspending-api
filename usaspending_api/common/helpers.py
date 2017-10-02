@@ -60,7 +60,7 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
     """ Generate the most recently completed fiscal quarter """
 
     # Get the current fiscal year so that it can be compared against the FY in the request
-    current_fiscal_date = FiscalDate.today()
+    current_fiscal_date = FiscalDateTime.today()
     requested_fiscal_year = FiscalYear(fiscal_year)
 
     if requested_fiscal_year.fiscal_year == current_fiscal_date.fiscal_year:
