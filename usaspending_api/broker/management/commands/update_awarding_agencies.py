@@ -112,10 +112,11 @@ class Command(BaseCommand):
                                                                                             ))
 
             elif funding_agency is None:
-                logger.error('Unable to find funding agency for CGAC {} Subtier {}'.format(
-                    row['funding_cgac_code'],
-                    row['funding_subtier_code']
-                ))
+                pass
+                #logger.error('Unable to find funding agency for CGAC {} Subtier {}'.format(
+                   # row['funding_cgac_code'],
+                   # row['funding_subtier_code']
+                #))
 
             # Update awarding/funding agency connected to transaction
             if transaction.awarding_agency is None and awarding_agency is not None:
