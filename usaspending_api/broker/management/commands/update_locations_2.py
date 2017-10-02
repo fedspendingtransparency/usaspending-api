@@ -12,12 +12,14 @@ logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
 
-def update_country_code(location, country_code, place_of_performance_code = None):
-    updated_location_country_code = None
-    if (location.recipient_flag and (country_code is None or country_code == 'UNITED STATES')) or \
-                            (location.place_of_performance_flag and country_code is None and place_of_performance_code and place_of_performance_code != '00FORGN') or \
-                            (location.place_of_performance_flag and country_code is None and not place_of_performance_code):
-        updated_location_country_code = 'USA'
+def update_country_code(d_file, location, country_code, state_code=None, state_name=None, place_of_performance_code=None):
+    updated_location_country_code = country_code
+
+    if d_file == "d2":
+        if (location.recipient_flag and (country_code is None or country_code == 'UNITED STATES')) or \
+                                (location.place_of_performance_flag and country_code is None and place_of_performance_code and place_of_performance_code != '00FORGN') or \
+                                (location.place_of_performance_flag and country_code is None and not place_of_performance_code):
+            updated_location_country_code = 'USA'
 
     location.location_country = RefCountryCode.objects.filter(
         country_code=updated_location_country_code).first()
@@ -25,6 +27,9 @@ def update_country_code(location, country_code, place_of_performance_code = None
     if location.location_country:
         location.location_country_code = location.location_country
         location.country_name = location.location_country.country_name
+
+    location.state_name = state_name if state_name else None
+    location.state_code = state_code if state_code else None
 
     return location
 
@@ -34,7 +39,9 @@ class Command(BaseCommand):
     @staticmethod
     def update_location_transaction_assistance(db_cursor, fiscal_year=2017, page=1, limit=500000, save=True):
 
-        list_of_columns = (', '.join(['fain', 'uri', 'award_modification_amendme', 'legal_entity_country_code', 'place_of_perform_country_c', 'place_of_performance_code']))
+        list_of_columns = (', '.join(['fain', 'uri', 'award_modification_amendme', 'legal_entity_country_code',
+                                      'place_of_perform_country_c', 'place_of_performance_code',
+                                      'legal_entity_state_code', 'legal_entity_state_name', 'place_of_perform_state_nam']))
 
         # get the transaction values we need
 
@@ -52,6 +59,7 @@ class Command(BaseCommand):
             query += ' action_date::Date BETWEEN %s AND %s'
             arguments += [fy_begin]
             arguments += [fy_end]
+        query += ' AND legal_entity_country_code is null or place_of_perform_country_c is null '
         query += ' ORDER BY published_award_financial_assistance_id LIMIT %s OFFSET %s'
         arguments += [limit, (page - 1) * limit]
 
@@ -86,20 +94,24 @@ class Command(BaseCommand):
                 if transaction.recipient and transaction.recipient.location:
                     lel = transaction.recipient.location
                     location_country_code = row['legal_entity_country_code']
-                    lel = update_country_code(lel, location_country_code)
+                    state_code = row['legal_entity_state_code']
+                    state_name = row['legal_entity_state_name']
+                    lel = update_country_code("d2", lel, location_country_code, state_code, state_name)
                     lel.save()
 
                 if transaction.place_of_performance:
                     pop = transaction.place_of_performance
                     location_country_code = row['place_of_perform_country_c']
                     place_of_perform_code = row['place_of_performance_code']
-                    pop = update_country_code(pop, location_country_code, place_of_performance_code=place_of_perform_code)
+                    state_name = row['place_of_perform_state_nam']
+                    pop = update_country_code("d2", pop, location_country_code, state_code, state_name, place_of_performance_code=place_of_perform_code)
                     pop.save()
 
     @staticmethod
     def update_location_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000, save=True):
 
-        list_of_columns = (', '.join(['piid', 'award_modification_amendme', 'legal_entity_country_code', 'place_of_perform_country_c']))
+        list_of_columns = (', '.join(['piid', 'award_modification_amendme', 'legal_entity_country_code',
+                                      'place_of_perform_country_c', 'legal_entity_state_code', 'place_of_performance_state']))
 
         query = "SELECT {} FROM detached_award_procurement".format(list_of_columns)
         arguments = []
@@ -150,13 +162,15 @@ class Command(BaseCommand):
                 if transaction.recipient and transaction.recipient.location:
                     lel = transaction.recipient.location
                     location_country_code = row['legal_entity_country_code']
-                    lel = update_country_code(lel, location_country_code)
+                    state_code = row['legal_entity_state_code']
+                    lel = update_country_code("d1", lel, location_country_code, state_code)
                     lel.save()
 
                 if transaction.place_of_performance:
                     pop = transaction.place_of_performance
                     location_country_code = row['place_of_perform_country_c']
-                    pop = update_country_code(pop, location_country_code)
+                    state_code = row['place_of_performance_state']
+                    pop = update_country_code("d1", pop, location_country_code, state_code)
                     pop.save()
 
         logger.info('saving locations')

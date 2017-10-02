@@ -58,6 +58,7 @@ class Command(BaseCommand):
             query += ' action_date::Date BETWEEN %s AND %s'
             arguments += [fy_begin]
             arguments += [fy_end]
+        query += ' AND legal_entity_country_code is null or place_of_perform_country_c is null '
         query += ' ORDER BY published_award_financial_assistance_id LIMIT %s OFFSET %s'
         arguments += [limit, (page-1)*limit]
 

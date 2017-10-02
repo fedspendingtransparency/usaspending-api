@@ -291,10 +291,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
 
         if self.state_code and self.state_name:
             return
-        # if self.country_name == 'UNITED STATES':
-        if (self.location_country_code_id == 'USA') or \
-                (self.recipient_flag and self.location_country_code_id is None) or \
-                (self.place_of_performance_flag and self.location_country_code_id is None and self.performance_code != '00FORGN'):
+        if self.country_name == 'UNITED STATES':
             if (not self.state_code):
                 self.state_code = state_to_code.get(self.state_name)
             elif (not self.state_name):
