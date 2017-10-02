@@ -91,7 +91,7 @@ class Command(BaseCommand):
 
         start_time = datetime.now()
 
-        trans_queryset = TransactionNormalized.objects.prefetch_related('award__fain', 'award__uri',
+        trans_queryset = TransactionNormalized.objects.prefetch_related('award',
                                                                         'recipient__location')
 
         for index, row in enumerate(award_financial_assistance_data, 1):
