@@ -42,8 +42,9 @@ def update_country_code(d_file, location, country_code, state_code=None, state_n
         location.location_country_code = location.location_country
         location.country_name = location.location_country.country_name
 
-    location.state_name = state_name if state_name else None
-    location.state_code = state_code if state_code else None
+    if location.location_country_code == 'USA':
+        location.state_name = state_name if state_name else None
+        location.state_code = state_code if state_code else None
 
     return location
 
@@ -59,17 +60,14 @@ class Command(BaseCommand):
 
         # get the transaction values we need
 
-        query = "SELECT {} FROM published_award_financial_assistance".format(list_of_columns)
+        query = "SELECT {} FROM published_award_financial_assistance WHERE is_active=TRUE AND updated_at < '09/20/2017'".format(list_of_columns)
         arguments = []
 
         fy_begin = '10/01/' + str(fiscal_year - 1)
         fy_end = '09/30/' + str(fiscal_year)
 
         if fiscal_year:
-            if arguments:
-                query += " AND"
-            else:
-                query += " WHERE"
+            query += " AND"
             query += ' action_date::Date BETWEEN %s AND %s'
             arguments += [fy_begin]
             arguments += [fy_end]
