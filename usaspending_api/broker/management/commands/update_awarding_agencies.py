@@ -2,7 +2,7 @@ import logging
 import timeit
 
 from django.core.management.base import BaseCommand
-
+from datetime import datetime
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency
@@ -68,8 +68,15 @@ class Command(BaseCommand):
 
         logger.info("Processing " + str(total_rows) + " rows of transaction data")
 
+        start_time = datetime.now()
         # Go through each D1 or D2 transaction to update awarding/funding agency if missing
-        for row in transaction_cgac_subtier_map:
+        for index, row in enumerate(transaction_cgac_subtier_map, 1):
+
+            if not (index % 500):
+                logger.info('Awarding agency update: Loading row {} of {} ({})'.format(str(index),
+                                                                             str(total_rows),
+                                                                             datetime.now() - start_time))
+
             # Find corresponding transaction
             transaction = TransactionNormalized.objects.filter(id=row['transaction_id']).first()
 
@@ -99,8 +106,8 @@ class Command(BaseCommand):
                                                                                             row['awarding_subtier_code']
                                                                                             ))
 
-            if funding_agency is None and row['funding_cgac_code'] is None and row['funding_subtier_code'] is None:
-                logger.info('No funding agency for transaction'.format(str(row['transaction_id'])))
+            # if funding_agency is None and row['funding_cgac_code'] is None and row['funding_subtier_code'] is None:
+                # logger.info('No funding agency for transaction'.format(str(row['transaction_id'])))
 
             elif funding_agency is None:
                 logger.error('Unable to find funding agency for CGAC {} Subtier {}'.format(
@@ -133,8 +140,8 @@ class Command(BaseCommand):
                 transaction.save()
                 award.save()
 
-                logger.info('Transaction {}: Awarding and funding agency fields updated'.format(str(transaction.id)))
-                logger.info('Award {}: Awarding and funding agency fields updated'.format(str(award.id)))
+                #logger.info('Transaction {}: Awarding and funding agency fields updated'.format(str(transaction.id)))
+                #logger.info('Award {}: Awarding and funding agency fields updated'.format(str(award.id)))
 
             except Exception as e:
                 logger.error('Unable to save Transaction {} and Award {}:{}'.format(str(transaction.id),
