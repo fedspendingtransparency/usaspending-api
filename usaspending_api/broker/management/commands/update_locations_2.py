@@ -88,7 +88,8 @@ class Command(BaseCommand):
 
         start_time = datetime.now()
 
-        trans_queryset = TransactionNormalized.objects.prefetch_related('award', 'recipient__location')
+        trans_queryset = TransactionNormalized.objects.prefetch_related('award__fain', 'award__uri',
+                                                                        'recipient__location')
 
         for index, row in enumerate(award_financial_assistance_data, 1):
                 if not (index % 100):
@@ -125,10 +126,10 @@ class Command(BaseCommand):
             lel_update_fields = ['location_country_code', 'state_code', 'state_name', 'location_country_code',
                                  'country_name']
 
-            logger.info('Bulk creating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
+            logger.info('Bulk updating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
             bulk_update(pop_bulk, batch_size=BATCH_SIZE)
 
-            logger.info('Bulk creating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
+            logger.info('Bulk updating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
             bulk_update(lel_bulk, batch_size=BATCH_SIZE)
 
 
