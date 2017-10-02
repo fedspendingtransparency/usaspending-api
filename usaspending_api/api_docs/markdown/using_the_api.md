@@ -251,23 +251,20 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
   * `combine_method` - This is a special field which modifies how the filter behaves. When `combine_method` is specified, the only other allowed parameter on the filter is `filters` which should contain an array of filter objects. The `combine_method` will be used to logically join the filters in this list. Options are `AND` or `OR`.
   ```
   {
-			"combine_method": "OR",
-			"filters": [
-				{
-					"field": "funding_agency__fpds_code",
-					"operation": "equals",
-					"value": "0300"
-
-				},
-				{
-					"field": "awarding_agency__fpds_code",
-					"operation": "in",
-					"value": ["0300", "0500"]
-
-				}
-				]
-
-	}
+    "combine_method": "OR",
+    "filters": [
+      {
+        "field": "funding_agency__fpds_code",
+        "operation": "equals",
+        "value": "0300"
+      },
+      {
+        "field": "awarding_agency__fpds_code",
+        "operation": "in",
+        "value": ["0300", "0500"]
+      }
+    ]
+  }
   ```
 
 #### Response (JSON)
@@ -393,6 +390,7 @@ Response
 * retry_url - An easy to use URL to retry your download request, and check if it has been generated yet
 
 Expected response status codes:
+
 * 200 - The file is ready for download, and `location` contains the URL
 * 202 - The request has been queued for generation, and `location` is null
 * 400 - The endpoint or request checksum that was specified is not currently supported by CSV bulk downloads
@@ -427,7 +425,7 @@ Expected response status codes:
 
   POST request to `/transactions/total`:
 
-  ```json
+  ```
   {
       "field": "federal_action_obligation",
       "group": "action_date",
@@ -446,7 +444,7 @@ Expected response status codes:
 
   Response:
 
-  ```json
+  ```
   {
     "page_metadata": {
      "page": 1,
@@ -471,7 +469,7 @@ Expected response status codes:
 
   POST request to `/awards/total`:
 
-  ```json
+  ```
   {
       "field": "total_obligation",
       "group": "place_of_performance__state_code",
@@ -479,9 +477,10 @@ Expected response status codes:
       "order": ["-aggregate"]
   }
   ```
+
   Response:
 
-  ```json
+  ```
   {
     "page_metadata": {
      "page": 1,
@@ -542,11 +541,11 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
 ##### Body
 ```
 {
-	fields": ["toptier_agency__name", "subtier_agency__name"],
-	"value": "DEFENSE",
-	"mode": "contains",
-    "limit": 100,
-    "matched_objects": true
+  "fields": ["toptier_agency__name", "subtier_agency__name"],
+  "value": "DEFENSE",
+  "mode": "contains",
+  "limit": 100,
+  "matched_objects": true,
   "filters": []
 }
 ```
