@@ -4,13 +4,17 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
+from django_bulk_update.helper import bulk_update
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import RefCountryCode
+from usaspending_api.references.models import RefCountryCode, Location
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
+country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
+
+BATCH_SIZE = 10000
 
 def update_country_code(d_file, location, country_code, state_code=None, state_name=None, place_of_performance_code=None):
     updated_location_country_code = country_code
@@ -26,8 +30,7 @@ def update_country_code(d_file, location, country_code, state_code=None, state_n
                                 (location.place_of_performance_flag and country_code is None and not place_of_performance_code):
             updated_location_country_code = 'USA'
 
-    location.location_country = RefCountryCode.objects.filter(
-        country_code=updated_location_country_code).first()
+    location.location_country = country_code_map[updated_location_country_code]
 
     if location.location_country:
         location.location_country_code = location.location_country
@@ -80,12 +83,11 @@ class Command(BaseCommand):
 
         logger.info("Processing " + str(total_rows) + " rows of location data")
 
-        bulk_array = []
+        pop_bulk = []
+        lel_bulk = []
 
         start_time = datetime.now()
         for index, row in enumerate(award_financial_assistance_data, 1):
-            with db_transaction.atomic():
-
                 if not (index % 100):
                     logger.info('Location Fix: Fixing row {} of {} ({})'.format(str(index),
                                                                                  str(total_rows),
@@ -102,7 +104,7 @@ class Command(BaseCommand):
                     state_code = row['legal_entity_state_code']
                     state_name = row['legal_entity_state_name']
                     lel = update_country_code("d2", lel, location_country_code, state_code, state_name)
-                    lel.save()
+                    lel_bulk.append(lel)
 
                 if transaction.place_of_performance:
                     pop = transaction.place_of_performance
@@ -110,7 +112,22 @@ class Command(BaseCommand):
                     place_of_perform_code = row['place_of_performance_code']
                     state_name = row['place_of_perform_state_nam']
                     pop = update_country_code("d2", pop, location_country_code, state_code, state_name, place_of_performance_code=place_of_perform_code)
-                    pop.save()
+                    pop_bulk.append(pop)
+
+        with db_transaction.atomic():
+
+            pop_update_fields = ['location_country_code', 'place_of_perform_code', 'state_name',
+                                 'location_country_code',
+                                 'country_name']
+            lel_update_fields = ['location_country_code', 'state_code', 'state_name', 'location_country_code',
+                                 'country_name']
+
+            logger.info('Bulk creating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
+            bulk_update(pop_bulk, update_fields=pop_update_fields, batch_size=BATCH_SIZE)
+            
+            logger.info('Bulk creating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
+            bulk_update(lel_bulk, update_fields=lel_update_fields, batch_size=BATCH_SIZE)
+
 
     @staticmethod
     def update_location_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000, save=True):
