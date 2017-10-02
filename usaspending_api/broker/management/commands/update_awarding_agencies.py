@@ -36,10 +36,7 @@ class Command(BaseCommand):
                                                 'funding_subtier_code': transaction['funding_sub_tier_agency_co']
                                                }
                                                for transaction in TransactionFPDS.objects
-                                               .filter(Q(transaction__fiscal_year=fiscal_year) &
-                                                       (Q(transaction__awarding_agency__isnull=True) |
-                                                        Q(transaction__funding_agency__isnull=True))
-                                                       )
+                                               .filter(Q(transaction__fiscal_year=fiscal_year))
                                                .values('transaction_id',
                                                        'awarding_agency_code',
                                                        'funding_agency_code',
@@ -59,10 +56,7 @@ class Command(BaseCommand):
                                                  'funding_subtier_code': transaction['funding_sub_tier_agency_co']
                                                 }
                                                 for transaction in TransactionFABS.objects
-                                                .filter(Q(transaction__fiscal_year=fiscal_year) &
-                                                        (Q(transaction__awarding_agency__isnull=True) |
-                                                         Q(transaction__funding_agency__isnull=True))
-                                                        )
+                                                .filter(Q(transaction__fiscal_year=fiscal_year))
                                                 .values('transaction_id',
                                                         'awarding_agency_code',
                                                         'funding_agency_code',
