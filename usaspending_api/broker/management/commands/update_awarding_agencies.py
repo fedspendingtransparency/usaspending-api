@@ -68,13 +68,15 @@ class Command(BaseCommand):
 
         logger.info("Processing " + str(total_rows) + " rows of transaction data")
 
-        start_time = datetime.now()
         # Go through each D1 or D2 transaction to update awarding/funding agency if missing
+
         index = 1
+
+        start_time = datetime.now()
         for row in transaction_cgac_subtier_map:
 
-            if not (index % 500):
-                logger.info('Awarding agency update: Loading row {} of {} ({})'.format(str(index),
+            if not (index % 100):
+                logger.info('Updating agencies: Loading row {} of {} ({})'.format(str(index),
                                                                              str(total_rows),
                                                                              datetime.now() - start_time))
 
@@ -109,9 +111,6 @@ class Command(BaseCommand):
                                                                                             row['awarding_subtier_code']
                                                                                             ))
 
-            # if funding_agency is None and row['funding_cgac_code'] is None and row['funding_subtier_code'] is None:
-                # logger.info('No funding agency for transaction'.format(str(row['transaction_id'])))
-
             elif funding_agency is None:
                 logger.error('Unable to find funding agency for CGAC {} Subtier {}'.format(
                     row['funding_cgac_code'],
@@ -142,9 +141,6 @@ class Command(BaseCommand):
                 # Save updates to Database
                 transaction.save()
                 award.save()
-
-                #logger.info('Transaction {}: Awarding and funding agency fields updated'.format(str(transaction.id)))
-                #logger.info('Award {}: Awarding and funding agency fields updated'.format(str(award.id)))
 
             except Exception as e:
                 logger.error('Unable to save Transaction {} and Award {}:{}'.format(str(transaction.id),
