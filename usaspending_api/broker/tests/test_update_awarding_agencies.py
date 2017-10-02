@@ -16,8 +16,8 @@ def transaction_data():
     award_fpds_2017 = mommy.make(Award, id=10, awarding_agency=None, funding_agency=None)
 
     transaction_normalized_fpds_2017 = mommy.make(TransactionNormalized, id=1234, awarding_agency=None,
-                                                  funding_agency=None, action_date=datetime(2017, 6, 1),
-                                                  fiscal_year=2017, award=award_fpds_2017)
+                                                  funding_agency=None,
+                                                  action_date=datetime(2017, 7, 1), award=award_fpds_2017)
 
     transaction_fpds_2017 = mommy.make(TransactionFPDS, transaction=transaction_normalized_fpds_2017,
                                        awarding_agency_code='001', awarding_sub_tier_agency_c='011',
@@ -27,8 +27,9 @@ def transaction_data():
     # Assistance Transaction - Fiscal Year 20176
     award_fabs_2017 = mommy.make(Award, id=40, awarding_agency=None, funding_agency=None)
     transaction_normalized_fabs_2017 = mommy.make(TransactionNormalized, id=13141516, awarding_agency=None,
-                                                  funding_agency=None, action_date=datetime(2017, 7, 1),
-                                                  fiscal_year=2017, award=award_fabs_2017)
+                                                  funding_agency=None,
+                                                  action_date=datetime(2016, 7, 1), award=award_fabs_2017)
+
 
     transaction_fabs_2017 = mommy.make(TransactionFABS, transaction=transaction_normalized_fabs_2017,
                                        awarding_agency_code='001', awarding_sub_tier_agency_c='011',
@@ -47,8 +48,6 @@ def transaction_data():
     toptier_funding_agency = mommy.make(ToptierAgency, toptier_agency_id=910, cgac_code='002')
     funding_agency = mommy.make(Agency, id=45678, toptier_agency=toptier_funding_agency,
                                 subtier_agency=subtier_funding_agency)
-
-
 
 
 @pytest.mark.django_db
@@ -77,6 +76,7 @@ def test_contracts_command(transaction_data):
     assert fabs_award_2017.awarding_agency is None
     assert fabs_award_2017.funding_agency is None
 
+
 @pytest.mark.django_db
 def test_assistance_command(transaction_data):
     """
@@ -84,7 +84,7 @@ def test_assistance_command(transaction_data):
     :return: tests FABS data FY 2017 to make sure it correct funding and awarding agency data is added
     takes into account when funding agency code is missing from transaction data
     """
-    call_command('update_awarding_agencies', '--fiscal_year', 2017, '--assistance')
+    call_command('update_awarding_agencies', '--fiscal_year', 2016, '--assistance')
 
     fpds_transaction_2017 = TransactionNormalized.objects.filter(id=1234).first()
     fpds_award_2017 = Award.objects.filter(id=10).first()

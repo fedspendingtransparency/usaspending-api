@@ -2,7 +2,6 @@ import logging
 import timeit
 
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
@@ -26,20 +25,17 @@ class Command(BaseCommand):
 
         if file_type == 'D1':
             # List of Transaction FPDS mapping transaction ids, cgac code, and subtier code
-            # Filters out FPDS transactions where the transaction's awarding or funding agency is null and by fiscal year
+            # Filters out FPDS transactions where the transaction is equal to the fiscal year
             transaction_cgac_subtier_map = [
                                                {
-                                                'transaction_id': transaction['transaction_id'],
-                                                'awarding_cgac_code': transaction['awarding_agency_code'],
-                                                'funding_cgac_code': transaction['funding_agency_code'],
-                                                'awarding_subtier_code': transaction['awarding_sub_tier_agency_c'],
-                                                'funding_subtier_code': transaction['funding_sub_tier_agency_co']
+                                                'transaction_id': transaction_FPDS['transaction_id'],
+                                                'awarding_cgac_code': transaction_FPDS['awarding_agency_code'],
+                                                'funding_cgac_code': transaction_FPDS['funding_agency_code'],
+                                                'awarding_subtier_code': transaction_FPDS['awarding_sub_tier_agency_c'],
+                                                'funding_subtier_code': transaction_FPDS['funding_sub_tier_agency_co']
                                                }
-                                               for transaction in TransactionFPDS.objects
-                                               .filter(Q(transaction__fiscal_year=fiscal_year) &
-                                                       (Q(transaction__awarding_agency__isnull=True) |
-                                                        Q(transaction__funding_agency__isnull=True))
-                                                       )
+                                               for transaction_FPDS in TransactionFPDS.objects
+                                               .filter(transaction__fiscal_year=fiscal_year)
                                                .values('transaction_id',
                                                        'awarding_agency_code',
                                                        'funding_agency_code',
@@ -49,20 +45,17 @@ class Command(BaseCommand):
                                             ]
         elif file_type == 'D2':
             # List of Transaction FABS mapping transaction ids, cgac code, and subtier code
-            # Filters out FABS transactions where the transaction's awarding or funding agency is null and by fiscal year
+            # Filters out FABS transactions where the where the transaction is equal to the fiscal year
             transaction_cgac_subtier_map = [
                                                 {
-                                                 'transaction_id': transaction['transaction_id'],
-                                                 'awarding_cgac_code': transaction['awarding_agency_code'],
-                                                 'funding_cgac_code': transaction['funding_agency_code'],
-                                                 'awarding_subtier_code': transaction['awarding_sub_tier_agency_c'],
-                                                 'funding_subtier_code': transaction['funding_sub_tier_agency_co']
+                                                 'transaction_id': transaction_FABS['transaction_id'],
+                                                 'awarding_cgac_code': transaction_FABS['awarding_agency_code'],
+                                                 'funding_cgac_code': transaction_FABS['funding_agency_code'],
+                                                 'awarding_subtier_code': transaction_FABS['awarding_sub_tier_agency_c'],
+                                                 'funding_subtier_code': transaction_FABS['funding_sub_tier_agency_co']
                                                 }
-                                                for transaction in TransactionFABS.objects
-                                                .filter(Q(transaction__fiscal_year=fiscal_year) &
-                                                        (Q(transaction__awarding_agency__isnull=True) |
-                                                         Q(transaction__funding_agency__isnull=True))
-                                                        )
+                                                for transaction_FABS in TransactionFABS.objects
+                                                # .filter(transaction__fiscal_year=fiscal_year)
                                                 .values('transaction_id',
                                                         'awarding_agency_code',
                                                         'funding_agency_code',
