@@ -76,10 +76,9 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
     elif requested_fiscal_year.fiscal_year < current_fiscal_date.fiscal_year:
         # If the retrieving a previous FY, get the last quarter data UNLESS its the most recent quarter, then account
         # for data loading.
-        if (requested_fiscal_year.fiscal_year == current_fiscal_date.fiscal_year - 1) and \
-                        (current_fiscal_date - requested_fiscal_year.start).days <= 45:
+        if (current_fiscal_date - requested_fiscal_year.end).days <= 45:
             fiscal_quarter = requested_fiscal_year.end.quarter - 1
-            fiscal_date = requested_fiscal_year.end
+            fiscal_date = getattr(requested_fiscal_year, 'q'+str(fiscal_quarter)).end
         else:
             fiscal_quarter = requested_fiscal_year.end.quarter
             fiscal_date = requested_fiscal_year.end
