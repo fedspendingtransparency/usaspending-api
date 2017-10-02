@@ -16,12 +16,17 @@ class Command(BaseCommand):
     help = "Updates empty awarding and funding agency fields on transactions and awards due to subtier/toptier mapping"
 
     @staticmethod
-    def update_awarding_funding_agency(fiscal_year=None, file_type=None):
+    def update_awarding_funding_agency(fiscal_year=None, file_type=None, page=1, limit=500000):
 
         """
         Uses the TransactionFPDS or TransactionFABS is present to update missing awarding and funding agency
         in TransactionNormalized and Awards
         """
+
+        offset = (page - 1) * limit
+
+        range_low = offset
+        range_high = offset + limit
 
         if file_type == 'D1':
             # List of Transaction FPDS mapping transaction ids, cgac code, and subtier code
@@ -41,7 +46,7 @@ class Command(BaseCommand):
                                                        'funding_agency_code',
                                                        'awarding_sub_tier_agency_c',
                                                        'funding_sub_tier_agency_co'
-                                                       )
+                                                       )[range_low:range_high]
                                             ]
         elif file_type == 'D2':
             # List of Transaction FABS mapping transaction ids, cgac code, and subtier code
@@ -61,12 +66,13 @@ class Command(BaseCommand):
                                                         'funding_agency_code',
                                                         'awarding_sub_tier_agency_c',
                                                         'funding_sub_tier_agency_co'
-                                                        )
+                                                        )[range_low:range_high]
                                             ]
 
         total_rows = len(transaction_cgac_subtier_map)
 
         logger.info("Processing " + str(total_rows) + " rows of transaction data")
+        logger.info("Rows range from {} to {}".format(range_low, range_high))
 
         # Go through each D1 or D2 transaction to update awarding/funding agency if missing
 
@@ -174,22 +180,44 @@ class Command(BaseCommand):
             help='Runs the historical loader only for Award Procurement (Contract) data'
         )
 
+        parser.add_argument(
+            '--page',
+            dest="page",
+            nargs='+',
+            type=int,
+            help="Page for batching and parallelization"
+        )
+
+        parser.add_argument(
+            '--limit',
+            dest="limit",
+            nargs='+',
+            type=int,
+            help="Limit for batching and parallelization"
+        )
+
     def handle(self, *args, **options):
         logger.info('Starting updating awarding agencies...')
 
         fiscal_year = options.get('fiscal_year')[0]
 
+        page = options.get('page')
+        limit = options.get('limit')
+
+        page = page[0] if page else 1
+        limit = limit[0] if limit else 500000
+
         if options.get('contracts', None):
             logger.info('Starting D1 awarding/funding agencies updates')
             start = timeit.default_timer()
-            self.update_awarding_funding_agency(fiscal_year, 'D1')
+            self.update_awarding_funding_agency(fiscal_year, 'D1', page=page, limit=limit)
             end = timeit.default_timer()
             logger.info('Finished D1 awarding agencies updates in ' + str(end - start) + ' seconds')
 
         elif options.get('assistance', None):
             logger.info('Starting D2 awarding/funding agencies updates')
             start = timeit.default_timer()
-            self.update_awarding_funding_agency(fiscal_year, 'D2')
+            self.update_awarding_funding_agency(fiscal_year, 'D2', page=page, limit=limit)
             end = timeit.default_timer()
             logger.info('Finished D2 awarding/funding agencies updates in ' + str(end - start) + ' seconds')
 
