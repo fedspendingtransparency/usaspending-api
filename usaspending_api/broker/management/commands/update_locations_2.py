@@ -90,6 +90,7 @@ class Command(BaseCommand):
                 transaction = TransactionNormalized.objects.filter(award__fain=row['fain'],award__uri=row['uri'],modification_number=row['award_modification_amendme']).first()
                 if not transaction:
                     logger.info('Couldn\'t find transaction with fain ({}), uri({}), and modification_number({}). Skipping.'.format(row['fain'], row['uri'], row['award_modification_amendme']))
+                    continue
 
                 if transaction.recipient and transaction.recipient.location:
                     lel = transaction.recipient.location
@@ -158,6 +159,7 @@ class Command(BaseCommand):
                 transaction = TransactionNormalized.objects.filter(award__piid=row['piid'],modification_number=row['award_modification_amendme']).first()
                 if not transaction:
                     logger.info('Couldn\'t find transaction with piid ({}) and modification_number({}). Skipping.'.format(row['piid'], row['award_modification_amendme']))
+                    continue
 
                 if transaction.recipient and transaction.recipient.location:
                     lel = transaction.recipient.location
