@@ -30,7 +30,7 @@ def update_country_code(d_file, location, country_code, state_code=None, state_n
                                 (location.place_of_performance_flag and country_code is None and not place_of_performance_code):
             updated_location_country_code = 'USA'
 
-    location.location_country = country_code_map[updated_location_country_code]
+    location.location_country = country_code_map.get(updated_location_country_code, None)
 
     if location.location_country:
         location.location_country_code = location.location_country
@@ -88,7 +88,7 @@ class Command(BaseCommand):
 
         start_time = datetime.now()
 
-        trans_queryset = TransactionNormalized.objects.prefetch_related('award', 'recipient')
+        trans_queryset = TransactionNormalized.objects.prefetch_related('award', 'recipient__location')
 
         for index, row in enumerate(award_financial_assistance_data, 1):
                 if not (index % 100):
