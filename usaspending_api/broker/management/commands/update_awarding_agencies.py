@@ -70,12 +70,15 @@ class Command(BaseCommand):
 
         start_time = datetime.now()
         # Go through each D1 or D2 transaction to update awarding/funding agency if missing
-        for index, row in enumerate(transaction_cgac_subtier_map, 1):
+        index = 1
+        for row in transaction_cgac_subtier_map:
 
             if not (index % 500):
                 logger.info('Awarding agency update: Loading row {} of {} ({})'.format(str(index),
                                                                              str(total_rows),
                                                                              datetime.now() - start_time))
+
+            index += 1
 
             # Find corresponding transaction
             transaction = TransactionNormalized.objects.filter(id=row['transaction_id']).first()
