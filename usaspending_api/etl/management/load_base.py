@@ -535,7 +535,12 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
 
     row = canonicalize_location_dict(row)
 
+    # For only FABS
     if "place_of_performance_code" in row:
+        # If the recipient's location country code is empty or it's 'UNITED STATES
+        # OR the place of performance location country code is empty and the performance code isn't 00FORGN
+        # OR the place of performance location country code is empty and there isn't a performance code
+        # THEN we can assume that the location country code is 'USA'
         if ('recipient_flag' in location_value_map and location_value_map['recipient_flag'] and (row[location_map.get('location_country_code')] is None or row[location_map.get('location_country_code')] == 'UNITED STATES')) or \
                 ('place_of_performance_flag' in location_value_map and location_value_map['place_of_performance_flag'] and row[location_map.get('location_country_code')] is None and "performance_code" in location_map and row[location_map["performance_code"]] != '00FORGN') or \
                 ('place_of_performance_flag' in location_value_map and location_value_map['place_of_performance_flag'] and row[location_map.get('location_country_code')] is None and "performance_code" not in location_map):

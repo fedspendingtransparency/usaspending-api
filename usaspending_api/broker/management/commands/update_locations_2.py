@@ -15,7 +15,12 @@ exception_logger = logging.getLogger("exceptions")
 def update_country_code(d_file, location, country_code, state_code=None, state_name=None, place_of_performance_code=None):
     updated_location_country_code = country_code
 
+    # For only FABS
     if d_file == "d2":
+        # If the recipient's location country code is empty or it's 'UNITED STATES
+        # OR the place of performance location country code is empty and the performance code isn't 00FORGN
+        # OR the place of performance location country code is empty and there isn't a performance code
+        # THEN we can assume that the location country code is 'USA'
         if (location.recipient_flag and (country_code is None or country_code == 'UNITED STATES')) or \
                                 (location.place_of_performance_flag and country_code is None and place_of_performance_code and place_of_performance_code != '00FORGN') or \
                                 (location.place_of_performance_flag and country_code is None and not place_of_performance_code):
