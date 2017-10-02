@@ -75,7 +75,7 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
             fiscal_date = FiscalQuarter(fiscal_year, fiscal_quarter).end
     elif requested_fiscal_year.fiscal_year < current_fiscal_date.fiscal_year:
         # If the retrieving a previous FY, get the date for the end of the final quarter
-        fiscal_quarter = requested_fiscal_year.end.quarter
+        fiscal_quarter = requested_fiscal_year.end.quarter - 1
         fiscal_date = requested_fiscal_year.end
     else:
         raise InvalidParameterException("Cannot obtain data for future fiscal years.")
