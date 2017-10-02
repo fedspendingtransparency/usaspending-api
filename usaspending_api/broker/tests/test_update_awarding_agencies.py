@@ -49,8 +49,6 @@ def transaction_data():
                                 subtier_agency=subtier_funding_agency)
 
 
-
-
 @pytest.mark.django_db
 def test_contracts_command(transaction_data):
     """
@@ -76,6 +74,7 @@ def test_contracts_command(transaction_data):
     assert fabs_transaction_2017.funding_agency is None
     assert fabs_award_2017.awarding_agency is None
     assert fabs_award_2017.funding_agency is None
+
 
 @pytest.mark.django_db
 def test_assistance_command(transaction_data):

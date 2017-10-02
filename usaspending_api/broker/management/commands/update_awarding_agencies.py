@@ -2,7 +2,6 @@ import logging
 import timeit
 
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
@@ -26,7 +25,7 @@ class Command(BaseCommand):
 
         if file_type == 'D1':
             # List of Transaction FPDS mapping transaction ids, cgac code, and subtier code
-            # Filters out FPDS transactions where the transaction's awarding or funding agency is null and by fiscal year
+            # Filters out FPDS transactions where the transaction is equal to the fiscal year
             transaction_cgac_subtier_map = [
                                                {
                                                 'transaction_id': transaction_FPDS['transaction_id'],
@@ -46,7 +45,7 @@ class Command(BaseCommand):
                                             ]
         elif file_type == 'D2':
             # List of Transaction FABS mapping transaction ids, cgac code, and subtier code
-            # Filters out FABS transactions where the transaction's awarding or funding agency is null and by fiscal year
+            # Filters out FABS transactions where the where the transaction is equal to the fiscal year
             transaction_cgac_subtier_map = [
                                                 {
                                                  'transaction_id': transaction_FABS['transaction_id'],
