@@ -47,6 +47,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # build response
         response = {'group': group, 'results': []}
+        nested_order = ''
 
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
@@ -73,7 +74,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 key = {'fiscal_year': str(trans['fiscal_year']), 'month': str(fiscal_month)}
                 key = str(key)
                 group_results[key] = trans['federal_action_obligation']
-
+            nested_order = 'month'
         else:  # quarterly, take months and add them up
 
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
@@ -95,6 +96,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                         group_results[key] = group_results.get(key) + trans['federal_action_obligation']
                     else:
                         group_results[key] = group_results.get(key)
+            nested_order = 'quarter'
 
         # convert result into expected format, sort by key to meet front-end specs
         results = []
@@ -103,7 +105,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # 'time_period': {'fy': '2017', 'quarter': '3'},
         # 	'aggregated_amount': '200000000'
         # }]
-        for key, value in sorted(group_results.items()):
+        for key, value in sorted(group_results.items(), key=lambda k: (ast.literal_eval(k[0])['fiscal_year'],
+                                                                       int(ast.literal_eval(k[0])[nested_order])) if nested_order else (ast.literal_eval(k[0])['fiscal_year'])):
             key_dict = ast.literal_eval(key)
             result = {'time_period': key_dict, 'aggregated_amount': float(value)}
             results.append(result)
