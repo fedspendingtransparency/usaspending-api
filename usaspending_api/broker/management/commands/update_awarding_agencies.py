@@ -29,14 +29,14 @@ class Command(BaseCommand):
             # Filters out FPDS transactions where the transaction's awarding or funding agency is null and by fiscal year
             transaction_cgac_subtier_map = [
                                                {
-                                                'transaction_id': transaction['transaction_id'],
-                                                'awarding_cgac_code': transaction['awarding_agency_code'],
-                                                'funding_cgac_code': transaction['funding_agency_code'],
-                                                'awarding_subtier_code': transaction['awarding_sub_tier_agency_c'],
-                                                'funding_subtier_code': transaction['funding_sub_tier_agency_co']
+                                                'transaction_id': transaction_FPDS['transaction_id'],
+                                                'awarding_cgac_code': transaction_FPDS['awarding_agency_code'],
+                                                'funding_cgac_code': transaction_FPDS['funding_agency_code'],
+                                                'awarding_subtier_code': transaction_FPDS['awarding_sub_tier_agency_c'],
+                                                'funding_subtier_code': transaction_FPDS['funding_sub_tier_agency_co']
                                                }
-                                               for transaction in TransactionFPDS.objects
-                                               .filter(Q(transaction__fiscal_year=fiscal_year))
+                                               for transaction_FPDS in TransactionFPDS.objects
+                                               .filter(transaction__fiscal_year=fiscal_year)
                                                .values('transaction_id',
                                                        'awarding_agency_code',
                                                        'funding_agency_code',
@@ -49,14 +49,14 @@ class Command(BaseCommand):
             # Filters out FABS transactions where the transaction's awarding or funding agency is null and by fiscal year
             transaction_cgac_subtier_map = [
                                                 {
-                                                 'transaction_id': transaction['transaction_id'],
-                                                 'awarding_cgac_code': transaction['awarding_agency_code'],
-                                                 'funding_cgac_code': transaction['funding_agency_code'],
-                                                 'awarding_subtier_code': transaction['awarding_sub_tier_agency_c'],
-                                                 'funding_subtier_code': transaction['funding_sub_tier_agency_co']
+                                                 'transaction_id': transaction_FABS['transaction_id'],
+                                                 'awarding_cgac_code': transaction_FABS['awarding_agency_code'],
+                                                 'funding_cgac_code': transaction_FABS['funding_agency_code'],
+                                                 'awarding_subtier_code': transaction_FABS['awarding_sub_tier_agency_c'],
+                                                 'funding_subtier_code': transaction_FABS['funding_sub_tier_agency_co']
                                                 }
-                                                for transaction in TransactionFABS.objects
-                                                .filter(Q(transaction__fiscal_year=fiscal_year))
+                                                for transaction_FABS in TransactionFABS.objects
+                                                # .filter(transaction__fiscal_year=fiscal_year)
                                                 .values('transaction_id',
                                                         'awarding_agency_code',
                                                         'funding_agency_code',

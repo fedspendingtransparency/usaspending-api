@@ -1,5 +1,6 @@
 from model_mommy import mommy
 import pytest
+from datetime import datetime
 
 from django.core.management import call_command
 
@@ -16,7 +17,7 @@ def transaction_data():
 
     transaction_normalized_fpds_2017 = mommy.make(TransactionNormalized, id=1234, awarding_agency=None,
                                                   funding_agency=None,
-                                                  fiscal_year=2017, award=award_fpds_2017)
+                                                  action_date=datetime(2017, 7, 1), award=award_fpds_2017)
 
     transaction_fpds_2017 = mommy.make(TransactionFPDS, transaction=transaction_normalized_fpds_2017,
                                        awarding_agency_code='001', awarding_sub_tier_agency_c='011',
@@ -27,7 +28,7 @@ def transaction_data():
     award_fabs_2017 = mommy.make(Award, id=40, awarding_agency=None, funding_agency=None)
     transaction_normalized_fabs_2017 = mommy.make(TransactionNormalized, id=13141516, awarding_agency=None,
                                                   funding_agency=None,
-                                                  fiscal_year=2017, award=award_fabs_2017)
+                                                  action_date=datetime(2016, 7, 1), award=award_fabs_2017)
 
     transaction_fabs_2017 = mommy.make(TransactionFABS, transaction=transaction_normalized_fabs_2017,
                                        awarding_agency_code='001', awarding_sub_tier_agency_c='011',
@@ -83,7 +84,7 @@ def test_assistance_command(transaction_data):
     :return: tests FABS data FY 2017 to make sure it correct funding and awarding agency data is added
     takes into account when funding agency code is missing from transaction data
     """
-    call_command('update_awarding_agencies', '--fiscal_year', 2017, '--assistance')
+    call_command('update_awarding_agencies', '--fiscal_year', 2016, '--assistance')
 
     fpds_transaction_2017 = TransactionNormalized.objects.filter(id=1234).first()
     fpds_award_2017 = Award.objects.filter(id=10).first()
