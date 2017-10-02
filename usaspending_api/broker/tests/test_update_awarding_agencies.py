@@ -1,5 +1,6 @@
 from model_mommy import mommy
 import pytest
+from datetime import datetime
 
 from django.core.management import call_command
 
@@ -15,7 +16,7 @@ def transaction_data():
     award_fpds_2017 = mommy.make(Award, id=10, awarding_agency=None, funding_agency=None)
 
     transaction_normalized_fpds_2017 = mommy.make(TransactionNormalized, id=1234, awarding_agency=None,
-                                                  funding_agency=None,
+                                                  funding_agency=None, action_date=datetime(2017, 6, 1),
                                                   fiscal_year=2017, award=award_fpds_2017)
 
     transaction_fpds_2017 = mommy.make(TransactionFPDS, transaction=transaction_normalized_fpds_2017,
@@ -26,7 +27,7 @@ def transaction_data():
     # Assistance Transaction - Fiscal Year 20176
     award_fabs_2017 = mommy.make(Award, id=40, awarding_agency=None, funding_agency=None)
     transaction_normalized_fabs_2017 = mommy.make(TransactionNormalized, id=13141516, awarding_agency=None,
-                                                  funding_agency=None,
+                                                  funding_agency=None, action_date=datetime(2017, 7, 1),
                                                   fiscal_year=2017, award=award_fabs_2017)
 
     transaction_fabs_2017 = mommy.make(TransactionFABS, transaction=transaction_normalized_fabs_2017,
