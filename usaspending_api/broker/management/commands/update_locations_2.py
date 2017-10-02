@@ -87,13 +87,16 @@ class Command(BaseCommand):
         lel_bulk = []
 
         start_time = datetime.now()
+
+        trans_queryset = TransactionNormalized.objects.prefetch_related('award', 'recipient')
+
         for index, row in enumerate(award_financial_assistance_data, 1):
                 if not (index % 100):
                     logger.info('Location Fix: Fixing row {} of {} ({})'.format(str(index),
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
                 # Could also use contract_data__fain
-                transaction = TransactionNormalized.objects.filter(award__fain=row['fain'],award__uri=row['uri'],modification_number=row['award_modification_amendme']).first()
+                transaction = trans_queryset.filter(award__fain=row['fain'],award__uri=row['uri'],modification_number=row['award_modification_amendme']).first()
                 if not transaction:
                     logger.info('Couldn\'t find transaction with fain ({}), uri({}), and modification_number({}). Skipping.'.format(row['fain'], row['uri'], row['award_modification_amendme']))
                     continue
@@ -124,7 +127,7 @@ class Command(BaseCommand):
 
             logger.info('Bulk creating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
             bulk_update(pop_bulk, update_fields=pop_update_fields, batch_size=BATCH_SIZE)
-            
+
             logger.info('Bulk creating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
             bulk_update(lel_bulk, update_fields=lel_update_fields, batch_size=BATCH_SIZE)
 
