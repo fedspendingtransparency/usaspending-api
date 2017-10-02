@@ -126,10 +126,10 @@ class Command(BaseCommand):
                                  'country_name']
 
             logger.info('Bulk creating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
-            bulk_update(pop_bulk, update_fields=pop_update_fields, batch_size=BATCH_SIZE)
+            bulk_update(pop_bulk, batch_size=BATCH_SIZE)
 
             logger.info('Bulk creating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
-            bulk_update(lel_bulk, update_fields=lel_update_fields, batch_size=BATCH_SIZE)
+            bulk_update(lel_bulk, batch_size=BATCH_SIZE)
 
 
     @staticmethod
