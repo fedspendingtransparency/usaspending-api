@@ -30,6 +30,7 @@ def transaction_data():
                                                   funding_agency=None,
                                                   action_date=datetime(2016, 7, 1), award=award_fabs_2017)
 
+
     transaction_fabs_2017 = mommy.make(TransactionFABS, transaction=transaction_normalized_fabs_2017,
                                        awarding_agency_code='001', awarding_sub_tier_agency_c='011',
                                        funding_agency_code=None, funding_sub_tier_agency_co=None
