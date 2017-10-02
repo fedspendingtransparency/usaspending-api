@@ -30,6 +30,9 @@ def update_country_code(d_file, location, country_code, state_code=None, state_n
                                 (location.place_of_performance_flag and country_code is None and not place_of_performance_code):
             updated_location_country_code = 'USA'
 
+    if not country_code_map.get(updated_location_country_code, None):
+        logger.info('No country found for country code: {}. Skipping...'.format(updated_location_country_code))
+
     location.location_country = country_code_map.get(updated_location_country_code, None)
 
     if location.location_country:
@@ -119,12 +122,6 @@ class Command(BaseCommand):
                     pop_bulk.append(pop)
 
         with db_transaction.atomic():
-
-            pop_update_fields = ['location_country_code', 'place_of_perform_code', 'state_name',
-                                 'location_country_code',
-                                 'country_name']
-            lel_update_fields = ['location_country_code', 'state_code', 'state_name', 'location_country_code',
-                                 'country_name']
 
             logger.info('Bulk updating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
             bulk_update(pop_bulk, batch_size=BATCH_SIZE)
