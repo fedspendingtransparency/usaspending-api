@@ -5,11 +5,18 @@ from django.core.management.base import BaseCommand
 from datetime import datetime
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency
+from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
 logger = logging.getLogger('console')
 
+
+subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
+subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
+toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
+agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
+agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
+agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
 
 class Command(BaseCommand):
 
@@ -95,10 +102,23 @@ class Command(BaseCommand):
             if transaction is None:
                 logger.error('Unable to find Transaction {}'.format(str(row['transaction_id'])))
                 continue
+                
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            awarding_agency = agency_no_sub_map.get((
+                row['awarding_cgac_code'],
+                row["awarding_subtier_code"]
+            ))
 
-            # Update awarding and funding agency if awarding of funding agency is empty
-            awarding_agency = Agency.get_by_toptier_subtier(row['awarding_cgac_code'], row['awarding_subtier_code'])
-            funding_agency = Agency.get_by_toptier_subtier(row['funding_cgac_code'], row['funding_subtier_code'])
+            if awarding_agency is None:
+                awarding_agency = agency_sub_only_map.get(row['awarding_agency_code'])
+
+            funding_agency = agency_no_sub_map.get((
+                row['funding_cgac_code'],
+                row["funding_subtier_code"]
+            ))
+
+            if funding_agency is None:
+                funding_agency = agency_sub_only_map.get(row['funding_agency_code'])
 
             # If unable to get agency moves on to the next transaction
             if awarding_agency is None and funding_agency is None:
