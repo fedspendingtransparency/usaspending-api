@@ -274,6 +274,7 @@ class Command(BaseCommand):
                 # create the award since it wasn't found
                 create_kwargs = {'awarding_agency': awarding_agency, 'fain': fain, 'uri': uri}
                 award = Award(**create_kwargs)
+                award_map[lookup_key] = award
                 award_bulk.append(award)
 
             award_lookup.append(award)
