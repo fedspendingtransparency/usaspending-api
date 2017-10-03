@@ -112,7 +112,7 @@ class Command(BaseCommand):
                     state_code = row['legal_entity_state_code']
                     state_name = row['legal_entity_state_name']
                     lel = update_country_code("d2", lel, location_country_code, state_code, state_name)
-                    lel_bulk.append(lel)
+                    lel.save()
 
                 if transaction.place_of_performance:
                     pop = transaction.place_of_performance
@@ -120,15 +120,15 @@ class Command(BaseCommand):
                     place_of_perform_code = row['place_of_performance_code']
                     state_name = row['place_of_perform_state_nam']
                     pop = update_country_code("d2", pop, location_country_code, state_code, state_name, place_of_performance_code=place_of_perform_code)
-                    pop_bulk.append(pop)
+                    pop.save()
 
         with db_transaction.atomic():
 
             logger.info('Bulk updating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
-            bulk_update(pop_bulk, batch_size=BATCH_SIZE)
+            #bulk_update(pop_bulk, batch_size=BATCH_SIZE)
 
             logger.info('Bulk updating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
-            bulk_update(lel_bulk, batch_size=BATCH_SIZE)
+            #bulk_update(lel_bulk, batch_size=BATCH_SIZE)
 
 
     @staticmethod
