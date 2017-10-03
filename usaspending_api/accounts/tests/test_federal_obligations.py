@@ -57,44 +57,44 @@ def financial_obligations_models():
         federal_account=federal_id_lame
     )
 
-    # Get Awesome account values
+    # AppropriationAccountBalances
     mommy.make(
-        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        'accounts.AppropriationAccountBalances',
         submission=fiscal_year,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=-100,
-        treasury_account=id_awesome
+        obligations_incurred_total_by_tas_cpe=-100,
+        treasury_account_identifier=id_awesome
     )
     mommy.make(
-        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        'accounts.AppropriationAccountBalances',
         submission=fiscal_year,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=200,
-        treasury_account=id_awesome
+        obligations_incurred_total_by_tas_cpe=200,
+        treasury_account_identifier=id_awesome
     )
     # Test to make sure False value is ignored in calculation
     mommy.make(
-        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        'accounts.AppropriationAccountBalances',
         submission=fiscal_year,
         final_of_fy=False,
-        obligations_incurred_by_program_object_class_cpe=200,
-        treasury_account=id_awesome
+        obligations_incurred_total_by_tas_cpe=200,
+        treasury_account_identifier=id_awesome
     )
 
     # Get Lame account values
     mommy.make(
-        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        'accounts.AppropriationAccountBalances',
         submission=fiscal_year,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=500,
-        treasury_account=id_lame
+        obligations_incurred_total_by_tas_cpe=500,
+        treasury_account_identifier=id_lame
     )
     mommy.make(
-        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        'accounts.AppropriationAccountBalances',
         submission=fiscal_year,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=-100,
-        treasury_account=id_lame
+        obligations_incurred_total_by_tas_cpe=-100,
+        treasury_account_identifier=id_lame
     )
 
 
