@@ -23,6 +23,7 @@ toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_
 agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
 agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
 agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
+award_map = {(award.get('fain'), award.get('uri'), award.get('awarding_agency_id')): award for award in Award.objects.filter(piid__isnull=True).values('fain', 'uri', 'awarding_agency_id')}
 
 fabs_bulk = []
 
@@ -38,12 +39,12 @@ awarding_agency_list = []
 funding_agency_list = []
 
 award_lookup = []
+award_bulk = []
 
 transaction_normalized_bulk = []
 
 # Lists to store for update_awards and update_contract_awards
-award_update_id_list = []
-award_contract_update_id_list = []
+award_update_list = []
 
 pop_field_map = {
     "city_name": "place_of_performance_city",
@@ -264,24 +265,30 @@ class Command(BaseCommand):
             awarding_agency_list.append(awarding_agency)
             funding_agency_list.append(funding_agency)
 
-            # award.save() is called in Award.get_or_create_summary_award by default
-            created, award = Award.get_or_create_summary_award(
-                awarding_agency=awarding_agency,
-                fain=row.get('fain'),
-                uri=row.get('uri'),
-                save=True,
-                agency_toptier_map=agency_toptier_map
-            )
+            fain = row.get('fain')
+            uri = row.get('uri')
+
+            lookup_key = (fain, uri, awarding_agency.id)
+            award = award_map.get(lookup_key)
+            if not award:
+                # create the award since it wasn't found
+                create_kwargs = {'awarding_agency': awarding_agency, 'fain': fain, 'uri': uri}
+                award = Award(**create_kwargs)
+                award_bulk.append(award)
 
             award_lookup.append(award)
-            award_update_id_list.append(award.id)
+            # award_update_list.append(award)
+
+        with db_transaction.atomic():
+            logger.info('Bulk creating Awards (batch_size: {})...'.format(BATCH_SIZE))
+            Award.objects.bulk_create(award_bulk, batch_size=BATCH_SIZE)
 
     @staticmethod
     def load_transaction_normalized(fabs_broker_data, total_rows):
         start_time = datetime.now()
         for index, row in enumerate(fabs_broker_data, 1):
             if not (index % 10000):
-                logger.info('Awards: Loading row {} of {} ({})'.format(str(index),
+                logger.info('Transaction Normalized: Loading row {} of {} ({})'.format(str(index),
                                                                           str(total_rows),
                                                                           datetime.now() - start_time))
 
