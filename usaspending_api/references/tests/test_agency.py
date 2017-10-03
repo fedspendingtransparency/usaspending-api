@@ -19,29 +19,35 @@ def agency_data():
 def test_department(agency_data):
     """
     Make sure an instance of a department is properly created
+    Uses African Development Foundation as test
     """
 
     # In this department, the FREC is being used as the cgac_code
-    Agency.objects.get(
-        toptier_agency__cgac_code='002',
-        toptier_agency__fpds_code='0000',
-        subtier_agency__subtier_code='0000')
+    department = Agency.objects.get(
+        toptier_agency__cgac_code='1136',
+        toptier_agency__fpds_code='1100',
+        subtier_agency__subtier_code='1141')
 
 
 @pytest.mark.django_db
 def test_subtier(agency_data):
     """
     Make sure a subtier is properly mapped to its parent department
+    Uses NIST and DOC (NIST is a subtier of DOC)
     """
 
-    # Make sure the subtier is mapped to a frec and the department are mapped to a frec and toptier respectively
-    subtier = Agency.objects.get(toptier_agency__cgac_code='0000',
-                                 toptier_agency__fpds_code='0000',
-                                 subtier_agency__subtier_code='0001')
-    department = Agency.objects.get(toptier_agency__cgac_code='002',
-                                    toptier_agency__fpds_code='0000',
-                                    subtier_agency__subtier_code='0000')
-    assert subtier.toptier_agency != department.toptier_agency
+    # Make sure the subtier's top agency = the expected toptier agency
+    subtier = Agency.objects.get(toptier_agency__cgac_code='013',
+                                 toptier_agency__fpds_code='1300',
+                                 subtier_agency__subtier_code='1341')
+
+    department = Agency.objects.get(toptier_agency__cgac_code='013',
+                                    toptier_agency__fpds_code='1300',
+                                    toptier_flag=True)
+
+    print('SUB: {}, TOP: {}'.format(subtier.toptier_agency, department.toptier_agency))
+
+    assert subtier.toptier_agency == department.toptier_agency
 
 
 @pytest.mark.django_db
