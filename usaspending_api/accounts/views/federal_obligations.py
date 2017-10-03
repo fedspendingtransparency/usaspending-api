@@ -3,13 +3,12 @@ from django.db.models import F, Sum
 from usaspending_api.accounts.serializers import FederalAccountByObligationSerializer
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import DetailViewSet
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import Agency
 
 
 class FederalAccountByObligationViewSet(DetailViewSet):
-    """Handle autocomplete requests for federal account information."""
+    """Returns a Appropriation Account Balance's obligated amount broken up by TAS."""
     serializer_class = FederalAccountByObligationSerializer
 
     def get_queryset(self):
