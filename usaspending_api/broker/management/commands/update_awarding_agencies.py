@@ -102,7 +102,11 @@ class Command(BaseCommand):
             if transaction is None:
                 logger.error('Unable to find Transaction {}'.format(str(row['transaction_id'])))
                 continue
-                
+
+            # Update awarding and funding agency if awarding of funding agency is empty
+            awarding_agency = Agency.get_by_toptier_subtier(row['awarding_cgac_code'], row['awarding_subtier_code'])
+            funding_agency = Agency.get_by_toptier_subtier(row['funding_cgac_code'], row['funding_subtier_code'])
+
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
             awarding_agency = agency_no_sub_map.get((
                 row['awarding_cgac_code'],
@@ -110,7 +114,7 @@ class Command(BaseCommand):
             ))
 
             if awarding_agency is None:
-                awarding_agency = agency_sub_only_map.get(row['awarding_agency_code'])
+                awarding_agency = agency_sub_only_map.get(row['awarding_cgac_code'])
 
             funding_agency = agency_no_sub_map.get((
                 row['funding_cgac_code'],
@@ -118,7 +122,7 @@ class Command(BaseCommand):
             ))
 
             if funding_agency is None:
-                funding_agency = agency_sub_only_map.get(row['funding_agency_code'])
+                funding_agency = agency_sub_only_map.get(row['funding_cgac_code'])
 
             # If unable to get agency moves on to the next transaction
             if awarding_agency is None and funding_agency is None:
