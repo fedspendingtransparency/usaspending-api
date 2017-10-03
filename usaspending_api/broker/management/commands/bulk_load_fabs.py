@@ -10,6 +10,7 @@ from usaspending_api.awards.models import TransactionFABS, TransactionNormalized
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date
 from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.references.models import RefCountryCode, Location, LegalEntity, Agency, ToptierAgency, SubtierAgency
+from usaspending_api.etl.award_helpers import update_awards, update_award_categories
 
 BATCH_SIZE = 10000
 
@@ -24,15 +25,15 @@ agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.sub
 agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
 agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
 award_map = {(award.get('fain'), award.get('uri'), award.get('awarding_agency_id')): award for award in Award.objects.filter(piid__isnull=True).values('fain', 'uri', 'awarding_agency_id')}
+le_map = {(le.get('recipient_unique_id'), le.get('recipient_name', '')): le for le in LegalEntity.objects.values()}
 
 fabs_bulk = []
 
-pop_lookup = {}
 pop_bulk = []
 
-lel_lookup = {}
 lel_bulk = []
 
+legal_entity_lookup = []
 legal_entity_bulk = []
 
 awarding_agency_list = []
@@ -42,9 +43,6 @@ award_lookup = []
 award_bulk = []
 
 transaction_normalized_bulk = []
-
-# Lists to store for update_awards and update_contract_awards
-award_update_list = []
 
 pop_field_map = {
     "city_name": "place_of_performance_city",
@@ -169,10 +167,8 @@ class Command(BaseCommand):
 
             if pop_flag:
                 pop_bulk.append(loc_instance)
-                pop_lookup[index] = loc_instance
             else:
                 lel_bulk.append(loc_instance)
-                lel_lookup[index] = loc_instance
 
         with db_transaction.atomic():
             if pop_flag:
@@ -193,21 +189,27 @@ class Command(BaseCommand):
                                                                           datetime.now() - start_time))
 
             recipient_name = row.get('awardee_or_recipient_legal', '')
+            recipient_unique_id = row['awardee_or_recipient_uniqu']
 
-            legal_entity = LegalEntity(
-                recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                recipient_name=recipient_name
-            )
+            lookup_key = (recipient_unique_id, recipient_name)
+            legal_entity = le_map.get(lookup_key)
 
-            legal_entity = load_data_into_model(
-                legal_entity,
-                row,
-                value_map={"location": lel_lookup[index]},
-                save=False)
+            if not legal_entity:
+                legal_entity = LegalEntity(
+                    recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                    recipient_name=recipient_name
+                )
 
-            LegalEntity.update_business_type_categories(legal_entity)
+                legal_entity = load_data_into_model(
+                    legal_entity,
+                    row,
+                    value_map={"location": lel_bulk[index-1]},
+                    save=False)
 
-            legal_entity_bulk.append(legal_entity)
+                LegalEntity.update_business_type_categories(legal_entity)
+
+                legal_entity_bulk.append(legal_entity)
+            legal_entity_lookup.append(legal_entity)
 
         with db_transaction.atomic():
             logger.info('Bulk creating Legal Entities (batch_size: {})...'.format(BATCH_SIZE))
@@ -278,7 +280,6 @@ class Command(BaseCommand):
                 award_bulk.append(award)
 
             award_lookup.append(award)
-            # award_update_list.append(award)
 
         with db_transaction.atomic():
             logger.info('Bulk creating Awards (batch_size: {})...'.format(BATCH_SIZE))
@@ -297,7 +298,7 @@ class Command(BaseCommand):
                 "award": award_lookup[index - 1],
                 "awarding_agency": awarding_agency_list[index - 1],
                 "funding_agency": funding_agency_list[index - 1],
-                "recipient": legal_entity_bulk[index - 1],
+                "recipient": legal_entity_lookup[index - 1],
                 "place_of_performance": pop_bulk[index - 1],
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
@@ -443,3 +444,17 @@ class Command(BaseCommand):
         self.load_transaction_fabs(fabs_broker_data, total_rows)
         end = timeit.default_timer()
         logger.info('Finished FABS bulk data load in ' + str(end - start) + ' seconds')
+
+        award_update_id_list = [award.id for award in award_lookup]
+
+        logger.info('Updating awards to reflect their latest associated transaction info...')
+        start = timeit.default_timer()
+        update_awards(tuple(award_update_id_list))
+        end = timeit.default_timer()
+        logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+
+        logger.info('Updating award category variables...')
+        start = timeit.default_timer()
+        update_award_categories(tuple(award_update_id_list))
+        end = timeit.default_timer()
+        logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
