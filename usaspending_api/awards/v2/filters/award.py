@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 # TODO: Performance when multiple false values are initially provided
 def award_filter(filters):
 
-    queryset = Award.objects.all()
+    queryset = Award.objects.filter(latest_transaction_id__isnull=False)
     for key, value in filters.items():
         # check for valid key
         if value is None:

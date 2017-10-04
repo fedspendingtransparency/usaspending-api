@@ -1,26 +1,27 @@
+import ast
+import logging
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Sum
+
+from django.db.models import Sum, Count
 from django.db.models.functions import ExtractMonth
+
 from collections import OrderedDict
 from functools import total_ordering
-from usaspending_api.references.models import Cfda
 
 from datetime import date
 from fiscalyear import *
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers import generate_fiscal_month, get_pagination, get_pagination_metadata
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
-    grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping, \
-    loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
+    loan_type_mapping, loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
+from usaspending_api.references.models import Cfda
 
-import ast
-from usaspending_api.common.helpers import generate_fiscal_month, \
-    get_pagination, get_pagination_metadata
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -645,23 +646,16 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         queryset = award_filter(filters)
 
         # define what values are needed in the sql query
-        queryset = queryset.values("latest_transaction__type")
+        queryset = queryset.values('category')
+        queryset = queryset.annotate(category_count=Count('category')).exclude(category__isnull=True).\
+            values('category', 'category_count')
 
-        # build response
-        response = {"results": {}}
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
         for award in queryset:
-            if (award["latest_transaction__type"] in contract_type_mapping):
-                results["contracts"] += 1
-            elif (award["latest_transaction__type"] in grant_type_mapping):  # Grants
-                results["grants"] += 1
-            elif award["latest_transaction__type"] in direct_payment_type_mapping:  # Direct Payment
-                results["direct_payments"] += 1
-            elif award["latest_transaction__type"] in loan_type_mapping:  # Loans
-                results["loans"] += 1
-            elif award["latest_transaction__type"] in other_type_mapping:  # Other
-                results["other"] += 1
+            result_key = award['category'].replace(' ', '_')
+            result_key += 's' if result_key != 'other' else ''
+            results[result_key] = award['category_count']
 
-        response["results"] = results
-        return Response(response)
+        # build response
+        return Response({"results": results})
