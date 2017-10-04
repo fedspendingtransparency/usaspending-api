@@ -647,12 +647,12 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         # define what values are needed in the sql query
         queryset = queryset.values('category')
-        new_qs = queryset.annotate(category_count=Count('category')).exclude(category__isnull=True)
-        new_qs = new_qs.values('category', 'category_count')
+        queryset = queryset.annotate(category_count=Count('category')).exclude(category__isnull=True).\
+            values('category', 'category_count')
 
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
-        for award in new_qs:
+        for award in queryset:
             result_key = award['category'].replace(' ', '_')
             result_key += 's' if result_key != 'other' else ''
             results[result_key] = award['category_count']
