@@ -174,7 +174,9 @@ CGAC AGENCY CODE,FPDS DEPARTMENT ID,AGENCY NAME,AGENCY ABBREVIATION,REGISTERED I
 012,1200,Department of Agriculture,USDA,YES,YES,OMB File,12E2,Rural Housing Service,RHS,1200,Department of Agriculture,GPO Acronym List,Yes,,"AGRICULTURE, DEPARTMENT OF",,Fixed subtier (was in scientific notation),,,,FALSE
 012,1200,Department of Agriculture,USDA,YES,YES,NIST (2008),1261,Rural Telephone Bank,RTB,1200,Department of Agriculture,GPO Acronym List,,,,,Closed down. Final Audit released 2008,,,,FALSE
 012,1200,Department of Agriculture,USDA,YES,YES,OMB File,12E1,Rural Utilities Service,RUS,1200,Department of Agriculture,GPO Acronym List,Yes,,"AGRICULTURE, DEPARTMENT OF",,Fixed subtier (was in scientific notation),,,,FALSE
-012,1200,Department of Agriculture,USDA,YES,YES,OMB File,122S,Science and Education,ISE,1200,Department of Agriculture,,,,"AGRICULTURE, DEPARTMENT OF",,"Probably the International Science and Education Program""""Projects funded under the ISE Program from 2005-2011 can be found in the external resources section below. The last award will end August 31, 2016.""",,,,FALSE
+012,1200,Department of Agriculture,USDA,YES,YES,OMB File,122S,Science and Education,ISE,1200,Department of Agriculture,,,,"AGRICULTURE, DEPARTMENT OF",,"Probably the International Science and Education Program""
+
+""Projects funded under the ISE Program from 2005-2011 can be found in the external resources section below. The last award will end August 31, 2016.""",,,,FALSE
 012,1200,Department of Agriculture,USDA,YES,YES,OMB File,1227,Soil Conservation Service,SCS,1200,Department of Agriculture,,,,"AGRICULTURE, DEPARTMENT OF",,Name changed to Natural Resources Conservation Service in 1994,,,,FALSE
 012,1200,Department of Agriculture,USDA,YES,YES,OMB File,12D0,Under Secretary for Farm and Foreign Agricultural Services,,1200,Department of Agriculture,,,,"AGRICULTURE, DEPARTMENT OF",,,,,,FALSE
 012,1200,Department of Agriculture,USDA,YES,YES,OMB File,12G0,Under Secretary for Food Safety,,1200,Department of Agriculture,,,,"AGRICULTURE, DEPARTMENT OF",,,,,,FALSE
@@ -612,7 +614,9 @@ CGAC AGENCY CODE,FPDS DEPARTMENT ID,AGENCY NAME,AGENCY ABBREVIATION,REGISTERED I
 389,4100,Merit Systems Protection Board,MSPB,YES,NO,OMB File,4100,Merit Systems Protection Board,MSPB,4100,Merit Systems Protection Board,GPO Acronym List,,,,,,,,,FALSE
 045,4500,Equal Employment Opportunity Commission,EEOC,YES,NO,OMB File,4500,Equal Employment Opportunity Commission,EEOC,4500,U.S. Equal Employment Opportunity Commission,GPO Acronym List,,,,,,,,,FALSE
 045,4500,Equal Employment Opportunity Commission,EEOC,YES,NO,OMB File,4565,Equal Employment Opportunity Coordinating Council,,4500,U.S. Equal Employment Opportunity Commission,,,,,,"""Executive Order 12067 of June 30, 1978, abolished the Equal Employment Opportunity Coordinating Council and transferred its duties to the Commission with responsibility for providing coherence and direction to the Government's equal employment opportunity efforts.""",,,,FALSE
-045,4500,Equal Employment Opportunity Commission,EEOC,YES,NO,OMB File,4567,Interagency Committee on Employment of People With Disabilities,ICEPD,4500,U.S. Equal Employment Opportunity Commission,,,,,,"""In fact, agencies with oversight responsibilities for the employment of PWTD have not met together as a group since the Interagency Committee onEmployment of People with Disabilities (ICEPD) disbanded in or about 1995.""",,,,FALSE
+045,4500,Equal Employment Opportunity Commission,EEOC,YES,NO,OMB File,4567,Interagency Committee on Employment of People With Disabilities,ICEPD,4500,U.S. Equal Employment Opportunity Commission,,,,,,"""In fact, agencies with oversight responsibilities for the employment of PWTD have not met together as a group since the Interagency Committee on
+
+Employment of People with Disabilities (ICEPD) disbanded in or about 1995.""",,,,FALSE
 047,4700,General Services Administration,GSA,YES,YES,OMB File,4712,Board of Contract Appeals,BCA,4700,General Services Administration,,,,,GSA Board of Contract Appeals,,,,,FALSE
 047,4700,General Services Administration,GSA,YES,YES,Historical USAspending data,4730,Federal Acquisition Service,FAS,4700,General Services Administration,,,,,,,,,,FALSE
 047,4700,General Services Administration,GSA,YES,YES,OMB File,4732,Federal Acquisition Service,FAS,4700,General Services Administration,,,,,,,,,,FALSE
@@ -1106,13 +1110,15 @@ CGAC AGENCY CODE,FPDS DEPARTMENT ID,AGENCY NAME,AGENCY ABBREVIATION,REGISTERED I
 456,9531,United States Holocaust Memorial Museum,USHMM,NO,NO,OMB File,9531,United States Holocaust Memorial Museum,USHMM,9539,U.S. Holocaust Memorial Council,,,,,,,,,,FALSE
 310,9532,Access Board,USAB,YES,NO,OMB File,9532,Access Board,,9503,Architectural & Transp. Barriers Compliance Board,,,,ARCHITECTURAL AND TRANSPORTATION BARRIERS COMPLIANCE BOARD,ARCHITECTURAL AND TRANSPORTATION BARRIERS COMPLIANCE BOARD,,,,,FALSE
 471,9533,Gulf Coast Ecosystem Restoration Council,GCERC,YES,YES,OMB File,9533,Gulf Coast Ecosystem Restoration Council,,9577,Gulf Coast Ecosystem Restoration Council,,,YES,,,,,,,FALSE
-373,9535,Institute of American Indian and Alaska Native Culture and Arts Development,IAIA,NO,NO,OMB File,9535,Institute of American Indian and Alaska Native Culture and Arts Development,IAIA,,,,,,,,"Also known as the Institute of American Indian Arts (the acronym is associated with this name. Couldn't find an acronym used for the other name.Have their own TAS but their FREC are all under Treasury",,,,FALSE
+373,9535,Institute of American Indian and Alaska Native Culture and Arts Development,IAIA,NO,NO,OMB File,9535,Institute of American Indian and Alaska Native Culture and Arts Development,IAIA,,,,,,,,"Also known as the Institute of American Indian Arts (the acronym is associated with this name. Couldn't find an acronym used for the other name.
+
+Have their own TAS but their FREC are all under Treasury",,,,FALSE
 323,9537,Commission of Fine Arts,CFA,YES,NO,OMB File,9537,Commission of Fine Arts,CFA,9507,Commission of Fine Arts,,,,,,,,,,FALSE
 364,9540,Federal Housing Finance Board,FHFB,NO,NO,OMB File,95HL,Federal Home Loan Banks,FHLBanks,9519,Federal Housing Finance Board,,,,,,Note that FHFB was superseded by Federal Housing Finance Agency FHFA in 2008. the se subtiers also may not exist anymore.,,,,FALSE
 364,9540,Federal Housing Finance Board,FHFB,NO,NO,OMB File,9540,Federal Housing Finance Board,FHFB,9519,Federal Housing Finance Board,GPO Acronym List,,,,,Note that FHFB was superseded by Federal Housing Finance Agency FHFA in 2008. the se subtiers also may not exist anymore.,,,,FALSE
 381,9541,James Madison Memorial Fellowship Foundation,MADISON,NO,NO,OMB File,9541,James Madison Memorial Fellowship Foundation,,9522,James Madison Memorial Fellowship Foundation,,,,JAMES MADISON MEMORIAL FELLOWSHIP COMMISSION,JAMES MADISON MEMORIAL FELLOWSHIP COMMISSION,,,,,FALSE
 537,9542,Federal Housing Finance Agency,FHFA,YES,NO,OMB File,9542,Federal Housing Finance Agency,FHFA,9566,Federal Housing Finance Agency,GPO Acronym List,,,,,,,,,TRUE
-524,9543,Millenium Challenge Corporation,MCC,YES,YES,OMB File,9543,Millennium Challenge Corporation,MCC,9563,Millennium Challenge Corporation,GPO Acronym List,,YES,,,,,,,FALSE
+524,9543,Millennium Challenge Corporation,MCC,YES,YES,OMB File,9543,Millennium Challenge Corporation,MCC,9563,Millennium Challenge Corporation,GPO Acronym List,,YES,,,,,,,FALSE
 487,9545,Morris K. Udall and Stewart L. Udall Foundation,UDALL,NO,NO,OMB File,9545,Morris K. Udall and Stewart L. Udall Foundation,UDALL,9542,Morris K. Udall Scholarship Foundation,,,,MORRIS K. UDALL SCHOLARSHIP AND EXCELLENCE IN NATIONAL ENVIRONMENTAL POLICY FOUNDATION,MORRIS K. UDALL SCHOLARSHIP AND EXCELLENCE IN NATIONAL ENVIRONMENTAL POLICY FOUNDATION,,,,,FALSE
 517,9547,Delta Regional Authority,DRA,YES,YES,OMB File,9547,Delta Regional Authority,DRA,9559,Delta Regional Authority,,,YES,,,,,,,FALSE
 434,9549,Office of Government Ethics,OGE,YES,NO,OMB File,9549,Office of Government Ethics,OGE,9534,Office of Government Ethics,,,,,,,,,,FALSE
@@ -1390,8 +1396,14 @@ CGAC AGENCY CODE,FPDS DEPARTMENT ID,AGENCY NAME,AGENCY ABBREVIATION,REGISTERED I
 272,,Congressional-Executive Commission on People's Republic of China,CECC,NO,NO,CARS File & NIST (2008),0923,Commission on the People's Republic of China ,CECC,9558,Congressional-Executive Commission on China,,,,,,"Still exists. Was listed in NIST as under 009, but I moved here.",,,,FALSE
 096,,Corps of Engineers - Civil Works,USACE,YES,NO,Historical USAspending data,9600,Corps of Engineers - Civil Works,,DE00,Department of Defense,,,,,,,,,,FALSE
 068,,Environmental Protection Agency,EPA,YES,YES,NIST (2008),6802,Deputy Administrator,,6800,Environmental Protection Agency,,,,,,,,,,FALSE
-283,,Dwight D. Eisenhower Memorial Commission,EISENHOWERMEMORIAL,NO,NO,A-11 Circular and CARS File & NIST (2008),0905,Dwight D. Eisenhower Memorial Commission,,4833,Dwight D. Eisenhower Memorial Commission,,,,,,"Too vague or broad to use in Broker. Possibly could be decomposed in future with FR Entity.Update: the only agency associated with this in the CARS file is Dwight D. Eisenhower Memorial Commission. Changing ""LEGISLATIVE BRANCH BOARDS AND COMMISSIONS"" to Dwight D. Eisenhower Memorial Commission. Under this name, it was listed in NIST under 009, but I moved here.",,,,FALSE
-570,,Eisenhower Exchange Fellowship Program Trust Fund,EISENHOWERFELLOWSHIP,NO,NO,A-11 Circular and CARS File & NIST (2008),195A,Eisenhower Exchange Fellowship Program ,,,,,,,,,"Too vague or broad to use in Broker. Possibly could be decomposed in future with FR Entity.Update: the only agency associated with this in the CARS file is Eisenhower Exchange Fellowship Program Trust Fund. Changing ""Other"" to this more specific desgination. the SubTier code came from the state list but I moved it here given that it has a separate CGAC. It's possible that state reports this subtier though.FREC is for DOS",,,,FALSE
+283,,Dwight D. Eisenhower Memorial Commission,EISENHOWERMEMORIAL,NO,NO,A-11 Circular and CARS File & NIST (2008),0905,Dwight D. Eisenhower Memorial Commission,,4833,Dwight D. Eisenhower Memorial Commission,,,,,,"Too vague or broad to use in Broker. Possibly could be decomposed in future with FR Entity.
+
+Update: the only agency associated with this in the CARS file is Dwight D. Eisenhower Memorial Commission. Changing ""LEGISLATIVE BRANCH BOARDS AND COMMISSIONS"" to Dwight D. Eisenhower Memorial Commission. Under this name, it was listed in NIST under 009, but I moved here.",,,,FALSE
+570,,Eisenhower Exchange Fellowship Program Trust Fund,EISENHOWERFELLOWSHIP,NO,NO,A-11 Circular and CARS File & NIST (2008),195A,Eisenhower Exchange Fellowship Program ,,,,,,,,,"Too vague or broad to use in Broker. Possibly could be decomposed in future with FR Entity.
+
+Update: the only agency associated with this in the CARS file is Eisenhower Exchange Fellowship Program Trust Fund. Changing ""Other"" to this more specific desgination. the SubTier code came from the state list but I moved it here given that it has a separate CGAC. It's possible that state reports this subtier though.
+
+FREC is for DOS",,,,FALSE
 068,,Environmental Protection Agency,EPA,YES,YES,NIST (2008),68SD,Environmental Appeals Board,,6800,Environmental Protection Agency,,,,,,,,,,FALSE
 068,,Environmental Protection Agency,EPA,YES,YES,NIST (2008),68SE,Executive Secretariat,OES,6800,Environmental Protection Agency,,,,,,,,,,FALSE
 058,,Federal Emergency Management Agency,FEMA,N/A (not submitting directly),N/A (not submitting directly),Historical USAspending data,5800,Federal Emergency Management Agency,FEMA,,,,,,,,,,,,FALSE
@@ -1472,25 +1484,35 @@ CGAC AGENCY CODE,FPDS DEPARTMENT ID,AGENCY NAME,AGENCY ABBREVIATION,REGISTERED I
 067,,Other (Listed Under Department of State),DOS,N/A (not submitting directly),N/A (not submitting directly),A-11 Circular and CARS File and Historical USAspending data,6700,United States Information Agency,USIA,,,,,,,,"Not state's primary CGAC. In CARS, this is associated with the ARMY CORPS OF ENGINEERS, not STATE. 4/24/17: I added 6700 as a possible sub-tier. This code came from the historical usaspending data.",,,,FALSE
 292,,United States-China Economic and Security Review Commission,USCC,NO,NO,CARS File & NIST (2008),4860,United States-China Economic and Security Review Commission,USCC,4830,U.S. - China Security Review Commission,,,,,,Still exists,,,,FALSE
 349,,District of Columbia Courts,DC COURTS,YES,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,9552,DC Courts,,,,,,Added b/c code in A-11 circular. Registered but no one is actually admin or certifier yet.,,,,FALSE
-486,,United States Enrichment Corporation Fund,USECFUND,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Added b/c code in A-11 circular; This is essentially inactive but apparently hasn't been rescinded yet.FREC is under Energy",,,,FALSE
+486,,United States Enrichment Corporation Fund,USECFUND,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Added b/c code in A-11 circular; This is essentially inactive but apparently hasn't been rescinded yet.
+
+FREC is under Energy",,,,FALSE
 526,,Public Company Accounting Oversight Board,PCAOB,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,Added b/c code in A-11 circular,,,,FALSE
 531,,Electric Reliability Organization,ERO,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Added b/c code in A-11 circular. In July 2006, FERC certified the North American Electric Reliability Corporation (NERC) as the ERO",,,,FALSE
 538,,National Infrastructure Bank,NIB,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,Added b/c code in A-11 circular.,,,,FALSE
 575,,National Railroad Passenger Corporation Office of the Inspector General,NRPCOIG,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,4841,National Railroad Passenger Corp. IG,,,,,,Added b/c code in A-11 circular. Amtrak IG,,,,FALSE
 578,,Independent Payment Advisory Board,IPAB,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,Added b/c code in A-11 circular,,,,FALSE
 579,,Patient-Centered Outcomes Research Trust Fund,PCORTF,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,9572,Patient Centered Outcomes Research Trust Fund,,,,,,Added b/c code in A-11 circular,,,,FALSE
-580,,Corporation for Travel Promotion,BRAND USA,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Added b/c code in A-11 circular. A public-private partnership tasked with promoting tourism in the United States.Treasury FREC",,,,FALSE
+580,,Corporation for Travel Promotion,BRAND USA,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Added b/c code in A-11 circular. A public-private partnership tasked with promoting tourism in the United States.
+
+Treasury FREC",,,,FALSE
 912,,Farm Credit System,FCS,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,Added b/c code in A-11 circular.,,,,FALSE
 473,,Federal Permitting Improvement Council,FPIC,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,Added b/c code in A-11 circular. Don't think this is actually an agency. Just a group of agencies.,,,,FALSE
 543,,National Association of Registered Agents and Brokers,NARAB,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,Added b/c code in A-11 circular.,,,,FALSE
 588,,Interagency Coordinating Council on Workforce Attachment,ICCWA,NO,NO,A-11 Circular,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,Added b/c code in A-11 circular.,,,,FALSE
 480,,World War I Centennial Commission,WW1CC,NO,NO,CARS File,Unknown (may not exist),Unknown (May Not Exist),,4845,WORLD WAR I CENTENNIAL COMMISSION,,,,,,Appears to be the WORLD WAR I CENTENNIAL COMMISSION. Nothing else is associated with this AID in the CARS File. Appears to still be active. Changed Generic CARS designation (Legislative Branch Boards and Commission) to WORLD WAR I CENTENNIAL COMMISSION,,,,FALSE
-032,,Synthetic Fuels Corporation,SFC,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Seems to have shut down years ago.FREC is listed as 9999 - Unidentified",,,,FALSE
+032,,Synthetic Fuels Corporation,SFC,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Seems to have shut down years ago.
+
+FREC is listed as 9999 - Unidentified",,,,FALSE
 571,,National Reconnaissance Office,NRO,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,9513,Community Management Staff,,,,,,"Seems to still exist. Though there's no way it's separately reporting to us. If it reports at all, I imagine it'd be covered under DOD.",,,,FALSE
 518,,National Veterans Business Development Corporation,NVBDC,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,9556,National Veterans Business Development Corporation,,,,,,Not clear this still exists,,,,FALSE
-460,,U. S. Railway Association,USRA,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Abolished in 1987.FREC is listed as 9999 - Unidentified",,,,FALSE
+460,,U. S. Railway Association,USRA,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Abolished in 1987.
+
+FREC is listed as 9999 - Unidentified",,,,FALSE
 437,,Office of the Nuclear Waste Negotiator,ONWN,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,4813,Office of Nuclear Waste Negotiator,,,,,,Abolished in 1995,,,,FALSE
-322,,Commission for the Study of International Migration & Cooperative Economic Development,SIMCED,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Dissolved in 1990FREC listed as 9999 - Unidentified",,,,FALSE
+322,,Commission for the Study of International Migration & Cooperative Economic Development,SIMCED,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,,,,,,,,"Dissolved in 1990
+
+FREC listed as 9999 - Unidentified",,,,FALSE
 481,,Commission to Eliminate Child Abuse And Neglect Fatalities,ECANF,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,4846,COMM TO ELIM CHILD ABUSE AND NEGLECT FATALITIES,,,,,,Expired March 2016,,,,FALSE
 254,,"Revenue and Outlays, District of Columbia",DCRO,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,9552,DC Courts,,,,,,Not sure exactly what this is.,,,,FALSE
 274,,Ronald Reagan Centennial Commission,REAGANCOMMISSION,N/A (not submitting directly),N/A (not submitting directly),CARS File,Unknown (may not exist),Unknown (May Not Exist),,4842,Ronald Reagan Centennial Commission,,,,,,Terminated as of 2011 it appears.,,,,FALSE
