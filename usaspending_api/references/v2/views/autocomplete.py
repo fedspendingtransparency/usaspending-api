@@ -4,7 +4,7 @@ from django.db.models.functions import Greatest
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionContract
+from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionFPDS
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency, Cfda
 from usaspending_api.references.v1.serializers import AgencySerializer
@@ -106,7 +106,7 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
 
         search_text, limit = self.get_request_payload(request)
 
-        # get relevant TransactionContracts
+        # get relevant TransactionFPDSs
         queryset = Cfda.objects.filter(program_number__isnull=False,
                                        program_title__isnull=False)
         # Filter based on search text
@@ -151,8 +151,8 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
         search_text, limit = self.get_request_payload(request)
 
-        # get relevant TransactionContracts
-        queryset = TransactionContract.objects.filter(naics__isnull=False, naics_description__isnull=False)
+        # get relevant TransactionFPDS
+        queryset = TransactionFPDS.objects.filter(naics__isnull=False, naics_description__isnull=False)
         # Filter based on search text
         response = {}
 
@@ -179,8 +179,8 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
         search_text, limit = self.get_request_payload(request)
 
-        # get relevant TransactionContracts
-        queryset = TransactionContract.objects.filter(product_or_service_code__isnull=False)
+        # get relevant TransactionFPDS
+        queryset = TransactionFPDS.objects.filter(product_or_service_code__isnull=False)
         # Filter based on search text
         response = {}
 

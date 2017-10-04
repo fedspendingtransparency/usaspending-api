@@ -1,7 +1,7 @@
 import pytest
 from model_mommy import mommy
 from rest_framework import status
-
+from datetime import datetime
 
 @pytest.fixture
 def award_spending_data(db):
@@ -11,38 +11,41 @@ def award_spending_data(db):
     award1 = mommy.make('awards.Award', category='contracts', awarding_agency=agency)
     award2 = mommy.make('awards.Award', category=None, awarding_agency=agency)
     mommy.make(
-        'awards.Transaction',
+        'awards.TransactionNormalized',
         award=award,
         awarding_agency=agency,
         federal_action_obligation=10,
+        action_date=datetime(2017, 1, 1),
         fiscal_year=2017,
         recipient=legal_entity
     )
     mommy.make(
-        'awards.Transaction',
+        'awards.TransactionNormalized',
         award=award1,
         awarding_agency=agency,
         federal_action_obligation=20,
+        action_date=datetime(2017, 9, 1),
         fiscal_year=2017,
         recipient=legal_entity
     )
     mommy.make(
-        'awards.Transaction',
+        'awards.TransactionNormalized',
         award=award1,
         awarding_agency=agency,
         federal_action_obligation=20,
+        action_date=datetime(2016, 12, 1),
         fiscal_year=2017,
         recipient=legal_entity
     )
     mommy.make(
-        'awards.Transaction',
+        'awards.TransactionNormalized',
         award=award2,
         awarding_agency=agency,
         federal_action_obligation=20,
+        action_date=datetime(2016, 10, 2),
         fiscal_year=2017,
         recipient=legal_entity
     )
-
 
 @pytest.mark.django_db
 def test_award_category_endpoint(client, award_spending_data):

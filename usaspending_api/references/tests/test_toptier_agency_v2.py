@@ -41,8 +41,8 @@ def financial_spending_data(db):
                       obligations_incurred_total_by_tas_cpe=14, gross_outlay_amount_by_tas_cpe=14,
                       treasury_account_identifier=tas2)
 
-    # CREATE OverallTotals
-    ot = mommy.make('references.OverallTotals', fiscal_year=2017, total_budget_authority=3860000000.00)
+    # # CREATE OverallTotals
+    # ot = mommy.make('references.OverallTotals', fiscal_year=2017, total_budget_authority=3860000000.00)
 
 
 @pytest.mark.django_db
@@ -57,20 +57,20 @@ def test_award_type_endpoint(client, financial_spending_data):
                                       'agency_id': 1,
                                       'agency_name': 'tta_name',
                                       'budget_authority_amount': 2.0,
-                                      'current_total_budget_authority_amount': 3860000000.0,
+                                      'current_total_budget_authority_amount': 8361447130497.72,
                                       'obligated_amount': 2.0,
                                       'outlay_amount': 2.0,
-                                      'percentage_of_total_budget_authority': 5.181347150259067e-10},
+                                      'percentage_of_total_budget_authority': 2.391930450298678e-13},
                                      {'abbreviation': 'tta_abrev_2',
                                       'active_fq': '2',
                                       'active_fy': '2017',
                                       'agency_id': 2,
                                       'agency_name': 'tta_name_2',
                                       'budget_authority_amount': 14.0,
-                                      'current_total_budget_authority_amount': 3860000000.0,
+                                      'current_total_budget_authority_amount': 8361447130497.72,
                                       'obligated_amount': 14.0,
                                       'outlay_amount': 14.00,
-                                      'percentage_of_total_budget_authority': 3.6269430051813473e-09}]}
+                                      'percentage_of_total_budget_authority': 1.6743513152090746e-12}]}
 
     resp = client.get('/api/v2/references/toptier_agencies/?sort=budget_authority_amount&order=desc')
     assert resp.status_code == status.HTTP_200_OK
@@ -81,16 +81,16 @@ def test_award_type_endpoint(client, financial_spending_data):
                          'agency_id': 2,
                          'agency_name': 'tta_name_2',
                          'budget_authority_amount': 14.0,
-                         'current_total_budget_authority_amount': 3860000000.0,
+                         'current_total_budget_authority_amount': 8361447130497.72,
                          'obligated_amount': 14.0,
                          'outlay_amount': 14.0,
-                         'percentage_of_total_budget_authority': 3.6269430051813473e-09},
+                         'percentage_of_total_budget_authority': 1.6743513152090746e-12},
                         {'abbreviation': 'tta_abrev',
                          'active_fq': '2', 'active_fy': '2017',
                          'agency_id': 1,
                          'agency_name': 'tta_name',
                          'budget_authority_amount': 2.0,
-                         'current_total_budget_authority_amount': 3860000000.0,
+                         'current_total_budget_authority_amount': 8361447130497.72,
                          'obligated_amount': 2.0,
                          'outlay_amount': 2.0,
-                         'percentage_of_total_budget_authority': 5.181347150259067e-10}]}
+                         'percentage_of_total_budget_authority': 2.391930450298678e-13}]}

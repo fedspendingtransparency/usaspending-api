@@ -75,9 +75,9 @@ class Agency(models.Model):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
-    toptier_agency = models.ForeignKey('ToptierAgency', models.DO_NOTHING, null=True)
-    subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True)
-    office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
+    toptier_agency = models.ForeignKey('ToptierAgency', models.DO_NOTHING, null=True, db_index=True)
+    subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True, db_index=True)
+    office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True, db_index=True)
 
     # 1182 This flag is true if toptier agency name and subtier agency name are equal.
     # This means the award is at the department level.
@@ -155,7 +155,7 @@ class ToptierAgency(models.Model):
     cgac_code = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Code", db_index=True)
     fpds_code = models.TextField(blank=True, null=True)
     abbreviation = models.TextField(blank=True, null=True, verbose_name="Agency Abbreviation")
-    name = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Name")
+    name = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Name", db_index=True)
     mission = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Mission Statement")
     website = models.URLField(blank=True, null=True, verbose_name="Top-Tier Agency Website")
     icon_filename = models.TextField(blank=True, null=True, verbose_name="Top-Tier Agency Icon Filename")
@@ -171,7 +171,7 @@ class SubtierAgency(models.Model):
     update_date = models.DateTimeField(auto_now=True, null=True)
     subtier_code = models.TextField(blank=True, null=True, verbose_name="Sub-Tier Agency Code")
     abbreviation = models.TextField(blank=True, null=True, verbose_name="Agency Abbreviation")
-    name = models.TextField(blank=True, null=True, verbose_name="Sub-Tier Agency Name")
+    name = models.TextField(blank=True, null=True, verbose_name="Sub-Tier Agency Name", db_index=True)
 
     class Meta:
         managed = True
@@ -203,7 +203,7 @@ class FilterHash(models.Model):
 
 class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     location_id = models.AutoField(primary_key=True)
-    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code", db_index=True)
+    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
     country_name = models.TextField(blank=True, null=True, verbose_name="Country Name", db_index=True)
     state_code = models.TextField(blank=True, null=True, verbose_name="State Code", db_index=True)
     state_name = models.TextField(blank=True, null=True, verbose_name="State Name")
@@ -232,6 +232,8 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    # location_unique = models.TextField(blank=True, null=True, db_index=True)
+
     # Tags whether this location is used as a place of performance or a recipient
     # location, or both
     place_of_performance_flag = models.BooleanField(default=False, verbose_name="Location used as place of performance")
@@ -241,7 +243,45 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
         self.load_country_data()
         self.load_city_county_data()
         self.fill_missing_state_data()
+        # self.populate_location_unique()
         super(Location, self).save(*args, **kwargs)
+
+    def populate_location_unique(self):
+        unique_columns = \
+            ["location_country_code",
+             "country_name",
+             "state_code",
+             "state_name",
+             "state_description",
+             "city_name",
+             "city_code",
+             "county_name",
+             "county_code",
+             "address_line1",
+             "address_line2",
+             "address_line3",
+             "foreign_location_description",
+             "zip4",
+             "congressional_code",
+             "performance_code",
+             "zip_last4",
+             "zip5",
+             "foreign_postal_code",
+             "foreign_province",
+             "foreign_city_name",
+             "reporting_period_start",
+             "reporting_period_end"
+             ]
+
+        ret_vals = []
+        for col in unique_columns:
+            col_val = getattr(self, col)
+            if col_val is None:
+                ret_val = "none"
+            else:
+                ret_val = str(col_val)
+            ret_vals += [ret_val]
+        self.location_unique = "_".join(ret_vals)
 
     def fill_missing_state_data(self):
         """Fills in blank US state names or codes from its counterpart"""
@@ -261,12 +301,29 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     def load_city_county_data(self):
         # Here we fill in missing information from the ref city county code data
         if self.location_country_code_id == "USA":
+
+            # TODO: this should be checked to see if this is even necessary... are these fields always uppercased?
+            if self.state_code:
+                temp_state_code = self.state_code.upper()
+            else:
+                temp_state_code = None
+
+            if self.city_name:
+                temp_city_name = self.city_name.upper()
+            else:
+                temp_city_name = None
+
+            if self.county_name:
+                temp_county_name = self.county_name.upper()
+            else:
+                temp_county_name = None
+
             q_kwargs = {
                 "city_code": self.city_code,
                 "county_code": self.county_code,
-                "state_code__iexact": self.state_code,
-                "city_name__iexact": self.city_name,
-                "county_name__iexact": self.county_name
+                "state_code": temp_state_code,
+                "city_name": temp_city_name,
+                "county_name": temp_county_name
             }
             # Clear out any blank or None values in our filter, so we can find the best match
             q_kwargs = dict((k, v) for k, v in q_kwargs.items() if v)
@@ -285,31 +342,11 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
                 logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" + str(q_kwargs) + "; got " + str(matched_reference.count()))
 
     class Meta:
-        # Let's make almost every column unique together so we don't have to
-        # perform heavy lifting on checking if a location already exists or not
-        unique_together = ("location_country_code",
-                           "country_name",
-                           "state_code",
-                           "state_name",
-                           "state_description",
-                           "city_name",
-                           "city_code",
-                           "county_name",
-                           "county_code",
-                           "address_line1",
-                           "address_line2",
-                           "address_line3",
-                           "foreign_location_description",
-                           "zip4",
-                           "congressional_code",
-                           "performance_code",
-                           "zip_last4",
-                           "zip5",
-                           "foreign_postal_code",
-                           "foreign_province",
-                           "foreign_city_name",
-                           "reporting_period_start",
-                           "reporting_period_end")
+        unique_together = ['location_country_code', 'country_name', 'state_code', 'state_name', 'state_description', 'city_name',
+                           'city_code', 'county_name', 'county_code', 'address_line1', 'address_line2', 'address_line3',
+                           'foreign_location_description', 'zip4', 'congressional_code', 'performance_code', 'zip_last4', 'zip5',
+                           'foreign_postal_code', 'foreign_province', 'foreign_city_name', 'reporting_period_start',
+                           'reporting_period_end']
 
 
 class LegalEntity(DataSourceTrackedModel):
@@ -858,20 +895,6 @@ class LegalEntity(DataSourceTrackedModel):
 
         le.business_categories = categories
 
-    @classmethod
-    def get_or_create_by_duns(cls, duns):
-        """
-        Finds a legal entity with the matching duns, or creates it if it does
-        not exist. If the duns is null, will always create a new instance.
-
-        Returns a single legal entity instance, and a boolean indicating if the
-        record was created or retrieved (i.e. mimicing the return of get_or_create)
-        """
-        if duns is None or len(duns) == 0:
-            return cls.objects.create(), True
-        else:
-            return cls.objects.get_or_create(recipient_unique_id=duns)
-
     class Meta:
         managed = True
         db_table = 'legal_entity'
@@ -914,6 +937,13 @@ class ObjectClass(models.Model):
         db_table = 'object_class'
         unique_together = ['object_class', 'direct_reimbursable']
 
+    @property
+    def corrected_major_object_class_name(self):
+        if self.major_object_class == '00':
+            return 'Unknown Object Type'
+        else:
+            return self.major_object_class_name
+
 
 class RefProgramActivity(models.Model):
     id = models.AutoField(primary_key=True)
@@ -932,11 +962,15 @@ class RefProgramActivity(models.Model):
     class Meta:
         managed = True
         db_table = 'ref_program_activity'
-        unique_together = (('program_activity_code', 'budget_year', 'responsible_agency_id', 'allocation_transfer_agency_id', 'main_account_code'),)
+        unique_together = (('program_activity_code',
+                            'budget_year',
+                            'responsible_agency_id',
+                            'allocation_transfer_agency_id',
+                            'main_account_code'),)
 
 
 class Cfda(DataSourceTrackedModel):
-    program_number = models.TextField(null=False, unique=True)
+    program_number = models.TextField(null=False, unique=True, db_index=True)
     program_title = models.TextField(blank=True, null=True)
     popular_name = models.TextField(blank=True, null=True)
     federal_agency = models.TextField(blank=True, null=True)
@@ -983,7 +1017,7 @@ class Cfda(DataSourceTrackedModel):
         managed = True
 
     def __str__(self):
-        return "%s" % (self.program_title)
+        return "%s" % self.program_title
 
 
 class Definition(models.Model):

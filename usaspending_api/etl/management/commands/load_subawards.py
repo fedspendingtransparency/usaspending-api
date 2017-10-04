@@ -32,6 +32,15 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
+            '-at',
+            '--awards_touched',
+            dest="awards_touched",
+            nargs='+',
+            type=int,
+            help="Awards associated with submission"
+        )
+
+        parser.add_argument(
             '-a',
             '--all',
             action='store_true',
@@ -77,14 +86,14 @@ class Command(BaseCommand):
         failed_submissions = []
         success_submissions = []
         for submission in submissions_to_update:
-            try:
-                logger.info("Loading subaward data for submission {}".format(submission.broker_submission_id))
-                load_subawards(submission, db_cursor)
-                success_submissions.append(submission.broker_submission_id)
-            except Exception as e:
-                exception_logger.exception(e)
-                failed_submissions.append(failed_submissions)
-                logger.error("Loading subawards for submission {} failed. Exception has been logged.".format(submission.broker_submission_id))
+            # try:
+            logger.info("Loading subaward data for submission {}".format(submission.broker_submission_id))
+            load_subawards(submission, awards_touched=options["awards_touched"], db_cursor=db_cursor)
+            success_submissions.append(submission.broker_submission_id)
+            # except Exception as e:
+            #     exception_logger.exception(e)
+            #     failed_submissions.append(failed_submissions)
+            #     logger.error("Loading subawards for submission {} failed. Exception has been logged.".format(submission.broker_submission_id))
 
         logger.info("Successfully loaded: {}".format(success_submissions))
         logger.info("Failed to load: {}".format(failed_submissions))

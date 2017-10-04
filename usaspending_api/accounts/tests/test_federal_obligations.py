@@ -9,8 +9,8 @@ def financial_obligations_models():
     fiscal_year = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016)
     top_tier_id = mommy.make('references.Agency', id=654, toptier_agency_id=987).toptier_agency_id
     top_tier = mommy.make('references.ToptierAgency', toptier_agency_id=top_tier_id)
-    federal_id_awesome = mommy.make('accounts.FederalAccount', id=6969)
-    federal_id_lame = mommy.make('accounts.FederalAccount', id=1234)
+    federal_id_awesome = mommy.make('accounts.FederalAccount', id=6969, account_title='Turtlenecks and Chains')
+    federal_id_lame = mommy.make('accounts.FederalAccount', id=1234, account_title='Suits and Ties')
     """
         Until this gets updated with mock.Mock(),
         the following cascade of variables applied to parameters,
@@ -57,44 +57,44 @@ def financial_obligations_models():
         federal_account=federal_id_lame
     )
 
-    # Get Awesome account values
+    # AppropriationAccountBalances
     mommy.make(
-        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        'accounts.AppropriationAccountBalances',
         submission=fiscal_year,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=-100,
-        treasury_account=id_awesome
+        obligations_incurred_total_by_tas_cpe=-100,
+        treasury_account_identifier=id_awesome
     )
     mommy.make(
-        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        'accounts.AppropriationAccountBalances',
         submission=fiscal_year,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=200,
-        treasury_account=id_awesome
+        obligations_incurred_total_by_tas_cpe=200,
+        treasury_account_identifier=id_awesome
     )
     # Test to make sure False value is ignored in calculation
     mommy.make(
-        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        'accounts.AppropriationAccountBalances',
         submission=fiscal_year,
         final_of_fy=False,
-        obligations_incurred_by_program_object_class_cpe=200,
-        treasury_account=id_awesome
+        obligations_incurred_total_by_tas_cpe=200,
+        treasury_account_identifier=id_awesome
     )
 
     # Get Lame account values
     mommy.make(
-        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        'accounts.AppropriationAccountBalances',
         submission=fiscal_year,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=500,
-        treasury_account=id_lame
+        obligations_incurred_total_by_tas_cpe=500,
+        treasury_account_identifier=id_lame
     )
     mommy.make(
-        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        'accounts.AppropriationAccountBalances',
         submission=fiscal_year,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=-100,
-        treasury_account=id_lame
+        obligations_incurred_total_by_tas_cpe=-100,
+        treasury_account_identifier=id_lame
     )
 
 

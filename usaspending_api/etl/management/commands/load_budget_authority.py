@@ -81,13 +81,18 @@ class Command(BaseCommand):
         instances = []
         for i in range(4, sheet.nrows):
             row = dict(zip(headers, (cell.value for cell in sheet.row(i))))
+
+            logger.info('Load FREC Map: AID {} / MAC {} / TAS {}'.format(row['AID'], row['MAIN'], row['GWA_TAS_NAME']))
             instance = FrecMap(
                 agency_identifier=row['AID'],
                 main_account_code=row['MAIN'],
                 treasury_appropriation_account_title=row['GWA_TAS_NAME'],
                 sub_function_code=row['Sub Function Code'],
                 fr_entity_code=row['FR Entity Type'])
+
             instances.append(instance)
+
+        logger.info('Running bulk create across FREC map...')
         FrecMap.objects.bulk_create(instances)
 
     def load_quarterly_spreadsheets(self, quarter, results, overall_totals):
@@ -136,6 +141,8 @@ class Command(BaseCommand):
             reader = csv.DictReader(infile)
             for row in reader:
                 agency_identifier = row['Treasury Agency Code'].zfill(3)
+
+                logger.info('Loading agency identifier from file: {}'.format(agency_identifier))
                 frec_inst = FrecMap.objects.filter(
                     agency_identifier=agency_identifier,
                     main_account_code=row['Account Code'],
@@ -155,8 +162,9 @@ class Command(BaseCommand):
         if quarter:
             self.load_quarterly_spreadsheets(options['quarter'], results, overall_totals)
         else:
-            print('No quarter given. Quarterly spreadsheets not loaded')
+            logger.info('No quarter given. Quarterly spreadsheets not loaded.')
 
+        logger.info('Running bulk create across agencies...')
         BudgetAuthority.objects.bulk_create(
             BudgetAuthority(
                 agency_identifier=agency_identifier,
@@ -164,6 +172,8 @@ class Command(BaseCommand):
                 year=year,
                 amount=amount)
             for ((agency_identifier, frec, year), amount) in results.items())
+
+        logger.info('Running bulk create across totals...')
         OverallTotals.objects.bulk_create(
             OverallTotals(
                 fiscal_year=year, total_budget_authority=amount)
