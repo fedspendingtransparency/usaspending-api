@@ -67,7 +67,7 @@ class Command(BaseCommand):
                                                  'funding_subtier_code': transaction_FABS['funding_sub_tier_agency_co']
                                                 }
                                                 for transaction_FABS in TransactionFABS.objects
-                                                .filter(transaction__fiscal_year=fiscal_year)
+                                                .filter(transaction__fiscal_year=fiscal_year, transaction__awarding_agency__lt=2757)
                                                 .values('transaction_id',
                                                         'awarding_agency_code',
                                                         'funding_agency_code',
