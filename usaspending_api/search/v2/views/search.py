@@ -654,7 +654,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         for award in queryset:
             result_key = award['category'].replace(' ', '_')
-            result_key += 's' if result_key != 'other' else ''
+            result_key += 's' if result_key not in ['other', 'loans'] else ''
             results[result_key] = award['category_count']
 
         # build response
