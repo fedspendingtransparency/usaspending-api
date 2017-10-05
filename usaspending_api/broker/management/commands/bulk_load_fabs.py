@@ -188,7 +188,9 @@ class Command(BaseCommand):
                                                                           str(total_rows),
                                                                           datetime.now() - start_time))
 
-            recipient_name = row.get('awardee_or_recipient_legal', '')
+            recipient_name = row['awardee_or_recipient_legal']
+            if recipient_name is None:
+                recipient_name = ''
             recipient_unique_id = row['awardee_or_recipient_uniqu']
 
             lookup_key = (recipient_unique_id, recipient_name)
