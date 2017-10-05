@@ -149,11 +149,11 @@ class Command(BaseCommand):
                 #))
 
             # Update awarding/funding agency connected to transaction
-            if transaction.awarding_agency is None and awarding_agency is not None:
-                transaction.awarding_agency = awarding_agency
+           # if transaction.awarding_agency is None and awarding_agency is not None:
+            transaction.awarding_agency = awarding_agency
 
-            if transaction.funding_agency is None and funding_agency is not None:
-                transaction.funding_agency = funding_agency
+           # if transaction.funding_agency is None and funding_agency is not None:
+            transaction.funding_agency = funding_agency
 
             # Update awarding/funding agency connected to transaction's award
             award = Award.objects.filter(id=transaction.award.id).first()
@@ -162,11 +162,11 @@ class Command(BaseCommand):
                 logger.error('Unable to find Award {}'.format(str(transaction.award.id)))
                 continue
 
-            if award.awarding_agency is None and awarding_agency is not None:
-                award.awarding_agency = awarding_agency
+            #if award.awarding_agency is None and awarding_agency is not None:
+            award.awarding_agency = awarding_agency
 
-            if award.funding_agency is None and funding_agency is not None:
-                award.funding_agency = funding_agency
+            #if award.funding_agency is None and funding_agency is not None:
+            award.funding_agency = funding_agency
 
             try:
                 # Save updates to Database
