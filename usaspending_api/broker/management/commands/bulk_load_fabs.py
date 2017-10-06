@@ -272,8 +272,12 @@ class Command(BaseCommand):
             fain = row.get('fain')
             uri = row.get('uri')
 
-            lookup_key = (fain, uri, awarding_agency.id)
-            award = award_map.get(lookup_key)
+            if awarding_agency:
+                lookup_key = (fain, uri, awarding_agency.id)
+                award = award_map.get(lookup_key)
+            else:
+                award = None
+
             if not award:
                 # create the award since it wasn't found
                 create_kwargs = {'awarding_agency': awarding_agency, 'fain': fain, 'uri': uri}
