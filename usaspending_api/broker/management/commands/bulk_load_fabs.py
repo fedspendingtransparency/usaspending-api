@@ -78,18 +78,26 @@ class Command(BaseCommand):
     help = "Update historical transaction data for a fiscal year from the Broker."
 
     @staticmethod
-    def get_fabs_data(db_cursor, fiscal_year=None, page=1, limit=500000, before_date='2017-09-20'):
+    def get_fabs_data(db_cursor, fiscal_year=None, page=1, limit=500000, before_date='2017-09-20', file=None):
+
         query = 'SELECT * FROM published_award_financial_assistance WHERE is_active=TRUE AND updated_at < %s'
         arguments = [before_date]
+
+        if file:
+            # Grab all the FABS IDs from the csv and remove the header row
+            with open(file) as f:
+                content = f.readlines()
+                del content[0]
+            fabs_ids = tuple([line.strip().replace('"', '') for line in content])
+            query += 'AND published_award_financial_assistance_id IN %s'
+            arguments += [fabs_ids]
 
         fy_begin = '10/01/' + str(fiscal_year - 1)
         fy_end = '09/30/' + str(fiscal_year)
 
         if fiscal_year:
-            query += " AND"
-            query += ' action_date::Date BETWEEN %s AND %s'
-            arguments += [fy_begin]
-            arguments += [fy_end]
+            query += ' AND action_date::Date BETWEEN %s AND %s'
+            arguments += [fy_begin, fy_end]
 
         query += ' ORDER BY published_award_financial_assistance_id LIMIT %s OFFSET %s'
         arguments += [limit, (page-1)*limit]
@@ -389,6 +397,14 @@ class Command(BaseCommand):
             help="Date for which to get everything prior to"
         )
 
+        parser.add_argument(
+            '--file',
+            dest="file",
+            nargs='+',
+            type=str,
+            help="File that contains FABS PKs in the Broker"
+        )
+
     def handle(self, *args, **options):
         logger.info('Starting FABS bulk data load...')
 
@@ -397,6 +413,7 @@ class Command(BaseCommand):
         page = options.get('page')
         limit = options.get('limit')
         before_date = options.get('before_date')
+        file = options.get('file')
 
         if fiscal_year:
             fiscal_year = fiscal_year[0]
@@ -410,7 +427,7 @@ class Command(BaseCommand):
 
         logger.info('Get Broker FABS data...')
         start = timeit.default_timer()
-        fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit, before_date=before_date)
+        fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit, before_date=before_date, file=file)
         total_rows = len(fabs_broker_data)
         end = timeit.default_timer()
         logger.info('Finished getting Broker FABS data in ' + str(end - start) + ' seconds')
