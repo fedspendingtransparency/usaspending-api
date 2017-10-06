@@ -47,8 +47,8 @@ class Command(BaseCommand):
                                                 'funding_subtier_code': transaction_FPDS['funding_sub_tier_agency_co']
                                                }
                                                for transaction_FPDS in TransactionFPDS.objects
-                                               .filter(transaction__fiscal_year=fiscal_year, transaction__awarding_agency_code__lt=4354).exclude(
-                                                       transaction__awarding_agency_code__in=(112, 190, 1232, 1033, 915, 777, 729, 857, 217, 255, 273, 361, 696, 462, 577, 689, 838, 765, 620, 555, 660, 533, 767, 552))
+                                               .filter(transaction__fiscal_year=fiscal_year, transaction__awarding_agency_id__lt=4354).exclude(
+                                                       transaction__awarding_agency_id__in=(112, 190, 1232, 1033, 915, 777, 729, 857, 217, 255, 273, 361, 696, 462, 577, 689, 838, 765, 620, 555, 660, 533, 767, 552))
                                                .values('transaction_id',
                                                        'awarding_agency_code',
                                                        'funding_agency_code',
@@ -68,8 +68,8 @@ class Command(BaseCommand):
                                                  'funding_subtier_code': transaction_FABS['funding_sub_tier_agency_co']
                                                 }
                                                 for transaction_FABS in TransactionFABS.objects
-                                                .filter(transaction__fiscal_year=fiscal_year, transaction__awarding_agency_code__lt=4354).exclude(
-                                                       transaction__awarding_agency_code__in=(112, 190, 1232, 1033, 915, 777, 729, 857, 217, 255, 273, 361, 696, 462, 577, 689, 838, 765, 620, 555, 660, 533, 767, 552))
+                                                .filter(transaction__fiscal_year=fiscal_year, transaction__awarding_agency_id__lt=4354).exclude(
+                                                       transaction__awarding_agency_id__in=(112, 190, 1232, 1033, 915, 777, 729, 857, 217, 255, 273, 361, 696, 462, 577, 689, 838, 765, 620, 555, 660, 533, 767, 552))
                                                 .values('transaction_id',
                                                         'awarding_agency_code',
                                                         'funding_agency_code',
