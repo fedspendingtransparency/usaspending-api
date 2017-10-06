@@ -24,8 +24,8 @@ toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_
 agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
 agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
 agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
-award_map = {(award.get('fain'), award.get('uri'), award.get('awarding_agency_id')): award for award in Award.objects.filter(piid__isnull=True).values('fain', 'uri', 'awarding_agency_id')}
-le_map = {(le.get('recipient_unique_id'), le.get('recipient_name', '')): le for le in LegalEntity.objects.values()}
+award_map = {(award.fain, award.uri, award.awarding_agency_id): award for award in Award.objects.filter(piid__isnull=True)}
+le_map = {(le.recipient_unique_id, le.recipient_name): le for le in LegalEntity.objects.all()}
 
 fabs_bulk = []
 
@@ -307,7 +307,6 @@ class Command(BaseCommand):
                 logger.info('Transaction Normalized: Loading row {} of {} ({})'.format(str(index),
                                                                           str(total_rows),
                                                                           datetime.now() - start_time))
-
             parent_txn_value_map = {
                 "award": award_lookup[index - 1],
                 "awarding_agency": awarding_agency_list[index - 1],
@@ -324,14 +323,14 @@ class Command(BaseCommand):
                 "description": "award_description",
             }
 
-            transaction_dict = load_data_into_model(
+            transaction_normalized = load_data_into_model(
                 TransactionNormalized(),
                 row,
                 field_map=fad_field_map,
                 value_map=parent_txn_value_map,
-                as_dict=True)
+                as_dict=False,
+                save=False)
 
-            transaction_normalized = TransactionNormalized.get_or_create_transaction(**transaction_dict)
             transaction_normalized.fiscal_year = fy(transaction_normalized.action_date)
             transaction_normalized_bulk.append(transaction_normalized)
 
