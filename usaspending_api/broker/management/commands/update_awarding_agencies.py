@@ -14,8 +14,8 @@ logger = logging.getLogger('console')
 subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
 subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
 toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
-agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
-agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
+agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.all()}
+agency_cgac_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
 agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
 
 class Command(BaseCommand):
@@ -47,7 +47,7 @@ class Command(BaseCommand):
                                                 'funding_subtier_code': transaction_FPDS['funding_sub_tier_agency_co']
                                                }
                                                for transaction_FPDS in TransactionFPDS.objects
-                                               .filter(transaction__fiscal_year=fiscal_year, transaction__awarding_agency__lt=2757)
+                                               .filter(transaction__fiscal_year=fiscal_year)
                                                .values('transaction_id',
                                                        'awarding_agency_code',
                                                        'funding_agency_code',
@@ -67,7 +67,7 @@ class Command(BaseCommand):
                                                  'funding_subtier_code': transaction_FABS['funding_sub_tier_agency_co']
                                                 }
                                                 for transaction_FABS in TransactionFABS.objects
-                                                .filter(transaction__fiscal_year=fiscal_year, transaction__awarding_agency__lt=2757)
+                                                .filter(transaction__fiscal_year=fiscal_year)
                                                 .values('transaction_id',
                                                         'awarding_agency_code',
                                                         'funding_agency_code',
@@ -107,14 +107,14 @@ class Command(BaseCommand):
             awarding_agency = Agency.get_by_toptier_subtier(row['awarding_cgac_code'], row['awarding_subtier_code'])
             funding_agency = Agency.get_by_toptier_subtier(row['funding_cgac_code'], row['funding_subtier_code'])
 
-            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            # Find the agency that this award transaction belongs to. If it doesn't exist, create it.
             awarding_agency = agency_no_sub_map.get((
                 row['awarding_cgac_code'],
                 row["awarding_subtier_code"]
             ))
 
             if awarding_agency is None:
-                awarding_agency = agency_sub_only_map.get(row['awarding_cgac_code'])
+                awarding_agency = agency_cgac_only_map.get(row['awarding_cgac_code'])
 
             funding_agency = agency_no_sub_map.get((
                 row['funding_cgac_code'],
@@ -122,7 +122,7 @@ class Command(BaseCommand):
             ))
 
             if funding_agency is None:
-                funding_agency = agency_sub_only_map.get(row['funding_cgac_code'])
+                funding_agency = agency_cgac_only_map.get(row['funding_cgac_code'])
 
             # If unable to get agency moves on to the next transaction
             if awarding_agency is None and funding_agency is None:
