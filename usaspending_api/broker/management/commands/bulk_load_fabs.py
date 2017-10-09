@@ -2,7 +2,7 @@ import logging
 import timeit
 from datetime import datetime
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction as db_transaction
+from django.db import connections, connection, transaction as db_transaction
 from usaspending_api.common.helpers import fy
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -78,29 +78,66 @@ class Command(BaseCommand):
     help = "Update historical transaction data for a fiscal year from the Broker."
 
     @staticmethod
-    def get_fabs_data(db_cursor, fiscal_year=None, page=1, limit=500000, before_date='2017-09-20', file=None):
+    def diff_fabs_data(db_cursor, ds_cursor, fiscal_year=None):
+        db_query = 'SELECT published_award_financial_assistance_id ' \
+                'FROM published_award_financial_assistance ' \
+                'WHERE is_active=TRUE'
+        db_arguments = []
 
-        query = 'SELECT * FROM published_award_financial_assistance WHERE is_active=TRUE AND updated_at < %s'
-        arguments = [before_date]
-
-        if file:
-            # Grab all the FABS IDs from the csv and remove the header row
-            with open(file) as f:
-                content = f.readlines()
-                del content[0]
-            fabs_ids = tuple([line.strip().replace('"', '') for line in content])
-            query += 'AND published_award_financial_assistance_id IN %s'
-            arguments += [fabs_ids]
-
-        fy_begin = '10/01/' + str(fiscal_year - 1)
-        fy_end = '09/30/' + str(fiscal_year)
+        ds_query = 'SELECT published_award_financial_assistance_id ' \
+                   'FROM transaction_fabs'
+        ds_arguments = []
 
         if fiscal_year:
+            if ds_arguments:
+                ds_query += ' AND'
+            else:
+                ds_query += ' WHERE'
+
+            fy_begin = '10/01/' + str(fiscal_year - 1)
+            fy_end = '09/30/' + str(fiscal_year)
+
+            db_query += ' AND action_date::Date BETWEEN %s AND %s'
+            db_arguments += [fy_begin, fy_end]
+
+            ds_query += ' action_date::Date BETWEEN %s AND %s'
+            ds_arguments += [fy_begin, fy_end]
+
+        db_cursor.execute(db_query, db_arguments)
+        ds_cursor.execute(ds_query, ds_arguments)
+
+        db_dict = dictfetchall(db_cursor)
+        ds_dict = dictfetchall(ds_cursor)
+
+        db_set = set(map(lambda db_entry: int(db_entry['published_award_financial_assistance_id']), db_dict))
+        ds_set = set(map(lambda ds_entry: int(ds_entry['published_award_financial_assistance_id']), ds_dict))
+
+        to_insert = db_set - ds_set
+        to_delete = ds_set - db_set
+
+        logger.info('Number of records to insert: %s' % str(len(to_insert)))
+        logger.info('Number of records to delete: %s' % str(len(to_delete)))
+
+        # Return what is not currently in our database (to insert) and what we have that Broker does not (to delete)
+        return to_insert, to_delete
+
+
+    @staticmethod
+    def get_fabs_data(db_cursor, fiscal_year=None, to_insert=None):
+        query = 'SELECT * FROM published_award_financial_assistance WHERE is_active=TRUE'
+        arguments = []
+
+        if to_insert:
+            query += ' AND published_award_financial_assistance_id IN %s'
+            arguments += [tuple(to_insert)]
+
+        if fiscal_year:
+            fy_begin = '10/01/' + str(fiscal_year - 1)
+            fy_end = '09/30/' + str(fiscal_year)
             query += ' AND action_date::Date BETWEEN %s AND %s'
             arguments += [fy_begin, fy_end]
 
-        query += ' ORDER BY published_award_financial_assistance_id LIMIT %s OFFSET %s'
-        arguments += [limit, (page-1)*limit]
+        query += ' ORDER BY published_award_financial_assistance_id'
 
         logger.info("Executing query on Broker DB => " + query % tuple(arguments))
 
@@ -178,13 +215,12 @@ class Command(BaseCommand):
             else:
                 lel_bulk.append(loc_instance)
 
-        with db_transaction.atomic():
-            if pop_flag:
-                logger.info('Bulk creating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
-                Location.objects.bulk_create(pop_bulk, batch_size=BATCH_SIZE)
-            else:
-                logger.info('Bulk creating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
-                Location.objects.bulk_create(lel_bulk, batch_size=BATCH_SIZE)
+        if pop_flag:
+            logger.info('Bulk creating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
+            Location.objects.bulk_create(pop_bulk, batch_size=BATCH_SIZE)
+        else:
+            logger.info('Bulk creating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
+            Location.objects.bulk_create(lel_bulk, batch_size=BATCH_SIZE)
 
     @staticmethod
     def load_legal_entity(fabs_broker_data, total_rows):
@@ -221,12 +257,10 @@ class Command(BaseCommand):
                 legal_entity_bulk.append(legal_entity)
             legal_entity_lookup.append(legal_entity)
 
-        with db_transaction.atomic():
-            logger.info('Bulk creating Legal Entities (batch_size: {})...'.format(BATCH_SIZE))
-            LegalEntity.objects.bulk_create(legal_entity_bulk, batch_size=BATCH_SIZE)
+        logger.info('Bulk creating Legal Entities (batch_size: {})...'.format(BATCH_SIZE))
+        LegalEntity.objects.bulk_create(legal_entity_bulk, batch_size=BATCH_SIZE)
 
     @staticmethod
-    @db_transaction.atomic()
     def load_awards(fabs_broker_data, total_rows):
         start_time = datetime.now()
         for index, row in enumerate(fabs_broker_data, 1):
@@ -290,14 +324,14 @@ class Command(BaseCommand):
                 # create the award since it wasn't found
                 create_kwargs = {'awarding_agency': awarding_agency, 'fain': fain, 'uri': uri}
                 award = Award(**create_kwargs)
-                award_map[lookup_key] = award
+                if awarding_agency:
+                    award_map[lookup_key] = award
                 award_bulk.append(award)
 
             award_lookup.append(award)
 
-        with db_transaction.atomic():
-            logger.info('Bulk creating Awards (batch_size: {})...'.format(BATCH_SIZE))
-            Award.objects.bulk_create(award_bulk, batch_size=BATCH_SIZE)
+        logger.info('Bulk creating Awards (batch_size: {})...'.format(BATCH_SIZE))
+        Award.objects.bulk_create(award_bulk, batch_size=BATCH_SIZE)
 
     @staticmethod
     def load_transaction_normalized(fabs_broker_data, total_rows):
@@ -334,9 +368,8 @@ class Command(BaseCommand):
             transaction_normalized.fiscal_year = fy(transaction_normalized.action_date)
             transaction_normalized_bulk.append(transaction_normalized)
 
-        with db_transaction.atomic():
-            logger.info('Bulk creating Transaction Normalized (batch_size: {})...'.format(BATCH_SIZE))
-            TransactionNormalized.objects.bulk_create(transaction_normalized_bulk, batch_size=BATCH_SIZE)
+        logger.info('Bulk creating Transaction Normalized (batch_size: {})...'.format(BATCH_SIZE))
+        TransactionNormalized.objects.bulk_create(transaction_normalized_bulk, batch_size=BATCH_SIZE)
 
     @staticmethod
     def load_transaction_fabs(fabs_broker_data, total_rows):
@@ -358,9 +391,17 @@ class Command(BaseCommand):
             fabs_instance.transaction = transaction_normalized_bulk[index-1]
             fabs_bulk.append(fabs_instance)
 
-        with db_transaction.atomic():
-            logger.info('Bulk creating Transaction FABS (batch_size: {})...'.format(BATCH_SIZE))
-            TransactionFABS.objects.bulk_create(fabs_bulk, batch_size=BATCH_SIZE)
+        logger.info('Bulk creating Transaction FABS (batch_size: {})...'.format(BATCH_SIZE))
+        TransactionFABS.objects.bulk_create(fabs_bulk, batch_size=BATCH_SIZE)
+
+    @staticmethod
+    def delete_stale_fabs(to_delete=None):
+
+        if not to_delete:
+            return
+
+        # This cascades deletes for TransactionFABS & Awards in addition to deleting TransactionNormalized records
+        TransactionNormalized.objects.filter(assistance_data__published_award_financial_assistance_id__in=to_delete).delete()
 
     def add_arguments(self, parser):
 
@@ -404,15 +445,13 @@ class Command(BaseCommand):
             help="File that contains FABS PKs in the Broker"
         )
 
+    @db_transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting FABS bulk data load...')
 
         db_cursor = connections['data_broker'].cursor()
+        ds_cursor = connection.cursor()
         fiscal_year = options.get('fiscal_year')
-        page = options.get('page')
-        limit = options.get('limit')
-        before_date = options.get('before_date')
-        file = options.get('file')
 
         if fiscal_year:
             fiscal_year = fiscal_year[0]
@@ -420,63 +459,77 @@ class Command(BaseCommand):
         else:
             fiscal_year = 2017
 
-        page = page[0] if page else 1
-        limit = limit[0] if limit else 500000
-        before_date = before_date[0] if before_date else '2017-09-20'
-
-        logger.info('Get Broker FABS data...')
+        logger.info('Diff-ing FABS data...')
         start = timeit.default_timer()
-        fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit, before_date=before_date, file=file)
-        total_rows = len(fabs_broker_data)
+        to_insert, to_delete = self.diff_fabs_data(db_cursor=db_cursor, ds_cursor=ds_cursor, fiscal_year=fiscal_year)
         end = timeit.default_timer()
-        logger.info('Finished getting Broker FABS data in ' + str(end - start) + ' seconds')
+        logger.info('Finished diff-ing FABS data in ' + str(end - start) + ' seconds')
 
-        logger.info('Loading POP Location data...')
-        start = timeit.default_timer()
-        self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows, pop_flag=True)
-        end = timeit.default_timer()
-        logger.info('Finished POP Location bulk data load in ' + str(end - start) + ' seconds')
+        total_rows = len(to_insert)
+        total_rows_delete = len(to_delete)
 
-        logger.info('Loading LE Location data...')
-        start = timeit.default_timer()
-        self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-        end = timeit.default_timer()
-        logger.info('Finished LE Location bulk data load in ' + str(end - start) + ' seconds')
+        if total_rows_delete > 0:
+            logger.info('Deleting stale FABS data...')
+            start = timeit.default_timer()
+            self.delete_stale_fabs(to_delete=to_delete)
+            end = timeit.default_timer()
+            logger.info('Finished deleting stale FABS data in ' + str(end - start) + ' seconds')
 
-        logger.info('Loading Legal Entity data...')
-        start = timeit.default_timer()
-        self.load_legal_entity(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-        end = timeit.default_timer()
-        logger.info('Finished Legal Entity bulk data load in ' + str(end - start) + ' seconds')
+        if total_rows > 0:
+            logger.info('Get Broker FABS data...')
+            start = timeit.default_timer()
+            fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)
+            end = timeit.default_timer()
+            logger.info('Finished getting Broker FABS data in ' + str(end - start) + ' seconds')
 
-        logger.info('Loading Award data...')
-        start = timeit.default_timer()
-        self.load_awards(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-        end = timeit.default_timer()
-        logger.info('Finished Award bulk data load in ' + str(end - start) + ' seconds')
+            logger.info('Loading POP Location data...')
+            start = timeit.default_timer()
+            self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows, pop_flag=True)
+            end = timeit.default_timer()
+            logger.info('Finished POP Location bulk data load in ' + str(end - start) + ' seconds')
 
-        logger.info('Loading Transaction Normalized data...')
-        start = timeit.default_timer()
-        self.load_transaction_normalized(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-        end = timeit.default_timer()
-        logger.info('Finished Transaction Normalized bulk data load in ' + str(end - start) + ' seconds')
+            logger.info('Loading LE Location data...')
+            start = timeit.default_timer()
+            self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+            end = timeit.default_timer()
+            logger.info('Finished LE Location bulk data load in ' + str(end - start) + ' seconds')
 
-        logger.info('Loading Transaction FABS data...')
-        start = timeit.default_timer()
-        self.load_transaction_fabs(fabs_broker_data, total_rows)
-        end = timeit.default_timer()
-        logger.info('Finished FABS bulk data load in ' + str(end - start) + ' seconds')
+            logger.info('Loading Legal Entity data...')
+            start = timeit.default_timer()
+            self.load_legal_entity(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+            end = timeit.default_timer()
+            logger.info('Finished Legal Entity bulk data load in ' + str(end - start) + ' seconds')
 
-        award_update_id_list = [award.id for award in award_lookup]
+            logger.info('Loading Award data...')
+            start = timeit.default_timer()
+            self.load_awards(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+            end = timeit.default_timer()
+            logger.info('Finished Award bulk data load in ' + str(end - start) + ' seconds')
 
-        logger.info('Updating awards to reflect their latest associated transaction info...')
-        start = timeit.default_timer()
-        update_awards(tuple(award_update_id_list))
-        end = timeit.default_timer()
-        logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+            logger.info('Loading Transaction Normalized data...')
+            start = timeit.default_timer()
+            self.load_transaction_normalized(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+            end = timeit.default_timer()
+            logger.info('Finished Transaction Normalized bulk data load in ' + str(end - start) + ' seconds')
 
-        logger.info('Updating award category variables...')
-        start = timeit.default_timer()
-        update_award_categories(tuple(award_update_id_list))
-        end = timeit.default_timer()
-        logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+            logger.info('Loading Transaction FABS data...')
+            start = timeit.default_timer()
+            self.load_transaction_fabs(fabs_broker_data, total_rows)
+            end = timeit.default_timer()
+            logger.info('Finished FABS bulk data load in ' + str(end - start) + ' seconds')
+
+            award_update_id_list = [award.id for award in award_lookup]
+
+            logger.info('Updating awards to reflect their latest associated transaction info...')
+            start = timeit.default_timer()
+            update_awards(tuple(award_update_id_list))
+            end = timeit.default_timer()
+            logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+
+            logger.info('Updating award category variables...')
+            start = timeit.default_timer()
+            update_award_categories(tuple(award_update_id_list))
+            end = timeit.default_timer()
+            logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+        else:
+            logger.info('Nothing to insert...FINISHED!')
