@@ -401,7 +401,11 @@ class Command(BaseCommand):
             return
 
         # This cascades deletes for TransactionFABS & Awards in addition to deleting TransactionNormalized records
-        TransactionNormalized.objects.filter(assistance_data__published_award_financial_assistance_id__in=to_delete).delete()
+        # TransactionNormalized.objects.filter(assistance_data__published_award_financial_assistance_id__in=to_delete).delete()
+
+        TransactionFABS.objects.filter(published_award_financial_assistance_id__in=to_delete).delete()
+
+        TransactionNormalized.objects.extra(where=['not exists (select 1 from transaction_fabs where transaction_fabs.transaction_id=transaction_normalized.id) and not exists (select 1 from transaction_fpds where transaction_fpds.transaction_id=transaction_normalized.id)']).delete()
 
     def add_arguments(self, parser):
 
@@ -455,9 +459,10 @@ class Command(BaseCommand):
 
         if fiscal_year:
             fiscal_year = fiscal_year[0]
-            logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
         else:
             fiscal_year = 2017
+
+        logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
 
         logger.info('Diff-ing FABS data...')
         start = timeit.default_timer()
