@@ -4,7 +4,6 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from django_bulk_update.helper import bulk_update
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.references.models import RefCountryCode, Location
@@ -16,6 +15,7 @@ exception_logger = logging.getLogger("exceptions")
 country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
 
 BATCH_SIZE = 10000
+
 
 def update_country_code(d_file, location, country_code, state_code=None, state_name=None, place_of_performance_code=None):
     updated_location_country_code = country_code
@@ -48,6 +48,7 @@ def update_country_code(d_file, location, country_code, state_code=None, state_n
 
     return location
 
+
 class Command(BaseCommand):
     help = "Create Locations from Location data in the Broker."
 
@@ -56,11 +57,13 @@ class Command(BaseCommand):
 
         list_of_columns = (', '.join(['fain', 'uri', 'award_modification_amendme', 'legal_entity_country_code',
                                       'place_of_perform_country_c', 'place_of_performance_code',
-                                      'legal_entity_state_code', 'legal_entity_state_name', 'place_of_perform_state_nam']))
+                                      'legal_entity_state_code', 'legal_entity_state_name',
+                                      'place_of_perform_state_nam']))
 
         # get the transaction values we need
-
-        query = "SELECT {} FROM published_award_financial_assistance WHERE is_active=TRUE AND updated_at < '09/20/2017'".format(list_of_columns)
+        # TODO: Modify cutoff date to match nightly loads
+        query = "SELECT {} FROM published_award_financial_assistance WHERE is_active=TRUE " \
+                "AND updated_at < '09/20/2017'".format(list_of_columns)
         arguments = []
 
         fy_begin = '10/01/' + str(fiscal_year - 1)
@@ -87,9 +90,6 @@ class Command(BaseCommand):
 
         logger.info("Processing " + str(total_rows) + " rows of location data")
 
-        pop_bulk = []
-        lel_bulk = []
-
         start_time = datetime.now()
 
         trans_queryset = TransactionNormalized.objects.prefetch_related('award',
@@ -101,9 +101,12 @@ class Command(BaseCommand):
                                                                                  str(total_rows),
                                                                                  datetime.now() - start_time))
                 # Could also use contract_data__fain
-                transaction = trans_queryset.filter(award__fain=row['fain'],award__uri=row['uri'],modification_number=row['award_modification_amendme']).first()
+                transaction = trans_queryset.filter(award__fain=row['fain'],
+                                                    award__uri=row['uri'],
+                                                    modification_number=row['award_modification_amendme']).first()
                 if not transaction:
-                    logger.info('Couldn\'t find transaction with fain ({}), uri({}), and modification_number({}). Skipping.'.format(row['fain'], row['uri'], row['award_modification_amendme']))
+                    logger.info('Couldn\'t find transaction with fain ({}), uri({}), and modification_number({}). '
+                                'Skipping.'.format(row['fain'], row['uri'], row['award_modification_amendme']))
                     continue
 
                 if transaction.recipient and transaction.recipient.location:
@@ -121,15 +124,6 @@ class Command(BaseCommand):
                     state_name = row['place_of_perform_state_nam']
                     pop = update_country_code("d2", pop, location_country_code, state_code, state_name, place_of_performance_code=place_of_perform_code)
                     pop.save()
-
-        with db_transaction.atomic():
-
-            logger.info('Bulk updating POP Locations (batch_size: {})...'.format(BATCH_SIZE))
-            #bulk_update(pop_bulk, batch_size=BATCH_SIZE)
-
-            logger.info('Bulk updating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
-            #bulk_update(lel_bulk, batch_size=BATCH_SIZE)
-
 
     @staticmethod
     def update_location_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000, save=True):
@@ -163,12 +157,9 @@ class Command(BaseCommand):
         procurement_data = dictfetchall(db_cursor)
 
         logger.info("Getting total rows")
-        # rows_loaded = len(current_ids)
         total_rows = len(procurement_data)  # - rows_loaded
 
         logger.info("Processing " + str(total_rows) + " rows of procurement data")
-
-        # bulk_array = []
 
         start_time = datetime.now()
         for index, row in enumerate(procurement_data, 1):
@@ -197,9 +188,6 @@ class Command(BaseCommand):
                     state_code = row['place_of_performance_state']
                     pop = update_country_code("d1", pop, location_country_code, state_code)
                     pop.save()
-
-        logger.info('saving locations')
-        # logger.info('BULK ARRAY: '.format(bulk_array))
 
     def add_arguments(self, parser):
 
@@ -249,7 +237,6 @@ class Command(BaseCommand):
             help="Decides if the save method is called after loading"
         )
 
-    # @transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
