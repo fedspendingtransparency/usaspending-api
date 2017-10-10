@@ -427,38 +427,6 @@ class Command(BaseCommand):
             help="Year for which to run the historical load"
         )
 
-        parser.add_argument(
-            '--page',
-            dest="page",
-            nargs='+',
-            type=int,
-            help="Page for batching and parallelization"
-        )
-
-        parser.add_argument(
-            '--limit',
-            dest="limit",
-            nargs='+',
-            type=int,
-            help="Limit for batching and parallelization"
-        )
-
-        parser.add_argument(
-            '--before_date',
-            dest="before_date",
-            nargs='+',
-            type=str,
-            help="Date for which to get everything prior to"
-        )
-
-        parser.add_argument(
-            '--file',
-            dest="file",
-            nargs='+',
-            type=str,
-            help="File that contains FPDS PKs in the Broker"
-        )
-
     @db_transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting FPDS bulk data load...')
