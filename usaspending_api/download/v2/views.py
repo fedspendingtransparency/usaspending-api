@@ -146,3 +146,18 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
                 'Missing one or more required query parameters: file_name')
 
         return self.get_download_response(file_name=file_name)
+
+class DownloadTransactionCountViewSet(APIView):
+    def post(self, request):
+        """Returns the number of transactions that would be included in a download request for the given filter set. """
+        json_request = request.data
+
+        # If no filters in request return empty object to return all transactions
+        filters = json_request.get('filters', {})
+        qs = transaction_filter(filters)
+
+        result = {
+            "transaction_rows": qs.count()
+        }
+
+        return Response(result)
