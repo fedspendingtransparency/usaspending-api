@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 # TODO: Performance when multiple false values are initially provided
 def award_filter(filters):
 
-    queryset = Award.objects.all()
+    queryset = Award.objects.filter(latest_transaction_id__isnull=False, category__isnull=False)
     for key, value in filters.items():
         # check for valid key
         if value is None:
@@ -50,7 +50,7 @@ def award_filter(filters):
                 if v.get("start_date") is not None:
                     kwargs["period_of_performance_start_date__gte"] = v.get("start_date")
                 if v.get("end_date") is not None:
-                    kwargs["period_of_performance_start_date__lte"] = v.get("end_date")
+                    kwargs["period_of_performance_current_end_date__lte"] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if or_queryset:
                     or_queryset |= Award.objects.filter(**kwargs)

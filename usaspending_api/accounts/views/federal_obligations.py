@@ -3,12 +3,12 @@ from django.db.models import F, Sum
 from usaspending_api.accounts.serializers import FederalAccountByObligationSerializer
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import DetailViewSet
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import Agency
 
 
 class FederalAccountByObligationViewSet(DetailViewSet):
-    """Handle autocomplete requests for federal account information."""
+    """Returns a Appropriation Account Balance's obligated amount broken up by TAS."""
     serializer_class = FederalAccountByObligationSerializer
 
     def get_queryset(self):
@@ -29,13 +29,13 @@ class FederalAccountByObligationViewSet(DetailViewSet):
         top_tier_agency_id = Agency.objects.filter(id=funding_agency_id).first().toptier_agency_id
         # Using final_objects below ensures that we're only pulling the latest
         # set of financial information for each fiscal year
-        queryset = FinancialAccountsByProgramActivityObjectClass.final_objects.filter(
+        queryset = AppropriationAccountBalances.final_objects.filter(
             submission__reporting_fiscal_year=fiscal_year,
-            treasury_account__funding_toptier_agency=top_tier_agency_id
+            treasury_account_identifier__funding_toptier_agency=top_tier_agency_id
         ).annotate(
-            agency_name=F('treasury_account__reporting_agency_name'),
-            account_title=F('treasury_account__federal_account__account_title'),
-            id=F('treasury_account__federal_account')
+            agency_name=F('treasury_account_identifier__reporting_agency_name'),
+            account_title=F('treasury_account_identifier__federal_account__account_title'),
+            id=F('treasury_account_identifier__federal_account')
 
         )
         # Sum and sort descending obligations_incurred by account
@@ -44,7 +44,7 @@ class FederalAccountByObligationViewSet(DetailViewSet):
             'agency_name',
             'account_title'
         ).annotate(
-            obligated_amount=Sum('obligations_incurred_by_program_object_class_cpe')
+            obligated_amount=Sum('obligations_incurred_total_by_tas_cpe')
         ).order_by('-obligated_amount')
         # Return minor object class vars
         return queryset

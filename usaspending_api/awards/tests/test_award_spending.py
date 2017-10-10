@@ -47,7 +47,6 @@ def award_spending_data(db):
         recipient=legal_entity
     )
 
-
 @pytest.mark.django_db
 def test_award_category_endpoint(client, award_spending_data):
     """Test the award_category endpoint."""
