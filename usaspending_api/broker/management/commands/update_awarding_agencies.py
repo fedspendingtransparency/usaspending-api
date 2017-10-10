@@ -11,12 +11,8 @@ from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgen
 logger = logging.getLogger('console')
 
 
-subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
-subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
-toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
 agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
 agency_cgac_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
-agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
 
 class Command(BaseCommand):
 
@@ -143,33 +139,21 @@ class Command(BaseCommand):
 
             elif funding_agency is None:
                 pass
-                #logger.error('Unable to find funding agency for CGAC {} Subtier {}'.format(
-                   # row['funding_cgac_code'],
-                   # row['funding_subtier_code']
-                #))
 
-            # Update awarding/funding agency connected to transaction
-           # if transaction.awarding_agency is None and awarding_agency is not None:
             transaction.awarding_agency = awarding_agency
-
-           # if transaction.funding_agency is None and funding_agency is not None:
             transaction.funding_agency = funding_agency
 
-            # Update awarding/funding agency connected to transaction's award
             award = Award.objects.filter(id=transaction.award.id).first()
 
             if award is None:
                 logger.error('Unable to find Award {}'.format(str(transaction.award.id)))
                 continue
 
-            #if award.awarding_agency is None and awarding_agency is not None:
             award.awarding_agency = awarding_agency
 
-            #if award.funding_agency is None and funding_agency is not None:
             award.funding_agency = funding_agency
 
             try:
-                # Save updates to Database
                 transaction.save()
                 award.save()
 
@@ -232,20 +216,21 @@ class Command(BaseCommand):
         limit = limit[0] if limit else 500000
 
         if options.get('contracts', None):
-            logger.info('Starting D1 awarding/funding agencies updates')
+            logger.info('Starting D1 (contracts/FPDS) awarding/funding agencies updates')
             start = timeit.default_timer()
             self.update_awarding_funding_agency(fiscal_year, 'D1', page=page, limit=limit)
             end = timeit.default_timer()
-            logger.info('Finished D1 awarding agencies updates in ' + str(end - start) + ' seconds')
+            logger.info('Finished D1 (contracts/FPDS) awarding agencies updates in ' + str(end - start) + ' seconds')
 
         elif options.get('assistance', None):
-            logger.info('Starting D2 awarding/funding agencies updates')
+            logger.info('Starting D2 (assistance/FABS) awarding/funding agencies updates')
             start = timeit.default_timer()
             self.update_awarding_funding_agency(fiscal_year, 'D2', page=page, limit=limit)
             end = timeit.default_timer()
-            logger.info('Finished D2 awarding/funding agencies updates in ' + str(end - start) + ' seconds')
+            logger.info('Finished D2 (assistance/FABS) awarding/funding agencies updates in ' + str(end - start) + ' seconds')
 
         else:
             logger.error('Not a valid data type: --assistance,--contracts')
 
         logger.info('Finished')
+        
