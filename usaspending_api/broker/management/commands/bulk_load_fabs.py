@@ -17,15 +17,15 @@ BATCH_SIZE = 10000
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
-country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
-subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
-subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
-toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
-agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
-agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
-agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
-award_map = {(award.fain, award.uri, award.awarding_agency_id): award for award in Award.objects.filter(piid__isnull=True)}
-le_map = {(le.recipient_unique_id, le.recipient_name): le for le in LegalEntity.objects.all()}
+# country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
+# subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
+# subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
+# toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
+# agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
+# agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
+# agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
+# award_map = {(award.fain, award.uri, award.awarding_agency_id): award for award in Award.objects.filter(piid__isnull=True)}
+# le_map = {(le.recipient_unique_id, le.recipient_name): le for le in LegalEntity.objects.all()}
 
 fabs_bulk = []
 
@@ -74,11 +74,32 @@ le_field_map = {
     "location_country_code": "legal_entity_country_code"
 }
 
+
 class Command(BaseCommand):
     help = "Update historical transaction data for a fiscal year from the Broker."
 
-    @staticmethod
-    def diff_fabs_data(db_cursor, ds_cursor, fiscal_year=None):
+    country_code_map = {}
+    subtier_agency_map = {}
+    subtier_to_agency_map = {}
+    toptier_agency_map = {}
+    agency_no_sub_map = {}
+    agency_sub_only_map = {}
+    agency_toptier_map = {}
+    award_map = {}
+    le_map = {}
+
+    def set_lookup_maps(self):
+        self.country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
+        self.subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
+        self.subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
+        self.toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
+        self.agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
+        self.agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
+        self.agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
+        self.award_map = {(award.fain, award.uri, award.awarding_agency_id): award for award in Award.objects.filter(piid__isnull=True)}
+        self.le_map = {(le.recipient_unique_id, le.recipient_name): le for le in LegalEntity.objects.all()}
+
+    def diff_fabs_data(self, db_cursor, ds_cursor, fiscal_year=None):
         db_query = 'SELECT published_award_financial_assistance_id ' \
                 'FROM published_award_financial_assistance ' \
                 'WHERE is_active=TRUE'
@@ -121,9 +142,7 @@ class Command(BaseCommand):
         # Return what is not currently in our database (to insert) and what we have that Broker does not (to delete)
         return to_insert, to_delete
 
-
-    @staticmethod
-    def get_fabs_data(db_cursor, fiscal_year=None, to_insert=None):
+    def get_fabs_data(self, db_cursor, fiscal_year=None, to_insert=None):
         query = 'SELECT * FROM published_award_financial_assistance WHERE is_active=TRUE'
         arguments = []
 
@@ -146,8 +165,7 @@ class Command(BaseCommand):
         logger.info("Running dictfetchall on db_cursor")
         return dictfetchall(db_cursor)
 
-    @staticmethod
-    def load_locations(fabs_broker_data, total_rows, pop_flag=False):
+    def load_locations(self, fabs_broker_data, total_rows, pop_flag=False):
 
         start_time = datetime.now()
         for index, row in enumerate(fabs_broker_data, 1):
@@ -173,7 +191,7 @@ class Command(BaseCommand):
                 row[field_map.get('location_country_code')] = 'USA'
 
             # Get country code obj
-            location_country_code = country_code_map.get(row[field_map.get('location_country_code')])
+            location_country_code = self.country_code_map.get(row[field_map.get('location_country_code')])
 
             # Fix state code periods
             state_code = row.get(field_map.get('state_code'))
@@ -222,8 +240,7 @@ class Command(BaseCommand):
             logger.info('Bulk creating LE Locations (batch_size: {})...'.format(BATCH_SIZE))
             Location.objects.bulk_create(lel_bulk, batch_size=BATCH_SIZE)
 
-    @staticmethod
-    def load_legal_entity(fabs_broker_data, total_rows):
+    def load_legal_entity(self, fabs_broker_data, total_rows):
 
         start_time = datetime.now()
         for index, row in enumerate(fabs_broker_data, 1):
@@ -238,7 +255,7 @@ class Command(BaseCommand):
             recipient_unique_id = row['awardee_or_recipient_uniqu']
 
             lookup_key = (recipient_unique_id, recipient_name)
-            legal_entity = le_map.get(lookup_key)
+            legal_entity = self.le_map.get(lookup_key)
 
             if not legal_entity:
                 legal_entity = LegalEntity(
@@ -260,8 +277,7 @@ class Command(BaseCommand):
         logger.info('Bulk creating Legal Entities (batch_size: {})...'.format(BATCH_SIZE))
         LegalEntity.objects.bulk_create(legal_entity_bulk, batch_size=BATCH_SIZE)
 
-    @staticmethod
-    def load_awards(fabs_broker_data, total_rows):
+    def load_awards(self, fabs_broker_data, total_rows):
         start_time = datetime.now()
         for index, row in enumerate(fabs_broker_data, 1):
             if not (index % 10000):
@@ -273,40 +289,40 @@ class Command(BaseCommand):
             # use the sub tier code to look it up. This code assumes that all incoming
             # records will supply an awarding subtier agency code
             if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
-                awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
-                awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
-                awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
+                awarding_subtier_agency_id = self.subtier_agency_map[row["awarding_sub_tier_agency_c"]]
+                awarding_toptier_agency_id = self.subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
+                awarding_cgac_code = self.toptier_agency_map[awarding_toptier_agency_id]
                 row['awarding_agency_code'] = awarding_cgac_code
 
             # If funding toptier agency code (aka CGAC) is empty, try using the sub
             # tier funding code to look it up. Unlike the awarding agency, we can't
             # assume that the funding agency subtier code will always be present.
             if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
-                funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
+                funding_subtier_agency_id = self.subtier_agency_map.get(row["funding_sub_tier_agency_co"])
                 if funding_subtier_agency_id is not None:
-                    funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id][
+                    funding_toptier_agency_id = self.subtier_to_agency_map[funding_subtier_agency_id][
                         'toptier_agency_id']
-                    funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
+                    funding_cgac_code = self.toptier_agency_map[funding_toptier_agency_id]
                 else:
                     funding_cgac_code = None
                 row['funding_agency_code'] = funding_cgac_code
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = agency_no_sub_map.get((
+            awarding_agency = self.agency_no_sub_map.get((
                 row['awarding_agency_code'],
                 row["awarding_sub_tier_agency_c"]
             ))
 
             if awarding_agency is None:
-                awarding_agency = agency_sub_only_map.get(row['awarding_agency_code'])
+                awarding_agency = self.agency_sub_only_map.get(row['awarding_agency_code'])
 
-            funding_agency = agency_no_sub_map.get((
+            funding_agency = self.agency_no_sub_map.get((
                 row['funding_agency_code'],
                 row["funding_sub_tier_agency_co"]
             ))
 
             if funding_agency is None:
-                funding_agency = agency_sub_only_map.get(row['funding_agency_code'])
+                funding_agency = self.agency_sub_only_map.get(row['funding_agency_code'])
 
             awarding_agency_list.append(awarding_agency)
             funding_agency_list.append(funding_agency)
@@ -316,7 +332,7 @@ class Command(BaseCommand):
 
             if awarding_agency:
                 lookup_key = (fain, uri, awarding_agency.id)
-                award = award_map.get(lookup_key)
+                award = self.award_map.get(lookup_key)
             else:
                 award = None
 
@@ -325,7 +341,7 @@ class Command(BaseCommand):
                 create_kwargs = {'awarding_agency': awarding_agency, 'fain': fain, 'uri': uri}
                 award = Award(**create_kwargs)
                 if awarding_agency:
-                    award_map[lookup_key] = award
+                    self.award_map[lookup_key] = award
                 award_bulk.append(award)
 
             award_lookup.append(award)
@@ -333,8 +349,7 @@ class Command(BaseCommand):
         logger.info('Bulk creating Awards (batch_size: {})...'.format(BATCH_SIZE))
         Award.objects.bulk_create(award_bulk, batch_size=BATCH_SIZE)
 
-    @staticmethod
-    def load_transaction_normalized(fabs_broker_data, total_rows):
+    def load_transaction_normalized(self, fabs_broker_data, total_rows):
         start_time = datetime.now()
         for index, row in enumerate(fabs_broker_data, 1):
             if not (index % 10000):
@@ -371,8 +386,7 @@ class Command(BaseCommand):
         logger.info('Bulk creating Transaction Normalized (batch_size: {})...'.format(BATCH_SIZE))
         TransactionNormalized.objects.bulk_create(transaction_normalized_bulk, batch_size=BATCH_SIZE)
 
-    @staticmethod
-    def load_transaction_fabs(fabs_broker_data, total_rows):
+    def load_transaction_fabs(self, fabs_broker_data, total_rows):
         logger.info('Starting bulk loading for FABS data')
 
         start_time = datetime.now()
@@ -394,8 +408,7 @@ class Command(BaseCommand):
         logger.info('Bulk creating Transaction FABS (batch_size: {})...'.format(BATCH_SIZE))
         TransactionFABS.objects.bulk_create(fabs_bulk, batch_size=BATCH_SIZE)
 
-    @staticmethod
-    def delete_stale_fabs(to_delete=None):
+    def delete_stale_fabs(self, to_delete=None):
 
         if not to_delete:
             return
@@ -445,7 +458,6 @@ class Command(BaseCommand):
             help="File that contains FABS PKs in the Broker"
         )
 
-    @db_transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting FABS bulk data load...')
 
@@ -469,68 +481,72 @@ class Command(BaseCommand):
         total_rows = len(to_insert)
         total_rows_delete = len(to_delete)
 
-        if total_rows_delete > 0:
-            logger.info('Deleting stale FABS data...')
-            start = timeit.default_timer()
-            self.delete_stale_fabs(to_delete=to_delete)
-            end = timeit.default_timer()
-            logger.info('Finished deleting stale FABS data in ' + str(end - start) + ' seconds')
+        with db_transaction.atomic():
+            if total_rows_delete > 0:
+                logger.info('Deleting stale FABS data...')
+                start = timeit.default_timer()
+                self.delete_stale_fabs(to_delete=to_delete)
+                end = timeit.default_timer()
+                logger.info('Finished deleting stale FABS data in ' + str(end - start) + ' seconds')
 
-        if total_rows > 0:
-            logger.info('Get Broker FABS data...')
-            start = timeit.default_timer()
-            fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)
-            end = timeit.default_timer()
-            logger.info('Finished getting Broker FABS data in ' + str(end - start) + ' seconds')
+        self.set_lookup_maps()
 
-            logger.info('Loading POP Location data...')
-            start = timeit.default_timer()
-            self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows, pop_flag=True)
-            end = timeit.default_timer()
-            logger.info('Finished POP Location bulk data load in ' + str(end - start) + ' seconds')
+        with db_transaction.atomic():
+            if total_rows > 0:
+                logger.info('Get Broker FABS data...')
+                start = timeit.default_timer()
+                fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)
+                end = timeit.default_timer()
+                logger.info('Finished getting Broker FABS data in ' + str(end - start) + ' seconds')
 
-            logger.info('Loading LE Location data...')
-            start = timeit.default_timer()
-            self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished LE Location bulk data load in ' + str(end - start) + ' seconds')
+                logger.info('Loading POP Location data...')
+                start = timeit.default_timer()
+                self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows, pop_flag=True)
+                end = timeit.default_timer()
+                logger.info('Finished POP Location bulk data load in ' + str(end - start) + ' seconds')
 
-            logger.info('Loading Legal Entity data...')
-            start = timeit.default_timer()
-            self.load_legal_entity(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished Legal Entity bulk data load in ' + str(end - start) + ' seconds')
+                logger.info('Loading LE Location data...')
+                start = timeit.default_timer()
+                self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+                end = timeit.default_timer()
+                logger.info('Finished LE Location bulk data load in ' + str(end - start) + ' seconds')
 
-            logger.info('Loading Award data...')
-            start = timeit.default_timer()
-            self.load_awards(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished Award bulk data load in ' + str(end - start) + ' seconds')
+                logger.info('Loading Legal Entity data...')
+                start = timeit.default_timer()
+                self.load_legal_entity(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+                end = timeit.default_timer()
+                logger.info('Finished Legal Entity bulk data load in ' + str(end - start) + ' seconds')
 
-            logger.info('Loading Transaction Normalized data...')
-            start = timeit.default_timer()
-            self.load_transaction_normalized(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished Transaction Normalized bulk data load in ' + str(end - start) + ' seconds')
+                logger.info('Loading Award data...')
+                start = timeit.default_timer()
+                self.load_awards(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+                end = timeit.default_timer()
+                logger.info('Finished Award bulk data load in ' + str(end - start) + ' seconds')
 
-            logger.info('Loading Transaction FABS data...')
-            start = timeit.default_timer()
-            self.load_transaction_fabs(fabs_broker_data, total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished FABS bulk data load in ' + str(end - start) + ' seconds')
+                logger.info('Loading Transaction Normalized data...')
+                start = timeit.default_timer()
+                self.load_transaction_normalized(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
+                end = timeit.default_timer()
+                logger.info('Finished Transaction Normalized bulk data load in ' + str(end - start) + ' seconds')
 
-            award_update_id_list = [award.id for award in award_lookup]
+                logger.info('Loading Transaction FABS data...')
+                start = timeit.default_timer()
+                self.load_transaction_fabs(fabs_broker_data, total_rows)
+                end = timeit.default_timer()
+                logger.info('Finished FABS bulk data load in ' + str(end - start) + ' seconds')
 
-            logger.info('Updating awards to reflect their latest associated transaction info...')
-            start = timeit.default_timer()
-            update_awards(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+                award_update_id_list = [award.id for award in award_lookup]
 
-            logger.info('Updating award category variables...')
-            start = timeit.default_timer()
-            update_award_categories(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
-        else:
-            logger.info('Nothing to insert...FINISHED!')
+                logger.info('Updating awards to reflect their latest associated transaction info...')
+                start = timeit.default_timer()
+                update_awards(tuple(award_update_id_list))
+                end = timeit.default_timer()
+                logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+
+                logger.info('Updating award category variables...')
+                start = timeit.default_timer()
+                update_award_categories(tuple(award_update_id_list))
+                end = timeit.default_timer()
+                logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+            else:
+                logger.info('Nothing to insert...FINISHED!')
