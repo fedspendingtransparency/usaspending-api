@@ -5,10 +5,11 @@ from model_mommy import mommy
 import pytest
 from rest_framework import status
 
+from django.conf import settings
+
 from usaspending_api.awards.models import Transaction, TransactionAssistance, TransactionContract
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.download.lookups import JOB_STATUS
-from usaspending_api.download.v2 import download_column_lookups
 from usaspending_api.etl.award_helpers import update_awards
 
 
@@ -70,16 +71,24 @@ def award_data(db):
     fa1 = mommy.make('references.Agency', id=3, toptier_flag=False)
 
     # Create Awards
-    award1 = mommy.make(
-        'awards.Award', category='contracts')
-    award2 = mommy.make(
-        'awards.Award', category='contracts')
+    award1 = mommy.make('awards.Award', category='contracts')
+    award2 = mommy.make('awards.Award', category='contracts')
 
     # Create Transactions
-    trann1 = mommy.make(TransactionNormalized, award=award1, modification_number=1, awarding_agency=aa1)
-    trann2 = mommy.make(TransactionNormalized, award=award2, modification_number=1, awarding_agency=aa2)
-    tran1 = mommy.make(Transaction, award=award1, modification_number=1, awarding_agency=aa1)
-    tran2 = mommy.make(Transaction, award=award2, modification_number=1, awarding_agency=aa2)
+    trann1 = mommy.make(
+        TransactionNormalized,
+        award=award1,
+        modification_number=1,
+        awarding_agency=aa1)
+    trann2 = mommy.make(
+        TransactionNormalized,
+        award=award2,
+        modification_number=1,
+        awarding_agency=aa2)
+    tran1 = mommy.make(
+        Transaction, award=award1, modification_number=1, awarding_agency=aa1)
+    tran2 = mommy.make(
+        Transaction, award=award2, modification_number=1, awarding_agency=aa2)
 
     # Create TransactionContract
     tfpds1 = mommy.make(TransactionFPDS, transaction=trann1, piid='tc1piid')
@@ -105,7 +114,7 @@ def test_download_transactions_v2_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": {},
+            "columns": {}
         }))
 
     assert resp.status_code == status.HTTP_200_OK
@@ -122,7 +131,7 @@ def test_download_awards_v2_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": [],
+            "columns": []
         }))
 
     assert resp.status_code == status.HTTP_200_OK
@@ -139,7 +148,7 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": [],
+            "columns": []
         }))
 
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -160,14 +169,15 @@ def test_download_awards_v2_status_endpoint(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "filters": {},
-            "columns": [],
+            "columns": []
         }))
 
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()['total_rows'] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1``0`
+    assert resp.json(
+    )['total_rows'] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1``0`
     assert resp.json()['total_columns'] > 100
 
 
@@ -205,8 +215,8 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                 "agencies": [{
                     'type': 'awarding',
                     'tier': 'toptier',
-                    'name': "Bureau of Things",
-                }, ]
+                    'name': "Bureau of Things"
+                } ]
             },
             "columns": ["award_id_piid", "modification_number"]
         }))
@@ -223,7 +233,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                 "agencies": [{
                     'type': 'awarding',
                     'tier': 'toptier',
-                    'name': "Bureau of Stuff",
+                    'name': "Bureau of Stuff"
                 }, ]
             },
             "columns": ["award_id_piid", "modification_number"]
@@ -242,13 +252,13 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                     {
                         'type': 'awarding',
                         'tier': 'toptier',
-                        'name': "Bureau of Stuff",
+                        'name': "Bureau of Stuff"
                     },
                     {
                         'type': 'awarding',
                         'tier': 'toptier',
-                        'name': "Bureau of Things",
-                    },
+                        'name': "Bureau of Things"
+                    }
                 ]
             },
             "columns": ["award_id_piid", "modification_number"]
@@ -264,7 +274,10 @@ def test_download_transactions_v2_bad_column_list_raises(client):
     """Test that bad column list inputs raise appropriate responses."""
 
     # Nonexistent filter
-    payload = {"filters": {}, "columns": ["modification_number", "bogus_column"]}
+    payload = {
+        "filters": {},
+        "columns": ["modification_number", "bogus_column"]
+    }
     resp = client.post(
         '/api/v2/download/transactions',
         content_type='application/json',
@@ -312,8 +325,8 @@ def test_download_transactions_v2_bad_filter_shape_raises(client):
             "agencies": [{
                 'type': 'not a valid type',
                 'tier': 'nor a valid tier',
-                'name': "Bureau of Stuff",
-            }, ]
+                'name': "Bureau of Stuff"
+            } ]
         },
         "columns": []
     }
@@ -330,31 +343,53 @@ def test_download_transactions_v2_bad_filter_shape_raises(client):
 def test_download_status_nonexistent_file_404(client):
     """Requesting status of nonexistent file should produce HTTP 404"""
 
-    resp = client.get('/api/v2/download/status/?file_name=there_is_no_such_file.zip')
+    resp = client.get(
+        '/api/v2/download/status/?file_name=there_is_no_such_file.zip')
 
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
-def test_download_transactions_v2_endpoint_check_all_mappings(client,
-                                                              award_data):
-    """
-    One-by-one checking on validity of columns
+def test_download_transactions_limit(client, award_data):
+    """Test limiting of csv results"""
 
-    For manual troubleshooting rather than automated run; this, skipped
-    """
-    for key in download_column_lookups.transaction_columns:
-        resp = client.post(
-            '/api/v2/download/transactions',
-            content_type='application/json',
-            data=json.dumps({
-                "filters": {},
-                "columns": [key, ]
-            }))
-        assert resp.status_code == status.HTTP_200_OK
-        message = resp.json()['message']
-        if message:
-            if 'exception was raised' in message:
-                pytest.set_trace()
-            pass
+    dl_resp = client.post(
+        '/api/v2/download/transactions',
+        content_type='application/json',
+        data=json.dumps({
+            "limit": 1,
+            "filters": {},
+            "columns": []
+        }))
+    resp = client.get('/api/v2/download/status/?file_name={}'
+                      .format(dl_resp.json()['file_name']))
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()['total_rows'] == 2  # one each contract and assistance
+
+
+def test_download_transactions_bad_limit(client, award_data):
+    """Test proper error when bad value passed for limit."""
+
+    resp = client.post(
+        '/api/v2/download/transactions',
+        content_type='application/json',
+        data=json.dumps({
+            "limit": "wombats",
+            "filters": {},
+            "columns": []
+        }))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_download_transactions_excessive_limit(client, award_data):
+    """Test that user-specified limits beyond MAX_DOWNLOAD_LIMIT are rejected"""
+
+    resp = client.post(
+        '/api/v2/download/transactions',
+        content_type='application/json',
+        data=json.dumps({
+            "limit": settings.MAX_DOWNLOAD_LIMIT + 1,
+            "filters": {},
+            "columns": []
+        }))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST

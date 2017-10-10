@@ -10,8 +10,6 @@ from django.conf import settings
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-# To switch to historical tables, do this instead:
-from usaspending_api.download.v2 import download_column_lookups
 from usaspending_api.download.v2 import download_column_historical_lookups
 
 BUFFER_SIZE = (5 * 1024**2)
@@ -45,18 +43,10 @@ class CsvSource:
     def __init__(self, model_type, file_type):
         self.model_type = model_type
         self.file_type = file_type
-        # Currently, the award filter is linked by latest_transaction to the historical
-        # transactions, but the transaction filter still returns the non-historical ones.
-        if model_type == 'transaction':
-            self.human_names = download_column_lookups.human_names[model_type][
-                file_type]
-            self.query_paths = download_column_lookups.query_paths[model_type][
-                file_type]
-        else:
-            self.human_names = download_column_historical_lookups.human_names[
-                model_type][file_type]
-            self.query_paths = download_column_historical_lookups.query_paths[
-                model_type][file_type]
+        self.human_names = download_column_historical_lookups.human_names[
+            model_type][file_type]
+        self.query_paths = download_column_historical_lookups.query_paths[
+            model_type][file_type]
 
     def values(self, header):
         query_paths = [self.query_paths[hn] for hn in header]
@@ -125,7 +115,6 @@ def write_csvs(download_job, file_name, columns, sources):
             download_job.file_size = stream.total_size
 
     except Exception as e:
-        # TODO: Add proper exception logging
         download_job.job_status_id = JOB_STATUS_DICT['failed']
         download_job.error_message = 'An exception was raised while attempting to write the CSV'
         if settings.DEBUG:
