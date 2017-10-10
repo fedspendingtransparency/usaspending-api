@@ -1,26 +1,27 @@
+import ast
+import logging
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Sum
+
+from django.db.models import Sum, Count
 from django.db.models.functions import ExtractMonth
+
 from collections import OrderedDict
 from functools import total_ordering
-from usaspending_api.references.models import Cfda
 
 from datetime import date
 from fiscalyear import *
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers import generate_fiscal_month, get_pagination, get_pagination_metadata
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
-    grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping, \
-    loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
+    loan_type_mapping, loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
+from usaspending_api.references.models import Cfda
 
-import ast
-from usaspending_api.common.helpers import generate_fiscal_month, \
-    get_pagination, get_pagination_metadata
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -47,6 +48,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # build response
         response = {'group': group, 'results': []}
+        nested_order = ''
 
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
@@ -73,7 +75,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 key = {'fiscal_year': str(trans['fiscal_year']), 'month': str(fiscal_month)}
                 key = str(key)
                 group_results[key] = trans['federal_action_obligation']
-
+            nested_order = 'month'
         else:  # quarterly, take months and add them up
 
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
@@ -95,6 +97,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                         group_results[key] = group_results.get(key) + trans['federal_action_obligation']
                     else:
                         group_results[key] = group_results.get(key)
+            nested_order = 'quarter'
 
         # convert result into expected format, sort by key to meet front-end specs
         results = []
@@ -103,7 +106,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # 'time_period': {'fy': '2017', 'quarter': '3'},
         # 	'aggregated_amount': '200000000'
         # }]
-        for key, value in sorted(group_results.items()):
+        for key, value in sorted(group_results.items(), key=lambda k: (ast.literal_eval(k[0])['fiscal_year'],
+                                                                       int(ast.literal_eval(k[0])[nested_order])) if nested_order else (ast.literal_eval(k[0])['fiscal_year'])):
             key_dict = ast.literal_eval(key)
             result = {'time_period': key_dict, 'aggregated_amount': float(value)}
             results.append(result)
@@ -642,24 +646,16 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         queryset = award_filter(filters)
 
         # define what values are needed in the sql query
-        queryset = queryset.values("latest_transaction__type")
+        queryset = queryset.values('category')
+        queryset = queryset.annotate(category_count=Count('category')).exclude(category__isnull=True).\
+            values('category', 'category_count')
 
-        # build response
-        response = {"results": {}}
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
         for award in queryset:
-            print(award)
-            if (award["latest_transaction__type"] in contract_type_mapping):
-                results["contracts"] += 1
-            elif (award["latest_transaction__type"] in grant_type_mapping):  # Grants
-                results["grants"] += 1
-            elif award["latest_transaction__type"] in direct_payment_type_mapping:  # Direct Payment
-                results["direct_payments"] += 1
-            elif award["latest_transaction__type"] in loan_type_mapping:  # Loans
-                results["loans"] += 1
-            elif award["latest_transaction__type"] in other_type_mapping:  # Other
-                results["other"] += 1
+            result_key = award['category'].replace(' ', '_')
+            result_key += 's' if result_key not in ['other', 'loans'] else ''
+            results[result_key] = award['category_count']
 
-        response["results"] = results
-        return Response(response)
+        # build response
+        return Response({"results": results})
