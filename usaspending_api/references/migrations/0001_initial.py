@@ -7,7 +7,7 @@ import django.contrib.postgres.fields.jsonb
 from django.db import migrations, models
 import django.db.models.deletion
 import usaspending_api.common.models
-
+from django.contrib.postgres.operations import TrigramExtension
 
 class Migration(migrations.Migration):
 
@@ -481,4 +481,5 @@ class Migration(migrations.Migration):
             name='agency',
             unique_together=set([('toptier_agency', 'subtier_agency', 'office_agency')]),
         ),
+        TrigramExtension(),
     ]

@@ -38,7 +38,7 @@ def documentation_test_data():
     ("/api/v1/awards/", {"order": ["-recipient__recipient_name"]}),
     ("/api/v1/awards/", {"page": 5, "limit": 10}),
     ("/api/v1/awards/autocomplete/", {"fields": ["description"], "value": "furniture"}),
-    ("/api/v1/awards/autocomplete/", {"fields": ["description", "transaction__description"], "value": "furniture"}),
+    ("/api/v1/awards/autocomplete/", {"fields": ["description", "latest_transaction__description"], "value": "furniture"}),
     ("/api/v1/awards/autocomplete/", {"fields": ["description"], "value": "f", "limit": 5}),
     ("/api/v1/awards/autocomplete/", {"fields": ["description"], "value": "f", "mode": "startswith"}),
     ("/api/v1/awards/total/", {"field": "total_obligation", "group": "date_signed__fy"}),
@@ -68,7 +68,7 @@ def test_intro_tutorial_get_requests(client, url, documentation_test_data):
 @pytest.mark.parametrize("url, req", [
     ("/api/v1/awards/", {"filters": [{"field": "awarding_agency__toptier_agency__cgac_code", "operation": "equals", "value": "097"}]}),
     ("/api/v1/awards/", {"filters": [{"field": "type", "operation": "in", "value": ["A", "B", "C", "D"]}]}),
-    ("/api/v1/awards/", {"filters": [{"field": "transaction__contract_data", "operation": "is_null", "value": False}]}),
+    ("/api/v1/awards/", {"filters": [{"field": "latest_transaction__contract_data", "operation": "is_null", "value": False}]}),
     ("/api/v1/awards/", {"filters": [{"field": "place_of_performance__state_code", "operation": "not_equals", "value": "NJ"}]})
 
 ])

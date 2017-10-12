@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import django.db.models.deletion
+from usaspending_api.common.helpers import FY_PG_FUNCTION_DEF
+from usaspending_api.accounts.models import AppropriationAccountBalances
 
 
 class Migration(migrations.Migration):
@@ -164,4 +166,6 @@ class Migration(migrations.Migration):
             name='treasury_account_identifier',
             field=models.ForeignKey(db_column='treasury_account_identifier', on_delete=django.db.models.deletion.CASCADE, related_name='account_balances', to='accounts.TreasuryAppropriationAccount'),
         ),
+        migrations.RunSQL(FY_PG_FUNCTION_DEF),
+        migrations.RunSQL(AppropriationAccountBalances.FINAL_OF_FY_SQL),
     ]
