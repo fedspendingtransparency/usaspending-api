@@ -41,6 +41,8 @@ funding_agency_list = []
 
 award_lookup = []
 award_bulk = []
+parent_award_lookup = []
+parent_award_bulk = []
 
 transaction_normalized_bulk = []
 
@@ -77,6 +79,7 @@ class Command(BaseCommand):
     agency_sub_only_map = {}
     agency_toptier_map = {}
     award_map = {}
+    parent_award_map = {}
     le_map = {}
 
     def set_lookup_maps(self):
@@ -87,7 +90,7 @@ class Command(BaseCommand):
         self.agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
         self.agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
         self.agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
-        self.award_map = {(award.piid, award.awarding_agency_id): award for award in Award.objects.filter(piid__isnull=False)}
+        self.award_map = {award.piid: award for award in Award.objects.filter(piid__isnull=False)}
         self.le_map = {(le.recipient_unique_id, le.recipient_name): le for le in LegalEntity.objects.all()}
 
     def diff_fpds_data(self, db_cursor, ds_cursor, fiscal_year=None):
@@ -278,6 +281,48 @@ class Command(BaseCommand):
         logger.info('Bulk creating Legal Entities (batch_size: {})...'.format(BATCH_SIZE))
         LegalEntity.objects.bulk_create(legal_entity_bulk, batch_size=BATCH_SIZE)
 
+    def load_parent_awards(self, fpds_broker_data, total_rows):
+        start_time = datetime.now()
+        for index, row in enumerate(fpds_broker_data, 1):
+            if not (index % 10000):
+                logger.info('Parent Awards: Loading row {} of {} ({})'.format(str(index),
+                                                                          str(total_rows),
+                                                                          datetime.now() - start_time))
+
+            # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
+            # use the sub tier code to look it up. This code assumes that all incoming
+            # records will supply an awarding subtier agency code
+            if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
+                awarding_subtier_agency_id = self.subtier_agency_map[row["awarding_sub_tier_agency_c"]]
+                awarding_toptier_agency_id = self.subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
+                awarding_cgac_code = self.toptier_agency_map[awarding_toptier_agency_id]
+                row['awarding_agency_code'] = awarding_cgac_code
+
+            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
+            awarding_agency = self.agency_no_sub_map.get((
+                row['awarding_agency_code'],
+                row["awarding_sub_tier_agency_c"]
+            ))
+
+            if awarding_agency is None:
+                awarding_agency = self.agency_sub_only_map.get(row['awarding_agency_code'])
+
+            # parent_award_id from the row = parent piid
+            parent_award_piid = row.get('parent_award_id')
+            parent_award = None
+            if parent_award_piid:
+                parent_award = self.award_map.get(parent_award_piid)
+                if not parent_award:
+                    create_kwargs = {'awarding_agency': awarding_agency, 'piid': parent_award_piid}
+                    parent_award = Award(**create_kwargs)
+                    self.award_map[parent_award_piid] = parent_award
+                    parent_award_bulk.append(parent_award)
+
+            parent_award_lookup.append(parent_award)
+
+        logger.info('Bulk creating Parent Awards (batch_size: {})...'.format(BATCH_SIZE))
+        Award.objects.bulk_create(parent_award_bulk, batch_size=BATCH_SIZE)
+
     def load_awards(self, fpds_broker_data, total_rows):
         start_time = datetime.now()
         for index, row in enumerate(fpds_broker_data, 1):
@@ -329,20 +374,17 @@ class Command(BaseCommand):
             funding_agency_list.append(funding_agency)
 
             piid = row.get('piid')
-
-            if awarding_agency:
-                lookup_key = (piid, awarding_agency.id)
-                award = self.award_map.get(lookup_key)
-            else:
-                lookup_key = None
-                award = None
+            award = self.award_map.get(piid)
+            if award and awarding_agency is not None and award.awarding_agency is not None:
+                if award.awarding_agency != awarding_agency:
+                    award = None
 
             if not award:
                 # create the award since it wasn't found
                 create_kwargs = {'awarding_agency': awarding_agency, 'piid': piid}
                 award = Award(**create_kwargs)
-                if awarding_agency and lookup_key:
-                    self.award_map[lookup_key] = award
+                award.parent_award = parent_award_lookup[index-1]
+                self.award_map[piid] = award
                 award_bulk.append(award)
 
             award_lookup.append(award)
@@ -485,6 +527,12 @@ class Command(BaseCommand):
             self.load_legal_entity(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
             end = timeit.default_timer()
             logger.info('Finished Legal Entity bulk data load in ' + str(end - start) + ' seconds')
+
+            logger.info('Loading Parent Award data...')
+            start = timeit.default_timer()
+            self.load_parent_awards(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
+            end = timeit.default_timer()
+            logger.info('Finished Parent Award bulk data load in ' + str(end - start) + ' seconds')
 
             logger.info('Loading Award data...')
             start = timeit.default_timer()
