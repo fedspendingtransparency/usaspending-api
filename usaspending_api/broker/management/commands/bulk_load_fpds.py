@@ -375,8 +375,8 @@ class Command(BaseCommand):
 
             piid = row.get('piid')
             award = self.award_map.get(piid)
-            if award and awarding_agency is not None and award.awarding_agency is not None:
-                if award.awarding_agency != awarding_agency:
+            if award and awarding_agency is not None and award.awarding_agency_id is not None:
+                if award.awarding_agency_id != awarding_agency.id:
                     award = None
 
             if not award:
