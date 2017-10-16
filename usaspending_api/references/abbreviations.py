@@ -51,6 +51,7 @@ code_to_state = {
     'TN': 'TENNESSEE',
     'TX': 'TEXAS',
     'UT': 'UTAH',
+    "UM": 'U.S. MINOR OUTLYING ISLANDS',
     'VA': 'VIRGINIA',
     'VI': 'VIRGIN ISLANDS',
     'VT': 'VERMONT',
@@ -58,6 +59,18 @@ code_to_state = {
     'WI': 'WISCONSIN',
     'WV': 'WEST VIRGINIA',
     'WY': 'WYOMING'
+}
+
+territory_country_codes = {
+    "ASM": "American Samoa",
+    "GUM": "Guam",
+    "MNP": "Northern Mariana Islands",
+    "PRI": "Puerto Rico",
+    "VIR": "Virgin Islands of the U.S.",
+    "UMI": "U.S. Minor Outlying Islands",
+    "FSM": "Federated States of Micronesia",
+    "MHL": "Marshall Islands",
+    "PLW": "Palau"
 }
 
 state_to_code = {v: k for (k, v) in code_to_state.items()}
