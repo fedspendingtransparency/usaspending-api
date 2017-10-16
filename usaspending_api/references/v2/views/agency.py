@@ -25,7 +25,8 @@ class AgencyViewSet(APIView):
         toptier_agency = agency.toptier_agency
         # get corresponding submissions through cgac code
         queryset = SubmissionAttributes.objects.all()
-        queryset = queryset.filter(cgac_code=toptier_agency.cgac_code)
+        # queryset = queryset.filter(cgac_code=toptier_agency.cgac_code)
+        queryset = queryset.filter(cgac_code="097")
 
         # get the most up to date fy and quarter
         queryset = queryset.order_by('-reporting_fiscal_year', '-reporting_fiscal_quarter')
@@ -48,6 +49,7 @@ class AgencyViewSet(APIView):
         # error on a bad agency id)
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
         if toptier_agency and toptier_agency.cgac_code and toptier_agency.cgac_code == "097":
+            print("hello")
             tta_list = ["097", "017", "021", "057", "096"]
             queryset = queryset.filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
