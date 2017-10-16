@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from usaspending_api.download.models import JobStatus
 from usaspending_api.download import lookups
 
@@ -8,14 +8,14 @@ import logging
 
 @transaction.atomic
 class Command(BaseCommand):
-    help = "Loads agencies and sub-tier agencies from authoritative OMB list in \
-            the folder of this management command."
-
-    logger = logging.getLogger('console')
+    help = "Loads static enum data for job statuses."
 
     @transaction.atomic
     def handle(self, *args, **options):
 
+        logger = logging.getLogger('console')
+
         for status in lookups.JOB_STATUS:
+            logger.info('Updating status: {}'.format(status))
             job_status = JobStatus(job_status_id=status.id, name=status.name, description=status.desc)
             job_status.save()
