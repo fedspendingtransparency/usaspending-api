@@ -32,7 +32,7 @@ class ToptierAgenciesViewSet(APIView):
                                             "Please choose from the following: ['asc', 'desc']")
 
         # get agency queryset
-        agency_queryset = Agency.objects.filter(toptier_flag=True)
+        agency_queryset = Agency.objects.filter(toptier_flag=True).distinct('toptier_agency_id')
         for agency in agency_queryset:
             toptier_agency = agency.toptier_agency
             # get corresponding submissions through cgac code
