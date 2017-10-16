@@ -44,7 +44,7 @@ def award_filter(filters):
 
         # time_period
         elif key == "time_period":
-            or_queryset = None
+            and_queryset = None
             for v in value:
                 kwargs = {}
                 if v.get("start_date") is not None:
@@ -52,12 +52,12 @@ def award_filter(filters):
                 if v.get("end_date") is not None:
                     kwargs["latest_transaction__action_date__lte"] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
-                if or_queryset:
-                    or_queryset &= Award.objects.filter(**kwargs)
+                if and_queryset:
+                    and_queryset &= Award.objects.filter(**kwargs)
                 else:
-                    or_queryset = Award.objects.filter(**kwargs)
-            if or_queryset is not None:
-                queryset &= or_queryset
+                    and_queryset = Award.objects.filter(**kwargs)
+            if and_queryset is not None:
+                queryset &= and_queryset
 
         # award_type_codes
         elif key == "award_type_codes":
