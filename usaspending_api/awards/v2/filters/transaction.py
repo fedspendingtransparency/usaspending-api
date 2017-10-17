@@ -42,7 +42,7 @@ def transaction_filter(filters):
 
         # time_period
         elif key == "time_period":
-            or_queryset = None
+            and_queryset = None
             for v in value:
                 kwargs = {}
                 if v.get("start_date") is not None:
@@ -51,11 +51,11 @@ def transaction_filter(filters):
                     kwargs["action_date__lte"] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if or_queryset:
-                    or_queryset |= TransactionNormalized.objects.filter(**kwargs)
+                    and_queryset &= TransactionNormalized.objects.filter(**kwargs)
                 else:
-                    or_queryset = TransactionNormalized.objects.filter(**kwargs)
+                    and_queryset = TransactionNormalized.objects.filter(**kwargs)
             if or_queryset is not None:
-                queryset &= or_queryset
+                queryset &= and_queryset
 
         # award_type_codes
         elif key == "award_type_codes":
