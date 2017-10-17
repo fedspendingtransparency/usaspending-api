@@ -63,8 +63,8 @@ class Command(BaseCommand):
                 match_count += 1
                 self.logger.info('Matched unknown funding agency for TAS {} with FREC {}'.format(
                     next_tas.tas_rendering_label, next_tas.fr_entity_code))
-            next_tas.funding_toptier_agency = frec_match
-            next_tas.save()
+                next_tas.funding_toptier_agency = frec_match
+                next_tas.save()
 
         self.logger.info('Updated {} funding toptiers with a FREC agency.'.format(match_count))
 
