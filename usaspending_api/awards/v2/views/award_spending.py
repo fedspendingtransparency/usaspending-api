@@ -66,8 +66,7 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
     @cache_response()
     def list(self, request, *args, **kwargs):
         try:
-            # First, get the req object from RequestCatalog
-            created, self.req = RequestCatalog.get_or_create_from_request(request)
+            self.req = request
             # Pass this to the paginator
             self.paginator.req = self.req
             # Get the queryset (this will handle filtering and ordering)
@@ -85,17 +84,11 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
             response = {"message": str(e)}
             status_code = status.HTTP_400_BAD_REQUEST
             self.exception_logger.exception(e)
-            if 'req' in self.__dict__:
-                # If we've made a request catalog, but the request is bad, we need to delete it
-                self.req.delete()
             return Response(response, status=status_code)
         except Exception as e:
             response = {"message": str(e)}
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
             self.exception_logger.exception(e)
-            if 'req' in self.__dict__:
-                # If we've made a request catalog, but the request is bad, we need to delete it
-                self.req.delete()
             return Response(response, status=status_code)
 
     def get_queryset(self):
