@@ -42,14 +42,6 @@ def test_award_type_endpoint(client, financial_spending_data):
 
     resp = client.get('/api/v2/references/agency/1/')
     assert resp.status_code == status.HTTP_200_OK
-    # expected resp.data:
-    # assert resp.data == {'results': {'agency_name': 'tta_name', 'active_fy': '2017', 'active_fq': '2',
-    #                                  'outlay_amount': '2.00', 'obligated_amount': '2.00',
-    #                                  'budget_authority_amount': '2.00',
-    #                                  'current_total_budget_authority_amount': '8361447130497.72',
-    #                                  'website': 'http://test.com',
-    #                                  'mission': 'test',
-    #                                  'icon_filename': 'test'}}
 
     assert resp.data['results']['outlay_amount'] == '2.00'
     assert resp.data['results']['obligated_amount'] == '2.00'
