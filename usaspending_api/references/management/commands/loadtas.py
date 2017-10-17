@@ -50,6 +50,24 @@ class Command(BaseCommand):
         loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map, collision_field='treasury_account_identifier', collision_behavior='update', pre_row_function=self.skip_and_remove_financing_tas)
         loader.load_from_file(options['file'][0])
 
+        # Match funding toptiers by FREC if they didn't match by AID
+        unmapped_funding_agencies = TreasuryAppropriationAccount.objects.filter(funding_toptier_agency=None)
+        match_count = 0
+        self.logger.info('Found {} unmatched funding agencies across all TAS objects. '
+                         'Attempting to match on FREC.'.format(unmapped_funding_agencies.count()))
+        for next_tas in unmapped_funding_agencies:
+            # CGAC code is a combination of FRECs and CGACs. It will never be empty and it will always
+            # be unique in ToptierAgencies; this should be safe to do.
+            frec_match = ToptierAgency.objects.filter(cgac_code=next_tas.fr_entity_code).first()
+            if frec_match:
+                match_count += 1
+                self.logger.info('Matched unknown funding agency for TAS {} with FREC {}'.format(
+                    next_tas.tas_rendering_label, next_tas.fr_entity_code))
+                next_tas.funding_toptier_agency = frec_match
+                next_tas.save()
+
+        self.logger.info('Updated {} funding toptiers with a FREC agency.'.format(match_count))
+
         # update TAS fk relationships to federal accounts
         remove_empty_federal_accounts()
         update_federal_accounts()
