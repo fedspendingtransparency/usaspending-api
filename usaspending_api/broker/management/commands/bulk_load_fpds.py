@@ -164,7 +164,7 @@ class Command(BaseCommand):
 
         query += ' ORDER BY detached_award_procurement_id'
 
-        logger.info("Executing query on Broker DB => " + query % tuple(arguments))
+        logger.info("Executing select query on Broker DB")
 
         db_cursor.execute(query, arguments)
 
