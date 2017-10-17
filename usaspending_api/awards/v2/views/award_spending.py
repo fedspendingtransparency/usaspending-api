@@ -1,4 +1,4 @@
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Q
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.serializers_v2.serializers import AwardTypeAwardSpendingSerializer, \
@@ -86,7 +86,10 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
 
         if award_category is not None:
             # Filter based on award_category
-            queryset = queryset.filter(award_category=award_category)
+            if award_category != "other":
+                queryset = queryset.filter(award_category=award_category)
+            else:
+                queryset = queryset.filter(Q(award_category='insurance') | Q(award_category='other'))
 
         # Sum Obligations for each Recipient
         queryset = queryset.values(
