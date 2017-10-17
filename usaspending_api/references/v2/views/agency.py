@@ -47,7 +47,7 @@ class AgencyViewSet(APIView):
         # (used filter() instead of get() b/c we likely don't want to raise an
         # error on a bad agency id)
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency and toptier_agency.cgac_code and toptier_agency.cgac_code == "097":
+        if toptier_agency.cgac_code == "097":
             tta_list = ["097", "017", "021", "057", "096"]
             queryset = queryset.filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
