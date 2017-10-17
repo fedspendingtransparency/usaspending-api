@@ -566,21 +566,29 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
         # get a list of values to queryset on instead of pinging the database for every field
-        values = ["id", "fain", "piid", "uri"]
+        values = ["id"]
+        if "Award ID" in fields:
+            values += ["fain", "piid", "uri"]
         if set(filters["award_type_codes"]) <= set(contract_type_mapping):
             for field in fields:
+                if field == "Award ID":
+                    continue
                 try:
                     values.append(award_contracts_mapping[field])
                 except:
                     raise InvalidParameterException("Invalid field value: {}".format(field))
         elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
             for field in fields:
+                if field == "Award ID":
+                    continue
                 try:
                     values.append(loan_award_mapping[field])
                 except:
                     raise InvalidParameterException("Invalid field value: {}".format(field))
         elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
             for field in fields:
+                if field == "Award ID":
+                    continue
                 try:
                     values.append(non_loan_assistance_award_mapping[field])
                 except:
