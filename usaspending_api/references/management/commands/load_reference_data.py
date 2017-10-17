@@ -46,4 +46,7 @@ class Command(BaseCommand):
         self.logger.info("Loading budget authority data")
         call_command('load_budget_authority')
 
+        self.logger.info("Loading NAICS codes and descriptions")
+        call_command('load_naics')
+
         self.logger.info("Reference data loaded.")
