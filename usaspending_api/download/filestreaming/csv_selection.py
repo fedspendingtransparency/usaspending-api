@@ -1,7 +1,7 @@
 import csv
 import io
 import logging
-import os
+import time
 
 import boto
 import smart_open
@@ -36,6 +36,7 @@ def csv_row_emitter(body, download_job):
             header_row = False
         else:
             download_job.number_of_rows += 1
+
         yield string_buffer.getvalue().encode('utf8')
 
 
@@ -88,6 +89,9 @@ def write_csvs(download_job, file_name, columns, sources):
     try:
         file_path = settings.CSV_LOCAL_PATH + file_name
         zstream = zipstream.ZipFile()
+        minutes = 5
+        timeout = time.time() + 60 * minutes
+
         logger.debug('Generating {}'.format(file_name))
         zstream.write_iter('contracts.csv',
                            csv_row_emitter(sources[0].row_emitter(columns),
@@ -99,9 +103,14 @@ def write_csvs(download_job, file_name, columns, sources):
         logger.debug('wrote assistance.csv')
 
         if settings.IS_LOCAL:
+
             with open(file_path, 'wb') as zipfile:
                 for chunk in zstream:
                     zipfile.write(chunk)
+                    # Adding timeout to break the stream if exceeding time limit, closes out thread
+                    if time.time() > timeout:
+                        raise Exception('Stream exceeded time of {} minutes.'.format(minutes))
+
                 download_job.file_size = zipfile.tell()
         else:
             bucket = settings.CSV_S3_BUCKET_NAME
@@ -112,6 +121,9 @@ def write_csvs(download_job, file_name, columns, sources):
                 conn, 'w', min_part_size=BUFFER_SIZE)
             for chunk in zstream:
                 stream.write(chunk)
+                # Adding timeout to break the stream if exceeding time limit, closes out thread
+                if time.time() > timeout:
+                    raise Exception('Stream exceeded time of {} minutes.'.format(minutes))
             download_job.file_size = stream.total_size
 
     except Exception as e:

@@ -75,6 +75,8 @@ class BaseDownloadViewSet(APIView):
         else:
             t = threading.Thread(target=csv_selection.write_csvs,
                                  kwargs=kwargs)
+
+            # Thread will stop when csv_selection.write_csvs stops
             t.start()
 
         return self.get_download_response(file_name=timestamped_file_name)
