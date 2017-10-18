@@ -61,11 +61,20 @@ class ToptierAgenciesViewSet(APIView):
             # need to filter on
             # (used filter() instead of get() b/c we likely don't want to raise an
             # error on a bad agency id)
-            queryset = queryset.filter(
-                submission__reporting_fiscal_year=active_fiscal_year,
-                submission__reporting_fiscal_quarter=active_fiscal_quarter,
-                treasury_account_identifier__funding_toptier_agency=toptier_agency
-            )
+            # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
+            if toptier_agency.cgac_code == "097":
+                tta_list = ["097", "017", "021", "057", "096"]
+                queryset = queryset.filter(
+                    submission__reporting_fiscal_year=active_fiscal_year,
+                    submission__reporting_fiscal_quarter=active_fiscal_quarter,
+                    treasury_account_identifier__funding_toptier_agency__cgac_code__in=tta_list
+                )
+            else:
+                queryset = queryset.filter(
+                    submission__reporting_fiscal_year=active_fiscal_year,
+                    submission__reporting_fiscal_quarter=active_fiscal_quarter,
+                    treasury_account_identifier__funding_toptier_agency=toptier_agency
+                )
             aggregate_dict = queryset.aggregate(
                 budget_authority_amount=Coalesce(Sum('budget_authority_available_amount_total_cpe'), 0),
                 obligated_amount=Coalesce(Sum('obligations_incurred_total_by_tas_cpe'), 0),
