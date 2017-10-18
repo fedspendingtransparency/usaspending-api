@@ -601,9 +601,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         response = {"limit": limit, "results": []}
         results = []
 
-        total_return_count = queryset.count()
-        page_metadata = get_pagination_metadata(total_return_count, limit, page)
-
         # Modify queryset to be ordered if we specify "sort" in the request
         if sort:
             sort_filters = []
@@ -620,7 +617,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if sort_filters:
                 queryset = queryset.order_by(*sort_filters)
 
-        for award in queryset[lower_limit:upper_limit]:
+        limited_queryset = queryset[lower_limit:upper_limit+1]
+        hasNext = len(limited_queryset) > limit
+        for award in limited_queryset[:limit]:
             row = {"internal_id": award["id"]}
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 for field in fields:
@@ -642,7 +641,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                                 reverse=(order == "desc"))
 
         response["results"] = sorted_results
-        response["page_metadata"] = page_metadata
+        response["page_metadata"] = {'page': page, 'hasNext': hasNext}
 
         return Response(response)
 
