@@ -13,9 +13,10 @@ from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgen
 
 @pytest.fixture
 def awards_data(db):
-    transactions = []
-    for i in range(4):
-        transactions.append(mommy.make('awards.TransactionNormalized'))
+    transactions = [mommy.make('awards.TransactionNormalized', action_date=date(2014, 7, 1)),
+                    mommy.make('awards.TransactionNormalized', action_date=date(2015, 7, 1)),
+                    mommy.make('awards.TransactionNormalized', action_date=date(2016, 7, 1)),
+                    mommy.make('awards.TransactionNormalized', action_date=date(2017, 7, 1))]
 
     mommy.make(
         'awards.Award',

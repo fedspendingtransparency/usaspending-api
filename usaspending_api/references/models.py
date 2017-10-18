@@ -1061,3 +1061,12 @@ class FrecMap(models.Model):
 
     class Meta:
         db_table = 'frec_map'
+
+class NAICS(models.Model):
+    """Based on United States Census Bureau"""
+    code = models.TextField(primary_key=True)
+    description = models.TextField(null=False)
+
+    class Meta:
+        managed = True
+        db_table = 'naics'
