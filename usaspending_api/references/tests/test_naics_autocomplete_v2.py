@@ -4,27 +4,27 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.awards.models import TransactionFPDS
+from usaspending_api.references.models import NAICS
 
 
 @pytest.fixture
 def budget_function_data(db):
     mommy.make(
-        TransactionFPDS,
-        naics="12121212",
-        naics_description="NAICS_DESCRIPTION")
+        NAICS,
+        code="12121212",
+        description="NAICS_DESCRIPTION")
     mommy.make(
-        TransactionFPDS,
-        naics="23232323",
-        naics_description="test1")
+        NAICS,
+        code="23232323",
+        description="test1")
     mommy.make(
-        TransactionFPDS,
-        naics="34343434",
-        naics_description="tes2")
+        NAICS,
+        code="34343434",
+        description="tes2")
     mommy.make(
-        TransactionFPDS,
-        naics="34343434",
-        naics_description="tes2")
+        NAICS,
+        code="34343434",
+        description="tes2")
 
 
 @pytest.mark.django_db
