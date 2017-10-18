@@ -49,12 +49,20 @@ class AgenciesFinancialBalancesViewSet(DetailViewSet):
         # need to filter on
         # (used filter() instead of get() b/c we likely don't want to raise an
         # error on a bad agency id)
-
-        queryset = queryset.filter(
-            submission__reporting_fiscal_year=active_fiscal_year,
-            submission__reporting_fiscal_quarter=active_fiscal_quarter,
-            treasury_account_identifier__funding_toptier_agency=toptier_agency
-        )
+        # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
+        if toptier_agency.cgac_code == "097":
+            tta_list = ["097", "017", "021", "057", "096"]
+            queryset = queryset.filter(
+                submission__reporting_fiscal_year=active_fiscal_year,
+                submission__reporting_fiscal_quarter=active_fiscal_quarter,
+                treasury_account_identifier__funding_toptier_agency__cgac_code__in=tta_list
+            )
+        else:
+            queryset = queryset.filter(
+                submission__reporting_fiscal_year=active_fiscal_year,
+                submission__reporting_fiscal_quarter=active_fiscal_quarter,
+                treasury_account_identifier__funding_toptier_agency=toptier_agency
+            )
 
         queryset = queryset.annotate(
             fiscal_year=F('submission__reporting_fiscal_year'))
