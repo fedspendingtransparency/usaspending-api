@@ -41,7 +41,7 @@ class FederalAccountByObligationViewSet(DetailViewSet):
                 submission__reporting_fiscal_year=fiscal_year,
                 treasury_account_identifier__funding_toptier_agency__cgac_code=toptier_agency.cgac_code
             )
-            
+
         queryset = queryset.annotate(
             agency_name=F('treasury_account_identifier__reporting_agency_name'),
             account_title=F('treasury_account_identifier__federal_account__account_title'),
