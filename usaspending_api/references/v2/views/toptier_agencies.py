@@ -31,8 +31,10 @@ class ToptierAgenciesViewSet(APIView):
             raise InvalidParameterException('The order value provided is not a valid option. '
                                             "Please choose from the following: ['asc', 'desc']")
 
-        # get agency queryset
-        agency_queryset = Agency.objects.filter(toptier_flag=True).distinct('toptier_agency_id')
+        # get agency queryset, distinct toptier id to avoid duplicates, take first ordered agency id for consistency
+        agency_queryset = Agency.objects.filter(toptier_flag=True) \
+            .order_by('toptier_agency_id', 'id') \
+            .distinct('toptier_agency_id')
 
         for agency in agency_queryset:
             toptier_agency = agency.toptier_agency
