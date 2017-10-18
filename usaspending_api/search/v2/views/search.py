@@ -618,7 +618,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 queryset = queryset.order_by(*sort_filters)
 
         limited_queryset = queryset[lower_limit:upper_limit+1]
-        hasNext = len(limited_queryset) > limit
+        has_next = len(limited_queryset) > limit
+
         for award in limited_queryset[:limit]:
             row = {"internal_id": award["id"]}
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
@@ -641,7 +642,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                                 reverse=(order == "desc"))
 
         response["results"] = sorted_results
-        response["page_metadata"] = {'page': page, 'hasNext': hasNext}
+        response["page_metadata"] = {'page': page, 'hasNext': has_next}
 
         return Response(response)
 
