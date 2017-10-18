@@ -165,10 +165,11 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
         if naics_exact_match_queryset.count() > 0:
             queryset = naics_exact_match_queryset
 
-        results_set = list(queryset.values('code', 'description')[:limit]) if limit else list(
-            queryset.values('code', 'description'))
+        queryset = queryset.annotate(naics=F('code'), naics_description=F('description'))
+
         # possible need to rename variables in gist or in database
-        results_set = [{"naics": naics['code'], "naics_description": naics['description']} for naics in results_set]
+        results_set = list(queryset.values('naics', 'naics_description')[:limit]) if limit else list(
+            queryset.values('naics', 'naics_description'))
         response['results'] = results_set
 
         return Response(response)
