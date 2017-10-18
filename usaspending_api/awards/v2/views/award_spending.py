@@ -1,4 +1,4 @@
-from django.db.models import F, Sum, Q
+from django.db.models import F, Sum, Q, Case, Value, When, CharField
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.serializers_v2.serializers import AwardTypeAwardSpendingSerializer, \
@@ -7,10 +7,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import check_valid_toptier_agency
 from usaspending_api.common.views import DetailViewSet
 from usaspending_api.references.models import Agency
-from usaspending_api.common.models import RequestCatalog
-from rest_framework_extensions.cache.decorators import cache_response
-from rest_framework.response import Response
-from rest_framework import status
 
 
 class AwardTypeAwardSpendingViewSet(DetailViewSet):
@@ -56,41 +52,6 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
 
     serializer_class = RecipientAwardSpendingSerializer
 
-    # Overwriting list function
-    # Some awards are insurance based and need to be grouped into the 'other' category
-    # Unfortunately we can only modify the results after the queryset has run and before
-    #  it gets put into a response. It is entirely copied from the superclass except for
-    #  the award_category lines
-    # TODO: Find a better solution to lump insurance into the other category without
-    #       modifying the database.
-    @cache_response()
-    def list(self, request, *args, **kwargs):
-        try:
-            self.req = request
-            # Pass this to the paginator
-            self.paginator.req = self.req
-            # Get the queryset (this will handle filtering and ordering)
-            queryset = self.get_queryset()
-            # Grab the page of data
-            page = self.paginate_queryset(queryset)
-            for result in page:
-                if result['award_category'] == 'insurance':
-                    result['award_category'] = 'other'
-            # Serialize the page
-            serializer = self.get_serializer(page, read_only=True, many=True)
-            # Return the paginated response
-            return self.get_paginated_response(serializer.data)
-        except InvalidParameterException as e:
-            response = {"message": str(e)}
-            status_code = status.HTTP_400_BAD_REQUEST
-            self.exception_logger.exception(e)
-            return Response(response, status=status_code)
-        except Exception as e:
-            response = {"message": str(e)}
-            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            self.exception_logger.exception(e)
-            return Response(response, status=status_code)
-
     def get_queryset(self):
         # retrieve post request payload
         json_request = self.request.query_params
@@ -128,7 +89,10 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
             if award_category != "other":
                 queryset = queryset.filter(award_category=award_category)
             else:
-                queryset = queryset.filter(Q(award_category='insurance') | Q(award_category='other'))
+                queryset = queryset.filter(Q(award_category='insurance') | Q(award_category='other')).\
+                    annotate(award_category=Case(
+                    When(award_category='insurance', then=Value('other')), output_field=CharField())
+                )
 
         # Sum Obligations for each Recipient
         queryset = queryset.values(
