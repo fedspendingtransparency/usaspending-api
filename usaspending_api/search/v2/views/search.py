@@ -163,17 +163,17 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                                        # "awarding_agency__office_agency__abbreviation",
                                        "federal_action_obligation")
 
-            total_return_count = 0
-
             if scope == "agency":
                 agency_set = queryset.filter(awarding_agency__toptier_agency__name__isnull=False) \
                         .values('awarding_agency__toptier_agency__name', 'awarding_agency__toptier_agency__abbreviation') \
                         .annotate(federal_action_obligation=Sum('federal_action_obligation'))\
                         .order_by('-federal_action_obligation')
 
-                total_return_count = agency_set.count()
+                agency_set = agency_set.prefetch_related('awarding_agency__toptier_agencydsif')[lower_limit:upper_limit + 1]
+                has_next = len(agency_set) > limit
+                has_previous = page > 1
 
-                for trans in agency_set[lower_limit:upper_limit]:
+                for trans in agency_set[:limit]:
                     ttname = trans["awarding_agency__toptier_agency__name"]
                     ttabv = trans["awarding_agency__toptier_agency__abbreviation"]
                     ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -188,9 +188,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         .annotate(federal_action_obligation=Sum('federal_action_obligation'))\
                         .order_by('-federal_action_obligation')
 
-                total_return_count = subagency_set.count()
+                subagency_set = subagency_set[lower_limit:upper_limit + 1]
+                has_next = len(subagency_set) > limit
+                has_previous = page > 1
 
-                for trans in subagency_set[lower_limit:upper_limit]:
+                for trans in subagency_set[:limit]:
                     stname = trans["awarding_agency__subtier_agency__name"]
                     stabv = trans["awarding_agency__subtier_agency__abbreviation"]
                     stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -205,9 +207,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         .annotate(federal_action_obligation=Sum('federal_action_obligation'))\
                         .order_by('-federal_action_obligation')
 
-                total_return_count = office_set.count()
+                office_set = office_set[lower_limit:upper_limit + 1]
+                has_next = len(office_set) > limit
+                has_previous = page > 1
 
-                for trans in office_set[lower_limit:upper_limit]:
+                for trans in office_set[:limit]:
                     oname = trans["awarding_agency__office_agency__name"]
                     oabv = trans["awarding_agency__office_agency__abbreviation"]
                     oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -227,9 +231,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-            page_metadata = get_pagination_metadata(total_return_count, limit, page)
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": page_metadata}
+                        "page_metadata": {'page': page, 'hasNext': has_next, 'hasPrevious': has_previous}}
             return Response(response)
 
         elif category == "funding_agency":
@@ -255,9 +258,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
                     .order_by('-federal_action_obligation')
 
-                total_return_count = agency_set.count()
+                agency_set = agency_set[lower_limit:upper_limit + 1]
+                has_next = len(agency_set) > limit
+                has_previous = page > 1
 
-                for trans in agency_set[lower_limit:upper_limit]:
+                for trans in agency_set[:limit]:
                     ttname = trans["funding_agency__toptier_agency__name"]
                     ttabv = trans["funding_agency__toptier_agency__abbreviation"]
                     ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -272,9 +277,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
                     .order_by('-federal_action_obligation')
 
-                total_return_count = subagency_set.count()
+                subagency_set = subagency_set[lower_limit:upper_limit + 1]
+                has_next = len(subagency_set) > limit
+                has_previous = page > 1
 
-                for trans in subagency_set[lower_limit:upper_limit]:
+                for trans in subagency_set[:limit]:
                     stname = trans["funding_agency__subtier_agency__name"]
                     stabv = trans["funding_agency__subtier_agency__abbreviation"]
                     stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -289,9 +296,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
                     .order_by('-federal_action_obligation')
 
-                total_return_count = office_set.count()
+                office_set = office_set[lower_limit:upper_limit + 1]
+                has_next = len(office_set) > limit
+                has_previous = page > 1
 
-                for trans in office_set[lower_limit:upper_limit]:
+                for trans in office_set[:limit]:
                     oname = trans["funding_agency__office_agency__name"]
                     oabv = trans["funding_agency__office_agency__abbreviation"]
                     oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
@@ -311,9 +320,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
                                 "aggregated_amount": value["aggregated_amount"]})
             results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-            page_metadata = get_pagination_metadata(total_return_count, limit, page)
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": page_metadata}
+                        "page_metadata": {'page': page, 'hasNext': has_next, 'hasPrevious': has_previous}}
             return Response(response)
 
         elif category == "recipient":
