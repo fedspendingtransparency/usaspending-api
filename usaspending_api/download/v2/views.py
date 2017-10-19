@@ -149,15 +149,19 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
 
 class DownloadTransactionCountViewSet(APIView):
     def post(self, request):
-        """Returns the number of transactions that would be included in a download request for the given filter set. """
+        """Returns boolean of whether adownload request is greater than the maximum limit. """
         json_request = request.data
 
         # If no filters in request return empty object to return all transactions
         filters = json_request.get('filters', {})
-        qs = transaction_filter(filters)
+        is_over_limit = True
+        try:
+            transaction_filter(filters)[settings.MAX_DOWNLOAD_LIMIT]
+        except IndexError:
+            is_over_limit = False
 
         result = {
-            "transaction_rows": qs.count()
+            "transaction_rows_gt_limit": is_over_limit
         }
 
         return Response(result)
