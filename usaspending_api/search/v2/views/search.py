@@ -567,20 +567,28 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         # get a list of values to queryset on instead of pinging the database for every field
         values = ["id"]
+        if "Award ID" in fields:
+            values += ["fain", "piid", "uri"]
         if set(filters["award_type_codes"]) <= set(contract_type_mapping):
             for field in fields:
+                if field == "Award ID":
+                    continue
                 try:
                     values.append(award_contracts_mapping[field])
                 except:
                     raise InvalidParameterException("Invalid field value: {}".format(field))
         elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
             for field in fields:
+                if field == "Award ID":
+                    continue
                 try:
                     values.append(loan_award_mapping[field])
                 except:
                     raise InvalidParameterException("Invalid field value: {}".format(field))
         elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
             for field in fields:
+                if field == "Award ID":
+                    continue
                 try:
                     values.append(non_loan_assistance_award_mapping[field])
                 except:
@@ -593,24 +601,26 @@ class SpendingByAwardVisualizationViewSet(APIView):
         response = {"limit": limit, "results": []}
         results = []
 
-        total_return_count = queryset.count()
-        page_metadata = get_pagination_metadata(total_return_count, limit, page)
-
         # Modify queryset to be ordered if we specify "sort" in the request
         if sort:
-            sort_string = ''
+            sort_filters = []
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
-                sort_string = award_contracts_mapping[sort]
+                sort_filters = [award_contracts_mapping[sort]]
             elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
-                sort_string = loan_award_mapping[sort]
+                sort_filters = [loan_award_mapping[sort]]
             else:  # assistance data
-                sort_string = non_loan_assistance_award_mapping[sort]
+                sort_filters = [non_loan_assistance_award_mapping[sort]]
+            if sort == "Award ID":
+                sort_filters = ["piid", "fain", "uri"]
             if order == 'desc':
-                sort_string = '-' + sort_string
-            if sort_string != '':
-                queryset = queryset.order_by(sort_string)
+                sort_filters = ['-' + sort_filter for sort_filter in sort_filters]
+            if sort_filters:
+                queryset = queryset.order_by(*sort_filters)
 
-        for award in queryset[lower_limit:upper_limit]:
+        limited_queryset = queryset[lower_limit:upper_limit+1]
+        has_next = len(limited_queryset) > limit
+
+        for award in limited_queryset[:limit]:
             row = {"internal_id": award["id"]}
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 for field in fields:
@@ -621,13 +631,18 @@ class SpendingByAwardVisualizationViewSet(APIView):
             elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
                 for field in fields:
                     row[field] = award[non_loan_assistance_award_mapping[field]]
+            if "Award ID" in fields and not row["Award ID"]:
+                for id_type in ["piid", "fain", "uri"]:
+                    if award[id_type]:
+                        row["Award ID"] = award[id_type]
+                        break
             results.append(row)
 
         sorted_results = sorted(results, key=lambda result: self.Min if result[sort] is None else result[sort],
                                 reverse=(order == "desc"))
 
         response["results"] = sorted_results
-        response["page_metadata"] = page_metadata
+        response["page_metadata"] = {'page': page, 'hasNext': has_next}
 
         return Response(response)
 

@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionFPDS
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import Agency, Cfda
+from usaspending_api.references.models import Agency, Cfda, NAICS
 from usaspending_api.references.v1.serializers import AgencySerializer
 
 
@@ -152,18 +152,21 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
         search_text, limit = self.get_request_payload(request)
 
         # get relevant TransactionFPDS
-        queryset = TransactionFPDS.objects.filter(naics__isnull=False, naics_description__isnull=False)
+        queryset = NAICS.objects.all()
         # Filter based on search text
         response = {}
 
         queryset = queryset.annotate(similarity=Greatest(
-            TrigramSimilarity('naics', search_text),
-            TrigramSimilarity('naics_description', search_text)))\
+            TrigramSimilarity('code', search_text),
+            TrigramSimilarity('description', search_text)))\
             .distinct().order_by('-similarity')
 
         naics_exact_match_queryset = queryset.filter(similarity=1.0)
         if naics_exact_match_queryset.count() > 0:
             queryset = naics_exact_match_queryset
+
+        # possible need to rename variables in gist or in database
+        queryset = queryset.annotate(naics=F('code'), naics_description=F('description'))
 
         results_set = list(queryset.values('naics', 'naics_description')[:limit]) if limit else list(
             queryset.values('naics', 'naics_description'))
