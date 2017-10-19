@@ -26,7 +26,7 @@ MAX_DOWNLOAD_LIMIT = 500000
 SECRET_KEY = get_random_string()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
