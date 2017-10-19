@@ -154,22 +154,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # filter the transactions by scope name
             name_dict = {}  # {ttname: {aggregated_amount: 1000, abbreviation: "tt"}
             # define what values are needed in the sql query
-            # TODO: Comment back in for office_agency changes
-            queryset = queryset.values("awarding_agency__toptier_agency__name",
-                                       "awarding_agency__subtier_agency__name",
-                                       # "awarding_agency__office_agency__name",
-                                       "awarding_agency__toptier_agency__abbreviation",
-                                       "awarding_agency__subtier_agency__abbreviation",
-                                       # "awarding_agency__office_agency__abbreviation",
-                                       "federal_action_obligation")
 
             if scope == "agency":
-                agency_set = queryset.filter(awarding_agency__toptier_agency__name__isnull=False) \
-                        .values('awarding_agency__toptier_agency__name', 'awarding_agency__toptier_agency__abbreviation') \
+                agency_set = queryset.values('awarding_agency__toptier_agency__name', 'awarding_agency__toptier_agency__abbreviation') \
                         .annotate(federal_action_obligation=Sum('federal_action_obligation'))\
                         .order_by('-federal_action_obligation')
 
-                agency_set = agency_set.prefetch_related('awarding_agency__toptier_agencydsif')[lower_limit:upper_limit + 1]
+                agency_set = agency_set[lower_limit:upper_limit + 1]
                 has_next = len(agency_set) > limit
                 has_previous = page > 1
 
@@ -244,17 +235,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             # filter the transactions by scope name
             name_dict = {}  # {ttname: {aggregated_amount: 1000, abbreviation: "tt"}
             # define what values are needed in the sql query
-            # TODO: Comment back in for office_agency changes
-            queryset = queryset.values("funding_agency__toptier_agency__name",
-                                       "funding_agency__subtier_agency__name",
-                                       # "funding_agency__office_agency__name",
-                                       "funding_agency__toptier_agency__abbreviation",
-                                       "funding_agency__subtier_agency__abbreviation",
-                                       # "funding_agency__office_agency__abbreviation",
-                                       "federal_action_obligation")
+
+            queryset = queryset.filter(funding_agency__isnull=False)
+
             if scope == "agency":
-                agency_set = queryset.filter(funding_agency__toptier_agency__name__isnull=False) \
-                    .values('funding_agency__toptier_agency__name', 'funding_agency__toptier_agency__abbreviation') \
+                agency_set = queryset.values('funding_agency__toptier_agency__name', 'funding_agency__toptier_agency__abbreviation') \
                     .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
                     .order_by('-federal_action_obligation')
 
