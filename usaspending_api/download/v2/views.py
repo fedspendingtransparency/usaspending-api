@@ -114,7 +114,7 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
         queryset = award_filter(filters)
         d1_source.queryset = queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False)
         d2_source.queryset = queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False)
-        return (d1_source, d2_source)
+        return d1_source, d2_source
 
     DOWNLOAD_NAME = 'awards'
 
@@ -122,6 +122,7 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
 class DownloadTransactionsViewSet(BaseDownloadViewSet):
     def get_csv_sources(self, json_request):
         limit = parse_limit(json_request)
+        limit = limit//2 if limit is not None else None
         contract_source = csv_selection.CsvSource('transaction', 'd1')
         assistance_source = csv_selection.CsvSource('transaction', 'd2')
         verify_requested_columns_available((contract_source, assistance_source), json_request['columns'])
@@ -131,7 +132,7 @@ class DownloadTransactionsViewSet(BaseDownloadViewSet):
         contract_source.queryset = queryset[:limit]
         queryset = base_qset & TransactionNormalized.objects.filter(assistance_data__isnull=False)
         assistance_source.queryset = queryset[:limit]
-        return (contract_source, assistance_source)
+        return contract_source, assistance_source
 
     DOWNLOAD_NAME = 'transactions'
 

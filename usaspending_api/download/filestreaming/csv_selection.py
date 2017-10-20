@@ -36,6 +36,9 @@ def csv_row_emitter(body, download_job):
             header_row = False
         else:
             download_job.number_of_rows += 1
+            if download_job.number_of_rows > settings.MAX_DOWNLOAD_LIMIT:
+                break
+                raise Exception('Requested query beyond max supported ({})'.format(settings.MAX_DOWNLOAD_LIMIT))
 
         yield string_buffer.getvalue().encode('utf8')
 
