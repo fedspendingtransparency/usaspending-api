@@ -12,7 +12,7 @@ from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.references.models import RefCountryCode, Location, LegalEntity, Agency, ToptierAgency, SubtierAgency
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 
-BATCH_SIZE = 10000
+BATCH_SIZE = 100000
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
