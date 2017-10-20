@@ -146,3 +146,23 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
                 'Missing one or more required query parameters: file_name')
 
         return self.get_download_response(file_name=file_name)
+
+class DownloadTransactionCountViewSet(APIView):
+    def post(self, request):
+        """Returns boolean of whether adownload request is greater than the maximum limit. """
+        json_request = request.data
+
+        # If no filters in request return empty object to return all transactions
+        filters = json_request.get('filters', {})
+        is_over_limit = False
+        try:
+            transaction_filter(filters)[settings.MAX_DOWNLOAD_LIMIT]
+            is_over_limit = True
+        except IndexError:
+            pass
+
+        result = {
+            "transaction_rows_gt_limit": is_over_limit
+        }
+
+        return Response(result)
