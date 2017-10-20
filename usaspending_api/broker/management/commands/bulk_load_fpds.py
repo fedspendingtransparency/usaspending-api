@@ -469,7 +469,7 @@ class Command(BaseCommand):
             help="Year for which to run the historical load"
         )
 
-    # @db_transaction.atomic
+    @db_transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting FPDS bulk data load...')
 
