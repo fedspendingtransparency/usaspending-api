@@ -92,7 +92,7 @@ def write_csvs(download_job, file_name, columns, sources):
     try:
         file_path = settings.CSV_LOCAL_PATH + file_name
         zstream = zipstream.ZipFile()
-        minutes = 5
+        minutes = settings.DOWNLOAD_TIMEOUT_MIN_LIMIT
         timeout = time.time() + 60 * minutes
 
         logger.debug('Generating {}'.format(file_name))
