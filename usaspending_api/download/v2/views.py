@@ -154,11 +154,12 @@ class DownloadTransactionCountViewSet(APIView):
 
         # If no filters in request return empty object to return all transactions
         filters = json_request.get('filters', {})
-        is_over_limit = True
+        is_over_limit = False
         try:
             transaction_filter(filters)[settings.MAX_DOWNLOAD_LIMIT]
+            is_over_limit = True
         except IndexError:
-            is_over_limit = False
+            pass
 
         result = {
             "transaction_rows_gt_limit": is_over_limit
