@@ -3,7 +3,7 @@ from usaspending_api.accounts.serializers import (ObjectClassFinancialSpendingSe
                                                   MinorObjectClassFinancialSpendingSerializer)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import Agency
-from usaspending_api.references.constants import dod_armed_forces_cgacs, dod_cgac
+from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.views import DetailViewSet
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -54,8 +54,8 @@ class ObjectClassFinancialSpendingViewSet(DetailViewSet):
         # (used filter() instead of get() b/c we likely don't want to raise an
         # error on a bad agency id)
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency.cgac_code == dod_cgac:
-            tta_list = dod_armed_forces_cgacs
+        if toptier_agency.cgac_code == DOD_CGAC:
+            tta_list = DOD_ARMED_FORCES_CGAC
             queryset = queryset.filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,

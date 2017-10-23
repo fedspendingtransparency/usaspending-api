@@ -7,7 +7,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import check_valid_toptier_agency
 from usaspending_api.common.views import DetailViewSet
 from usaspending_api.references.models import Agency
-from usaspending_api.references.constants import dod_armed_forces_cgacs, dod_cgac
+from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
 
@@ -77,8 +77,8 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
         queryset = TransactionNormalized.objects.all()
 
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency.cgac_code == dod_cgac:
-            tta_list = dod_armed_forces_cgacs
+        if toptier_agency.cgac_code == DOD_CGAC:
+            tta_list = DOD_ARMED_FORCES_CGAC
             queryset = queryset.filter(
                 # Filter based on fiscal_year and awarding_category_id
                 fiscal_year=fiscal_year,
