@@ -348,7 +348,7 @@ def test_download_transactions_limit(client, award_data):
         '/api/v2/download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "limit": 1,
+            "limit": 2,
             "filters": {},
             "columns": []
         }))

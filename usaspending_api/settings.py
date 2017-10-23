@@ -18,6 +18,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # User-specified limit on downloads should not be permitted beyond this
 MAX_DOWNLOAD_LIMIT = 500000
+# User-specified timeout limit for streaming downloads
+DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
