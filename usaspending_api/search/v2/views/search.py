@@ -335,9 +335,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for result in results:
                     result["legal_entity_name"] = legal_entity_mappings[result["legal_entity_id"]]
 
+                page_metadata = {"hasNext": hasNext, "hasPrevious": hasPrevious}
                 response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                            "page_metadata": {"hasNext": hasNext,
-                                              "hasPrevious": hasPrevious}}
+                            "page_metadata": page_metadata}
                 return Response(response)
 
             elif scope == "parent_duns":
