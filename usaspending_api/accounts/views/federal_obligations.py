@@ -5,6 +5,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import DetailViewSet
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import Agency
+from usaspending_api.references.constants import dod_armed_forces_cgacs, dod_cgac
 
 
 class FederalAccountByObligationViewSet(DetailViewSet):
@@ -30,8 +31,8 @@ class FederalAccountByObligationViewSet(DetailViewSet):
         # Using final_objects below ensures that we're only pulling the latest
         # set of financial information for each fiscal year
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency.cgac_code == "097":
-            tta_list = ["097", "017", "021", "057", "096"]
+        if toptier_agency.cgac_code == dod_cgac:
+            tta_list = dod_armed_forces_cgacs
             queryset = AppropriationAccountBalances.final_objects.filter(
                 submission__reporting_fiscal_year=fiscal_year,
                 treasury_account_identifier__funding_toptier_agency__cgac_code__in=tta_list
