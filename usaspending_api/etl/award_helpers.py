@@ -1,6 +1,6 @@
 from django.db import connection
-
-from usaspending_api.awards.models import Award, Subaward, Agency
+import logging
+from usaspending_api.awards.models import Award, Agency
 from usaspending_api.awards.models import TransactionNormalized
 from django.db.models import Case, Value, When, TextField
 
@@ -21,6 +21,8 @@ def update_awards(award_tuple=None):
     via the ORM. These updates do need to be set-based, as looping through
     and updating individual award records would be an ETL bottleneck.
     """
+
+    logger = logging.getLogger('console')
 
     # common table expression for each award's latest transaction
     sql_txn_latest = (
