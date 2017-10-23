@@ -5,6 +5,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import DetailViewSet
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import Agency
+from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
 class FederalAccountByObligationViewSet(DetailViewSet):
@@ -26,13 +27,23 @@ class FederalAccountByObligationViewSet(DetailViewSet):
         # Use filter() instead of get() on Agency.objects
         # as get() will likely raise an error on a bad agency id
         # while trying to get the top_tier_agency_id from the Agency set
-        top_tier_agency_id = Agency.objects.filter(id=funding_agency_id).first().toptier_agency_id
+        toptier_agency = Agency.objects.filter(id=funding_agency_id).first().toptier_agency
         # Using final_objects below ensures that we're only pulling the latest
         # set of financial information for each fiscal year
-        queryset = AppropriationAccountBalances.final_objects.filter(
-            submission__reporting_fiscal_year=fiscal_year,
-            treasury_account_identifier__funding_toptier_agency=top_tier_agency_id
-        ).annotate(
+        # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
+        if toptier_agency.cgac_code == DOD_CGAC:
+            tta_list = DOD_ARMED_FORCES_CGAC
+            queryset = AppropriationAccountBalances.final_objects.filter(
+                submission__reporting_fiscal_year=fiscal_year,
+                treasury_account_identifier__funding_toptier_agency__cgac_code__in=tta_list
+            )
+        else:
+            queryset = AppropriationAccountBalances.final_objects.filter(
+                submission__reporting_fiscal_year=fiscal_year,
+                treasury_account_identifier__funding_toptier_agency__cgac_code=toptier_agency.cgac_code
+            )
+
+        queryset = queryset.annotate(
             agency_name=F('treasury_account_identifier__reporting_agency_name'),
             account_title=F('treasury_account_identifier__federal_account__account_title'),
             id=F('treasury_account_identifier__federal_account')

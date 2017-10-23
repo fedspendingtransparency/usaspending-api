@@ -1,4 +1,4 @@
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Q, Case, Value, When, CharField
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.serializers_v2.serializers import AwardTypeAwardSpendingSerializer, \
@@ -7,6 +7,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import check_valid_toptier_agency
 from usaspending_api.common.views import DetailViewSet
 from usaspending_api.references.models import Agency
+from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
 class AwardTypeAwardSpendingViewSet(DetailViewSet):
@@ -71,14 +72,26 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
         if not check_valid_toptier_agency(awarding_agency_id):
             raise InvalidParameterException('Awarding Agency ID provided must correspond to a toptier agency')
 
-        top_tier_agency_id = Agency.objects.filter(id=awarding_agency_id).first().toptier_agency_id
+        toptier_agency = Agency.objects.filter(id=awarding_agency_id).first().toptier_agency
         queryset = TransactionNormalized.objects.all()
 
-        queryset = queryset.filter(
-            # Filter based on fiscal_year and awarding_category_id
-            fiscal_year=fiscal_year,
-            awarding_agency__toptier_agency=top_tier_agency_id
-        ).annotate(
+        # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
+        if toptier_agency.cgac_code == DOD_CGAC:
+            tta_list = DOD_ARMED_FORCES_CGAC
+            queryset = queryset.filter(
+                # Filter based on fiscal_year and awarding_category_id
+                fiscal_year=fiscal_year,
+                awarding_agency__toptier_agency__cgac_code__in=tta_list
+            )
+        else:
+            queryset = queryset.filter(
+                # Filter based on fiscal_year and awarding_category_id
+                fiscal_year=fiscal_year,
+                awarding_agency__toptier_agency__cgac_code=toptier_agency.cgac_code
+            )
+
+
+        queryset = queryset.annotate(
             award_category=F('award__category'),
             recipient_id=F('recipient__legal_entity_id'),
             recipient_name=F('recipient__recipient_name')
@@ -86,7 +99,13 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
 
         if award_category is not None:
             # Filter based on award_category
-            queryset = queryset.filter(award_category=award_category)
+            if award_category != "other":
+                queryset = queryset.filter(award_category=award_category)
+            else:
+                queryset = queryset.filter(Q(award_category='insurance') | Q(award_category='other')).\
+                    annotate(award_category=Case(
+                    When(award_category='insurance', then=Value('other')), output_field=CharField())
+                )
 
         # Sum Obligations for each Recipient
         queryset = queryset.values(
