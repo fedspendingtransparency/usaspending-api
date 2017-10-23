@@ -5,7 +5,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
-from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY
+from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY, DOD_ARMED_FORCES_CGAC, DOD_CGAC
+
 
 
 class AgencyViewSet(APIView):
@@ -47,8 +48,8 @@ class AgencyViewSet(APIView):
         # (used filter() instead of get() b/c we likely don't want to raise an
         # error on a bad agency id)
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency.cgac_code == "097":
-            tta_list = ["097", "017", "021", "057", "096"]
+        if toptier_agency.cgac_code == DOD_CGAC:
+            tta_list = DOD_ARMED_FORCES_CGAC
             queryset = queryset.filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
