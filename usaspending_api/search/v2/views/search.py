@@ -311,7 +311,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         elif category == "recipient":
             # filter the transactions by scope name
-            name_dict = OrderedDict()  # e.g. {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
+            # name_dict example: {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
+            name_dict = OrderedDict()
 
             if scope == "duns":
                 # define what values are needed in the sql query
