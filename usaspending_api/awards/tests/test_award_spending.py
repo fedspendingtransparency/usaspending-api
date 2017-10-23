@@ -3,9 +3,11 @@ from model_mommy import mommy
 from rest_framework import status
 from datetime import datetime
 
+
 @pytest.fixture
 def award_spending_data(db):
-    agency = mommy.make('references.Agency', id=111, toptier_flag=True)
+    ttagency = mommy.make('references.ToptierAgency')
+    agency = mommy.make('references.Agency', id=111, toptier_flag=True, toptier_agency=ttagency)
     legal_entity = mommy.make('references.LegalEntity')
     award = mommy.make('awards.Award', category='grants', awarding_agency=agency)
     award1 = mommy.make('awards.Award', category='contracts', awarding_agency=agency)
