@@ -8,6 +8,10 @@
 </ul>
 [//]: # (Begin Content)
 
+###### Coming soon!
+We're working on new USASpending API documentation, please check back for its release.
+Until then, visit our GitHub wiki for our current documentation: https://github.com/fedspendingtransparency/usaspending-api/wiki
+
 # The USAspending Application Programming Interface (API)
 
 The USAspending API (Application Programming Interface) allows the public to access comprehensive U.S. government spending data.
