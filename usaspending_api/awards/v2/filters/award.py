@@ -45,6 +45,7 @@ def award_filter(filters):
         # time_period
         elif key == "time_period":
             or_queryset = None
+            queryset_init = False
             for v in value:
                 kwargs = {}
                 if v.get("start_date") is not None:
@@ -52,11 +53,12 @@ def award_filter(filters):
                 if v.get("end_date") is not None:
                     kwargs["latest_transaction__action_date__lte"] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
-                if or_queryset:
+                if queryset_init:
                     or_queryset |= Award.objects.filter(**kwargs)
                 else:
+                    queryset_init = True
                     or_queryset = Award.objects.filter(**kwargs)
-            if or_queryset is not None:
+            if queryset_init:
                 queryset &= or_queryset
 
         # award_type_codes
@@ -156,27 +158,31 @@ def award_filter(filters):
         # award_amounts
         elif key == "award_amounts":
             or_queryset = None
+            queryset_init = False
             for v in value:
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
-                    if or_queryset:
+                    if queryset_init:
                         or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"],
                                                             total_obligation__lt=v["upper_bound"])
                     else:
+                        queryset_init = True
                         or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"],
                                                            total_obligation__lt=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
-                    if or_queryset:
+                    if queryset_init:
                         or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"])
                     else:
+                        queryset_init = True
                         or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"])
                 elif v.get("upper_bound") is not None:
-                    if or_queryset:
+                    if queryset_init:
                         or_queryset |= Award.objects.filter(total_obligation__lt=v["upper_bound"])
                     else:
+                        queryset_init = True
                         or_queryset = Award.objects.filter(total_obligation__lt=v["upper_bound"])
                 else:
                     raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
-            if or_queryset is not None:
+            if queryset_init:
                 queryset &= or_queryset
 
         # award_ids
