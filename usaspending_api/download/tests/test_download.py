@@ -95,7 +95,6 @@ def award_data(db):
     # Set latest_award for each award
     update_awards()
 
-
 @pytest.mark.django_db
 @pytest.mark.skip
 def test_download_transactions_v2_endpoint(client, award_data):
@@ -385,3 +384,23 @@ def test_download_transactions_excessive_limit(client, award_data):
             "columns": []
         }))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_download_transactions_count(client, award_data):
+    """Test transaction count endpoint works with filters"""
+    resp = client.post(
+        '/api/v2/download/count',
+        content_type='application/json',
+        data=json.dumps({
+            "filters": {
+                "agencies": [
+                    {
+                        "type": "awarding",
+                        "tier": "toptier",
+                        "name": "Bureau of Things"
+                    }
+                ]
+            }
+        }))
+
+    assert resp.json()['transaction_rows_gt_limit'] == False
