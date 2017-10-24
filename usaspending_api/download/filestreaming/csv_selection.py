@@ -96,14 +96,20 @@ def write_csvs(download_job, file_name, columns, sources):
         timeout = time.time() + 60 * minutes
 
         logger.debug('Generating {}'.format(file_name))
-        zstream.write_iter('contracts.csv',
-                           csv_row_emitter(sources[0].row_emitter(columns),
-                                           download_job))
-        logger.debug('wrote contracts.csv')
-        zstream.write_iter('assistance.csv',
-                           csv_row_emitter(sources[1].row_emitter(columns),
-                                           download_job))
-        logger.debug('wrote assistance.csv')
+
+        # Ensures does not generate an empty contracts file
+        if sources[0].queryset:
+            zstream.write_iter('contracts.csv',
+                               csv_row_emitter(sources[0].row_emitter(columns),
+                                               download_job))
+            logger.debug('wrote contracts.csv')
+
+        # Ensures does not generate an empty assitance file
+        if sources[1].queryset:
+            zstream.write_iter('assistance.csv',
+                               csv_row_emitter(sources[1].row_emitter(columns),
+                                               download_job))
+            logger.debug('wrote assistance.csv')
 
         if settings.IS_LOCAL:
 

@@ -72,6 +72,7 @@ def award_data(db):
     # Create Awards
     award1 = mommy.make('awards.Award', category='contracts')
     award2 = mommy.make('awards.Award', category='contracts')
+    award3 = mommy.make('awards.Award', category='assistance')
 
     # Create Transactions
     trann1 = mommy.make(
@@ -84,13 +85,18 @@ def award_data(db):
         award=award2,
         modification_number=1,
         awarding_agency=aa2)
+    trann3 = mommy.make(
+        TransactionNormalized,
+        award=award3,
+        modification_number=1,
+        awarding_agency=aa2)
 
     # Create TransactionContract
     tfpds1 = mommy.make(TransactionFPDS, transaction=trann1, piid='tc1piid')
     tfpds2 = mommy.make(TransactionFPDS, transaction=trann2, piid='tc2piid')
 
     # Create TransactionAssistance
-    tfabs1 = mommy.make(TransactionFABS, transaction=trann1, fain='ta1fain')
+    tfabs1 = mommy.make(TransactionFABS, transaction=trann3, fain='ta1fain')
 
     # Set latest_award for each award
     update_awards()
@@ -355,8 +361,7 @@ def test_download_transactions_limit(client, award_data):
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()['total_rows'] == 2  # one each contract and assistance
-
+    assert resp.json()['total_rows'] == 2
 
 def test_download_transactions_bad_limit(client, award_data):
     """Test proper error when bad value passed for limit."""
