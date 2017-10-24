@@ -160,7 +160,7 @@ class DownloadTransactionCountViewSet(APIView):
     def post(self, request):
         """Returns boolean of whether a download request is greater
         than the max limit. """
-        
+
         json_request = request.data
 
         # If no filters in request return empty object to return all transactions
