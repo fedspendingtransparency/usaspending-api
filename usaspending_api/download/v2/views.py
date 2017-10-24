@@ -155,22 +155,29 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
 
         return self.get_download_response(file_name=file_name)
 
+
 class DownloadTransactionCountViewSet(APIView):
     def post(self, request):
-        """Returns boolean of whether adownload request is greater than the maximum limit. """
+        """Returns boolean of whether a download request is greater than the maximum limit. """
         json_request = request.data
 
         # If no filters in request return empty object to return all transactions
         filters = json_request.get('filters', {})
-        is_over_limit = False
+        is_not_downloadable = False
+
+        queryset = transaction_filter(filters)
+
         try:
-            transaction_filter(filters)[settings.MAX_DOWNLOAD_LIMIT]
-            is_over_limit = True
+            queryset[settings.MAX_DOWNLOAD_LIMIT]
+            is_not_downloadable = True
+
         except IndexError:
-            pass
+            # If the queryset is empty then download should be disabled
+            if not queryset:
+                is_not_downloadable = True
 
         result = {
-            "transaction_rows_gt_limit": is_over_limit
+            "transaction_rows_gt_limit": is_not_downloadable
         }
 
         return Response(result)

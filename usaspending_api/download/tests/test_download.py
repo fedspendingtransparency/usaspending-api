@@ -410,3 +410,23 @@ def test_download_transactions_count(client, award_data):
         }))
 
     assert resp.json()['transaction_rows_gt_limit'] is False
+
+
+def test_download_transactions_count_zero(client, award_data):
+    """Test transaction count endpoint works with filters"""
+    resp = client.post(
+        '/api/v2/download/count',
+        content_type='application/json',
+        data=json.dumps({
+            "filters": {
+                "agencies": [
+                    {
+                        "type": "awarding",
+                        "tier": "toptier",
+                        "name": "Bureau of Nothing"
+                    }
+                ]
+            }
+        }))
+
+    assert resp.json()['transaction_rows_gt_limit'] is True
