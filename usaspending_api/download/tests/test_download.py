@@ -409,4 +409,4 @@ def test_download_transactions_count(client, award_data):
             }
         }))
 
-    assert resp.json()['transaction_rows_gt_limit'] is True
+    assert resp.json()['transaction_rows_gt_limit'] is False
