@@ -14,7 +14,6 @@ from usaspending_api.etl.award_helpers import update_awards
 
 @pytest.fixture
 def award_data(db):
-
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make(
@@ -100,6 +99,7 @@ def award_data(db):
 
     # Set latest_award for each award
     update_awards()
+
 
 @pytest.mark.django_db
 @pytest.mark.skip
@@ -213,7 +213,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                     'type': 'awarding',
                     'tier': 'toptier',
                     'name': "Bureau of Things"
-                } ]
+                }]
             },
             "columns": ["award_id_piid", "modification_number"]
         }))
@@ -323,7 +323,7 @@ def test_download_transactions_v2_bad_filter_shape_raises(client):
                 'type': 'not a valid type',
                 'tier': 'nor a valid tier',
                 'name': "Bureau of Stuff"
-            } ]
+            }]
         },
         "columns": []
     }
@@ -362,6 +362,7 @@ def test_download_transactions_limit(client, award_data):
                       .format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 2
+
 
 def test_download_transactions_bad_limit(client, award_data):
     """Test proper error when bad value passed for limit."""
@@ -408,4 +409,4 @@ def test_download_transactions_count(client, award_data):
             }
         }))
 
-    assert resp.json()['transaction_rows_gt_limit'] == False
+    assert resp.json()['transaction_rows_gt_limit'] is False

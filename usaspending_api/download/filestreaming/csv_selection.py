@@ -12,7 +12,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.v2 import download_column_historical_lookups
 
-BUFFER_SIZE = (5 * 1024**2)
+BUFFER_SIZE = (5 * 1024 ** 2)
 
 logger = logging.getLogger(__name__)
 

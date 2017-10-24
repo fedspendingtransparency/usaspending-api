@@ -134,7 +134,7 @@ class DownloadTransactionsViewSet(BaseDownloadViewSet):
         contract_source.queryset = queryset
 
         # Assistance file
-        queryset = TransactionNormalized.objects.filter(id__in=base_qset,assistance_data__isnull=False)
+        queryset = TransactionNormalized.objects.filter(id__in=base_qset, assistance_data__isnull=False)
         assistance_source.queryset = queryset
 
         return contract_source, assistance_source
