@@ -98,13 +98,13 @@ def write_csvs(download_job, file_name, columns, sources):
         logger.debug('Generating {}'.format(file_name))
 
         zstream.write_iter('contracts.csv',
-                               csv_row_emitter(sources[0].row_emitter(columns),
-                                               download_job))
+                           csv_row_emitter(sources[0].row_emitter(columns),
+                                           download_job))
         logger.debug('wrote contracts.csv')
 
         zstream.write_iter('assistance.csv',
-                               csv_row_emitter(sources[1].row_emitter(columns),
-                                               download_job))
+                           csv_row_emitter(sources[1].row_emitter(columns),
+                                           download_job))
         logger.debug('wrote assistance.csv')
 
         if settings.IS_LOCAL:
