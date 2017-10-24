@@ -413,7 +413,7 @@ def test_download_transactions_count(client, award_data):
 
 
 def test_download_transactions_count_zero(client, award_data):
-    """Test transaction count endpoint works with filters"""
+    """Test transaction count endpoint when filters return zero"""
     resp = client.post(
         '/api/v2/download/count',
         content_type='application/json',
