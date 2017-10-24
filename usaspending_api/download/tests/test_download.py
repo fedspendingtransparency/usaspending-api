@@ -14,7 +14,6 @@ from usaspending_api.etl.award_helpers import update_awards
 
 @pytest.fixture
 def award_data(db):
-
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make(
@@ -72,6 +71,7 @@ def award_data(db):
     # Create Awards
     award1 = mommy.make('awards.Award', category='contracts')
     award2 = mommy.make('awards.Award', category='contracts')
+    award3 = mommy.make('awards.Award', category='assistance')
 
     # Create Transactions
     trann1 = mommy.make(
@@ -84,16 +84,22 @@ def award_data(db):
         award=award2,
         modification_number=1,
         awarding_agency=aa2)
+    trann3 = mommy.make(
+        TransactionNormalized,
+        award=award3,
+        modification_number=1,
+        awarding_agency=aa2)
 
     # Create TransactionContract
     tfpds1 = mommy.make(TransactionFPDS, transaction=trann1, piid='tc1piid')
     tfpds2 = mommy.make(TransactionFPDS, transaction=trann2, piid='tc2piid')
 
     # Create TransactionAssistance
-    tfabs1 = mommy.make(TransactionFABS, transaction=trann1, fain='ta1fain')
+    tfabs1 = mommy.make(TransactionFABS, transaction=trann3, fain='ta1fain')
 
     # Set latest_award for each award
     update_awards()
+
 
 @pytest.mark.django_db
 @pytest.mark.skip
@@ -207,7 +213,7 @@ def test_download_transactions_v2_endpoint_column_filtering(client,
                     'type': 'awarding',
                     'tier': 'toptier',
                     'name': "Bureau of Things"
-                } ]
+                }]
             },
             "columns": ["award_id_piid", "modification_number"]
         }))
@@ -317,7 +323,7 @@ def test_download_transactions_v2_bad_filter_shape_raises(client):
                 'type': 'not a valid type',
                 'tier': 'nor a valid tier',
                 'name': "Bureau of Stuff"
-            } ]
+            }]
         },
         "columns": []
     }
@@ -355,7 +361,7 @@ def test_download_transactions_limit(client, award_data):
     resp = client.get('/api/v2/download/status/?file_name={}'
                       .format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()['total_rows'] == 2  # one each contract and assistance
+    assert resp.json()['total_rows'] == 2
 
 
 def test_download_transactions_bad_limit(client, award_data):
@@ -387,7 +393,7 @@ def test_download_transactions_excessive_limit(client, award_data):
 
 
 def test_download_transactions_count(client, award_data):
-    """Test transaction count endpoint works with filters"""
+    """Test transaction count endpoint when filters return zero"""
     resp = client.post(
         '/api/v2/download/count',
         content_type='application/json',
@@ -403,4 +409,4 @@ def test_download_transactions_count(client, award_data):
             }
         }))
 
-    assert resp.json()['transaction_rows_gt_limit'] == False
+    assert resp.json()['transaction_rows_gt_limit'] is False
