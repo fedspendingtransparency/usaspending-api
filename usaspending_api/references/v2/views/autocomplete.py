@@ -213,7 +213,6 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
         queryset = LegalEntity.objects.all()
 
-        # Filter based on search text
         response = {}
 
         is_duns = False
