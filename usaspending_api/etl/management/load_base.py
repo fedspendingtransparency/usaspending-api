@@ -11,10 +11,9 @@ import dateutil
 from copy import copy
 from django import db
 from django.conf import settings
-from django.core.cache import caches
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
-from django.db import connection, connections, utils
+from django.db import connections
 from django.core.cache import caches
 
 from usaspending_api.awards.models import Award
@@ -40,7 +39,7 @@ logger = logging.getLogger('console')
 class Command(BaseCommand):
     """
     This command will load a single submission from the DATA Act broker. If
-    we've already loaded the specified broker submisison, this command
+    we've already loaded the specified broker submission, this command
     will remove the existing records before loading them again.
     """
     help = "Loads a single submission from the DATA Act broker." \
@@ -85,14 +84,15 @@ class Command(BaseCommand):
             logger.info('Updating model description fields...')
             update_model_description_fields()
 
-        logger.info('Updating awards to reflect their latest associated transaction info...')
-        update_awards(tuple(award_update_id_list))
-
-        logger.info('Updating contract-specific awards to reflect their latest transaction info...')
-        update_contract_awards(tuple(award_contract_update_id_list))
-
-        logger.info('Updating award category variables...')
-        update_award_categories(tuple(award_update_id_list))
+        # TODO: Find out where this is being used
+        # logger.info('Updating awards to reflect their latest associated transaction info...')
+        # update_awards(tuple(award_update_id_list))
+        #
+        # logger.info('Updating contract-specific awards to reflect their latest transaction info...')
+        # update_contract_awards(tuple(award_contract_update_id_list))
+        #
+        # logger.info('Updating award category variables...')
+        # update_award_categories(tuple(award_update_id_list))
 
         # Done!
         logger.info('FINISHED')
@@ -109,6 +109,7 @@ def run_sql_file(file_path, parameters):
                     logger.info('sql:\n\n{}\n\ntime: {}\n\n'.format(some_sql, time.time() - sql_start_time))
 
 
+# TODO: Remove this function. Keeping it for now to refer to in case we have questions about past submissions.
 def load_file_d1(submission_attributes, procurement_data, db_cursor, quick=False):
     """
     Process and load file D1 broker data (contract award txns).
@@ -267,6 +268,7 @@ def no_preprocessing(row):
     return row
 
 
+# TODO: Remove this function. Keeping it for now to refer to in case we have questions about past submissions.
 def load_file_d2(
         submission_attributes, award_financial_assistance_data, db_cursor, quick, row_preprocessor=no_preprocessing
 ):

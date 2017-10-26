@@ -4,7 +4,7 @@ import logging
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q, F
 from django.db.models.functions import ExtractMonth
 
 from collections import OrderedDict
@@ -19,7 +19,7 @@ from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
     loan_type_mapping, loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
-from usaspending_api.references.models import Cfda
+from usaspending_api.references.models import Cfda, LegalEntity
 
 
 logger = logging.getLogger(__name__)
@@ -311,35 +311,31 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         elif category == "recipient":
             # filter the transactions by scope name
-            name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
-            # define what values are needed in the sql query
-            queryset = queryset.values("federal_action_obligation",
-                                       "recipient",
-                                       "recipient__recipient_name",
-                                       "recipient__legal_entity_id",
-                                       "recipient__parent_recipient_unique_id")
+            # name_dict example: {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
+            name_dict = OrderedDict()
+
             if scope == "duns":
-                for trans in queryset:
-                    if trans["recipient"]:
-                        r_name = trans["recipient__recipient_name"]
-                        r_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                        r_lei = trans["recipient__legal_entity_id"]
-                        if r_name in name_dict:
-                            name_dict[r_name]["aggregated_amount"] += r_obl
-                        else:
-                            name_dict[r_name] = {"aggregated_amount": r_obl, "legal_entity_id": r_lei}
-                # build response
-                results = []
-                # [{
-                # "recipient_name": key,
-                # "legal_entity_id": ttabrev,
-                # 	"aggregated_amount": "200000000"
-                # },...]
-                for key, value in name_dict.items():
-                    results.append({"recipient_name": key, "legal_entity_id": value["legal_entity_id"],
-                                    "aggregated_amount": value["aggregated_amount"]})
-                results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-                results, page_metadata = get_pagination(results, limit, page)
+                # define what values are needed in the sql query
+                queryset = queryset.filter(federal_action_obligation__isnull=False).values("recipient_id") \
+                               .annotate(aggregated_amount=Sum("federal_action_obligation"),
+                                         legal_entity_id=F("recipient_id")) \
+                               .values("legal_entity_id", "aggregated_amount")\
+                               .order_by("-aggregated_amount")[lower_limit:upper_limit + 1]
+
+                results = list(queryset)
+                hasNext = len(results) > limit
+                hasPrevious = page > 1
+                results = results[:limit]
+
+                legal_entity_mappings = LegalEntity.objects.filter(
+                    legal_entity_id__in=[result["legal_entity_id"] for result in results]).values("recipient_name",
+                                                                                                  "legal_entity_id")
+                legal_entity_mappings = {result["legal_entity_id"]: result["recipient_name"]
+                                         for result in legal_entity_mappings}
+                for result in results:
+                    result["legal_entity_name"] = legal_entity_mappings[result["legal_entity_id"]]
+
+                page_metadata = {"hasNext": hasNext, "hasPrevious": hasPrevious}
                 response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)

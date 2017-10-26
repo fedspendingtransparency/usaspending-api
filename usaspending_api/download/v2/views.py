@@ -122,16 +122,21 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
 class DownloadTransactionsViewSet(BaseDownloadViewSet):
     def get_csv_sources(self, json_request):
         limit = parse_limit(json_request)
-        limit = limit//2 if limit is not None else None
         contract_source = csv_selection.CsvSource('transaction', 'd1')
         assistance_source = csv_selection.CsvSource('transaction', 'd2')
         verify_requested_columns_available((contract_source, assistance_source), json_request['columns'])
         filters = json_request['filters']
-        base_qset = transaction_filter(filters)
-        queryset = base_qset & TransactionNormalized.objects.filter(contract_data__isnull=False)
-        contract_source.queryset = queryset[:limit]
-        queryset = base_qset & TransactionNormalized.objects.filter(assistance_data__isnull=False)
-        assistance_source.queryset = queryset[:limit]
+
+        base_qset = transaction_filter(filters).values_list('id')[:limit]
+
+        # Contract file
+        queryset = TransactionNormalized.objects.filter(id__in=base_qset, contract_data__isnull=False)
+        contract_source.queryset = queryset
+
+        # Assistance file
+        queryset = TransactionNormalized.objects.filter(id__in=base_qset, assistance_data__isnull=False)
+        assistance_source.queryset = queryset
+
         return contract_source, assistance_source
 
     DOWNLOAD_NAME = 'transactions'
@@ -150,17 +155,24 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
 
         return self.get_download_response(file_name=file_name)
 
+
 class DownloadTransactionCountViewSet(APIView):
     def post(self, request):
-        """Returns boolean of whether adownload request is greater than the maximum limit. """
+        """Returns boolean of whether a download request is greater
+        than the max limit. """
+
         json_request = request.data
 
         # If no filters in request return empty object to return all transactions
         filters = json_request.get('filters', {})
         is_over_limit = False
+
+        queryset = transaction_filter(filters)
+
         try:
-            transaction_filter(filters)[settings.MAX_DOWNLOAD_LIMIT]
+            queryset[settings.MAX_DOWNLOAD_LIMIT]
             is_over_limit = True
+
         except IndexError:
             pass
 

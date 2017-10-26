@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal
-from django.core.management import call_command, CommandError
+from django.core.management import call_command
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
@@ -88,9 +88,9 @@ def test_load_historical_command_financial_assistance(endpoint_data, partially_f
 @pytest.mark.django_db
 def test_load_submission_command(endpoint_data, partially_flushed):
     """
-    Test the submission loader to validate the ETL process
+    Test the submission loader to validate the ETL process.
     """
-    # Load the RefObjClass and ProgramActivityCode data
+    # TODO: Confirm test data in etl_test_data.json has decent coverage of load_submission
     call_command('load_submission', '-1', '--test')
     assert SubmissionAttributes.objects.count() == 1
     assert AppropriationAccountBalances.objects.count() == 1
@@ -98,13 +98,15 @@ def test_load_submission_command(endpoint_data, partially_flushed):
     assert FinancialAccountsByAwards.objects.count() == 11
     for account in FinancialAccountsByAwards.objects.all():
         assert account.transaction_obligated_amount == -6500
-        # for testing, data pulled from etl_test_data.json
-    assert Location.objects.count() == 4
-    assert LegalEntity.objects.count() == 2
-    assert Award.objects.count() == 15
-    assert TransactionNormalized.objects.count() == 2
-    assert TransactionFPDS.objects.count() == 1
-    assert TransactionFABS.objects.count() == 1
+
+    assert Award.objects.count() == 13
+
+    # D1/D2 do not get loaded, these are expected to be empty
+    assert Location.objects.count() == 0
+    assert LegalEntity.objects.count() == 0
+    assert TransactionNormalized.objects.count() == 0
+    assert TransactionFPDS.objects.count() == 0
+    assert TransactionFABS.objects.count() == 0
 
     # Verify that sign has been reversed during load where appropriate
     assert AppropriationAccountBalances.objects.filter(gross_outlay_amount_by_tas_cpe__lt=0).count() == 1

@@ -12,7 +12,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.v2 import download_column_historical_lookups
 
-BUFFER_SIZE = (5 * 1024**2)
+BUFFER_SIZE = (5 * 1024 ** 2)
 
 logger = logging.getLogger(__name__)
 
@@ -96,10 +96,12 @@ def write_csvs(download_job, file_name, columns, sources):
         timeout = time.time() + 60 * minutes
 
         logger.debug('Generating {}'.format(file_name))
+
         zstream.write_iter('contracts.csv',
                            csv_row_emitter(sources[0].row_emitter(columns),
                                            download_job))
         logger.debug('wrote contracts.csv')
+
         zstream.write_iter('assistance.csv',
                            csv_row_emitter(sources[1].row_emitter(columns),
                                            download_job))
