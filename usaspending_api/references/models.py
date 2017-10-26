@@ -330,6 +330,12 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
             }
             # Clear out any blank or None values in our filter, so we can find the best match
             q_kwargs = dict((k, v) for k, v in q_kwargs.items() if v)
+
+            # if q_kwargs = {} the filter below will return everything. There's no point in continuing if nothing is
+            # being filtered
+            if not q_kwargs:
+                return
+
             matched_reference = RefCityCountyCode.objects.filter(Q(**q_kwargs))
             # We only load the data if our matched reference count is one; otherwise,
             # we don't have data (count=0) or the match is ambiguous (count>1)
