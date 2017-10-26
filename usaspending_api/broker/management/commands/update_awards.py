@@ -2,9 +2,9 @@ import logging
 import timeit
 
 from django.core.management.base import BaseCommand
-from django.db import connection, transaction
+from django.db import transaction
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 
 # start = timeit.default_timer()

@@ -9,23 +9,14 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date
 from usaspending_api.references.helpers import canonicalize_location_dict
-from usaspending_api.references.models import RefCountryCode, Location, LegalEntity, Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import RefCountryCode, Location, LegalEntity, Agency, ToptierAgency, \
+    SubtierAgency
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
 
 BATCH_SIZE = 100000
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
-
-# country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
-# subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
-# subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
-# toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
-# agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
-# agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
-# agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
-# award_map = {(award.fain, award.uri, award.awarding_agency_id): award for award in Award.objects.filter(piid__isnull=True)}
-# le_map = {(le.recipient_unique_id, le.recipient_name): le for le in LegalEntity.objects.all()}
 
 fabs_bulk = []
 
@@ -90,13 +81,34 @@ class Command(BaseCommand):
 
     def set_lookup_maps(self):
         self.country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
-        self.subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
-        self.subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
-        self.toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
-        self.agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
-        self.agency_sub_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
-        self.agency_toptier_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(toptier_flag=True)}
-        self.award_map = {(award.fain, award.uri, award.awarding_agency_id): award for award in Award.objects.filter(piid__isnull=True)}
+        self.subtier_agency_map = {
+            subtier_agency['subtier_code']: subtier_agency['subtier_agency_id']
+            for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')
+            }
+        self.subtier_to_agency_map = {
+            agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']}
+            for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')
+            }
+        self.toptier_agency_map = {
+            toptier_agency['toptier_agency_id']: toptier_agency['cgac_code']
+            for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')
+            }
+        self.agency_no_sub_map = {
+            (agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency
+            for agency in Agency.objects.filter(subtier_agency__isnull=False)
+            }
+        self.agency_sub_only_map = {
+            agency.toptier_agency.cgac_code: agency
+            for agency in Agency.objects.filter(subtier_agency__isnull=True)
+            }
+        self.agency_toptier_map = {
+            agency.toptier_agency.cgac_code: agency
+            for agency in Agency.objects.filter(toptier_flag=True)
+            }
+        self.award_map = {
+            (award.fain, award.uri, award.awarding_agency_id): award
+            for award in Award.objects.filter(piid__isnull=True)
+            }
         self.le_map = {(le.recipient_unique_id, le.recipient_name): le for le in LegalEntity.objects.all()}
 
     def diff_fabs_data(self, db_cursor, ds_cursor, fiscal_year=None):
@@ -171,8 +183,8 @@ class Command(BaseCommand):
         for index, row in enumerate(fabs_broker_data, 1):
             if not (index % 10000):
                 logger.info('Locations: Loading row {} of {} ({})'.format(str(index),
-                                                                             str(total_rows),
-                                                                             datetime.now() - start_time))
+                                                                          str(total_rows),
+                                                                          datetime.now() - start_time))
             if pop_flag:
                 location_value_map = {"place_of_performance_flag": True}
                 field_map = pop_field_map
@@ -246,8 +258,8 @@ class Command(BaseCommand):
         for index, row in enumerate(fabs_broker_data, 1):
             if not (index % 10000):
                 logger.info('Legal Entity: Loading row {} of {} ({})'.format(str(index),
-                                                                          str(total_rows),
-                                                                          datetime.now() - start_time))
+                                                                             str(total_rows),
+                                                                             datetime.now() - start_time))
 
             recipient_name = row['awardee_or_recipient_legal']
             if recipient_name is None:
@@ -282,8 +294,8 @@ class Command(BaseCommand):
         for index, row in enumerate(fabs_broker_data, 1):
             if not (index % 10000):
                 logger.info('Awards: Loading row {} of {} ({})'.format(str(index),
-                                                                          str(total_rows),
-                                                                          datetime.now() - start_time))
+                                                                       str(total_rows),
+                                                                       datetime.now() - start_time))
 
             # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
             # use the sub tier code to look it up. This code assumes that all incoming
@@ -355,8 +367,8 @@ class Command(BaseCommand):
         for index, row in enumerate(fabs_broker_data, 1):
             if not (index % 10000):
                 logger.info('Transaction Normalized: Loading row {} of {} ({})'.format(str(index),
-                                                                          str(total_rows),
-                                                                          datetime.now() - start_time))
+                                                                                       str(total_rows),
+                                                                                       datetime.now() - start_time))
             parent_txn_value_map = {
                 "award": award_lookup[index - 1],
                 "awarding_agency": awarding_agency_list[index - 1],
@@ -394,8 +406,8 @@ class Command(BaseCommand):
         for index, row in enumerate(fabs_broker_data, 1):
             if not (index % 10000):
                 logger.info('Transaction FABS: Loading row {} of {} ({})'.format(str(index),
-                                                                             str(total_rows),
-                                                                             datetime.now() - start_time))
+                                                                                 str(total_rows),
+                                                                                 datetime.now() - start_time))
 
             fabs_instance_data = load_data_into_model(
                 TransactionFABS(),  # thrown away
@@ -415,7 +427,8 @@ class Command(BaseCommand):
             return
 
         # This cascades deletes for TransactionFABS & Awards in addition to deleting TransactionNormalized records
-        TransactionNormalized.objects.filter(assistance_data__published_award_financial_assistance_id__in=to_delete).delete()
+        TransactionNormalized.objects.\
+            filter(assistance_data__published_award_financial_assistance_id__in=to_delete).delete()
 
     def add_arguments(self, parser):
 

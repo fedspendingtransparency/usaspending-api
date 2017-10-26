@@ -11,7 +11,7 @@ from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency, Location
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
-import sys
+
 # start = timeit.default_timer()
 # function_call
 # end = timeit.default_timer()
@@ -25,9 +25,18 @@ exception_logger = logging.getLogger("exceptions")
 award_update_id_list = []
 award_contract_update_id_list = []
 
-subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
-subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
-toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
+subtier_agency_map = {
+    subtier_agency['subtier_code']: subtier_agency['subtier_agency_id']
+    for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')
+    }
+subtier_to_agency_map = {
+    agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']}
+    for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')
+    }
+toptier_agency_map = {
+    toptier_agency['toptier_agency_id']: toptier_agency['cgac_code']
+    for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')
+    }
 
 
 class Command(BaseCommand):
@@ -113,9 +122,7 @@ class Command(BaseCommand):
         # skip_count = 0
 
 
-##### ROW ITERATION STARTS HERE
-
-        start_time = datetime.now()
+# ROW ITERATION STARTS HERE
 
         lel_bulk = []
         pop_bulk = []
@@ -202,7 +209,8 @@ class Command(BaseCommand):
                 if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
                     funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
                     if funding_subtier_agency_id is not None:
-                        funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
+                        funding_toptier_agency_id = \
+                            subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
                         funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
                     else:
                         funding_cgac_code = None
@@ -275,7 +283,8 @@ class Command(BaseCommand):
                 row,
                 as_dict=True)
 
-            transaction_assistance = TransactionFABS(transaction=transaction_normalized_bulk[index - 1], **financial_assistance_data)
+            transaction_assistance = TransactionFABS(transaction=transaction_normalized_bulk[index - 1],
+                                                     **financial_assistance_data)
             transaction_assistance_bulk.append(transaction_assistance)
 
         logger.info('Bulk creating TransactionFABS rows...')
@@ -286,7 +295,6 @@ class Command(BaseCommand):
 
 
 ######################################################
-
 
     @staticmethod
     def update_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000):
@@ -419,7 +427,8 @@ class Command(BaseCommand):
                 if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
                     funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
                     if funding_subtier_agency_id is not None:
-                        funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
+                        funding_toptier_agency_id = \
+                            subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
                         funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
                     else:
                         funding_cgac_code = None
