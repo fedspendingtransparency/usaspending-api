@@ -1,8 +1,5 @@
 import logging
 import signal
-
-from collections import defaultdict
-
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 
@@ -21,41 +18,6 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('submission_id', nargs=1, help='the broker submission id to delete', type=int)
 
-    def instances_potentially_left_childless(self, submission):
-        """All Location instances to check for delete-ability after this deletion.
-
-        Could be expanded to other models.
-        """
-
-        # TODO: Need to update this to not rely on getting transactions through submissions
-        return {}
-
-        # potential_childless = set()
-        # self.logger.info('Running childless check on %s transactions', str(submission.transaction_set.count()))
-        # pop = submission.transaction_set.prefetch_related('place_of_performance')
-        # for transaction in pop:
-        #     potential_childless.add(transaction.place_of_performance)
-        #
-        # award = submission.transaction_set.prefetch_related('award__place_of_performance')
-        # for transaction in award:
-        #     potential_childless.add(transaction.award.place_of_performance)
-        #
-        # recipient = submission.transaction_set.prefetch_related('award__recipient__location')
-        # for transaction in recipient:
-        #     if transaction.award.recipient:
-        #         potential_childless.add(transaction.award.recipient.location)
-        #
-        # subawards = submission.transaction_set.prefetch_related('award__subawards__place_of_performance')
-        # for transaction in subawards:
-        #     for subaward in transaction.award.subawards.all():
-        #         potential_childless.add(subaward.place_of_performance)
-        #         if subaward.recipient:
-        #             potential_childless.add(subaward.recipient.location)
-        #             # could get the LegalEntities, too
-        #
-        # # Return without `None`s
-        # return potential_childless - {None}
-
     @transaction.atomic
     def handle(self, *args, **options):
         self.logger.info('Staring rm_submissions management command')
@@ -67,33 +29,19 @@ class Command(BaseCommand):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-        # This will throw an exception and exit the command if the id doesn't exist
+        broker_submission_id = options["submission_id"][0]
+
         try:
-            submission = SubmissionAttributes.objects.get(broker_submission_id=options["submission_id"][0])
+            submission = SubmissionAttributes.objects.get(broker_submission_id=broker_submission_id)
         except ObjectDoesNotExist:
-            raise "Submission with broker id " + str(options["submission_id"][0]) + " does not exist"
+            raise "Broker submission id {} does not exist".format(broker_submission_id)
 
-        self.logger.info('Getting childless submissions')
-        potentially_childless = self.instances_potentially_left_childless(submission)
-        print('done')
+        deleted_stats = submission.delete()
 
-        deleted = defaultdict(int)
-        deleted_total = 0
-        deletion_tally = submission.delete()
-        deleted_total += deletion_tally[0]
-        deleted.update(deletion_tally[1])
+        self.logger.info('Finished deletions.')
 
-        self.logger.info('Starting iteration over potentially childless submissions')
-        for instance in potentially_childless:
-            deletions = instance.delete_if_childless()
-            deleted_total += deletions[0]
-            for (key, value) in deletions[1].items():
-                deleted[key] += value
+        statistics = "Statistics:\n  Total objects removed: {}".format(deleted_stats[0])
+        for (model, count) in deleted_stats[1].items():
+            statistics += "\n  {}: {}".format(model, count)
 
-        self.logger.info('Finished deletions')
-
-        statistics = "Statistics:\n  Total objects Removed: {}".format(deleted_total)
-        for (model, count) in deleted.items():
-            statistics = statistics + "\n  {}: {}".format(model, count)
-
-        self.logger.info("Deleted submission " + str(options["submission_id"][0]) + ". " + statistics)
+        self.logger.info("Deleted broker submission id {}. ".format(broker_submission_id) + statistics)

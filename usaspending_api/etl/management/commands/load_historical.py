@@ -1,4 +1,4 @@
-from datetime import datetime
+from django.utils import timezone
 import logging
 
 from django.utils.dateparse import parse_date
@@ -44,7 +44,7 @@ class Command(load_base.Command):
     def handle_loading(self, db_cursor, *args, **options):
 
         submission_attributes = SubmissionAttributes()
-        submission_attributes.usaspending_update = datetime.now()
+        submission_attributes.usaspending_update = timezone.now()
         submission_attributes.save()
 
         if not options['contracts'] and not options['financial_assistance']:

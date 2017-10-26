@@ -3,7 +3,7 @@ from django.db.models import F
 from django.db.models.functions import Greatest
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionFPDS
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency, Cfda, NAICS
@@ -56,6 +56,7 @@ class BaseAutocompleteViewSet(APIView):
 
 class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all awarding agencies matching the provided search text"""
         return self.agency_autocomplete_response(request)
@@ -63,6 +64,7 @@ class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class BudgetFunctionAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
 
@@ -101,6 +103,7 @@ class BudgetFunctionAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
 
@@ -139,6 +142,7 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all funding agencies matching the provided search text"""
         return self.agency_autocomplete_response(request)
@@ -146,6 +150,7 @@ class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
 
@@ -177,6 +182,7 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
 
@@ -206,6 +212,7 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all Parents and Recipients matching the provided search text"""
 
@@ -257,6 +264,7 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all toptier agencies matching the provided search text"""
 
