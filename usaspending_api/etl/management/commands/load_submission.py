@@ -72,28 +72,24 @@ class Command(load_base.Command):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-        # Grab the submission id
         submission_id = options['submission_id'][0]
 
-        logger.info('Getting submission from broker')
-        # Verify the ID exists in the database, and grab the data
+        logger.info('Getting submission {} from broker...'.format(submission_id))
         db_cursor.execute('SELECT * FROM submission WHERE submission_id = %s', [submission_id])
         submission_data = dictfetchall(db_cursor)
-        logger.info('Finished getting submission from broker')
+        logger.info('Finished getting submission {} from broker'.format(submission_id))
 
         if len(submission_data) == 0:
             raise 'Could not find submission with id ' + str(submission_id)
         elif len(submission_data) > 1:
             raise 'Found multiple submissions with id ' + str(submission_id)
 
-        # We have a single submission, which is what we want
         submission_data = submission_data[0]
         broker_submission_id = submission_data['submission_id']
-        del submission_data['submission_id']  # To avoid collisions with the newer PK system
+        del submission_data['submission_id']  # We use broker_submission_id, submission_id is our own PK
         submission_attributes = get_submission_attributes(broker_submission_id, submission_data)
 
         logger.info('Getting File A data')
-        # Move on, and grab file A data
         db_cursor.execute('SELECT * FROM appropriation WHERE submission_id = %s', [submission_id])
         appropriation_data = dictfetchall(db_cursor)
         logger.info('Acquired File A (appropriation) data for ' + str(submission_id) + ', there are ' + str(
@@ -104,7 +100,6 @@ class Command(load_base.Command):
         logger.info('Finished loading File A data, took {}'.format(datetime.now() - start_time))
 
         logger.info('Getting File B data')
-        # Let's get File B information
         prg_act_obj_cls_data = get_file_b(submission_attributes, db_cursor)
         logger.info(
             'Acquired File B (program activity object class) data for ' + str(submission_id) + ', there are ' + str(
@@ -114,38 +109,9 @@ class Command(load_base.Command):
         load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor)
         logger.info('Finished loading File B data, took {}'.format(datetime.now() - start_time))
 
-        logger.info('Getting File D2 data')
-        # File D2
-        db_cursor.execute('SELECT * FROM award_financial_assistance WHERE submission_id = %s', [submission_id])
-        award_financial_assistance_data = dictfetchall(db_cursor)
-        logger.info('Acquired award financial assistance data for ' + str(submission_id) + ', there are ' + str(
-            len(award_financial_assistance_data)) + ' rows.')
-        logger.info('Loading File D2 data')
-        start_time = datetime.now()
-        load_base.load_file_d2(submission_attributes, award_financial_assistance_data, db_cursor,
-                               quick=options['quick'])
-        logger.info('Finished loading File D2 data, took {}'.format(datetime.now() - start_time))
-
-        logger.info('Getting File D1 data')
-        # File D1
-        db_cursor.execute('SELECT * FROM award_procurement WHERE submission_id = %s', [submission_id])
-        procurement_data = dictfetchall(db_cursor)
-        logger.info('Acquired award procurement data for ' + str(submission_id) + ', there are ' + str(
-            len(procurement_data)) + ' rows.')
-        logger.info('Loading File D1 data')
-        start_time = datetime.now()
-        load_base.load_file_d1(submission_attributes, procurement_data, db_cursor, quick=options['quick'])
-        logger.info('Finished loading File D1 data, took {}'.format(datetime.now() - start_time))
-
         logger.info('Getting File C data')
-        # Let's get File C information
-        # Note: we load File C last, because the D1 and D2 files have the awarding
-        # agency top tier (CGAC) and sub tier data needed to look up/create
-        # the most specific possible corresponding award. When looking up/
-        # creating awards for File C, we dont have sub-tier agency info, so
-        # we'll do our best to match them to the more specific award records
-        # already created by the D file load
-
+        # we dont have sub-tier agency info, so we'll do our best
+        # to match them to the more specific award records
         award_financial_query = 'SELECT * FROM award_financial WHERE submission_id = %s'
         if isinstance(db_cursor, PhonyCursor):  # spoofed data for test
             award_financial_frame = pd.DataFrame(db_cursor.db_responses[award_financial_query])
