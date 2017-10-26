@@ -22,6 +22,7 @@ class AutocompleteView(AutocompleteResponseMixin,
         context = super(AutocompleteView, self).get_serializer_context()
         return {'req': self.req, **context}
 
+    @cache_response()
     def post(self, request, *args, **kwargs):
         try:
             created, self.req = RequestCatalog.get_or_create_from_request(request)
