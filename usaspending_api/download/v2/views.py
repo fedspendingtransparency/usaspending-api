@@ -75,6 +75,8 @@ class BaseDownloadViewSet(APIView):
         else:
             t = threading.Thread(target=csv_selection.write_csvs,
                                  kwargs=kwargs)
+
+            # Thread will stop when csv_selection.write_csvs stops
             t.start()
 
         return self.get_download_response(file_name=timestamped_file_name)
@@ -112,7 +114,7 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
         queryset = award_filter(filters)
         d1_source.queryset = queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False)
         d2_source.queryset = queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False)
-        return (d1_source, d2_source)
+        return d1_source, d2_source
 
     DOWNLOAD_NAME = 'awards'
 
@@ -124,12 +126,18 @@ class DownloadTransactionsViewSet(BaseDownloadViewSet):
         assistance_source = csv_selection.CsvSource('transaction', 'd2')
         verify_requested_columns_available((contract_source, assistance_source), json_request['columns'])
         filters = json_request['filters']
-        base_qset = transaction_filter(filters)
-        queryset = base_qset & TransactionNormalized.objects.filter(contract_data__isnull=False)
-        contract_source.queryset = queryset[:limit]
-        queryset = base_qset & TransactionNormalized.objects.filter(assistance_data__isnull=False)
-        assistance_source.queryset = queryset[:limit]
-        return (contract_source, assistance_source)
+
+        base_qset = transaction_filter(filters).values_list('id')[:limit]
+
+        # Contract file
+        queryset = TransactionNormalized.objects.filter(id__in=base_qset, contract_data__isnull=False)
+        contract_source.queryset = queryset
+
+        # Assistance file
+        queryset = TransactionNormalized.objects.filter(id__in=base_qset, assistance_data__isnull=False)
+        assistance_source.queryset = queryset
+
+        return contract_source, assistance_source
 
     DOWNLOAD_NAME = 'transactions'
 
@@ -146,3 +154,30 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
                 'Missing one or more required query parameters: file_name')
 
         return self.get_download_response(file_name=file_name)
+
+
+class DownloadTransactionCountViewSet(APIView):
+    def post(self, request):
+        """Returns boolean of whether a download request is greater
+        than the max limit. """
+
+        json_request = request.data
+
+        # If no filters in request return empty object to return all transactions
+        filters = json_request.get('filters', {})
+        is_over_limit = False
+
+        queryset = transaction_filter(filters)
+
+        try:
+            queryset[settings.MAX_DOWNLOAD_LIMIT]
+            is_over_limit = True
+
+        except IndexError:
+            pass
+
+        result = {
+            "transaction_rows_gt_limit": is_over_limit
+        }
+
+        return Response(result)

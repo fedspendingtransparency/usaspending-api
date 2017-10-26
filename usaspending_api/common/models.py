@@ -2,11 +2,9 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.csv_helpers import resolve_path_to_view, create_filename_from_options, format_path
-from enum import Enum
+from django.utils import timezone
+
 import hashlib
-import pickle
-import datetime
 import json
 
 
@@ -97,7 +95,7 @@ class RequestCatalog(models.Model):
         request_catalog = None
         try:
             request_catalog = RequestCatalog.objects.get(request=json_request)
-            request_catalog.last_accessed = datetime.datetime.now()
+            request_catalog.last_accessed = timezone.now()
             request_catalog.save()
             created = False
         except ObjectDoesNotExist:
