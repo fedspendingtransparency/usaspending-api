@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'usaspending_api.api_docs',
     'usaspending_api.broker',
     'usaspending_api.download',
+    'usaspending_api.bulk_download',
     'django_spaghetti',
     'simple_history',
 ]
