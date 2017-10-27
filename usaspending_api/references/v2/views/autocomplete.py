@@ -60,43 +60,12 @@ class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
         """Return all awarding agencies matching the provided search text"""
         return self.agency_autocomplete_response(request)
 
-
-class BudgetFunctionAutocompleteViewSet(BaseAutocompleteViewSet):
+    
+class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-
-        search_text, limit = self.get_request_payload(request)
-
-        queryset = TreasuryAppropriationAccount.objects.all()
-
-        # Filter based on search text
-        response = {}
-
-        function_results = queryset.annotate(similarity=TrigramSimilarity('budget_function_title', search_text)).\
-            distinct().order_by('-similarity')
-
-        subfunction_results = queryset.annotate(similarity=TrigramSimilarity('budget_subfunction_title', search_text)).\
-            distinct().order_by('-similarity')
-
-        function_exact_match_queryset = function_results.filter(similarity=1.0)
-        if function_exact_match_queryset.count() > 0:
-            function_results = function_exact_match_queryset
-
-        subfunction_exact_match_queryset = subfunction_results.filter(similarity=1.0)
-        if subfunction_exact_match_queryset.count() > 0:
-            subfunction_results = subfunction_exact_match_queryset
-
-        function_titles = list(function_results.values_list('budget_function_title', flat=True)[:limit])
-        subfunction_titles = list(subfunction_results.values_list('budget_subfunction_title', flat=True)[:limit])
-
-        response['results'] = {'budget_function_title': function_titles,
-                               'budget_subfunction_title': subfunction_titles}
-
-        response['counts'] = {'budget_function_title': len(function_titles),
-                              'budget_subfunction_title': len(subfunction_titles)}
-
-        return Response(response)
+        """Return all funding agencies matching the provided search text"""
+        return self.agency_autocomplete_response(request)
 
 
 class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
@@ -135,13 +104,6 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
         response['results'] = results_set
 
         return Response(response)
-
-
-class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
-
-    def post(self, request):
-        """Return all funding agencies matching the provided search text"""
-        return self.agency_autocomplete_response(request)
 
 
 class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
@@ -242,43 +204,3 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
                                   'recipient_unique_id')[:limit]}
 
         return Response(response)
-
-
-class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
-
-    def post(self, request):
-        """Return all toptier agencies matching the provided search text"""
-
-        json_request = request.data
-
-        # retrieve search_text from request
-        search_text = json_request.get('search_text', None)
-        limit = json_request.get('limit')
-
-        # required query parameters were not provided
-        if not search_text:
-            raise InvalidParameterException('Missing one or more required request parameters: search_text')
-
-        # if there's a limit present, convert to an int. otherwise everything will be returned
-        if limit:
-            try:
-                limit = int(limit)
-            except ValueError:
-                raise InvalidParameterException('Limit request parameter is not a valid, positive integer')
-
-        queryset = Agency.objects.filter(toptier_flag=True)
-
-        queryset = queryset.annotate(similarity=TrigramSimilarity('toptier_agency__name', search_text)).\
-            order_by('-similarity')
-
-        exact_match_queryset = queryset.filter(similarity=1.0)
-        if exact_match_queryset.count() > 0:
-            queryset = exact_match_queryset
-
-        queryset = queryset.annotate(agency_id=F('id'), agency_name=F('toptier_agency__name'))
-
-        column_names = ['agency_id', 'agency_name']
-
-        results = list(queryset.values(*column_names)[:limit]) if limit else list(queryset.values(*column_names))
-
-        return Response({'results': results})
