@@ -1,5 +1,6 @@
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from rest_framework.response import Response
+from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from rest_framework.views import APIView
 
@@ -7,6 +8,7 @@ from rest_framework.views import APIView
 class ObjectClassFederalAccountsViewSet(APIView):
     """Returns financial spending data by object class."""
 
+    @cache_response()
     def get(self, request, pk, format=None):
         """Return the view's queryset."""
         # create response

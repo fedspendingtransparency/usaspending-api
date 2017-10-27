@@ -5,14 +5,21 @@ from django.core.management.base import BaseCommand
 from datetime import datetime
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import Agency
 
 
 logger = logging.getLogger('console')
 
 
-agency_no_sub_map = {(agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency for agency in Agency.objects.filter(subtier_agency__isnull=False)}
-agency_cgac_only_map = {agency.toptier_agency.cgac_code: agency for agency in Agency.objects.filter(subtier_agency__isnull=True)}
+agency_no_sub_map = {
+    (agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency
+    for agency in Agency.objects.filter(subtier_agency__isnull=False)
+    }
+agency_cgac_only_map = {
+    agency.toptier_agency.cgac_code: agency
+    for agency in Agency.objects.filter(subtier_agency__isnull=True)
+    }
+
 
 class Command(BaseCommand):
 
@@ -55,22 +62,17 @@ class Command(BaseCommand):
             # List of Transaction FABS mapping transaction ids, cgac code, and subtier code
             # Filters out FABS transactions where the where the transaction is equal to the fiscal year
             transaction_cgac_subtier_map = [
-                                                {
-                                                 'transaction_id': transaction_FABS['transaction_id'],
-                                                 'awarding_cgac_code': transaction_FABS['awarding_agency_code'],
-                                                 'funding_cgac_code': transaction_FABS['funding_agency_code'],
-                                                 'awarding_subtier_code': transaction_FABS['awarding_sub_tier_agency_c'],
-                                                 'funding_subtier_code': transaction_FABS['funding_sub_tier_agency_co']
-                                                }
-                                                for transaction_FABS in TransactionFABS.objects
-                                                .filter(transaction__fiscal_year=fiscal_year)
-                                                .values('transaction_id',
-                                                        'awarding_agency_code',
-                                                        'funding_agency_code',
-                                                        'awarding_sub_tier_agency_c',
-                                                        'funding_sub_tier_agency_co'
-                                                        )[range_low:range_high]
-                                            ]
+                {
+                    'transaction_id': transaction_FABS['transaction_id'],
+                    'awarding_cgac_code': transaction_FABS['awarding_agency_code'],
+                    'funding_cgac_code': transaction_FABS['funding_agency_code'],
+                    'awarding_subtier_code': transaction_FABS['awarding_sub_tier_agency_c'],
+                    'funding_subtier_code': transaction_FABS['funding_sub_tier_agency_co']
+                }
+                for transaction_FABS in TransactionFABS.objects.filter(transaction__fiscal_year=fiscal_year).values(
+                    'transaction_id', 'awarding_agency_code', 'funding_agency_code', 'awarding_sub_tier_agency_c',
+                    'funding_sub_tier_agency_co')[range_low:range_high]
+                ]
 
         total_rows = len(transaction_cgac_subtier_map)
 
@@ -86,8 +88,8 @@ class Command(BaseCommand):
 
             if not (index % 100):
                 logger.info('Updating agencies: Loading row {} of {} ({})'.format(str(index),
-                                                                             str(total_rows),
-                                                                             datetime.now() - start_time))
+                                                                                  str(total_rows),
+                                                                                  datetime.now() - start_time))
 
             index += 1
 
@@ -227,10 +229,10 @@ class Command(BaseCommand):
             start = timeit.default_timer()
             self.update_awarding_funding_agency(fiscal_year, 'D2', page=page, limit=limit)
             end = timeit.default_timer()
-            logger.info('Finished D2 (assistance/FABS) awarding/funding agencies updates in ' + str(end - start) + ' seconds')
+            logger.info('Finished D2 (assistance/FABS) awarding/funding agencies updates in ' + str(end - start) +
+                        ' seconds')
 
         else:
             logger.error('Not a valid data type: --assistance,--contracts')
 
         logger.info('Finished')
-        

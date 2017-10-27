@@ -3,6 +3,7 @@ import logging
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_extensions.cache.decorators import cache_response
 
 from django.db.models import Sum, Count, Q, F
 from django.db.models.functions import ExtractMonth
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class SpendingOverTimeVisualizationViewSet(APIView):
 
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
@@ -118,6 +120,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
 class SpendingByCategoryVisualizationViewSet(APIView):
 
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         # TODO: check logic in name_dict[x]["aggregated_amount"] statements
@@ -458,6 +461,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
 class SpendingByGeographyVisualizationViewSet(APIView):
 
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
@@ -527,6 +531,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return (self is other)
     Min = MinType()
 
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
@@ -637,7 +642,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
 
 class SpendingByAwardCountVisualizationViewSet(APIView):
-
+    
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
