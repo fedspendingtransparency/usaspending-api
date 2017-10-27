@@ -313,4 +313,9 @@ class Command(BaseCommand):
         else:
             logger.info('Nothing to insert...')
 
+        # Update the date for the last time the data load was run
+        ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fpds']).delete()
+        ExternalDataLoadDate(last_load_date=datetime.now().strftime('%Y-%m-%d'),
+                             external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fpds']).save()
+
         logger.info('FABS NIGHTLY UPDATE FINISHED!')
