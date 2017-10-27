@@ -1,10 +1,10 @@
-from django.contrib.postgres.search import TrigramSimilarity, SearchVector
+from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import F
 from django.db.models.functions import Greatest
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionFPDS
+from rest_framework_extensions.cache.decorators import cache_response
+from usaspending_api.awards.models import LegalEntity, TransactionFPDS
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency, Cfda, NAICS
 from usaspending_api.references.v1.serializers import AgencySerializer
@@ -38,125 +38,98 @@ class BaseAutocompleteViewSet(APIView):
 
         return search_text, limit
 
-    def agency_autocomplete_response(self, request):
-        order_list = ['-toptier_flag', '-similarity']
-        search_text, limit = self.get_request_payload(request)
-
-        queryset = Agency.objects.filter(subtier_agency__isnull=False)
-
-        queryset = queryset.annotate(similarity=TrigramSimilarity('subtier_agency__name', search_text)). \
-            order_by(*order_list)
-
-        exact_match_queryset = queryset.filter(similarity=1.0)
-        if exact_match_queryset.count() > 0:
-            queryset = exact_match_queryset
-
-        return Response({'results': AgencySerializer(queryset[:limit], many=True).data})
-
 
 class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
-        """Return all awarding agencies matching the provided search text"""
-        return self.agency_autocomplete_response(request)
+        """Search by subtier agencies, return all, with toptiers first"""
+        search_text, limit = self.get_request_payload(request)
 
-    
+        queryset = Agency.objects.filter(subtier_agency__name__icontains=search_text). \
+            order_by('-toptier_flag')
+
+        return Response(
+            {'results': AgencySerializer(queryset[:limit], many=True).data}
+        )
+
+
 class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
-        """Return all funding agencies matching the provided search text"""
-        return self.agency_autocomplete_response(request)
+        """Return only toptier agencies"""
+        search_text, limit = self.get_request_payload(request)
+
+        queryset = Agency.objects.filter(toptier_flag=True, toptier_agency__name__icontains=search_text)
+
+        return Response(
+            {'results': AgencySerializer(queryset[:limit], many=True).data}
+        )
 
 
 class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-
+        """Return CFDA matches by number, title, or name"""
         search_text, limit = self.get_request_payload(request)
 
-        # get relevant TransactionFPDSs
-        queryset = Cfda.objects.filter(program_number__isnull=False,
-                                       program_title__isnull=False)
-        # Filter based on search text
-        response = {}
+        queryset = Cfda.objects.all()
 
-        queryset = queryset.annotate(similarity=Greatest(
-            TrigramSimilarity('program_number', search_text),
-            TrigramSimilarity('program_title', search_text),
-            TrigramSimilarity('popular_name', search_text)))\
-            .distinct().order_by('-similarity')
+        # Program numbers are 10.4839, 98.2718, etc...
+        if search_text.replace('.', '').isnumeric():
+            queryset = queryset.filter(program_number__icontains=search_text)
+        else:
+            queryset = queryset.annotate(similarity=Greatest(
+                TrigramSimilarity('program_title', search_text),
+                TrigramSimilarity('popular_name', search_text))) \
+                .distinct().order_by('-similarity')
 
-        queryset = queryset.annotate(prog_num_similarity=TrigramSimilarity('program_number', search_text))
-
-        cfda_exact_match_queryset = queryset.filter(similarity=1.0)
-        if cfda_exact_match_queryset.count() > 0:
-            # check for trigram error if similarity is a program number
-            if cfda_exact_match_queryset.filter(prog_num_similarity=1.0).count() > 0:
-                if len(cfda_exact_match_queryset.first().program_number) == len(search_text):
-                    queryset = cfda_exact_match_queryset
-            else:
-                queryset = cfda_exact_match_queryset
-
-        results_set = list(queryset.values('program_number', 'program_title', 'popular_name')[:limit]) if list else \
-            list(queryset.values('program_number', 'program_title', 'popular_name'))
-
-        response['results'] = results_set
-
-        return Response(response)
+        return Response(
+            {'results': list(queryset.values('program_number', 'program_title', 'popular_name')[:limit])}
+        )
 
 
 class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
 
         search_text, limit = self.get_request_payload(request)
 
-        # get relevant TransactionFPDS
         queryset = NAICS.objects.all()
-        # Filter based on search text
         response = {}
 
-        queryset = queryset.annotate(similarity=Greatest(
-            TrigramSimilarity('code', search_text),
-            TrigramSimilarity('description', search_text)))\
-            .distinct().order_by('-similarity')
+        # CFDA codes are 111150, 112310, etc...
+        if search_text.isnumeric():
+            queryset = queryset.filter(code__icontains=search_text)
 
-        naics_exact_match_queryset = queryset.filter(similarity=1.0)
-        if naics_exact_match_queryset.count() > 0:
-            queryset = naics_exact_match_queryset
+        queryset = queryset.annotate(similarity=TrigramSimilarity('description', search_text)). \
+            order_by('-similarity')
 
-        # possible need to rename variables in gist or in database
+        # rename columns...
         queryset = queryset.annotate(naics=F('code'), naics_description=F('description'))
 
-        results_set = list(queryset.values('naics', 'naics_description')[:limit]) if limit else list(
-            queryset.values('naics', 'naics_description'))
-        response['results'] = results_set
-
-        return Response(response)
+        return Response(
+            {'results': list(queryset.values('naics', 'naics_description')[:limit])}
+        )
 
 
 class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
-
         search_text, limit = self.get_request_payload(request)
 
-        # get relevant TransactionFPDS
         queryset = TransactionFPDS.objects.filter(product_or_service_code__isnull=False)
         # Filter based on search text
         response = {}
 
         queryset = queryset.annotate(similarity=TrigramSimilarity('product_or_service_code', search_text))\
             .distinct().order_by('-similarity')
-
-        # look for exact match
-        psc_exact_match_queryset = queryset.filter(similarity=1.0)
-        if psc_exact_match_queryset.count() == 1:
-            if len(psc_exact_match_queryset.first().product_or_service_code) == len(search_text):
-                queryset = psc_exact_match_queryset
 
         # craft results
         results_set = list(queryset.values('product_or_service_code')[:limit]) if limit else list(
@@ -168,6 +141,7 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
+    @cache_response()
     def post(self, request):
         """Return all Parents and Recipients matching the provided search text"""
 
