@@ -2,6 +2,7 @@ import csv
 import io
 import logging
 import time
+import itertools
 
 import boto
 import smart_open
@@ -13,6 +14,7 @@ from usaspending_api.bulk_download.lookups import JOB_STATUS_DICT
 from usaspending_api.bulk_download.v2 import download_column_historical_lookups
 
 BUFFER_SIZE = (5 * 1024 ** 2)
+EXCEL_ROW_LIMIT = 1000000
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +38,6 @@ def csv_row_emitter(body, download_job):
             header_row = False
         else:
             download_job.number_of_rows += 1
-            if download_job.number_of_rows > settings.MAX_DOWNLOAD_LIMIT:
-                break
-                raise Exception('Requested query beyond max supported ({})'.format(settings.MAX_DOWNLOAD_LIMIT))
 
         yield string_buffer.getvalue().encode('utf8')
 
@@ -74,9 +73,22 @@ class CsvSource:
 
     def row_emitter(self, headers_requested):
         headers = self.columns(headers_requested)
-        yield headers
+        # yield headers
         query_paths = [self.query_paths[hn] for hn in headers]
         yield from self.queryset.values_list(*query_paths).iterator()
+
+
+def calculate_number_of_csvs(queryset, limit):
+    csvs = 0
+    reached_limit = False
+
+    while not reached_limit:
+        csvs += 1
+        try:
+            queryset[limit*csvs]
+        except IndexError:
+            reached_limit = True
+    return csvs
 
 
 def write_csvs(download_job, file_name, columns, sources):
@@ -91,30 +103,31 @@ def write_csvs(download_job, file_name, columns, sources):
 
     try:
         file_path = settings.CSV_LOCAL_PATH + file_name
-        zstream = zipstream.ZipFile()
-        minutes = settings.DOWNLOAD_TIMEOUT_MIN_LIMIT
-        timeout = time.time() + 60 * minutes
+        zstream = zipstream.ZipFile(allowZip64=True)
 
         logger.debug('Generating {}'.format(file_name))
 
-        zstream.write_iter('contracts.csv',
-                           csv_row_emitter(sources[0].row_emitter(columns),
-                                           download_job))
-        logger.debug('wrote contracts.csv')
+        source_map = {"contracts": sources[0],
+                      "assistance": sources[1]}
 
-        zstream.write_iter('assistance.csv',
-                           csv_row_emitter(sources[1].row_emitter(columns),
-                                           download_job))
-        logger.debug('wrote assistance.csv')
+        for source_name, source in source_map.items():
+            source_limit = (source.queryset.count() // EXCEL_ROW_LIMIT) + 1
+            source_iterator = list(source.row_emitter(columns))
+            headers = source.columns(columns)
+            for split_csv in range(1, source_limit+1):
+                split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
+                end_row = split_csv*EXCEL_ROW_LIMIT if split_csv != source_limit else None
+                split_source_iterator = itertools.islice(iter(source_iterator), (split_csv-1)*EXCEL_ROW_LIMIT, end_row)
+                split_source_iterator = itertools.chain([headers], split_source_iterator)
+
+                zstream.write_iter(split_csv_name, csv_row_emitter(split_source_iterator, download_job))
+            logger.debug('wrote {}.csv'.format(source_name))
 
         if settings.IS_LOCAL:
 
             with open(file_path, 'wb') as zipfile:
                 for chunk in zstream:
                     zipfile.write(chunk)
-                    # Adding timeout to break the stream if exceeding time limit, closes out thread
-                    if time.time() > timeout:
-                        raise Exception('Stream exceeded time of {} minutes.'.format(minutes))
 
                 download_job.file_size = zipfile.tell()
         else:
@@ -126,9 +139,6 @@ def write_csvs(download_job, file_name, columns, sources):
                 conn, 'w', min_part_size=BUFFER_SIZE)
             for chunk in zstream:
                 stream.write(chunk)
-                # Adding timeout to break the stream if exceeding time limit, closes out thread
-                if time.time() > timeout:
-                    raise Exception('Stream exceeded time of {} minutes.'.format(minutes))
             download_job.file_size = stream.total_size
 
     except Exception as e:
