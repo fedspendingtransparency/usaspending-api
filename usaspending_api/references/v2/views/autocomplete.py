@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.awards.models import LegalEntity, TransactionFPDS
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import Agency, Cfda, NAICS
+from usaspending_api.references.models import Agency, Cfda, NAICS, PSC
 from usaspending_api.references.v1.serializers import AgencySerializer
 
 
@@ -95,19 +95,17 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-
+        """Return all NAICS table entries matching the provided search text"""
         search_text, limit = self.get_request_payload(request)
 
         queryset = NAICS.objects.all()
-        response = {}
 
-        # CFDA codes are 111150, 112310, etc...
+        # CFDA codes are 111150, 112310, and there are no numeric NAICS descriptions...
         if search_text.isnumeric():
             queryset = queryset.filter(code__icontains=search_text)
-
-        queryset = queryset.annotate(similarity=TrigramSimilarity('description', search_text)). \
-            order_by('-similarity')
+        else:
+            queryset = queryset.annotate(similarity=TrigramSimilarity('description', search_text)). \
+                order_by('-similarity')
 
         # rename columns...
         queryset = queryset.annotate(naics=F('code'), naics_description=F('description'))
@@ -121,22 +119,25 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
+        """Return all PSC table entires matching the provided search text"""
         search_text, limit = self.get_request_payload(request)
 
-        queryset = TransactionFPDS.objects.filter(product_or_service_code__isnull=False)
-        # Filter based on search text
-        response = {}
+        queryset = PSC.objects.all()
 
-        queryset = queryset.annotate(similarity=TrigramSimilarity('product_or_service_code', search_text))\
-            .distinct().order_by('-similarity')
+        # CFDA codes are 4-digit, but we have some numeric PSC descriptions, so limit to 4...
+        if len(search_text) == 4 and queryset.filter(code=search_text.upper()).exists():
+            queryset = queryset.filter(code=search_text.upper())
+        else:
+            queryset = queryset.annotate(similarity=TrigramSimilarity('description', search_text)). \
+                order_by('-similarity')
 
-        # craft results
-        results_set = list(queryset.values('product_or_service_code')[:limit]) if limit else list(
-            queryset.values('product_or_service_code'))
-        response['results'] = results_set
+        # rename columns...
+        queryset = queryset.annotate(product_or_service_code=F('code'), psc_description=F('description'))
 
-        return Response(response)
+        return Response(
+            {'results': list(
+                queryset.values('product_or_service_code', 'psc_description')[:limit])}
+        )
 
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
