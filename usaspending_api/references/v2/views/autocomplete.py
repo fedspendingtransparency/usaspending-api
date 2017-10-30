@@ -81,10 +81,9 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
         if search_text.replace('.', '').isnumeric():
             queryset = queryset.filter(program_number__icontains=search_text)
         else:
-            queryset = queryset.annotate(similarity=Greatest(
-                TrigramSimilarity('program_title', search_text),
-                TrigramSimilarity('popular_name', search_text))) \
-                .distinct().order_by('-similarity')
+            title_filter = queryset.filter(program_title__icontains=search_text)
+            popular_name_filter = queryset.filter(popular_name__icontains=search_text)
+            queryset = title_filter | popular_name_filter
 
         return Response(
             {'results': list(queryset.values('program_number', 'program_title', 'popular_name')[:limit])}
@@ -100,7 +99,7 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
         queryset = NAICS.objects.all()
 
-        # CFDA codes are 111150, 112310, and there are no numeric NAICS descriptions...
+        # NAICS codes are 111150, 112310, and there are no numeric NAICS descriptions...
         if search_text.isnumeric():
             queryset = queryset.filter(code__icontains=search_text)
         else:
@@ -124,7 +123,7 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
         queryset = PSC.objects.all()
 
-        # CFDA codes are 4-digit, but we have some numeric PSC descriptions, so limit to 4...
+        # PSC codes are 4-digit, but we have some numeric PSC descriptions, so limit to 4...
         if len(search_text) == 4 and queryset.filter(code=search_text.upper()).exists():
             queryset = queryset.filter(code=search_text.upper())
         else:
