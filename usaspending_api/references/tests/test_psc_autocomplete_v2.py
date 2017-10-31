@@ -23,6 +23,7 @@ def budget_function_data(db):
         product_or_service_code="34343434")
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_naics_autocomplete_success(client, budget_function_data):
 
@@ -48,6 +49,7 @@ def test_naics_autocomplete_success(client, budget_function_data):
     assert resp.data['results'][2]['product_or_service_code'] == '34343434'
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_naics_autocomplete_failure(client):
     """Verify error on bad autocomplete request for budget function."""

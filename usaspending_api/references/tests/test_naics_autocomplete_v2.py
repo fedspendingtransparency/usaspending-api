@@ -8,7 +8,7 @@ from usaspending_api.references.models import NAICS
 
 
 @pytest.fixture
-def budget_function_data(db):
+def naics_data(db):
     mommy.make(
         NAICS,
         code="12121212",
@@ -28,7 +28,7 @@ def budget_function_data(db):
 
 
 @pytest.mark.django_db
-def test_naics_autocomplete_success(client, budget_function_data):
+def test_naics_autocomplete_success(client, naics_data):
 
     # test for NAICS_description exact match
     resp = client.post(
@@ -36,7 +36,7 @@ def test_naics_autocomplete_success(client, budget_function_data):
         content_type='application/json',
         data=json.dumps({'search_text': 'naics_description'}))
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data['results']) == 1
+    assert len(resp.data['results']) == 3
     assert resp.data['results'][0]['naics_description'] == 'NAICS_DESCRIPTION'
 
     # test for similar matches (with no duplicates)
@@ -46,11 +46,6 @@ def test_naics_autocomplete_success(client, budget_function_data):
         data=json.dumps({'search_text': 'test', 'limit': 3}))
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 3
-    # test closest match is at the top
-    assert resp.data['results'][0]['naics'] == '23232323'
-    assert resp.data['results'][1]['naics'] == '34343434'
-    assert resp.data['results'][2]['naics'] == '12121212'
-
 
 @pytest.mark.django_db
 def test_naics_autocomplete_failure(client):
