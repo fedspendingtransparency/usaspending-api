@@ -49,4 +49,7 @@ class Command(BaseCommand):
         self.logger.info("Loading NAICS codes and descriptions")
         call_command('load_naics')
 
+        self.logger.info("Loading PSC codes and descriptions")
+        call_command('load_psc')
+
         self.logger.info("Reference data loaded.")

@@ -1,12 +1,13 @@
-from django.contrib.postgres.search import TrigramSimilarity, SearchVector
+from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import F
 from django.db.models.functions import Greatest
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
-from usaspending_api.awards.models import LegalEntity, TreasuryAppropriationAccount, TransactionFPDS
+from usaspending_api.awards.models import LegalEntity, TransactionFPDS
+
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import Agency, Cfda, NAICS
+from usaspending_api.references.models import Agency, Cfda, NAICS, PSC
 from usaspending_api.references.v1.serializers import AgencySerializer
 
 
@@ -38,176 +39,103 @@ class BaseAutocompleteViewSet(APIView):
 
         return search_text, limit
 
-    def agency_autocomplete_response(self, request):
-        order_list = ['-toptier_flag', '-similarity']
+    # Shared autocomplete...
+    def agency_autocomplete(self, request):
+        """Search by subtier agencies, return all, with toptiers first"""
         search_text, limit = self.get_request_payload(request)
 
-        queryset = Agency.objects.filter(subtier_agency__isnull=False)
+        queryset = Agency.objects.filter(
+            subtier_agency__name__icontains=search_text). \
+            order_by('-toptier_flag')
 
-        queryset = queryset.annotate(similarity=TrigramSimilarity('subtier_agency__name', search_text)). \
-            order_by(*order_list)
-
-        exact_match_queryset = queryset.filter(similarity=1.0)
-        if exact_match_queryset.count() > 0:
-            queryset = exact_match_queryset
-
-        return Response({'results': AgencySerializer(queryset[:limit], many=True).data})
+        return Response(
+            {'results': AgencySerializer(queryset[:limit], many=True).data}
+        )
 
 
 class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        """Return all awarding agencies matching the provided search text"""
-        return self.agency_autocomplete_response(request)
-
-
-class BudgetFunctionAutocompleteViewSet(BaseAutocompleteViewSet):
-
-    @cache_response()
-    def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-
-        search_text, limit = self.get_request_payload(request)
-
-        queryset = TreasuryAppropriationAccount.objects.all()
-
-        # Filter based on search text
-        response = {}
-
-        function_results = queryset.annotate(similarity=TrigramSimilarity('budget_function_title', search_text)).\
-            distinct().order_by('-similarity')
-
-        subfunction_results = queryset.annotate(similarity=TrigramSimilarity('budget_subfunction_title', search_text)).\
-            distinct().order_by('-similarity')
-
-        function_exact_match_queryset = function_results.filter(similarity=1.0)
-        if function_exact_match_queryset.count() > 0:
-            function_results = function_exact_match_queryset
-
-        subfunction_exact_match_queryset = subfunction_results.filter(similarity=1.0)
-        if subfunction_exact_match_queryset.count() > 0:
-            subfunction_results = subfunction_exact_match_queryset
-
-        function_titles = list(function_results.values_list('budget_function_title', flat=True)[:limit])
-        subfunction_titles = list(subfunction_results.values_list('budget_subfunction_title', flat=True)[:limit])
-
-        response['results'] = {'budget_function_title': function_titles,
-                               'budget_subfunction_title': subfunction_titles}
-
-        response['counts'] = {'budget_function_title': len(function_titles),
-                              'budget_subfunction_title': len(subfunction_titles)}
-
-        return Response(response)
-
-
-class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
-
-    @cache_response()
-    def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-
-        search_text, limit = self.get_request_payload(request)
-
-        # get relevant TransactionFPDSs
-        queryset = Cfda.objects.filter(program_number__isnull=False,
-                                       program_title__isnull=False)
-        # Filter based on search text
-        response = {}
-
-        queryset = queryset.annotate(similarity=Greatest(
-            TrigramSimilarity('program_number', search_text),
-            TrigramSimilarity('program_title', search_text),
-            TrigramSimilarity('popular_name', search_text)))\
-            .distinct().order_by('-similarity')
-
-        queryset = queryset.annotate(prog_num_similarity=TrigramSimilarity('program_number', search_text))
-
-        cfda_exact_match_queryset = queryset.filter(similarity=1.0)
-        if cfda_exact_match_queryset.count() > 0:
-            # check for trigram error if similarity is a program number
-            if cfda_exact_match_queryset.filter(prog_num_similarity=1.0).count() > 0:
-                if len(cfda_exact_match_queryset.first().program_number) == len(search_text):
-                    queryset = cfda_exact_match_queryset
-            else:
-                queryset = cfda_exact_match_queryset
-
-        results_set = list(queryset.values('program_number', 'program_title', 'popular_name')[:limit]) if list else \
-            list(queryset.values('program_number', 'program_title', 'popular_name'))
-
-        response['results'] = results_set
-
-        return Response(response)
+        return self.agency_autocomplete(request)
 
 
 class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        """Return all funding agencies matching the provided search text"""
-        return self.agency_autocomplete_response(request)
+        return self.agency_autocomplete(request)
+
+
+class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
+
+    @cache_response()
+    def post(self, request):
+        """Return CFDA matches by number, title, or name"""
+        search_text, limit = self.get_request_payload(request)
+
+        queryset = Cfda.objects.all()
+
+        # Program numbers are 10.4839, 98.2718, etc...
+        if search_text.replace('.', '').isnumeric():
+            queryset = queryset.filter(program_number__icontains=search_text)
+        else:
+            title_filter = queryset.filter(program_title__icontains=search_text)
+            popular_name_filter = queryset.filter(popular_name__icontains=search_text)
+            queryset = title_filter | popular_name_filter
+
+        return Response(
+            {'results': list(queryset.values('program_number', 'program_title', 'popular_name')[:limit])}
+        )
 
 
 class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-
+        """Return all NAICS table entries matching the provided search text"""
         search_text, limit = self.get_request_payload(request)
 
-        # get relevant TransactionFPDS
         queryset = NAICS.objects.all()
-        # Filter based on search text
-        response = {}
 
-        queryset = queryset.annotate(similarity=Greatest(
-            TrigramSimilarity('code', search_text),
-            TrigramSimilarity('description', search_text)))\
-            .distinct().order_by('-similarity')
+        # NAICS codes are 111150, 112310, and there are no numeric NAICS descriptions...
+        if search_text.isnumeric():
+            queryset = queryset.filter(code__icontains=search_text)
+        else:
+            queryset = queryset.annotate(similarity=TrigramSimilarity('description', search_text)). \
+                order_by('-similarity')
 
-        naics_exact_match_queryset = queryset.filter(similarity=1.0)
-        if naics_exact_match_queryset.count() > 0:
-            queryset = naics_exact_match_queryset
-
-        # possible need to rename variables in gist or in database
+        # rename columns...
         queryset = queryset.annotate(naics=F('code'), naics_description=F('description'))
 
-        results_set = list(queryset.values('naics', 'naics_description')[:limit]) if limit else list(
-            queryset.values('naics', 'naics_description'))
-        response['results'] = results_set
-
-        return Response(response)
+        return Response(
+            {'results': list(queryset.values('naics', 'naics_description')[:limit])}
+        )
 
 
 class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-
+        """Return all PSC table entires matching the provided search text"""
         search_text, limit = self.get_request_payload(request)
 
-        # get relevant TransactionFPDS
-        queryset = TransactionFPDS.objects.filter(product_or_service_code__isnull=False)
-        # Filter based on search text
-        response = {}
+        queryset = PSC.objects.all()
 
-        queryset = queryset.annotate(similarity=TrigramSimilarity('product_or_service_code', search_text))\
-            .distinct().order_by('-similarity')
+        # PSC codes are 4-digit, but we have some numeric PSC descriptions, so limit to 4...
+        if len(search_text) == 4 and queryset.filter(code=search_text.upper()).exists():
+            queryset = queryset.filter(code=search_text.upper())
+        else:
+            queryset = queryset.annotate(similarity=TrigramSimilarity('description', search_text)). \
+                order_by('-similarity')
 
-        # look for exact match
-        psc_exact_match_queryset = queryset.filter(similarity=1.0)
-        if psc_exact_match_queryset.count() == 1:
-            if len(psc_exact_match_queryset.first().product_or_service_code) == len(search_text):
-                queryset = psc_exact_match_queryset
+        # rename columns...
+        queryset = queryset.annotate(product_or_service_code=F('code'), psc_description=F('description'))
 
-        # craft results
-        results_set = list(queryset.values('product_or_service_code')[:limit]) if limit else list(
-            queryset.values('product_or_service_code'))
-        response['results'] = results_set
-
-        return Response(response)
+        return Response(
+            {'results': list(
+                queryset.values('product_or_service_code', 'psc_description')[:limit])}
+        )
 
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
@@ -217,87 +145,35 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         """Return all Parents and Recipients matching the provided search text"""
 
         search_text, limit = self.get_request_payload(request)
-        # Return Recipients with valid id entries
-        queryset = LegalEntity.objects.exclude(
-            recipient_unique_id__isnull=True).exclude(
-            recipient_unique_id__exact='')
 
-        # Filter based on search text
+        queryset = LegalEntity.objects.all()
+
         response = {}
 
-        # Search and filter for Parent Recipients
-        parents = queryset.annotate(
-            similarity=Greatest(
-                TrigramSimilarity('recipient_name', search_text),
-                TrigramSimilarity('parent_recipient_unique_id', search_text))
-        ).distinct().order_by('-similarity').filter(
+        is_duns = False
+        if search_text.isnumeric() and len(search_text) == 9:
+            is_duns = True
+
+        if is_duns:
+            queryset = queryset.filter(recipient_unique_id=search_text)
+        else:
+            queryset = queryset.filter(recipient_name__icontains=search_text)
+
+        parents = queryset.filter(
             parent_recipient_unique_id__in=F('recipient_unique_id'))
 
-        # Search and filter for Recipients, excluding Parent Recipients
-        recipients = queryset.annotate(
-            similarity=Greatest(
-                TrigramSimilarity('recipient_name', search_text),
-                TrigramSimilarity('recipient_unique_id', search_text))
-        ).distinct().order_by('-similarity').exclude(
+        recipients = queryset.exclude(
             parent_recipient_unique_id__in=F('recipient_unique_id'))
-
-        parents_exact_match_queryset = parents.filter(similarity=1.0)
-        if parents_exact_match_queryset.count() > 0:
-            parents = parents_exact_match_queryset
-
-        recipients_exact_match_queryset = recipients.filter(similarity=1.0)
-        if recipients_exact_match_queryset.count() > 0:
-            recipients = recipients_exact_match_queryset
 
         # Format response
         response['results'] = {
             'parent_recipient':
-                parents.values('legal_entity_id',
-                               'recipient_name',
-                               'parent_recipient_unique_id')[:limit],
+               parents.values('legal_entity_id',
+                              'recipient_name',
+                              'parent_recipient_unique_id')[:limit],
             'recipient':
                 recipients.values('legal_entity_id',
                                   'recipient_name',
                                   'recipient_unique_id')[:limit]}
+
         return Response(response)
-
-
-class ToptierAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
-
-    @cache_response()
-    def post(self, request):
-        """Return all toptier agencies matching the provided search text"""
-
-        json_request = request.data
-
-        # retrieve search_text from request
-        search_text = json_request.get('search_text', None)
-        limit = json_request.get('limit')
-
-        # required query parameters were not provided
-        if not search_text:
-            raise InvalidParameterException('Missing one or more required request parameters: search_text')
-
-        # if there's a limit present, convert to an int. otherwise everything will be returned
-        if limit:
-            try:
-                limit = int(limit)
-            except ValueError:
-                raise InvalidParameterException('Limit request parameter is not a valid, positive integer')
-
-        queryset = Agency.objects.filter(toptier_flag=True)
-
-        queryset = queryset.annotate(similarity=TrigramSimilarity('toptier_agency__name', search_text)).\
-            order_by('-similarity')
-
-        exact_match_queryset = queryset.filter(similarity=1.0)
-        if exact_match_queryset.count() > 0:
-            queryset = exact_match_queryset
-
-        queryset = queryset.annotate(agency_id=F('id'), agency_name=F('toptier_agency__name'))
-
-        column_names = ['agency_id', 'agency_name']
-
-        results = list(queryset.values(*column_names)[:limit]) if limit else list(queryset.values(*column_names))
-
-        return Response({'results': results})
