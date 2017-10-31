@@ -4,6 +4,10 @@ languages:
 engines:
   pep8:
     enabled: true
+    checks:
+      # Disable line length (> 79) check
+      E501:
+        enabled: false
   radon:
     enabled: true
   duplication:
