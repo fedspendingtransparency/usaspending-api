@@ -24,7 +24,7 @@ def budget_function_data(db):
 
 
 @pytest.mark.django_db
-@pytest.mark.skip(reason="Endpoint will eventually be disabled and is not in use")
+@pytest.mark.skip(reason="Endpoint is not in use")
 def test_budget_function_autocomplete_success(client, budget_function_data):
 
     # test for budget_function exact match
@@ -54,13 +54,14 @@ def test_budget_function_autocomplete_success(client, budget_function_data):
     assert len(resp.data['results']['budget_function_title']) == 3
     assert len(resp.data['results']['budget_subfunction_title']) == 3
 
+    results = resp.data['results']
     # test closest match is at the top
-    assert resp.data['results']['budget_function_title'][0] == 'Income Security'
-    assert resp.data['results']['budget_subfunction_title'][0] == 'Other Income Security'
+    assert results['budget_function_title'][0] == 'Income Security'
+    assert results['budget_subfunction_title'][0] == 'Other Income Security'
 
     # test furthest match is at the end
-    assert resp.data['results']['budget_function_title'][-1] == ''
-    assert resp.data['results']['budget_subfunction_title'][-1] == 'National Defense'
+    assert results['budget_function_title'][-1] == ''
+    assert results['budget_subfunction_title'][-1] == 'National Defense'
 
 
 @pytest.mark.django_db
