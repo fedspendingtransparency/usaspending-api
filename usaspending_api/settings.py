@@ -28,7 +28,7 @@ DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 SECRET_KEY = get_random_string()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -289,7 +289,7 @@ CACHES = {
 }
 
 # Cache environment - 'local', 'disabled', or 'elasticache'
-CACHE_ENVIRONMENT = 'local'
+CACHE_ENVIRONMENT = 'disabled'
 
 # Set up the appropriate elasticache for our environment
 CACHE_ENVIRONMENTS = {
