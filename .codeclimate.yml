@@ -4,10 +4,14 @@ languages:
 engines:
   pep8:
     enabled: true
+    checks:
+      # Disable line length (> 79) check
+      E501:
+        enabled: false
   radon:
-    enabled: true
+    enabled: false
   duplication:
-    enabled: true
+    enabled: false
     config:
       languages:
         python:
