@@ -24,7 +24,6 @@ def budget_function_data(db):
 
 
 @pytest.mark.django_db
-@pytest.mark.skip(reason="Endpoint will eventually be disabled and is not in use")
 def test_budget_function_autocomplete_success(client, budget_function_data):
 
     # test for budget_function exact match
