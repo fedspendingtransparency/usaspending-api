@@ -4,58 +4,50 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.awards.models import TransactionFPDS
-
+from usaspending_api.references.models import PSC
 
 @pytest.fixture
-def budget_function_data(db):
+def psc_data(db):
     mommy.make(
-        TransactionFPDS,
-        product_or_service_code="12121212")
+        PSC,
+        code="3605",
+        description="FOOD PRODUCTS MACHINE & EQ")
     mommy.make(
-        TransactionFPDS,
-        product_or_service_code="23232323")
+        PSC,
+        code="8435",
+        description="FOOTWEAR, WOMEN'S")
     mommy.make(
-        TransactionFPDS,
-        product_or_service_code="34343434")
-    mommy.make(
-        TransactionFPDS,
-        product_or_service_code="34343434")
+        PSC,
+        code="6250",
+        description="BALLASTS, LAMPHOLDERS, AND STARTERS")
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
-def test_naics_autocomplete_success(client, budget_function_data):
+def test_psc_autocomplete_success(client, psc_data):
 
-    # test for NAICS_description exact match
+    # test for psc by code
     resp = client.post(
         '/api/v2/autocomplete/psc/',
         content_type='application/json',
-        data=json.dumps({'search_text': '12121212'}))
+        data=json.dumps({'search_text': '8435'}))
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 1
-    assert resp.data['results'][0]['product_or_service_code'] == '12121212'
+    assert resp.data['results'][0]['psc_description'] == "FOOTWEAR, WOMEN'S"
 
-    # test for similar matches (with no duplicates)
+    # test for similar matches
     resp = client.post(
         '/api/v2/autocomplete/psc/',
         content_type='application/json',
-        data=json.dumps({'search_text': '2323', 'limit': 3}))
+        data=json.dumps({'search_text': 'FOO'}))
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data['results']) == 3
-    # test closest match is at the top
-    assert resp.data['results'][0]['product_or_service_code'] == '23232323'
-    assert resp.data['results'][1]['product_or_service_code'] == '12121212'
-    assert resp.data['results'][2]['product_or_service_code'] == '34343434'
+    assert len(resp.data['results']) == 2
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_naics_autocomplete_failure(client):
-    """Verify error on bad autocomplete request for budget function."""
-
+    """Test empty search string."""
     resp = client.post(
         '/api/v2/autocomplete/psc/',
         content_type='application/json',
-        data=json.dumps({}))
+        data=json.dumps({'search_text': ''}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

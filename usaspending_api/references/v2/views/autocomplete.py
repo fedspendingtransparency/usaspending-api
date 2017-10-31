@@ -1,10 +1,8 @@
-from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import F
-from django.db.models.functions import Greatest
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
-from usaspending_api.awards.models import LegalEntity, TransactionFPDS
+from usaspending_api.awards.models import LegalEntity
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency, Cfda, NAICS, PSC
@@ -102,8 +100,7 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
         if search_text.isnumeric():
             queryset = queryset.filter(code__icontains=search_text)
         else:
-            queryset = queryset.annotate(similarity=TrigramSimilarity('description', search_text)). \
-                order_by('-similarity')
+            queryset = queryset.filter(description__icontains=search_text)
 
         # rename columns...
         queryset = queryset.annotate(naics=F('code'), naics_description=F('description'))
@@ -126,8 +123,7 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
         if len(search_text) == 4 and queryset.filter(code=search_text.upper()).exists():
             queryset = queryset.filter(code=search_text.upper())
         else:
-            queryset = queryset.annotate(similarity=TrigramSimilarity('description', search_text)). \
-                order_by('-similarity')
+            queryset = queryset.filter(description__icontains=search_text)
 
         # rename columns...
         queryset = queryset.annotate(product_or_service_code=F('code'), psc_description=F('description'))
@@ -142,7 +138,8 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        """Return all Parents and Recipients matching the provided search text"""
+        """Return all recipients matching the provided search text, splitting to
+        specify which are parents and children in the matching set."""
 
         search_text, limit = self.get_request_payload(request)
 
@@ -151,7 +148,7 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         response = {}
 
         is_duns = False
-        if search_text.isnumeric() and len(search_text) == 9:
+        if len(search_text) == 9 and queryset.filter(recipient_unique_id=search_text).exists():
             is_duns = True
 
         if is_duns:
