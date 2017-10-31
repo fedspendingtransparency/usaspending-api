@@ -39,15 +39,13 @@ class BaseAutocompleteViewSet(APIView):
 
         return search_text, limit
 
-
-class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
-
-    @cache_response()
-    def post(self, request):
+    # Shared autocomplete...
+    def agency_autocomplete(self, request):
         """Search by subtier agencies, return all, with toptiers first"""
         search_text, limit = self.get_request_payload(request)
 
-        queryset = Agency.objects.filter(subtier_agency__name__icontains=search_text). \
+        queryset = Agency.objects.filter(
+            subtier_agency__name__icontains=search_text). \
             order_by('-toptier_flag')
 
         return Response(
@@ -55,18 +53,18 @@ class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
         )
 
 
+class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
+
+    @cache_response()
+    def post(self, request):
+        return self.agency_autocomplete(request)
+
+
 class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        """Return only toptier agencies"""
-        search_text, limit = self.get_request_payload(request)
-
-        queryset = Agency.objects.filter(toptier_flag=True, toptier_agency__name__icontains=search_text)
-
-        return Response(
-            {'results': AgencySerializer(queryset[:limit], many=True).data}
-        )
+        return self.agency_autocomplete(request)
 
 
 class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
