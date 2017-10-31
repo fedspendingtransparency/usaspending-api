@@ -9,9 +9,9 @@ engines:
       E501:
         enabled: false
   radon:
-    enabled: false
+    enabled: true
   duplication:
-    enabled: false
+    enabled: true
     config:
       languages:
         python:
