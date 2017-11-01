@@ -105,7 +105,7 @@ def award_data():
 
 
 @pytest.mark.django_db
-def test_awards_filter_pop(award_data):
+def test_awards_filter_pop_state(award_data):
 
     # Testing state
     filter_state = {'place_of_performance_locations': [
@@ -114,6 +114,9 @@ def test_awards_filter_pop(award_data):
     result = award_filter(filter_state)
     assert len(result) == 1
 
+
+@pytest.mark.django_db
+def test_awards_filter_pop_county(award_data):
     # Testing county
     filter_county = {'place_of_performance_locations': [
         {'country': 'USA', 'state': 'AB', 'county': '002'}
@@ -121,41 +124,9 @@ def test_awards_filter_pop(award_data):
     result = award_filter(filter_county)
     assert len(result) == 1
 
-    # Testing district
-    filter_district = {'place_of_performance_locations': [
-        {'country': 'USA', 'state': 'AB', 'district': '01'}
-    ]}
-    result = award_filter(filter_district)
-    assert len(result) == 2
-
-    # Testing country
-    filter_country = {'place_of_performance_locations': [{'country': 'GBR'}]}
-    result = award_filter(filter_country)
-    assert len(result) == 1
-
-    # Testing multiple
-    filter_multiple = {'place_of_performance_locations': [
-        {'country': 'USA', 'state': 'AB', 'district': '01'},
-        {'country': 'GBR'}
-    ]}
-    result = award_filter(filter_multiple)
-    assert len(result) == 3
-
 
 @pytest.mark.django_db
-def test_award_filter_recipient(award_data):
-    # Testing state
-    filter_state = {'recipient_locations': [{'country': 'USA', 'state': 'AB'}]}
-    result = award_filter(filter_state)
-    assert len(result) == 2
-
-    # Testing county
-    filter_county = {'recipient_locations': [
-        {'country': 'USA', 'state': 'AB', 'county': '001'}
-    ]}
-    result = award_filter(filter_county)
-    assert len(result) == 1
-
+def test_award_filter_recipient_district(award_data):
     # Testing district
     filter_district = {'recipient_locations': [
         {'country': 'USA', 'state': 'BC', 'district': '01'}
@@ -163,11 +134,17 @@ def test_award_filter_recipient(award_data):
     result = award_filter(filter_district)
     assert len(result) == 1
 
+
+@pytest.mark.django_db
+def test_award_filter_recipient_country(award_data):
     # Testing country
     filter_country = {'recipient_locations': [{'country': 'USA'}]}
     result = award_filter(filter_country)
     assert len(result) == 3
 
+
+@pytest.mark.django_db
+def test_award_filter_recipient_multi(award_data):
     # Testing multiple
     filter_multiple = {'recipient_locations': [
         {'country': 'USA', 'state': 'AB', 'district': '01'},

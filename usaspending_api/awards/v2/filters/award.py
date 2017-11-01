@@ -1,5 +1,6 @@
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 
 import logging
 
@@ -124,46 +125,7 @@ def award_filter(filters):
 
         # recipient_location
         elif key == "recipient_locations":
-            or_queryset = None
-            for v in value:
-
-                if v.get("district") is not None \
-                        and v.get("state") is not None \
-                        and v.get("country") is not None:
-                    qs = Award.objects.filter(
-                        recipient__location__congressional_code=v["district"],
-                        recipient__location__state_code=v["state"],
-                        recipient__location__location_country_code=v["country"]
-                    )
-                elif v.get("county") is not None \
-                        and v.get("state") is not None \
-                        and v.get("country") is not None:
-                    qs = Award.objects.filter(
-                        recipient__location__county_code=v["county"],
-                        recipient__location__state_code=v["state"],
-                        recipient__location__location_country_code=v["country"]
-                    )
-                elif v.get("state") is not None \
-                        and v.get("country") is not None:
-                    qs = Award.objects.filter(
-                        recipient__location__state_code=v["state"],
-                        recipient__location__location_country_code=v["country"]
-                    )
-                elif v.get("country") is not None:
-                    qs = Award.objects.filter(
-                        recipient__location__location_country_code=v["country"]
-                    )
-                else:
-                    raise InvalidParameterException(
-                        'Invalid filter: recipient_locations ' +
-                        'has incorrect fields.'
-                    )
-
-                if or_queryset is not None:
-                    or_queryset |= qs
-                else:
-                    or_queryset = qs
-
+            or_queryset = geocode_filter_locations('recipient__location', value, 'award')
             queryset &= or_queryset
 
         # recipient_type_names
@@ -185,44 +147,7 @@ def award_filter(filters):
 
         # place_of_performance
         elif key == "place_of_performance_locations":
-            or_queryset = None
-            for v in value:
-
-                if v.get("district") is not None \
-                        and v.get("state") is not None \
-                        and v.get("country") is not None:
-                    qs = Award.objects.filter(
-                        place_of_performance__congressional_code=v["district"],
-                        place_of_performance__state_code=v["state"],
-                        place_of_performance__location_country_code=v["country"]
-                    )
-                elif v.get("county") is not None \
-                        and v.get("state") is not None \
-                        and v.get("country") is not None:
-                    qs = Award.objects.filter(
-                        place_of_performance__county_code=v["county"],
-                        place_of_performance__state_code=v["state"],
-                        place_of_performance__location_country_code=v["country"]
-                    )
-                elif v.get("state") is not None \
-                        and v.get("country") is not None:
-                    qs = Award.objects.filter(
-                        place_of_performance__state_code=v["state"],
-                        place_of_performance__location_country_code=v["country"]
-                    )
-                elif v.get("country") is not None:
-                    qs = Award.objects.filter(
-                        place_of_performance__location_country_code=v["country"]
-                    )
-                else:
-                    raise InvalidParameterException(
-                        'Invalid filter: place_of_performance_locations '
-                        + 'has incorrect fields.')
-
-                if or_queryset is not None:
-                    or_queryset |= qs
-                else:
-                    or_queryset = qs
+            or_queryset = geocode_filter_locations('place_of_performance', value, 'award')
 
             queryset &= or_queryset
 

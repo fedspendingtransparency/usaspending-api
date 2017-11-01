@@ -90,12 +90,16 @@ def test_spending_by_award_type_success(client, budget_function_data):
         ],
         "legal_entities": [1, 2, 3],
         'recipient_scope': "domestic",
-        "recipient_locations": [{"country": "USA"}, {"country": "ABC"}],
+        "recipient_locations": [{"country": "XYZ"},
+                                {"country": "USA"},
+                                {"country": "ABC"}
+                                ],
         "recipient_type_names": [
             "Small Business",
             "Alaskan Native Owned Business"],
         "place_of_performance_scope": "domestic",
-        "place_of_performance_locations": [{"country": "USA"}, {"country": "ABC"}],
+        "place_of_performance_locations": [{"country": "USA"},
+                                           {"country": "PQR"}],
         "award_type_codes": ["A", "B", "03", '011', '020'],
         "award_ids": [1, 2, 3],
         "award_amounts": [

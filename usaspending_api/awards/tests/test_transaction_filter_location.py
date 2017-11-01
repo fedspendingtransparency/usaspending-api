@@ -73,34 +73,15 @@ def transaction_data():
 
 
 @pytest.mark.django_db
-def test_transaction_filter_pop(transaction_data):
-
-    # Testing state
-    filter_state = {'place_of_performance_locations': [
-        {'country': 'ABC', 'state': 'AA'}
-    ]}
-    result = transaction_filter(filter_state)
-    assert len(result) == 2
-
-    # Testing county
-    filter_county = {'place_of_performance_locations': [
-        {'country': 'ABC', 'state': 'AA', 'county': '002'}
-    ]}
-    result = transaction_filter(filter_county)
-    assert len(result) == 1
-
-    # Testing district
-    filter_district = {'place_of_performance_locations': [
-        {'country': 'ABC', 'state': 'AA', 'district': '01'}
-    ]}
-    result = transaction_filter(filter_district)
-    assert len(result) == 2
-
+def test_transaction_filter_pop_country(transaction_data):
     # Testing country
     filter_country = {'place_of_performance_locations': [{'country': 'DEF'}]}
     result = transaction_filter(filter_country)
     assert len(result) == 1
 
+
+@pytest.mark.django_db
+def test_transaction_filter_pop_multi(transaction_data):
     # Testing multiple
     filter_multiple = {'place_of_performance_locations': [
         {'country': 'ABC', 'state': 'AA', 'district': '01'},
@@ -111,12 +92,15 @@ def test_transaction_filter_pop(transaction_data):
 
 
 @pytest.mark.django_db
-def test_transaction_filter_recipient(transaction_data):
+def test_transaction_filter_recipient_state(transaction_data):
     # Testing state
     filter_state = {'recipient_locations': [{'country': 'ABC', 'state': 'AB'}]}
     result = transaction_filter(filter_state)
     assert len(result) == 1
 
+
+@pytest.mark.django_db
+def test_transaction_filter_recipient_county(transaction_data):
     # Testing county
     filter_county = {'recipient_locations': [
         {'country': 'ABC', 'state': 'AB', 'county': '001'}
@@ -124,22 +108,12 @@ def test_transaction_filter_recipient(transaction_data):
     result = transaction_filter(filter_county)
     assert len(result) == 1
 
+
+@pytest.mark.django_db
+def test_transaction_filter_recipient_district(transaction_data):
     # Testing district
     filter_district = {'recipient_locations': [
         {'country': 'ABC', 'state': 'AA', 'district': '01'}
     ]}
     result = transaction_filter(filter_district)
-    assert len(result) == 2
-
-    # Testing country
-    filter_country = {'recipient_locations': [{'country': 'ABC'}]}
-    result = transaction_filter(filter_country)
-    assert len(result) == 3
-
-    # Testing multiple
-    filter_multiple = {'recipient_locations': [
-        {'country': 'ABC', 'state': 'AA', 'district': '01'},
-        {'country': 'ABC', 'state': 'AA', 'county': '001'}
-    ]}
-    result = transaction_filter(filter_multiple)
     assert len(result) == 2

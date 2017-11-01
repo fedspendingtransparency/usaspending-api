@@ -94,7 +94,8 @@ def test_spending_over_time_success(client, budget_function_data):
             "Small Business",
             "Alaskan Native Owned Business"],
         "place_of_performance_scope": "domestic",
-        "place_of_performance_locations": [{"country": "USA"}, {"country": "ABC"}],
+        "place_of_performance_locations": [{"country": "USA"},
+                                           {"country": "ABC"}],
         "award_type_codes": ["A", "B", "03", '011', '020'],
         "award_ids": [1, 2, 3],
         "award_amounts": [
