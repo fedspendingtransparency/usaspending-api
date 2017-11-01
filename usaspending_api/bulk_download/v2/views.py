@@ -1,6 +1,8 @@
 import sys
-import threading
 import itertools
+import json
+import time
+import logging
 
 from django.conf import settings
 from django.db.models import F, Sum, Value, CharField, Q
@@ -14,10 +16,13 @@ from usaspending_api.awards.models import Award, Subaward, TransactionNormalized
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
 from usaspending_api.bulk_download.lookups import JOB_STATUS_DICT
+
+logger = logging.getLogger('console')
 
 award_type_mappings = {
     "contracts": list(contract_type_mapping.keys()),
@@ -47,10 +52,13 @@ value_mappings = {
     }
 }
 
+queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
+                  QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+
 
 class BaseDownloadViewSet(APIView):
 
-    s3_handler = S3Handler()
+    s3_handler = S3Handler(name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
     def get_download_response(self, file_name):
         """ Generate download response which encompasses various elements to provide accurate status for state
@@ -105,12 +113,27 @@ class BaseDownloadViewSet(APIView):
             # is not shared with the thread
             csv_selection.write_csvs(**kwargs)
         else:
-            # REPLACE WITH AWS LAMBDA
-            t = threading.Thread(target=csv_selection.write_csvs,
-                                 kwargs=kwargs)
-
-            # Thread will stop when csv_selection.write_csvs stops
-            t.start()
+            generating_sqs_request_start = time.now()
+            message_attributes = {
+                "download_job_id": {
+                    "StringValue": str(kwargs['download_job'].bulk_download_job_id),
+                    'DataType': 'String'
+                },
+                "file_name": {
+                    "StringValue": kwargs['file_name'],
+                    'DataType': 'String'
+                },
+                "columns": {
+                    "StringValue": json.dumps(kwargs['columns']),
+                    'DataType': 'String'
+                },
+                'sources': {
+                    "StringValue": json.dumps(tuple([source.toJsonDict() for source in kwargs['sources']])),
+                    'DataType': 'String'
+                }
+            }
+            logger.info("generating_sqs_request took {} seconds".format(time.now()-generating_sqs_request_start))
+            response = queue.send_message(MessageBody="Test", MessageAttributes=message_attributes)
 
         return self.get_download_response(file_name=timestamped_file_name)
 
@@ -159,6 +182,7 @@ class BulkDownloadListAgenciesViewSet(APIView):
 
 class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
     def process_filters(self, filters, award_level):
+        process_filters_start = time.now()
         and_queryset_filters = {}
 
         # Adding award type filter
@@ -225,10 +249,12 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         order_by = date_attribute if date_attribute else value_mappings[award_level]["action_date"]
         filtered_queryset = filtered_queryset.order_by(order_by)
 
+        logger.info("process_filters took {} seconds".format(time.now() - process_filters_start))
         return filtered_queryset
 
 
     def get_csv_sources(self, json_request):
+        get_csv_sources_start = time.now()
         for required_param in ["file_format", "award_levels"]:
             if required_param not in json_request:
                 raise InvalidParameterException('{} parameter not provided'.format(required_param))
@@ -261,6 +287,8 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                 verify_requested_columns_available((d1_source, d2_source), json_request['columns'])
             else:
                 raise InvalidParameterException('Invalid parameter for award_levels: {}'.format(award_level))
+
+        logger.info("get_csv_sources took {} seconds".format(time.now() - get_csv_sources_start))
 
         return tuple(csv_sources)
 

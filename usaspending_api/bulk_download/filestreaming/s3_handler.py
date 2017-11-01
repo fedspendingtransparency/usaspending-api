@@ -14,7 +14,7 @@ class S3Handler:
     This class acts a wrapper for S3 URL Signing
     """
 
-    def __init__(self, name=None):
+    def __init__(self, name=settings.CSV_S3_BUCKET_NAME, region=settings.CSV_AWS_REGION):
         """
         Creates the object for signing URLS
 
@@ -22,12 +22,8 @@ class S3Handler:
         name -- (String) Name of the S3 bucket
 
         """
-        if name is None:
-            self.bucketRoute = settings.CSV_S3_BUCKET_NAME
-        else:
-            self.bucketRoute = name
-
-        S3Handler.REGION = settings.CSV_AWS_REGION
+        self.bucketRoute = name
+        S3Handler.REGION = region
 
     def get_simple_url(self, file_name):
         """

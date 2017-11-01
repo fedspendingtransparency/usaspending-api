@@ -1,22 +1,23 @@
 import csv
 import io
 import logging
-import time
 import itertools
+import json
+import jsonpickle
 
 import boto
 import smart_open
 import zipstream
 from django.conf import settings
+from django.core import serializers
 
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.bulk_download.lookups import JOB_STATUS_DICT
 from usaspending_api.bulk_download.v2 import download_column_historical_lookups
 
 BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('console')
 
 
 def update_number_of_columns(row, download_job):
@@ -50,6 +51,7 @@ class CsvSource:
             model_type][file_type]
         self.query_paths = download_column_historical_lookups.query_paths[
             model_type][file_type]
+        self.queryset = None
 
     def values(self, header):
         query_paths = [self.query_paths[hn] for hn in header]
@@ -76,6 +78,14 @@ class CsvSource:
         # yield headers
         query_paths = [self.query_paths[hn] for hn in headers]
         yield from self.queryset.values_list(*query_paths).iterator()
+
+    def toJsonDict(self):
+        json_dict = {
+            "model_type": self.model_type,
+            "file_type": self.file_type,
+            "query": jsonpickle.dumps(self.queryset.query) if self.queryset is not None else None
+        }
+        return json_dict
 
 
 def calculate_number_of_csvs(queryset, limit):
@@ -114,6 +124,7 @@ def write_csvs(download_job, file_name, columns, sources):
             source_limit = (source.queryset.count() // EXCEL_ROW_LIMIT) + 1
             source_iterator = list(source.row_emitter(columns))
             headers = source.columns(columns)
+            logger.debug(source.queryset.query)
             for split_csv in range(1, source_limit+1):
                 split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
                 end_row = split_csv*EXCEL_ROW_LIMIT if split_csv != source_limit else None
@@ -131,8 +142,8 @@ def write_csvs(download_job, file_name, columns, sources):
 
                 download_job.file_size = zipfile.tell()
         else:
-            bucket = settings.CSV_S3_BUCKET_NAME
-            region = settings.CSV_AWS_REGION
+            bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+            region = settings.BULK_DOWNLOAD_AWS_REGION
             s3_bucket = boto.s3.connect_to_region(region).get_bucket(bucket)
             conn = s3_bucket.new_key(file_name)
             stream = smart_open.smart_open(
