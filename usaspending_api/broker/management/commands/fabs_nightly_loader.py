@@ -213,8 +213,14 @@ class Command(BaseCommand):
                 row,
                 as_dict=True)
 
-            transaction_assistance = TransactionFABS(transaction=transaction, **financial_assistance_data)
-            transaction_assistance.save()
+            afa_generated_unique = financial_assistance_data['afa_generated_unique']
+
+            if TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique).exists():
+                TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique).\
+                    update(**financial_assistance_data)
+            else:
+                transaction_assistance = TransactionFABS(transaction=transaction, **financial_assistance_data)
+                transaction_assistance.save()
 
     def add_arguments(self, parser):
 

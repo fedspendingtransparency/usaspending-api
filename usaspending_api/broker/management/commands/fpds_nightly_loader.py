@@ -232,8 +232,14 @@ class Command(BaseCommand):
                 row,
                 as_dict=True)
 
-            transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)
-            transaction_contract.save()
+            detached_award_proc_unique = contract_instance['detached_award_proc_unique']
+
+            if TransactionFPDS.objects.filter(detached_award_proc_unique=detached_award_proc_unique).exists():
+                TransactionFPDS.objects.filter(detached_award_proc_unique=detached_award_proc_unique).\
+                    update(**contract_instance)
+            else:
+                transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)
+                transaction_contract.save()
 
     def add_arguments(self, parser):
 
