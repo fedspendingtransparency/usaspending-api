@@ -307,7 +307,8 @@ class Award(DataSourceTrackedModel):
 
             return created, summary_award
 
-        except:
+        # Do not use bare except
+        except ValueError:
             raise ValueError(
                 'Unable to find or create an award with the provided information: '
                 'piid={}, fain={}, uri={}, parent_id={}, awarding_agency={}'.format(
@@ -479,6 +480,7 @@ class TransactionFPDS(models.Model):
     place_of_perf_country_desc = models.TextField(blank=True, null=True)
     idv_type = models.TextField(blank=True, null=True)
     idv_type_description = models.TextField(blank=True, null=True)
+    award_or_idv_flag = models.TextField(blank=True, null=True)
     referenced_idv_type = models.TextField(blank=True, null=True)
     referenced_idv_type_desc = models.TextField(blank=True, null=True)
     vendor_doing_as_business_n = models.TextField(blank=True, null=True)
@@ -719,6 +721,7 @@ class TransactionFABS(models.Model):
     awarding_agency_code = models.TextField(blank=True, null=True)
     awarding_agency_name = models.TextField(blank=True, null=True)
     awarding_office_code = models.TextField(blank=True, null=True)
+    awarding_office_name = models.TextField(blank=True, null=True)
     awarding_sub_tier_agency_c = models.TextField(blank=True, null=True)
     awarding_sub_tier_agency_n = models.TextField(blank=True, null=True)
     award_modification_amendme = models.TextField(blank=True, null=True)
@@ -734,6 +737,7 @@ class TransactionFABS(models.Model):
     funding_agency_code = models.TextField(blank=True, null=True)
     funding_agency_name = models.TextField(blank=True, null=True)
     funding_office_code = models.TextField(blank=True, null=True)
+    funding_office_name = models.TextField(blank=True, null=True)
     funding_sub_tier_agency_co = models.TextField(blank=True, null=True)
     funding_sub_tier_agency_na = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(null=False, default=False)
@@ -742,8 +746,10 @@ class TransactionFABS(models.Model):
     legal_entity_address_line2 = models.TextField(blank=True, null=True)
     legal_entity_address_line3 = models.TextField(blank=True, null=True)
     legal_entity_city_name = models.TextField(blank=True, null=True)
+    legal_entity_city_code = models.TextField(blank=True, null=True)
     legal_entity_congressional = models.TextField(blank=True, null=True)
     legal_entity_country_code = models.TextField(blank=True, null=True)
+    legal_entity_country_name = models.TextField(blank=True, null=True)
     legal_entity_county_code = models.TextField(blank=True, null=True)
     legal_entity_county_name = models.TextField(blank=True, null=True)
     legal_entity_foreign_city = models.TextField(blank=True, null=True)
@@ -762,6 +768,8 @@ class TransactionFABS(models.Model):
     place_of_performance_code = models.TextField(blank=True, null=True)
     place_of_performance_congr = models.TextField(blank=True, null=True)
     place_of_perform_country_c = models.TextField(blank=True, null=True)
+    place_of_perform_country_n = models.TextField(blank=True, null=True)
+    place_of_perform_county_c = models.TextField(blank=True, null=True)
     place_of_perform_county_na = models.TextField(blank=True, null=True)
     place_of_performance_forei = models.TextField(blank=True, null=True)
     place_of_perform_state_nam = models.TextField(blank=True, null=True)
