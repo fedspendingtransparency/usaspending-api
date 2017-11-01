@@ -46,6 +46,17 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_fpds_data(db_cursor, date):
+        # Connect to AWS
+        aws_region = os.environ.get('AWS_REGION')
+        fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
+
+        if not (aws_region or fpds_bucket_name):
+            raise Exception('Missing required environment variables: AWS_REGION, FPDS_BUCKET_NAME')
+        
+        s3client = boto3.client('s3', region_name=aws_region)
+        s3resource = boto3.resource('s3', region_name=aws_region)
+        s3_bucket = s3resource.Bucket(fpds_bucket_name)
+        
         # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
         # by the Broker's PK since every modification is a new row
         db_query = 'SELECT * ' \
@@ -58,16 +69,6 @@ class Command(BaseCommand):
         db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
 
         ids_to_delete = []
-
-        aws_region = os.environ.get('AWS_REGION')
-        fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
-
-        if not (aws_region or fpds_bucket_name):
-            raise Exception('Missing required environment variables: AWS_REGION, FPDS_BUCKET_NAME')
-
-        s3client = boto3.client('s3', region_name=aws_region)
-        s3resource = boto3.resource('s3', region_name=aws_region)
-        s3_bucket = s3resource.Bucket(fpds_bucket_name)
 
         # make an array of all the keys in the bucket
         file_list = [item.key for item in s3_bucket.objects.all()]
