@@ -2,7 +2,7 @@ from django.db.models import F, Sum
 from django.db.models.functions import Coalesce
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
-
+from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.submissions.models import SubmissionAttributes
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,6 +14,7 @@ from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY
 
 class ToptierAgenciesViewSet(APIView):
 
+    @cache_response()
     def get(self, request, format=None):
         """Return all toptier agencies and associated information"""
 
