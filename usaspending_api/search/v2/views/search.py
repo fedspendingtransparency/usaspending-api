@@ -372,36 +372,40 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 raise InvalidParameterException("recipient type is not yet implemented")
 
         elif category == "cfda_programs":
-            # filter the transactions by scope name
-            name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
-            # define what values are needed in the sql query
-            queryset = queryset.values("federal_action_obligation",
-                                       "assistance_data__cfda_program_title",
-                                       "assistance_data__cfda_program_number")
+            queryset = queryset.filter(assistance_data__cfda_number__isnull=False,
+                                       federal_action_obligation__isnull=False) \
+                        .values("assistance_data__cfda_number") \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation'),
+                                  cfda_program_title=F("assistance_data__cfda_title"),
+                                  cfda_program_number=F("assistance_data__cfda_number")) \
+                        .values("aggregated_amount", "cfda_program_title", "cfda_program_number") \
+                        .order_by('-aggregated_amount')
 
-            for trans in queryset:
-                if trans["assistance_data__cfda_program_number"]:
-                    cfda_program_number = trans["assistance_data__cfda_program_number"]
-                    cfda_program_title = trans["assistance_data__cfda_program_title"]
-                    cfda_program_name = Cfda.objects.filter(program_title=cfda_program_title,
-                                                            program_number=cfda_program_number).first().popular_name
-                    cfda_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                    if cfda_program_number in name_dict:
-                        name_dict[cfda_program_number]["aggregated_amount"] += cfda_obl
-                    else:
-                        name_dict[cfda_program_number] = {"aggregated_amount": cfda_obl,
-                                                          "program_title": cfda_program_title,
-                                                          "popular_name": cfda_program_name}
+            # Eval queryset here
+            count = queryset.count()
+            results = list(queryset[lower_limit:upper_limit + 1])
 
-            # build response
-            results = []
+            has_next = len(results) > limit
+            has_previous = page > 1 and limit * (page - 2) < count
 
-            for key, value in name_dict.items():
-                results.append({"cfda_program_number": key, "program_title": value["program_title"],
-                                "popular_name": value["popular_name"],
-                                "aggregated_amount": value["aggregated_amount"]})
-            results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-            results, page_metadata = get_pagination(results, limit, page)
+            page_metadata = {
+                "page": page,
+                "count": count,
+                "next": page + 1 if has_next else None,
+                "previous": page - 1 if has_previous else None,
+                "hasNext": has_next,
+                "hasPrevious": has_previous
+            }
+
+            results = results[:limit]
+
+            for trans in results:
+                trans['popular_name'] = None
+                cfda = Cfda.objects.filter(program_title=trans['cfda_program_title'],
+                        program_number=trans['cfda_program_number']).values('popular_name').first()
+                if cfda:
+                    trans['popular_name'] = cfda['popular_name']
+
             response = {"category": category, "limit": limit, "results": results, "page_metadata": page_metadata}
             return Response(response)
 
@@ -642,7 +646,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
 
 class SpendingByAwardCountVisualizationViewSet(APIView):
-    
+
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
