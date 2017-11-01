@@ -44,7 +44,7 @@ class Command(BaseCommand):
     def get_fabs_data(db_cursor, date):
         # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
         # by the Broker's PK since every modification is a new row
-        db_query = 'SELECT published_award_financial_assistance_id ' \
+        db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
                    'WHERE created_at >= %s' \
                    'ORDER BY published_award_financial_assistance_id ASC'
@@ -62,6 +62,9 @@ class Command(BaseCommand):
                 # remove the row from the list of rows from the Broker since once we delete it, we don't care about it.
                 # all that'll be left in db_rows are rows we want to insert
                 db_rows.remove(row)
+
+        logger.info('Number of records to insert/update: %s' % str(len(db_rows)))
+        logger.info('Number of records to delete: %s' % str(len(ids_to_delete)))
 
         return db_rows, ids_to_delete
 
@@ -216,14 +219,7 @@ class Command(BaseCommand):
                 as_dict=True)
 
             transaction_assistance = TransactionFABS(transaction=transaction, **financial_assistance_data)
-            # catch exception and do nothing if we see
-            # "django.db.utils.IntegrityError: duplicate key value violates unique constraint"
-            try:
-                transaction_assistance.save()
-            except IntegrityError:
-                print("integrity error")
-                TransactionFABS.objects.filter(afa_generated_unique=row['afa_generated_unique']). \
-                    update(**financial_assistance_data)
+            transaction_assistance.save()
 
     def add_arguments(self, parser):
 

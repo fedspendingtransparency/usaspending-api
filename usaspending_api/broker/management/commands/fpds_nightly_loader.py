@@ -48,9 +48,9 @@ class Command(BaseCommand):
     def get_fpds_data(db_cursor, date):
         # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
         # by the Broker's PK since every modification is a new row
-        db_query = 'SELECT detached_award_procurement_id ' \
+        db_query = 'SELECT * ' \
                    'FROM detached_award_procurement ' \
-                   'WHERE updated_at >= %s' \
+                   'WHERE updated_at >= %s ' \
                    'ORDER BY detached_award_procurement_id ASC'
         db_args = [date]
 
@@ -71,11 +71,12 @@ class Command(BaseCommand):
 
         # make an array of all the keys in the bucket
         file_list = [item.key for item in s3_bucket.objects.all()]
-
         # Only use files that match the date we're currently checking
+
         for item in file_list:
             # if the date on the file is the same day as we're checking
-            if re.match('^' + date.strftime('%m-%d-%Y') + '_delete_records_(IDV|award).*', item):
+            if re.search('.*_delete_records_(IDV|award).*', item) and '/' not in item and \
+                            datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= date:
                 # make the url params to pass
                 url_params = {
                     'Bucket': fpds_bucket_name,
@@ -87,10 +88,13 @@ class Command(BaseCommand):
                 reader = csv.reader(current_file.read().decode("utf-8").splitlines())
                 # skip the header, the reader doesn't ignore it for some reason
                 next(reader)
-                # make an array of all the afa_generated_unique
-                unique_key_list = [rows[1] for rows in reader]
+                # make an array of all the detached_award_procurement_ids
+                unique_key_list = [rows[0] for rows in reader]
 
                 ids_to_delete += unique_key_list
+
+        logger.info('Number of records to insert/update: %s' % str(len(db_rows)))
+        logger.info('Number of records to delete: %s' % str(len(ids_to_delete)))
 
         return db_rows, ids_to_delete
 
@@ -233,13 +237,7 @@ class Command(BaseCommand):
                 as_dict=True)
 
             transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)
-            # catch exception and update existing row
-            # "django.db.utils.IntegrityError: duplicate key value violates unique constraint"
-            try:
-                transaction_contract.save()
-            except IntegrityError:
-                TransactionFPDS.objects.filter(detached_award_proc_unique=row['detached_award_proc_unique']).update(
-                    **contract_instance)
+            transaction_contract.save()
 
     def add_arguments(self, parser):
 
@@ -318,4 +316,4 @@ class Command(BaseCommand):
         ExternalDataLoadDate(last_load_date=datetime.now().strftime('%Y-%m-%d'),
                              external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fpds']).save()
 
-        logger.info('FABS NIGHTLY UPDATE FINISHED!')
+        logger.info('FPDS NIGHTLY UPDATE FINISHED!')
