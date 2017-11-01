@@ -148,10 +148,19 @@ class Command(BaseCommand):
             if recipient_name is None:
                 recipient_name = ""
 
-            legal_entity, created = LegalEntity.objects.get_or_create(
+            # Handling the case of duplicates, just grab the first match
+            legal_entity = LegalEntity.objects.filter(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
                 recipient_name=recipient_name
-            )
+            ).first()
+            created = False
+
+            if not legal_entity:
+                legal_entity = LegalEntity.objects.create(
+                    recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                    recipient_name=recipient_name
+                )
+                created = True
 
             if created:
                 legal_entity_value_map = {
