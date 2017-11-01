@@ -11,48 +11,48 @@ from usaspending_api.references.models import NAICS
 def naics_data(db):
     mommy.make(
         NAICS,
-        code="12121212",
-        description="NAICS_DESCRIPTION")
+        code="212113",
+        description="Anthracite Mining")
     mommy.make(
         NAICS,
-        code="23232323",
-        description="test1")
+        code="212112",
+        description="Bituminous Coal Underground Mining")
     mommy.make(
         NAICS,
-        code="34343434",
-        description="tes2")
+        code="213111",
+        description="Drilling Oil and Gas Wells")
     mommy.make(
         NAICS,
-        code="34343434",
-        description="tes2")
+        code="111331",
+        description="Apple Orchards")
 
 
 @pytest.mark.django_db
 def test_naics_autocomplete_success(client, naics_data):
 
-    # test for NAICS_description exact match
+    # test for naics code
     resp = client.post(
         '/api/v2/autocomplete/naics/',
         content_type='application/json',
-        data=json.dumps({'search_text': 'naics_description'}))
+        data=json.dumps({'search_text': '212112'}))
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data['results']) == 3
-    assert resp.data['results'][0]['naics_description'] == 'NAICS_DESCRIPTION'
+    assert len(resp.data['results']) == 1
+    assert resp.data['results'][0]['naics_description'] == 'Bituminous Coal Underground Mining'
 
-    # test for similar matches (with no duplicates)
+    # test for similarity
     resp = client.post(
         '/api/v2/autocomplete/naics/',
         content_type='application/json',
-        data=json.dumps({'search_text': 'test', 'limit': 3}))
+        data=json.dumps({'search_text': 'Mining'}))
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data['results']) == 3
+    assert len(resp.data['results']) == 2
+
 
 @pytest.mark.django_db
 def test_naics_autocomplete_failure(client):
-    """Verify error on bad autocomplete request for budget function."""
-
+    """Empty search string"""
     resp = client.post(
         '/api/v2/autocomplete/naics/',
         content_type='application/json',
-        data=json.dumps({}))
+        data=json.dumps({'search_text': ''}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
