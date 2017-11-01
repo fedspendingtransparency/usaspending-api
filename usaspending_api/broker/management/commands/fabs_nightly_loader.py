@@ -69,20 +69,15 @@ class Command(BaseCommand):
         return db_rows, ids_to_delete
 
     @staticmethod
-    def delete_stale_fabs(ids_to_delete, total_rows_delete):
+    def delete_stale_fabs(ids_to_delete=None):
         logger.info('Starting deletion of stale FABS data')
 
-        start_time = datetime.now()
-        for index, published_award_financial_assistance_id in enumerate(ids_to_delete, 1):
-            if not (index % 100):
-                logger.info('Deleting Stale FABS: Deleting row {} of {} ({})'.format(str(index),
-                                                                                     str(total_rows_delete),
-                                                                                     datetime.now() - start_time))
-            # This cascades deletes for TransactionFABS & Awards in addition to deleting TransactionNormalized records
-            TransactionNormalized.objects. \
-                filter(
-                    assistance_data__published_award_financial_assistance_id=published_award_financial_assistance_id
-                ).delete()
+        if not ids_to_delete:
+            return
+
+        # This cascades deletes for TransactionFABS & Awards in addition to deleting TransactionNormalized records
+        TransactionNormalized.objects.\
+            filter(assistance_data__published_award_financial_assistance_id__in=ids_to_delete).delete()
 
     @staticmethod
     def insert_new_fabs(to_insert, total_rows):
@@ -260,7 +255,7 @@ class Command(BaseCommand):
         if total_rows_delete > 0:
             logger.info('Deleting stale FABS data...')
             start = timeit.default_timer()
-            self.delete_stale_fabs(ids_to_delete=ids_to_delete, total_rows_delete=total_rows_delete)
+            self.delete_stale_fabs(ids_to_delete=ids_to_delete)
             end = timeit.default_timer()
             logger.info('Finished deleting stale FABS data in ' + str(end - start) + ' seconds')
         else:
