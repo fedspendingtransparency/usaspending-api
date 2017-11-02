@@ -283,6 +283,7 @@ class Command(BaseCommand):
 
                 LegalEntity.update_business_type_categories(legal_entity)
 
+                self.le_map[lookup_key] = legal_entity
                 legal_entity_bulk.append(legal_entity)
             legal_entity_lookup.append(legal_entity)
 
