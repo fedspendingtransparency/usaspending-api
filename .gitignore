@@ -13,3 +13,5 @@ usaspending_api/.idea/*
 usaspending_api/references/.idea/*
 usaspending_api/financial_activities/.idea/*
 .idea/*
+
+.direnv/
