@@ -1,5 +1,6 @@
 import ast
 import logging
+import json
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,7 +16,7 @@ from datetime import date
 from fiscalyear import *
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_month, get_pagination
+from usaspending_api.common.helpers import generate_fiscal_month, get_pagination, get_pagination_metadata
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
@@ -150,166 +151,125 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         # filter the transactions by category
         if category == "awarding_agency":
-            # TODO: Add "offices" below for office_agency changes
             potential_scopes = ["agency", "subagency"]
             if scope not in potential_scopes:
                 raise InvalidParameterException("scope does not have a valid value")
-            # filter the transactions by scope name
-            name_dict = {}  # {ttname: {aggregated_amount: 1000, abbreviation: "tt"}
-            # define what values are needed in the sql query
 
             if scope == "agency":
-                agency_set = queryset.values('awarding_agency__toptier_agency__name', 'awarding_agency__toptier_agency__abbreviation') \
-                        .annotate(federal_action_obligation=Sum('federal_action_obligation'))\
-                        .order_by('-federal_action_obligation')
+                agency_set = queryset \
+                    .filter(awarding_agency__toptier_agency__name__isnull=False) \
+                    .values(agency_name=F('awarding_agency__toptier_agency__name'),
+                            abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .order_by('-aggregated_amount')
 
-                agency_set = agency_set[lower_limit:upper_limit + 1]
-                has_next = len(agency_set) > limit
-                has_previous = page > 1
-
-                for trans in agency_set[:limit]:
-                    ttname = trans["awarding_agency__toptier_agency__name"]
-                    ttabv = trans["awarding_agency__toptier_agency__abbreviation"]
-                    ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                    if ttname in name_dict:
-                        name_dict[ttname]["aggregated_amount"] += ttob
-                    else:
-                        name_dict[ttname] = {"aggregated_amount": ttob, "abbreviation": ttabv}
+                # Begin DB hits here
+                total = agency_set.count()
+                results = list(agency_set[lower_limit:upper_limit])
 
             elif scope == "subagency":
-                subagency_set = queryset.filter(awarding_agency__subtier_agency__name__isnull=False) \
-                        .values('awarding_agency__subtier_agency__name', 'awarding_agency__subtier_agency__abbreviation') \
-                        .annotate(federal_action_obligation=Sum('federal_action_obligation'))\
-                        .order_by('-federal_action_obligation')
+                subagency_set = queryset \
+                    .filter(awarding_agency__subtier_agency__name__isnull=False) \
+                    .values(agency_name=F('awarding_agency__subtier_agency__name'),
+                            abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
+                    .order_by('-aggregated_amount')
 
-                subagency_set = subagency_set[lower_limit:upper_limit + 1]
-                has_next = len(subagency_set) > limit
-                has_previous = page > 1
+                # Begin DB hits here
+                total = subagency_set.count()
+                results = list(subagency_set[lower_limit:upper_limit])
 
-                for trans in subagency_set[:limit]:
-                    stname = trans["awarding_agency__subtier_agency__name"]
-                    stabv = trans["awarding_agency__subtier_agency__abbreviation"]
-                    stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                    if stname in name_dict:
-                        name_dict[stname]["aggregated_amount"] += stob
-                    else:
-                        name_dict[stname] = {"aggregated_amount": stob, "abbreviation": stabv}
+            elif scope == "office":
+                #####################################################
+                # NOT IMPLEMENTED IN UI
+                #####################################################
+                # office_set = queryset \
+                #     .filter(awarding_agency__office_agency__name__isnull=False) \
+                #     .values('awarding_agency__office_agency__name',
+                #             'awarding_agency__office_agency__abbreviation') \
+                #     .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
+                #     .order_by('-federal_action_obligation')
 
-            else:  # offices
-                office_set = queryset.filter(awarding_agency__office_agency__name__isnull=False) \
-                        .values('awarding_agency__office_agency__name', 'awarding_agency__office_agency__abbreviation') \
-                        .annotate(federal_action_obligation=Sum('federal_action_obligation'))\
-                        .order_by('-federal_action_obligation')
+                # office_set = office_set[lower_limit:upper_limit + 1]
+                # has_next = len(office_set) > limit
+                # has_previous = page > 1
 
-                office_set = office_set[lower_limit:upper_limit + 1]
-                has_next = len(office_set) > limit
-                has_previous = page > 1
+                # for trans in office_set[:limit]:
+                #     oname = trans["awarding_agency__office_agency__name"]
+                #     oabv = trans["awarding_agency__office_agency__abbreviation"]
+                #     oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
+                #     if oname in name_dict:
+                #         name_dict[oname]["aggregated_amount"] += oob
+                #     else:
+                #         name_dict[oname] = {"aggregated_amount": oob, "abbreviation": oabv}
+                #####################################################
+                pass
 
-                for trans in office_set[:limit]:
-                    oname = trans["awarding_agency__office_agency__name"]
-                    oabv = trans["awarding_agency__office_agency__abbreviation"]
-                    oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                    if oname in name_dict:
-                        name_dict[oname]["aggregated_amount"] += oob
-                    else:
-                        name_dict[oname] = {"aggregated_amount": oob, "abbreviation": oabv}
+            page_metadata = get_pagination_metadata(total, limit, page)
 
-            # build response
-            results = []
-            # [{
-            # "agency_name": ttname,
-            # "agency_abbreviation": ttabrev,
-            # 	"aggregated_amount": "200000000"
-            # },...]
-            for key, value in name_dict.items():
-                results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
-                                "aggregated_amount": value["aggregated_amount"]})
-            results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": {'page': page, 'hasNext': has_next, 'hasPrevious': has_previous}}
+                        "page_metadata": page_metadata}
             return Response(response)
 
         elif category == "funding_agency":
-
-            # TODO: Add "offices" below for office_agency changes
             potential_scopes = ["agency", "subagency"]
             if scope not in potential_scopes:
                 raise InvalidParameterException("scope does not have a valid value")
-            # filter the transactions by scope name
-            name_dict = {}  # {ttname: {aggregated_amount: 1000, abbreviation: "tt"}
-            # define what values are needed in the sql query
-
-            queryset = queryset.filter(funding_agency__isnull=False)
 
             if scope == "agency":
-                agency_set = queryset.values('funding_agency__toptier_agency__name', 'funding_agency__toptier_agency__abbreviation') \
-                    .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
-                    .order_by('-federal_action_obligation')
+                agency_set = queryset \
+                    .filter(funding_agency__isnull=False,
+                            funding_agency__toptier_agency__name__isnull=False) \
+                    .values(agency_name=F('funding_agency__toptier_agency__name'),
+                            abbreviation=F('funding_agency__toptier_agency__abbreviation')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .order_by('-aggregated_amount')
 
-                agency_set = agency_set[lower_limit:upper_limit + 1]
-                has_next = len(agency_set) > limit
-                has_previous = page > 1
-
-                for trans in agency_set[:limit]:
-                    ttname = trans["funding_agency__toptier_agency__name"]
-                    ttabv = trans["funding_agency__toptier_agency__abbreviation"]
-                    ttob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                    if ttname in name_dict:
-                        name_dict[ttname]["aggregated_amount"] += ttob
-                    else:
-                        name_dict[ttname] = {"aggregated_amount": ttob, "abbreviation": ttabv}
+                total = agency_set.count()
+                results = list(agency_set[lower_limit:upper_limit])
 
             elif scope == "subagency":
-                subagency_set = queryset.filter(funding_agency__subtier_agency__name__isnull=False) \
-                    .values('funding_agency__subtier_agency__name', 'funding_agency__subtier_agency__abbreviation') \
-                    .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
-                    .order_by('-federal_action_obligation')
+                subagency_set = queryset \
+                    .filter(funding_agency__isnull=False,
+                            funding_agency__subtier_agency__name__isnull=False) \
+                    .values(agency_name=F('funding_agency__subtier_agency__name'),
+                            abbreviation=F('funding_agency__subtier_agency__abbreviation')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .order_by('-aggregated_amount')
 
-                subagency_set = subagency_set[lower_limit:upper_limit + 1]
-                has_next = len(subagency_set) > limit
-                has_previous = page > 1
+                total = subagency_set.count()
+                results = list(subagency_set[lower_limit:upper_limit])
 
-                for trans in subagency_set[:limit]:
-                    stname = trans["funding_agency__subtier_agency__name"]
-                    stabv = trans["funding_agency__subtier_agency__abbreviation"]
-                    stob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                    if stname in name_dict:
-                        name_dict[stname]["aggregated_amount"] += stob
-                    else:
-                        name_dict[stname] = {"aggregated_amount": stob, "abbreviation": stabv}
+            elif scope == "office":
+                #####################################################
+                # NOT IMPLEMENTED IN UI
+                #####################################################
+                # office_set = queryset \
+                #     .filter(funding_agency__office_agency__name=False) \
+                #     .values('funding_agency__office_agency__name',
+                #         'funding_agency__office_agency__abbreviation') \
+                #     .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
+                #     .order_by('-federal_action_obligation')
 
-            else:  # offices
-                office_set = queryset.filter(funding_agency__office_agency__name=False) \
-                    .values('funding_agency__office_agency__name', 'funding_agency__office_agency__abbreviation') \
-                    .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
-                    .order_by('-federal_action_obligation')
+                # office_set = office_set[lower_limit:upper_limit + 1]
+                # has_next = len(office_set) > limit
+                # has_previous = page > 1
 
-                office_set = office_set[lower_limit:upper_limit + 1]
-                has_next = len(office_set) > limit
-                has_previous = page > 1
+                # for trans in office_set[:limit]:
+                #     oname = trans["funding_agency__office_agency__name"]
+                #     oabv = trans["funding_agency__office_agency__abbreviation"]
+                #     oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
+                #     if oname in name_dict:
+                #         name_dict[oname]["aggregated_amount"] += oob
+                #     else:
+                #         name_dict[oname] = {"aggregated_amount": oob, "abbreviation": oabv}
+                #####################################################
+                pass
 
-                for trans in office_set[:limit]:
-                    oname = trans["funding_agency__office_agency__name"]
-                    oabv = trans["funding_agency__office_agency__abbreviation"]
-                    oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                    if oname in name_dict:
-                        name_dict[oname]["aggregated_amount"] += oob
-                    else:
-                        name_dict[oname] = {"aggregated_amount": oob, "abbreviation": oabv}
+            page_metadata = get_pagination_metadata(total, limit, page)
 
-            # build response
-            results = []
-            # [{
-            # "agency_name": ttname,
-            # "agency_abbreviation": ttabrev,
-            # 	"aggregated_amount": "200000000"
-            # },...]
-            for key, value in name_dict.items():
-                results.append({"agency_name": key, "agency_abbreviation": value["abbreviation"],
-                                "aggregated_amount": value["aggregated_amount"]})
-            results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": {'page': page, 'hasNext': has_next, 'hasPrevious': has_previous}}
+                        "page_metadata": page_metadata}
             return Response(response)
 
         elif category == "recipient":
@@ -383,20 +343,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 .order_by('-aggregated_amount')
 
             # Begin DB hits here
-            count = queryset.count()  # Using count to keep response consistant
+            total = queryset.count()  # Using count to keep response consistant
             results = list(queryset[lower_limit:upper_limit])
 
-            has_next = limit * page < count
-            has_previous = (page > 1) and (limit * (page - 2) < count)
-
-            page_metadata = {
-                "page": page,
-                "count": count,
-                "next": page + 1 if has_next else None,
-                "previous": page - 1 if has_previous else None,
-                "hasNext": has_next,
-                "hasPrevious": has_previous
-            }
+            page_metadata = get_pagination_metadata(total, limit, page)
 
             for trans in results:
                 trans['popular_name'] = None
@@ -418,20 +368,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
-                count = queryset.count()
+                total = queryset.count()
                 results = list(queryset[lower_limit:upper_limit])
 
-                has_next = limit * page < count
-                has_previous = (page > 1) and (limit * (page - 2) < count)
-
-                page_metadata = {
-                    "page": page,
-                    "count": count,
-                    "next": page + 1 if has_next else None,
-                    "previous": page - 1 if has_previous else None,
-                    "hasNext": has_next,
-                    "hasPrevious": has_previous
-                }
+                page_metadata = get_pagination_metadata(total, limit, page)
                 response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
@@ -446,20 +386,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                             naics_description=F('contract_data__naics_description'))
 
                 # Begin DB hits here
-                count = queryset.count()
+                total = queryset.count()
                 results = list(queryset[lower_limit:upper_limit])
 
-                has_next = limit * page < count
-                has_previous = (page > 1) and (limit * (page - 2) < count)
-
-                page_metadata = {
-                    "page": page,
-                    "count": count,
-                    "next": page + 1 if has_next else None,
-                    "previous": page - 1 if has_previous else None,
-                    "hasNext": has_next,
-                    "hasPrevious": has_previous
-                }
+                page_metadata = get_pagination_metadata(total, limit, page)
                 response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
