@@ -126,7 +126,7 @@ def award_filter(filters):
 
         # recipient_location
         elif key == "recipient_locations":
-            or_queryset = geocode_filter_locations('recipient__location', value, 'award')
+            or_queryset = geocode_filter_locations('recipient__location', value, 'Award')
             queryset &= or_queryset
 
         # recipient_type_names
@@ -148,7 +148,7 @@ def award_filter(filters):
 
         # place_of_performance
         elif key == "place_of_performance_locations":
-            or_queryset = geocode_filter_locations('place_of_performance', value, 'award')
+            or_queryset = geocode_filter_locations('place_of_performance', value, 'Award')
 
             queryset &= or_queryset
 

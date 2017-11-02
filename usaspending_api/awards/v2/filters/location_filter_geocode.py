@@ -24,7 +24,7 @@ def geocode_filter_locations(scope, values, model):
     for v in values:
         fields = v.keys()
 
-        check_location_fields(v, fields)
+        check_location_fields(fields)
 
         kwargs = {'{0}__{1}'.format(
             scope, loc_dict.get(loc_scope)
@@ -43,7 +43,7 @@ def geocode_filter_locations(scope, values, model):
     return or_queryset
 
 
-def check_location_fields(filters, fields):
+def check_location_fields(fields):
     # Request must have country, and can only have 3 fields,
     # and must have state if there is county or district
     if 'country' not in fields or \
