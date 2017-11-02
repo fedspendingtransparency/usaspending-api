@@ -1,41 +1,21 @@
 import logging
 import timeit
+from functools import wraps
 from datetime import datetime
+import psycopg2.extras
 from django.core.management.base import BaseCommand
 from django.db import connections, connection, transaction as db_transaction
-from usaspending_api.common.helpers import fy
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
+from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date
 from usaspending_api.references.helpers import canonicalize_location_dict
-from usaspending_api.references.models import RefCountryCode, Location, LegalEntity, Agency, ToptierAgency, \
-    SubtierAgency
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
+from usaspending_api.references.models import RefCountryCode, Location
 
 BATCH_SIZE = 100000
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
-
-fpds_bulk = []
-
-pop_bulk = []
-
-lel_bulk = []
-
-legal_entity_lookup = []
-legal_entity_bulk = []
-
-awarding_agency_list = []
-funding_agency_list = []
-
-award_lookup = []
-award_bulk = []
-parent_award_lookup = []
-parent_award_bulk = []
-
-transaction_normalized_bulk = []
 
 pop_field_map = {
     # not sure place_of_performance_locat maps exactly to city name
@@ -60,6 +40,21 @@ le_field_map = {
 }
 
 
+def log_time(func):
+    """Decorator to log elapsed time for a function"""
+
+    @wraps(func) 
+    def log_time_wrapper(*args, **kwargs):
+        logger.info('Begin {}'.format(func.__name__))
+        start = timeit.default_timer()
+        result = func(*args, **kwargs)
+        end = timeit.default_timer()
+        logger.info('Finished {} in {} seconds'.format(func.__name__, end - start))
+        return result
+
+    return log_time_wrapper
+
+
 class Command(BaseCommand):
     help = "Update historical transaction data for a fiscal year from the Broker."
 
@@ -79,15 +74,27 @@ class Command(BaseCommand):
                                  for country in RefCountryCode.objects.all()}
 
     def get_fpds_data(self, db_cursor, piid):
-        piids = ','.join("'{}'".format(p) for p in piid)
-        query = 'SELECT * FROM detached_award_procurement WHERE piid IN ({})'.format(
-            piids)
-        logger.info("Executing select query on Broker DB")
+        """For a PIID, get FPDS data from broker"""
 
+        query = 'SELECT * FROM detached_award_procurement WHERE piid = %s'
         db_cursor.execute(query, [piid, ])
-
-        logger.info("Running dictfetchall on db_cursor")
         return dictfetchall(db_cursor)
+
+    @log_time
+    def piids_for_blank_pops(self, limit):
+
+        return TransactionFPDS.objects.only('piid'). \
+            filter(transaction__place_of_performance__state_code__isnull=True). \
+            filter(transaction__place_of_performance__location_country_code__country_code='USA') \
+            [:limit]
+
+    @log_time
+    def piids_for_blank_recipients(self, limit):
+
+        return TransactionFPDS.objects.only('piid'). \
+            filter(transaction__recipient__location__state_code__isnull=True). \
+            filter(transaction__recipient__location__location_country_code__country_code='USA') \
+            [:limit]
 
     def location_from_fpds_row(self, fpds_broker_row, field_map, value_map):
         row = canonicalize_location_dict(fpds_broker_row)
@@ -128,38 +135,45 @@ class Command(BaseCommand):
                                                       field_map=field_map,
                                                       as_dict=True)
 
-        (loc, created) = Location.objects.get_or_create(**
-                                                        location_instance_data)
-        loc.save()
-        return loc
+        # get_or_create can't be used b/c we have many duplicates
+        loc = Location.objects.filter(**location_instance_data).order_by('create_date').first()
+        if loc:
+            created = False 
+        else:
+            loc = Location(**location_instance_data)
+            loc.save()
+            created = True
+        return (loc, created)
 
+    @log_time
     def fix_places_of_performance(self, fpds_broker_data):
 
         start_time = datetime.now()
         value_map = {"place_of_performance_flag": True}
+        create_count = change_count = 0
         for index, row in enumerate(fpds_broker_data, 1):
-            if not (index % 10000):
-                logger.info('Place of performance: fixing row {} ({})'.format(
-                    str(index), datetime.now() - start_time))
-            loc = self.location_from_fpds_row(row,
+            (loc, created) = self.location_from_fpds_row(row,
                                               field_map=pop_field_map,
                                               value_map=dict(value_map))
+            create_count += int(created)
             for txn in TransactionFPDS.objects.filter(
                     detached_award_procurement_id=row[
                         'detached_award_procurement_id']).all():
-                txn.transaction.place_of_performance = loc
-                txn.transaction.save()
-                if txn.transaction == txn.transaction.award.latest_transaction:
+                if txn.transaction.place_of_performance != loc:
+                    change_count += 1
+                    txn.transaction.place_of_performance = loc
+                    txn.transaction.save()
+                if txn.transaction_id == txn.transaction.award.latest_transaction_id:
                     txn.transaction.award.place_of_performance = loc
                     txn.transaction.award.save()
+        return (change_count, create_count)
 
+    @log_time
     def fix_recipient_locations(self, fpds_broker_data):
 
         value_map = {"recipient_flag": True}
+        create_count = change_count = 0
         for index, row in enumerate(fpds_broker_data, 1):
-            if not (index % 10000):
-                logger.info('Recipient location: fixing row {} ({})'.format(
-                    str(index), datetime.now() - start_time))
             for txn in TransactionFPDS.objects.filter(
                     detached_award_procurement_id=row[
                         'detached_award_procurement_id']).all():
@@ -167,51 +181,82 @@ class Command(BaseCommand):
                 last_txn = recip.transactionnormalized_set.order_by(
                     '-action_date')[0]
                 if txn.transaction == last_txn:
-                    loc = self.location_from_fpds_row(
+                    (loc, created) = self.location_from_fpds_row(
                         row,
                         field_map=le_field_map,
                         value_map=dict(value_map))
-                    recip.location = loc
-                    recip.save()
+                    create_count += int(created)
+                    if recip.location != loc:
+                        change_count += 1
+                        recip.location = loc
+                        recip.save()
+        return (change_count, create_count)
 
-    def add_arguments(self, parser):
-
-        parser.add_argument('--piid',
-                            nargs='+',
-                            help="PIID of award(s) to reload")
-
-    @db_transaction.atomic
-    def handle(self, *args, **options):
-        logger.info('Starting FPDS data fix...')
-
-        db_cursor = connections['data_broker'].cursor()
-        ds_cursor = connection.cursor()
-        piid = options.get('piid')
-
-        self.set_lookup_maps()
-
-        logger.info('Processing data for Piid {}'.format(piid))
-
-        # Set lookups after deletions to only get latest
-        # self.set_lookup_maps()
-
-        logger.info('Get Broker FPDS data...')
+    def log_and_execute(self, description, func, *args, **kwargs):
+        logger.info('Begin {}'.format(description))
         start = timeit.default_timer()
-        fpds_broker_data = self.get_fpds_data(db_cursor=db_cursor, piid=piid)
+        result = func(*args, **kwargs)
         end = timeit.default_timer()
-        logger.info('Finished getting Broker FPDS data in ' + str(end - start)
-                    + ' seconds')
+        logger.info('Finished {} in {} seconds'.format(description, (end - start)))
+
+    
+    def fix_locations(self, db_cursor, piid):
+
+        logger.info('Fixing locations for PIID {}'.format(piid))
+        overall_start = timeit.default_timer()
+
+        fpds_broker_data = self.get_fpds_data(db_cursor=db_cursor, piid=piid)
 
         logger.info('Fixing POP Location data...')
         start = timeit.default_timer()
         self.fix_places_of_performance(fpds_broker_data=fpds_broker_data)
         end = timeit.default_timer()
-        logger.info('Finished POP Location bulk data load in ' + str(
-            end - start) + ' seconds')
+        logger.info('Fixed POP locations in {} seconds'.format(end - start))
 
         logger.info('Fixing LE Location data...')
         start = timeit.default_timer()
         self.fix_recipient_locations(fpds_broker_data=fpds_broker_data)
         end = timeit.default_timer()
-        logger.info('Finished LE Location bulk data load in ' + str(
-            end - start) + ' seconds')
+        logger.info('Fixed LE location in {} seconds'.format(end - start))
+
+        end = timeit.default_timer()
+        logger.info('PIID {} fixed in {} seconds'.format(piid, end - overall_start))
+
+
+    def add_arguments(self, parser):
+
+        parser.add_argument('--piid',
+                            help="PIID of award to reload")
+        parser.add_argument('--limit', type=int, default=1000, 
+                            help="Max # of awards to fix")
+
+    @db_transaction.atomic
+    def handle(self, *args, **options):
+        logger.info('Starting FPDS data fix...')
+        start = timeit.default_timer()
+
+        self.set_lookup_maps()
+        db_cursor = connections['data_broker'].cursor()
+        piid = options.get('piid')
+        limit = options.get('limit')
+        if piid:
+            fpds_broker_data = self.get_fpds_data(db_cursor=db_cursor, piid=piid)
+            (changed, created) = self.fix_places_of_performance(fpds_broker_data=fpds_broker_data)
+            logger.info('Created {} locations, changed POP for {} transactions'.format(created, changed))
+            (changed, created) = self.fix_recipient_locations(fpds_broker_data=fpds_broker_data)
+            logger.info('Created {} locations, changed location for {} recipients'.format(created, changed))
+            created = pop_created + recip_created
+        else:
+            for (n, txn) in enumerate(self.piids_for_blank_pops(limit=limit)):
+                logger.info('Begin piid {}'.format(txn.piid))
+                fpds_broker_data = self.get_fpds_data(db_cursor=db_cursor, piid=txn.piid)
+                (changed, created) = self.fix_places_of_performance(fpds_broker_data=fpds_broker_data)
+                logger.info('Created {} locations, changed POP for {} transactions'.format(created, changed))
+                logger.info('Checked {} POPs in {} seconds'.format(n, timeit.default_timer() - start))
+            for (n, txn) in enumerate(self.piids_for_blank_recips(limit=limit)):
+                logger.info('Begin piid {}'.format(txn.piid))
+                fpds_broker_data = self.get_fpds_data(db_cursor=db_cursor, piid=txn.piid)
+                (changed, created) = self.fix_recipient_locations(fpds_broker_data=fpds_broker_data)
+                logger.info('Created {} locations, changed location for {} recipients'.format(created, changed))
+                logger.info('Checked {} recipient locations in {} seconds'.format(n, timeit.default_timer() - start))
+        
