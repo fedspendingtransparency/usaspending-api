@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, Q, F
+from django.db.models import Sum, Count, F
 from django.db.models.functions import ExtractMonth
 
 from collections import OrderedDict
@@ -15,7 +15,7 @@ from datetime import date
 from fiscalyear import *
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_month, get_pagination, get_pagination_metadata
+from usaspending_api.common.helpers import generate_fiscal_month, get_pagination
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
@@ -372,21 +372,22 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 raise InvalidParameterException("recipient type is not yet implemented")
 
         elif category == "cfda_programs":
-            queryset = queryset.filter(assistance_data__cfda_number__isnull=False,
-                                       federal_action_obligation__isnull=False) \
-                        .values("assistance_data__cfda_number") \
-                        .annotate(aggregated_amount=Sum('federal_action_obligation'),
-                                  cfda_program_title=F("assistance_data__cfda_title"),
-                                  cfda_program_number=F("assistance_data__cfda_number")) \
-                        .values("aggregated_amount", "cfda_program_title", "cfda_program_number") \
-                        .order_by('-aggregated_amount')
+            queryset = queryset \
+                .filter(assistance_data__cfda_number__isnull=False,
+                        federal_action_obligation__isnull=False) \
+                .values("assistance_data__cfda_number") \
+                .annotate(aggregated_amount=Sum('federal_action_obligation'),
+                        cfda_program_title=F("assistance_data__cfda_title"),
+                        cfda_program_number=F("assistance_data__cfda_number")) \
+                .values("aggregated_amount", "cfda_program_title", "cfda_program_number") \
+                .order_by('-aggregated_amount')
 
-            # Eval queryset here
-            count = queryset.count()
-            results = list(queryset[lower_limit:upper_limit + 1])
+            # Begin DB hits here
+            count = queryset.count()  # Using count to keep response consistant
+            results = list(queryset[lower_limit:upper_limit])
 
-            has_next = len(results) > limit
-            has_previous = page > 1 and limit * (page - 2) < count
+            has_next = limit * page < count
+            has_previous = (page > 1) and (limit * (page - 2) < count)
 
             page_metadata = {
                 "page": page,
@@ -397,10 +398,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 "hasPrevious": has_previous
             }
 
-            results = results[:limit]
-
             for trans in results:
                 trans['popular_name'] = None
+                # small DB hit every loop here
                 cfda = Cfda.objects.filter(program_title=trans['cfda_program_title'],
                         program_number=trans['cfda_program_number']).values('popular_name').first()
                 if cfda:
@@ -410,51 +410,56 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             return Response(response)
 
         elif category == "industry_codes":  # industry_codes
-            # filter the transactions by scope name
-            name_dict = {}  # {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
-            # define what values are needed in the sql query
-            queryset = queryset.values("federal_action_obligation", "contract_data__product_or_service_code",
-                                       "contract_data__naics", "contract_data__naics_description")
-
             if scope == "psc":
-                for trans in queryset:
-                    if trans["contract_data__product_or_service_code"]:
-                        psc = trans["contract_data__product_or_service_code"]
-                        psc_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                        if psc in name_dict:
-                            name_dict[psc] += psc_obl
-                        else:
-                            name_dict[psc] = psc_obl
+                queryset = queryset \
+                    .filter(contract_data__product_or_service_code__isnull=False) \
+                    .values(psc_code=F('contract_data__product_or_service_code')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .order_by('-aggregated_amount')
 
-                results = []
-                for key, value in name_dict.items():
-                    results.append({"psc_code": key,
-                                    "aggregated_amount": value})
-                results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-                results, page_metadata = get_pagination(results, limit, page)
+                # Begin DB hits here
+                count = queryset.count()
+                results = list(queryset[lower_limit:upper_limit])
+
+                has_next = limit * page < count
+                has_previous = (page > 1) and (limit * (page - 2) < count)
+
+                page_metadata = {
+                    "page": page,
+                    "count": count,
+                    "next": page + 1 if has_next else None,
+                    "previous": page - 1 if has_previous else None,
+                    "hasNext": has_next,
+                    "hasPrevious": has_previous
+                }
                 response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
 
             elif scope == "naics":
-                for trans in queryset:
-                    if trans["contract_data__naics"]:
-                        naics = trans["contract_data__naics"]
-                        naics_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                        naics_desc = trans["contract_data__naics_description"]
-                        if naics in name_dict:
-                            name_dict[naics]["aggregated_amount"] += naics_obl
-                        else:
-                            name_dict[naics] = {"aggregated_amount": naics_obl,
-                                                "naics_description": naics_desc}
+                queryset = queryset \
+                    .filter(contract_data__naics__isnull=False) \
+                    .values(naics_code=F('contract_data__naics')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .order_by('-aggregated_amount') \
+                    .values('naics_code', 'aggregated_amount',
+                            naics_description=F('contract_data__naics_description'))
 
-                results = []
-                for key, value in name_dict.items():
-                    results.append({"naics_code": key,
-                                    "aggregated_amount": value["aggregated_amount"],
-                                    "naics_description": value["naics_description"]})
-                results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-                results, page_metadata = get_pagination(results, limit, page)
+                # Begin DB hits here
+                count = queryset.count()
+                results = list(queryset[lower_limit:upper_limit])
+
+                has_next = limit * page < count
+                has_previous = (page > 1) and (limit * (page - 2) < count)
+
+                page_metadata = {
+                    "page": page,
+                    "count": count,
+                    "next": page + 1 if has_next else None,
+                    "previous": page - 1 if has_previous else None,
+                    "hasNext": has_next,
+                    "hasPrevious": has_previous
+                }
                 response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
