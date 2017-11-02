@@ -2,7 +2,7 @@ import logging
 import timeit
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction, IntegrityError
+from django.db import connections, transaction
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
