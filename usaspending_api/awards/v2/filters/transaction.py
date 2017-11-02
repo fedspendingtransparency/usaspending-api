@@ -138,7 +138,9 @@ def transaction_filter(filters):
 
         # recipient_location
         elif key == "recipient_locations":
-            or_queryset = geocode_filter_locations('recipient__location', value, 'transaction')
+            or_queryset = geocode_filter_locations(
+                'recipient__location', value, 'TransactionNormalized'
+            )
 
             queryset &= or_queryset
 
@@ -163,7 +165,9 @@ def transaction_filter(filters):
 
         # place_of_performance
         elif key == "place_of_performance_locations":
-            or_queryset = geocode_filter_locations('place_of_performance', value, 'transaction')
+            or_queryset = geocode_filter_locations(
+                'place_of_performance', value, 'TransactionNormalized'
+            )
 
             queryset &= or_queryset
 

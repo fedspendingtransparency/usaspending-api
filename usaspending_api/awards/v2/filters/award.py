@@ -72,6 +72,7 @@ def award_filter(filters):
 
         # agencies
         elif key == "agencies":
+            # TODO: Make function to match agencies in award filter throwing dupe error
             or_queryset = None
             funding_toptier = []
             funding_subtier = []
