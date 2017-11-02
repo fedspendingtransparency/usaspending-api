@@ -82,9 +82,8 @@ class Command(BaseCommand):
                             'columns': json.loads(message.message_attributes['columns']['StringValue']),
                             'sources': tuple(sources)
                         }
-                        start_zip_generation = time.now()
+
                         csv_selection.write_csvs(**kwargs)
-                        print("generate csv took {} seconds".format(time.now() - start_zip_generation))
 
                     # delete from SQS once processed
                     message.delete()
@@ -100,7 +99,7 @@ class Command(BaseCommand):
                     job_status = 'failed'
                 job = self.get_current_job()
                 if job:
-                    self.mark_job_status(job.job_id, job_status)
+                    self.mark_job_status(job.bulk_download_job_id, job_status)
             finally:
                 # Set visibility to 0 so that another attempt can be made to process in SQS immediately,
                 # instead of waiting for the timeout window to expire

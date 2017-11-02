@@ -2,14 +2,13 @@ import csv
 import io
 import logging
 import itertools
-import json
 import jsonpickle
+import time
 
 import boto
 import smart_open
 import zipstream
 from django.conf import settings
-from django.core import serializers
 
 from usaspending_api.bulk_download.lookups import JOB_STATUS_DICT
 from usaspending_api.bulk_download.v2 import download_column_historical_lookups
@@ -77,7 +76,7 @@ class CsvSource:
         headers = self.columns(headers_requested)
         # yield headers
         query_paths = [self.query_paths[hn] for hn in headers]
-        yield from self.queryset.values_list(*query_paths).iterator()
+        return self.queryset.values_list(*query_paths)
 
     def toJsonDict(self):
         json_dict = {
@@ -105,6 +104,7 @@ def write_csvs(download_job, file_name, columns, sources):
     """Derive the relevant location and write CSVs to it.
 
     :return: the final file name (complete with prefix)"""
+    start_zip_generation = time.time()
 
     download_job.job_status_id = JOB_STATUS_DICT['running']
     download_job.number_of_rows = 0
@@ -121,10 +121,16 @@ def write_csvs(download_job, file_name, columns, sources):
                       "assistance": sources[1]}
 
         for source_name, source in source_map.items():
-            source_limit = (source.queryset.count() // EXCEL_ROW_LIMIT) + 1
-            source_iterator = list(source.row_emitter(columns))
-            headers = source.columns(columns)
+            start_count = time.time()
+            # source_limit = (source.queryset.count() // EXCEL_ROW_LIMIT) + 1
+            source_limit = calculate_number_of_csvs(source.queryset, EXCEL_ROW_LIMIT)
+            logger.debug('source_limit({}) took {} seconds'.format(source_limit, time.time() - start_count))
             logger.debug(source.queryset.query)
+            start_row_emitter = time.time()
+            source_iterator = source.row_emitter(columns)
+            logger.debug('row_emitter took {} seconds'.format(time.time() - start_row_emitter))
+            headers = source.columns(columns)
+            start_writing = time.time()
             for split_csv in range(1, source_limit+1):
                 split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
                 end_row = split_csv*EXCEL_ROW_LIMIT if split_csv != source_limit else None
@@ -132,10 +138,9 @@ def write_csvs(download_job, file_name, columns, sources):
                 split_source_iterator = itertools.chain([headers], split_source_iterator)
 
                 zstream.write_iter(split_csv_name, csv_row_emitter(split_source_iterator, download_job))
-            logger.debug('wrote {}.csv'.format(source_name))
+            logger.debug('wrote {}.csv took {} seconds'.format(source_name, time.time() - start_writing))
 
         if settings.IS_LOCAL:
-
             with open(file_path, 'wb') as zipfile:
                 for chunk in zstream:
                     zipfile.write(chunk)
@@ -145,11 +150,13 @@ def write_csvs(download_job, file_name, columns, sources):
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.BULK_DOWNLOAD_AWS_REGION
             s3_bucket = boto.s3.connect_to_region(region).get_bucket(bucket)
+            start_uploading = time.time()
             conn = s3_bucket.new_key(file_name)
             stream = smart_open.smart_open(
                 conn, 'w', min_part_size=BUFFER_SIZE)
             for chunk in zstream:
                 stream.write(chunk)
+            logger.info('uploading took {} seconds'.format(time.time() - start_uploading))
             download_job.file_size = stream.total_size
 
     except Exception as e:
@@ -168,5 +175,7 @@ def write_csvs(download_job, file_name, columns, sources):
             pass
 
     download_job.save()
+
+    logger.info("generate_zips took {} seconds".format(time.time() - start_zip_generation))
 
     return file_name

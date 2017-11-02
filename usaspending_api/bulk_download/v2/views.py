@@ -113,7 +113,6 @@ class BaseDownloadViewSet(APIView):
             # is not shared with the thread
             csv_selection.write_csvs(**kwargs)
         else:
-            generating_sqs_request_start = time.now()
             message_attributes = {
                 "download_job_id": {
                     "StringValue": str(kwargs['download_job'].bulk_download_job_id),
@@ -132,7 +131,6 @@ class BaseDownloadViewSet(APIView):
                     'DataType': 'String'
                 }
             }
-            logger.info("generating_sqs_request took {} seconds".format(time.now()-generating_sqs_request_start))
             response = queue.send_message(MessageBody="Test", MessageAttributes=message_attributes)
 
         return self.get_download_response(file_name=timestamped_file_name)
@@ -182,7 +180,6 @@ class BulkDownloadListAgenciesViewSet(APIView):
 
 class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
     def process_filters(self, filters, award_level):
-        process_filters_start = time.now()
         and_queryset_filters = {}
 
         # Adding award type filter
@@ -249,12 +246,10 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         order_by = date_attribute if date_attribute else value_mappings[award_level]["action_date"]
         filtered_queryset = filtered_queryset.order_by(order_by)
 
-        logger.info("process_filters took {} seconds".format(time.now() - process_filters_start))
         return filtered_queryset
 
 
     def get_csv_sources(self, json_request):
-        get_csv_sources_start = time.now()
         for required_param in ["file_format", "award_levels"]:
             if required_param not in json_request:
                 raise InvalidParameterException('{} parameter not provided'.format(required_param))
@@ -287,8 +282,6 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                 verify_requested_columns_available((d1_source, d2_source), json_request['columns'])
             else:
                 raise InvalidParameterException('Invalid parameter for award_levels: {}'.format(award_level))
-
-        logger.info("get_csv_sources took {} seconds".format(time.now() - get_csv_sources_start))
 
         return tuple(csv_sources)
 
