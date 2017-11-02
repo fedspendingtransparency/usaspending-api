@@ -11,119 +11,60 @@ from usaspending_api.references.models import LegalEntity
 def recipients_data(db):
     mommy.make(
         LegalEntity,
-        recipient_name='Weyland-Yutani Corp',
-        parent_recipient_unique_id='2099',
-        recipient_unique_id='2099')
+        legal_entity_id='271286',
+        recipient_unique_id='048122469',
+        recipient_name='EVERGREEN TERRACE STARTUP, INC.'
+        )
     mommy.make(
         LegalEntity,
-        recipient_name='Tyrell Corporation',
-        parent_recipient_unique_id='AF19',
-        recipient_unique_id='AF19')
+        legal_entity_id='342445',
+        recipient_unique_id='136725434',
+        parent_recipient_unique_id='',
+        recipient_name='The Human Partnership'
+        )
     mommy.make(
         LegalEntity,
-        recipient_name='Weyland-Yutani Vessel, USCSS Nostromo LV426',
-        parent_recipient_unique_id='2099',
-        recipient_unique_id='LV426')
+        legal_entity_id='342467',
+        recipient_unique_id='298712981',
+        parent_recipient_unique_id='136725434',
+        recipient_name='The Human Childship'
+        )
     mommy.make(
         LegalEntity,
-        recipient_name='Wey-Yu, USCSS Prometheus LV223',
-        parent_recipient_unique_id='2099',
-        recipient_unique_id='LV223')
-    mommy.make(
-        LegalEntity,
-        recipient_name='Wey-Yu Vessel, USCSS Covenant Origae-6',
-        parent_recipient_unique_id='2099',
-        recipient_unique_id='Origae-6')
-    mommy.make(
-        LegalEntity,
-        recipient_name='Replicants',
-        parent_recipient_unique_id='AF19',
-        recipient_unique_id='Nexus-6')
-    mommy.make(
-        LegalEntity,
-        recipient_name='Weyland-Yutani, Xenomorph XX121',
-        parent_recipient_unique_id='2099',
-        recipient_unique_id=None)
+        legal_entity_id='274178',
+        recipient_unique_id='078757313',
+        recipient_name='STARTUP JUNKIE CONSULTING, LLC'
+    )
 
 
 @pytest.mark.django_db
 def test_recipient_autocomplete_success(client, recipients_data):
-    """Verify test on autocomplete request for recipients."""
 
     # Test on search_text using string
     resp = client.post(
         '/api/v2/autocomplete/recipient/',
         content_type='application/json',
-        data=json.dumps({'search_text': 'Wey'}))
+        data=json.dumps({'search_text': 'Human'}))
     assert resp.status_code == status.HTTP_200_OK
+    print(resp.data['results'])
     assert len(resp.data['results']) == 2
-    result = resp.data['results']
-    parents = result['parent_recipient']
+    assert len(resp.data['results']['recipient']) == 2
 
-    # Verify parent result
-    assert parents[0]['recipient_name'] == 'Weyland-Yutani Corp'
-
-    # Check for Recipients results
-    recipients = result['recipient']
-    # Verify top recipient results contain search_text
-    assert recipients[0]['recipient_name'] == 'Wey-Yu, USCSS Prometheus LV223'
-    assert recipients[1]['recipient_name'] == 'Wey-Yu Vessel, USCSS Covenant Origae-6'
-    assert recipients[2]['recipient_name'] == 'Weyland-Yutani Vessel, USCSS Nostromo LV426'
-
-    # Test on on search_text using multiple words
+    # Test on on search_text using DUNS (recipient_unique_id)
     resp = client.post(
         '/api/v2/autocomplete/recipient/',
         content_type='application/json',
-        data=json.dumps({'search_text': 'USCSS Nostromo'}))
+        data=json.dumps({'search_text': '078757313'}))
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 2
-    result = resp.data['results']
-    parents = result['parent_recipient']
-
-    # Verify closest parent result
-    assert parents[0]['recipient_name'] == 'Weyland-Yutani Corp'
-
-    # Verify top matching recipient
-    recipients = result['recipient']
-    assert recipients[0]['recipient_name'] == 'Weyland-Yutani Vessel, USCSS Nostromo LV426'
-
-    # Test on on search_text using recipient_unique_id
-    resp = client.post(
-        '/api/v2/autocomplete/recipient/',
-        content_type='application/json',
-        data=json.dumps({'search_text': 'LV426'}))
-    assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data['results']) == 2
-    result = resp.data['results']
-    parents = result['parent_recipient']
-
-    # Verify closest parent result
-    assert parents[0]['recipient_name'] == 'Weyland-Yutani Corp'
-
-    # Verify top matching recipient
-    recipients = result['recipient']
-    assert recipients[0]['recipient_name'] == 'Weyland-Yutani Vessel, USCSS Nostromo LV426'
-
-    # Test on on search_text using parent_recipient_unique_id
-    resp = client.post(
-        '/api/v2/autocomplete/recipient/',
-        content_type='application/json',
-        data=json.dumps({'search_text': 'AF19'}))
-    assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data['results']) == 2
-    result = resp.data['results']
-    parents = result['parent_recipient']
-
-    # Verify top parent result
-    assert parents[0]['recipient_name'] == 'Tyrell Corporation'
+    assert resp.data['results']['recipient'][0]['recipient_name'] == 'STARTUP JUNKIE CONSULTING, LLC'
 
 
 @pytest.mark.django_db
 def test_recipient_autocomplete_failure(client):
-    """Verify error on bad autocomplete request for recipients."""
-
+    """Empty string test"""
     resp = client.post(
         '/api/v2/autocomplete/recipient/',
         content_type='application/json',
-        data=json.dumps({}))
+        data=json.dumps({'search_text': ''}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

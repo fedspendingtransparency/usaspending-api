@@ -22,6 +22,8 @@ class GetPostQueryParamsKeyBit(bits.QueryParamsKeyBit):
     def get_source_dict(self, params, view_instance, view_method, request, args, kwargs):
         params = dict(request.query_params)
         params.update(dict(request.data))
+        if 'auditTrail' in params:
+            del params['auditTrail']
         return params
 
 
