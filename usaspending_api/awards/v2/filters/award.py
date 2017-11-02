@@ -1,5 +1,6 @@
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 
 import logging
 
@@ -71,6 +72,7 @@ def award_filter(filters):
 
         # agencies
         elif key == "agencies":
+            # TODO: Make function to match agencies in award filter throwing dupe error
             or_queryset = None
             funding_toptier = []
             funding_subtier = []
@@ -124,11 +126,8 @@ def award_filter(filters):
 
         # recipient_location
         elif key == "recipient_locations":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(recipient__location__location_id__in=or_queryset)
+            or_queryset = geocode_filter_locations('recipient__location', value, 'Award')
+            queryset &= or_queryset
 
         # recipient_type_names
         elif key == "recipient_type_names":
@@ -149,11 +148,9 @@ def award_filter(filters):
 
         # place_of_performance
         elif key == "place_of_performance_locations":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(place_of_performance__location_id__in=or_queryset)
+            or_queryset = geocode_filter_locations('place_of_performance', value, 'Award')
+
+            queryset &= or_queryset
 
         # award_amounts
         elif key == "award_amounts":
