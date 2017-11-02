@@ -203,20 +203,20 @@ class Command(BaseCommand):
                 row[field_map.get('location_country_code')] = 'USA'
 
             # Get country code obj
-            location_country_code = self.country_code_map.get(row[field_map.get('location_country_code')])
+            location_country_code_obj = self.country_code_map.get(row[field_map.get('location_country_code')])
 
             # Fix state code periods
             state_code = row.get(field_map.get('state_code'))
             if state_code is not None:
                 location_value_map.update({'state_code': state_code.replace('.', '')})
 
-            if location_country_code:
+            if location_country_code_obj:
                 location_value_map.update({
-                    'location_country_code': location_country_code,
-                    'country_name': location_country_code.country_name
+                    'location_country_code': location_country_code_obj.country_code,
+                    'country_name': location_country_code_obj.country_name
                 })
 
-                if location_country_code != 'USA':
+                if location_country_code_obj.country_code != 'USA':
                     location_value_map.update({
                         'state_code': None,
                         'state_name': None
