@@ -129,11 +129,11 @@ class Command(BaseCommand):
             if recipient_name is None:
                 recipient_name = ""
 
-            # Handling the case of duplicates, just grab the first match
+            # Handling the case of duplicates, just grab the most recently updated match
             legal_entity = LegalEntity.objects.filter(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
                 recipient_name=recipient_name
-            ).first()
+            ).order_by('-update_date').first()
             created = False
 
             if not legal_entity:

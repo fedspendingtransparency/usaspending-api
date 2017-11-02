@@ -152,7 +152,7 @@ class Command(BaseCommand):
             legal_entity = LegalEntity.objects.filter(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
                 recipient_name=recipient_name
-            ).first()
+            ).order_by('-update_date').first()
             created = False
 
             if not legal_entity:
