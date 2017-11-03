@@ -6,6 +6,7 @@ import logging
 import timeit
 from datetime import datetime
 from functools import wraps
+from itertools import count, groupby
 
 from django.core.management.base import BaseCommand
 from django.db import transaction as db_transaction
@@ -19,6 +20,8 @@ from usaspending_api.references.models import Location, RefCountryCode
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
+
+BATCH_DOWNLOAD_SIZE = 100
 
 pop_field_map = {
     # not sure place_of_performance_locat maps exactly to city name
@@ -59,6 +62,23 @@ def log_time(func):
 
 
 class Command(BaseCommand):
+
+    DAP_COLUMNS = """detached_award_procurement_id, place_of_perform_country_c,
+      place_of_perform_city_name, place_of_performance_zip4a,
+      place_of_performance_congr, place_of_perform_county_na,
+      place_of_performance_state,
+      legal_entity_state_code, 
+      legal_entity_city_name ,
+      legal_entity_address_line1 ,
+      legal_entity_address_line2 ,
+      legal_entity_address_line3 ,
+      legal_entity_zip4 ,
+      legal_entity_congressional ,
+      legal_entity_country_code
+      """
+
+    # DAP_COLUMNS = '*'
+
     help = "Update historical transaction data for a fiscal year from the Broker."
 
     country_code_map = {}
@@ -69,7 +89,7 @@ class Command(BaseCommand):
     def get_fpds_data(self, db_cursor, filter, parameter):
         """Get all detached_award_procurement rows from broker database for a certain filter"""
 
-        query = 'SELECT * FROM detached_award_procurement WHERE {}'.format(filter)
+        query = 'SELECT {} FROM detached_award_procurement WHERE {}'.format(self.DAP_COLUMNS, filter)
         db_cursor.execute(query, [parameter])
         return dictfetchall(db_cursor)
 
@@ -77,27 +97,42 @@ class Command(BaseCommand):
         """Get all detached_award_procurement rows from broker database with given PIID"""
         return self.get_fpds_data(db_cursor, 'piid = %s', piid)
 
-    def get_fpds_data_by_dap_id(self, db_cursor, dap_id):
+    def get_fpds_data_by_dap_id(self, db_cursor, dap_ids):
         """Get all detached_award_procurement rows from broker database with given detached_award_procurement_id"""
-        return self.get_fpds_data(db_cursor, 'detached_award_procurement_id = %s', dap_id)
+        qry = 'detached_award_procurement_id IN ({})'.format(','.join(d.detached_award_procurement_id for d in dap_ids))
+        return self.get_fpds_data(db_cursor, qry, [])
+
+    def apply_fpds_filters(self, result, limit, fiscal_year=None, only_final_transactions=False):
+
+        if fiscal_year:
+            result = result.filter(transaction__fiscal_year=fiscal_year)
+
+        if only_final_transactions:
+            # for speed, only fix final transaction of each award,
+            # which are the only ones now surfaced on website
+            result = result.filter(transaction__latest_for_award__isnull=False)
+
+        return result[:limit]
 
     @log_time
-    def dap_ids_for_blank_pops(self, limit):
+    def dap_ids_for_blank_pops(self, limit, fiscal_year=None, only_final_transactions=False):
         """Get detached_award_procurement_ids for places of performance with blank state code"""
 
-        return TransactionFPDS.objects.only('detached_award_procurement_id'). \
+        result = TransactionFPDS.objects.only('detached_award_procurement_id'). \
             filter(transaction__place_of_performance__state_code__isnull=True). \
-            filter(transaction__place_of_performance__location_country_code__country_code='USA') \
-            [:limit]
+            filter(transaction__place_of_performance__location_country_code__country_code='USA')
+
+        return self.apply_fpds_filters(result, limit, fiscal_year, only_final_transactions)
 
     @log_time
-    def dap_ids_for_blank_recipients(self, limit):
+    def dap_ids_for_blank_recipients(self, limit, fiscal_year=None, only_final_transactions=False):
         """Get detached_award_procurement_ids for recipient locations with blank state code"""
 
-        return TransactionFPDS.objects.only('detached_award_procurement_id'). \
+        result = TransactionFPDS.objects.only('detached_award_procurement_id'). \
             filter(transaction__recipient__location__state_code__isnull=True). \
-            filter(transaction__recipient__location__location_country_code__country_code='USA') \
-            [:limit]
+            filter(transaction__recipient__location__location_country_code__country_code='USA')
+
+        return self.apply_fpds_filters(result, limit, fiscal_year, only_final_transactions)
 
     def location_from_fpds_row(self, fpds_broker_row, field_map, value_map):
         """Find or create Location from a row of broker FPDS data"""
@@ -183,9 +218,13 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
 
-        parser.add_argument('--piid', help="PIID of award to reload")
+        parser.add_argument('--piid', help="Reload single award, this PIID")
         parser.add_argument('--limit', type=int, default=100000000, help="Max # of awards to fix")
-        parser.add_argument('--commit', type=int, default=1000, help='Rows between commits')
+        parser.add_argument('--fiscal-year', type=int, help="Fix only this FY")
+        parser.add_argument(
+            '--only-final-transactions',
+            action='store_true',
+            help="For speed, fix only final transaction of each award")
 
     def handle(self, *args, **options):
         logger.info('Starting FPDS data fix...')
@@ -195,28 +234,31 @@ class Command(BaseCommand):
         db_cursor = connections['data_broker'].cursor()
         piid = options.get('piid')
         limit = options.get('limit')
-        commit_interval = options.get('commit')
+        fy = options.get('fiscal_year')
+        only_final = options.get('only_final_transactions')
         if piid:
             fpds_broker_data = self.get_fpds_data_by_piid(db_cursor=db_cursor, piid=piid)
             (changed, created) = self.fix_places_of_performance(fpds_broker_data=fpds_broker_data)
-            logger.info('Created {} locations, changed POP for {} transactions'.format(created, changed))
+            logger.info('Created %s locations, changed POP for %s transactions', created, changed)
             (changed, created) = self.fix_recipient_locations(fpds_broker_data=fpds_broker_data)
-            logger.info('Created {} locations, changed location for {} recipients'.format(created, changed))
-            created = pop_created + recip_created
+            logger.info('Created %s locations, changed location for %s recipients', created, changed)
         else:
-            for (n, txn) in enumerate(self.dap_ids_for_blank_pops(limit=limit)):
-                logger.info('Begin detached_award_procurement_id {}'.format(txn.detached_award_procurement_id))
-                fpds_broker_data = self.get_fpds_data_by_dap_id(db_cursor, txn.detached_award_procurement_id)
+            for id_chunk in chunks(
+                    self.dap_ids_for_blank_pops(limit=limit, fiscal_year=fy, only_final_transactions=only_final)):
+                fpds_broker_data = self.get_fpds_data_by_dap_id(db_cursor, id_chunk)
                 (changed, created) = self.fix_places_of_performance(fpds_broker_data=fpds_broker_data)
-                logger.info('Created {} locations, changed POP for {} transactions'.format(created, changed))
-                logger.info('Checked {} POPs in {} seconds'.format(n, timeit.default_timer() - start))
-                if not n % commit_interval:
-                    connection.commit()
-            for (n, txn) in enumerate(self.dap_ids_for_blank_recipients(limit=limit)):
-                logger.info('Begin detached_award_procurement_id {}'.format(txn.detached_award_procurement_id))
-                fpds_broker_data = self.get_fpds_data_by_piid(db_cursor, txn.detached_award_procurement_id)
+                logger.info('Created %s locations, changed POP for %s transactions', created, changed)
+                logger.info('Elapsed so far: %s seconds', timeit.default_timer() - start)
+            for id_chunk in chunks(
+                    self.dap_ids_for_blank_recipients(limit=limit, fiscal_year=fy, only_final_transactions=only_final)):
+                fpds_broker_data = self.get_fpds_data_by_dap_id(db_cursor, id_chunk)
                 (changed, created) = self.fix_recipient_locations(fpds_broker_data=fpds_broker_data)
-                logger.info('Created {} locations, changed location for {} recipients'.format(created, changed))
-                logger.info('Checked {} recipient locations in {} seconds'.format(n, timeit.default_timer() - start))
-                if not n % commit_interval:
-                    connection.commit()
+                logger.info('Created %s locations, changed POP for %s transactions', created, changed)
+                logger.info('Elapsed so far: %s seconds', timeit.default_timer() - start)
+
+
+def chunks(source_iterable, size=1000):
+    """Given an iterable, yield smaller iterables of size `size`"""
+    c = count()
+    for _, g in groupby(source_iterable, lambda _: next(c) // size):
+        yield g
