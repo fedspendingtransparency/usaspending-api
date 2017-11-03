@@ -212,7 +212,7 @@ class Command(BaseCommand):
 
             if location_country_code_obj:
                 location_value_map.update({
-                    'location_country_code': location_country_code_obj.country_code,
+                    'location_country_code': location_country_code_obj,
                     'country_name': location_country_code_obj.country_name
                 })
 
