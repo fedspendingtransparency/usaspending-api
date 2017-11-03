@@ -1,13 +1,20 @@
 import csv
 import io
 import logging
-import itertools
 import jsonpickle
 import time
+import os
+import zipfile
+import subprocess
+import re
+import shutil
+import math
+import multiprocessing
+from filechunkio import FileChunkIO
+import mimetypes
 
 import boto
 import smart_open
-import zipstream
 from django.conf import settings
 
 from usaspending_api.bulk_download.lookups import JOB_STATUS_DICT
@@ -76,7 +83,7 @@ class CsvSource:
         headers = self.columns(headers_requested)
         # yield headers
         query_paths = [self.query_paths[hn] for hn in headers]
-        return self.queryset.values_list(*query_paths)
+        return self.queryset.values(*query_paths)
 
     def toJsonDict(self):
         json_dict = {
@@ -99,6 +106,73 @@ def calculate_number_of_csvs(queryset, limit):
             reached_limit = True
     return csvs
 
+def date_query_fix(query):
+    for date_string in re.findall('\d\d\d\d-\d\d-\d\d', query):
+        query = query.replace(date_string, '\'{}\''.format(date_string))
+    return query
+
+# Multipart upload functions copied from Fabian Topfstedt's solution
+# http://www.topfstedt.de/python-parallel-s3-multipart-upload-with-retries.html
+def upload(bucketname, regionname, source_path, keyname, acl='private', headers={}, guess_mimetype=True,
+           parallel_processes=4):
+    """
+    Parallel multipart upload.
+    """
+    bucket = boto.s3.connect_to_region(regionname).get_bucket(bucketname)
+    if guess_mimetype:
+        mtype = mimetypes.guess_type(keyname)[0] or 'application/octet-stream'
+        headers.update({'Content-Type': mtype})
+
+    mp = bucket.initiate_multipart_upload(keyname, headers=headers)
+
+    source_size = os.stat(source_path).st_size
+    bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)),
+        5242880)
+    chunk_amount = int(math.ceil(source_size / float(bytes_per_chunk)))
+
+    pool = multiprocessing.Pool(processes=parallel_processes)
+    for i in range(chunk_amount):
+        offset = i * bytes_per_chunk
+        remaining_bytes = source_size - offset
+        bytes = min([bytes_per_chunk, remaining_bytes])
+        part_num = i + 1
+        pool.apply_async(_upload_part, [bucketname, regionname, mp.id,
+            part_num, source_path, offset, bytes])
+    pool.close()
+    pool.join()
+
+    if len(mp.get_all_parts()) == chunk_amount:
+        mp.complete_upload()
+        key = bucket.get_key(keyname)
+        key.set_acl(acl)
+    else:
+        mp.cancel_upload()
+
+def _upload_part(bucketname, regionname, multipart_id, part_num,
+    source_path, offset, bytes, amount_of_retries=10):
+    """
+    Uploads a part with retries.
+    """
+    bucket = boto.s3.connect_to_region(regionname).get_bucket(bucketname)
+    def _upload(retries_left=amount_of_retries):
+        try:
+            logging.info('Start uploading part #%d ...' % part_num)
+            for mp in bucket.get_all_multipart_uploads():
+                if mp.id == multipart_id:
+                    with FileChunkIO(source_path, 'r', offset=offset,
+                        bytes=bytes) as fp:
+                        mp.upload_part_from_file(fp=fp, part_num=part_num)
+                    break
+        except Exception as exc:
+            if retries_left:
+                _upload(retries_left=retries_left - 1)
+            else:
+                logging.info('... Failed uploading part #%d' % part_num)
+                raise exc
+        else:
+            logging.info('... Uploaded part #%d' % part_num)
+
+    _upload()
 
 def write_csvs(download_job, file_name, columns, sources):
     """Derive the relevant location and write CSVs to it.
@@ -112,8 +186,11 @@ def write_csvs(download_job, file_name, columns, sources):
     download_job.save()
 
     try:
-        file_path = settings.CSV_LOCAL_PATH + file_name
-        zstream = zipstream.ZipFile(allowZip64=True)
+        file_path = settings.BULK_DOWNLOAD_LOCAL_PATH + file_name
+        working_dir = os.path.splitext(file_path)[0]
+        if not os.path.exists(working_dir):
+            os.mkdir(working_dir)
+        zipped_csvs = zipfile.ZipFile(file_path, 'w', allowZip64=True)
 
         logger.debug('Generating {}'.format(file_name))
 
@@ -125,39 +202,31 @@ def write_csvs(download_job, file_name, columns, sources):
             # source_limit = (source.queryset.count() // EXCEL_ROW_LIMIT) + 1
             source_limit = calculate_number_of_csvs(source.queryset, EXCEL_ROW_LIMIT)
             logger.debug('source_limit({}) took {} seconds'.format(source_limit, time.time() - start_count))
-            logger.debug(source.queryset.query)
-            start_row_emitter = time.time()
-            source_iterator = source.row_emitter(columns)
-            logger.debug('row_emitter took {} seconds'.format(time.time() - start_row_emitter))
-            headers = source.columns(columns)
+            source_query = source.row_emitter(columns)
             start_writing = time.time()
             for split_csv in range(1, source_limit+1):
                 split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
+                split_csv_path = os.path.join(working_dir, split_csv_name)
                 end_row = split_csv*EXCEL_ROW_LIMIT if split_csv != source_limit else None
-                split_source_iterator = itertools.islice(iter(source_iterator), (split_csv-1)*EXCEL_ROW_LIMIT, end_row)
-                split_source_iterator = itertools.chain([headers], split_source_iterator)
-
-                zstream.write_iter(split_csv_name, csv_row_emitter(split_source_iterator, download_job))
+                split_csv_query = date_query_fix(str(source_query[(split_csv-1)*EXCEL_ROW_LIMIT:end_row].query))
+                psql_command = subprocess.Popen(['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query)], stdout=subprocess.PIPE)
+                subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
+                zipped_csvs.write(split_csv_path, split_csv_name)
             logger.debug('wrote {}.csv took {} seconds'.format(source_name, time.time() - start_writing))
+        shutil.rmtree(working_dir)
+        zipped_csvs.close()
 
-        if settings.IS_LOCAL:
-            with open(file_path, 'wb') as zipfile:
-                for chunk in zstream:
-                    zipfile.write(chunk)
-
-                download_job.file_size = zipfile.tell()
-        else:
+        if not settings.IS_LOCAL:
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.BULK_DOWNLOAD_AWS_REGION
             s3_bucket = boto.s3.connect_to_region(region).get_bucket(bucket)
             start_uploading = time.time()
-            conn = s3_bucket.new_key(file_name)
-            stream = smart_open.smart_open(
-                conn, 'w', min_part_size=BUFFER_SIZE)
-            for chunk in zstream:
-                stream.write(chunk)
+
+            upload(bucket, region, file_path, os.path.basename(file_path), parallel_processes=multiprocessing.cpu_count())
+
+            # os.remove(file_path)
             logger.info('uploading took {} seconds'.format(time.time() - start_uploading))
-            download_job.file_size = stream.total_size
+            # download_job.file_size = stream.total_size
 
     except Exception as e:
         download_job.job_status_id = JOB_STATUS_DICT['failed']
@@ -168,8 +237,9 @@ def write_csvs(download_job, file_name, columns, sources):
         download_job.job_status_id = JOB_STATUS_DICT['finished']
     finally:
         try:
-            stream.close()
-            s3_bucket.lookup(conn.key).set_acl('public-read')
+            pass
+            # stream.close()
+            # s3_bucket.lookup(conn.key).set_acl('public-read')
         except NameError:
             # there was no stream to close
             pass
