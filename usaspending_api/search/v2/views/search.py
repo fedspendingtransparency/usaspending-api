@@ -288,28 +288,32 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 # Begin DB hits here
                 total = queryset.count()
                 results = list(queryset[lower_limit:upper_limit])
+
+                # The below code (here to the `elif`) is necessary due to django ORM stupidity
                 results = sorted(results, key=lambda result: result["legal_entity_id"])
-
-                # The below code is due to django ORM stupidity
-
                 # (Small) DB hit here
-                le_queryset = LegalEntity.objects \
+                le_names = LegalEntity.objects \
                     .filter(legal_entity_id__in=[result["legal_entity_id"] for result in results]) \
-                    .values("recipient_name") \
-                    .order_by('legal_entity_id')
-                ids = list(le_queryset)
+                    .order_by('legal_entity_id') \
+                    .values_list('recipient_name', flat=True)
 
                 for i in range(len(results)):
-                    results[i]['legal_entity_name'] = ids[i]['recipient_name']
+                    results[i]['legal_entity_name'] = le_names[i]
+
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
 
-                page_metadata = get_pagination_metadata(total, limit, page)
-
-                response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                            "page_metadata": page_metadata}
-                return Response(response)
-
             elif scope == "parent_duns":
+                # queryset = queryset \
+                #     .filter(recipient__parent_recipient_unique_id__isnull=False) \
+                #     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                #     .values('aggregated_amount',
+                #         recipient_name=F('recipient__recipient_name'),
+                #         parent_recipient_unique_id=F('recipient__parent_recipient_unique_id')) \
+                #     .order_by('-aggregated_amount')
+
+                # total = queryset.count()
+                # results = list(queryset[lower_limit:upper_limit])
+
                 for trans in queryset:
                     if trans["recipient"]:
                         r_name = trans["recipient__recipient_name"]
@@ -336,6 +340,12 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 return Response(response)
             else:  # recipient_type
                 raise InvalidParameterException("recipient type is not yet implemented")
+
+            page_metadata = get_pagination_metadata(total, limit, page)
+
+            response = {"category": category, "scope": scope, "limit": limit, "results": results,
+                        "page_metadata": page_metadata}
+            return Response(response)
 
         elif category == "cfda_programs":
             queryset = queryset \
