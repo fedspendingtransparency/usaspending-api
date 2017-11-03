@@ -16,7 +16,7 @@ from datetime import date
 from fiscalyear import *
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_month, get_pagination, get_pagination_metadata
+from usaspending_api.common.helpers import generate_fiscal_month, get_pagination_metadata
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
@@ -303,41 +303,18 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
 
             elif scope == "parent_duns":
-                # queryset = queryset \
-                #     .filter(recipient__parent_recipient_unique_id__isnull=False) \
-                #     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                #     .values('aggregated_amount',
-                #         recipient_name=F('recipient__recipient_name'),
-                #         parent_recipient_unique_id=F('recipient__parent_recipient_unique_id')) \
-                #     .order_by('-aggregated_amount')
+                queryset = queryset \
+                    .filter(recipient__parent_recipient_unique_id__isnull=False) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values('aggregated_amount',
+                        recipient_name=F('recipient__recipient_name'),
+                        parent_recipient_unique_id=F('recipient__parent_recipient_unique_id')) \
+                    .order_by('-aggregated_amount')
 
-                # total = queryset.count()
-                # results = list(queryset[lower_limit:upper_limit])
+                # Begin DB hits here
+                total = queryset.count()
+                results = list(queryset[lower_limit:upper_limit])
 
-                for trans in queryset:
-                    if trans["recipient"]:
-                        r_name = trans["recipient__recipient_name"]
-                        r_obl = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                        r_prui = trans["recipient__parent_recipient_unique_id"]
-                        if r_name in name_dict:
-                            name_dict[r_name]["aggregated_amount"] += r_obl
-                        else:
-                            name_dict[r_name] = {"aggregated_amount": r_obl, "parent_recipient_unique_id": r_prui}
-                # build response
-                results = []
-                # [{
-                # "recipient_name": key,
-                # "legal_entity_id": ttabrev,
-                # 	"aggregated_amount": "200000000"
-                # },...]
-                for key, value in name_dict.items():
-                    results.append({"recipient_name": key, "parent_recipient_unique_id": value["parent_recipient_unique_id"],
-                                    "aggregated_amount": value["aggregated_amount"]})
-                results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-                results, page_metadata = get_pagination(results, limit, page)
-                response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                            "page_metadata": page_metadata}
-                return Response(response)
             else:  # recipient_type
                 raise InvalidParameterException("recipient type is not yet implemented")
 
