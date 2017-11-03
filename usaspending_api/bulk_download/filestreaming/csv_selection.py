@@ -207,8 +207,7 @@ def write_csvs(download_job, file_name, columns, sources):
             for split_csv in range(1, source_limit+1):
                 split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
                 split_csv_path = os.path.join(working_dir, split_csv_name)
-                end_row = split_csv*EXCEL_ROW_LIMIT if split_csv != source_limit else None
-                split_csv_query = date_query_fix(str(source_query[(split_csv-1)*EXCEL_ROW_LIMIT:end_row].query))
+                split_csv_query = date_query_fix(str(source_query[(split_csv-1)*EXCEL_ROW_LIMIT:split_csv*EXCEL_ROW_LIMIT].query))
                 psql_command = subprocess.Popen(['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query)], stdout=subprocess.PIPE)
                 subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
                 zipped_csvs.write(split_csv_path, split_csv_name)
