@@ -14,7 +14,6 @@ from filechunkio import FileChunkIO
 import mimetypes
 
 import boto
-import smart_open
 from django.conf import settings
 
 from usaspending_api.bulk_download.lookups import JOB_STATUS_DICT
@@ -203,14 +202,19 @@ def write_csvs(download_job, file_name, columns, sources):
             source_limit = calculate_number_of_csvs(source.queryset, EXCEL_ROW_LIMIT)
             logger.debug('source_limit({}) took {} seconds'.format(source_limit, time.time() - start_count))
             source_query = source.row_emitter(columns)
+            download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns))
             start_writing = time.time()
-            for split_csv in range(1, source_limit+1):
+            for split_csv in range(1, source_limit + 1):
                 split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
                 split_csv_path = os.path.join(working_dir, split_csv_name)
-                split_csv_query = date_query_fix(str(source_query[(split_csv-1)*EXCEL_ROW_LIMIT:split_csv*EXCEL_ROW_LIMIT].query))
-                psql_command = subprocess.Popen(['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query)], stdout=subprocess.PIPE)
+                split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
+                split_csv_query_raw = date_query_fix(str(split_csv_query.query))
+                psql_command = subprocess.Popen(['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)], stdout=subprocess.PIPE)
                 subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
                 zipped_csvs.write(split_csv_path, split_csv_name)
+                if split_csv == source_limit:
+                    download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + split_csv_query.count()
+
             logger.debug('wrote {}.csv took {} seconds'.format(source_name, time.time() - start_writing))
         shutil.rmtree(working_dir)
         zipped_csvs.close()
@@ -223,9 +227,9 @@ def write_csvs(download_job, file_name, columns, sources):
 
             upload(bucket, region, file_path, os.path.basename(file_path), parallel_processes=multiprocessing.cpu_count())
 
-            # os.remove(file_path)
+            os.remove(file_path)
             logger.info('uploading took {} seconds'.format(time.time() - start_uploading))
-            # download_job.file_size = stream.total_size
+        download_job.file_size = os.stat(file_path).st_size
 
     except Exception as e:
         download_job.job_status_id = JOB_STATUS_DICT['failed']
