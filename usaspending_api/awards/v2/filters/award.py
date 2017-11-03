@@ -66,7 +66,7 @@ def award_filter(filters):
         elif key == "award_type_codes":
             or_queryset = []
 
-            idv_flag = all(i in value for i in [ 'A', 'B', 'C', 'D' ])
+            idv_flag = all(i in value for i in ['A', 'B', 'C', 'D'])
 
             for v in value:
                 or_queryset.append(v)
