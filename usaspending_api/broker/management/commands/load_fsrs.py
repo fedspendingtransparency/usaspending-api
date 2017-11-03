@@ -116,7 +116,7 @@ class Command(BaseCommand):
 
         # run as long as we get any results for the subawards, stop as soon as we run out
         while len(subaward_dict) > 0:
-            logger.info("Processing next 10,000 subawards")
+            logger.info("Processing next 10,000 subawards, starting at offset: " + str(current_offset))
             for row in subaward_dict:
                 # only insert the subaward if the internal_id is in our mappings, otherwise there was a problem
                 # finding one or more parts of the shared data for it and we don't want to insert it.
