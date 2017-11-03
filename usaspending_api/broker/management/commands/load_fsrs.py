@@ -67,9 +67,9 @@ class Command(BaseCommand):
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                # logger.warning(
-                #     "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
-                #     format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
+                logger.warning(
+                    "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
+                    format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
                 continue
 
             # Get or create unique DUNS-recipient pair
