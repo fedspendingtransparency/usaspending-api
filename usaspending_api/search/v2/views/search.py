@@ -1,6 +1,5 @@
 import ast
 import logging
-import time
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -273,9 +272,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             return Response(response)
 
         elif category == "recipient":
-            # filter the transactions by scope name
-            # name_dict example: {recipient_name: {legal_entity_id: "1111", aggregated_amount: "1111"}
-            name_dict = OrderedDict()
 
             if scope == "duns":
                 queryset = queryset \
@@ -501,7 +497,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     continue
                 try:
                     values.append(award_contracts_mapping[field])
-                except:
+                except Exception:
                     raise InvalidParameterException("Invalid field value: {}".format(field))
         elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
             for field in fields:
@@ -509,7 +505,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     continue
                 try:
                     values.append(loan_award_mapping[field])
-                except:
+                except Exception:
                     raise InvalidParameterException("Invalid field value: {}".format(field))
         elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
             for field in fields:
@@ -517,7 +513,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     continue
                 try:
                     values.append(non_loan_assistance_award_mapping[field])
-                except:
+                except Exception:
                     raise InvalidParameterException("Invalid field value: {}".format(field))
 
         # build sql query filters
@@ -543,7 +539,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if sort_filters:
                 queryset = queryset.order_by(*sort_filters)
 
-        limited_queryset = queryset[lower_limit:upper_limit+1]
+        limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit
 
         for award in limited_queryset[:limit]:
