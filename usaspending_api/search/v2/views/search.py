@@ -108,13 +108,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # 'time_period': {'fy': '2017', 'quarter': '3'},
         # 	'aggregated_amount': '200000000'
         # }]
-        flake8_nightmare = sorted(
+        sorted_group_results = sorted(
             group_results.items(),
             key=lambda k: (
                 ast.literal_eval(k[0])['fiscal_year'],
                 int(ast.literal_eval(k[0])[nested_order])) if nested_order else (ast.literal_eval(k[0])['fiscal_year']))
 
-        for key, value in flake8_nightmare:
+        for key, value in sorted_group_results:
             key_dict = ast.literal_eval(key)
             result = {'time_period': key_dict, 'aggregated_amount': float(value)}
             results.append(result)
@@ -161,7 +161,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             if scope == "agency":
                 agency_set = queryset \
-                    .filter(awarding_agency__toptier_agency__name__isnull=False) \
+                    .filter(
+                        awarding_agency__isnull=False,
+                        awarding_agency__toptier_agency__name__isnull=False) \
                     .values(
                         agency_name=F('awarding_agency__toptier_agency__name'),
                         abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
@@ -174,7 +176,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "subagency":
                 subagency_set = queryset \
-                    .filter(awarding_agency__subtier_agency__name__isnull=False) \
+                    .filter(
+                        awarding_agency__isnull=False,
+                        awarding_agency__subtier_agency__name__isnull=False) \
                     .values(
                         agency_name=F('awarding_agency__subtier_agency__name'),
                         abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
