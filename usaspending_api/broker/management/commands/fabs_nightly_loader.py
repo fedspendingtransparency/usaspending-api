@@ -116,7 +116,7 @@ class Command(BaseCommand):
         start_time = datetime.now()
 
         for index, row in enumerate(to_insert, 1):
-            if not (index % 100):
+            if not (index % 1000):
                 logger.info('Inserting Stale FABS: Inserting row {} of {} ({})'.format(str(index),
                                                                                        str(total_rows),
                                                                                        datetime.now() - start_time))
