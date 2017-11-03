@@ -510,10 +510,10 @@ class Command(BaseCommand):
             end = timeit.default_timer()
             logger.info('Finished deleting stale FPDS data in ' + str(end - start) + ' seconds')
 
-        # Set lookups after deletions to only get latest
-        self.set_lookup_maps()
-
         if total_rows > 0:
+            # Set lookups after deletions to only get latest
+            self.set_lookup_maps()
+
             logger.info('Get Broker FPDS data...')
             start = timeit.default_timer()
             fpds_broker_data = self.get_fpds_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)

@@ -472,10 +472,10 @@ class Command(BaseCommand):
             end = timeit.default_timer()
             logger.info('Finished deleting stale FABS data in ' + str(end - start) + ' seconds')
 
-        # Set lookups after deletions to only get latest
-        self.set_lookup_maps()
-
         if total_rows > 0:
+            # Set lookups after deletions to only get latest
+            self.set_lookup_maps()
+
             logger.info('Get Broker FABS data...')
             start = timeit.default_timer()
             fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)
