@@ -181,6 +181,7 @@ def write_csvs(download_job, file_name, columns, sources):
 
     download_job.job_status_id = JOB_STATUS_DICT['running']
     download_job.number_of_rows = 0
+    download_job.number_of_columns = 0
     download_job.file_size = 0
     download_job.save()
 
@@ -202,7 +203,7 @@ def write_csvs(download_job, file_name, columns, sources):
             source_limit = calculate_number_of_csvs(source.queryset, EXCEL_ROW_LIMIT)
             logger.debug('source_limit({}) took {} seconds'.format(source_limit, time.time() - start_count))
             source_query = source.row_emitter(columns)
-            download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns))
+            download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
             start_writing = time.time()
             for split_csv in range(1, source_limit + 1):
                 split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
@@ -218,18 +219,15 @@ def write_csvs(download_job, file_name, columns, sources):
             logger.debug('wrote {}.csv took {} seconds'.format(source_name, time.time() - start_writing))
         shutil.rmtree(working_dir)
         zipped_csvs.close()
+        download_job.file_size = os.stat(file_path).st_size
 
         if not settings.IS_LOCAL:
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.BULK_DOWNLOAD_AWS_REGION
-            s3_bucket = boto.s3.connect_to_region(region).get_bucket(bucket)
             start_uploading = time.time()
-
             upload(bucket, region, file_path, os.path.basename(file_path), parallel_processes=multiprocessing.cpu_count())
-
-            os.remove(file_path)
             logger.info('uploading took {} seconds'.format(time.time() - start_uploading))
-        download_job.file_size = os.stat(file_path).st_size
+            os.remove(file_path)
 
     except Exception as e:
         download_job.job_status_id = JOB_STATUS_DICT['failed']
