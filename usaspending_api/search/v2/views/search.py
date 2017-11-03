@@ -1,6 +1,6 @@
 import ast
 import logging
-import json
+import time
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -278,27 +278,33 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             name_dict = OrderedDict()
 
             if scope == "duns":
-                # define what values are needed in the sql query
-                queryset = queryset.filter(federal_action_obligation__isnull=False).values("recipient_id") \
-                               .annotate(aggregated_amount=Sum("federal_action_obligation"),
-                                         legal_entity_id=F("recipient_id")) \
-                               .values("legal_entity_id", "aggregated_amount")\
-                               .order_by("-aggregated_amount")[lower_limit:upper_limit + 1]
+                queryset = queryset \
+                    .filter(federal_action_obligation__isnull=False) \
+                    .values(legal_entity_id=F("recipient_id")) \
+                    .annotate(aggregated_amount=Sum("federal_action_obligation")) \
+                    .values("aggregated_amount", "legal_entity_id") \
+                    .order_by("-aggregated_amount")
 
-                results = list(queryset)
-                hasNext = len(results) > limit
-                hasPrevious = page > 1
-                results = results[:limit]
+                # Begin DB hits here
+                total = queryset.count()
+                results = list(queryset[lower_limit:upper_limit])
+                results = sorted(results, key=lambda result: result["legal_entity_id"])
 
-                legal_entity_mappings = LegalEntity.objects.filter(
-                    legal_entity_id__in=[result["legal_entity_id"] for result in results]).values("recipient_name",
-                                                                                                  "legal_entity_id")
-                legal_entity_mappings = {result["legal_entity_id"]: result["recipient_name"]
-                                         for result in legal_entity_mappings}
-                for result in results:
-                    result["legal_entity_name"] = legal_entity_mappings[result["legal_entity_id"]]
+                # The below code is due to django ORM stupidity
 
-                page_metadata = {"hasNext": hasNext, "hasPrevious": hasPrevious}
+                # (Small) DB hit here
+                le_queryset = LegalEntity.objects \
+                    .filter(legal_entity_id__in=[result["legal_entity_id"] for result in results]) \
+                    .values("recipient_name") \
+                    .order_by('legal_entity_id')
+                ids = list(le_queryset)
+
+                for i in range(len(results)):
+                    results[i]['legal_entity_name'] = ids[i]['recipient_name']
+                results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
+
+                page_metadata = get_pagination_metadata(total, limit, page)
+
                 response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
