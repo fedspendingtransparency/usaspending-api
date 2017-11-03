@@ -64,11 +64,19 @@ def award_filter(filters):
 
         # award_type_codes
         elif key == "award_type_codes":
+            # or_queryset = filter(lambda x: x != "IDV", value)
+            # idv_flag = "IDV" in value
             or_queryset = []
+            idv_flag=False
             for v in value:
-                or_queryset.append(v)
+                if v = "IDV":
+                    idv_flag=True
+                else:
+                    or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= Award.objects.filter(type__in=or_queryset)
+            if idv_flag:
+                queryset |= Award.objects.filter(type__isnull=True, latest_transaction__to_contract__pulled_from='IDV')
 
         # agencies
         elif key == "agencies":
