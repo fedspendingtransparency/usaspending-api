@@ -19,8 +19,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('bulk_download_job_id', models.AutoField(primary_key=True, serialize=False)),
                 ('file_name', models.TextField()),
-                ('file_size', models.IntegerField(blank=True, null=True)),
-                ('number_of_rows', models.IntegerField(blank=True, null=True)),
+                ('file_size', models.BigIntegerField(blank=True, null=True)),
+                ('number_of_rows', models.BigIntegerField(blank=True, null=True)),
                 ('number_of_columns', models.IntegerField(blank=True, null=True)),
                 ('error_message', models.TextField(blank=True, null=True)),
                 ('create_date', models.DateTimeField(auto_now_add=True, null=True)),
