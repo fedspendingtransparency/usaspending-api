@@ -1,4 +1,4 @@
-from usaspending_api.awards.models import SummaryAwardView, SummaryView
+from usaspending_api.awards.models import SummaryAwardView, SummaryView, SumaryPscCodesView
 from usaspending_api.common.exceptions import InvalidParameterException
 
 #import os
@@ -18,6 +18,8 @@ def view_filter(filters, view_name):
         view_objects = SummaryView.objects
     elif view_name == 'SummaryAwardView':
         view_objects = SummaryAwardView.objects
+    elif view_name == 'SumaryPscCodesView':
+        view_objects = SumaryPscCodesView.objects
     else:
         raise InvalidParameterException('Invalid view: ' + view_name + ' does not exist.')
 

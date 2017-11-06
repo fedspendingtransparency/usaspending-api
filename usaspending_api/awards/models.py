@@ -869,3 +869,37 @@ class SummaryView(models.Model):
     class Meta:
         managed = False
         db_table = 'summary_view'
+
+
+class SumaryNaicsCodesView(models.Model):
+
+    # Fields
+    action_date = models.DateField(blank=True, null=True)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    naics = models.TextField(blank=True, null=True)
+    naics_description = models.TextField(blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True,
+                                                         null=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_view_naics_codes'
+
+
+
+class SumaryPscCodesView(models.Model):
+
+    # Fields
+    action_date = models.DateField(blank=True, null=True)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    product_or_service_code = models.TextField(blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True,
+                                                         null=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_view_psc_codes'
