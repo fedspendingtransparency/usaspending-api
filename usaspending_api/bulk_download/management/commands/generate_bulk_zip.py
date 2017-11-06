@@ -68,9 +68,11 @@ class Command(BaseCommand):
                     if message.message_attributes is not None:
                         self.current_job_id = message.message_attributes['download_job_id']['StringValue']
                         sources = []
+
+                        # Recreate the sources
                         for source in json.loads(message.message_attributes['sources']['StringValue']):
                             csv_source = csv_selection.CsvSource(source['model_type'], source['file_type'])
-                            # TODO: Change Award below to be dynamic based on prime_award/subaward
+                            # Note: this will have to be updated when incorporating Subaward functionality
                             csv_source.queryset = Award.objects.all()
                             csv_source.queryset.query = jsonpickle.loads(source['query'])
                             sources.append(csv_source)
@@ -80,7 +82,6 @@ class Command(BaseCommand):
                             'columns': json.loads(message.message_attributes['columns']['StringValue']),
                             'sources': tuple(sources)
                         }
-
                         csv_selection.write_csvs(**kwargs)
 
                     # delete from SQS once processed

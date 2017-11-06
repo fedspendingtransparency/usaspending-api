@@ -80,6 +80,7 @@ class CsvSource:
 
     def row_emitter(self, headers_requested):
         headers = self.columns(headers_requested)
+        # Not yieling headers as the files can be split
         # yield headers
         query_paths = [self.query_paths[hn] for hn in headers]
         return self.queryset.values(*query_paths)
@@ -94,9 +95,10 @@ class CsvSource:
 
 
 def calculate_number_of_csvs(queryset, limit):
+    # This could also be done with the commented line below but this performed better
+    # return (queryset.count() // limit) + 1
     csvs = 0
     reached_limit = False
-
     while not reached_limit:
         csvs += 1
         try:
@@ -106,6 +108,7 @@ def calculate_number_of_csvs(queryset, limit):
     return csvs
 
 def date_query_fix(query):
+    """Adds quotes around dates to execute the query"""
     for date_string in re.findall('\d\d\d\d-\d\d-\d\d', query):
         query = query.replace(date_string, '\'{}\''.format(date_string))
     return query
@@ -192,31 +195,37 @@ def write_csvs(download_job, file_name, columns, sources):
             os.mkdir(working_dir)
         zipped_csvs = zipfile.ZipFile(file_path, 'w', allowZip64=True)
 
-        logger.debug('Generating {}'.format(file_name))
+        logger.info('Generating {}'.format(file_name))
 
         source_map = {'contracts': sources[0],
                       'assistance': sources[1]}
 
         for source_name, source in source_map.items():
+            # Figure out how many csvs we need
             start_count = time.time()
-            # source_limit = (source.queryset.count() // EXCEL_ROW_LIMIT) + 1
             source_limit = calculate_number_of_csvs(source.queryset, EXCEL_ROW_LIMIT)
-            logger.debug('source_limit({}) took {} seconds'.format(source_limit, time.time() - start_count))
+            logger.info('source_limit({}) took {} seconds'.format(source_limit, time.time() - start_count))
+
             source_query = source.row_emitter(columns)
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
             start_writing = time.time()
             for split_csv in range(1, source_limit + 1):
                 split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
                 split_csv_path = os.path.join(working_dir, split_csv_name)
+                # Generate the final query, values, limits, dates fixed
                 split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
                 split_csv_query_raw = date_query_fix(str(split_csv_query.query))
+                # Generate the csv with \copy
                 psql_command = subprocess.Popen(['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)], stdout=subprocess.PIPE)
                 subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
+                # save it to the zip
                 zipped_csvs.write(split_csv_path, split_csv_name)
                 if split_csv == source_limit:
+                    # could've called .count() earlier on the original query but we know how many millions
+                    # it is, so let's just get a count of the remaining rows to save time
                     download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + split_csv_query.count()
+            logger.info('wrote {}.csv took {} seconds'.format(source_name, time.time() - start_writing))
 
-            logger.debug('wrote {}.csv took {} seconds'.format(source_name, time.time() - start_writing))
         shutil.rmtree(working_dir)
         zipped_csvs.close()
         download_job.file_size = os.stat(file_path).st_size
@@ -236,14 +245,6 @@ def write_csvs(download_job, file_name, columns, sources):
             download_job.error_message += '\n' + str(e)
     else:
         download_job.job_status_id = JOB_STATUS_DICT['finished']
-    finally:
-        try:
-            pass
-            # stream.close()
-            # s3_bucket.lookup(conn.key).set_acl('public-read')
-        except NameError:
-            # there was no stream to close
-            pass
 
     download_job.save()
 
