@@ -40,7 +40,8 @@ class Command(BaseCommand):
         self.logger.info("Loading descriptions of commonly used terms")
         call_command('load_glossary')
 
-        self.logger.info("Loading download status types")
+        self.logger.info("Loading static data")
+        call_command('load_broker_static_data')
         call_command('load_download_static_data')
 
         self.logger.info("Loading budget authority data")
@@ -48,5 +49,8 @@ class Command(BaseCommand):
 
         self.logger.info("Loading NAICS codes and descriptions")
         call_command('load_naics')
+
+        self.logger.info("Loading PSC codes and descriptions")
+        call_command('load_psc')
 
         self.logger.info("Reference data loaded.")
