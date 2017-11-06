@@ -16,7 +16,7 @@ import mimetypes
 import boto
 from django.conf import settings
 
-from usaspending_api.bulk_download.lookups import JOB_STATUS_DICT
+from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.v2 import download_column_historical_lookups
 
 BUFFER_SIZE = (5 * 1024 ** 2)

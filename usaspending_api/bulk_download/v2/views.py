@@ -20,7 +20,7 @@ from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
-from usaspending_api.bulk_download.lookups import JOB_STATUS_DICT
+from usaspending_api.download.lookups import JOB_STATUS_DICT
 
 logger = logging.getLogger('console')
 
@@ -309,12 +309,3 @@ class BulkDownloadStatusViewSet(BaseDownloadViewSet):
                 'Missing one or more required query parameters: file_name')
 
         return self.get_download_response(file_name=file_name)
-
-
-class BulkDownloadTransactionCountViewSet(APIView):
-    def post(self, request):
-        result = {
-            'transaction_rows_gt_limit': False
-        }
-
-        return Response(result)

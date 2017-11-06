@@ -8,7 +8,7 @@ from rest_framework import status
 from django.conf import settings
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
-from usaspending_api.bulk_download.lookups import JOB_STATUS
+from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 
 

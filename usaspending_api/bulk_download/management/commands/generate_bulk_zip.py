@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from usaspending_api.bulk_download.models import BulkDownloadJob
 from usaspending_api.awards.models import Award
-from usaspending_api.bulk_download.lookups import JOB_STATUS_DICT
+from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.bulk_download.filestreaming import csv_selection
 
