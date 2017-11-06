@@ -1,7 +1,6 @@
-from usaspending_api.awards.models import SummaryAwardView, SummaryView, SumaryPscCodesView
+from usaspending_api.awards.models import SummaryAwardView, SummaryView, SumaryPscCodesView, SumaryCfdaNumbersView
 from usaspending_api.common.exceptions import InvalidParameterException
 
-#import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,6 +19,8 @@ def view_filter(filters, view_name):
         view_objects = SummaryAwardView.objects
     elif view_name == 'SumaryPscCodesView':
         view_objects = SumaryPscCodesView.objects
+    elif view_name == 'SumaryCfdaNumbersView':
+        view_objects = SumaryCfdaNumbersView.objects
     else:
         raise InvalidParameterException('Invalid view: ' + view_name + ' does not exist.')
 
@@ -101,19 +102,18 @@ def view_filter(filters, view_name):
 
 def can_use_view(filters):
 
-    #views_enabled = os.getenv('VIEWS_ENABLED', 0)
     key_list = ['time_period',
                 'award_type_codes',
                 'agencies']
 
-    #Make sure only the keys in the key list are in the fileters
+    # Make sure only the keys in the key list are in the fileters
     if len(filters.keys() - key_list) > 0:
-        return False;
+        return False
 
-    agencies = filters.get('agencies');
+    agencies = filters.get('agencies')
     if agencies is not None:
         for v in agencies:
             if v["tier"] == "subtier":
-                return False;
+                return False
 
-    return True;
+    return True
