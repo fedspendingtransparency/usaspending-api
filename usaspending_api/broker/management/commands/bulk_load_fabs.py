@@ -40,11 +40,12 @@ pop_field_map = {
     "performance_code": "place_of_performance_code",
     "congressional_code": "place_of_performance_congr",
     "county_name": "place_of_perform_county_na",
+    "county_code": "place_of_perform_county_c",
     "foreign_location_description": "place_of_performance_forei",
     "state_name": "place_of_perform_state_nam",
     "zip4": "place_of_performance_zip4a",
-    "location_country_code": "place_of_perform_country_c"
-
+    "location_country_code": "place_of_perform_country_c",
+    "country_name": "place_of_perform_country_n"
 }
 
 le_field_map = {
@@ -52,6 +53,7 @@ le_field_map = {
     "address_line2": "legal_entity_address_line2",
     "address_line3": "legal_entity_address_line3",
     "city_name": "legal_entity_city_name",
+    "city_code": "legal_entity_city_code",
     "congressional_code": "legal_entity_congressional",
     "county_code": "legal_entity_county_code",
     "county_name": "legal_entity_county_name",
@@ -62,7 +64,8 @@ le_field_map = {
     "state_name": "legal_entity_state_name",
     "zip5": "legal_entity_zip5",
     "zip_last4": "legal_entity_zip_last4",
-    "location_country_code": "legal_entity_country_code"
+    "location_country_code": "legal_entity_country_code",
+    "country_name": "legal_entity_country_name"
 }
 
 
@@ -203,20 +206,20 @@ class Command(BaseCommand):
                 row[field_map.get('location_country_code')] = 'USA'
 
             # Get country code obj
-            location_country_code = self.country_code_map.get(row[field_map.get('location_country_code')])
+            location_country_code_obj = self.country_code_map.get(row[field_map.get('location_country_code')])
 
             # Fix state code periods
             state_code = row.get(field_map.get('state_code'))
             if state_code is not None:
                 location_value_map.update({'state_code': state_code.replace('.', '')})
 
-            if location_country_code:
+            if location_country_code_obj:
                 location_value_map.update({
-                    'location_country_code': location_country_code,
-                    'country_name': location_country_code.country_name
+                    'location_country_code': location_country_code_obj,
+                    'country_name': location_country_code_obj.country_name
                 })
 
-                if location_country_code != 'USA':
+                if location_country_code_obj.country_code != 'USA':
                     location_value_map.update({
                         'state_code': None,
                         'state_name': None
@@ -283,6 +286,7 @@ class Command(BaseCommand):
 
                 LegalEntity.update_business_type_categories(legal_entity)
 
+                self.le_map[lookup_key] = legal_entity
                 legal_entity_bulk.append(legal_entity)
             legal_entity_lookup.append(legal_entity)
 
@@ -471,10 +475,10 @@ class Command(BaseCommand):
             end = timeit.default_timer()
             logger.info('Finished deleting stale FABS data in ' + str(end - start) + ' seconds')
 
-        # Set lookups after deletions to only get latest
-        self.set_lookup_maps()
-
         if total_rows > 0:
+            # Set lookups after deletions to only get latest
+            self.set_lookup_maps()
+
             logger.info('Get Broker FABS data...')
             start = timeit.default_timer()
             fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)

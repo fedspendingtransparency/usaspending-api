@@ -16,7 +16,7 @@ from fiscalyear import FiscalDate
 
 from usaspending_api.awards.v2.filters.MaterializedView import view_filter, can_use_view
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_month, get_pagination_metadata
+from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
@@ -113,13 +113,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # 'time_period': {'fy': '2017', 'quarter': '3'},
         # 	'aggregated_amount': '200000000'
         # }]
-        flake8_nightmare = sorted(
+        sorted_group_results = sorted(
             group_results.items(),
             key=lambda k: (
                 ast.literal_eval(k[0])['fiscal_year'],
                 int(ast.literal_eval(k[0])[nested_order])) if nested_order else (ast.literal_eval(k[0])['fiscal_year']))
 
-        for key, value in flake8_nightmare:
+        for key, value in sorted_group_results:
             key_dict = ast.literal_eval(key)
             result = {'time_period': key_dict, 'aggregated_amount': float(value)}
             results.append(result)
@@ -166,57 +166,38 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             if scope == "agency":
                 agency_set = queryset \
-                    .filter(awarding_agency__toptier_agency__name__isnull=False) \
+                    .filter(
+                        awarding_agency__isnull=False,
+                        awarding_agency__toptier_agency__name__isnull=False) \
                     .values(
                         agency_name=F('awarding_agency__toptier_agency__name'),
-                        abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
+                        agency_abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
-                total = agency_set.count()
-                results = list(agency_set[lower_limit:upper_limit])
+                results = list(agency_set[lower_limit:upper_limit + 1])
 
             elif scope == "subagency":
                 subagency_set = queryset \
-                    .filter(awarding_agency__subtier_agency__name__isnull=False) \
+                    .filter(
+                        awarding_agency__isnull=False,
+                        awarding_agency__subtier_agency__name__isnull=False) \
                     .values(
                         agency_name=F('awarding_agency__subtier_agency__name'),
-                        abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
+                        agency_abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation'))\
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
-                total = subagency_set.count()
-                results = list(subagency_set[lower_limit:upper_limit])
+                results = list(subagency_set[lower_limit:upper_limit + 1])
 
             elif scope == "office":
-                #####################################################
                 # NOT IMPLEMENTED IN UI
-                #####################################################
-                # office_set = queryset \
-                #     .filter(awarding_agency__office_agency__name__isnull=False) \
-                #     .values('awarding_agency__office_agency__name',
-                #             'awarding_agency__office_agency__abbreviation') \
-                #     .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
-                #     .order_by('-federal_action_obligation')
+                raise NotImplementedError
 
-                # office_set = office_set[lower_limit:upper_limit + 1]
-                # has_next = len(office_set) > limit
-                # has_previous = page > 1
-
-                # for trans in office_set[:limit]:
-                #     oname = trans["awarding_agency__office_agency__name"]
-                #     oabv = trans["awarding_agency__office_agency__abbreviation"]
-                #     oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                #     if oname in name_dict:
-                #         name_dict[oname]["aggregated_amount"] += oob
-                #     else:
-                #         name_dict[oname] = {"aggregated_amount": oob, "abbreviation": oabv}
-                #####################################################
-                pass
-
-            page_metadata = get_pagination_metadata(total, limit, page)
+            page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+            results = results[:limit]
 
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
                         "page_metadata": page_metadata}
@@ -234,13 +215,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         funding_agency__toptier_agency__name__isnull=False) \
                     .values(
                         agency_name=F('funding_agency__toptier_agency__name'),
-                        abbreviation=F('funding_agency__toptier_agency__abbreviation')) \
+                        agency_abbreviation=F('funding_agency__toptier_agency__abbreviation')) \
                     .annotate(
                         aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
-                total = agency_set.count()
-                results = list(agency_set[lower_limit:upper_limit])
+                # Begin DB hits here
+                results = list(agency_set[lower_limit:upper_limit + 1])
 
             elif scope == "subagency":
                 subagency_set = queryset \
@@ -249,48 +230,25 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         funding_agency__subtier_agency__name__isnull=False) \
                     .values(
                         agency_name=F('funding_agency__subtier_agency__name'),
-                        abbreviation=F('funding_agency__subtier_agency__abbreviation')) \
+                        agency_abbreviation=F('funding_agency__subtier_agency__abbreviation')) \
                     .annotate(
                         aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
-                total = subagency_set.count()
-                results = list(subagency_set[lower_limit:upper_limit])
+                results = list(subagency_set[lower_limit:upper_limit + 1])
 
             elif scope == "office":
-                #####################################################
                 # NOT IMPLEMENTED IN UI
-                #####################################################
-                # office_set = queryset \
-                #     .filter(funding_agency__office_agency__name=False) \
-                #     .values('funding_agency__office_agency__name',
-                #         'funding_agency__office_agency__abbreviation') \
-                #     .annotate(federal_action_obligation=Sum('federal_action_obligation')) \
-                #     .order_by('-federal_action_obligation')
+                raise NotImplementedError
 
-                # office_set = office_set[lower_limit:upper_limit + 1]
-                # has_next = len(office_set) > limit
-                # has_previous = page > 1
-
-                # for trans in office_set[:limit]:
-                #     oname = trans["funding_agency__office_agency__name"]
-                #     oabv = trans["funding_agency__office_agency__abbreviation"]
-                #     oob = trans["federal_action_obligation"] if trans["federal_action_obligation"] else 0
-                #     if oname in name_dict:
-                #         name_dict[oname]["aggregated_amount"] += oob
-                #     else:
-                #         name_dict[oname] = {"aggregated_amount": oob, "abbreviation": oabv}
-                #####################################################
-                pass
-
-            page_metadata = get_pagination_metadata(total, limit, page)
+            page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+            results = results[:limit]
 
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
                         "page_metadata": page_metadata}
             return Response(response)
 
         elif category == "recipient":
-
             if scope == "duns":
                 queryset = queryset \
                     .filter(federal_action_obligation__isnull=False) \
@@ -300,10 +258,15 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .order_by("-aggregated_amount")
 
                 # Begin DB hits here
-                total = queryset.count()
-                results = list(queryset[lower_limit:upper_limit])
+                results = list(queryset[lower_limit:upper_limit + 1])
 
-                # The below code (here to the `elif`) is necessary due to django ORM stupidity
+                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                results = results[:limit]
+
+                # The below code (here to the `elif`) is necessary due to django ORM
+                # Overview: sort list by legal-entity ids, then fetch le names by id,
+                #   sort into the same order, then add names to result list.
+                #   reorder results by aggregated amount
                 results = sorted(results, key=lambda result: result["legal_entity_id"])
                 # (Small) DB hit here
                 le_names = LegalEntity.objects \
@@ -312,7 +275,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .values_list('recipient_name', flat=True)
 
                 for i in range(len(results)):
-                    results[i]['legal_entity_name'] = le_names[i]
+                    results[i]['recipient_name'] = le_names[i]
 
                 results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
 
@@ -327,13 +290,12 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
-                total = queryset.count()
-                results = list(queryset[lower_limit:upper_limit])
+                results = list(queryset[lower_limit:upper_limit + 1])
+                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                results = results[:limit]
 
             else:  # recipient_type
                 raise InvalidParameterException("recipient type is not yet implemented")
-
-            page_metadata = get_pagination_metadata(total, limit, page)
 
             response = {"category": category, "scope": scope, "limit": limit, "results": results,
                         "page_metadata": page_metadata}
@@ -349,20 +311,20 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 .values(
                     "aggregated_amount",
                     "cfda_program_number",
-                    cfda_program_title=F("assistance_data__cfda_title")) \
+                    program_title=F("assistance_data__cfda_title")) \
                 .order_by('-aggregated_amount')
 
             # Begin DB hits here
-            total = queryset.count()  # Using count to keep response consistant
-            results = list(queryset[lower_limit:upper_limit])
+            results = list(queryset[lower_limit:upper_limit + 1])
 
-            page_metadata = get_pagination_metadata(total, limit, page)
+            page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+            results = results[:limit]
 
             for trans in results:
                 trans['popular_name'] = None
                 # small DB hit every loop here
                 cfda = Cfda.objects.filter(
-                    program_title=trans['cfda_program_title'],
+                    program_title=trans['program_title'],
                     program_number=trans['cfda_program_number']).values('popular_name').first()
                 if cfda:
                     trans['popular_name'] = cfda['popular_name']
@@ -379,10 +341,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
-                total = queryset.count()
-                results = list(queryset[lower_limit:upper_limit])
+                results = list(queryset[lower_limit:upper_limit + 1])
 
-                page_metadata = get_pagination_metadata(total, limit, page)
+                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                results = results[:limit]
+
                 response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
@@ -399,10 +362,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         naics_description=F('contract_data__naics_description'))
 
                 # Begin DB hits here
-                total = queryset.count()
-                results = list(queryset[lower_limit:upper_limit])
+                results = list(queryset[lower_limit:upper_limit + 1])
 
-                page_metadata = get_pagination_metadata(total, limit, page)
+                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                results = results[:limit]
+
                 response = {"category": category, "scope": scope, "limit": limit, "results": results,
                             "page_metadata": page_metadata}
                 return Response(response)
