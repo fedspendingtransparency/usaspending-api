@@ -40,11 +40,12 @@ pop_field_map = {
     "performance_code": "place_of_performance_code",
     "congressional_code": "place_of_performance_congr",
     "county_name": "place_of_perform_county_na",
+    "county_code": "place_of_perform_county_c",
     "foreign_location_description": "place_of_performance_forei",
     "state_name": "place_of_perform_state_nam",
     "zip4": "place_of_performance_zip4a",
-    "location_country_code": "place_of_perform_country_c"
-
+    "location_country_code": "place_of_perform_country_c",
+    "country_name": "place_of_perform_country_n"
 }
 
 le_field_map = {
@@ -52,6 +53,7 @@ le_field_map = {
     "address_line2": "legal_entity_address_line2",
     "address_line3": "legal_entity_address_line3",
     "city_name": "legal_entity_city_name",
+    "city_code": "legal_entity_city_code",
     "congressional_code": "legal_entity_congressional",
     "county_code": "legal_entity_county_code",
     "county_name": "legal_entity_county_name",
@@ -62,7 +64,8 @@ le_field_map = {
     "state_name": "legal_entity_state_name",
     "zip5": "legal_entity_zip5",
     "zip_last4": "legal_entity_zip_last4",
-    "location_country_code": "legal_entity_country_code"
+    "location_country_code": "legal_entity_country_code",
+    "country_name": "legal_entity_country_name"
 }
 
 

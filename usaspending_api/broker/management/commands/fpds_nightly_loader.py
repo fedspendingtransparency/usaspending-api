@@ -45,7 +45,9 @@ class Command(BaseCommand):
     help = "Update FPDS data nightly"
 
     @staticmethod
-    def get_fpds_data(db_cursor, date):
+    def get_fpds_data(date):
+        db_cursor = connections['data_broker'].cursor()
+
         # Connect to AWS
         aws_region = os.environ.get('AWS_REGION')
         fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
@@ -264,7 +266,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
-        db_cursor = connections['data_broker'].cursor()
         if options.get('date'):
             date = options.get('date')[0]
         else:
@@ -279,7 +280,7 @@ class Command(BaseCommand):
 
         logger.info('Retrieving FPDS Data...')
         start = timeit.default_timer()
-        to_insert, ids_to_delete = self.get_fpds_data(db_cursor=db_cursor, date=date)
+        to_insert, ids_to_delete = self.get_fpds_data(date=date)
         end = timeit.default_timer()
         logger.info('Finished diff-ing FPDS data in ' + str(end - start) + ' seconds')
 

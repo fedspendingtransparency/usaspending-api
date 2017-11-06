@@ -41,7 +41,9 @@ class Command(BaseCommand):
     help = "Update FABS data nightly"
 
     @staticmethod
-    def get_fabs_data(db_cursor, date):
+    def get_fabs_data(date):
+        db_cursor = connections['data_broker'].cursor()
+
         # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
         # by the Broker's PK since every modification is a new row
         db_query = 'SELECT * ' \
@@ -88,11 +90,12 @@ class Command(BaseCommand):
             "performance_code": "place_of_performance_code",
             "congressional_code": "place_of_performance_congr",
             "county_name": "place_of_perform_county_na",
+            "county_code": "place_of_perform_county_c",
             "foreign_location_description": "place_of_performance_forei",
             "state_name": "place_of_perform_state_nam",
             "zip4": "place_of_performance_zip4a",
-            "location_country_code": "place_of_perform_country_c"
-
+            "location_country_code": "place_of_perform_country_c",
+            "country_name": "place_of_perform_country_n"
         }
 
         legal_entity_location_field_map = {
@@ -100,6 +103,7 @@ class Command(BaseCommand):
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
             "city_name": "legal_entity_city_name",
+            "city_code": "legal_entity_city_code",
             "congressional_code": "legal_entity_congressional",
             "county_code": "legal_entity_county_code",
             "county_name": "legal_entity_county_name",
@@ -110,7 +114,8 @@ class Command(BaseCommand):
             "state_name": "legal_entity_state_name",
             "zip5": "legal_entity_zip5",
             "zip_last4": "legal_entity_zip_last4",
-            "location_country_code": "legal_entity_country_code"
+            "location_country_code": "legal_entity_country_code",
+            "country_name": "legal_entity_country_name"
         }
 
         start_time = datetime.now()
@@ -245,7 +250,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info('Starting historical data load...')
 
-        db_cursor = connections['data_broker'].cursor()
         if options.get('date'):
             date = options.get('date')[0]
         else:
@@ -260,7 +264,7 @@ class Command(BaseCommand):
 
         logger.info('Retrieving FABS Data...')
         start = timeit.default_timer()
-        to_insert, ids_to_delete = self.get_fabs_data(db_cursor=db_cursor, date=date)
+        to_insert, ids_to_delete = self.get_fabs_data(date=date)
         end = timeit.default_timer()
         logger.info('Finished diff-ing FABS data in ' + str(end - start) + ' seconds')
 
