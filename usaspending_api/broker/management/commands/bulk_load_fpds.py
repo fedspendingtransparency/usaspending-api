@@ -204,20 +204,20 @@ class Command(BaseCommand):
             #     row[field_map.get('location_country_code')] = 'USA'
 
             # Get country code obj
-            location_country_code = self.country_code_map.get(row[field_map.get('location_country_code')])
+            location_country_code_obj = self.country_code_map.get(row[field_map.get('location_country_code')])
 
             # Fix state code periods
             state_code = row.get(field_map.get('state_code'))
             if state_code is not None:
                 location_value_map.update({'state_code': state_code.replace('.', '')})
 
-            if location_country_code:
+            if location_country_code_obj:
                 location_value_map.update({
-                    'location_country_code': location_country_code,
-                    'country_name': location_country_code.country_name
+                    'location_country_code': location_country_code_obj,
+                    'country_name': location_country_code_obj.country_name
                 })
 
-                if location_country_code != 'USA':
+                if location_country_code_obj.country_code != 'USA':
                     location_value_map.update({
                         'state_code': None,
                         'state_name': None
@@ -284,6 +284,7 @@ class Command(BaseCommand):
 
                 LegalEntity.update_business_type_categories(legal_entity)
 
+                self.le_map[lookup_key] = legal_entity
                 legal_entity_bulk.append(legal_entity)
             legal_entity_lookup.append(legal_entity)
 
@@ -509,10 +510,10 @@ class Command(BaseCommand):
             end = timeit.default_timer()
             logger.info('Finished deleting stale FPDS data in ' + str(end - start) + ' seconds')
 
-        # Set lookups after deletions to only get latest
-        self.set_lookup_maps()
-
         if total_rows > 0:
+            # Set lookups after deletions to only get latest
+            self.set_lookup_maps()
+
             logger.info('Get Broker FPDS data...')
             start = timeit.default_timer()
             fpds_broker_data = self.get_fpds_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)

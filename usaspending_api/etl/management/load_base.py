@@ -582,8 +582,8 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
         if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
             location_object = None
             created = False
-        elif not save:
-            return load_data_into_model(Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False)
+        elif save:
+            location_object = load_data_into_model(Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False, save=True)
             created = False
         else:
             location_object = load_data_into_model(Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False)
