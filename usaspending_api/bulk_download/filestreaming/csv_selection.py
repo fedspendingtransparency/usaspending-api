@@ -17,7 +17,7 @@ import boto
 from django.conf import settings
 
 from usaspending_api.bulk_download.lookups import JOB_STATUS_DICT
-from usaspending_api.bulk_download.v2 import download_column_historical_lookups
+from usaspending_api.download.v2 import download_column_historical_lookups
 
 BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
@@ -86,9 +86,9 @@ class CsvSource:
 
     def toJsonDict(self):
         json_dict = {
-            "model_type": self.model_type,
-            "file_type": self.file_type,
-            "query": jsonpickle.dumps(self.queryset.query) if self.queryset is not None else None
+            'model_type': self.model_type,
+            'file_type': self.file_type,
+            'query': jsonpickle.dumps(self.queryset.query) if self.queryset is not None else None
         }
         return json_dict
 
@@ -194,8 +194,8 @@ def write_csvs(download_job, file_name, columns, sources):
 
         logger.debug('Generating {}'.format(file_name))
 
-        source_map = {"contracts": sources[0],
-                      "assistance": sources[1]}
+        source_map = {'contracts': sources[0],
+                      'assistance': sources[1]}
 
         for source_name, source in source_map.items():
             start_count = time.time()
@@ -247,6 +247,6 @@ def write_csvs(download_job, file_name, columns, sources):
 
     download_job.save()
 
-    logger.info("generate_zips took {} seconds".format(time.time() - start_zip_generation))
+    logger.info('generate_zips took {} seconds'.format(time.time() - start_zip_generation))
 
     return file_name

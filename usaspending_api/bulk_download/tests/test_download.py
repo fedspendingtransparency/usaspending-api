@@ -31,22 +31,22 @@ def award_data(db):
     # Create Awarding Top Agency
     ata1 = mommy.make(
         'references.ToptierAgency',
-        name="Bureau of Things",
+        name='Bureau of Things',
         cgac_code='100',
         website='http://test.com',
         mission='test',
         icon_filename='test')
     ata2 = mommy.make(
         'references.ToptierAgency',
-        name="Bureau of Stuff",
+        name='Bureau of Stuff',
         cgac_code='101',
         website='http://test.com',
         mission='test',
         icon_filename='test')
 
     # Create Awarding subs
-    asa1 = mommy.make('references.SubtierAgency', name="Bureau of Things")
-    asa2 = mommy.make('references.SubtierAgency', name="Bureau of Stuff")
+    asa1 = mommy.make('references.SubtierAgency', name='Bureau of Things')
+    asa2 = mommy.make('references.SubtierAgency', name='Bureau of Stuff')
 
     # Create Awarding Agencies
     aa1 = mommy.make(
@@ -57,14 +57,14 @@ def award_data(db):
     # Create Funding Top Agency
     fta = mommy.make(
         'references.ToptierAgency',
-        name="Bureau of Money",
+        name='Bureau of Money',
         cgac_code='102',
         website='http://test.com',
         mission='test',
         icon_filename='test')
 
     # Create Funding SUB
-    fsa1 = mommy.make('references.SubtierAgency', name="Bureau of Things")
+    fsa1 = mommy.make('references.SubtierAgency', name='Bureau of Things')
 
     # Create Funding Agency
     fa1 = mommy.make('references.Agency', id=3, toptier_agency=fta, subtier_agency=fsa1, toptier_flag=False)
@@ -72,7 +72,7 @@ def award_data(db):
     # Create Federal Account
     fta = mommy.make(
         'accounts.FederalAccount',
-        account_title="Compensation to Accounts",
+        account_title='Compensation to Accounts',
         agency_identifier='102',
         id=1)
 
@@ -119,8 +119,8 @@ def test_download_transactions_v2_endpoint(client, award_data):
         '/api/v2/bulk_download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "filters": {},
-            "columns": {}
+            'filters': {},
+            'columns': {}
         }))
 
     assert resp.status_code == status.HTTP_200_OK
@@ -136,8 +136,8 @@ def test_download_awards_v2_endpoint(client, award_data):
         '/api/v2/bulk_download/awards',
         content_type='application/json',
         data=json.dumps({
-            "filters": {},
-            "columns": []
+            'filters': {},
+            'columns': []
         }))
 
     assert resp.status_code == status.HTTP_200_OK
@@ -153,8 +153,8 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
         '/api/v2/bulk_download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "filters": {},
-            "columns": []
+            'filters': {},
+            'columns': []
         }))
 
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -174,8 +174,8 @@ def test_download_awards_v2_status_endpoint(client, award_data):
         '/api/v2/bulk_download/awards',
         content_type='application/json',
         data=json.dumps({
-            "filters": {},
-            "columns": []
+            'filters': {},
+            'columns': []
         }))
 
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -206,45 +206,45 @@ def test_list_agencies(client, award_data):
         data=json.dumps({
         }))
 
-    all_toptiers = [{"name": "Bureau of Things", "toptier_agency_id": 1, "cgac_code": "100"},
-                    {"name": "Bureau of Stuff", "toptier_agency_id": 2, "cgac_code": "101"},
-                    {"name": "Bureau of Money", "toptier_agency_id": 3, "cgac_code": "102"}]
-    sort_function = lambda agency: agency["toptier_agency_id"]
+    all_toptiers = [{'name': 'Bureau of Things', 'toptier_agency_id': 1, 'cgac_code': '100'},
+                    {'name': 'Bureau of Stuff', 'toptier_agency_id': 2, 'cgac_code': '101'},
+                    {'name': 'Bureau of Money', 'toptier_agency_id': 3, 'cgac_code': '102'}]
+    sort_function = lambda agency: agency['toptier_agency_id']
 
     assert sorted(resp.json()['agencies'], key=sort_function) == sorted(all_toptiers, key=sort_function)
-    assert resp.json()["sub_agencies"] == []
-    assert resp.json()["federal_accounts"] == []
+    assert resp.json()['sub_agencies'] == []
+    assert resp.json()['federal_accounts'] == []
 
     resp = client.post(
         '/api/v2/bulk_download/list_agencies',
         content_type='application/json',
         data=json.dumps({
-            "agency": 1
+            'agency': 1
         }))
 
-    assert resp.json()["agencies"] == []
-    assert resp.json()["sub_agencies"] == [{'subtier_agency_name': 'Bureau of Things', 'subtier_agency_id': 1}]
-    assert resp.json()["federal_accounts"] == []
+    assert resp.json()['agencies'] == []
+    assert resp.json()['sub_agencies'] == [{'subtier_agency_name': 'Bureau of Things', 'subtier_agency_id': 1}]
+    assert resp.json()['federal_accounts'] == []
 
     resp = client.post(
         '/api/v2/bulk_download/list_agencies',
         content_type='application/json',
         data=json.dumps({
-            "agency": 2
+            'agency': 2
         }))
 
-    assert resp.json()["agencies"] == []
-    assert resp.json()["sub_agencies"] == [{'subtier_agency_name': 'Bureau of Stuff', 'subtier_agency_id': 2}]
-    assert resp.json()["federal_accounts"] == []
+    assert resp.json()['agencies'] == []
+    assert resp.json()['sub_agencies'] == [{'subtier_agency_name': 'Bureau of Stuff', 'subtier_agency_id': 2}]
+    assert resp.json()['federal_accounts'] == []
 
     resp = client.post(
         '/api/v2/bulk_download/list_agencies',
         content_type='application/json',
         data=json.dumps({
-            "agency": 3
+            'agency': 3
         }))
 
-    assert resp.json()["agencies"] == []
-    assert resp.json()["sub_agencies"] == [{'subtier_agency_name': 'Bureau of Things', 'subtier_agency_id': 3}]
-    assert resp.json()["federal_accounts"] == [{"federal_account_name": "Compensation to Accounts",
-                                                "federal_account_id": 1}]
+    assert resp.json()['agencies'] == []
+    assert resp.json()['sub_agencies'] == [{'subtier_agency_name': 'Bureau of Things', 'subtier_agency_id': 3}]
+    assert resp.json()['federal_accounts'] == [{'federal_account_name': 'Compensation to Accounts',
+                                                'federal_account_id': 1}]

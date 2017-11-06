@@ -19,10 +19,10 @@ from usaspending_api.bulk_download.filestreaming import csv_selection
 logger = logging.getLogger('console')
 
 # # AWS parameters
-# BULK_DOWNLOAD_S3_BUCKET_NAME = os.environ.get("BULK_DOWNLOAD_S3_BUCKET_NAME")
-# BULK_DOWNLOAD_SQS_QUEUE_NAME = os.environ.get("BULK_DOWNLOAD_SQS_QUEUE_NAME")
-# BULK_DOWNLOAD_AWS_REGION = os.environ.get("BULK_DOWNLOAD_AWS_REGION")
-# DATABASE_URL = os.environ.get("DATABASE_URL")
+# BULK_DOWNLOAD_S3_BUCKET_NAME = os.environ.get('BULK_DOWNLOAD_S3_BUCKET_NAME')
+# BULK_DOWNLOAD_SQS_QUEUE_NAME = os.environ.get('BULK_DOWNLOAD_SQS_QUEUE_NAME')
+# BULK_DOWNLOAD_AWS_REGION = os.environ.get('BULK_DOWNLOAD_AWS_REGION')
+# DATABASE_URL = os.environ.get('DATABASE_URL')
 
 class Command(BaseCommand):
 
@@ -57,14 +57,14 @@ class Command(BaseCommand):
         queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
                           QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
 
-        logger.info("Starting SQS polling")
+        logger.info('Starting SQS polling')
         while True:
             processed_messages = []
             try:
                 # Grabs one (or more) messages from the queue
                 messages = queue.receive_messages(WaitTimeSeconds=10, MessageAttributeNames=['All'])
                 for message in messages:
-                    logger.info("Message Received: {}".format(message))
+                    logger.info('Message Received: {}'.format(message))
                     if message.message_attributes is not None:
                         self.current_job_id = message.message_attributes['download_job_id']['StringValue']
                         sources = []
