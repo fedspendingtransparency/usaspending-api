@@ -822,7 +822,7 @@ class Subaward(DataSourceTrackedModel):
                                                                                            "broker",
                                           help_text="The ID of the parent award in broker", db_index=True)
     internal_id = models.TextField(blank=False, null=False, default="", verbose_name="Internal ID of the parent award",
-                                      help_text="The internal of the parent award in broker from FSRS", db_index=True)
+                                   help_text="The internal of the parent award in broker from FSRS", db_index=True)
     award_type = models.TextField(blank=False, null=False, default="unknown", verbose_name="Award Type",
                                   help_text="Whether the parent award is a procurement or a grant", db_index=True)
 

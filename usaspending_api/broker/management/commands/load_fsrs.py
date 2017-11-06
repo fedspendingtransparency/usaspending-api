@@ -20,7 +20,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_award_data(db_cursor, award_type, max_id):
-        """ Gets data for all new awards from broker with ID greater than the ones already stored for the given 
+        """ Gets data for all new awards from broker with ID greater than the ones already stored for the given
             award type
         """
         query_columns = ['internal_id', 'duns', 'parent_duns', 'principle_place_country', 'principle_place_city',
