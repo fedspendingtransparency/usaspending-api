@@ -215,7 +215,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
-                total = agency_set.count()
+                # Begin DB hits here
                 results = list(agency_set[lower_limit:upper_limit + 1])
 
             elif scope == "subagency":
@@ -258,7 +258,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
 
-                # The below code (here to the `elif`) is necessary due to django ORM stupidity
+                # The below code (here to the `elif`) is necessary due to django ORM
+                # Overview: sort list by legal-entity ids, then fetch le names by id,
+                #   sort into the same order, then add names to result list.
+                #   reorder results by aggregated amount
                 results = sorted(results, key=lambda result: result["legal_entity_id"])
                 # (Small) DB hit here
                 le_names = LegalEntity.objects \
