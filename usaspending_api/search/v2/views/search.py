@@ -491,13 +491,16 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         # Build the query based on the scope fields and geo_layers
         # Fields not in the reference objects above then request is invalid
-        try:
-            scope_field_name = model_dict[scope]
-            loc_field_name = loc_dict[self.geo_layer]
-            loc_lookup = '{}__{}'.format(scope_field_name, loc_field_name)
 
-        except InvalidParameterException:
-            raise InvalidParameterException("Invalid request parameters: scope, geo_layer")
+        scope_field_name = model_dict.get(scope)
+        loc_field_name = loc_dict.get(self.geo_layer)
+        loc_lookup = '{}__{}'.format(scope_field_name, loc_field_name)
+
+        if scope_field_name is None:
+            raise InvalidParameterException("Invalid request parameters: scope")
+
+        if loc_field_name is None:
+            raise InvalidParameterException("Invalid request parameters: geo_layer")
 
         # build sql query filters
         self.queryset = transaction_filter(filters)
@@ -511,7 +514,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             # State codes are consistent in db ie AL, AK
             fields_list.append(loc_lookup)
 
-            return Response(self.state_results(kwargs, fields_list, loc_lookup))
+            state_response = {
+                'scope': scope,
+                'geo_layer': self.geo_layer,
+                'results': self.state_results(kwargs, fields_list, loc_lookup)
+            }
+
+            return Response(state_response)
 
         else:
             # County and district scope will need to select multiple fields
@@ -531,10 +540,24 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 county_name = '{}__{}'.format(scope_field_name, 'county_name')
                 fields_list.append(county_name)
                 self.county_district_queryset(kwargs, fields_list, loc_lookup, scope_field_name)
-                return Response(self.county_results(state_lookup, county_name))
+
+                county_response = {
+                    'scope': scope,
+                    'geo_layer': self.geo_layer,
+                    'results': self.county_results(state_lookup, county_name)
+                }
+
+                return Response(county_response)
             else:
                 self.geo_queryset = self.county_district_queryset(kwargs, fields_list, loc_lookup, scope_field_name)
-                return Response(self.district_results(state_lookup))
+
+                district_response = {
+                    'scope': scope,
+                    'geo_layer': self.geo_layer,
+                    'results': self.district_results(state_lookup)
+                }
+
+                return Response(district_response)
 
     def state_results(self, filter_args, lookup_fields, loc_lookup):
         # Adding additional state filters if specified
