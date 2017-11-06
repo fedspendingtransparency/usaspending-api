@@ -1,19 +1,18 @@
 import sys
 import itertools
 import json
-import time
 import logging
 
 from django.conf import settings
-from django.db.models import F, Sum, Value, CharField, Q
+from django.db.models import F, Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import NotFound, ParseError
+from rest_framework.exceptions import NotFound
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, \
     grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping
-from usaspending_api.awards.models import Award, Subaward, TransactionNormalized, Agency
-from usaspending_api.references.models import ToptierAgency, SubtierAgency
+from usaspending_api.awards.models import Award, Subaward, Agency
+from usaspending_api.references.models import ToptierAgency
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.csv_helpers import sqs_queue
@@ -105,7 +104,7 @@ class BaseDownloadViewSet(APIView):
         # create download job in database to track progress. Starts at 'ready'
         # status by default.
         download_job = BulkDownloadJob(job_status_id=JOB_STATUS_DICT['ready'],
-                                   file_name=timestamped_file_name)
+                                       file_name=timestamped_file_name)
         download_job.save()
 
         kwargs = {'download_job': download_job,
@@ -180,12 +179,17 @@ class BulkDownloadListAgenciesViewSet(APIView):
                 raise InvalidParameterException('Agency ID not found')
             top_tier_agency = top_tier_agency[0]
             # Get the sub agencies and federal accounts associated with that top tier agency
-            response_data['sub_agencies'] = Agency.objects.filter(toptier_agency_id=agency_id)\
-                .annotate(subtier_agency_name=F('subtier_agency__name'),subtier_agency_id=F('subtier_agency__subtier_agency_id'))\
+            response_data['sub_agencies'] = Agency.objects \
+                .filter(toptier_agency_id=agency_id) \
+                .annotate(
+                    subtier_agency_name=F('subtier_agency__name'),
+                    subtier_agency_id=F('subtier_agency__subtier_agency_id')) \
                 .values('subtier_agency_name', 'subtier_agency_id')
-            response_data['federal_accounts'] = FederalAccount.objects.filter(agency_identifier=top_tier_agency['cgac_code']) \
+
+            response_data['federal_accounts'] = FederalAccount.objects \
+                .filter(agency_identifier=top_tier_agency['cgac_code']) \
                 .annotate(federal_account_name=F('account_title'),
-                          federal_account_id=F('id'))\
+                          federal_account_id=F('id')) \
                 .values('federal_account_name', 'federal_account_id')
         return Response(response_data)
 
@@ -234,7 +238,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
 
         # Agencies are to be OR'd together and then AND'd to the major query
         or_queryset = (Q(awarding_agency_id=filters['agency']) |
-                                   Q(funding_agency_id=filters['agency']))
+                       Q(funding_agency_id=filters['agency']))
         if 'sub_agency' in filters:
             or_queryset = (or_queryset & (Q(awarding_agency_id=filters['sub_agency']) |
                                           Q(funding_agency_id=filters['sub_agency'])))
@@ -258,14 +262,13 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
 
         return filtered_queryset
 
-
     def get_csv_sources(self, json_request):
         """
         Generate the CSV Sources (filtered queryset and metadata) based on the request
         """
         award_levels = json_request['award_levels']
         # TODO: Send use file_format
-        file_format = json_request['file_format']
+        # file_format = json_request['file_format']
 
         csv_sources = []
         if not isinstance(award_levels, list):

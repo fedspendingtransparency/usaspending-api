@@ -24,6 +24,7 @@ logger = logging.getLogger('console')
 # BULK_DOWNLOAD_AWS_REGION = os.environ.get('BULK_DOWNLOAD_AWS_REGION')
 # DATABASE_URL = os.environ.get('DATABASE_URL')
 
+
 class Command(BaseCommand):
 
     current_job_id = None
@@ -49,7 +50,6 @@ class Command(BaseCommand):
         job = BulkDownloadJob.objects.filter(bulk_download_job_id=job_id).first()
         # update job status
         job.job_status_id = JOB_STATUS_DICT[status_name]
-
 
     def handle(self, *args, **options):
         """Run the application."""

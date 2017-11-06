@@ -102,16 +102,18 @@ def calculate_number_of_csvs(queryset, limit):
     while not reached_limit:
         csvs += 1
         try:
-            queryset[limit*csvs]
+            queryset[limit * csvs]
         except IndexError:
             reached_limit = True
     return csvs
+
 
 def date_query_fix(query):
     """Adds quotes around dates to execute the query"""
     for date_string in re.findall('\d\d\d\d-\d\d-\d\d', query):
         query = query.replace(date_string, '\'{}\''.format(date_string))
     return query
+
 
 # Multipart upload functions copied from Fabian Topfstedt's solution
 # http://www.topfstedt.de/python-parallel-s3-multipart-upload-with-retries.html
@@ -129,7 +131,7 @@ def upload(bucketname, regionname, source_path, keyname, acl='private', headers=
 
     source_size = os.stat(source_path).st_size
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)),
-        5242880)
+                          5242880)
     chunk_amount = int(math.ceil(source_size / float(bytes_per_chunk)))
 
     pool = multiprocessing.Pool(processes=parallel_processes)
@@ -139,7 +141,7 @@ def upload(bucketname, regionname, source_path, keyname, acl='private', headers=
         bytes = min([bytes_per_chunk, remaining_bytes])
         part_num = i + 1
         pool.apply_async(_upload_part, [bucketname, regionname, mp.id,
-            part_num, source_path, offset, bytes])
+                         part_num, source_path, offset, bytes])
     pool.close()
     pool.join()
 
@@ -150,19 +152,21 @@ def upload(bucketname, regionname, source_path, keyname, acl='private', headers=
     else:
         mp.cancel_upload()
 
+
 def _upload_part(bucketname, regionname, multipart_id, part_num,
-    source_path, offset, bytes, amount_of_retries=10):
+                 source_path, offset, bytes, amount_of_retries=10):
     """
     Uploads a part with retries.
     """
     bucket = boto.s3.connect_to_region(regionname).get_bucket(bucketname)
+
     def _upload(retries_left=amount_of_retries):
         try:
             logging.info('Start uploading part #%d ...' % part_num)
             for mp in bucket.get_all_multipart_uploads():
                 if mp.id == multipart_id:
                     with FileChunkIO(source_path, 'r', offset=offset,
-                        bytes=bytes) as fp:
+                                     bytes=bytes) as fp:
                         mp.upload_part_from_file(fp=fp, part_num=part_num)
                     break
         except Exception as exc:
@@ -175,6 +179,7 @@ def _upload_part(bucketname, regionname, multipart_id, part_num,
             logging.info('... Uploaded part #%d' % part_num)
 
     _upload()
+
 
 def write_csvs(download_job, file_name, columns, sources):
     """Derive the relevant location and write CSVs to it.
@@ -216,7 +221,10 @@ def write_csvs(download_job, file_name, columns, sources):
                 split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
                 split_csv_query_raw = date_query_fix(str(split_csv_query.query))
                 # Generate the csv with \copy
-                psql_command = subprocess.Popen(['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)], stdout=subprocess.PIPE)
+                psql_command = subprocess.Popen(
+                    ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
+                    stdout=subprocess.PIPE
+                )
                 subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
                 # save it to the zip
                 zipped_csvs.write(split_csv_path, split_csv_name)
@@ -234,7 +242,8 @@ def write_csvs(download_job, file_name, columns, sources):
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.BULK_DOWNLOAD_AWS_REGION
             start_uploading = time.time()
-            upload(bucket, region, file_path, os.path.basename(file_path), parallel_processes=multiprocessing.cpu_count())
+            upload(bucket, region, file_path, os.path.basename(file_path),
+                   parallel_processes=multiprocessing.cpu_count())
             logger.info('uploading took {} seconds'.format(time.time() - start_uploading))
             os.remove(file_path)
 
