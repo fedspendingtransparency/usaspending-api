@@ -1,5 +1,5 @@
 """
-Idempotently re-runs location creation / matching code from broker FPDS data 
+Idempotently re-runs location creation / matching code from broker FPDS data
 """
 
 import logging
@@ -67,7 +67,7 @@ class Command(BaseCommand):
       place_of_perform_city_name, place_of_performance_zip4a,
       place_of_performance_congr, place_of_perform_county_na,
       place_of_performance_state,
-      legal_entity_state_code, 
+      legal_entity_state_code,
       legal_entity_city_name ,
       legal_entity_address_line1 ,
       legal_entity_address_line2 ,
@@ -247,14 +247,10 @@ class Command(BaseCommand):
                     self.dap_ids_for_blank_pops(limit=limit, fiscal_year=fy, only_final_transactions=only_final)):
                 fpds_broker_data = self.get_fpds_data_by_dap_id(db_cursor, id_chunk)
                 (changed, created) = self.fix_places_of_performance(fpds_broker_data=fpds_broker_data)
-                logger.info('Created %s locations, changed POP for %s transactions', created, changed)
-                logger.info('Elapsed so far: %s seconds', timeit.default_timer() - start)
             for id_chunk in chunks(
                     self.dap_ids_for_blank_recipients(limit=limit, fiscal_year=fy, only_final_transactions=only_final)):
                 fpds_broker_data = self.get_fpds_data_by_dap_id(db_cursor, id_chunk)
                 (changed, created) = self.fix_recipient_locations(fpds_broker_data=fpds_broker_data)
-                logger.info('Created %s locations, changed POP for %s transactions', created, changed)
-                logger.info('Elapsed so far: %s seconds', timeit.default_timer() - start)
 
 
 def chunks(source_iterable, size=1000):
