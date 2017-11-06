@@ -558,7 +558,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         return Response(response)
 
 
-
 class SpendingByAwardCountVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
