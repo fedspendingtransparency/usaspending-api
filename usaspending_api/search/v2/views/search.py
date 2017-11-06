@@ -22,7 +22,7 @@ from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
     loan_type_mapping, loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
-from usaspending_api.references.abbreviations import code_to_state, code_to_fips, fips_to_code, pad_codes
+from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda, LegalEntity
 
 import timeit
@@ -573,8 +573,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         results = [
             {
                 'shape_code': x[loc_lookup],
-                'federal_action_obligation': x['federal_action_obligation'],
-                'display_name': code_to_state.get(x[loc_lookup]).title()
+                'aggregated_amount': x['federal_action_obligation'],
+                'display_name': code_to_state.get(x[loc_lookup])['name'].title()
             } for x in self.geo_queryset.iterator()
         ]
 
@@ -604,9 +604,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Returns county results formatted for map
         results = [
                 {
-                    'shape_code': code_to_fips.get(x[state_lookup]) +
+                    'shape_code': code_to_state.get(x[state_lookup])['fips'] +
                     pad_codes(self.geo_layer, x['code_as_float']),
-                    'federal_action_obligation': x['federal_action_obligation'],
+                    'aggregated_amount': x['federal_action_obligation'],
                     'display_name': x[county_name].title()
                 }
                 for x in self.geo_queryset.iterator()
@@ -618,9 +618,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Returns congressional district results formatted for map
         results = [
                 {
-                    'shape_code': code_to_fips.get(x[state_lookup]) +
+                    'shape_code': code_to_state.get(x[state_lookup])['fips'] +
                     pad_codes(self.geo_layer, x['code_as_float']),
-                    'federal_action_obligation': x['federal_action_obligation'],
+                    'aggregated_amount': x['federal_action_obligation'],
                     'display_name': x[state_lookup] + '-' + pad_codes(self.geo_layer, x['code_as_float'])
                 } for x in self.geo_queryset.iterator()
             ]
