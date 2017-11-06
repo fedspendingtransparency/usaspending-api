@@ -1,20 +1,23 @@
-import json
-
 import pytest
 from model_mommy import mommy
-from rest_framework import status
 
 from usaspending_api.awards.models import Award, TransactionNormalized
-from usaspending_api.references.models \
-    import Location, Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import \
+    Location, Agency, ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
-def budget_function_data(db):
+def budget_function_data():
+
+    country1 = mommy.make(
+        'references.RefCountryCode',
+        country_code='USA'
+    )
 
     loc1 = mommy.make(
         Location,
-        location_id=1)
+        location_id=1,
+        location_country_code=country1)
 
     ttagency1 = mommy.make(
         ToptierAgency,
@@ -49,22 +52,8 @@ def budget_function_data(db):
         federal_action_obligation=50)
 
 
-@pytest.mark.django_db
-def test_spending_by_category_success(client, budget_function_data):
-
-    # test for required functions
-    resp = client.post(
-        '/api/v2/search/spending_by_category',
-        content_type='application/json',
-        data=json.dumps({
-            "category": "funding_agency",
-            "scope": "agency",
-            "filters": {
-                "keyword": "test"
-            }
-        }))
-    assert resp.status_code == status.HTTP_200_OK
-    all_filters = {
+def all_filters():
+    return {
         "keyword": "test",
         "time_period": [
             {
@@ -72,7 +61,6 @@ def test_spending_by_category_success(client, budget_function_data):
                 "end_date": "2017-09-30"
             }
         ],
-        'award_type_codes': ['011', '020'],
         "agencies": [
             {
                 "type": "funding",
@@ -87,13 +75,17 @@ def test_spending_by_category_success(client, budget_function_data):
         ],
         "legal_entities": [1, 2, 3],
         'recipient_scope': "domestic",
-        "recipient_locations": [1, 2, 3],
+        "recipient_locations": [{"country": "XYZ"},
+                                {"country": "USA"},
+                                {"country": "ABC"}
+                                ],
         "recipient_type_names": [
             "Small Business",
             "Alaskan Native Owned Business"],
         "place_of_performance_scope": "domestic",
-        "place_of_performance_locations": [1, 2, 3],
-        "award_type_codes": ["A", "B", "03"],
+        "place_of_performance_locations": [{"country": "USA"},
+                                           {"country": "PQR"}],
+        "award_type_codes": ["A", "B", "03", '011', '020'],
         "award_ids": [1, 2, 3],
         "award_amounts": [
             {
@@ -114,24 +106,3 @@ def test_spending_by_category_success(client, budget_function_data):
         "set_aside_type_codes": ["SAMPLECODE123"],
         "extent_competed_type_codes": ["SAMPLECODE_ECTC"]
     }
-
-    # TODO: Fix all filters test
-    resp = client.post(
-        '/api/v2/visualizations/spending_by_category',
-        content_type='application/json',
-        data=json.dumps({
-            "group": "quarter",
-            "filters": all_filters
-        }))
-    # test for similar matches (with no duplicates)
-
-
-@pytest.mark.django_db
-def test_naics_autocomplete_failure(client):
-    """Verify error on bad autocomplete request for budget function."""
-
-    resp = client.post(
-        '/api/v2/search/spending_by_category/',
-        content_type='application/json',
-        data=json.dumps({}))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST

@@ -2,6 +2,7 @@ import json
 import os
 import dj_database_url
 from django.db import connection, connections
+from collections import OrderedDict
 import logging
 
 
@@ -14,7 +15,7 @@ def dictfetchall(cursor):
     else:
         "Return all rows from a cursor as a dict"
         columns = [col[0] for col in cursor.description]
-        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+        return [OrderedDict(zip(columns, row)) for row in cursor.fetchall()]
 
 
 class PhonyCursor:
