@@ -61,6 +61,69 @@ code_to_state = {
     'WY': 'WYOMING'
 }
 
+code_to_fips = {
+    'AK': '02',
+    'AL': '01',
+    'AR': '05',
+    'AS': '60',
+    'AZ': '04',
+    'CA': '06',
+    'CO': '08',
+    'CT': '09',
+    'DC': '11',
+    'DE': '10',
+    'FL': '12',
+    'FM': '64',
+    'GA': '13',
+    'GU': '66',
+    'HI': '15',
+    'IA': '19',
+    'ID': '16',
+    'IL': '17',
+    'IN': '18',
+    'KS': '20',
+    'KY': '21',
+    'LA': '22',
+    'MA': '25',
+    'MD': '24',
+    'ME': '23',
+    'MH': '68',
+    'MI': '26',
+    'MN': '27',
+    'MO': '29',
+    'MP': '69',
+    'MS': '28',
+    'MT': '30',
+    'NC': '37',
+    'ND': '38',
+    'NE': '31',
+    'NH': '33',
+    'NJ': '34',
+    'NM': '35',
+    'NV': '32',
+    'NY': '36',
+    'OH': '39',
+    'OK': '40',
+    'OR': '41',
+    'PA': '42',
+    'PR': '72',
+    'PW': '70',
+    'RI': '44',
+    'SC': '45',
+    'SD': '46',
+    'TN': '47',
+    'TX': '48',
+    'UM': '74',
+    'UT': '49',
+    'VA': '51',
+    'VI': '78',
+    'VT': '50',
+    'WA': '53',
+    'WI': '55',
+    'WV': '54',
+    'WY': '56'
+}
+
 territory_country_codes = {
     "ASM": "American Samoa",
     "GUM": "Guam",
@@ -74,3 +137,14 @@ territory_country_codes = {
 }
 
 state_to_code = {v: k for (k, v) in code_to_state.items()}
+
+fips_to_code = {fips: code for (code, fips) in code_to_fips.items()}
+
+
+def pad_codes(location_scope, code_as_float):
+    # Used to convert float back to text code: 9.0 -> '09'
+    code_as_float = str(code_as_float).replace('.0', '')
+    if location_scope == 'county':
+        return code_as_float.zfill(3)
+    else:
+        return code_as_float.zfill(2)
