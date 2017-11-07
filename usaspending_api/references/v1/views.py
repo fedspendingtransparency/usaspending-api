@@ -6,6 +6,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.awards.models import Award
 
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin
@@ -185,6 +187,42 @@ class GlossaryViewSet(FilterQuerysetMixin, DetailViewSet):
         queryset = Definition.objects.all()
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         return filtered_queryset
+
+
+class AwardAutocompleteViewSet(APIView):
+
+    @cache_response()
+    def post(self, request):
+
+        json_request = request.data
+        search_text = json_request.get('value', None)
+
+        try:
+            limit = int(json_request.get('limit', 10))
+        except ValueError:
+            raise InvalidParameterException('Limit request parameter is not a valid, positive integer')
+        if not search_text:
+            raise InvalidParameterException('Missing one or more required request parameters: value')
+
+        all_qs = Award.objects.all()
+
+        piid_qs = all_qs.filter(piid=search_text)
+        parent_award_qs = all_qs.filter(parent_award__piid=search_text)
+        fain_qs = all_qs.filter(fain=search_text)
+        uri_qs = all_qs.filter(uri=search_text)
+
+        response = {}
+        matched_objects = {}
+        matched_objects['fain'] = list(fain_qs.values('id', 'piid', 'fain', 'uri')[:limit])
+        matched_objects['parent_award__piid'] = list(parent_award_qs.values('id', 'piid', 'fain', 'uri')[:limit])
+        matched_objects['piid'] = list(piid_qs.values('id', 'piid', 'fain', 'uri')[:limit])
+        matched_objects['uri'] = list(uri_qs.values('id', 'piid', 'fain', 'uri')[:limit])
+
+        response['matched_objects'] = matched_objects
+
+        return Response(
+            response
+        )
 
 
 class GlossaryAutocomplete(FilterQuerysetMixin, AutocompleteView):
