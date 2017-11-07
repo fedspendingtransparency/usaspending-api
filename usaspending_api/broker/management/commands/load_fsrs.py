@@ -46,7 +46,49 @@ class Command(BaseCommand):
         return dictfetchall(db_cursor)
 
     @staticmethod
-    def gather_shared_award_data(data, award_type):
+    def get_award(row, award_type):
+        if award_type == 'procurement':
+            # we don't need the agency for grants
+            agency = get_valid_awarding_agency(row)
+
+            if not agency:
+                # logger.warning(
+                #     "Internal ID {} cannot find matching agency with subtier code {}".
+                #     format(row['internal_id'], row['contracting_office_aid']))
+                return None, None
+
+            # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
+            # a transaction with a matching agency, parent award id, and piid
+            award = Award.objects.filter(
+                awarding_agency=agency,
+                latest_transaction__contract_data__piid=row['contract_number'],
+                latest_transaction__contract_data__parent_award_id=row['idv_reference_number']).distinct().order_by(
+                "-date_signed").first()
+
+            # We don't have a matching award for this subcontract, log a warning and continue to the next row
+            if not award:
+                # logger.warning(
+                #     "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
+                #     format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
+                return None, None
+
+            recipient_name = row['company_name']
+        else:
+            # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
+            # a transaction with a matching fain
+            award = Award.objects.filter(latest_transaction__assistance_data__fain=row['fain']).distinct(). \
+                order_by("-date_signed").first()
+            # We don't have a matching award for this subcontract, log a warning and continue to the next row
+            if not award:
+                # logger.warning(
+                #     "Internal ID {} cannot find award with fain {}; skipping...".
+                #     format(row['internal_id'], row['fain']))
+                return None, None
+
+            recipient_name = row['awardee_name']
+        return award, recipient_name
+
+    def gather_shared_award_data(self, data, award_type):
         """ Creates a dictionary with internal IDs as keys that stores data for each award that's shared between all
             its subawards so we don't have to query the DB repeatedly
         """
@@ -60,45 +102,10 @@ class Command(BaseCommand):
             if counter % 1000 == 0:
                 logger.info("Processed " + str(counter) + " of " + str(new_awards) + " new awards")
 
-            if award_type == 'procurement':
-                # we don't need the agency for grants
-                agency = get_valid_awarding_agency(row)
+            award, recipient_name = self.get_award(row, award_type)
 
-                if not agency:
-                    logger.warning(
-                        "Internal ID {} cannot find matching agency with subtier code {}".
-                        format(row['internal_id'], row['contracting_office_aid']))
-                    continue
-
-                # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
-                # a transaction with a matching agency, parent award id, and piid
-                award = Award.objects.filter(
-                    awarding_agency=agency,
-                    latest_transaction__contract_data__piid=row['contract_number'],
-                    latest_transaction__contract_data__parent_award_id=row['idv_reference_number']).distinct().order_by(
-                    "-date_signed").first()
-
-                # We don't have a matching award for this subcontract, log a warning and continue to the next row
-                if not award:
-                    logger.warning(
-                        "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
-                        format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
-                    continue
-
-                recipient_name = row['company_name']
-            else:
-                # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
-                # a transaction with a matching fain
-                award = Award.objects.filter(latest_transaction__assistance_data__fain=row['fain']).distinct().\
-                    order_by("-date_signed").first()
-                # We don't have a matching award for this subcontract, log a warning and continue to the next row
-                if not award:
-                    logger.warning(
-                        "Internal ID {} cannot find award with fain {}; skipping...".
-                        format(row['internal_id'], row['fain']))
-                    continue
-
-                recipient_name = row['awardee_name']
+            if not award:
+                continue
 
             # Get or create unique DUNS-recipient pair
             recipient, created = LegalEntity.objects.get_or_create(
@@ -153,6 +160,47 @@ class Command(BaseCommand):
 
         return dictfetchall(db_cursor)
 
+    def create_subaward(self, row, shared_award_mappings, award_type):
+        """ Creates a subaward if the internal ID of the current row is in the shared award mappings (this was made
+            to satisfy codeclimate complexity issues)
+        """
+
+        # only insert the subaward if the internal_id is in our mappings, otherwise there was a problem
+        # finding one or more parts of the shared data for it and we don't want to insert it.
+        if row['internal_id'] in shared_award_mappings:
+            shared_mappings = shared_award_mappings[row['internal_id']]
+
+            cfda = None
+            # check if the key exists and if it isn't empty (only here for grants)
+            if 'cfda_numbers' in row and row['cfda_numbers']:
+                only_num = row['cfda_numbers'].split(' ')
+                cfda = Cfda.objects.filter(program_number=only_num[0]).first()
+
+            subaward_dict = {
+                'award': shared_mappings['award'],
+                'recipient': shared_mappings['recipient'],
+                'data_source': "DBR",
+                'cfda': cfda,
+                'awarding_agency': shared_mappings['award'].awarding_agency,
+                'funding_agency': shared_mappings['award'].funding_agency,
+                'place_of_performance': shared_mappings['place_of_performance'],
+                'subaward_number': row['subaward_num'],
+                'amount': row['subaward_amount'],
+                'description': row['overall_description'],
+                'recovery_model_question1': row['q1_flag'],
+                'recovery_model_question2': row['q2_flag'],
+                'action_date': row['subaward_date'],
+                'award_report_fy_month': row['report_period_mon'],
+                'award_report_fy_year': row['report_period_year'],
+                'broker_award_id': row['id'],
+                'internal_id': row['internal_id'],
+                'award_type': award_type
+            }
+
+            # Either we're starting with an empty table in regards to this award type or we've deleted all
+            # subawards related to the internal_id, either way we just create the subaward
+            Subaward.objects.create(**subaward_dict)
+
     def process_subawards(self, db_cursor, shared_award_mappings, award_type, subaward_type, max_id):
         """ Process the subawards and insert them as we go """
         current_offset = 0
@@ -163,41 +211,8 @@ class Command(BaseCommand):
         while len(subaward_list) > 0:
             logger.info("Processing next 10,000 subawards, starting at offset: " + str(current_offset))
             for row in subaward_list:
-                # only insert the subaward if the internal_id is in our mappings, otherwise there was a problem
-                # finding one or more parts of the shared data for it and we don't want to insert it.
-                if row['internal_id'] in shared_award_mappings:
-                    shared_mappings = shared_award_mappings[row['internal_id']]
+                self.create_subaward(row, shared_award_mappings, award_type)
 
-                    cfda = None
-                    # check if the key exists and if it isn't empty (only here for grants)
-                    if 'cfda_numbers' in row and row['cfda_numbers']:
-                        only_num = row['cfda_numbers'].split(' ')
-                        cfda = Cfda.objects.filter(program_number=only_num[0]).first()
-
-                    subaward_dict = {
-                        'award': shared_mappings['award'],
-                        'recipient': shared_mappings['recipient'],
-                        'data_source': "DBR",
-                        'cfda': cfda,
-                        'awarding_agency': shared_mappings['award'].awarding_agency,
-                        'funding_agency': shared_mappings['award'].funding_agency,
-                        'place_of_performance': shared_mappings['place_of_performance'],
-                        'subaward_number': row['subaward_num'],
-                        'amount': row['subaward_amount'],
-                        'description': row['overall_description'],
-                        'recovery_model_question1': row['q1_flag'],
-                        'recovery_model_question2': row['q2_flag'],
-                        'action_date': row['subaward_date'],
-                        'award_report_fy_month': row['report_period_mon'],
-                        'award_report_fy_year': row['report_period_year'],
-                        'broker_award_id': row['id'],
-                        'internal_id': row['internal_id'],
-                        'award_type': award_type
-                    }
-
-                    # Either we're starting with an empty table in regards to this award type or we've deleted all
-                    # subawards related to the internal_id, either way we just create the subaward
-                    Subaward.objects.create(**subaward_dict)
             current_offset += QUERY_LIMIT
             subaward_list = self.gather_next_subawards(db_cursor, award_type, subaward_type, max_id, current_offset)
 
