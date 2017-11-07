@@ -1,4 +1,6 @@
 from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.awards.models import LegalEntity
+from usaspending_api.references.models import NAICS, PSC
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 
@@ -37,9 +39,66 @@ def transaction_filter(filters):
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
-        # keyword
         if key == "keyword":
-            queryset = queryset.filter(description=value)
+            keyword = value # alias
+
+            # description_match = False
+            # description_qs = queryset.filter(description__icontains=keyword)
+            # if description_qs.exists():
+            #     description_match = True
+
+            recipient_match = False
+            recipient_list = LegalEntity.objects.all().values('legal_entity_id').filter(
+                recipient_name__icontains=keyword)
+            if recipient_list.exists():
+                recipient_match = True
+                recipient_qs = queryset.filter(recipient__in=recipient_list)
+
+            naics_match = False
+            if keyword.isnumeric():
+                naics_list = NAICS.objects.all().filter(code__icontains=keyword).values('code')
+            else:
+                naics_list = NAICS.objects.all().filter(
+                    description__icontains=keyword).values('code')
+            if naics_list.exists():
+                naics_match = True
+                naics_qs = queryset.filter(contract_data__naics__in=naics_list)
+
+            psc_match = False
+            if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
+               psc_list = PSC.objects.all().filter(code=keyword).values('code')
+            else:
+               psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
+            if psc_list.exists():
+                psc_match = True
+                psc_qs = queryset.filter(contract_data__product_or_service_code__in=psc_list)
+
+            duns_match = False
+            non_parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
+                recipient_unique_id=keyword)
+            parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
+                parent_recipient_unique_id=keyword)
+            duns_list = non_parent_duns_list | parent_duns_list
+            if duns_list.exists():
+                duns_match = True
+                duns_qs = queryset.filter(recipient__in=duns_list)
+
+            piid_qs = queryset.filter(contract_data__piid=keyword)
+            fain_qs = queryset.filter(assistance_data__fain=keyword)
+
+            # Always filter on fain/piid because fast:
+            queryset = piid_qs
+            queryset |= fain_qs
+            # if description_match:
+            #     queryset |= description_qs
+            if recipient_match:
+                queryset |= recipient_qs
+            if naics_match:
+                queryset |= naics_qs
+            if psc_match:
+                queryset |= psc_qs
+            if duns_match:
+                queryset |= duns_qs
 
         # time_period
         elif key == "time_period":
