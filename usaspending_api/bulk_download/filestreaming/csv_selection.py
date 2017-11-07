@@ -18,6 +18,7 @@ from django.conf import settings
 
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.v2 import download_column_historical_lookups
+from usaspending_api.common.helpers import generate_raw_quoted_query
 
 BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
@@ -106,22 +107,6 @@ def calculate_number_of_csvs(queryset, limit):
         except IndexError:
             reached_limit = True
     return csvs
-
-
-def date_query_fix(query):
-    """Adds quotes around dates to execute the query"""
-    for date_string in re.findall('\d{4}-\d{2}-\d{2}', query):
-        query = query.replace(date_string, '\'{}\''.format(date_string))
-    return query
-
-
-def in_list_query_fix(query):
-    """Adds quotes around dates to execute the query"""
-    for in_list_string in re.findall('IN \([^\)]*\)', query):
-        quoted_strings = ",".join('\'{}\''.format(str_value.strip())
-                                  for str_value in in_list_string[4:-1].strip().split(','))
-        query = query.replace(in_list_string, 'IN ({})'.format(quoted_strings))
-    return query
 
 
 # Multipart upload functions copied from Fabian Topfstedt's solution
@@ -228,7 +213,7 @@ def write_csvs(download_job, file_name, columns, sources):
                 split_csv_path = os.path.join(working_dir, split_csv_name)
                 # Generate the final query, values, limits, dates fixed
                 split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
-                split_csv_query_raw = in_list_query_fix(date_query_fix(str(split_csv_query.query)))
+                split_csv_query_raw = generate_raw_quoted_query(split_csv_query)
                 # Generate the csv with \copy
                 psql_command = subprocess.Popen(
                     ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
