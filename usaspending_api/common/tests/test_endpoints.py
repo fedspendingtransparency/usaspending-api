@@ -47,6 +47,11 @@ def test_endpoints(endpoint_data, client):
 
     for endpoint in endpoints:
         url = endpoint.get('url', None)
+
+        # Skip v1 endpoint that got rewritten
+        if url == '/api/v1/awards/autocomplete/':
+            continue
+
         method = endpoint.get('method', None)
         request_object = endpoint.get('request_object', None)
         response_object = endpoint.get('response_object', None)
