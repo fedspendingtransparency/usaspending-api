@@ -76,7 +76,6 @@ def award_data(db):
         agency_identifier='102',
         id=1)
 
-
     # Create Awards
     award1 = mommy.make('awards.Award', category='contracts')
     award2 = mommy.make('awards.Award', category='contracts')
@@ -198,6 +197,10 @@ def test_download_status_nonexistent_file_404(client):
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
 
+def sort_function(agency):
+    return agency['toptier_agency_id']
+
+
 def test_list_agencies(client, award_data):
     """Test transaction list agencies endpoint"""
     resp = client.post(
@@ -209,7 +212,6 @@ def test_list_agencies(client, award_data):
     all_toptiers = [{'name': 'Bureau of Things', 'toptier_agency_id': 1, 'cgac_code': '100'},
                     {'name': 'Bureau of Stuff', 'toptier_agency_id': 2, 'cgac_code': '101'},
                     {'name': 'Bureau of Money', 'toptier_agency_id': 3, 'cgac_code': '102'}]
-    sort_function = lambda agency: agency['toptier_agency_id']
 
     assert sorted(resp.json()['agencies'], key=sort_function) == sorted(all_toptiers, key=sort_function)
     assert resp.json()['sub_agencies'] == []
