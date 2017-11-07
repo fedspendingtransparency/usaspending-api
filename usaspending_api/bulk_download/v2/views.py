@@ -109,7 +109,7 @@ class BaseDownloadViewSet(APIView):
 
         kwargs = {'download_job': download_job,
                   'file_name': timestamped_file_name,
-                  'columns': request.data['columns'],
+                  'columns': json_request.get('columns', None),
                   'sources': csv_sources}
 
         if 'pytest' in sys.modules:
@@ -282,7 +282,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                 if award_level == 'prime_awards':
                     d1_source = csv_selection.CsvSource('award', 'd1')
                     d2_source = csv_selection.CsvSource('award', 'd2')
-                    verify_requested_columns_available((d1_source, d2_source), json_request['columns'])
+                    verify_requested_columns_available((d1_source, d2_source), json_request.get('columns', None))
                     d1_source.queryset = queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False)
                     d2_source.queryset = queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False)
                     csv_sources.extend([d1_source, d2_source])
@@ -290,7 +290,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                     # NOT IMPLEMENTED
                     # d1_source = csv_selection.CsvSource('subaward', 'd1')
                     # d2_source = csv_selection.CsvSource('subaward', 'd2')
-                    # verify_requested_columns_available((d1_source, d2_source), json_request['columns'])
+                    # verify_requested_columns_available((d1_source, d2_source), json_request.get('columns', None))
                     raise NotImplementedError
                 else:
                     raise InvalidParameterException('Invalid parameter for award_levels: {}'.format(award_level))
