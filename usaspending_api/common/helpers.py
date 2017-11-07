@@ -3,7 +3,6 @@ import logging
 import time
 
 from fiscalyear import *
-from datetime import datetime
 
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.dateparse import parse_date
@@ -104,7 +103,7 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
 
         raise InvalidParameterException("Cannot obtain data for future fiscal years.")
 
-    fiscal_date = datetime.strftime(fiscal_date, '%Y-%m-%d')
+    fiscal_date = datetime.datetime.strftime(fiscal_date, '%Y-%m-%d')
 
     return fiscal_date, fiscal_quarter
 
