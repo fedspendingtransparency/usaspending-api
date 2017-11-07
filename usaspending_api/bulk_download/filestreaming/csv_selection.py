@@ -117,7 +117,7 @@ def date_query_fix(query):
 
 def in_list_query_fix(query):
     """Adds quotes around dates to execute the query"""
-    for in_list_string in re.findall('IN \(.*\)', query):
+    for in_list_string in re.findall('IN \([^\)]*\)', query):
         quoted_strings = ",".join('\'{}\''.format(str_value.strip())
                                   for str_value in in_list_string[4:-1].strip().split(','))
         query = query.replace(in_list_string, 'IN ({})'.format(quoted_strings))
