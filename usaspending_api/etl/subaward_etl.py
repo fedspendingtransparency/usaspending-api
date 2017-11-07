@@ -109,7 +109,6 @@ def load_subawards(submission_attributes, awards_touched, db_cursor):
         d1_f_dict = {
             'award': award,
             'recipient': recipient,
-            'submission': submission_attributes,
             'data_source': "DBR",
             'cfda': None,
             'awarding_agency': award.awarding_agency,
@@ -122,9 +121,7 @@ def load_subawards(submission_attributes, awards_touched, db_cursor):
             'recovery_model_question2': row['recovery_model_q2'],
             'action_date': row['subcontract_date'],
             'award_report_fy_month': row['report_period_mon'],
-            'award_report_fy_year': row['report_period_year'],
-            'naics': row['naics'],
-            'naics_description': row['naics_description'],
+            'award_report_fy_year': row['report_period_year']
         }
 
         # Create the subaward
@@ -210,7 +207,6 @@ def load_subawards(submission_attributes, awards_touched, db_cursor):
         d2_f_dict = {
             'award': award,
             'recipient': recipient,
-            'submission': submission_attributes,
             'data_source': "DBR",
             'cfda': cfda,
             'awarding_agency': award.awarding_agency,
@@ -223,9 +219,7 @@ def load_subawards(submission_attributes, awards_touched, db_cursor):
             'recovery_model_question2': row['compensation_q2'],
             'action_date': row['subaward_date'],
             'award_report_fy_month': row['report_period_mon'],
-            'award_report_fy_year': row['report_period_year'],
-            'naics': None,
-            'naics_description': None,
+            'award_report_fy_year': row['report_period_year']
         }
 
         # Create the subaward
