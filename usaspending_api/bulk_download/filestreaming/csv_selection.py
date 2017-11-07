@@ -110,7 +110,7 @@ def calculate_number_of_csvs(queryset, limit):
 
 def date_query_fix(query):
     """Adds quotes around dates to execute the query"""
-    for date_string in re.findall('\d\d\d\d-\d\d-\d\d', query):
+    for date_string in re.findall('\d{4}-\d{2}-\d{2}', query):
         query = query.replace(date_string, '\'{}\''.format(date_string))
     return query
 
