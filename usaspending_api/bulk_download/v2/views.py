@@ -240,7 +240,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         # Agencies are to be OR'd together and then AND'd to the major query
         or_queryset = (Q(awarding_agency_id=filters['agency']) |
                        Q(funding_agency_id=filters['agency']))
-        if 'sub_agency' in filters:
+        if 'sub_agency' in filters and filters['sub_agency']:
             or_queryset = (or_queryset & (Q(awarding_agency_id=filters['sub_agency']) |
                                           Q(funding_agency_id=filters['sub_agency'])))
 
