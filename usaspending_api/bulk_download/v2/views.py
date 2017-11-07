@@ -230,9 +230,9 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('Invalid parameter for date_type: {}'.format(filters['date_type']))
         # Get the date ranges
         try:
-            if 'start_date' in filters['date_range']:
+            if 'start_date' in filters['date_range'] and filters['date_range']['start_date']:
                 and_queryset_filters['{}__gte'.format(date_attribute)] = filters['date_range']['start_date']
-            if 'end_date' in filters['date_range']:
+            if 'end_date' in filters['date_range'] and filters['date_range']['end_date']:
                 and_queryset_filters['{}__lte'.format(date_attribute)] = filters['date_range']['end_date']
         except TypeError:
             raise InvalidParameterException('date_range parameter not provided as an object')
