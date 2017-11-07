@@ -199,7 +199,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
     def process_filters(self, filters, award_level):
         """Filter function for Bulk Download Award Generation"""
 
-        for required_param in ['award_types', 'agency', 'sub_agency', 'date_type', 'date_range']:
+        for required_param in ['award_types', 'agency', 'date_type', 'date_range']:
             if required_param not in filters:
                 raise InvalidParameterException('{} filter not provided'.format(required_param))
 
