@@ -115,6 +115,14 @@ def date_query_fix(query):
     return query
 
 
+def in_list_query_fix(query):
+    """Adds quotes around dates to execute the query"""
+    for in_list_string in re.findall('IN \(.*\)', query):
+        quoted_strings = ",".join('\'{}\''.format(str_value.strip()) for str_value in in_list_string[4:-1].strip().split(','))
+        query = query.replace(in_list_string, 'IN ({})'.format(quoted_strings))
+    return query
+
+
 # Multipart upload functions copied from Fabian Topfstedt's solution
 # http://www.topfstedt.de/python-parallel-s3-multipart-upload-with-retries.html
 def upload(bucketname, regionname, source_path, keyname, acl='private', headers={}, guess_mimetype=True,
@@ -219,7 +227,7 @@ def write_csvs(download_job, file_name, columns, sources):
                 split_csv_path = os.path.join(working_dir, split_csv_name)
                 # Generate the final query, values, limits, dates fixed
                 split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
-                split_csv_query_raw = date_query_fix(str(split_csv_query.query))
+                split_csv_query_raw = in_list_query_fix(date_query_fix(str(split_csv_query.query)))
                 # Generate the csv with \copy
                 psql_command = subprocess.Popen(
                     ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
