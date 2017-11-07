@@ -52,9 +52,9 @@ class Command(BaseCommand):
             agency = get_valid_awarding_agency(row)
 
             if not agency:
-                # logger.warning(
-                #     "Internal ID {} cannot find matching agency with subtier code {}".
-                #     format(row['internal_id'], row['contracting_office_aid']))
+                logger.warning(
+                    "Internal ID {} cannot find matching agency with subtier code {}".
+                    format(row['internal_id'], row['contracting_office_aid']))
                 return None, None
 
             # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
@@ -67,9 +67,9 @@ class Command(BaseCommand):
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                # logger.warning(
-                #     "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
-                #     format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
+                logger.warning(
+                    "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
+                    format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
                 return None, None
 
             recipient_name = row['company_name']
@@ -80,9 +80,9 @@ class Command(BaseCommand):
                 order_by("-date_signed").first()
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                # logger.warning(
-                #     "Internal ID {} cannot find award with fain {}; skipping...".
-                #     format(row['internal_id'], row['fain']))
+                logger.warning(
+                    "Internal ID {} cannot find award with fain {}; skipping...".
+                    format(row['internal_id'], row['fain']))
                 return None, None
 
             recipient_name = row['awardee_name']
