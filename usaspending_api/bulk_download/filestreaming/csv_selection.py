@@ -242,7 +242,7 @@ def write_csvs(download_job, file_name, columns, sources):
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.BULK_DOWNLOAD_AWS_REGION
             start_uploading = time.time()
-            upload(bucket, region, file_path, os.path.basename(file_path),
+            upload(bucket, region, file_path, os.path.basename(file_path), acl='public-read',
                    parallel_processes=multiprocessing.cpu_count())
             logger.info('uploading took {} seconds'.format(time.time() - start_uploading))
             os.remove(file_path)
