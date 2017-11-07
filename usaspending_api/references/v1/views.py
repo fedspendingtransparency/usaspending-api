@@ -192,15 +192,12 @@ class GlossaryViewSet(FilterQuerysetMixin, DetailViewSet):
 class AwardAutocompleteViewSet(APIView):
 
     @cache_response()
+    # TODO: This only returns one response for each, we have duplicate PIIDs that need to be dealt with in the DB
     def post(self, request):
 
         json_request = request.data
         search_text = json_request.get('value', None)
 
-        try:
-            limit = int(json_request.get('limit', 10))
-        except ValueError:
-            raise InvalidParameterException('Limit request parameter is not a valid, positive integer')
         if not search_text:
             raise InvalidParameterException('Missing one or more required request parameters: value')
 
@@ -213,10 +210,10 @@ class AwardAutocompleteViewSet(APIView):
 
         response = {}
         matched_objects = {}
-        matched_objects['fain'] = list(fain_qs.values('id', 'piid', 'fain', 'uri')[:limit])
-        matched_objects['parent_award__piid'] = list(parent_award_qs.values('id', 'piid', 'fain', 'uri')[:limit])
-        matched_objects['piid'] = list(piid_qs.values('id', 'piid', 'fain', 'uri')[:limit])
-        matched_objects['uri'] = list(uri_qs.values('id', 'piid', 'fain', 'uri')[:limit])
+        matched_objects['fain'] = list(fain_qs.values('id', 'fain')[:1])
+        matched_objects['parent_award__piid'] = list(parent_award_qs.values('id', 'parent_award__piid')[:1])
+        matched_objects['piid'] = list(piid_qs.values('id', 'piid')[:1])
+        matched_objects['uri'] = list(uri_qs.values('id', 'uri')[:1])
 
         response['matched_objects'] = matched_objects
 
