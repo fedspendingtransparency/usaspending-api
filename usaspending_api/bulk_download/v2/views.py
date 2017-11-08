@@ -274,18 +274,24 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         csv_sources = []
         try:
             for award_level in award_levels:
-                if 'filters' in json_request:
-                    queryset = self.process_filters(json_request['filters'], award_level)
-                else:
-                    table = value_mappings[award_level]['table']
-                    queryset = table.objects.all()
+                queryset = self.process_filters(json_request['filters'], award_level)
                 if award_level == 'prime_awards':
-                    d1_source = csv_selection.CsvSource('award', 'd1')
-                    d2_source = csv_selection.CsvSource('award', 'd2')
-                    verify_requested_columns_available((d1_source, d2_source), json_request.get('columns', None))
-                    d1_source.queryset = queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False)
-                    d2_source.queryset = queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False)
-                    csv_sources.extend([d1_source, d2_source])
+                    award_types = set(json_request['filters']['award_types'])
+                    d1_award_types = set(['contracts'])
+                    d2_award_types = set(['grants', 'direct_payments', 'loans', 'other_financial_assistance'])
+                    if award_types & d1_award_types:
+                        # only generate d1 files if the user is asking for contracts
+                        d1_source = csv_selection.CsvSource('award', 'd1')
+                        d1_source.queryset = queryset & Award.objects.\
+                            filter(latest_transaction__contract_data__isnull=False)
+                        csv_sources.append(d1_source)
+                    if award_types & d2_award_types:
+                        # only generate d2 files if the user is asking for assistance data
+                        d2_source = csv_selection.CsvSource('award', 'd2')
+                        d2_source.queryset = queryset & Award.objects.\
+                            filter(latest_transaction__assistance_data__isnull=False)
+                        csv_sources.append(d2_source)
+                    verify_requested_columns_available(tuple(csv_sources), json_request.get('columns', None))
                 elif award_level == 'sub_awards':
                     # NOT IMPLEMENTED
                     # d1_source = csv_selection.CsvSource('subaward', 'd1')
