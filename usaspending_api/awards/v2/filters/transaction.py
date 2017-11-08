@@ -40,7 +40,7 @@ def transaction_filter(filters):
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
         if key == "keyword":
-            keyword = value # alias
+            keyword = value  # alias
 
             # description_match = False
             # description_qs = queryset.filter(description__icontains=keyword)
@@ -66,9 +66,9 @@ def transaction_filter(filters):
 
             psc_match = False
             if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
-               psc_list = PSC.objects.all().filter(code=keyword).values('code')
+                psc_list = PSC.objects.all().filter(code=keyword).values('code')
             else:
-               psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
+                psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
             if psc_list.exists():
                 psc_match = True
                 psc_qs = queryset.filter(contract_data__product_or_service_code__in=psc_list)
