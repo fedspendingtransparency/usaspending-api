@@ -1,6 +1,7 @@
 from django.conf.urls import url
 
 from usaspending_api.awards.v1 import views
+from usaspending_api.references.v1 import views as references_v1_views
 
 # map reqest types to viewset method; replace this with a router
 award_list = views.AwardViewSet.as_view({
@@ -13,6 +14,6 @@ award_total = views.AwardAggregateViewSet.as_view({
 urlpatterns = [
     url(r'^$', award_list, name='award-list'),
     url(r'(?P<pk>[0-9]+)/$', award_detail, name='award-detail'),
-    url(r'^autocomplete/', views.AwardAutocomplete.as_view()),
+    url(r'^autocomplete/', references_v1_views.AwardAutocompleteViewSet.as_view()),
     url(r'^total/', award_total, name='award-total')
 ]
