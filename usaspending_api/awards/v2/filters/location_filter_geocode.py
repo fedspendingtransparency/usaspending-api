@@ -26,9 +26,9 @@ def geocode_filter_locations(scope, values, model):
 
         check_location_fields(fields)
 
-        kwargs = {'{0}__{1}'.format(
+        kwargs = {'{0}__{1}__in'.format(
             scope, loc_dict.get(loc_scope)
-            ): v.get(loc_scope)
+            ): get_fields_list(loc_dict.get(loc_scope), v.get(loc_scope))
             for loc_scope in fields
             if loc_dict.get(loc_scope) is not None}
 
@@ -39,7 +39,6 @@ def geocode_filter_locations(scope, values, model):
             or_queryset |= qs
         else:
             or_queryset = qs
-
     return or_queryset
 
 
@@ -53,3 +52,10 @@ def check_location_fields(fields):
         raise InvalidParameterException(
             'Invalid filter: recipient has incorrect object.'
         )
+
+
+def get_fields_list(scope, field_value):
+    if scope not in ['state_code', 'location_country_code']:
+        return [str(int(field_value)), field_value, str(float(field_value))]
+
+    return [field_value]
