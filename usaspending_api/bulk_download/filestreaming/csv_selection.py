@@ -196,23 +196,26 @@ def write_csvs(download_job, file_name, columns, sources):
             while not reached_end:
                 split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
                 split_csv_path = os.path.join(working_dir, split_csv_name)
-                try:
-                    # Generate the final query, values, limits, dates fixed
-                    split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
-                    split_csv_query_raw = generate_raw_quoted_query(split_csv_query)
-                    # Generate the csv with \copy
-                    psql_command = subprocess.Popen(
-                        ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
-                        stdout=subprocess.PIPE
-                    )
-                    subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
-                    # save it to the zip
-                    zipped_csvs.write(split_csv_path, split_csv_name)
-                    split_csv += 1
-                except IndexError:
+
+                # Generate the final query, values, limits, dates fixed
+                split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
+                split_csv_query_raw = generate_raw_quoted_query(split_csv_query)
+                # Generate the csv with \copy
+                psql_command = subprocess.Popen(
+                    ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
+                    stdout=subprocess.PIPE
+                )
+                subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
+                # save it to the zip
+                zipped_csvs.write(split_csv_path, split_csv_name)
+
+                last_count = len(open(split_csv_path).readlines())
+                if last_count < EXCEL_ROW_LIMIT + 1:
                     # Will be hit when line 201 ((split_csv - 1) * EXCEL_ROW_LIMIT) > number of rows in source
-                    download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + split_csv_query.count()
+                    download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + last_count
                     reached_end = True
+                else:
+                    split_csv += 1
             logger.info('wrote {}.csv took {} seconds'.format(source_name, time.time() - start_writing))
 
         shutil.rmtree(working_dir)
