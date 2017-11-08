@@ -238,6 +238,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('date_range parameter not provided as an object')
 
         # Agencies are to be OR'd together and then AND'd to the major query
+        or_queryset = None
         if filters['agency'] != 'all':
             or_queryset = (Q(awarding_agency__toptier_agency_id=filters['agency']) |
                            Q(funding_agency__toptier_agency_id=filters['agency']))
