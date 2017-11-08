@@ -122,10 +122,14 @@ def transaction_filter(filters):
         # award_type_codes
         elif key == "award_type_codes":
             or_queryset = []
+            idv_flag = all(i in value for i in ['A', 'B', 'C', 'D'])
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= TransactionNormalized.objects.filter(type__in=or_queryset)
+            if idv_flag:
+                queryset |= TransactionNormalized.objects.filter(type__isnull=True, contract_data__pulled_from='IDV')
+
 
         # agencies
         elif key == "agencies":
