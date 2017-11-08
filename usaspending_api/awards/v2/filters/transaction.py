@@ -66,7 +66,7 @@ def transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= TransactionNormalized.objects.filter(award__type__in=or_queryset)
+                queryset &= TransactionNormalized.objects.filter(type__in=or_queryset)
 
         # agencies
         elif key == "agencies":
