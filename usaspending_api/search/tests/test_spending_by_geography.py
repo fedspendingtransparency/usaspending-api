@@ -16,6 +16,7 @@ def test_spending_by_geography_success(client, budget_function_data):
         content_type='application/json',
         data=json.dumps({
             "scope": "place_of_performance",
+            "geo_layer": "state",
             "filters": {
                 'recipient_locations': [{'country': 'ABC'}]
             }
@@ -27,14 +28,15 @@ def test_spending_by_geography_success(client, budget_function_data):
         '/api/v2/search/spending_by_geography',
         content_type='application/json',
         data=json.dumps({
-            "scope": "place_of_performance",
+            "scope": "recipient_location",
+            "geo_layer": "county",
             "filters": all_filters()
         }))
     assert resp.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db
-def test_naics_autocomplete_failure(client):
+def test_spending_by_geography_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
