@@ -256,12 +256,6 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         else:
             filtered_queryset = table.objects.all()
 
-        # Note: Ordering by date for testing/verification for now
-        #       If there's a request to sort by a specific attribute,
-        #       here's where it will be.
-        order_by = date_attribute if date_attribute else value_mappings[award_level]['action_date']
-        filtered_queryset = filtered_queryset.order_by(order_by)
-
         return filtered_queryset
 
     def get_csv_sources(self, json_request):
