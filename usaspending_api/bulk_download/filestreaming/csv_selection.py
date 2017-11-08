@@ -196,11 +196,12 @@ def write_csvs(download_job, file_name, columns, sources):
 
         logger.info('Generating {}'.format(file_name))
 
-        source_map = {'contracts': sources[0],
-                      'assistance': sources[1]}
+        source_map = {'d1': 'contracts',
+                      'd2': 'assistance'}
 
-        for source_name, source in source_map.items():
+        for source in sources:
             # Figure out how many csvs we need
+            source_name = source_map[source.file_type]
             start_count = time.time()
             source_limit = calculate_number_of_csvs(source.queryset, EXCEL_ROW_LIMIT)
             logger.info('source_limit({}) took {} seconds'.format(source_limit, time.time() - start_count))
