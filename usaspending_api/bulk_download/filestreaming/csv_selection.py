@@ -95,20 +95,6 @@ class CsvSource:
         return json_dict
 
 
-def calculate_number_of_csvs(queryset, limit):
-    # This could also be done with the commented line below but this performed better
-    # return (queryset.count() // limit) + 1
-    csvs = 0
-    reached_limit = False
-    while not reached_limit:
-        csvs += 1
-        try:
-            queryset[limit * csvs]
-        except IndexError:
-            reached_limit = True
-    return csvs
-
-
 # Multipart upload functions copied from Fabian Topfstedt's solution
 # http://www.topfstedt.de/python-parallel-s3-multipart-upload-with-retries.html
 def upload(bucketname, regionname, source_path, keyname, acl='private', headers={}, guess_mimetype=True,
@@ -200,33 +186,33 @@ def write_csvs(download_job, file_name, columns, sources):
                       'd2': 'assistance'}
 
         for source in sources:
-            # Figure out how many csvs we need
             source_name = source_map[source.file_type]
-            start_count = time.time()
-            source_limit = calculate_number_of_csvs(source.queryset, EXCEL_ROW_LIMIT)
-            logger.info('source_limit({}) took {} seconds'.format(source_limit, time.time() - start_count))
 
             source_query = source.row_emitter(columns)
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
             start_writing = time.time()
-            for split_csv in range(1, source_limit + 1):
+            reached_end = False
+            split_csv = 1
+            while not reached_end:
                 split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
                 split_csv_path = os.path.join(working_dir, split_csv_name)
-                # Generate the final query, values, limits, dates fixed
-                split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
-                split_csv_query_raw = generate_raw_quoted_query(split_csv_query)
-                # Generate the csv with \copy
-                psql_command = subprocess.Popen(
-                    ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
-                    stdout=subprocess.PIPE
-                )
-                subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
-                # save it to the zip
-                zipped_csvs.write(split_csv_path, split_csv_name)
-                if split_csv == source_limit:
-                    # could've called .count() earlier on the original query but we know how many millions
-                    # it is, so let's just get a count of the remaining rows to save time
+                try:
+                    # Generate the final query, values, limits, dates fixed
+                    split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
+                    split_csv_query_raw = generate_raw_quoted_query(split_csv_query)
+                    # Generate the csv with \copy
+                    psql_command = subprocess.Popen(
+                        ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
+                        stdout=subprocess.PIPE
+                    )
+                    subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
+                    # save it to the zip
+                    zipped_csvs.write(split_csv_path, split_csv_name)
+                    split_csv += 1
+                except IndexError:
+                    # Will be hit when line 201 ((split_csv - 1) * EXCEL_ROW_LIMIT) > number of rows in source
                     download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + split_csv_query.count()
+                    reached_end = True
             logger.info('wrote {}.csv took {} seconds'.format(source_name, time.time() - start_writing))
 
         shutil.rmtree(working_dir)
