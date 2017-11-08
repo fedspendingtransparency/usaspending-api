@@ -90,7 +90,6 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
                 awarding_agency__toptier_agency__cgac_code=toptier_agency.cgac_code
             )
 
-
         queryset = queryset.annotate(
             award_category=F('award__category'),
             recipient_id=F('recipient__legal_entity_id'),
