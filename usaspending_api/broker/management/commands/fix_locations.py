@@ -12,10 +12,13 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction as db_transaction
 from django.db import connection, connections
 
-from usaspending_api.awards.models import (TransactionFABS, TransactionFPDS, TransactionNormalized)
+from usaspending_api.awards.models import (TransactionFABS, TransactionFPDS,
+                                           TransactionNormalized)
+from usaspending_api.broker.management.commands import (fabs_nightly_loader,
+                                                        fpds_nightly_loader)
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.broker.management.commands import fabs_nightly_loader, fpds_nightly_loader
-from usaspending_api.etl.management.load_base import (format_date, load_data_into_model)
+from usaspending_api.etl.management.load_base import (format_date,
+                                                      load_data_into_model)
 from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.references.models import Location, RefCountryCode
 
@@ -41,219 +44,6 @@ def log_time(func):
 
 
 class Command(BaseCommand):
-
-    # DAP_COLUMNS = """detached_award_procurement_id, place_of_perform_country_c,
-    #   place_of_perform_city_name, place_of_performance_zip4a,
-    #   place_of_performance_congr, place_of_perform_county_na,
-    #   place_of_performance_state,
-    #   legal_entity_state_code,
-    #   legal_entity_city_name ,
-    #   legal_entity_address_line1 ,
-    #   legal_entity_address_line2 ,
-    #   legal_entity_address_line3 ,
-    #   legal_entity_zip4 ,
-    #   legal_entity_congressional ,
-    #   legal_entity_country_code
-    #   """
-
-    # PFA_COLUMNS = '*'
-
-    # help = "Update historical transaction data for a fiscal year from the Broker."
-
-    # country_code_map = {}
-
-    # def set_lookup_maps(self):
-    #     self.country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
-
-    # def get_fpds_data(self, db_cursor, filter, parameter):
-    #     """Get all detached_award_procurement rows from broker database for a certain filter"""
-
-    #     query = 'SELECT {} FROM detached_award_procurement WHERE {}'.format(self.DAP_COLUMNS, filter)
-    #     db_cursor.execute(query, [parameter])
-    #     return dictfetchall(db_cursor)
-
-    # def get_fabs_data(self, db_cursor, filter, parameter):
-    #     """Get all published_award_financial_assistance rows from broker database for a certain filter"""
-
-    #     query = 'SELECT {} FROM published_award_financial_assistance WHERE {}'.format(self.PFA_COLUMNS, filter)
-    #     db_cursor.execute(query, [parameter])
-    #     return dictfetchall(db_cursor)
-
-    # def get_fpds_data_by_piid(self, db_cursor, piid):
-    #     """Get all detached_award_procurement rows from broker database with given PIID"""
-    #     return self.get_fpds_data(db_cursor, 'piid = %s', piid)
-
-    # def get_fpds_data_by_dap_id(self, db_cursor, dap_ids):
-    #     """Get all detached_award_procurement rows from broker database with given detached_award_procurement_id"""
-    #     qry = 'detached_award_procurement_id IN ({})'.format(','.join(d.detached_award_procurement_id for d in dap_ids))
-    #     return self.get_fpds_data(db_cursor, qry, [])
-
-    # def get_fabs_data_by_fa_id(self, db_cursor, fa_ids):
-    #     """Get all published_award_financial_assistance rows from broker database with given published_award_financial_assistance_id"""
-    #     qry = 'published_award_financial_assistance_id IN ({})'.format(','.join(fa.published_award_financial_assistance_id for fa in fa_ids))
-
-    #     return self.get_fabs_data(db_cursor, qry, [])
-
-
-    # def apply_broker_filters(self, result, limit, fiscal_year=None, only_final_transactions=False):
-
-    #     if fiscal_year:
-    #         result = result.filter(transaction__fiscal_year=fiscal_year)
-
-    #     if only_final_transactions:
-    #         # for speed, only fix final transaction of each award,
-    #         # which are the only ones now surfaced on website
-    #         result = result.filter(transaction__latest_for_award__isnull=False)
-
-    #     return result[:limit]
-
-    # @log_time
-    # def dap_ids_for_blank_pops(self, limit, fiscal_year=None, only_final_transactions=False):
-    #     """Get detached_award_procurement_ids for places of performance with blank state code"""
-
-    #     result = TransactionFPDS.objects.only('detached_award_procurement_id'). \
-    #         filter(transaction__place_of_performance__state_code__isnull=True). \
-    #         filter(transaction__place_of_performance__location_country_code__country_code='USA')
-
-    #     return self.apply_broker_filters(result, limit, fiscal_year, only_final_transactions)
-
-    # def fa_ids_for_blank_pops(self, limit, fiscal_year=None, only_final_transactions=False):
-    #     """Get published_award_financial_assistance_id for places of performance with blank state code"""
-
-    #     result = TransactionFABS.objects.only('published_award_financial_assistance_id'). \
-    #         filter(transaction__place_of_performance__state_code__isnull=True). \
-    #         filter(transaction__place_of_performance__location_country_code__country_code='USA')
-
-    #     return self.apply_broker_filters(result, limit, fiscal_year, only_final_transactions)
-
-
-    # def dap_ids_for_blank_recipients(self, limit, fiscal_year=None, only_final_transactions=False):
-    #     """Get detached_award_procurement_ids for recipient locations with blank state code"""
-
-    #     result = TransactionFPDS.objects.only('detached_award_procurement_id'). \
-    #         filter(transaction__recipient__location__state_code__isnull=True). \
-    #         filter(transaction__recipient__location__location_country_code__country_code='USA')
-
-    #     return self.apply_broker_filters(result, limit, fiscal_year, only_final_transactions)
-
-    # def fa_ids_for_blank_recipients(self, limit, fiscal_year=None, only_final_transactions=False):
-    #     """Get published_award_financial_assistance_id for recipient locations with blank state code"""
-
-    #     result = TransactionFABS.objects.only('published_award_financial_assistance_id'). \
-    #         filter(transaction__recipient__location__state_code__isnull=True). \
-    #         filter(transaction__recipient__location__location_country_code__country_code='USA')
-
-    #     return self.apply_broker_filters(result, limit, fiscal_year, only_final_transactions)
-
-
-    # def location_from_fpds_row(self, fpds_broker_row, field_map, value_map):
-    #     """Find or create Location from a row of broker FPDS data"""
-
-    #     row = canonicalize_location_dict(fpds_broker_row)
-
-    #     # THIS ASSUMPTION DOES NOT HOLD FOR FPDS SINCE IT DOES NOT HAVE A PLACE OF PERFORMANCE CODE
-    #     # We can assume that if the country code is blank and the place of performance code is NOT '00FORGN', then
-    #     # the country code is USA
-    #     # if pop_flag and not country_code and pop_code != '00FORGN':
-    #     #     row[field_map.get('location_country_code')] = 'USA'
-
-    #     # Get country code obj
-    #     location_country_code = self.country_code_map.get(row[field_map.get('location_country_code')])
-
-    #     # Fix state code periods
-    #     state_code = row.get(field_map.get('state_code'))
-    #     if state_code is not None:
-    #         value_map.update({'state_code': state_code.replace('.', '')})
-
-    #     if location_country_code:
-    #         value_map.update({
-    #             'location_country_code': location_country_code,
-    #             'country_name': location_country_code.country_name
-    #         })
-
-    #         if location_country_code.country_code != 'USA':
-    #             value_map.update({'state_code': None, 'state_name': None})
-    #     else:
-    #         # no country found for this code
-    #         value_map.update({'location_country_code': None, 'country_name': None})
-
-    #     location_instance_data = load_data_into_model(
-    #         Location(), row, value_map=value_map, field_map=field_map, as_dict=True)
-
-    #     loc = Location.objects.filter(**location_instance_data).order_by('create_date').first()
-    #     if loc:
-    #         created = False
-    #     else:
-    #         loc = Location(**location_instance_data)
-    #         loc.save()
-    #         created = True
-    #     return (loc, created)
-
-    # def _fpds_rows(self, row):
-    #     return TransactionFPDS.objects.filter(
-    #                 detached_award_procurement_id=row['detached_award_procurement_id'])
-
-    # def _fabs_rows(self, row):
-    #     return TransactionFABS.objects.filter(
-    #                 published_award_financial_assistance_id=row['published_award_financial_assistance_id'])
-
-    # def _fix_places_of_performance(self, broker_data, broker_row_getter):
-
-    #     start_time = datetime.now()
-    #     value_map = {"place_of_performance_flag": True}
-    #     create_count = change_count = 0
-    #     for index, row in enumerate(broker_data, 1):
-    #         (loc, created) = self.location_from_fpds_row(row, field_map=pop_field_map, value_map=dict(value_map))
-    #         create_count += int(created)
-    #         for txn in broker_row_getter(row).all():
-    #             if txn.transaction.place_of_performance != loc:
-    #                 change_count += 1
-    #                 txn.transaction.place_of_performance = loc
-    #                 txn.transaction.save()
-    #             if txn.transaction_id == txn.transaction.award.latest_transaction_id:
-    #                 txn.transaction.award.place_of_performance = loc
-    #                 txn.transaction.award.save()
-    #     return (change_count, create_count)
-
-
-    # @log_time
-    # def fix_fpds_places_of_performance(self, broker_data):
-
-    #     return self._fix_places_of_performance(broker_data, self._fpds_rows)
-
-    # @log_time
-    # def fix_fabs_places_of_performance(self, broker_data):
-
-    #     return self._fix_places_of_performance(broker_data, self._fabs_rows)
-
-    # @log_time
-    # def fix_fpds_recipient_locations(self, broker_data):
-
-    #     return self._fix_recipient_locations(broker_data, self._fpds_rows)
-
-    # @log_time
-    # def fix_fabs_recipient_locations(self, broker_data):
-
-    #     return self._fix_recipient_locations(broker_data, self._fabs_rows)
-
-
-    # def _fix_recipient_locations(self, broker_data, broker_row_getter):
-
-    #     value_map = {"recipient_flag": True}
-    #     create_count = change_count = 0
-    #     for index, row in enumerate(broker_data, 1):
-    #         for txn in broker_row_getter(row).all():
-    #             recip = txn.transaction.recipient
-    #             last_txn = recip.transactionnormalized_set.order_by('-action_date')[0]
-    #             if txn.transaction == last_txn:
-    #                 (loc, created) = self.location_from_fpds_row(row, field_map=le_field_map, value_map=dict(value_map))
-    #                 create_count += int(created)
-    #                 if recip.location != loc:
-    #                     change_count += 1
-    #                     recip.location = loc
-    #                     recip.save()
-    #     return (change_count, create_count)
-
     def add_arguments(self, parser):
 
         parser.add_argument('-c', '--contracts', action='store_true', help="Fix locations for contracts")
@@ -274,48 +64,10 @@ class Command(BaseCommand):
             fixer = FPDSLocationFixer(options)
         elif options.get('assistance'):
             fixer = FABSLocationFixer(options)
+        else:
+            raise CommandError('Please specify either --contracts or --assistance')
 
         fixer.fix()
-
-
-
-        # self.set_lookup_maps()
-        # db_cursor = connections['data_broker'].cursor()
-        # for_contracts = options.get('contracts')
-        # for_assistance = options.get('assistance')
-        # piid = options.get('piid')
-        # limit = options.get('limit')
-        # fy = options.get('fiscal_year')
-        # only_final = options.get('only_final_transactions')
-        # if piid:
-        #     broker_data = self.get_fpds_data_by_piid(db_cursor=db_cursor, piid=piid)
-        #     self.fix_fpds_places_of_performance(broker_data=broker_data)
-        #     self.fix_fpds_recipient_locations(broker_data=broker_data)
-        # else:
-        #     if for_contracts:
-        #         blank_pop_id_getter = self.dap_ids_for_blank_pops
-        #         blank_recipient_id_getter = self.dap_ids_for_blank_recipients
-        #         get_data_by_id  = self.get_fpds_data_by_dap_id
-        #         fix_places_of_performance = self.fix_fpds_places_of_performance
-        #         fix_recipient_locations = self.fix_fpds_recipient_locations
-        #     elif for_assistance:
-        #         import ipdb; ipdb.set_trace()
-        #         blank_pop_id_getter = self.fa_ids_for_blank_pops
-        #         blank_recipient_id_getter = self.fa_ids_for_blank_recipients
-        #         get_data_by_id  = self.get_fabs_data_by_fa_id
-        #         fix_places_of_performance = self.fix_fabs_places_of_performance
-        #         fix_recipient_locations = self.fix_fabs_recipient_locations
-        #     else:
-        #         raise CommandError('Must use either --piid, --contracts, or --assistance')
-
-        #     for id_chunk in chunks(
-        #             blank_pop_id_getter(limit=limit, fiscal_year=fy, only_final_transactions=only_final)):
-        #         broker_data = get_data_by_id(db_cursor, id_chunk)
-        #         fix_places_of_performance(broker_data=broker_data)
-        #     for id_chunk in chunks(
-        #             blank_recipient_id_getter(limit=limit, fiscal_year=fy, only_final_transactions=only_final)):
-        #         broker_data = get_data_by_id(db_cursor, id_chunk)
-        #         fix_recipient_locations(broker_data=broker_data)
 
 
 def chunks(source_iterable, size=1000):
@@ -326,7 +78,6 @@ def chunks(source_iterable, size=1000):
 
 
 class LocationFixer:
-
     def __init__(self, options):
 
         self.broker_cursor = connections['data_broker'].cursor()
@@ -390,7 +141,8 @@ class LocationFixer:
                 recip = txn.transaction.recipient
                 last_txn = recip.transactionnormalized_set.order_by('-action_date')[0]
                 if txn.transaction == last_txn:
-                    (loc, created) = self.location_from_broker_row(row, field_map=self.le_field_map, value_map=dict(value_map))
+                    (loc, created) = self.location_from_broker_row(
+                        row, field_map=self.le_field_map, value_map=dict(value_map))
                     create_count += int(created)
                     if recip.location != loc:
                         change_count += 1
@@ -442,8 +194,6 @@ class LocationFixer:
         return (loc, created)
 
 
-
-
 class FABSLocationFixer(LocationFixer):
 
     BROKER_COLUMNS = '*'
@@ -470,7 +220,7 @@ class FABSLocationFixer(LocationFixer):
 
     def txns_from_broker_row(self, row):
         return TransactionFABS.objects.filter(
-                    published_award_financial_assistance_id=row['published_award_financial_assistance_id'])
+            published_award_financial_assistance_id=row['published_award_financial_assistance_id'])
 
     def broker_ids_for_bad_recipients(self):
         """Get published_award_financial_assistance_id for recipient locations with blank state code"""
@@ -516,7 +266,6 @@ class FABSLocationFixer(LocationFixer):
 
 
 class FPDSLocationFixer(LocationFixer):
-
     def broker_ids_for_bad_pops(self):
         """Get detached_award_procurement_ids for places of performance with blank state code"""
 
@@ -538,8 +287,7 @@ class FPDSLocationFixer(LocationFixer):
         return dictfetchall(self.broker_cursor)
 
     def txns_from_broker_row(self, row):
-        return TransactionFPDS.objects.filter(
-                    detached_award_procurement_id=row['detached_award_procurement_id'])
+        return TransactionFPDS.objects.filter(detached_award_procurement_id=row['detached_award_procurement_id'])
 
     def broker_ids_for_bad_recipients(self):
         """Get detached_award_procurement_ids for recipient locations with blank state code"""
@@ -585,4 +333,3 @@ class FPDSLocationFixer(LocationFixer):
         "state_code": "legal_entity_state_code",
         "zip4": "legal_entity_zip4"
     }
-
