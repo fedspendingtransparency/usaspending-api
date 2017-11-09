@@ -72,15 +72,17 @@ def load_executive_compensation(db_cursor):
         if not any_data:
             continue
 
+        duns_number = row['awardee_or_recipient_uniqu']
+
         # Deal with multiples that we have in our LE table
-        legal_entities = LegalEntity.objects.filter(recipient_unique_id=row['awardee_or_recipient_uniqu'])
+        legal_entities = LegalEntity.objects.filter(recipient_unique_id=duns_number)
+        if not legal_entities.exists():
+            raise AssertionError('No record in data store for DUNS {}. Aborting.'.format(duns_number))
 
         for le in legal_entities:
             leo, _ = LegalEntityOfficers.objects.get_or_create(legal_entity=le)
             for attr, value in leo_update_dict.items():
                 if value == "":
                     value = None
-                if value:
-                    print(value)
                 setattr(leo, attr, value)
             leo.save()
