@@ -215,15 +215,16 @@ class BulkDownloadListAgenciesViewSet(APIView):
                 raise InvalidParameterException('Agency ID not found')
             top_tier_agency = top_tier_agency[0]
             # Get the sub agencies and federal accounts associated with that top tier agency
-            response_data['sub_agencies'] = Agency.objects \
+            response_data['sub_agencies'] = sorted(Agency.objects \
                 .filter(toptier_agency_id=agency_id) \
                 .values(subtier_agency_name=F('subtier_agency__name'),
-                        subtier_agency_id=F('subtier_agency__subtier_agency_id'))
+                        subtier_agency_id=F('subtier_agency__subtier_agency_id')),
+                                                   key=lambda agency: agency['subtier_agency_name'])
 
-            response_data['federal_accounts'] = FederalAccount.objects \
+            response_data['federal_accounts'] = sorted(FederalAccount.objects \
                 .filter(agency_identifier=top_tier_agency['cgac_code']) \
                 .values(federal_account_name=F('account_title'),
-                        federal_account_id=F('id'))
+                        federal_account_id=F('id')), key=lambda agency: agency['federal_account_name'])
         return Response(response_data)
 
 
