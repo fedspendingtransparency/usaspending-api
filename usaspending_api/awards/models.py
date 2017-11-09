@@ -149,7 +149,7 @@ class Award(DataSourceTrackedModel):
                                       "and direct payments.")
     type_description = models.TextField(verbose_name="Award Type Description", blank=True, null=True,
                                         help_text="The plain text description of the type of the award")
-    category = models.TextField(verbose_name="Category", null=True,
+    category = models.TextField(db_index=True, verbose_name="Category", null=True,
                                 help_text="A field that generalizes the award's type.")
     piid = models.TextField(db_index=True, blank=True, null=True,
                             help_text="Procurement Instrument Identifier - A unique identifier assigned to a federal "
