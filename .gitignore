@@ -15,3 +15,6 @@ usaspending_api/financial_activities/.idea/*
 .idea/*
 
 .direnv/
+.pgdump
+.ipynb
+.lprof
