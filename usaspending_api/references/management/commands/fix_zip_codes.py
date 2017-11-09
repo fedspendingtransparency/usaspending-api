@@ -1,6 +1,7 @@
-from django.db import connection
-from django.core.management.base import BaseCommand
 import logging
+
+from django.core.management.base import BaseCommand
+from django.db import connection
 
 
 class Command(BaseCommand):
@@ -20,4 +21,3 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         with connection.cursor() as cursor:
             cursor.execute(self.update_qry)
-
