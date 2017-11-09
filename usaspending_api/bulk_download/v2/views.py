@@ -2,6 +2,7 @@ import sys
 import itertools
 import json
 import logging
+from collections import OrderedDict
 
 from django.conf import settings
 from django.db.models import F, Q
@@ -20,6 +21,34 @@ from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
+
+# List of CFO CGACS for list agencies viewset in the correct order, names included for reference
+# TODO: Find a solution that marks the CFO agencies in the database AND have the correct order
+CFO_CGACS_MAPPING = OrderedDict({'012': 'Department of Agriculture',
+                                 '013': 'Department of Commerce',
+                                 '097': 'Department of Defense',
+                                 '091': 'Department of Education',
+                                 '089': 'Department of Energy',
+                                 '075': 'Department of Health and Human Services',
+                                 '070': 'Department of Homeland Security',
+                                 '086': 'Department of Housing and Urban Development',
+                                 '015': 'Department of Justice',
+                                 '1601': 'Department of Labor',
+                                 '019': 'Department of State',
+                                 '014': 'Department of the Interior',
+                                 '020': 'Department of the Treasury',
+                                 '069': 'Department of Transportation',
+                                 '036': 'Department of Veterans Affairs',
+                                 '068': 'Environmental Protection Agency',
+                                 '047': 'General Services Administration',
+                                 '080': 'National Aeronautics and Space Administration',
+                                 '049': 'National Science Foundation',
+                                 '031': 'Nuclear Regulatory Commission',
+                                 '024': 'Office of Personnel Management',
+                                 '073': 'Small Business Administration',
+                                 '028': 'Social Security Administration',
+                                 '072': 'Agency for International Development'})
+CFO_CGACS = list(CFO_CGACS_MAPPING.keys())
 
 logger = logging.getLogger('console')
 
@@ -171,7 +200,14 @@ class BulkDownloadListAgenciesViewSet(APIView):
 
         if not agency_id:
             # Return all the agencies if no agency id provided
-            response_data['agencies'] = toptier_agencies
+            cfo_agencies = sorted(list(filter(lambda agency: agency['cgac_code'] in CFO_CGACS,
+                                              toptier_agencies)),
+                                  key=lambda agency: CFO_CGACS.index(agency['cgac_code']))
+            other_agencies = sorted([agency for agency in toptier_agencies
+                                     if agency not in cfo_agencies],
+                                    key=lambda agency: agency['name'])
+            response_data['agencies'] = {"cfo_agencies": cfo_agencies,
+                                         "other_agencies": other_agencies}
         else:
             # Get the top tier agency object based on the agency id provided
             top_tier_agency = list(filter(lambda toptier: toptier['toptier_agency_id'] == agency_id, toptier_agencies))
