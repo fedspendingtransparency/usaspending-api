@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'usaspending_api.download',
     'django_spaghetti',
     'simple_history',
+    'django_pgviews',
 ]
 
 INTERNAL_IPS = ()

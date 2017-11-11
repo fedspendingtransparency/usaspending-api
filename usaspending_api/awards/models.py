@@ -12,6 +12,9 @@ from usaspending_api.common.models import DataSourceTrackedModel
 from usaspending_api.common.helpers import fy
 from django.core.cache import caches, CacheKeyWarning
 
+from django_pgviews import view as pg
+
+
 warnings.simplefilter("ignore", CacheKeyWarning)
 
 
@@ -828,3 +831,24 @@ class Subaward(DataSourceTrackedModel):
     class Meta:
         managed = True
         unique_together = (('subaward_number', 'award'),)
+
+
+class MatviewMinimalFabs(pg.View):
+    projection = ['transaction_id', 'cfda_number', 'awarding_agency_code']
+    dependencies = ['myapp.TransactionFABS']
+    sql = '''
+CREATE MATERIALIZED VIEW matview_minimal_fabs AS (
+SELECT
+  "transaction_fabs"."transaction_id",
+  "transaction_fabs"."cfda_number",
+  "transaction_fabs"."awarding_agency_code"
+FROM
+  "transaction_fabs"
+ORDER BY
+  "cfda_number" ASC)
+'''
+
+    class Meta:
+        # app_label = 'myapp'
+        db_table = 'matview_minimal_fabs'
+        managed = False
