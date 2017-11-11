@@ -3,6 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
 from django.db.models import Max
+from django.core.exceptions import MultipleObjectsReturned
 
 from usaspending_api.awards.models import Award, Subaward
 from usaspending_api.references.models import LegalEntity, Agency, Cfda
@@ -108,10 +109,15 @@ class Command(BaseCommand):
                 continue
 
             # Get or create unique DUNS-recipient pair
-            recipient, created = LegalEntity.objects.get_or_create(
-                recipient_unique_id=row['duns'],
-                recipient_name=recipient_name
-            )
+            try:
+                recipient, created = LegalEntity.objects.get_or_create(
+                    recipient_unique_id=row['duns'],
+                    recipient_name=recipient_name
+                )
+            except MultipleObjectsReturned:
+                created = False
+                print('Legal Entity with DUNS: {} and name: {} returned two rows. '
+                      'Skipping...'.format(row['duns'], recipient_name))
 
             if created:
                 recipient.parent_recipient_unique_id = row['parent_duns']
