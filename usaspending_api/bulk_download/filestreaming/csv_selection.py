@@ -50,9 +50,10 @@ def csv_row_emitter(body, download_job):
 
 
 class CsvSource:
-    def __init__(self, model_type, file_type):
+    def __init__(self, model_type, file_type, source_type):
         self.model_type = model_type
         self.file_type = file_type
+        self.source_type = source_type
         self.human_names = download_column_historical_lookups.human_names[
             model_type][file_type]
         self.query_paths = download_column_historical_lookups.query_paths[
@@ -90,6 +91,7 @@ class CsvSource:
         json_dict = {
             'model_type': self.model_type,
             'file_type': self.file_type,
+            'source_type': self.source_type,
             'query': jsonpickle.dumps(self.queryset.query) if self.queryset is not None else None
         }
         return json_dict
@@ -182,11 +184,13 @@ def write_csvs(download_job, file_name, columns, sources):
 
         logger.info('Generating {}'.format(file_name))
 
-        source_map = {'d1': 'contracts',
-                      'd2': 'assistance'}
+        source_map = {'prime_awards': 'awards',
+                      'sub_awards': "subawards"}
+        d_map = {'d1': 'contracts',
+                 'd2': 'assistance'}
 
         for source in sources:
-            source_name = source_map[source.file_type]
+            source_name = '{}_{}'.format(source_map[source.source_type], d_map[source.file_type])
 
             source_query = source.row_emitter(columns)
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))

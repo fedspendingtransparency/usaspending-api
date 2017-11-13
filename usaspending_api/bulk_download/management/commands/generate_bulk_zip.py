@@ -6,10 +6,11 @@ import jsonpickle
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from usaspending_api.bulk_download.models import BulkDownloadJob
-from usaspending_api.awards.models import Award
+from usaspending_api.awards.models import Award, Subaward
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.bulk_download.filestreaming import csv_selection
+from usaspending_api.bulk_download.v2.views import value_mappings
 
 # Logging
 # logging.basicConfig(filename='bulk-download-worker.log',
@@ -71,9 +72,14 @@ class Command(BaseCommand):
 
                         # Recreate the sources
                         for source in json.loads(message.message_attributes['sources']['StringValue']):
-                            csv_source = csv_selection.CsvSource(source['model_type'], source['file_type'])
-                            # Note: this will have to be updated when incorporating Subaward functionality
-                            csv_source.queryset = Award.objects.all()
+                            csv_source = csv_selection.CsvSource(source['model_type'], source['file_type'],
+                                                                 source['source_type'])
+                            try:
+                                table = value_mappings[csv_source.source_type]['table']
+                            except KeyError:
+                                raise Exception('Invalid source type for CSV source: {}'
+                                                .format(csv_source.source_type))
+                            csv_source.queryset = table.objects.all()
                             csv_source.queryset.query = jsonpickle.loads(source['query'])
                             sources.append(csv_source)
                         kwargs = {
