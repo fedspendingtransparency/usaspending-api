@@ -223,16 +223,16 @@ class BulkDownloadListAgenciesViewSet(APIView):
                 raise InvalidParameterException('Agency ID not found')
             top_tier_agency = top_tier_agency[0]
             # Get the sub agencies and federal accounts associated with that top tier agency
-            response_data['sub_agencies'] = sorted(Agency.objects \
-                .filter(toptier_agency_id=agency_id) \
-                .values(subtier_agency_name=F('subtier_agency__name'),
-                        subtier_agency_id=F('subtier_agency__subtier_agency_id')),
+            response_data['sub_agencies'] = sorted(Agency.objects
+                                                   .filter(toptier_agency_id=agency_id)
+                                                   .values(subtier_agency_name=F('subtier_agency__name'),
+                                                           subtier_agency_id=F('subtier_agency__subtier_agency_id')),
                                                    key=lambda agency: agency['subtier_agency_name'])
 
-            response_data['federal_accounts'] = sorted(FederalAccount.objects \
-                .filter(agency_identifier=top_tier_agency['cgac_code']) \
-                .values(federal_account_name=F('account_title'),
-                        federal_account_id=F('id')), key=lambda agency: agency['federal_account_name'])
+            response_data['federal_accounts'] = sorted(FederalAccount.objects
+                                                       .filter(agency_identifier=top_tier_agency['cgac_code'])
+                                                       .values(federal_account_name=F('account_title'),
+                                                               federal_account_id=F('id')), key=lambda agency: agency['federal_account_name'])
         return Response(response_data)
 
 
@@ -312,7 +312,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
 
         csv_sources = []
         self.DOWNLOAD_NAME = "_".join(value_mappings[award_level]['download_name']
-                                 for award_level in award_levels)
+                                      for award_level in award_levels)
         try:
             for award_level in award_levels:
                 if award_level not in value_mappings:
