@@ -3,7 +3,7 @@ Idempotently re-runs location creation / matching code from broker FPDS data
 """
 
 import logging
-import timeit
+import time
 from datetime import datetime
 from functools import wraps
 from itertools import count, groupby
@@ -25,7 +25,7 @@ from usaspending_api.references.models import Location, RefCountryCode
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
-BATCH_DOWNLOAD_SIZE = 10000
+BATCH_DOWNLOAD_SIZE = 100
 
 
 def log_time(func):
@@ -34,9 +34,9 @@ def log_time(func):
     @wraps(func)
     def log_time_wrapper(*args, **kwargs):
         logger.info('Begin {}'.format(func.__name__))
-        start = timeit.default_timer()
+        start = time.time()
         result = func(*args, **kwargs)
-        end = timeit.default_timer()
+        end = time.time()
         logger.info('Finished {} in {} seconds'.format(func.__name__, end - start))
         return result
 
@@ -56,9 +56,8 @@ class Command(BaseCommand):
             action='store_true',
             help="For speed, fix only final transaction of each award")
 
+    @log_time
     def handle(self, *args, **options):
-        logger.info('Starting FPDS data fix...')
-        start = timeit.default_timer()
 
         if options.get('contracts'):
             fixer = FPDSLocationFixer(options)
@@ -67,7 +66,7 @@ class Command(BaseCommand):
         else:
             raise CommandError('Please specify either --contracts or --assistance')
 
-        fixer.fix()
+        fixer.fix_all_rows()
 
 
 def chunks(source_iterable, size=BATCH_DOWNLOAD_SIZE):
@@ -87,19 +86,20 @@ class LocationFixer:
     def set_lookup_maps(self):
         self.country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
 
-    def fix(self):
+    @log_time
+    def fix_all_rows(self):
 
         broker_ids = self.broker_ids_for_bad_pops()
         broker_ids = self.apply_option_filters(broker_ids, self.options)
         for some_broker_ids in chunks(broker_ids):
             broker_rows = self.get_broker_data(some_broker_ids)
-            self.fix_places_of_performance(broker_rows)
+            self.fix_batch_of_places_of_performance(broker_rows)
 
         broker_ids = self.broker_ids_for_bad_recipients()
         broker_ids = self.apply_option_filters(broker_ids, self.options)
         for some_broker_ids in chunks(broker_ids):
             broker_rows = self.get_broker_data(some_broker_ids)
-            self.fix_recipients(broker_rows)
+            self.fix_batch_of_recipients(broker_rows)
 
     def apply_option_filters(self, query, options):
 
@@ -116,7 +116,7 @@ class LocationFixer:
         return query.all()[:options['limit']]
 
     @log_time
-    def fix_places_of_performance(self, broker_data):
+    def fix_batch_of_places_of_performance(self, broker_data):
 
         value_map = {"place_of_performance_flag": True}
         create_count = change_count = 0
@@ -134,7 +134,7 @@ class LocationFixer:
         return (change_count, create_count)
 
     @log_time
-    def fix_recipients(self, broker_data):
+    def fix_batch_of_recipients(self, broker_data):
 
         value_map = {"recipient_flag": True}
         create_count = change_count = 0
