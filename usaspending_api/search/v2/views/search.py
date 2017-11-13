@@ -23,12 +23,10 @@ from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, c
     loan_type_mapping, loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
 from usaspending_api.references.models import Cfda, LegalEntity
 
-
 logger = logging.getLogger(__name__)
 
 
 class SpendingOverTimeVisualizationViewSet(APIView):
-
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -61,7 +59,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         if group == 'fy' or group == 'fiscal_year':
 
-            fy_set = queryset.values('fiscal_year')\
+            fy_set = queryset.values('fiscal_year') \
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
             for trans in fy_set:
@@ -129,7 +127,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
 
 class SpendingByCategoryVisualizationViewSet(APIView):
-
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -167,11 +164,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             if scope == "agency":
                 agency_set = queryset \
                     .filter(
-                        awarding_agency__isnull=False,
-                        awarding_agency__toptier_agency__name__isnull=False) \
+                    awarding_agency__isnull=False,
+                    awarding_agency__toptier_agency__name__isnull=False) \
                     .values(
-                        agency_name=F('awarding_agency__toptier_agency__name'),
-                        agency_abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
+                    agency_name=F('awarding_agency__toptier_agency__name'),
+                    agency_abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
@@ -181,12 +178,12 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             elif scope == "subagency":
                 subagency_set = queryset \
                     .filter(
-                        awarding_agency__isnull=False,
-                        awarding_agency__subtier_agency__name__isnull=False) \
+                    awarding_agency__isnull=False,
+                    awarding_agency__subtier_agency__name__isnull=False) \
                     .values(
-                        agency_name=F('awarding_agency__subtier_agency__name'),
-                        agency_abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
+                    agency_name=F('awarding_agency__subtier_agency__name'),
+                    agency_abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
@@ -211,13 +208,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             if scope == "agency":
                 agency_set = queryset \
                     .filter(
-                        funding_agency__isnull=False,
-                        funding_agency__toptier_agency__name__isnull=False) \
+                    funding_agency__isnull=False,
+                    funding_agency__toptier_agency__name__isnull=False) \
                     .values(
-                        agency_name=F('funding_agency__toptier_agency__name'),
-                        agency_abbreviation=F('funding_agency__toptier_agency__abbreviation')) \
+                    agency_name=F('funding_agency__toptier_agency__name'),
+                    agency_abbreviation=F('funding_agency__toptier_agency__abbreviation')) \
                     .annotate(
-                        aggregated_amount=Sum('federal_action_obligation')) \
+                    aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
@@ -226,13 +223,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             elif scope == "subagency":
                 subagency_set = queryset \
                     .filter(
-                        funding_agency__isnull=False,
-                        funding_agency__subtier_agency__name__isnull=False) \
+                    funding_agency__isnull=False,
+                    funding_agency__subtier_agency__name__isnull=False) \
                     .values(
-                        agency_name=F('funding_agency__subtier_agency__name'),
-                        agency_abbreviation=F('funding_agency__subtier_agency__abbreviation')) \
+                    agency_name=F('funding_agency__subtier_agency__name'),
+                    agency_abbreviation=F('funding_agency__subtier_agency__abbreviation')) \
                     .annotate(
-                        aggregated_amount=Sum('federal_action_obligation')) \
+                    aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
                 results = list(subagency_set[lower_limit:upper_limit + 1])
@@ -284,9 +281,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .filter(recipient__parent_recipient_unique_id__isnull=False) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .values(
-                        'aggregated_amount',
-                        recipient_name=F('recipient__recipient_name'),
-                        parent_recipient_unique_id=F('recipient__parent_recipient_unique_id')) \
+                    'aggregated_amount',
+                    recipient_name=F('recipient__recipient_name'),
+                    parent_recipient_unique_id=F('recipient__parent_recipient_unique_id')) \
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
@@ -304,14 +301,14 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif category == "cfda_programs":
             queryset = queryset \
                 .filter(
-                    assistance_data__cfda_number__isnull=False,
-                    federal_action_obligation__isnull=False) \
+                assistance_data__cfda_number__isnull=False,
+                federal_action_obligation__isnull=False) \
                 .values(cfda_program_number=F("assistance_data__cfda_number")) \
                 .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                 .values(
-                    "aggregated_amount",
-                    "cfda_program_number",
-                    program_title=F("assistance_data__cfda_title")) \
+                "aggregated_amount",
+                "cfda_program_number",
+                program_title=F("assistance_data__cfda_title")) \
                 .order_by('-aggregated_amount')
 
             # Begin DB hits here
@@ -357,9 +354,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount') \
                     .values(
-                        'naics_code',
-                        'aggregated_amount',
-                        naics_description=F('contract_data__naics_description'))
+                    'naics_code',
+                    'aggregated_amount',
+                    naics_description=F('contract_data__naics_description'))
 
                 # Begin DB hits here
                 results = list(queryset[lower_limit:upper_limit + 1])
@@ -376,7 +373,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):
-
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -437,7 +433,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
 
 class SpendingByAwardVisualizationViewSet(APIView):
-
     @total_ordering
     class MinType(object):
         def __le__(self, other):
@@ -445,6 +440,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         def __eq__(self, other):
             return (self is other)
+
     Min = MinType()
 
     @cache_response()
@@ -576,21 +572,19 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         return response
 
-
     def process_with_view(self, filters):
         """Return all budget function/subfunction titles matching the provided search text"""
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
-        queryset = view_filter(filters=filters,view_name='SummaryAwardView')
+        queryset = view_filter(filters=filters, view_name='SummaryAwardView')
         queryset = queryset.values("category").annotate(category_count=Sum('counts'))
 
         results = self.get_results(queryset)
 
         # build response
         return Response({"results": results})
-
 
     def process_with_tables(self, filters):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -609,7 +603,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         # build response
         return Response({"results": results})
-
 
     def get_results(self, queryset):
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
