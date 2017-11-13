@@ -25,7 +25,7 @@ from usaspending_api.references.models import Location, RefCountryCode
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
-BATCH_DOWNLOAD_SIZE = 100
+BATCH_DOWNLOAD_SIZE = 10000
 
 
 def log_time(func):
@@ -92,12 +92,14 @@ class LocationFixer:
         broker_ids = self.broker_ids_for_bad_pops()
         broker_ids = self.apply_option_filters(broker_ids, self.options)
         for some_broker_ids in chunks(broker_ids):
+            logger.info('loading (up to) {} broker rows'.format(BATCH_DOWNLOAD_SIZE))
             broker_rows = self.get_broker_data(some_broker_ids)
             self.fix_batch_of_places_of_performance(broker_rows)
 
         broker_ids = self.broker_ids_for_bad_recipients()
         broker_ids = self.apply_option_filters(broker_ids, self.options)
         for some_broker_ids in chunks(broker_ids):
+            logger.info('loading (up to) {} broker rows'.format(BATCH_DOWNLOAD_SIZE))
             broker_rows = self.get_broker_data(some_broker_ids)
             self.fix_batch_of_recipients(broker_rows)
 
