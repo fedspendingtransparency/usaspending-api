@@ -748,7 +748,7 @@ query_paths = {
             'subaward_action_date': 'action_date',
             'subaward_report_year': 'award_report_fy_year',
             'subaward_report_month': 'award_report_fy_month',
-            'prime_awarding_agency_code': 'award__awarding_agency__toptier_agency__toptier_code',
+            'prime_awarding_agency_code': 'award__awarding_agency__toptier_agency__cgac_code',
             'prime_awarding_agency_name': 'award__awarding_agency__toptier_agency__name',
             'prime_awarding_sub_agency_code': 'award__awarding_agency__subtier_agency__subtier_code',
             'prime_awarding_sub_agency_name': 'award__awarding_agency__subtier_agency__name',
