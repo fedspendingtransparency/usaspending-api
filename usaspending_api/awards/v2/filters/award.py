@@ -130,7 +130,7 @@ def award_filter(filters):
             if len(or_queryset) != 0:
                 queryset &= Award.objects.filter(type__in=or_queryset)
             if idv_flag:
-                queryset |= Award.objects.filter(type__isnull=True, latest_transaction__to_contract__pulled_from='IDV')
+                queryset |= Award.objects.filter(type__isnull=True, latest_transaction__contract_data__pulled_from='IDV')
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
