@@ -25,7 +25,7 @@ from usaspending_api.references.models import Location, RefCountryCode
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
-BATCH_DOWNLOAD_SIZE = 100
+BATCH_DOWNLOAD_SIZE = 10000
 
 
 def log_time(func):
@@ -70,7 +70,7 @@ class Command(BaseCommand):
         fixer.fix()
 
 
-def chunks(source_iterable, size=1000):
+def chunks(source_iterable, size=BATCH_DOWNLOAD_SIZE):
     """Given an iterable, yield smaller iterables of size `size`"""
     c = count()
     for _, g in groupby(source_iterable, lambda _: next(c) // size):
@@ -115,6 +115,7 @@ class LocationFixer:
 
         return query.all()[:options['limit']]
 
+    @log_time
     def fix_places_of_performance(self, broker_data):
 
         value_map = {"place_of_performance_flag": True}
@@ -132,6 +133,7 @@ class LocationFixer:
                     txn.transaction.award.save()
         return (change_count, create_count)
 
+    @log_time
     def fix_recipients(self, broker_data):
 
         value_map = {"recipient_flag": True}
