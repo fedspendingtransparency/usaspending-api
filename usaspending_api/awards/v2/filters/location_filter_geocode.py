@@ -20,7 +20,7 @@ def geocode_filter_locations(scope, values, model):
     returns queryset
     """
     or_queryset = None
-    has_content = False
+    queryset_init = False
 
     for v in values:
         fields = v.keys()
@@ -37,10 +37,10 @@ def geocode_filter_locations(scope, values, model):
         model_name = apps.get_model('awards', model)
         qs = model_name.objects.filter(**kwargs)
 
-        if has_content:
+        if queryset_init:
             or_queryset |= qs
         else:
-            has_content = True
+            queryset_init = True
             or_queryset = qs
     return or_queryset
 
