@@ -114,7 +114,7 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        """Return all PSC table entires matching the provided search text"""
+        """Return all PSC table entries matching the provided search text"""
         search_text, limit = self.get_request_payload(request)
 
         queryset = PSC.objects.all()
@@ -138,14 +138,18 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-        """Return all recipients matching the provided search text, splitting to
-        specify which are parents and children in the matching set."""
+        """Return a list of legal entity IDs whose recipient name contains search_text,
+        OR a list od legal entity IDs matching a valid DUNS number.
+        Include search_text in response for frontend. """
 
-        search_text, limit = self.get_request_payload(request)
+        # Limit not used here
+        search_text, _ = self.get_request_payload(request)
 
         queryset = LegalEntity.objects.all()
 
-        response = {}
+        if len(search_text) < 3:
+            raise InvalidParameterException('search_text \'{}\' does not meet '
+                                            'the minimum length of 3 characters'.format(search_text))
 
         is_duns = False
         if len(search_text) == 9 and queryset.filter(recipient_unique_id=search_text).exists():
@@ -156,21 +160,14 @@ class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
         else:
             queryset = queryset.filter(recipient_name__icontains=search_text)
 
-        parents = queryset.filter(
-            parent_recipient_unique_id__in=F('recipient_unique_id'))
+        recipients = queryset
 
-        recipients = queryset.exclude(
-            parent_recipient_unique_id__in=F('recipient_unique_id'))
-
-        # Format response
-        response['results'] = {
-            'parent_recipient':
-               parents.values('legal_entity_id',
-                              'recipient_name',
-                              'parent_recipient_unique_id')[:limit],
-            'recipient':
-                recipients.values('legal_entity_id',
-                                  'recipient_name',
-                                  'recipient_unique_id')[:limit]}
+        response = {
+            'results': {
+                'search_text': search_text,
+                'recipient_id_list':
+                    recipients.values_list('legal_entity_id', flat=True)
+            }
+        }
 
         return Response(response)
