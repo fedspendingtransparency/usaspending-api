@@ -114,7 +114,7 @@ def test_spending_by_geography_incorrect_state(client, incorrect_location_data):
         })
     )
 
-    assert resp.data['results'][0]['display_name'] in ['AL', 'None']
+    assert resp.data['results'][0]['display_name'] in ['Alabama', 'None']
 
 
 @pytest.mark.django_db

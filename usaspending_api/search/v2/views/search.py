@@ -27,6 +27,7 @@ from usaspending_api.references.models import Cfda, LegalEntity
 
 logger = logging.getLogger(__name__)
 
+
 class SpendingOverTimeVisualizationViewSet(APIView):
 
     @cache_response()
