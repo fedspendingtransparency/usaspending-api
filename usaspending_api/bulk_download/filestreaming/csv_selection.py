@@ -163,6 +163,24 @@ def _upload_part(bucketname, regionname, multipart_id, part_num,
     _upload()
 
 
+def apply_annotations_to_sql(raw_query, aliases):
+    """
+    Django's ORM understandably doesn't allow aliases to be the same names
+    as other fields available. However, if we want to use the efficiency of
+    psql's \copy method and keep the column names, we need to allow these
+    scenarios. This function simply outputs a modified raw sql which
+    does the aliasing, allowing these scenarios.
+    """
+    select_string = re.findall('SELECT (.*) FROM', raw_query)[0]
+    selects = [select.strip() for select in select_string.split(',')]
+    if len(selects) != len(aliases):
+        raise Exception("Length of alises doesn't match the columns in selects")
+    selects_mapping = dict(zip(aliases, selects))
+    new_select_string = ", ".join(['{} AS \"{}\"'.format(select, alias)
+                                   for alias, select in selects_mapping.items()])
+    return raw_query.replace(select_string, new_select_string)
+
+
 def write_csvs(download_job, file_name, columns, sources):
     """Derive the relevant location and write CSVs to it.
 
@@ -205,6 +223,7 @@ def write_csvs(download_job, file_name, columns, sources):
                 # Generate the final query, values, limits, dates fixed
                 split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
                 split_csv_query_raw = generate_raw_quoted_query(split_csv_query)
+                split_csv_query_raw = apply_annotations_to_sql(split_csv_query_raw, source.human_names)
                 # Generate the csv with \copy
                 psql_command = subprocess.Popen(
                     ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
