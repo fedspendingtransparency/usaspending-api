@@ -833,22 +833,89 @@ class Subaward(DataSourceTrackedModel):
         unique_together = (('subaward_number', 'award'),)
 
 
-class MatviewMinimalFabs(pg.View):
-    projection = ['transaction_id', 'cfda_number', 'awarding_agency_code']
-    dependencies = ['myapp.TransactionFABS']
-    sql = '''
-CREATE MATERIALIZED VIEW matview_minimal_fabs AS (
-SELECT
-  "transaction_fabs"."transaction_id",
-  "transaction_fabs"."cfda_number",
-  "transaction_fabs"."awarding_agency_code"
-FROM
-  "transaction_fabs"
-ORDER BY
-  "cfda_number" ASC)
-'''
+# class MatviewMinimalFabs(pg.View):
+#     projection = ['transaction_id', 'cfda_number', 'awarding_agency_code']
+#     dependencies = ['myapp.TransactionFABS']
+#     sql = '''
+# CREATE MATERIALIZED VIEW matview_minimal_fabs AS (
+# SELECT
+#   "transaction_fabs"."transaction_id",
+#   "transaction_fabs"."cfda_number",
+#   "transaction_fabs"."awarding_agency_code"
+# FROM
+#   "transaction_fabs"
+# ORDER BY
+#   "cfda_number" ASC)
+# '''
+
+#     class Meta:
+#         # app_label = 'myapp'
+#         db_table = 'matview_minimal_fabs'
+#         managed = False
+
+class MatviewTransactionFilter(models.Model):
+    # Fields
+    action_date = models.DateField(blank=True, null=False)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    transaction_id = models.IntegerField(blank=False, null=False, primary_key=True)
+    action_type = models.TextField()
+    award_id = models.IntegerField()
+    award_category = models.TextField()
+    total_obligation = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True,
+        null=True)
+    federal_action_obligation = models.DecimalField(
+        max_digits=20, db_index=True, decimal_places=2, blank=True,
+        null=True)
+
+    place_of_performance_id = models.IntegerField()
+    pop_country_name = models.TextField()
+    pop_country_code = models.TextField()
+    pop_county_code = models.TextField()
+    pop_state_code = models.TextField()
+    pop_congressional_code = models.TextField()
+
+    awarding_agency_id = models.IntegerField()
+    awarding_agency_code = models.TextField()
+    funding_agency_id = models.IntegerField()
+
+    naics_code = models.TextField()
+    naics_description = models.TextField()
+    piid = models.TextField()
+    pcs_code = models.TextField()
+    pcs_description = models.TextField()
+
+    type_of_contract_pricing = models.TextField()
+    type_set_aside = models.TextField()
+    extent_competed = models.TextField()
+
+    cfda_number = models.TextField()
+    cfda_title = models.TextField()
+    cfda_popular_name = models.TextField()
+
+    recipient_id = models.IntegerField()
+    recipient_name = models.TextField()
+    recipient_unique_id = models.TextField()
+    parent_recipient_unique_id = models.TextField()
+    business_types_description = models.TextField()
+
+    recipient_location_country_name = models.TextField()
+    recipient_location_state_code = models.TextField()
+    recipient_location_state_name = models.TextField()
+    recipient_location_county_code = models.TextField()
+    recipient_location_county_name = models.TextField()
+    recipient_location_congressional_code = models.TextField()
+
+    awarding_toptier_agency_name = models.TextField()
+    funding_toptier_agency_name = models.TextField()
+    awarding_subtier_agency_name = models.TextField()
+    funding_subtier_agency_name = models.TextField()
+    awarding_toptier_agency_abbreviation = models.TextField()
+    funding_toptier_agency_abbreviation = models.TextField()
+    awarding_subtier_agency_abbreviation = models.TextField()
+    finding_subtier_agency_abbreviation = models.TextField()
 
     class Meta:
-        # app_label = 'myapp'
-        db_table = 'matview_minimal_fabs'
         managed = False
+        db_table = 'matview_transaction_filter'

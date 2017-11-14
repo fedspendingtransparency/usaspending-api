@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, Q, F
+from django.db.models import Sum, Count, F
 from django.db.models.functions import ExtractMonth, Cast
 from django.db.models import FloatField
 
@@ -18,6 +18,7 @@ from fiscalyear import FiscalDate
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
+from usaspending_api.awards.v2.filters.matview_transaction import matview_transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
@@ -126,6 +127,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
 
 class SpendingByCategoryVisualizationViewSet(APIView):
+    USE_NEW_MATVIEW = False
 
     @cache_response()
     def post(self, request):
@@ -153,7 +155,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # filter queryset
-        queryset = transaction_filter(filters)
+        if USE_NEW_MATVIEW is False:
+            queryset = transaction_filter(filters)
+        else:
+            queryset = matview_transaction_filter(filters)
 
         # filter the transactions by category
         if category == "awarding_agency":
@@ -161,37 +166,63 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             if scope not in potential_scopes:
                 raise InvalidParameterException("scope does not have a valid value")
 
-            if scope == "agency":
-                agency_set = queryset \
+            if USE_NEW_MATVIEW:
+                if scope == "agency":
+                    queryset = queryset \
+                        .filter(awarding_toptier_agency_name__isnull=False) \
+                        .values(
+                            agency_name=F('awarding_toptier_agency_name'),
+                            agency_abbreviation=F('awarding_toptier_agency_abbreviation')) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount')
+                elif scope == "subagency":
+                    queryset = queryset \
                     .filter(
-                        awarding_agency__isnull=False,
-                        awarding_agency__toptier_agency__name__isnull=False) \
+                        awarding_subtier_agency_name__isnull=False) \
                     .values(
-                        agency_name=F('awarding_agency__toptier_agency__name'),
-                        agency_abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                    .order_by('-aggregated_amount')
-
-                # Begin DB hits here
-                results = list(agency_set[lower_limit:upper_limit + 1])
-
-            elif scope == "subagency":
-                subagency_set = queryset \
-                    .filter(
-                        awarding_agency__isnull=False,
-                        awarding_agency__subtier_agency__name__isnull=False) \
-                    .values(
-                        agency_name=F('awarding_agency__subtier_agency__name'),
-                        agency_abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
+                        agency_name=F('awarding_subtier_agency_name'),
+                        agency_abbreviation=F('awarding_subtier_agency_abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation'))\
                     .order_by('-aggregated_amount')
+                elif scope == "office":
+                    raise NotImplementedError
 
-                # Begin DB hits here
-                results = list(subagency_set[lower_limit:upper_limit + 1])
+                print('====================================')
+                print(queryset.query)
+                results = list(queryset[lower_limit:upper_limit + 1])
 
-            elif scope == "office":
-                # NOT IMPLEMENTED IN UI
-                raise NotImplementedError
+            else:
+                if scope == "agency":
+                    agency_set = queryset \
+                        .filter(
+                            awarding_agency__isnull=False,
+                            awarding_agency__toptier_agency__name__isnull=False) \
+                        .values(
+                            agency_name=F('awarding_agency__toptier_agency__name'),
+                            agency_abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount')
+
+                    # Begin DB hits here
+                    results = list(agency_set[lower_limit:upper_limit + 1])
+
+                elif scope == "subagency":
+                    subagency_set = queryset \
+                        .filter(
+                            awarding_agency__isnull=False,
+                            awarding_agency__subtier_agency__name__isnull=False) \
+                        .values(
+                            agency_name=F('awarding_agency__subtier_agency__name'),
+                            agency_abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation'))\
+                        .order_by('-aggregated_amount')
+
+                    # Begin DB hits here
+                    results = list(subagency_set[lower_limit:upper_limit + 1])
+
+                elif scope == "office":
+                    # NOT IMPLEMENTED IN UI
+                    raise NotImplementedError
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
             results = results[:limit]
@@ -201,6 +232,20 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             return Response(response)
 
         elif category == "funding_agency":
+            '''
+MINE:
+96.002  $648,515,538,578.00 Social Security_Retirement Insurance
+93.778  $443,361,034,504.00 Medical Assistance Program
+93.774  $303,036,432,181.00 Medicare_Supplementary Medical Insurance
+93.773  $289,033,730,683.00 Medicare_Hospital Insurance
+96.001  $130,007,131,497.00 Social Security_Disability Insurance
+ORIGINAL:
+96.002  $474,729,456,342.00 Social Security_Retirement Insurance
+93.778  $443,361,034,504.00 Medical Assistance Program
+93.774  $221,656,581,856.00 Medicare_Supplementary Medical Insurance
+93.773  $213,518,383,409.00 Medicare_Hospital Insurance
+96.002  $173,786,082,236.00 (null)
+'''
             potential_scopes = ["agency", "subagency"]
             if scope not in potential_scopes:
                 raise InvalidParameterException("scope does not have a valid value")

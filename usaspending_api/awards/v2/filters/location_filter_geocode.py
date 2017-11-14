@@ -11,7 +11,7 @@ loc_dict = {
     }
 
 
-def geocode_filter_locations(scope, values, model):
+def geocode_filter_locations(scope, values, model, use_matview=False):
     """
     Function filter querysets on location table
     scope- place of performance or recipient location mappings
@@ -19,14 +19,18 @@ def geocode_filter_locations(scope, values, model):
     model- awards or transactions will create queryset for model
     returns queryset
     """
+
     or_queryset = None
+    q_str = '{0}__{1}__in'
+    if use_matview:
+        q_str = '{0}_{1}_in'
 
     for v in values:
         fields = v.keys()
 
         check_location_fields(fields)
 
-        kwargs = {'{0}__{1}__in'.format(
+        kwargs = {q_str.format(
             scope, loc_dict.get(loc_scope)
             ): get_fields_list(loc_dict.get(loc_scope), v.get(loc_scope))
             for loc_scope in fields
