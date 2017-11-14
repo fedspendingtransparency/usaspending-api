@@ -73,7 +73,7 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
             raise InvalidParameterException('Awarding Agency ID provided must correspond to a toptier agency')
 
         toptier_agency = Agency.objects.filter(id=awarding_agency_id).first().toptier_agency
-        queryset = TransactionNormalized.objects.all()
+        queryset = TransactionNormalized.objects.filter(federal_action_obligation__isnull=False)
 
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
         if toptier_agency.cgac_code == DOD_CGAC:
@@ -89,7 +89,6 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
                 fiscal_year=fiscal_year,
                 awarding_agency__toptier_agency__cgac_code=toptier_agency.cgac_code
             )
-
 
         queryset = queryset.annotate(
             award_category=F('award__category'),
