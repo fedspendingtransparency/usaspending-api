@@ -214,9 +214,11 @@ def test_list_agencies(client, award_data):
                     {'name': 'Bureau of Money', 'cgac_code': '102'}]
 
     index = 0
+    agency_ids = []
     for toptier in sorted(resp.json()['agencies']['other_agencies'], key=sort_function):
         assert toptier['name'] == all_toptiers[index]['name']
         assert toptier['cgac_code'] == all_toptiers[index]['cgac_code']
+        agency_ids.append(toptier['toptier_agency_id'])
         index += 1
     assert resp.json()['sub_agencies'] == []
     assert resp.json()['federal_accounts'] == []
@@ -225,7 +227,7 @@ def test_list_agencies(client, award_data):
         '/api/v2/bulk_download/list_agencies',
         content_type='application/json',
         data=json.dumps({
-            'agency': 1
+            'agency': agency_ids[0]
         }))
 
     assert resp.json()['agencies'] == []
@@ -236,7 +238,7 @@ def test_list_agencies(client, award_data):
         '/api/v2/bulk_download/list_agencies',
         content_type='application/json',
         data=json.dumps({
-            'agency': 2
+            'agency': agency_ids[1]
         }))
 
     assert resp.json()['agencies'] == []
@@ -247,7 +249,7 @@ def test_list_agencies(client, award_data):
         '/api/v2/bulk_download/list_agencies',
         content_type='application/json',
         data=json.dumps({
-            'agency': 3
+            'agency': agency_ids[2]
         }))
 
     assert resp.json()['agencies'] == []
