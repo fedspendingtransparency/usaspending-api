@@ -1,7 +1,6 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from django.conf import settings
 from django.db import connections
 
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
@@ -19,22 +18,6 @@ class Command(BaseCommand):
     help = "Loads a set of DUNS's executive compensation data from the configured data broker database"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            '-d',
-            '--duns',
-            dest="duns",
-            nargs='+',
-            help="DUNS to load subawards for"
-        )
-
-        parser.add_argument(
-            '-a',
-            '--all',
-            action='store_true',
-            dest='update_all',
-            default=False,
-            help='Update all DUNS present in the datastore',
-        )
 
         parser.add_argument(
             '-t',
@@ -58,11 +41,4 @@ class Command(BaseCommand):
         else:
             db_cursor = PhonyCursor()
 
-        # Require users to explicitly call -a to use the "All" case so that
-        # it is not accidentally triggered by omitting an option
-        if options["duns"] is None and options["update_all"]:
-            load_executive_compensation(db_cursor, None)
-        elif options["duns"] is not None:
-            load_executive_compensation(db_cursor, options["duns"])
-        else:
-            logger.info("Please specify either a list of DUNS (using the --duns) flag, or set to update all mode using the (--all) flag.")
+        load_executive_compensation(db_cursor)
