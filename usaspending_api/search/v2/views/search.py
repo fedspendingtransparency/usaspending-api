@@ -693,7 +693,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         # build sql query filters
         queryset = view_filter(filters=filters,view_name='SummaryAwardView')
-        queryset = queryset.values("category").annotate(category_count=Sum('counts'))
+        queryset = queryset.values("category").annotate(category_count=Sum('counts')).exclude(category__isnull=True)
 
         results = self.get_results(queryset)
 
