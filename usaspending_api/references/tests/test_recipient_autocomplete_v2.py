@@ -46,9 +46,10 @@ def test_recipient_autocomplete_success(client, recipients_data):
         content_type='application/json',
         data=json.dumps({'search_text': 'Human'}))
     assert resp.status_code == status.HTTP_200_OK
-    print(resp.data['results'])
-    assert len(resp.data['results']) == 2
-    assert len(resp.data['results']['recipient']) == 2
+    assert len(resp.data['results']['recipient_id_list']) == 2
+    # Legal Entity IDs for Human Childship and Human Partnership
+    assert 342445 in resp.data['results']['recipient_id_list']
+    assert 342467 in resp.data['results']['recipient_id_list']
 
     # Test on on search_text using DUNS (recipient_unique_id)
     resp = client.post(
@@ -56,8 +57,8 @@ def test_recipient_autocomplete_success(client, recipients_data):
         content_type='application/json',
         data=json.dumps({'search_text': '078757313'}))
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data['results']) == 2
-    assert resp.data['results']['recipient'][0]['recipient_name'] == 'STARTUP JUNKIE CONSULTING, LLC'
+    assert len(resp.data['results']['recipient_id_list']) == 1
+    assert 274178 in resp.data['results']['recipient_id_list']
 
 
 @pytest.mark.django_db

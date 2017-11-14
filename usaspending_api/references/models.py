@@ -1,4 +1,5 @@
 import logging
+import re
 
 from django.db import models
 from django.db.models import F, Q
@@ -243,6 +244,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
         self.load_country_data()
         self.load_city_county_data()
         self.fill_missing_state_data()
+        self.fill_missing_zip5()
         # self.populate_location_unique()
 
     def save(self, *args, **kwargs):
@@ -292,10 +294,20 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
         if self.state_code and self.state_name:
             return
         if self.country_name == 'UNITED STATES':
-            if (not self.state_code):
+            if not self.state_code:
                 self.state_code = state_to_code.get(self.state_name)
-            elif (not self.state_name):
-                self.state_name = code_to_state.get(self.state_code)
+            elif not self.state_name:
+                self.state_name = code_to_state.get(self.state_code)['name']
+
+    zip_code_pattern = re.compile('^(\d{5})\-?(\d{4})?$')
+
+    def fill_missing_zip5(self):
+        """Where zip5 is blank, fill from a valid zip4, if avaliable"""
+
+        if self.zip4 and not self.zip5:
+            match = self.zip_code_pattern.match(self.zip4)
+            if match:
+                self.zip5 = match.group(1)
 
     def load_country_data(self):
         if self.location_country_code:

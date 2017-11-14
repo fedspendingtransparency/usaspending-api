@@ -26,21 +26,6 @@ class AwardAggregateViewSet(SuperLoggingMixin,
         return queryset
 
 
-class AwardAutocomplete(FilterQuerysetMixin,
-                        AutocompleteView):
-    """Autocomplete support for award summary objects."""
-    # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
-    serializer_class = AwardSerializer
-
-    def get_queryset(self):
-        """Return the view's queryset."""
-        queryset = Award.nonempty.all()
-        queryset = self.serializer_class.setup_eager_loading(queryset)
-        filtered_queryset = self.filter_records(self.request, queryset=queryset)
-        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
-        return ordered_queryset
-
-
 class AwardViewSet(SuperLoggingMixin,
                    FilterQuerysetMixin,
                    DetailViewSet):
