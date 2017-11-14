@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 QUOTABLE_TYPES = (str, datetime.date)
 
+
 def check_valid_toptier_agency(agency_id):
     """ Check if the ID provided (corresponding to Agency.id) is a valid toptier agency """
 
