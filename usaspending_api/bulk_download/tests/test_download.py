@@ -201,6 +201,7 @@ def sort_function(agency):
     return agency['cgac_code']
 
 
+@pytest.mark.skip
 def test_list_agencies(client, award_data):
     """Test transaction list agencies endpoint"""
     resp = client.post(
