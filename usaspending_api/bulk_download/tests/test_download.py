@@ -50,9 +50,9 @@ def award_data(db):
 
     # Create Awarding Agencies
     aa1 = mommy.make(
-        'references.Agency', id=1, toptier_agency=ata1, subtier_agency=asa1, toptier_flag=False)
+        'references.Agency', toptier_agency=ata1, subtier_agency=asa1, toptier_flag=False)
     aa2 = mommy.make(
-        'references.Agency', id=2, toptier_agency=ata2, subtier_agency=asa2, toptier_flag=False)
+        'references.Agency', toptier_agency=ata2, subtier_agency=asa2, toptier_flag=False)
 
     # Create Funding Top Agency
     fta = mommy.make(
@@ -67,7 +67,7 @@ def award_data(db):
     fsa1 = mommy.make('references.SubtierAgency', name='Bureau of Things')
 
     # Create Funding Agency
-    fa1 = mommy.make('references.Agency', id=3, toptier_agency=fta, subtier_agency=fsa1, toptier_flag=False)
+    fa1 = mommy.make('references.Agency', toptier_agency=fta, subtier_agency=fsa1, toptier_flag=False)
 
     # Create Federal Account
     fta = mommy.make(
@@ -198,7 +198,7 @@ def test_download_status_nonexistent_file_404(client):
 
 
 def sort_function(agency):
-    return agency['toptier_agency_id']
+    return agency['cgac_code']
 
 
 def test_list_agencies(client, award_data):
@@ -209,11 +209,15 @@ def test_list_agencies(client, award_data):
         data=json.dumps({
         }))
 
-    all_toptiers = [{'name': 'Bureau of Things', 'toptier_agency_id': 1, 'cgac_code': '100'},
-                    {'name': 'Bureau of Stuff', 'toptier_agency_id': 2, 'cgac_code': '101'},
-                    {'name': 'Bureau of Money', 'toptier_agency_id': 3, 'cgac_code': '102'}]
+    all_toptiers = [{'name': 'Bureau of Things', 'cgac_code': '100'},
+                    {'name': 'Bureau of Stuff', 'cgac_code': '101'},
+                    {'name': 'Bureau of Money', 'cgac_code': '102'}]
 
-    assert sorted(resp.json()['agencies']['other_agencies'], key=sort_function) == sorted(all_toptiers, key=sort_function)
+    index = 0
+    for toptier in sorted(resp.json()['agencies']['other_agencies'], key=sort_function):
+        assert toptier['name'] == all_toptiers[index]['name']
+        assert toptier['cgac_code'] == all_toptiers[index]['cgac_code']
+        index += 1
     assert resp.json()['sub_agencies'] == []
     assert resp.json()['federal_accounts'] == []
 
