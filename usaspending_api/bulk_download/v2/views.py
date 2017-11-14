@@ -88,9 +88,6 @@ value_mappings = {
     }
 }
 
-queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
-                  QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
-
 
 class BaseDownloadViewSet(APIView):
 
@@ -175,6 +172,8 @@ class BaseDownloadViewSet(APIView):
                     'DataType': 'String'
                 }
             }
+            queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
+                              QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody='Test', MessageAttributes=message_attributes)
 
         return self.get_download_response(file_name=timestamped_file_name)
