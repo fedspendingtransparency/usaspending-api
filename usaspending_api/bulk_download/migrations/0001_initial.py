@@ -31,23 +31,9 @@ class Migration(migrations.Migration):
                 'managed': True,
             },
         ),
-        migrations.CreateModel(
-            name='BulkJobStatus',
-            fields=[
-                ('bulk_job_status_id', models.AutoField(primary_key=True, serialize=False)),
-                ('name', models.TextField()),
-                ('description', models.TextField(blank=True, null=True)),
-                ('create_date', models.DateTimeField(auto_now_add=True, null=True)),
-                ('update_date', models.DateTimeField(auto_now=True, null=True)),
-            ],
-            options={
-                'db_table': 'bulk_job_status',
-                'managed': True,
-            },
-        ),
         migrations.AddField(
             model_name='bulkdownloadjob',
             name='job_status',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='bulk_download.BulkJobStatus'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='download.JobStatus'),
         ),
     ]
