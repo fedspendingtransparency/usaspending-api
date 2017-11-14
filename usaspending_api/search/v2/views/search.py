@@ -5,8 +5,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, F
-from django.db.models.functions import ExtractMonth
+from django.db.models import Sum, Count, Q, F
+from django.db.models.functions import ExtractMonth, Cast
+from django.db.models import FloatField
 
 from collections import OrderedDict
 from functools import total_ordering
@@ -19,14 +20,17 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.award import award_filter
+from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
     loan_type_mapping, loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
+from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda, LegalEntity
 
 logger = logging.getLogger(__name__)
 
 
 class SpendingOverTimeVisualizationViewSet(APIView):
+
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -59,7 +63,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         if group == 'fy' or group == 'fiscal_year':
 
-            fy_set = queryset.values('fiscal_year') \
+            fy_set = queryset.values('fiscal_year')\
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
             for trans in fy_set:
@@ -127,6 +131,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
 
 class SpendingByCategoryVisualizationViewSet(APIView):
+
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -164,11 +169,11 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             if scope == "agency":
                 agency_set = queryset \
                     .filter(
-                    awarding_agency__isnull=False,
-                    awarding_agency__toptier_agency__name__isnull=False) \
+                        awarding_agency__isnull=False,
+                        awarding_agency__toptier_agency__name__isnull=False) \
                     .values(
-                    agency_name=F('awarding_agency__toptier_agency__name'),
-                    agency_abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
+                        agency_name=F('awarding_agency__toptier_agency__name'),
+                        agency_abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
@@ -178,12 +183,12 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             elif scope == "subagency":
                 subagency_set = queryset \
                     .filter(
-                    awarding_agency__isnull=False,
-                    awarding_agency__subtier_agency__name__isnull=False) \
+                        awarding_agency__isnull=False,
+                        awarding_agency__subtier_agency__name__isnull=False) \
                     .values(
-                    agency_name=F('awarding_agency__subtier_agency__name'),
-                    agency_abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        agency_name=F('awarding_agency__subtier_agency__name'),
+                        agency_abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
@@ -208,13 +213,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             if scope == "agency":
                 agency_set = queryset \
                     .filter(
-                    funding_agency__isnull=False,
-                    funding_agency__toptier_agency__name__isnull=False) \
+                        funding_agency__isnull=False,
+                        funding_agency__toptier_agency__name__isnull=False) \
                     .values(
-                    agency_name=F('funding_agency__toptier_agency__name'),
-                    agency_abbreviation=F('funding_agency__toptier_agency__abbreviation')) \
+                        agency_name=F('funding_agency__toptier_agency__name'),
+                        agency_abbreviation=F('funding_agency__toptier_agency__abbreviation')) \
                     .annotate(
-                    aggregated_amount=Sum('federal_action_obligation')) \
+                        aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
@@ -223,13 +228,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             elif scope == "subagency":
                 subagency_set = queryset \
                     .filter(
-                    funding_agency__isnull=False,
-                    funding_agency__subtier_agency__name__isnull=False) \
+                        funding_agency__isnull=False,
+                        funding_agency__subtier_agency__name__isnull=False) \
                     .values(
-                    agency_name=F('funding_agency__subtier_agency__name'),
-                    agency_abbreviation=F('funding_agency__subtier_agency__abbreviation')) \
+                        agency_name=F('funding_agency__subtier_agency__name'),
+                        agency_abbreviation=F('funding_agency__subtier_agency__abbreviation')) \
                     .annotate(
-                    aggregated_amount=Sum('federal_action_obligation')) \
+                        aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
 
                 results = list(subagency_set[lower_limit:upper_limit + 1])
@@ -281,9 +286,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .filter(recipient__parent_recipient_unique_id__isnull=False) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .values(
-                    'aggregated_amount',
-                    recipient_name=F('recipient__recipient_name'),
-                    parent_recipient_unique_id=F('recipient__parent_recipient_unique_id')) \
+                        'aggregated_amount',
+                        recipient_name=F('recipient__recipient_name'),
+                        parent_recipient_unique_id=F('recipient__parent_recipient_unique_id')) \
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
@@ -301,14 +306,14 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif category == "cfda_programs":
             queryset = queryset \
                 .filter(
-                assistance_data__cfda_number__isnull=False,
-                federal_action_obligation__isnull=False) \
+                    assistance_data__cfda_number__isnull=False,
+                    federal_action_obligation__isnull=False) \
                 .values(cfda_program_number=F("assistance_data__cfda_number")) \
                 .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                 .values(
-                "aggregated_amount",
-                "cfda_program_number",
-                program_title=F("assistance_data__cfda_title")) \
+                    "aggregated_amount",
+                    "cfda_program_number",
+                    program_title=F("assistance_data__cfda_title")) \
                 .order_by('-aggregated_amount')
 
             # Begin DB hits here
@@ -354,9 +359,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount') \
                     .values(
-                    'naics_code',
-                    'aggregated_amount',
-                    naics_description=F('contract_data__naics_description'))
+                        'naics_code',
+                        'aggregated_amount',
+                        naics_description=F('contract_data__naics_description'))
 
                 # Begin DB hits here
                 results = list(queryset[lower_limit:upper_limit + 1])
@@ -373,66 +378,175 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):
+    geo_layer = None  # State, county or District
+    geo_layer_filters = None  # Specific geo_layers to filter on
+    queryset = None  # Transaction queryset
+    geo_queryset = None  # Aggregate queryset based on scope
+
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
-        scope = json_request.get("scope", None)
-        filters = json_request.get("filters", None)
+        scope = json_request.get("scope")
+        filters = json_request.get("filters", {})
+        self.geo_layer = json_request.get("geo_layer")
+        self.geo_layer_filters = json_request.get("geo_layer_filters")
+        fields_list = []  # fields to include in the aggregate query
 
-        if scope is None:
-            raise InvalidParameterException("Missing one or more required request parameters: scope")
-        if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
-        potential_scopes = ["recipient_location", "place_of_performance"]
-        if scope not in potential_scopes:
-            raise InvalidParameterException("scope does not have a valid value")
+        loc_dict = {
+            'state': 'state_code',
+            'county': 'county_code',
+            'district': 'congressional_code'
+        }
+
+        model_dict = {
+            'place_of_performance': 'place_of_performance',
+            'recipient_location': 'recipient__location'
+        }
+
+        # Build the query based on the scope fields and geo_layers
+        # Fields not in the reference objects above then request is invalid
+
+        scope_field_name = model_dict.get(scope)
+        loc_field_name = loc_dict.get(self.geo_layer)
+        loc_lookup = '{}__{}'.format(scope_field_name, loc_field_name)
+
+        if scope_field_name is None:
+            raise InvalidParameterException("Invalid request parameters: scope")
+
+        if loc_field_name is None:
+            raise InvalidParameterException("Invalid request parameters: geo_layer")
 
         # build sql query filters
-        queryset = transaction_filter(filters)
+        self.queryset = transaction_filter(filters)
 
-        # define what values are needed in the sql query
-        queryset = queryset.values("federal_action_obligation",
-                                   "recipient",
-                                   "recipient__location__state_code",
-                                   "place_of_performance__state_code")
-        # build response
-        response = {"scope": scope, "results": []}
+        if self.geo_layer == 'state':
+            # State will have one field (state_code) containing letter A-Z
+            kwargs = {'{}__{}'.format(loc_lookup, 'isnull'): False,
+                      '{}__{}'.format(loc_lookup, 'iregex'): r'^[A-Z]{2}$'}
 
-        # key is time period (defined by group), value is federal_action_obligation
-        name_dict = {}
-        if scope == "recipient_location":
+            # Only state scope will add its own state code
+            # State codes are consistent in db ie AL, AK
+            fields_list.append(loc_lookup)
 
-            geo_queryset = queryset.filter(recipient__location__state_code__isnull=False) \
-                .values('recipient__location__state_code') \
-                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+            state_response = {
+                'scope': scope,
+                'geo_layer': self.geo_layer,
+                'results': self.state_results(kwargs, fields_list, loc_lookup)
+            }
 
-            for trans in geo_queryset:
-                state_code = trans["recipient__location__state_code"]
-                name_dict[state_code] = trans["federal_action_obligation"]
+            return Response(state_response)
 
-        else:  # place of performance
+        else:
+            # County and district scope will need to select multiple fields
+            # State code is needed for county/district aggregation
+            state_lookup = '{}__{}'.format(scope_field_name, loc_dict['state'])
+            fields_list.append(state_lookup)
 
-            geo_queryset = queryset.filter(place_of_performance__state_code__isnull=False) \
-                .values('place_of_performance__state_code') \
-                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+            # Adding regex to county/district codes to remove entries with letters since
+            # can't be surfaced by map
+            kwargs = {'{}__{}'.format(loc_lookup, 'isnull'): False,
+                      '{}__{}'.format(state_lookup, 'isnull'): False,
+                      '{}__{}'.format(state_lookup, 'iregex'): r'^[A-Z]{2}$',
+                      '{}__{}'.format(loc_lookup, 'iregex'): r'^[0-9]*(\.\d+)?$'}
 
-            for trans in geo_queryset:
-                state_code = trans["place_of_performance__state_code"]
-                name_dict[state_code] = trans["federal_action_obligation"]
+            if self.geo_layer == 'county':
+                # County name added to aggregation since consistent in db
+                county_name = '{}__{}'.format(scope_field_name, 'county_name')
+                fields_list.append(county_name)
+                self.county_district_queryset(kwargs, fields_list, loc_lookup, scope_field_name)
 
-        # convert result into expected format
-        results = []
+                county_response = {
+                    'scope': scope,
+                    'geo_layer': self.geo_layer,
+                    'results': self.county_results(state_lookup, county_name)
+                }
 
-        for key, value in name_dict.items():
-            result = {"state_code": key, "aggregated_amount": float(value)}
-            results.append(result)
-        response["results"] = results
+                return Response(county_response)
+            else:
+                self.geo_queryset = self.county_district_queryset(kwargs, fields_list, loc_lookup, scope_field_name)
 
-        return Response(response)
+                district_response = {
+                    'scope': scope,
+                    'geo_layer': self.geo_layer,
+                    'results': self.district_results(state_lookup)
+                }
+
+                return Response(district_response)
+
+    def state_results(self, filter_args, lookup_fields, loc_lookup):
+        # Adding additional state filters if specified
+        if self.geo_layer_filters:
+            self.queryset = self.queryset.filter(**{'{}__{}'.format(loc_lookup, 'in'): self.geo_layer_filters})
+
+        self.geo_queryset = self.queryset.filter(**filter_args) \
+            .values(*lookup_fields) \
+            .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+        # State names are inconsistent in database (upper, lower, null)
+        # Used lookup instead to be consistent
+        results = [
+            {
+                'shape_code': x[loc_lookup],
+                'aggregated_amount': x['federal_action_obligation'],
+                'display_name': code_to_state.get(x[loc_lookup])['name'].title()
+            } for x in self.geo_queryset.iterator()
+        ]
+
+        return results
+
+    def county_district_queryset(self, kwargs, fields_list, loc_lookup, scope_field_name):
+        # Filtering queryset to specific county/districts if requested
+        # Since geo_layer_filters comes as concat of state fips and county/district codes
+        # need to split for the geocode_filter
+        if self.geo_layer_filters:
+            self.queryset &= geocode_filter_locations(scope_field_name, [
+                {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
+                for x in self.geo_layer_filters
+            ], 'TransactionNormalized')
+
+        # Turn county/district codes into float since inconsistent in database
+        # Codes in location table ex: '01', '1', '1.0'
+        # Cast will group codes as a float and will combine inconsistent codes
+        self.geo_queryset = self.queryset.filter(**kwargs) \
+            .values(*fields_list) \
+            .annotate(federal_action_obligation=Sum('federal_action_obligation'),
+                      code_as_float=Cast(loc_lookup, FloatField()))
+
+        return self.geo_queryset
+
+    def county_results(self, state_lookup, county_name):
+        # Returns county results formatted for map
+        results = [
+                {
+                    'shape_code': code_to_state.get(x[state_lookup])['fips'] +
+                    pad_codes(self.geo_layer, x['code_as_float']),
+                    'aggregated_amount': x['federal_action_obligation'],
+                    'display_name': x[county_name].title() if x[county_name] is not None
+                    else x[county_name]
+                }
+                for x in self.geo_queryset.iterator()
+            ]
+
+        return results
+
+    def district_results(self, state_lookup):
+        # Returns congressional district results formatted for map
+        results = [
+                {
+                    'shape_code': code_to_state.get(x[state_lookup])['fips'] +
+                    pad_codes(self.geo_layer, x['code_as_float']),
+                    'aggregated_amount': x['federal_action_obligation'],
+                    'display_name': x[state_lookup] + '-' +
+                    pad_codes(self.geo_layer, x['code_as_float'])
+                } for x in self.geo_queryset.iterator()
+            ]
+
+        return results
 
 
 class SpendingByAwardVisualizationViewSet(APIView):
+
     @total_ordering
     class MinType(object):
         def __le__(self, other):
@@ -440,7 +554,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         def __eq__(self, other):
             return (self is other)
-
     Min = MinType()
 
     @cache_response()
@@ -572,19 +685,21 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         return response
 
+
     def process_with_view(self, filters):
         """Return all budget function/subfunction titles matching the provided search text"""
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
-        queryset = view_filter(filters=filters, view_name='SummaryAwardView')
-        queryset = queryset.values("category").annotate(category_count=Sum('counts')).exclude(category__isnull=True)
+        queryset = view_filter(filters=filters,view_name='SummaryAwardView')
+        queryset = queryset.values("category").annotate(category_count=Sum('counts'))
 
         results = self.get_results(queryset)
 
         # build response
         return Response({"results": results})
+
 
     def process_with_tables(self, filters):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -603,6 +718,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         # build response
         return Response({"results": results})
+
 
     def get_results(self, queryset):
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
