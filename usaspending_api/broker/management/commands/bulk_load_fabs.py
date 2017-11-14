@@ -242,6 +242,7 @@ class Command(BaseCommand):
             loc_instance.load_country_data()
             loc_instance.load_city_county_data()
             loc_instance.fill_missing_state_data()
+            loc_instance.fill_missing_zip5()
 
             if pop_flag:
                 pop_bulk.append(loc_instance)
