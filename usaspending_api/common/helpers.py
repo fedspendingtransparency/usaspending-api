@@ -88,14 +88,15 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
             raise InvalidParameterException("Cannot obtain data for current fiscal year. At least one quarter must be "
                                             "completed.")
         else:
-            fiscal_quarter = current_fiscal_quarter - 1  # can also do: current_fiscal_date.prev_quarter.quarter
+            # can also do: current_fiscal_date.prev_quarter.quarter
+            fiscal_quarter = current_fiscal_quarter - 1
             fiscal_date = FiscalQuarter(fiscal_year, fiscal_quarter).end
     elif requested_fiscal_year.fiscal_year < current_fiscal_date.fiscal_year:
         # If the retrieving a previous FY, get the last quarter data UNLESS its the most recent quarter, then account
         # for data loading.
         if (current_fiscal_date - requested_fiscal_year.end).days <= 45:
             fiscal_quarter = requested_fiscal_year.end.quarter - 1
-            fiscal_date = getattr(requested_fiscal_year, 'q'+str(fiscal_quarter)).end
+            fiscal_date = getattr(requested_fiscal_year, 'q' + str(fiscal_quarter)).end
         else:
             fiscal_quarter = requested_fiscal_year.end.quarter
             fiscal_date = requested_fiscal_year.end
@@ -111,32 +112,62 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
 def get_pagination(results, limit, page, benchmarks=False):
     if benchmarks:
         start_pagination = time.time()
-    page_metadata = {"page": page, "count": len(results), "next": None, "previous": None, "hasNext": False,
-                     "hasPrevious": False}
+    page_metadata = {
+        "page": page,
+        "count": len(results),
+        "next": None,
+        "previous": None,
+        "hasNext": False,
+        "hasPrevious": False
+    }
     if limit < 1 or page < 1:
         return [], page_metadata
-    page_metadata["hasNext"] = (limit*page < len(results))
-    page_metadata["hasPrevious"] = (page > 1 and limit*(page-2) < len(results))
+
+    page_metadata["hasNext"] = (limit * page < len(results))
+    page_metadata["hasPrevious"] = (page > 1 and limit * (page - 2) < len(results))
+
     if not page_metadata["hasNext"]:
-        paginated_results = results[limit*(page-1):]
+        paginated_results = results[limit * (page - 1):]
     else:
-        paginated_results = results[limit*(page-1):limit*page]
-    page_metadata["next"] = page+1 if page_metadata["hasNext"] else None
-    page_metadata["previous"] = page-1 if page_metadata["hasPrevious"] else None
+        paginated_results = results[limit * (page - 1): limit * page]
+
+    page_metadata["next"] = page + 1 if page_metadata["hasNext"] else None
+    page_metadata["previous"] = page - 1 if page_metadata["hasPrevious"] else None
     if benchmarks:
         logger.info("get_pagination took {} seconds".format(time.time() - start_pagination))
     return paginated_results, page_metadata
 
 
 def get_pagination_metadata(total_return_count, limit, page):
-    page_metadata = {"page": page, "count": total_return_count, "next": None, "previous": None, "hasNext": False,
-                     "hasPrevious": False}
+    page_metadata = {
+        "page": page,
+        "count": total_return_count,
+        "next": None,
+        "previous": None,
+        "hasNext": False,
+        "hasPrevious": False
+    }
     if limit < 1 or page < 1:
         return page_metadata
+
     page_metadata["hasNext"] = (limit * page < total_return_count)
-    page_metadata["hasPrevious"] = (page > 1 and limit*(page-2) < total_return_count)
-    page_metadata["next"] = page+1 if page_metadata["hasNext"] else None
-    page_metadata["previous"] = page-1 if page_metadata["hasPrevious"] else None
+    page_metadata["hasPrevious"] = (page > 1 and limit * (page - 2) < total_return_count)
+    page_metadata["next"] = page + 1 if page_metadata["hasNext"] else None
+    page_metadata["previous"] = page - 1 if page_metadata["hasPrevious"] else None
+    return page_metadata
+
+
+def get_simple_pagination_metadata(results_plus_one, limit, page):
+    has_next = results_plus_one > limit
+    has_previous = page > 1
+
+    page_metadata = {
+        "page": page,
+        "next": page + 1 if has_next else None,
+        "previous": page - 1 if has_previous else None,
+        "hasNext": has_next,
+        "hasPrevious": has_previous
+    }
     return page_metadata
 
 
@@ -157,6 +188,7 @@ def fy(raw_date):
         raise TypeError('{} needs year and month attributes'.format(raw_date))
 
     return result
+
 
 # Raw SQL run during a migration
 FY_PG_FUNCTION_DEF = '''

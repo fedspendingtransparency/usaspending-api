@@ -4,11 +4,11 @@ from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.common.exceptions import InvalidParameterException
 
 loc_dict = {
-        'country': 'location_country_code',
-        'state': 'state_code',
-        'county': 'county_code',
-        'district': 'congressional_code'
-    }
+    'country': 'location_country_code',
+    'state': 'state_code',
+    'county': 'county_code',
+    'district': 'congressional_code'
+}
 
 
 def geocode_filter_locations(scope, values, model):
@@ -20,26 +20,28 @@ def geocode_filter_locations(scope, values, model):
     returns queryset
     """
     or_queryset = None
+    queryset_init = False
 
     for v in values:
         fields = v.keys()
 
         check_location_fields(fields)
 
-        kwargs = {'{0}__{1}'.format(
-            scope, loc_dict.get(loc_scope)
-            ): v.get(loc_scope)
-            for loc_scope in fields
-            if loc_dict.get(loc_scope) is not None}
+        kwargs = {}
+
+        for loc_scope in fields:
+            if loc_dict.get(loc_scope) is not None:
+                key_str = '{0}__{1}__in'.format(scope, loc_dict.get(loc_scope))
+                kwargs[key_str] = get_fields_list(loc_dict.get(loc_scope), v.get(loc_scope))
 
         model_name = apps.get_model('awards', model)
         qs = model_name.objects.filter(**kwargs)
 
-        if or_queryset is not None:
+        if queryset_init:
             or_queryset |= qs
         else:
+            queryset_init = True
             or_queryset = qs
-
     return or_queryset
 
 
@@ -53,3 +55,10 @@ def check_location_fields(fields):
         raise InvalidParameterException(
             'Invalid filter: recipient has incorrect object.'
         )
+
+
+def get_fields_list(scope, field_value):
+    if scope not in ['state_code', 'location_country_code']:
+        return [str(int(field_value)), field_value, str(float(field_value))]
+
+    return [field_value]
