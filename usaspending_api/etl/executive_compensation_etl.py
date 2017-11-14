@@ -29,6 +29,7 @@ TRIM(high_comp_officer4_amount) != '' OR
 TRIM(high_comp_officer5_amount) != ''
 """
 
+
 # Updates all executive compensation data
 def load_executive_compensation(db_cursor):
 
@@ -47,8 +48,8 @@ def load_executive_compensation(db_cursor):
 
         if not (index % 100):
             logger.info('Loading row {} of {} ({})'.format(str(index),
-                                                    str(total_rows),
-                                                    datetime.now() - start_time))
+                                                           str(total_rows),
+                                                           datetime.now() - start_time))
 
         leo_update_dict = {
             "officer_1_name": row['high_comp_officer1_full_na'],
