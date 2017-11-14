@@ -213,7 +213,7 @@ def test_list_agencies(client, award_data):
                     {'name': 'Bureau of Stuff', 'toptier_agency_id': 2, 'cgac_code': '101'},
                     {'name': 'Bureau of Money', 'toptier_agency_id': 3, 'cgac_code': '102'}]
 
-    assert sorted(resp.json()['agencies'], key=sort_function) == sorted(all_toptiers, key=sort_function)
+    assert sorted(resp.json()['agencies']['other_agencies'], key=sort_function) == sorted(all_toptiers, key=sort_function)
     assert resp.json()['sub_agencies'] == []
     assert resp.json()['federal_accounts'] == []
 
