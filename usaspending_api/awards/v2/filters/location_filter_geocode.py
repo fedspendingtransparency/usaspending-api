@@ -7,7 +7,8 @@ loc_dict = {
     'country': 'location_country_code',
     'state': 'state_code',
     'county': 'county_code',
-    'district': 'congressional_code'
+    'district': 'congressional_code',
+    'zip': 'zip5',
 }
 
 
