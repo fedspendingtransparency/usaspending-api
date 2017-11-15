@@ -1,12 +1,13 @@
 import logging
 
 from usaspending_api.references.models import LegalEntity, LegalEntityOfficers
-from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
+from datetime import datetime
 
 logger = logging.getLogger("console")
 
-# Broker SQL query
-FILE_E_QUERY = """
+# We join DUNS and exec comp data, but ignore any empty data sets. Expected count from broker is < 5000.
+EXEC_COMP_QUERY = """
 SELECT DISTINCT ON (e.awardee_or_recipient_uniqu) *
 FROM executive_compensation e
 INNER JOIN (
@@ -14,26 +15,42 @@ INNER JOIN (
     FROM executive_compensation ex
     GROUP BY awardee_or_recipient_uniqu
 ) ex ON e.awardee_or_recipient_uniqu = ex.awardee_or_recipient_uniqu
-     AND e.created_at = ex.MaxDate
-WHERE e.awardee_or_recipient_uniqu IN %s
+    AND e.created_at = ex.MaxDate
+WHERE
+TRIM(high_comp_officer1_full_na) != '' OR
+TRIM(high_comp_officer2_full_na) != '' OR
+TRIM(high_comp_officer3_full_na) != '' OR
+TRIM(high_comp_officer4_full_na) != '' OR
+TRIM(high_comp_officer5_full_na) != '' OR
+TRIM(high_comp_officer1_amount) != '' OR
+TRIM(high_comp_officer2_amount) != '' OR
+TRIM(high_comp_officer3_amount) != '' OR
+TRIM(high_comp_officer4_amount) != '' OR
+TRIM(high_comp_officer5_amount) != ''
 """
 
 
-def load_executive_compensation(db_cursor, duns_list=None):
-    """
-    Loads File E from the broker. db_cursor should be the db_cursor for Broker
-    """
-    if duns_list is None:
-        duns_list = list(set(LegalEntity.objects.all().exclude(recipient_unique_id__isnull=True).values_list("recipient_unique_id", flat=True)))
+# Updates all executive compensation data
+def load_executive_compensation(db_cursor):
 
-    duns_list = [str(x) for x in duns_list]
+    logger.info("Getting DUNS/Exec Comp data from broker...")
 
-    # File E
-    db_cursor.execute(FILE_E_QUERY, [tuple(duns_list)])
-    e_data = dictfetchall(db_cursor)
-    logger.info("Updating Executive Compensation, entries: {}".format(len(e_data)))
+    # Get first page
+    db_cursor.execute(EXEC_COMP_QUERY)
+    exec_comp_query_dict = dictfetchall(db_cursor)
 
-    for row in e_data:
+    total_rows = len(exec_comp_query_dict)
+    logger.info('Updating Executive Compensation Data, {} rows...'.format(total_rows))
+
+    start_time = datetime.now()
+
+    for index, row in enumerate(exec_comp_query_dict, 1):
+
+        if not (index % 100):
+            logger.info('Loading row {} of {} ({})'.format(str(index),
+                                                           str(total_rows),
+                                                           datetime.now() - start_time))
+
         leo_update_dict = {
             "officer_1_name": row['high_comp_officer1_full_na'],
             "officer_1_amount": row['high_comp_officer1_amount'],
@@ -47,10 +64,26 @@ def load_executive_compensation(db_cursor, duns_list=None):
             "officer_5_amount": row['high_comp_officer5_amount'],
         }
 
-        leo = LegalEntityOfficers.objects.get(legal_entity__recipient_unique_id=row['awardee_or_recipient_uniqu'])
-
+        any_data = False
         for attr, value in leo_update_dict.items():
-            if value == "":
-                value = None
-            setattr(leo, attr, value)
-        leo.save()
+            if value and value != "":
+                any_data = True
+                break
+
+        if not any_data:
+            continue
+
+        duns_number = row['awardee_or_recipient_uniqu']
+
+        # Deal with multiples that we have in our LE table
+        legal_entities = LegalEntity.objects.filter(recipient_unique_id=duns_number)
+        if not legal_entities.exists():
+            raise AssertionError('No record in data store for DUNS {}. Aborting.'.format(duns_number))
+
+        for le in legal_entities:
+            leo, _ = LegalEntityOfficers.objects.get_or_create(legal_entity=le)
+            for attr, value in leo_update_dict.items():
+                if value == "":
+                    value = None
+                setattr(leo, attr, value)
+            leo.save()

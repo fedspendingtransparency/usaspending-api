@@ -3,13 +3,15 @@ import logging
 import time
 
 from fiscalyear import *
-from datetime import datetime
 
+from django.db import DEFAULT_DB_ALIAS
 from django.utils.dateparse import parse_date
 from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)
+
+QUOTABLE_TYPES = (str, datetime.date)
 
 
 def check_valid_toptier_agency(agency_id):
@@ -56,6 +58,22 @@ def generate_fiscal_month(date):
     return date.month + 3
 
 
+def generate_raw_quoted_query(queryset):
+    """
+    Generates the raw sql from a queryset with quotable types quoted.
+    This function exists cause queryset.query doesn't quote some types such as
+    dates and strings. If Django is updated to fix this, please use that instead.
+    Note: To add types that should be in quotes in queryset.query, add it to
+          QUOTABLE_TYPES above
+    """
+    sql, params = queryset.query.get_compiler(DEFAULT_DB_ALIAS).as_sql()
+    str_fix_params = []
+    for param in params:
+        str_fix_param = '\'{}\''.format(param) if isinstance(param, QUOTABLE_TYPES) else param
+        str_fix_params.append(str_fix_param)
+    return sql % tuple(str_fix_params)
+
+
 def generate_last_completed_fiscal_quarter(fiscal_year):
     """ Generate the most recently completed fiscal quarter """
 
@@ -71,14 +89,15 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
             raise InvalidParameterException("Cannot obtain data for current fiscal year. At least one quarter must be "
                                             "completed.")
         else:
-            fiscal_quarter = current_fiscal_quarter - 1  # can also do: current_fiscal_date.prev_quarter.quarter
+            # can also do: current_fiscal_date.prev_quarter.quarter
+            fiscal_quarter = current_fiscal_quarter - 1
             fiscal_date = FiscalQuarter(fiscal_year, fiscal_quarter).end
     elif requested_fiscal_year.fiscal_year < current_fiscal_date.fiscal_year:
         # If the retrieving a previous FY, get the last quarter data UNLESS its the most recent quarter, then account
         # for data loading.
         if (current_fiscal_date - requested_fiscal_year.end).days <= 45:
             fiscal_quarter = requested_fiscal_year.end.quarter - 1
-            fiscal_date = getattr(requested_fiscal_year, 'q'+str(fiscal_quarter)).end
+            fiscal_date = getattr(requested_fiscal_year, 'q' + str(fiscal_quarter)).end
         else:
             fiscal_quarter = requested_fiscal_year.end.quarter
             fiscal_date = requested_fiscal_year.end
@@ -86,7 +105,7 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
 
         raise InvalidParameterException("Cannot obtain data for future fiscal years.")
 
-    fiscal_date = datetime.strftime(fiscal_date, '%Y-%m-%d')
+    fiscal_date = datetime.datetime.strftime(fiscal_date, '%Y-%m-%d')
 
     return fiscal_date, fiscal_quarter
 
@@ -94,32 +113,62 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
 def get_pagination(results, limit, page, benchmarks=False):
     if benchmarks:
         start_pagination = time.time()
-    page_metadata = {"page": page, "count": len(results), "next": None, "previous": None, "hasNext": False,
-                     "hasPrevious": False}
+    page_metadata = {
+        "page": page,
+        "count": len(results),
+        "next": None,
+        "previous": None,
+        "hasNext": False,
+        "hasPrevious": False
+    }
     if limit < 1 or page < 1:
         return [], page_metadata
-    page_metadata["hasNext"] = (limit*page < len(results))
-    page_metadata["hasPrevious"] = (page > 1 and limit*(page-2) < len(results))
+
+    page_metadata["hasNext"] = (limit * page < len(results))
+    page_metadata["hasPrevious"] = (page > 1 and limit * (page - 2) < len(results))
+
     if not page_metadata["hasNext"]:
-        paginated_results = results[limit*(page-1):]
+        paginated_results = results[limit * (page - 1):]
     else:
-        paginated_results = results[limit*(page-1):limit*page]
-    page_metadata["next"] = page+1 if page_metadata["hasNext"] else None
-    page_metadata["previous"] = page-1 if page_metadata["hasPrevious"] else None
+        paginated_results = results[limit * (page - 1): limit * page]
+
+    page_metadata["next"] = page + 1 if page_metadata["hasNext"] else None
+    page_metadata["previous"] = page - 1 if page_metadata["hasPrevious"] else None
     if benchmarks:
         logger.info("get_pagination took {} seconds".format(time.time() - start_pagination))
     return paginated_results, page_metadata
 
 
 def get_pagination_metadata(total_return_count, limit, page):
-    page_metadata = {"page": page, "count": total_return_count, "next": None, "previous": None, "hasNext": False,
-                     "hasPrevious": False}
+    page_metadata = {
+        "page": page,
+        "count": total_return_count,
+        "next": None,
+        "previous": None,
+        "hasNext": False,
+        "hasPrevious": False
+    }
     if limit < 1 or page < 1:
         return page_metadata
+
     page_metadata["hasNext"] = (limit * page < total_return_count)
-    page_metadata["hasPrevious"] = (page > 1 and limit*(page-2) < total_return_count)
-    page_metadata["next"] = page+1 if page_metadata["hasNext"] else None
-    page_metadata["previous"] = page-1 if page_metadata["hasPrevious"] else None
+    page_metadata["hasPrevious"] = (page > 1 and limit * (page - 2) < total_return_count)
+    page_metadata["next"] = page + 1 if page_metadata["hasNext"] else None
+    page_metadata["previous"] = page - 1 if page_metadata["hasPrevious"] else None
+    return page_metadata
+
+
+def get_simple_pagination_metadata(results_plus_one, limit, page):
+    has_next = results_plus_one > limit
+    has_previous = page > 1
+
+    page_metadata = {
+        "page": page,
+        "next": page + 1 if has_next else None,
+        "previous": page - 1 if has_previous else None,
+        "hasNext": has_next,
+        "hasPrevious": has_previous
+    }
     return page_metadata
 
 
@@ -140,6 +189,7 @@ def fy(raw_date):
         raise TypeError('{} needs year and month attributes'.format(raw_date))
 
     return result
+
 
 # Raw SQL run during a migration
 FY_PG_FUNCTION_DEF = '''
