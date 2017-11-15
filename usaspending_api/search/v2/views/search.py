@@ -36,6 +36,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
+        USE_NEW_MATVIEW = True
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
         group = json_request.get('group', None)
@@ -52,8 +53,15 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # build sql query filters
         if can_use_view(filters):
             queryset = view_filter(filters, 'SummaryView')
+            print('==================')
+            print("Using Ed's Matview")
         else:
-            queryset = transaction_filter(filters)
+            if USE_NEW_MATVIEW:
+                queryset = matview_transaction_filter(filters)
+                print('====================')
+                print("Using Tony's Matview")
+            else:
+                queryset = transaction_filter(filters)
 
         # define what values are needed in the sql query
         queryset = queryset.values('action_date', 'federal_action_obligation')
@@ -69,6 +77,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             fy_set = queryset.values('fiscal_year')\
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
+            print('====================================')
+            print(generate_raw_quoted_query(fy_set))
             for trans in fy_set:
                 key = {'fiscal_year': str(trans['fiscal_year'])}
                 key = str(key)
@@ -80,6 +90,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 .values('fiscal_year', 'month') \
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
+            print('====================================')
+            print(generate_raw_quoted_query(month_set))
             for trans in month_set:
                 # Convert month to fiscal month
                 fiscal_month = generate_fiscal_month(date(year=2017, day=1, month=trans['month']))
@@ -94,6 +106,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 .values('fiscal_year', 'month') \
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
+            print('====================================')
+            print(generate_raw_quoted_query(month_set))
             for trans in month_set:
                 # Convert month to quarter
                 quarter = FiscalDate(2017, trans['month'], 1).quarter
@@ -834,6 +848,8 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         response = None
         if can_use_view(filters):
+            print('************************************')
+            print('SpendingByAwardCount matview')
             response = self.process_with_view(filters)
         else:
             response = self.process_with_tables(filters)
