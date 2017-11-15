@@ -24,16 +24,13 @@ class Command(BaseCommand):
         start = time.time()
         with connection.cursor() as curs:
             curs.execute(self.CREATE_STATE_ABBREVS)
-            for (table, base_qry) in (
-                ('transaction_fpds', self.FPDS_UPDATER),
-                ('transaction_fabs', self.FABS_UPDATER),
-            ):
-                batches = self.find_batches(curs=curs, table=table, options=options)
+            for (descrip, table_name, base_qry) in self.UPDATERS:
+                batches = self.find_batches(curs=curs, table=table_name, options=options)
                 for (floor, ceiling) in batches:
                     qry = base_qry.format(floor=floor, ceiling=ceiling)
                     curs.execute(qry)
                     elapsed = time.time() - start
-                    logger.info('{}: ID {} to {} updated, {} s'.format(table, floor, ceiling, elapsed))
+                    logger.info('{}: ID {} to {}, {} s'.format(descrip, floor, ceiling, elapsed))
 
     def find_batches(self, curs, table, options):
         batch = options['batch']
@@ -48,23 +45,54 @@ class Command(BaseCommand):
         SELECT MIN(transaction_id) AS floor, MAX(transaction_id) AS ceiling
         FROM   {}"""
 
-    FABS_UPDATER = """
+    # Tuples of ( description, controlling table name, query)
+    UPDATERS = (('Place of performance for FABS', 'transaction_fabs', """
+            UPDATE references_location l
+            SET    state_name = UPPER(tf.place_of_perform_state_nam),
+                state_code = sa.abbrev
+            FROM   transaction_normalized tn
+            JOIN   transaction_fabs tf ON (tf.transaction_id = tn.id)
+            JOIN   state_abbrevs sa ON (UPPER(tf.place_of_perform_state_nam) = sa.name)
+            WHERE  tn.place_of_performance_id = l.location_id
+            AND    l.location_country_code = 'USA'
+            AND    l.state_code IS NULL
+            AND    l.state_name IS NULL
+            AND    l.place_of_performance_flag
+            AND    tf.transaction_id >= {floor}
+            AND    tf.transaction_id < {ceiling};
+            """), ('Recipient for FABS (get state code from name)', 'transaction_fabs', """
         UPDATE references_location l
-        SET    state_name = UPPER(tf.place_of_perform_state_nam),
+        SET    state_name = UPPER(tf.legal_entity_state_name),
                state_code = sa.abbrev
         FROM   transaction_normalized tn
         JOIN   transaction_fabs tf ON (tf.transaction_id = tn.id)
+        JOIN   legal_entity le ON (tn.recipient_id = le.legal_entity_id)
         JOIN   state_abbrevs sa ON (UPPER(tf.place_of_perform_state_nam) = sa.name)
-        WHERE  tn.place_of_performance_id = l.location_id
+        WHERE  le.location_id = l.location_id
+        AND    tf.legal_entity_state_code IS NULL
         AND    l.location_country_code = 'USA'
         AND    l.state_code IS NULL
         AND    l.state_name IS NULL
-        AND    l.place_of_performance_flag
+        AND    l.recipient_flag
         AND    tf.transaction_id >= {floor}
         AND    tf.transaction_id < {ceiling};
-        """
-
-    FPDS_UPDATER = """
+        """), ('Recipient for FABS (get state name from code)', 'transaction_fabs', """
+        UPDATE references_location l
+        SET    state_name = sa.name,
+               state_code = UPPER(REPLACE(tf.legal_entity_state_code, '.', ''))
+        FROM   transaction_normalized tn
+        JOIN   transaction_fabs tf ON (tf.transaction_id = tn.id)
+        JOIN   legal_entity le ON (tn.recipient_id = le.legal_entity_id)
+        JOIN   state_abbrevs sa ON (UPPER(REPLACE(tf.legal_entity_state_code, '.', '')) = sa.abbrev)
+        WHERE  le.location_id = l.location_id
+        AND    tf.legal_entity_state_code IS NOT NULL
+        AND    l.location_country_code = 'USA'
+        AND    l.state_code IS NULL
+        AND    l.state_name IS NULL
+        AND    l.recipient_flag
+        AND    tf.transaction_id >= {floor}
+        AND    tf.transaction_id < {ceiling};
+        """), ('Place of performance for FPDS', 'transaction_fpds', """
         UPDATE references_location l
         SET    state_name = sa.name,
                state_code = UPPER(REPLACE(tf.place_of_performance_state, '.', ''))
@@ -78,7 +106,22 @@ class Command(BaseCommand):
         AND    l.place_of_performance_flag
         AND    tf.transaction_id >= {floor}
         AND    tf.transaction_id < {ceiling};
-        """
+        """), ('Recipient for FPDS (get state name from code)', 'transaction_fpds', """
+        UPDATE references_location l
+        SET    state_name = sa.name,
+               state_code = UPPER(REPLACE(tf.legal_entity_state_code, '.', ''))
+        FROM   transaction_normalized tn
+        JOIN   transaction_fpds tf ON (tf.transaction_id = tn.id)
+        JOIN   legal_entity le ON (tn.recipient_id = le.legal_entity_id)
+        JOIN   state_abbrevs sa ON (UPPER(REPLACE(tf.legal_entity_state_code, '.', '')) = sa.abbrev)
+        WHERE  le.location_id = l.location_id
+        AND    l.location_country_code = 'USA'
+        AND    l.state_code IS NULL
+        AND    l.state_name IS NULL
+        AND    l.recipient_flag
+        AND    tf.transaction_id >= {floor}
+        AND    tf.transaction_id < {ceiling};
+        """))
 
     CREATE_STATE_ABBREVS = """
         CREATE TEMPORARY TABLE state_abbrevs (abbrev TEXT PRIMARY KEY, name TEXT NOT NULL);
