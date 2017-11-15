@@ -1,4 +1,4 @@
-from usaspending_api.awards.models import SummaryAwardView, SummaryView, SumaryPscCodesView, SumaryCfdaNumbersView
+from usaspending_api.awards.models_matviews import SummaryAwardView, SummaryView, SumaryPscCodesView, SumaryCfdaNumbersView
 from usaspending_api.common.exceptions import InvalidParameterException
 
 import logging

@@ -1,4 +1,4 @@
-from usaspending_api.awards.models import MatviewAwardSearch
+from usaspending_api.awards.models_matviews import MatviewAwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 
