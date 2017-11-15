@@ -90,7 +90,7 @@ class Command(BaseCommand):
             "performance_code": "place_of_performance_code",
             "congressional_code": "place_of_performance_congr",
             "county_name": "place_of_perform_county_na",
-            "county_code": "place_of_perform_county_c",
+            "county_code": "place_of_perform_county_co",
             "foreign_location_description": "place_of_performance_forei",
             "state_name": "place_of_perform_state_nam",
             "zip4": "place_of_performance_zip4a",
