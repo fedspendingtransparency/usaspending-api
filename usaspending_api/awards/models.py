@@ -883,8 +883,8 @@ class MatviewAwardSearch(models.Model):
     naics_code = models.TextField()
     naics_description = models.TextField()
     piid = models.TextField()
-    pcs_code = models.TextField()
-    pcs_description = models.TextField()
+    psc_code = models.TextField()
+    psc_description = models.TextField()
 
     type_of_contract_pricing = models.TextField()
     type_set_aside = models.TextField()

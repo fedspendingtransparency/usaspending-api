@@ -26,6 +26,8 @@ from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, c
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda, LegalEntity
 
+from usaspending_api.common.helpers import generate_raw_quoted_query
+
 logger = logging.getLogger(__name__)
 
 
@@ -188,7 +190,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     raise NotImplementedError
 
                 print('====================================')
-                print(queryset.query)
+                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
 
             else:
@@ -205,7 +207,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                     # Begin DB hits here
                     print('====================================')
-                    print(queryset.query)
+                    print(generate_raw_quoted_query(queryset))
                     results = list(agency_set[lower_limit:upper_limit + 1])
 
                 elif scope == "subagency":
@@ -221,7 +223,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                     # Begin DB hits here
                     print('====================================')
-                    print(queryset.query)
+                    print(generate_raw_quoted_query(queryset))
                     results = list(subagency_set[lower_limit:upper_limit + 1])
 
                 elif scope == "office":
@@ -262,7 +264,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     raise NotImplementedError
 
                 print('====================================')
-                print(queryset.query)
+                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
 
             else:
@@ -280,7 +282,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                     # Begin DB hits here
                     print('====================================')
-                    print(queryset.query)
+                    print(generate_raw_quoted_query(queryset))
                     results = list(agency_set[lower_limit:upper_limit + 1])
 
                 elif scope == "subagency":
@@ -297,7 +299,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                     # Begin DB hits here
                     print('====================================')
-                    print(queryset.query)
+                    print(generate_raw_quoted_query(queryset))
                     results = list(subagency_set[lower_limit:upper_limit + 1])
 
                 elif scope == "office":
@@ -322,7 +324,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                     # Begin DB hits here
                     print('====================================')
-                    print(queryset.query)
+                    print(generate_raw_quoted_query(queryset))
                     results = list(queryset[lower_limit:upper_limit + 1])
 
                     page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -337,7 +339,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                     # Begin DB hits here
                     print('====================================')
-                    print(queryset.query)
+                    print(generate_raw_quoted_query(queryset))
                     results = list(queryset[lower_limit:upper_limit + 1])
 
                     page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -381,7 +383,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                 # Begin DB hits here
                 print('====================================')
-                print(queryset.query)
+                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
@@ -406,6 +408,12 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         popular_name=F("cfda_popular_name"),
                         program_title=F("cfda_title")) \
                     .order_by('-aggregated_amount')
+                # Begin DB hits here
+                print('====================================')
+                print(generate_raw_quoted_query(queryset))
+                results = list(queryset[lower_limit:upper_limit + 1])
+                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                results = results[:limit]
             else:
                 queryset = queryset \
                     .filter(
@@ -421,7 +429,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                 # Begin DB hits here
                 print('====================================')
-                print(queryset.query)
+                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
 
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -456,7 +464,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
                 # Begin DB hits here
                 print('====================================')
-                print(queryset.query)
+                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
 
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
