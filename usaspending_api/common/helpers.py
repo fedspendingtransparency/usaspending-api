@@ -3,13 +3,15 @@ import logging
 import time
 
 from fiscalyear import *
-from datetime import datetime
 
+from django.db import DEFAULT_DB_ALIAS
 from django.utils.dateparse import parse_date
 from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)
+
+QUOTABLE_TYPES = (str, datetime.date)
 
 
 def check_valid_toptier_agency(agency_id):
@@ -56,6 +58,22 @@ def generate_fiscal_month(date):
     return date.month + 3
 
 
+def generate_raw_quoted_query(queryset):
+    """
+    Generates the raw sql from a queryset with quotable types quoted.
+    This function exists cause queryset.query doesn't quote some types such as
+    dates and strings. If Django is updated to fix this, please use that instead.
+    Note: To add types that should be in quotes in queryset.query, add it to
+          QUOTABLE_TYPES above
+    """
+    sql, params = queryset.query.get_compiler(DEFAULT_DB_ALIAS).as_sql()
+    str_fix_params = []
+    for param in params:
+        str_fix_param = '\'{}\''.format(param) if isinstance(param, QUOTABLE_TYPES) else param
+        str_fix_params.append(str_fix_param)
+    return sql % tuple(str_fix_params)
+
+
 def generate_last_completed_fiscal_quarter(fiscal_year):
     """ Generate the most recently completed fiscal quarter """
 
@@ -87,7 +105,7 @@ def generate_last_completed_fiscal_quarter(fiscal_year):
 
         raise InvalidParameterException("Cannot obtain data for future fiscal years.")
 
-    fiscal_date = datetime.strftime(fiscal_date, '%Y-%m-%d')
+    fiscal_date = datetime.datetime.strftime(fiscal_date, '%Y-%m-%d')
 
     return fiscal_date, fiscal_quarter
 

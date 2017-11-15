@@ -41,6 +41,11 @@ CSV_S3_ROLE = ""
 CSV_S3_BUCKET_NAME = ""
 CSV_SQS_QUEUE_NAME = ""
 CSV_AWS_REGION = ""
+BULK_DOWNLOAD_LOCAL_PATH = os.path.join(BASE_DIR, 'bulk_downloads', '')
+BULK_DOWNLOAD_S3_ROLE = ""
+BULK_DOWNLOAD_S3_BUCKET_NAME = ""
+BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
+BULK_DOWNLOAD_AWS_REGION = ""
 
 # Application definition
 
@@ -68,6 +73,7 @@ INSTALLED_APPS = [
     'usaspending_api.api_docs',
     'usaspending_api.broker',
     'usaspending_api.download',
+    'usaspending_api.bulk_download',
     'django_spaghetti',
     'simple_history',
     'django_pgviews',

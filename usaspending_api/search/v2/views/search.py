@@ -547,8 +547,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
-            kwargs = {'{}__{}'.format(loc_lookup, 'isnull'): False,
-                      '{}__{}'.format(loc_lookup, 'iregex'): r'^[A-Z]{2}$'}
+            kwargs = {
+                      '{}__location_country_code'.format(scope_field_name): 'USA',
+                      'federal_action_obligation__isnull': False
+                      }
 
             # Only state scope will add its own state code
             # State codes are consistent in db ie AL, AK
@@ -570,16 +572,15 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
             # Adding regex to county/district codes to remove entries with letters since
             # can't be surfaced by map
-            kwargs = {'{}__{}'.format(loc_lookup, 'isnull'): False,
-                      '{}__{}'.format(state_lookup, 'isnull'): False,
-                      '{}__{}'.format(state_lookup, 'iregex'): r'^[A-Z]{2}$',
-                      '{}__{}'.format(loc_lookup, 'iregex'): r'^[0-9]*(\.\d+)?$'}
+            kwargs = {'federal_action_obligation__isnull': False}
 
             if self.geo_layer == 'county':
                 # County name added to aggregation since consistent in db
                 county_name = '{}__{}'.format(scope_field_name, 'county_name')
                 fields_list.append(county_name)
-                self.county_district_queryset(kwargs, fields_list, loc_lookup, scope_field_name)
+                self.county_district_queryset(kwargs, fields_list,
+                                              loc_lookup, state_lookup, scope_field_name
+                                              )
 
                 county_response = {
                     'scope': scope,
@@ -589,7 +590,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
                 return Response(county_response)
             else:
-                self.geo_queryset = self.county_district_queryset(kwargs, fields_list, loc_lookup, scope_field_name)
+                self.county_district_queryset(kwargs, fields_list,
+                                              loc_lookup, state_lookup, scope_field_name
+                                              )
 
                 district_response = {
                     'scope': scope,
@@ -603,6 +606,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Adding additional state filters if specified
         if self.geo_layer_filters:
             self.queryset = self.queryset.filter(**{'{}__{}'.format(loc_lookup, 'in'): self.geo_layer_filters})
+        else:
+            # Adding null filter for state for specific partial index
+            # when not using geocode_filter
+            filter_args['{}__{}'.format(loc_lookup, 'isnull')] = False
 
         self.geo_queryset = self.queryset.filter(**filter_args) \
             .values(*lookup_fields) \
@@ -614,13 +621,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             {
                 'shape_code': x[loc_lookup],
                 'aggregated_amount': x['federal_action_obligation'],
-                'display_name': code_to_state.get(x[loc_lookup])['name'].title()
-            } for x in self.geo_queryset.iterator()
+                'display_name': code_to_state.get(x[loc_lookup], {'name': 'None'}).get('name').title()
+            } for x in self.geo_queryset
         ]
 
         return results
 
-    def county_district_queryset(self, kwargs, fields_list, loc_lookup, scope_field_name):
+    def county_district_queryset(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
         # Filtering queryset to specific county/districts if requested
         # Since geo_layer_filters comes as concat of state fips and county/district codes
         # need to split for the geocode_filter
@@ -629,6 +636,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
                 for x in self.geo_layer_filters
             ], 'TransactionNormalized')
+        else:
+            # Adding null,USA, not number filters for specific partial index
+            # when not using geocode_filter
+            kwargs['{}__{}'.format(loc_lookup, 'isnull')] = False
+            kwargs['{}__{}'.format(state_lookup, 'isnull')] = False
+            kwargs['{}__location_country_code'.format(scope_field_name)] = 'USA'
+            kwargs['{}__{}'.format(loc_lookup, 'iregex')] = r'^[0-9]*(\.\d+)?$'
 
         # Turn county/district codes into float since inconsistent in database
         # Codes in location table ex: '01', '1', '1.0'
@@ -636,7 +650,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.geo_queryset = self.queryset.filter(**kwargs) \
             .values(*fields_list) \
             .annotate(federal_action_obligation=Sum('federal_action_obligation'),
-                      code_as_float=Cast(loc_lookup, FloatField()))
+                      code_as_float=Cast(loc_lookup, FloatField())
+                      )
 
         return self.geo_queryset
 
@@ -650,7 +665,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     'display_name': x[county_name].title() if x[county_name] is not None
                     else x[county_name]
                 }
-                for x in self.geo_queryset.iterator()
+                for x in self.geo_queryset
             ]
 
         return results
@@ -664,7 +679,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     'aggregated_amount': x['federal_action_obligation'],
                     'display_name': x[state_lookup] + '-' +
                     pad_codes(self.geo_layer, x['code_as_float'])
-                } for x in self.geo_queryset.iterator()
+                } for x in self.geo_queryset
             ]
 
         return results
