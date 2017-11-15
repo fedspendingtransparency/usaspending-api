@@ -15,6 +15,7 @@ from functools import total_ordering
 from datetime import date
 from fiscalyear import FiscalDate
 
+from usaspending_api.awards.v2.filters.MaterializedView import view_filter, can_use_view
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
@@ -49,7 +50,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             raise InvalidParameterException('group does not have a valid value')
 
         # build sql query filters
-        queryset = transaction_filter(filters)
+        if can_use_view(filters):
+            queryset = view_filter(filters, 'SummaryView')
+        else:
+            queryset = transaction_filter(filters)
+
         # define what values are needed in the sql query
         queryset = queryset.values('action_date', 'federal_action_obligation')
 
@@ -818,7 +823,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
 
 class SpendingByAwardCountVisualizationViewSet(APIView):
-
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -828,14 +832,50 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
+        response = None
+        if can_use_view(filters):
+            response = self.process_with_view(filters)
+        else:
+            response = self.process_with_tables(filters)
+
+        return response
+
+
+    def process_with_view(self, filters):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        if filters is None:
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
+
+        # build sql query filters
+        queryset = view_filter(filters=filters,view_name='SummaryAwardView')
+        queryset = queryset.values("category").annotate(category_count=Sum('counts')).exclude(category__isnull=True)
+
+        results = self.get_results(queryset)
+
+        # build response
+        return Response({"results": results})
+
+
+    def process_with_tables(self, filters):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        if filters is None:
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
+
         # build sql query filters
         queryset = award_filter(filters)
 
         # define what values are needed in the sql query
         queryset = queryset.values('category')
-        queryset = queryset.annotate(category_count=Count('category')).exclude(category__isnull=True).\
+        queryset = queryset.annotate(category_count=Count('category')).exclude(category__isnull=True). \
             values('category', 'category_count')
 
+        results = self.get_results(queryset)
+
+        # build response
+        return Response({"results": results})
+
+
+    def get_results(self, queryset):
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
         for award in queryset:
@@ -843,5 +883,4 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             result_key += 's' if result_key not in ['other', 'loans'] else ''
             results[result_key] = award['category_count']
 
-        # build response
-        return Response({"results": results})
+        return results

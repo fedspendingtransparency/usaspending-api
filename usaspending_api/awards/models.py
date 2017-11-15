@@ -897,3 +897,96 @@ class MatviewAwardSearch(models.Model):
     class Meta:
         managed = False
         db_table = 'matview_award_search'
+
+
+class SummaryAwardView(models.Model):
+
+    # Fields
+    action_date = models.DateField(blank=True, null=True)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    category = models.TextField(blank=True, null=True)
+    awarding_agency_id = models.TextField(blank=True, null=True)
+    awarding_agency_name = models.TextField(blank=True, null=True)
+    awarding_agency_abbr = models.TextField(blank=True, null=True)
+    funding_agency_id = models.TextField(blank=True, null=True)
+    funding_agency_name = models.TextField(blank=True, null=True)
+    funding_agency_abbr = models.TextField(blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
+                                                    null=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_award_view'
+
+
+class SummaryView(models.Model):
+
+    # Fields
+    action_date = models.DateField(blank=True, null=True)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    awarding_agency_id = models.TextField(blank=True, null=True)
+    awarding_agency_name = models.TextField(blank=True, null=True)
+    awarding_agency_abbr = models.TextField(blank=True, null=True)
+    funding_agency_id = models.TextField(blank=True, null=True)
+    funding_agency_name = models.TextField(blank=True, null=True)
+    funding_agency_abbr = models.TextField(blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
+                                                    null=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_view'
+
+
+class SumaryNaicsCodesView(models.Model):
+
+    # Fields
+    action_date = models.DateField(blank=True, null=True)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    naics = models.TextField(blank=True, null=True)
+    naics_description = models.TextField(blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
+                                                    null=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_view_naics_codes'
+
+
+class SumaryPscCodesView(models.Model):
+
+    # Fields
+    action_date = models.DateField(blank=True, null=True)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    product_or_service_code = models.TextField(blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
+                                                    null=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_view_psc_codes'
+
+
+class SumaryCfdaNumbersView(models.Model):
+
+    # Fields
+    action_date = models.DateField(blank=True, null=True)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    cfda_number = models.TextField(blank=True, null=True)
+    cfda_title = models.TextField(blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
+                                                    null=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_view_cfda_number'
