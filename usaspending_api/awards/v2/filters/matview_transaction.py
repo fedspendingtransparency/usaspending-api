@@ -1,4 +1,4 @@
-from usaspending_api.awards.models import MatviewTransactionFilter
+from usaspending_api.awards.models import MatviewAwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 # TODO: Performance when multiple false values are initially provided
 def matview_transaction_filter(filters):
 
-    queryset = MatviewTransactionFilter.objects.all()
+    queryset = MatviewAwardSearch.objects.all()
     for key, value in filters.items():
         # check for valid key
         if value is None:
@@ -110,10 +110,10 @@ def matview_transaction_filter(filters):
                     kwargs["action_date__lte"] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if queryset_init:
-                    or_queryset |= MatviewTransactionFilter.objects.filter(**kwargs)
+                    or_queryset |= MatviewAwardSearch.objects.filter(**kwargs)
                 else:
                     queryset_init = True
-                    or_queryset = MatviewTransactionFilter.objects.filter(**kwargs)
+                    or_queryset = MatviewAwardSearch.objects.filter(**kwargs)
             if queryset_init:
                 queryset &= or_queryset
 
@@ -123,7 +123,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(type__in=or_queryset)
+                queryset &= MatviewAwardSearch.objects.filter(type__in=or_queryset)
 
         # agencies
         elif key == "agencies":
@@ -153,19 +153,19 @@ def matview_transaction_filter(filters):
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
             if len(funding_toptier) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                     funding_toptier_agency_name__in=funding_toptier
                 )
             if len(funding_subtier) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                     funding_subtier_agency_name__in=funding_subtier
                 )
             if len(awarding_toptier) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                     awarding_toptier_agency_name__in=awarding_toptier
                 )
             if len(awarding_subtier) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                     awarding_subtier_agency_name__in=awarding_subtier
                 )
 
@@ -175,7 +175,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                     recipient_id__in=or_queryset
                 )
 
@@ -196,7 +196,7 @@ def matview_transaction_filter(filters):
         # recipient_location
         elif key == "recipient_locations":
             or_queryset = geocode_filter_locations(
-                'recipient_location', value, 'MatviewTransactionFilter'
+                'recipient_location', value, 'MatviewAwardSearch'
             )
 
             queryset &= or_queryset
@@ -207,7 +207,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                     business_types_description__in=or_queryset
                 )
 
@@ -235,32 +235,32 @@ def matview_transaction_filter(filters):
             for v in value:
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if queryset_init:
-                        or_queryset |= MatviewTransactionFilter.objects.filter(
+                        or_queryset |= MatviewAwardSearch.objects.filter(
                             total_obligation__gt=v["lower_bound"],
                             total_obligation__lt=v["upper_bound"]
                         )
                     else:
                         queryset_init = True
-                        or_queryset = MatviewTransactionFilter.objects.filter(
+                        or_queryset = MatviewAwardSearch.objects.filter(
                             total_obligation__gt=v["lower_bound"],
                             total_obligation__lt=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if queryset_init:
-                        or_queryset |= MatviewTransactionFilter.objects.filter(
+                        or_queryset |= MatviewAwardSearch.objects.filter(
                             total_obligation__gt=v["lower_bound"]
                         )
                     else:
                         queryset_init = True
-                        or_queryset = MatviewTransactionFilter.objects.filter(
+                        or_queryset = MatviewAwardSearch.objects.filter(
                             total_obligation__gt=v["lower_bound"])
                 elif v.get("upper_bound") is not None:
                     if queryset_init:
-                        or_queryset |= MatviewTransactionFilter.objects.filter(
+                        or_queryset |= MatviewAwardSearch.objects.filter(
                             total_obligation__lt=v["upper_bound"]
                         )
                     else:
                         queryset_init = True
-                        or_queryset = MatviewTransactionFilter.objects.filter(
+                        or_queryset = MatviewAwardSearch.objects.filter(
                             total_obligation__lt=v["upper_bound"])
                 else:
                     raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
@@ -273,7 +273,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(award_id__in=or_queryset)
+                queryset &= MatviewAwardSearch.objects.filter(award_id__in=or_queryset)
 
         # program_numbers
         elif key == "program_numbers":
@@ -281,7 +281,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                         cfda_number__in=or_queryset)
 
         # naics_codes
@@ -290,7 +290,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                         naics_code__in=or_queryset)
 
         # psc_codes
@@ -299,7 +299,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                         psc_code__in=or_queryset)
 
         # contract_pricing_type_codes
@@ -308,7 +308,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                         type_of_contract_pricing__in=or_queryset)
 
         # set_aside_type_codes
@@ -317,7 +317,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                         type_set_aside__in=or_queryset)
 
         # extent_competed_type_codes
@@ -326,7 +326,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewTransactionFilter.objects.filter(
+                queryset &= MatviewAwardSearch.objects.filter(
                         extent_competed__in=or_queryset)
 
     return queryset

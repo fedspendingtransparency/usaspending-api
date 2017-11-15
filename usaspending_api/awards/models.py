@@ -853,7 +853,7 @@ class Subaward(DataSourceTrackedModel):
 #         db_table = 'matview_minimal_fabs'
 #         managed = False
 
-class MatviewTransactionFilter(models.Model):
+class MatviewAwardSearch(models.Model):
     # Fields
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
@@ -914,8 +914,8 @@ class MatviewTransactionFilter(models.Model):
     awarding_toptier_agency_abbreviation = models.TextField()
     funding_toptier_agency_abbreviation = models.TextField()
     awarding_subtier_agency_abbreviation = models.TextField()
-    finding_subtier_agency_abbreviation = models.TextField()
+    funding_subtier_agency_abbreviation = models.TextField()
 
     class Meta:
         managed = False
-        db_table = 'matview_transaction_filter'
+        db_table = 'matview_award_search'

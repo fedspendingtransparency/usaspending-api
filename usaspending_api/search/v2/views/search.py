@@ -127,10 +127,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
 
 class SpendingByCategoryVisualizationViewSet(APIView):
-    USE_NEW_MATVIEW = False
 
     @cache_response()
     def post(self, request):
+        USE_NEW_MATVIEW = True
         """Return all budget function/subfunction titles matching the provided search text"""
         # TODO: check logic in name_dict[x]["aggregated_amount"] statements
 
@@ -204,6 +204,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         .order_by('-aggregated_amount')
 
                     # Begin DB hits here
+                    print('====================================')
+                    print(queryset.query)
                     results = list(agency_set[lower_limit:upper_limit + 1])
 
                 elif scope == "subagency":
@@ -218,6 +220,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         .order_by('-aggregated_amount')
 
                     # Begin DB hits here
+                    print('====================================')
+                    print(queryset.query)
                     results = list(subagency_set[lower_limit:upper_limit + 1])
 
                 elif scope == "office":
@@ -232,56 +236,73 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             return Response(response)
 
         elif category == "funding_agency":
-            '''
-MINE:
-96.002  $648,515,538,578.00 Social Security_Retirement Insurance
-93.778  $443,361,034,504.00 Medical Assistance Program
-93.774  $303,036,432,181.00 Medicare_Supplementary Medical Insurance
-93.773  $289,033,730,683.00 Medicare_Hospital Insurance
-96.001  $130,007,131,497.00 Social Security_Disability Insurance
-ORIGINAL:
-96.002  $474,729,456,342.00 Social Security_Retirement Insurance
-93.778  $443,361,034,504.00 Medical Assistance Program
-93.774  $221,656,581,856.00 Medicare_Supplementary Medical Insurance
-93.773  $213,518,383,409.00 Medicare_Hospital Insurance
-96.002  $173,786,082,236.00 (null)
-'''
             potential_scopes = ["agency", "subagency"]
             if scope not in potential_scopes:
                 raise InvalidParameterException("scope does not have a valid value")
 
-            if scope == "agency":
-                agency_set = queryset \
+            if USE_NEW_MATVIEW:
+                if scope == "agency":
+                    queryset = queryset \
+                        .filter(funding_toptier_agency_name__isnull=False) \
+                        .values(
+                            agency_name=F('funding_toptier_agency_name'),
+                            agency_abbreviation=F('funding_toptier_agency_abbreviation')) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount')
+                elif scope == "subagency":
+                    queryset = queryset \
                     .filter(
-                        funding_agency__isnull=False,
-                        funding_agency__toptier_agency__name__isnull=False) \
+                        funding_subtier_agency_name__isnull=False) \
                     .values(
-                        agency_name=F('funding_agency__toptier_agency__name'),
-                        agency_abbreviation=F('funding_agency__toptier_agency__abbreviation')) \
-                    .annotate(
-                        aggregated_amount=Sum('federal_action_obligation')) \
+                        agency_name=F('funding_subtier_agency_name'),
+                        agency_abbreviation=F('funding_subtier_agency_abbreviation')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
                     .order_by('-aggregated_amount')
+                elif scope == "office":
+                    raise NotImplementedError
 
-                # Begin DB hits here
-                results = list(agency_set[lower_limit:upper_limit + 1])
+                print('====================================')
+                print(queryset.query)
+                results = list(queryset[lower_limit:upper_limit + 1])
 
-            elif scope == "subagency":
-                subagency_set = queryset \
-                    .filter(
-                        funding_agency__isnull=False,
-                        funding_agency__subtier_agency__name__isnull=False) \
-                    .values(
-                        agency_name=F('funding_agency__subtier_agency__name'),
-                        agency_abbreviation=F('funding_agency__subtier_agency__abbreviation')) \
-                    .annotate(
-                        aggregated_amount=Sum('federal_action_obligation')) \
-                    .order_by('-aggregated_amount')
+            else:
+                if scope == "agency":
+                    agency_set = queryset \
+                        .filter(
+                            funding_agency__isnull=False,
+                            funding_agency__toptier_agency__name__isnull=False) \
+                        .values(
+                            agency_name=F('funding_agency__toptier_agency__name'),
+                            agency_abbreviation=F('funding_agency__toptier_agency__abbreviation')) \
+                        .annotate(
+                            aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount')
 
-                results = list(subagency_set[lower_limit:upper_limit + 1])
+                    # Begin DB hits here
+                    print('====================================')
+                    print(queryset.query)
+                    results = list(agency_set[lower_limit:upper_limit + 1])
 
-            elif scope == "office":
-                # NOT IMPLEMENTED IN UI
-                raise NotImplementedError
+                elif scope == "subagency":
+                    subagency_set = queryset \
+                        .filter(
+                            funding_agency__isnull=False,
+                            funding_agency__subtier_agency__name__isnull=False) \
+                        .values(
+                            agency_name=F('funding_agency__subtier_agency__name'),
+                            agency_abbreviation=F('funding_agency__subtier_agency__abbreviation')) \
+                        .annotate(
+                            aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount')
+
+                    # Begin DB hits here
+                    print('====================================')
+                    print(queryset.query)
+                    results = list(subagency_set[lower_limit:upper_limit + 1])
+
+                elif scope == "office":
+                    # NOT IMPLEMENTED IN UI
+                    raise NotImplementedError
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
             results = results[:limit]
@@ -292,46 +313,75 @@ ORIGINAL:
 
         elif category == "recipient":
             if scope == "duns":
-                queryset = queryset \
-                    .filter(federal_action_obligation__isnull=False) \
-                    .values(legal_entity_id=F("recipient_id")) \
-                    .annotate(aggregated_amount=Sum("federal_action_obligation")) \
-                    .values("aggregated_amount", "legal_entity_id") \
-                    .order_by("-aggregated_amount")
+                if USE_NEW_MATVIEW:
+                    queryset = queryset \
+                        .values(legal_entity_id=F("recipient_id")) \
+                        .annotate(aggregated_amount=Sum("federal_action_obligation")) \
+                        .values("aggregated_amount", "legal_entity_id", "recipient_name") \
+                        .order_by("-aggregated_amount")
 
-                # Begin DB hits here
-                results = list(queryset[lower_limit:upper_limit + 1])
+                    # Begin DB hits here
+                    print('====================================')
+                    print(queryset.query)
+                    results = list(queryset[lower_limit:upper_limit + 1])
 
-                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-                results = results[:limit]
+                    page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                    results = results[:limit]
+                else:
+                    queryset = queryset \
+                        .filter(federal_action_obligation__isnull=False) \
+                        .values(legal_entity_id=F("recipient_id")) \
+                        .annotate(aggregated_amount=Sum("federal_action_obligation")) \
+                        .values("aggregated_amount", "legal_entity_id") \
+                        .order_by("-aggregated_amount")
 
-                # The below code (here to the `elif`) is necessary due to django ORM
-                # Overview: sort list by legal-entity ids, then fetch le names by id,
-                #   sort into the same order, then add names to result list.
-                #   reorder results by aggregated amount
-                results = sorted(results, key=lambda result: result["legal_entity_id"])
-                # (Small) DB hit here
-                le_names = LegalEntity.objects \
-                    .filter(legal_entity_id__in=[result["legal_entity_id"] for result in results]) \
-                    .order_by('legal_entity_id') \
-                    .values_list('recipient_name', flat=True)
+                    # Begin DB hits here
+                    print('====================================')
+                    print(queryset.query)
+                    results = list(queryset[lower_limit:upper_limit + 1])
 
-                for i in range(len(results)):
-                    results[i]['recipient_name'] = le_names[i]
+                    page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                    results = results[:limit]
 
-                results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
+                    # The below code (here to the `elif`) is necessary due to django ORM
+                    # Overview: sort list by legal-entity ids, then fetch le names by id,
+                    #   sort into the same order, then add names to result list.
+                    #   reorder results by aggregated amount
+                    results = sorted(results, key=lambda result: result["legal_entity_id"])
+                    # (Small) DB hit here
+                    le_names = LegalEntity.objects \
+                        .filter(legal_entity_id__in=[result["legal_entity_id"] for result in results]) \
+                        .order_by('legal_entity_id') \
+                        .values_list('recipient_name', flat=True)
+
+                    for i in range(len(results)):
+                        results[i]['recipient_name'] = le_names[i]
+
+                    results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
 
             elif scope == "parent_duns":
-                queryset = queryset \
-                    .filter(recipient__parent_recipient_unique_id__isnull=False) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                    .values(
-                        'aggregated_amount',
-                        recipient_name=F('recipient__recipient_name'),
-                        parent_recipient_unique_id=F('recipient__parent_recipient_unique_id')) \
-                    .order_by('-aggregated_amount')
+                if USE_NEW_MATVIEW:
+                    queryset = queryset \
+                        .filter(parent_recipient_unique_id__isnull=False) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .values(
+                            'aggregated_amount',
+                            'recipient_name',
+                            'parent_recipient_unique_id') \
+                        .order_by('-aggregated_amount')
+                else:
+                    queryset = queryset \
+                        .filter(recipient__parent_recipient_unique_id__isnull=False) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .values(
+                            'aggregated_amount',
+                            recipient_name=F('recipient__recipient_name'),
+                            parent_recipient_unique_id=F('recipient__parent_recipient_unique_id')) \
+                        .order_by('-aggregated_amount')
 
                 # Begin DB hits here
+                print('====================================')
+                print(queryset.query)
                 results = list(queryset[lower_limit:upper_limit + 1])
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
@@ -344,45 +394,69 @@ ORIGINAL:
             return Response(response)
 
         elif category == "cfda_programs":
-            queryset = queryset \
-                .filter(
-                    assistance_data__cfda_number__isnull=False,
-                    federal_action_obligation__isnull=False) \
-                .values(cfda_program_number=F("assistance_data__cfda_number")) \
-                .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                .values(
-                    "aggregated_amount",
-                    "cfda_program_number",
-                    program_title=F("assistance_data__cfda_title")) \
-                .order_by('-aggregated_amount')
+            if USE_NEW_MATVIEW:
+                queryset = queryset \
+                    .filter(
+                        cfda_number__isnull=False) \
+                    .values(cfda_program_number=F("cfda_number")) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values(
+                        "aggregated_amount",
+                        "cfda_program_number",
+                        popular_name=F("cfda_popular_name"),
+                        program_title=F("cfda_title")) \
+                    .order_by('-aggregated_amount')
+            else:
+                queryset = queryset \
+                    .filter(
+                        assistance_data__cfda_number__isnull=False,
+                        federal_action_obligation__isnull=False) \
+                    .values(cfda_program_number=F("assistance_data__cfda_number")) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values(
+                        "aggregated_amount",
+                        "cfda_program_number",
+                        program_title=F("assistance_data__cfda_title")) \
+                    .order_by('-aggregated_amount')
 
-            # Begin DB hits here
-            results = list(queryset[lower_limit:upper_limit + 1])
+                # Begin DB hits here
+                print('====================================')
+                print(queryset.query)
+                results = list(queryset[lower_limit:upper_limit + 1])
 
-            page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-            results = results[:limit]
+                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                results = results[:limit]
 
-            for trans in results:
-                trans['popular_name'] = None
-                # small DB hit every loop here
-                cfda = Cfda.objects.filter(
-                    program_title=trans['program_title'],
-                    program_number=trans['cfda_program_number']).values('popular_name').first()
-                if cfda:
-                    trans['popular_name'] = cfda['popular_name']
+                for trans in results:
+                    trans['popular_name'] = None
+                    # small DB hit every loop here
+                    cfda = Cfda.objects.filter(
+                        program_title=trans['program_title'],
+                        program_number=trans['cfda_program_number']).values('popular_name').first()
+                    if cfda:
+                        trans['popular_name'] = cfda['popular_name']
 
             response = {"category": category, "limit": limit, "results": results, "page_metadata": page_metadata}
             return Response(response)
 
         elif category == "industry_codes":  # industry_codes
             if scope == "psc":
-                queryset = queryset \
-                    .filter(contract_data__product_or_service_code__isnull=False) \
-                    .values(psc_code=F('contract_data__product_or_service_code')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                    .order_by('-aggregated_amount')
+                if USE_NEW_MATVIEW:
+                    queryset = queryset \
+                        .filter(psc_code__isnull=False) \
+                        .values("psc_code") \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount')
+                else:
+                    queryset = queryset \
+                        .filter(contract_data__product_or_service_code__isnull=False) \
+                        .values(psc_code=F('contract_data__product_or_service_code')) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount')
 
                 # Begin DB hits here
+                print('====================================')
+                print(queryset.query)
                 results = list(queryset[lower_limit:upper_limit + 1])
 
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -393,15 +467,26 @@ ORIGINAL:
                 return Response(response)
 
             elif scope == "naics":
-                queryset = queryset \
-                    .filter(contract_data__naics__isnull=False) \
-                    .values(naics_code=F('contract_data__naics')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                    .order_by('-aggregated_amount') \
-                    .values(
-                        'naics_code',
-                        'aggregated_amount',
-                        naics_description=F('contract_data__naics_description'))
+                if USE_NEW_MATVIEW:
+                    queryset = queryset \
+                        .filter(naics_code__isnull=False) \
+                        .values("naics_code") \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount') \
+                        .values(
+                            'naics_code',
+                            'aggregated_amount',
+                            'naics_description')
+                else:
+                    queryset = queryset \
+                        .filter(contract_data__naics__isnull=False) \
+                        .values(naics_code=F('contract_data__naics')) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount') \
+                        .values(
+                            'naics_code',
+                            'aggregated_amount',
+                            naics_description=F('contract_data__naics_description'))
 
                 # Begin DB hits here
                 results = list(queryset[lower_limit:upper_limit + 1])
