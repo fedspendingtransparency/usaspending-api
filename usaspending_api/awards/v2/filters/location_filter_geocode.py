@@ -3,13 +3,6 @@ from django.apps import apps
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.common.exceptions import InvalidParameterException
 
-loc_dict = {
-    'country': 'location_country_code',
-    'state': 'state_code',
-    'county': 'county_code',
-    'district': 'congressional_code'
-}
-
 
 def geocode_filter_locations(scope, values, model, use_matview=False):
     """
@@ -19,10 +12,7 @@ def geocode_filter_locations(scope, values, model, use_matview=False):
     model- awards or transactions will create queryset for model
     returns queryset
     """
-
-    q_str = '{0}__{1}__in'
-    if use_matview:
-        q_str = '{0}_{1}_in'
+    q_str, loc_dict = return_query_strings(use_matview)
 
     queryset_init = False
 
@@ -62,7 +52,25 @@ def check_location_fields(fields):
 
 
 def get_fields_list(scope, field_value):
-    if scope not in ['state_code', 'location_country_code']:
+    if scope not in ['state_code', 'location_country_code', 'country_code']:
         return [str(int(field_value)), field_value, str(float(field_value))]
 
     return [field_value]
+
+
+def return_query_strings(use_matview):
+    # Returns query strings according based on mat view or database
+    loc_dict = {
+        'country': 'location_country_code',
+        'state': 'state_code',
+        'county': 'county_code',
+        'district': 'congressional_code'
+    }
+
+    q_str = '{0}__{1}__in'
+
+    if use_matview:
+        q_str = '{0}_{1}__in'
+        loc_dict['country'] = 'country_code'
+
+    return q_str, loc_dict
