@@ -4,130 +4,144 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.awards.models import Award, TransactionNormalized
-from usaspending_api.references.models import Location, Agency, ToptierAgency, SubtierAgency
+from usaspending_api.search.tests.test_mock_data_search \
+    import budget_function_data, all_filters
 
 
 @pytest.fixture
-def budget_function_data(db):
+def incorrect_location_data(db):
+    country_usa = mommy.make(
+        'references.RefCountryCode',
+        country_code='USA'
+    )
 
-    loc1 = mommy.make(
-        Location,
-        location_id=1)
+    location_wrong_state = mommy.make(
+        'references.Location',
+        location_id=10,
+        location_country_code=country_usa,
+        state_code='*'
+    )
 
-    ttagency1 = mommy.make(
-        ToptierAgency,
-        toptier_agency_id=1)
-    stagency1 = mommy.make(
-        SubtierAgency,
-        subtier_agency_id=1,)
+    location_wrong_county = mommy.make(
+        'references.Location',
+        location_id=11,
+        location_country_code=country_usa,
+        state_code='AL',
+        county_code='9.0',
+        county_name='COUNTY'
 
-    agency1 = mommy.make(
-        Agency,
-        id=1,
-        toptier_agency=ttagency1,
-        subtier_agency=stagency1)
+    )
 
-    award1 = mommy.make(
-        Award,
-        id=1,
-        description="test",
-        type="011",
-        category="business",
-        period_of_performance_start_date="1111-11-11",
-        place_of_performance=loc1,
-        awarding_agency=agency1,
-        funding_agency=agency1,
-        total_obligation=1000000.10)
+    location_wrong_district = mommy.make(
+        'references.Location',
+        location_id=12,
+        location_country_code=country_usa,
+        state_code='AL',
+        congressional_code='AL09',
 
-    trans1 = mommy.make(
-        TransactionNormalized,
-        action_date="2222-2-22",
-        id=1,
-        award=award1,
-        federal_action_obligation=50)
+    )
+
+    transaction_state = mommy.make(
+        'awards.TransactionNormalized',
+        id=12345,
+        place_of_performance=location_wrong_state,
+        federal_action_obligation=50
+    )
+
+    transaction_county = mommy.make(
+        'awards.TransactionNormalized',
+        id=12346,
+        place_of_performance=location_wrong_county,
+        federal_action_obligation=100
+    )
+
+    transaction_county = mommy.make(
+        'awards.TransactionNormalized',
+        id=12347,
+        place_of_performance=location_wrong_district,
+        federal_action_obligation=0
+    )
 
 
 @pytest.mark.django_db
 def test_spending_by_geography_success(client, budget_function_data):
 
-    # test for NAICS_description exact match
+    # test for required filters
     resp = client.post(
         '/api/v2/search/spending_by_geography',
         content_type='application/json',
         data=json.dumps({
             "scope": "place_of_performance",
+            "geo_layer": "state",
             "filters": {
-                "keyword": "test"
+                'recipient_locations': [{'country': 'ABC'}]
             }
         }))
     assert resp.status_code == status.HTTP_200_OK
-    all_filters = {
-        "keyword": "test",
-        "time_period": [
-            {
-                "start_date": "2016-10-01",
-                "end_date": "2017-09-30"
-            }
-        ],
-        'award_type_codes': ['011', '020'],
-        "agencies": [
-            {
-                "type": "funding",
-                "tier": "toptier",
-                "name": "Office of Pizza"
-            },
-            {
-                "type": "awarding",
-                "tier": "subtier",
-                "name": "Personal Pizza"
-            }
-        ],
-        "legal_entities": [1, 2, 3],
-        'recipient_scope': "domestic",
-        "recipient_locations": [1, 2, 3],
-        "recipient_type_names": [
-            "Small Business",
-            "Alaskan Native Owned Business"],
-        "place_of_performance_scope": "domestic",
-        "place_of_performance_locations": [1, 2, 3],
-        "award_type_codes": ["A", "B", "03"],
-        "award_ids": [1, 2, 3],
-        "award_amounts": [
-            {
-                "lower_bound": 1000000.00,
-                "upper_bound": 25000000.00
-            },
-            {
-                "upper_bound": 1000000.00
-            },
-            {
-                "lower_bound": 500000000.00
-            }
-        ],
-        "program_numbers": ["10.553"],
-        "naics_codes": ["336411"],
-        "psc_codes": ["1510"],
-        "contract_pricing_type_codes": ["SAMPLECODE_CPTC"],
-        "set_aside_type_codes": ["SAMPLECODE123"],
-        "extent_competed_type_codes": ["SAMPLECODE_ECTC"]
-    }
+
+    # test all filters
     resp = client.post(
         '/api/v2/search/spending_by_geography',
         content_type='application/json',
         data=json.dumps({
-            "scope": "place_of_performance",
-            "filters": all_filters
+            "scope": "recipient_location",
+            "geo_layer": "county",
+            "filters": all_filters()
         }))
-    # test for similar matches (with no duplicates)
+    assert resp.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db
-def test_naics_autocomplete_failure(client):
+def test_spending_by_geography_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
         '/api/v2/search/spending_by_geography/',
         content_type='application/json',
-        data=json.dumps({}))
+        data=json.dumps({'scope': 'test', 'filter': {}}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_spending_by_geography_incorrect_state(client, incorrect_location_data):
+    resp = client.post(
+        '/api/v2/search/spending_by_geography/',
+        content_type='application/json',
+        data=json.dumps({
+            'scope': 'place_of_performance',
+            'geo_layer': 'state',
+            'filter': {}
+        })
+    )
+
+    assert resp.data['results'][0]['display_name'] in ['Alabama', 'None']
+
+
+@pytest.mark.django_db
+def test_spending_by_geography_incorrect_county(client, incorrect_location_data):
+    resp = client.post(
+        '/api/v2/search/spending_by_geography/',
+        content_type='application/json',
+        data=json.dumps({
+            'scope': 'place_of_performance',
+            'geo_layer': 'county',
+            'filter': {}
+        })
+    )
+
+    assert resp.data['results'][0]['display_name'] == 'County'
+
+
+@pytest.mark.django_db
+def test_spending_by_geography_incorrect_district(client, incorrect_location_data):
+    resp = client.post(
+        '/api/v2/search/spending_by_geography/',
+        content_type='application/json',
+        data=json.dumps({
+            'scope': 'place_of_performance',
+            'geo_layer': 'district',
+            'filter': {}
+        })
+    )
+
+    assert len(resp.data['results']) == 0
