@@ -17,11 +17,7 @@ BATCH_DOWNLOAD_SIZE = 10000
 class Command(BaseCommand):
     def add_arguments(self, parser):
 
-        parser.add_argument('-c', '--contracts', action='store_true', help="Fix locations for contracts")
-        parser.add_argument('-a', '--assistance', action='store_true', help="Fix locations for assistance")
         parser.add_argument('--batch', type=int, default=BATCH_DOWNLOAD_SIZE, help="ID range to update per query")
-        parser.add_argument('--limit', type=int, default=100000000, help="Max # of awards to fix")
-        parser.add_argument('--fiscal-year', type=int, help="Fix only this FY")
 
     def handle(self, *args, **options):
 
