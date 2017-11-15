@@ -497,6 +497,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                             naics_description=F('contract_data__naics_description'))
 
                 # Begin DB hits here
+                print('====================================')
+                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
 
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)

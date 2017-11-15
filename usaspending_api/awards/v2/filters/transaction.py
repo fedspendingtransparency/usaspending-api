@@ -7,7 +7,6 @@ from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_fi
 import logging
 logger = logging.getLogger(__name__)
 
-
 # TODO: Performance when multiple false values are initially provided
 def transaction_filter(filters):
 

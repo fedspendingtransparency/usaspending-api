@@ -223,7 +223,7 @@ def matview_transaction_filter(filters):
         # place_of_performance
         elif key == "place_of_performance_locations":
             or_queryset = geocode_filter_locations(
-                'place_of_performance', value, 'TransactionNormalized'
+                'place_of_performance', value, 'MatviewAwardSearch'
             )
 
             queryset &= or_queryset
