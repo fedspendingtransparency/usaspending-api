@@ -48,7 +48,6 @@ class Command(BaseCommand):
 
         parser.add_argument('-c', '--contracts', action='store_true', help="Fix locations for contracts")
         parser.add_argument('-a', '--assistance', action='store_true', help="Fix locations for assistance")
-        parser.add_argument('--piid', help="Reload single award, this PIID")
         parser.add_argument('--limit', type=int, default=100000000, help="Max # of awards to fix")
         parser.add_argument('--fiscal-year', type=int, help="Fix only this FY")
         parser.add_argument(
@@ -69,178 +68,96 @@ class Command(BaseCommand):
         fixer.fix_all_rows()
 
 
-def chunks(source_iterable, size=BATCH_DOWNLOAD_SIZE):
-    """Given an iterable, yield smaller iterables of size `size`"""
-    c = count()
-    for _, g in groupby(source_iterable, lambda _: next(c) // size):
-        yield g
-
-
 class LocationFixer:
+
     def __init__(self, options):
+        pass
 
-        self.broker_cursor = connections['data_broker'].cursor()
-        self.options = options
-        self.set_lookup_maps()
+    def loc_from_txn(self, data):
 
-    def set_lookup_maps(self):
-        self.country_code_map = {country.country_code: country for country in RefCountryCode.objects.all()}
+        data['data_source'] = 'DBR'
 
-    @log_time
-    def fix_all_rows(self):
+        if ((not data['location_country_code']) and (data['performance_code'] != '00FORGN')):
+            data['location_country_code'] = 'USA'
 
-        broker_ids = self.broker_ids_for_bad_pops()
-        broker_ids = self.apply_option_filters(broker_ids, self.options)
-        for some_broker_ids in chunks(broker_ids):
-            logger.info('loading (up to) {} broker rows'.format(BATCH_DOWNLOAD_SIZE))
-            broker_rows = self.get_broker_data(some_broker_ids)
-            self.fix_batch_of_places_of_performance(broker_rows)
-
-        broker_ids = self.broker_ids_for_bad_recipients()
-        broker_ids = self.apply_option_filters(broker_ids, self.options)
-        for some_broker_ids in chunks(broker_ids):
-            logger.info('loading (up to) {} broker rows'.format(BATCH_DOWNLOAD_SIZE))
-            broker_rows = self.get_broker_data(some_broker_ids)
-            self.fix_batch_of_recipients(broker_rows)
-
-    def apply_option_filters(self, query, options):
-
-        fiscal_year = options.get('fiscal_year')
-        if fiscal_year:
-            query = query.filter(transaction__fiscal_year=fiscal_year)
-
-        only_final_transactions = options.get('only_final_transactions')
-        if only_final_transactions:
-            # for speed, only fix final transaction of each award,
-            # which are the only ones now surfaced on website
-            query = query.filter(transaction__latest_for_award__isnull=False)
-
-        return query.all()[:options['limit']]
-
-    @log_time
-    def fix_batch_of_places_of_performance(self, broker_data):
-
-        value_map = {"place_of_performance_flag": True}
-        create_count = change_count = 0
-        for row in broker_data:
-            (loc, created) = self.location_from_broker_row(row, field_map=self.pop_field_map, value_map=dict(value_map))
-            create_count += int(created)
-            for txn in self.txns_from_broker_row(row).all():
-                if txn.transaction.place_of_performance != loc:
-                    change_count += 1
-                    txn.transaction.place_of_performance = loc
-                    txn.transaction.save()
-                if txn.transaction_id == txn.transaction.award.latest_transaction_id:
-                    txn.transaction.award.place_of_performance = loc
-                    txn.transaction.award.save()
-        return (change_count, create_count)
-
-    @log_time
-    def fix_batch_of_recipients(self, broker_data):
-
-        value_map = {"recipient_flag": True}
-        create_count = change_count = 0
-        for row in broker_data:
-            for txn in self.txns_from_broker_row(row).all():
-                recip = txn.transaction.recipient
-                last_txn = recip.transactionnormalized_set.order_by('-action_date')[0]
-                if txn.transaction == last_txn:
-                    (loc, created) = self.location_from_broker_row(
-                        row, field_map=self.le_field_map, value_map=dict(value_map))
-                    create_count += int(created)
-                    if recip.location != loc:
-                        change_count += 1
-                        recip.location = loc
-                        recip.save()
-        return (change_count, create_count)
-
-    def location_from_broker_row(self, broker_row, field_map, value_map):
-        """Find or create Location from a row of broker data"""
-
-        row = canonicalize_location_dict(broker_row)
-
-        # THIS ASSUMPTION DOES NOT HOLD FOR FPDS SINCE IT DOES NOT HAVE A PLACE OF PERFORMANCE CODE
-        # We can assume that if the country code is blank and the place of performance code is NOT '00FORGN', then
-        # the country code is USA
-        # if pop_flag and not country_code and pop_code != '00FORGN':
-        #     row[field_map.get('location_country_code')] = 'USA'
-
-        # Get country code obj
-        location_country_code = self.country_code_map.get(row[field_map.get('location_country_code')])
-
-        # Fix state code periods
-        state_code = row.get(field_map.get('state_code'))
-        if state_code is not None:
-            value_map.update({'state_code': state_code.replace('.', '')})
-
-        if location_country_code:
-            value_map.update({
-                'location_country_code': location_country_code,
-                'country_name': location_country_code.country_name
-            })
-
-            if location_country_code.country_code != 'USA':
-                value_map.update({'state_code': None, 'state_name': None})
+        # if present, country code determines name
+        country_code_obj = RefCountryCode.objects.filter(country_code=data['location_country_code']).first()
+        if country_code_obj:
+            data['location_country_code'] = country_code_obj
+            data['country_name'] = country_code_obj.country_name
         else:
-            # no country found for this code
-            value_map.update({'location_country_code': None, 'country_name': None})
+            # no country found
+            data['location_country_code'] = None
+            data['country_name'] = None
 
-        location_instance_data = load_data_into_model(
-            Location(), row, value_map=value_map, field_map=field_map, as_dict=True)
+        if data.get('state_code'):
+            data['state_code'] = data['state_code'].replace('.', '')
+        if data['location_country_code'].country_code != 'USA':
+            data['state_code'] = None
+            data['state_name'] = None
 
-        loc = Location.objects.filter(**location_instance_data).order_by('create_date').first()
-        if loc:
-            created = False
-        else:
-            loc = Location(**location_instance_data)
-            loc.save()
-            created = True
-        return (loc, created)
+        loc_instance = Location(**data)
+        loc_instance.load_country_data()
+        loc_instance.load_city_county_data()
+        loc_instance.fill_missing_state_data()
+        # fix zip code!
+
+        return loc_instance
+
+
 
 
 class FABSLocationFixer(LocationFixer):
 
-    BROKER_COLUMNS = '*'
+    @log_time
+    def fix_all_rows(self):
 
-    def broker_ids_for_bad_pops(self):
-        """Get published_award_financial_assistance_id for places of performance with blank state code"""
+        overall_start = time.time()
+        to_create = []
 
-        result = TransactionFABS.objects.only('published_award_financial_assistance_id'). \
-            filter(transaction__place_of_performance__state_code__isnull=True). \
-            filter(transaction__place_of_performance__location_country_code__country_code='USA')
+        logger.info('Fixing Location.state, FABS, places of performance')
 
-        return result
+        for (i, inst) in enumerate(TransactionFABS.objects \
+            .filter(transaction__place_of_performance__state_code__isnull=True) \
+            .filter(transaction__place_of_performance__location_country_code='USA')):
 
-    def get_broker_data(self, broker_ids):
+            row = {k: getattr(inst, v) for (k, v) in self.pop_field_map.items()}
+            row['place_of_performance_flag'] = True
+            to_create.append(self.loc_from_txn(row))
 
-        id_list = ','.join(b_id.published_award_financial_assistance_id for b_id in broker_ids)
-        query = """SELECT {}
-            FROM published_award_financial_assistance
-            WHERE published_award_financial_assistance_id IN ({})""". \
-            format(self.BROKER_COLUMNS, id_list)
+            if not i % 1000:
+                Location.objects.bulk_create(to_create)
+                to_create = []
+                elapsed = time.time()
+                logger.info('Total: {} rows, {} s'.format(i, elapsed - overall_start))
 
-        self.broker_cursor.execute(query)
-        return dictfetchall(self.broker_cursor)
+        elapsed = time.time()
+        logger.info('Total rows: {}, {} s'.format(i, elapsed - overall_start))
+        logger.info('Fixing state info, FABS, recipients')
 
-    def txns_from_broker_row(self, row):
-        return TransactionFABS.objects.filter(
-            published_award_financial_assistance_id=row['published_award_financial_assistance_id'])
+        to_create = []
+        import ipdb; ipdb.set_trace()
+        for (i, inst) in enumerate(TransactionFABS.objects \
+            .filter(transaction__recipient__location__state_code__isnull=True) \
+            .filter(transaction__recipient__location__location_country_code='USA')):
 
-    def broker_ids_for_bad_recipients(self):
-        """Get published_award_financial_assistance_id for recipient locations with blank state code"""
+            row = {k: getattr(inst, v) for (k, v) in self.le_field_map.items()}
+            row['recipient_flag'] = True
+            to_create.append(self.loc_from_txn(row))
 
-        result = TransactionFABS.objects.only('published_award_financial_assistance_id'). \
-            filter(transaction__recipient__location__state_code__isnull=True). \
-            filter(transaction__recipient__location__location_country_code__country_code='USA')
+            if not i % 1000:
+                Location.objects.bulk_create(to_create)
+                to_create = []
+                elapsed = time.time()
+                logger.info('Total: {} rows, {} s'.format(i, elapsed - overall_start))
 
-        return result
 
     pop_field_map = {
         "city_name": "place_of_performance_city",
         "performance_code": "place_of_performance_code",
         "congressional_code": "place_of_performance_congr",
         "county_name": "place_of_perform_county_na",
-        "county_code": "place_of_perform_county_co",
+        # "county_code": "place_of_perform_county_co",
         "foreign_location_description": "place_of_performance_forei",
         "state_name": "place_of_perform_state_nam",
         "zip4": "place_of_performance_zip4a",
