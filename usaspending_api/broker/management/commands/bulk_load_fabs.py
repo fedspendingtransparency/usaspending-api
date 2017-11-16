@@ -40,7 +40,7 @@ pop_field_map = {
     "performance_code": "place_of_performance_code",
     "congressional_code": "place_of_performance_congr",
     "county_name": "place_of_perform_county_na",
-    "county_code": "place_of_perform_county_c",
+    "county_code": "place_of_perform_county_co",
     "foreign_location_description": "place_of_performance_forei",
     "state_name": "place_of_perform_state_nam",
     "zip4": "place_of_performance_zip4a",
@@ -242,6 +242,7 @@ class Command(BaseCommand):
             loc_instance.load_country_data()
             loc_instance.load_city_county_data()
             loc_instance.fill_missing_state_data()
+            loc_instance.fill_missing_zip5()
 
             if pop_flag:
                 pop_bulk.append(loc_instance)
@@ -382,6 +383,7 @@ class Command(BaseCommand):
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
+                "last_modified_date": row['modified_at']
             }
 
             fad_field_map = {
