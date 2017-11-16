@@ -196,7 +196,7 @@ def matview_transaction_filter(filters):
         # recipient_location
         elif key == "recipient_locations":
             or_queryset = geocode_filter_locations(
-                'recipient_location', value, 'MatviewAwardSearch'
+                'recipient_location', value, 'MatviewAwardSearch', True
             )
 
             queryset &= or_queryset
@@ -223,7 +223,7 @@ def matview_transaction_filter(filters):
         # place_of_performance
         elif key == "place_of_performance_locations":
             or_queryset = geocode_filter_locations(
-                'place_of_performance', value, 'MatviewAwardSearch'
+                'pop', value, 'MatviewAwardSearch', True
             )
 
             queryset &= or_queryset
