@@ -802,7 +802,6 @@ class Subaward(DataSourceTrackedModel):
     # Foreign keys
     award = models.ForeignKey(Award, models.CASCADE, related_name="subawards")
     recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_subawards", null=True)
     awarding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="awarding_subawards", null=True)
     funding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="funding_subawards", null=True)
@@ -819,12 +818,13 @@ class Subaward(DataSourceTrackedModel):
     award_report_fy_month = models.IntegerField()
     award_report_fy_year = models.IntegerField()
 
-    naics = models.TextField(blank=True, null=True, verbose_name="NAICS",
-                             help_text="Specified which industry the work for this transaction falls into. A "
-                                       "6-digit code")
-    naics_description = models.TextField(blank=True, null=True, verbose_name="NAICS Description",
-                                         help_text="A plain text description of the NAICS code")
+    broker_award_id = models.IntegerField(blank=False, null=False, default=0, verbose_name="FSRS Award ID in the "
+                                                                                           "broker",
+                                          help_text="The ID of the parent award in broker", db_index=True)
+    internal_id = models.TextField(blank=False, null=False, default="", verbose_name="Internal ID of the parent award",
+                                   help_text="The internal of the parent award in broker from FSRS", db_index=True)
+    award_type = models.TextField(blank=False, null=False, default="unknown", verbose_name="Award Type",
+                                  help_text="Whether the parent award is a procurement or a grant", db_index=True)
 
     class Meta:
         managed = True
-        unique_together = (('subaward_number', 'award'),)
