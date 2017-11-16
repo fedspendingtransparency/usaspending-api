@@ -1,16 +1,6 @@
 import warnings
-
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.db.models import Q
-
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.models import (
-    Agency, Cfda, LegalEntity, Location, ObjectClass, RefProgramActivity)
-from usaspending_api.common.models import DataSourceTrackedModel
-from usaspending_api.common.helpers import fy
-from django.core.cache import caches, CacheKeyWarning
+from django.core.cache import CacheKeyWarning
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
@@ -100,8 +90,8 @@ class SummaryAwardView(models.Model):
     funding_agency_id = models.TextField(blank=True, null=True)
     funding_agency_name = models.TextField(blank=True, null=True)
     funding_agency_abbr = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
-                                                    null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
+                                                    blank=True, null=True)
     counts = models.IntegerField()
 
     class Meta:
@@ -121,8 +111,8 @@ class SummaryView(models.Model):
     funding_agency_id = models.TextField(blank=True, null=True)
     funding_agency_name = models.TextField(blank=True, null=True)
     funding_agency_abbr = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
-                                                    null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
+                                                    blank=True, null=True)
     counts = models.IntegerField()
 
     class Meta:
@@ -138,8 +128,8 @@ class SumaryNaicsCodesView(models.Model):
     type = models.TextField(blank=True, null=True)
     naics = models.TextField(blank=True, null=True)
     naics_description = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
-                                                    null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
+                                                    blank=True, null=True)
     counts = models.IntegerField()
 
     class Meta:
@@ -154,8 +144,8 @@ class SumaryPscCodesView(models.Model):
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     product_or_service_code = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
-                                                    null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
+                                                    blank=True, null=True)
     counts = models.IntegerField()
 
     class Meta:
@@ -171,8 +161,8 @@ class SumaryCfdaNumbersView(models.Model):
     type = models.TextField(blank=True, null=True)
     cfda_number = models.TextField(blank=True, null=True)
     cfda_title = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
-                                                    null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
+                                                    blank=True, null=True)
     counts = models.IntegerField()
 
     class Meta:

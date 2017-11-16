@@ -1,4 +1,6 @@
 from usaspending_api.awards.models_matviews import MatviewAwardSearch
+from usaspending_api.awards.models import LegalEntity
+from usaspending_api.references.models import NAICS, PSC
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 
@@ -50,7 +52,7 @@ def matview_transaction_filter(filters):
                 recipient_name__icontains=keyword)
             if recipient_list.exists():
                 recipient_match = True
-                recipient_qs = queryset.filter(recipient__in=recipient_list)
+                recipient_qs = queryset.filter(recipient_id__in=recipient_list)
 
             naics_match = False
             if keyword.isnumeric():
@@ -60,7 +62,7 @@ def matview_transaction_filter(filters):
                     description__icontains=keyword).values('code')
             if naics_list.exists():
                 naics_match = True
-                naics_qs = queryset.filter(contract_data__naics__in=naics_list)
+                naics_qs = queryset.filter(naics_code__in=naics_list)
 
             psc_match = False
             if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
@@ -69,7 +71,7 @@ def matview_transaction_filter(filters):
                 psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
             if psc_list.exists():
                 psc_match = True
-                psc_qs = queryset.filter(contract_data__product_or_service_code__in=psc_list)
+                psc_qs = queryset.filter(psc_code__in=psc_list)
 
             duns_match = False
             non_parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
@@ -79,14 +81,14 @@ def matview_transaction_filter(filters):
             duns_list = non_parent_duns_list | parent_duns_list
             if duns_list.exists():
                 duns_match = True
-                duns_qs = queryset.filter(recipient__in=duns_list)
+                duns_qs = queryset.filter(recipient_id__in=duns_list)
 
-            piid_qs = queryset.filter(contract_data__piid=keyword)
-            fain_qs = queryset.filter(assistance_data__fain=keyword)
+            piid_qs = queryset.filter(piid=keyword)
+            # fain_qs = queryset.filter(fain=keyword)
 
             # Always filter on fain/piid because fast:
             queryset = piid_qs
-            queryset |= fain_qs
+            # queryset |= fain_qs
             # if description_match:
             #     queryset |= description_qs
             if recipient_match:

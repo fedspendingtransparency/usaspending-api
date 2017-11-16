@@ -198,13 +198,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         .order_by('-aggregated_amount')
                 elif scope == "subagency":
                     queryset = queryset \
-                    .filter(
-                        awarding_subtier_agency_name__isnull=False) \
-                    .values(
-                        agency_name=F('awarding_subtier_agency_name'),
-                        agency_abbreviation=F('awarding_subtier_agency_abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
-                    .order_by('-aggregated_amount')
+                        .filter(
+                            awarding_subtier_agency_name__isnull=False) \
+                        .values(
+                            agency_name=F('awarding_subtier_agency_name'),
+                            agency_abbreviation=F('awarding_subtier_agency_abbreviation')) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation'))\
+                        .order_by('-aggregated_amount')
                 elif scope == "office":
                     raise NotImplementedError
 
@@ -272,13 +272,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         .order_by('-aggregated_amount')
                 elif scope == "subagency":
                     queryset = queryset \
-                    .filter(
-                        funding_subtier_agency_name__isnull=False) \
-                    .values(
-                        agency_name=F('funding_subtier_agency_name'),
-                        agency_abbreviation=F('funding_subtier_agency_abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
-                    .order_by('-aggregated_amount')
+                        .filter(
+                            funding_subtier_agency_name__isnull=False) \
+                        .values(
+                            agency_name=F('funding_subtier_agency_name'),
+                            agency_abbreviation=F('funding_subtier_agency_abbreviation')) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation'))\
+                        .order_by('-aggregated_amount')
                 elif scope == "office":
                     raise NotImplementedError
 
@@ -577,9 +577,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
             kwargs = {
-                      '{}__location_country_code'.format(scope_field_name): 'USA',
-                      'federal_action_obligation__isnull': False
-                      }
+                '{}__location_country_code'.format(scope_field_name): 'USA',
+                'federal_action_obligation__isnull': False
+            }
 
             # Only state scope will add its own state code
             # State codes are consistent in db ie AL, AK
@@ -687,29 +687,29 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
         results = [
-                {
-                    'shape_code': code_to_state.get(x[state_lookup])['fips'] +
-                    pad_codes(self.geo_layer, x['code_as_float']),
-                    'aggregated_amount': x['federal_action_obligation'],
-                    'display_name': x[county_name].title() if x[county_name] is not None
-                    else x[county_name]
-                }
-                for x in self.geo_queryset
-            ]
+            {
+                'shape_code': code_to_state.get(x[state_lookup])['fips'] +
+                pad_codes(self.geo_layer, x['code_as_float']),
+                'aggregated_amount': x['federal_action_obligation'],
+                'display_name': x[county_name].title() if x[county_name] is not None
+                else x[county_name]
+            }
+            for x in self.geo_queryset
+        ]
 
         return results
 
     def district_results(self, state_lookup):
         # Returns congressional district results formatted for map
         results = [
-                {
-                    'shape_code': code_to_state.get(x[state_lookup])['fips'] +
-                    pad_codes(self.geo_layer, x['code_as_float']),
-                    'aggregated_amount': x['federal_action_obligation'],
-                    'display_name': x[state_lookup] + '-' +
-                    pad_codes(self.geo_layer, x['code_as_float'])
-                } for x in self.geo_queryset
-            ]
+            {
+                'shape_code': code_to_state.get(x[state_lookup])['fips'] +
+                pad_codes(self.geo_layer, x['code_as_float']),
+                'aggregated_amount': x['federal_action_obligation'],
+                'display_name': x[state_lookup] + '-' +
+                pad_codes(self.geo_layer, x['code_as_float'])
+            } for x in self.geo_queryset
+        ]
 
         return results
 
@@ -807,6 +807,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 queryset = queryset.order_by(*sort_filters)
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
+        print('====================================')
+        print(generate_raw_quoted_query(queryset))
+        print('^^^ SpendingByAward ^^^')
         has_next = len(limited_queryset) > limit
 
         for award in limited_queryset[:limit]:
@@ -856,21 +859,19 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         return response
 
-
     def process_with_view(self, filters):
         """Return all budget function/subfunction titles matching the provided search text"""
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
-        queryset = view_filter(filters=filters,view_name='SummaryAwardView')
+        queryset = view_filter(filters=filters, view_name='SummaryAwardView')
         queryset = queryset.values("category").annotate(category_count=Sum('counts')).exclude(category__isnull=True)
 
         results = self.get_results(queryset)
 
         # build response
         return Response({"results": results})
-
 
     def process_with_tables(self, filters):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -889,7 +890,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         # build response
         return Response({"results": results})
-
 
     def get_results(self, queryset):
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
