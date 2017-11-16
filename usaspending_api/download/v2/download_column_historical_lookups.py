@@ -730,8 +730,8 @@ query_paths = {
             'subaward_primary_place_of_performance_country_code': 'place_of_performance__location_country_code',
             'subaward_primary_place_of_performance_country_name': 'place_of_performance__country_name',
             'subaward_description': 'description',
-            'subaward_naics_code': 'naics',
-            'subaward_naics_description': 'naics_description',
+            'subaward_naics_code': 'award__latest_transaction__contract_data__naics',
+            'subaward_naics_description': 'award__latest_transaction__contract_data__naics_description',
             'subawardee_business_type_code': 'recipient__business_types',
             'subawardee_business_type_description': 'recipient__business_types_description',
             # Commented out as LegalEntity doesn't have a foreign key to LegalEntityOfficers
@@ -779,8 +779,8 @@ query_paths = {
             'subaward_primary_place_of_performance_country_code': 'place_of_performance__location_country_code',
             'subaward_primary_place_of_performance_country_name': 'place_of_performance__country_name',
             'subaward_description': 'description',
-            'cfda_number': 'cfda__program_number',
-            'cfda_title': 'cfda__program_title',
+            'cfda_number': 'award__latest_transaction__assistance_data__cfda_number',
+            'cfda_title': 'award__latest_transaction__assistance_data__cfda_title',
             'subawardee_business_type_code': 'recipient__business_types',
             'subawardee_business_type_description': 'recipient__business_types_description',
             # Commented out as LegalEntity doesn't have a foreign key to LegalEntityOfficers
