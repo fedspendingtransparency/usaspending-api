@@ -107,6 +107,7 @@ def test_award_filter_recipient_error(transaction_data):
         ]}
         award_filter(filter_error)
 
+
 @pytest.mark.django_db
 def test_award_filter_pop_zip(transaction_data):
     # Testing zip
@@ -127,6 +128,3 @@ def test_award_filter_pop_zip(transaction_data):
     ]}
     result = award_filter(filter_zip)
     assert len(result) == 0
-
-
-
