@@ -12,7 +12,7 @@ from rest_framework.exceptions import NotFound
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, \
     grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping
-from usaspending_api.awards.models import Award, Subaward, Agency
+from usaspending_api.awards.models import Award, Subaward, Agency, TransactionNormalized
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -61,18 +61,31 @@ award_type_mappings = {
     'other_financial_assistance': list(other_type_mapping.keys())
 }
 value_mappings = {
+    # Award Level
+    # 'prime_awards': {
+    #     'table': Award,
+    #     'table_name': 'award',
+    #     'download_name': 'awards',
+    #     'action_date': 'latest_transaction__action_date',
+    #     'last_modified_date': 'last_modified_date',
+    #     'type': 'type',
+    #     'awarding_agency_id': 'awarding_agency_id',
+    #     'funding_agency_id': 'funding_agency_id',
+    #     'contract_data': 'latest_transaction__contract_data',
+    #     'assistance_data': 'latest_transaction__assistance_data'
+    # },
+    # Transaction Level
     'prime_awards': {
-        'table': Award,
-        'table_name': 'award',
+        'table': TransactionNormalized,
+        'table_name': 'transaction',
         'download_name': 'awards',
-        'action_date': 'latest_transaction__action_date',
+        'action_date': 'action_date',
         'last_modified_date': 'last_modified_date',
-        'type': 'type',
+        'type': 'award__type',
         'awarding_agency_id': 'awarding_agency_id',
         'funding_agency_id': 'funding_agency_id',
-        'contract_data': 'latest_transaction__contract_data',
-        'assistance_data': 'latest_transaction__assistance_data'
-
+        'contract_data': 'contract_data',
+        'assistance_data': 'assistance_data'
     },
     'sub_awards': {
         'table': Subaward,
