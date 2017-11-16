@@ -1038,6 +1038,18 @@ loan_award_mapping = {
     'Funding Sub Agency': 'funding_agency__subtier_agency__name'
 }
 
+loan_award_mapping_matview = {
+    'Award ID': 'fain',
+    'Recipient Name': 'recipient_name',
+    'Issued Date': 'issued_date',
+    'Loan Value': 'face_value_loan_guarantee',
+    'Subsidy Cost': 'original_loan_subsidy_cost',
+    'Awarding Agency': 'awarding_toptier_agency_name',
+    'Awarding Sub Agency': 'awarding_subtier_agency_name',
+    'Funding Agency': 'funding_toptier_agency_name',
+    'Funding Sub Agency': 'funding_subtier_agency_name'
+}
+
 direct_payment_award_mapping = {
     'Award ID': 'fain',
     'Recipient Name': 'recipient__recipient_name',

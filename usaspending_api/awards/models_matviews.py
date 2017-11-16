@@ -7,16 +7,20 @@ warnings.simplefilter("ignore", CacheKeyWarning)
 
 class MatviewAwardSearch(models.Model):
     # Fields
+    transaction_id = models.IntegerField(blank=False, null=False, primary_key=True)
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
-    transaction_id = models.IntegerField(blank=False, null=False, primary_key=True)
     action_type = models.TextField()
     award_id = models.IntegerField()
     award_category = models.TextField()
     total_obligation = models.DecimalField(
         max_digits=15, decimal_places=2, blank=True,
         null=True)
+    total_obl_bin = models.TextField()
+    fain = models.TextField()
+    uri = models.TextField()
+    piid = models.TextField()
     federal_action_obligation = models.DecimalField(
         max_digits=20, db_index=True, decimal_places=2, blank=True,
         null=True)
@@ -24,18 +28,22 @@ class MatviewAwardSearch(models.Model):
     pop_location_id = models.IntegerField()
     pop_country_name = models.TextField()
     pop_country_code = models.TextField()
-    pop_country_zip5 = models.TextField()
+    pop_zip5 = models.TextField()
     pop_county_code = models.TextField()
+    pop_county_name = models.TextField()
     pop_state_code = models.TextField()
     pop_congressional_code = models.TextField()
 
+    issued_date = models.TextField()
+    face_value_loan_guarentee = models.TextField()
+    original_loan_subsidy_cost = models.TextField()
     awarding_agency_id = models.IntegerField()
     awarding_agency_code = models.TextField()
     funding_agency_id = models.IntegerField()
+    funding_agency_code = models.TextField()
 
     naics_code = models.TextField()
     naics_description = models.TextField()
-    piid = models.TextField()
     psc_code = models.TextField()
     psc_description = models.TextField()
 
@@ -74,7 +82,7 @@ class MatviewAwardSearch(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'matview_award_search'
+        db_table = 'beast_matview'
 
 
 class SummaryAwardView(models.Model):

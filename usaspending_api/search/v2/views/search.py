@@ -30,13 +30,13 @@ from usaspending_api.references.models import Cfda, LegalEntity
 from usaspending_api.common.helpers import generate_raw_quoted_query
 
 logger = logging.getLogger(__name__)
+USE_NEW_MATVIEW = True
 
 
 class SpendingOverTimeVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        USE_NEW_MATVIEW = True
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
         group = json_request.get('group', None)
@@ -151,7 +151,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        USE_NEW_MATVIEW = True
         """Return all budget function/subfunction titles matching the provided search text"""
         # TODO: check logic in name_dict[x]["aggregated_amount"] statements
 
@@ -179,6 +178,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         if USE_NEW_MATVIEW is False:
             queryset = transaction_filter(filters)
         else:
+            print('====================')
+            print("Using Tony's Matview")
             queryset = matview_transaction_filter(filters)
 
         # filter the transactions by category
@@ -211,6 +212,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 print('====================================')
                 print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
+                print('\n\nCompleted')
 
             else:
                 if scope == "agency":
