@@ -68,7 +68,7 @@ class Command(BaseCommand):
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                #logger.warning(
+                # logger.warning(
                 #    "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
                 #    format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
                 return None, None
@@ -102,8 +102,9 @@ class Command(BaseCommand):
         for row in data:
             counter += 1
             if counter % 1000 == 0:
-                logger.info("Processed " + str(counter) + " of " + str(new_awards)
-                            + " new awards. Skipped " + str(skip_count))
+                logger.info(
+                    "Processed " + str(counter) + " of " + str(new_awards) + " new awards. Skipped " + str(skip_count)
+                )
                 skip_count = 0
 
             award, recipient_name = self.get_award(row, award_type)
