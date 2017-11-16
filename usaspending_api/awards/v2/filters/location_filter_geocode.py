@@ -59,7 +59,9 @@ def check_location_fields(fields):
 
 
 def get_fields_list(scope, field_value):
-    if scope not in ['state_code', 'location_country_code']:
+    """List of values to search for; `field_value`, plus possibley variants on it"""
+
+    if scope not in ['state_code', 'location_country_code', 'zip5']:
         return [str(int(field_value)), field_value, str(float(field_value))]
 
     return [field_value]
