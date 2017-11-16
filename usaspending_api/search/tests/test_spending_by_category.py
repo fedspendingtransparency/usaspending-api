@@ -5,7 +5,8 @@ from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.awards.models import Award, TransactionNormalized
-from usaspending_api.references.models import Location, Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models \
+    import Location, Agency, ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
@@ -51,7 +52,7 @@ def budget_function_data(db):
 @pytest.mark.django_db
 def test_spending_by_category_success(client, budget_function_data):
 
-    # test for NAICS_description exact match
+    # test for required functions
     resp = client.post(
         '/api/v2/search/spending_by_category',
         content_type='application/json',
@@ -113,6 +114,8 @@ def test_spending_by_category_success(client, budget_function_data):
         "set_aside_type_codes": ["SAMPLECODE123"],
         "extent_competed_type_codes": ["SAMPLECODE_ECTC"]
     }
+
+    # TODO: Fix all filters test
     resp = client.post(
         '/api/v2/visualizations/spending_by_category',
         content_type='application/json',

@@ -4,7 +4,6 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.common.tests.autocomplete import check_autocomplete
 from usaspending_api.references.models import Agency
 
 
@@ -56,7 +55,7 @@ def test_awarding_agency_autocomplete_success(client, agency_data):
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 2
 
-    # test closest match is at the top
+    # test toptier match at top
     assert resp.data['results'][0]['subtier_agency']['name'] == 'Department of Transportation'
     assert resp.data['results'][1]['subtier_agency']['name'] == 'Department of the Army'
 
@@ -92,15 +91,14 @@ def test_funding_agency_autocomplete_success(client, agency_data):
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 2
 
-    # test closest match is at the top
+    # test toptier match at top
     assert resp.data['results'][0]['subtier_agency']['name'] == 'Department of Transportation'
     assert resp.data['results'][1]['subtier_agency']['name'] == 'Department of the Army'
 
 
 @pytest.mark.django_db
 def test_funding_agency_autocomplete_failure(client):
-    """Verify error on bad autocomplete request for funding agency."""
-
+    """Empty string test"""
     resp = client.post(
         '/api/v2/autocomplete/funding_agency/',
         content_type='application/json',

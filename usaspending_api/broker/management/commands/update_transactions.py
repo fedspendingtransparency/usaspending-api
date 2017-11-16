@@ -1,17 +1,17 @@
 import logging
 import timeit
 from datetime import datetime
-
+from usaspending_api.common.helpers import fy
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction, IntegrityError
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency
+from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency, Location
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
-import sys
+
 # start = timeit.default_timer()
 # function_call
 # end = timeit.default_timer()
@@ -25,9 +25,18 @@ exception_logger = logging.getLogger("exceptions")
 award_update_id_list = []
 award_contract_update_id_list = []
 
-subtier_agency_map = {subtier_agency['subtier_code']: subtier_agency['subtier_agency_id'] for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')}
-subtier_to_agency_map = {agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']} for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')}
-toptier_agency_map = {toptier_agency['toptier_agency_id']: toptier_agency['cgac_code'] for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')}
+subtier_agency_map = {
+    subtier_agency['subtier_code']: subtier_agency['subtier_agency_id']
+    for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')
+    }
+subtier_to_agency_map = {
+    agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']}
+    for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')
+    }
+toptier_agency_map = {
+    toptier_agency['toptier_agency_id']: toptier_agency['cgac_code']
+    for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')
+    }
 
 
 class Command(BaseCommand):
@@ -73,7 +82,6 @@ class Command(BaseCommand):
             "address_line1": "legal_entity_address_line1",
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
-            # "city_code": "legal_entity_city_code", # NOT PRESENT IN FABS!
             "city_name": "legal_entity_city_name",
             "congressional_code": "legal_entity_congressional",
             "county_code": "legal_entity_county_code",
@@ -88,10 +96,6 @@ class Command(BaseCommand):
             "location_country_code": "legal_entity_country_code"
         }
 
-        legal_entity_location_value_map = {
-            "recipient_flag": True
-        }
-
         place_of_performance_field_map = {
             "city_name": "place_of_performance_city",
             "performance_code": "place_of_performance_code",
@@ -102,10 +106,6 @@ class Command(BaseCommand):
             "zip4": "place_of_performance_zip4a",
             "location_country_code": "place_of_perform_country_c"
 
-        }
-
-        place_of_performance_value_map = {
-            "place_of_performance_flag": True
         }
 
         fad_field_map = {
@@ -121,55 +121,78 @@ class Command(BaseCommand):
 
         # skip_count = 0
 
-        start_time = datetime.now()
+
+# ROW ITERATION STARTS HERE
+
+        lel_bulk = []
+        pop_bulk = []
+        legal_entity_bulk = []
+        award_bulk = []
+
+        transaction_assistance_bulk = []
+        transaction_normalized_bulk = []
+
+        logger.info('Getting legal entity location objects for {} rows...'.format(len(award_financial_assistance_data)))
         for index, row in enumerate(award_financial_assistance_data, 1):
-            with db_transaction.atomic():
-                # if TransactionFABS.objects.values('published_award_financial_assistance_id').\
-                #         filter(published_award_financial_assistance_id=str(row['published_award_financial_assistance_id'])).first():
-                #     skip_count += 1
-                #
-                #     if not (skip_count % 100):
-                #         logger.info('Skipped {} records so far'.format(str(skip_count)))
-                #     continue
 
-                if not (index % 100):
-                    logger.info('D2 File Load: Loading row {} of {} ({})'.format(str(index),
-                                                                                 str(total_rows),
-                                                                                 datetime.now() - start_time))
+            # Recipient flag is true for LeL
+            legal_entity_location = get_or_create_location(
+                legal_entity_location_field_map, row, {"recipient_flag": True}, save=False
+            )
 
-                legal_entity_location, created = get_or_create_location(
-                    legal_entity_location_field_map, row, legal_entity_location_value_map
-                )
+            lel_bulk.append(legal_entity_location)
 
-                recipient_name = row['awardee_or_recipient_legal']
-                if recipient_name is None:
-                    recipient_name = ""
+        logger.info('Bulk creating {} legal entity location rows...'.format(len(lel_bulk)))
+        try:
+            Location.objects.bulk_create(lel_bulk)
+        except IntegrityError:
+            logger.info('!!! DUPLICATES FOUND. Continuing... ')
 
-                # Create the legal entity if it doesn't exist
-                created = False
-                legal_entity = LegalEntity.objects.filter(recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                                                          recipient_name=recipient_name).first()
+        logger.info('Getting place of performance objects for {} rows...'.format(len(award_financial_assistance_data)))
+        for index, row in enumerate(award_financial_assistance_data, 1):
 
-                if legal_entity is None:
-                    created = True
-                    legal_entity = LegalEntity(recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                                               recipient_name=recipient_name)
+            # Place of Performance flag is true for PoP
+            pop_location = get_or_create_location(
+                place_of_performance_field_map, row, {"place_of_performance_flag": True}, save=False
+            )
 
-                # legal_entity, created = LegalEntity.objects.get_or_create(
-                #     recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                #     recipient_name=recipient_name
-                # )
+            pop_bulk.append(pop_location)
 
-                if created:
-                    legal_entity_value_map = {
-                        "location": legal_entity_location,
-                    }
-                    legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
+        logger.info('Bulk creating {} place of performance rows...'.format(len(pop_bulk)))
+        try:
+            Location.objects.bulk_create(pop_bulk)
+        except IntegrityError:
+            logger.info('!!! DUPLICATES FOUND. Continuing... ')
 
-                # Create the place of performance location
-                pop_location, created = get_or_create_location(
-                    place_of_performance_field_map, row, place_of_performance_value_map
-                )
+        logger.info('Getting legal entity objects for {} rows...'.format(len(award_financial_assistance_data)))
+        for index, row in enumerate(award_financial_assistance_data, 1):
+
+            recipient_name = row.get('awardee_or_recipient_legal', '')
+
+            legal_entity = LegalEntity.objects.filter(recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                                                      recipient_name=recipient_name).first()
+
+            if legal_entity is None:
+                legal_entity = LegalEntity(recipient_unique_id=row['awardee_or_recipient_uniqu'],
+                                           recipient_name=recipient_name)
+                legal_entity_value_map = {
+                    "location": lel_bulk[index - 1],
+                }
+                legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=False)
+
+            legal_entity_bulk.append(legal_entity)
+
+        logger.info('Bulk creating {} legal entity rows...'.format(len(legal_entity_bulk)))
+        try:
+            LegalEntity.objects.bulk_create(legal_entity_bulk)
+        except IntegrityError:
+            logger.info('!!! DUPLICATES FOUND. Continuing... ')
+
+        awarding_agency_list = []
+        funding_agency_list = []
+
+        logger.info('Getting award objects for {} rows...'.format(len(award_financial_assistance_data)))
+        for index, row in enumerate(award_financial_assistance_data, 1):
 
                 # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
                 # use the sub tier code to look it up. This code assumes that all incoming
@@ -186,7 +209,8 @@ class Command(BaseCommand):
                 if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
                     funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
                     if funding_subtier_agency_id is not None:
-                        funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
+                        funding_toptier_agency_id = \
+                            subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
                         funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
                     else:
                         funding_cgac_code = None
@@ -197,50 +221,80 @@ class Command(BaseCommand):
                     row['awarding_agency_code'],
                     row["awarding_sub_tier_agency_c"]
                 )
+                funding_agency = Agency.get_by_toptier_subtier(
+                    row['funding_agency_code'],
+                    row["funding_sub_tier_agency_co"]
+                )
+
+                awarding_agency_list.append(awarding_agency)
+                funding_agency_list.append(funding_agency)
+
+                # award.save() is called in Award.get_or_create_summary_award by default
                 created, award = Award.get_or_create_summary_award(
                     awarding_agency=awarding_agency,
-                    # piid=transaction_assistance.get('piid'), # not found
                     fain=row.get('fain'),
-                    uri=row.get('uri'))
-                # parent_award_id=transaction_assistance.get('parent_award_id')) # not found
-                award.save()
+                    uri=row.get('uri'),
+                    save=False
+                )
 
+                award_bulk.append(award)
                 award_update_id_list.append(award.id)
 
-                parent_txn_value_map = {
-                    "award": award,
-                    "awarding_agency": awarding_agency,
-                    "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                                                    row["funding_sub_tier_agency_co"]),
-                    "recipient": legal_entity,
-                    "place_of_performance": pop_location,
-                    "period_of_performance_start_date": format_date(row['period_of_performance_star']),
-                    "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
-                    "action_date": format_date(row['action_date']),
-                }
+        logger.info('Bulk creating {} award rows...'.format(len(award_bulk)))
+        try:
+            Award.objects.bulk_create(award_bulk)
+        except IntegrityError:
+            logger.info('!!! DUPLICATES FOUND. Continuing... ')
 
-                transaction_dict = load_data_into_model(
-                    TransactionNormalized(),  # thrown away
-                    row,
-                    field_map=fad_field_map,
-                    value_map=parent_txn_value_map,
-                    as_dict=True)
+        logger.info('Getting transaction_normalized for {} rows...'.format(len(award_financial_assistance_data)))
+        for index, row in enumerate(award_financial_assistance_data, 1):
 
-                transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
-                transaction.save()
+            parent_txn_value_map = {
+                "award": award_bulk[index - 1],
+                "awarding_agency": awarding_agency_list[index - 1],
+                "funding_agency": funding_agency_list[index - 1],
+                "recipient": legal_entity_bulk[index - 1],
+                "place_of_performance": pop_bulk[index - 1],
+                "period_of_performance_start_date": format_date(row['period_of_performance_star']),
+                "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
+                "action_date": format_date(row['action_date']),
+            }
 
-                financial_assistance_data = load_data_into_model(
-                    TransactionFABS(),  # thrown away
-                    row,
-                    as_dict=True)
+            transaction_dict = load_data_into_model(
+                TransactionNormalized(),  # thrown away
+                row,
+                field_map=fad_field_map,
+                value_map=parent_txn_value_map,
+                as_dict=True)
 
-                transaction_assistance = TransactionFABS(transaction=transaction, **financial_assistance_data)
-                # catch exception and do nothing if we see
-                # "django.db.utils.IntegrityError: duplicate key value violates unique constraint"
-                try:
-                    transaction_assistance.save()
-                except IntegrityError:
-                    pass
+            transaction_normalized = TransactionNormalized.get_or_create_transaction(**transaction_dict)
+            transaction_normalized.fiscal_year = fy(transaction_normalized.action_date)
+            transaction_normalized_bulk.append(transaction_normalized)
+
+        logger.info('Bulk creating {} TransactionNormalized rows...'.format(len(transaction_normalized_bulk)))
+        try:
+            TransactionNormalized.objects.bulk_create(transaction_normalized_bulk)
+        except IntegrityError:
+            logger.info('Tried and failed to insert duplicate transaction_normalized row. Continuing... ')
+
+        for index, row in enumerate(award_financial_assistance_data, 1):
+            financial_assistance_data = load_data_into_model(
+                TransactionFABS(),  # thrown away
+                row,
+                as_dict=True)
+
+            transaction_assistance = TransactionFABS(transaction=transaction_normalized_bulk[index - 1],
+                                                     **financial_assistance_data)
+            transaction_assistance_bulk.append(transaction_assistance)
+
+        logger.info('Bulk creating TransactionFABS rows...')
+        try:
+            TransactionFABS.objects.bulk_create(transaction_assistance_bulk)
+        except IntegrityError:
+            logger.info('!!! DUPLICATES FOUND. Continuing... ')
+
+
+######################################################
 
     @staticmethod
     def update_transaction_contract(db_cursor, fiscal_year=None, page=1, limit=500000):
@@ -373,7 +427,8 @@ class Command(BaseCommand):
                 if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
                     funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
                     if funding_subtier_agency_id is not None:
-                        funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
+                        funding_toptier_agency_id = \
+                            subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
                         funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
                     else:
                         funding_cgac_code = None

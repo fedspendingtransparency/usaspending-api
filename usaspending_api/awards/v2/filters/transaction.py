@@ -1,5 +1,8 @@
 from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.awards.models import LegalEntity
+from usaspending_api.references.models import NAICS, PSC
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 
 import logging
 logger = logging.getLogger(__name__)
@@ -36,9 +39,66 @@ def transaction_filter(filters):
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
-        # keyword
         if key == "keyword":
-            queryset = queryset.filter(description=value)
+            keyword = value  # alias
+
+            # description_match = False
+            # description_qs = queryset.filter(description__icontains=keyword)
+            # if description_qs.exists():
+            #     description_match = True
+
+            recipient_match = False
+            recipient_list = LegalEntity.objects.all().values('legal_entity_id').filter(
+                recipient_name__icontains=keyword)
+            if recipient_list.exists():
+                recipient_match = True
+                recipient_qs = queryset.filter(recipient__in=recipient_list)
+
+            naics_match = False
+            if keyword.isnumeric():
+                naics_list = NAICS.objects.all().filter(code__icontains=keyword).values('code')
+            else:
+                naics_list = NAICS.objects.all().filter(
+                    description__icontains=keyword).values('code')
+            if naics_list.exists():
+                naics_match = True
+                naics_qs = queryset.filter(contract_data__naics__in=naics_list)
+
+            psc_match = False
+            if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
+                psc_list = PSC.objects.all().filter(code=keyword).values('code')
+            else:
+                psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
+            if psc_list.exists():
+                psc_match = True
+                psc_qs = queryset.filter(contract_data__product_or_service_code__in=psc_list)
+
+            duns_match = False
+            non_parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
+                recipient_unique_id=keyword)
+            parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
+                parent_recipient_unique_id=keyword)
+            duns_list = non_parent_duns_list | parent_duns_list
+            if duns_list.exists():
+                duns_match = True
+                duns_qs = queryset.filter(recipient__in=duns_list)
+
+            piid_qs = queryset.filter(contract_data__piid=keyword)
+            fain_qs = queryset.filter(assistance_data__fain=keyword)
+
+            # Always filter on fain/piid because fast:
+            queryset = piid_qs
+            queryset |= fain_qs
+            # if description_match:
+            #     queryset |= description_qs
+            if recipient_match:
+                queryset |= recipient_qs
+            if naics_match:
+                queryset |= naics_qs
+            if psc_match:
+                queryset |= psc_qs
+            if duns_match:
+                queryset |= duns_qs
 
         # time_period
         elif key == "time_period":
@@ -65,10 +125,11 @@ def transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= TransactionNormalized.objects.filter(award__type__in=or_queryset)
+                queryset &= TransactionNormalized.objects.filter(type__in=or_queryset)
 
         # agencies
         elif key == "agencies":
+            # TODO: Make function to match agencies in award filter throwing dupe error
             funding_toptier = []
             funding_subtier = []
             awarding_toptier = []
@@ -94,13 +155,21 @@ def transaction_filter(filters):
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
             if len(funding_toptier) != 0:
-                queryset &= TransactionNormalized.objects.filter(funding_agency__toptier_agency__name__in=funding_toptier)
+                queryset &= TransactionNormalized.objects.filter(
+                    funding_agency__toptier_agency__name__in=funding_toptier
+                )
             if len(funding_subtier) != 0:
-                queryset &= TransactionNormalized.objects.filter(funding_agency__subtier_agency__name__in=funding_subtier)
+                queryset &= TransactionNormalized.objects.filter(
+                    funding_agency__subtier_agency__name__in=funding_subtier
+                )
             if len(awarding_toptier) != 0:
-                queryset &= TransactionNormalized.objects.filter(awarding_agency__toptier_agency__name__in=awarding_toptier)
+                queryset &= TransactionNormalized.objects.filter(
+                    awarding_agency__toptier_agency__name__in=awarding_toptier
+                )
             if len(awarding_subtier) != 0:
-                queryset &= TransactionNormalized.objects.filter(awarding_agency__subtier_agency__name__in=awarding_subtier)
+                queryset &= TransactionNormalized.objects.filter(
+                    awarding_agency__subtier_agency__name__in=awarding_subtier
+                )
 
         # legal_entities
         elif key == "legal_entities":
@@ -108,24 +177,31 @@ def transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= TransactionNormalized.objects.filter(recipient__legal_entity_id__in=or_queryset)
+                queryset &= TransactionNormalized.objects.filter(
+                    recipient__legal_entity_id__in=or_queryset
+                )
 
         # recipient_location_scope (broken till data reload)
         elif key == "recipient_scope":
             if value == "domestic":
-                queryset = queryset.filter(recipient__location__country_name="UNITED STATES")
+                queryset = queryset.filter(
+                    recipient__location__country_name="UNITED STATES"
+                )
             elif value == "foreign":
-                queryset = queryset.exclude(recipient__location__country_name="UNITED STATES")
+                queryset = queryset.exclude(
+                    recipient__location__country_name="UNITED STATES"
+                )
             else:
-                raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
+                raise InvalidParameterException(
+                    'Invalid filter: recipient_scope type is invalid.')
 
         # recipient_location
         elif key == "recipient_locations":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= TransactionNormalized.objects.filter(recipient__location__location_id__in=or_queryset)
+            or_queryset = geocode_filter_locations(
+                'recipient__location', value, 'TransactionNormalized'
+            )
+
+            queryset &= or_queryset
 
         # recipient_type_names
         elif key == "recipient_type_names":
@@ -133,7 +209,9 @@ def transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= TransactionNormalized.objects.filter(recipient__business_types_description__in=or_queryset)
+                queryset &= TransactionNormalized.objects.filter(
+                    recipient__business_types_description__in=or_queryset
+                )
 
         # place_of_performance_scope (broken till data reload
         elif key == "place_of_performance_scope":
@@ -146,11 +224,11 @@ def transaction_filter(filters):
 
         # place_of_performance
         elif key == "place_of_performance_locations":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= TransactionNormalized.objects.filter(place_of_performance__location_id__in=or_queryset)
+            or_queryset = geocode_filter_locations(
+                'place_of_performance', value, 'TransactionNormalized'
+            )
+
+            queryset &= or_queryset
 
         # award_amounts
         elif key == "award_amounts":
@@ -159,21 +237,27 @@ def transaction_filter(filters):
             for v in value:
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if queryset_init:
-                        or_queryset |= TransactionNormalized.objects.filter(award__total_obligation__gt=v["lower_bound"],
-                                                                            award__total_obligation__lt=v["upper_bound"])
+                        or_queryset |= TransactionNormalized.objects.filter(
+                            award__total_obligation__gt=v["lower_bound"],
+                            award__total_obligation__lt=v["upper_bound"]
+                        )
                     else:
                         queryset_init = True
                         or_queryset = TransactionNormalized.objects.filter(award__total_obligation__gt=v["lower_bound"],
                                                                            award__total_obligation__lt=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if queryset_init:
-                        or_queryset |= TransactionNormalized.objects.filter(award__total_obligation__gt=v["lower_bound"])
+                        or_queryset |= TransactionNormalized.objects.filter(
+                            award__total_obligation__gt=v["lower_bound"]
+                        )
                     else:
                         queryset_init = True
                         or_queryset = TransactionNormalized.objects.filter(award__total_obligation__gt=v["lower_bound"])
                 elif v.get("upper_bound") is not None:
                     if queryset_init:
-                        or_queryset |= TransactionNormalized.objects.filter(award__total_obligation__lt=v["upper_bound"])
+                        or_queryset |= TransactionNormalized.objects.filter(
+                            award__total_obligation__lt=v["upper_bound"]
+                        )
                     else:
                         queryset_init = True
                         or_queryset = TransactionNormalized.objects.filter(award__total_obligation__lt=v["upper_bound"])
@@ -243,5 +327,4 @@ def transaction_filter(filters):
             if len(or_queryset) != 0:
                 queryset &= TransactionNormalized.objects.filter(
                         contract_data__extent_competed__in=or_queryset)
-
     return queryset
