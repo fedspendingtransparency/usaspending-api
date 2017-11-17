@@ -37,6 +37,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
+        print('<<<<< SpendingOverTime >>>>>')
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
         group = json_request.get('group', None)
@@ -151,6 +152,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
+        print('<<<<< SpendingByCategory >>>>>')
         """Return all budget function/subfunction titles matching the provided search text"""
         # TODO: check logic in name_dict[x]["aggregated_amount"] statements
 

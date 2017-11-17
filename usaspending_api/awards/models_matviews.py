@@ -82,7 +82,7 @@ class MatviewAwardSearch(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'beast_matview'
+        db_table = 'award_search_matview'
 
 
 class SummaryAwardView(models.Model):
