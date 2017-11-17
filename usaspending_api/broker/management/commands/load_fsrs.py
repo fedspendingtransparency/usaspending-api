@@ -15,6 +15,8 @@ logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
 QUERY_LIMIT = 10000
+LOG_LIMIT = 10000
+
 award_update_id_list = []
 
 
@@ -103,7 +105,7 @@ class Command(BaseCommand):
         skip_count = 0
         for row in data:
             counter += 1
-            if counter % 10000 == 0:
+            if counter % LOG_LIMIT == 0:
                 logger.info(
                     "Processed " + str(counter) + " of " + str(new_awards) + " new awards. Skipped " + str(skip_count)
                 )
