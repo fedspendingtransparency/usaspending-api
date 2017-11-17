@@ -272,6 +272,7 @@ class Command(BaseCommand):
 
         logger.info('Load FSRS Script Complete!')
 
+
 def get_valid_awarding_agency(row):
     agency = None
 
