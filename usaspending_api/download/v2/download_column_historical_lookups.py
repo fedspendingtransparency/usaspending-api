@@ -415,6 +415,7 @@ query_paths = {
             'community_developed_corporation_owned_firm': 'contract_data__community_developed_corpor',
             'community_development_corporation': 'contract_data__community_development_corp',
             'consolidated_contract': 'contract_data__consolidated_contract_desc',
+            'consolidated_contract_code': 'contract_data__consolidated_contract',
             'contingency_humanitarian_or_peacekeeping_operation': 'contract_data__contingency_humanitar_desc',
             'contingency_humanitarian_or_peacekeeping_operation_code': 'contract_data__contingency_humanitarian_o',
             'contract_bundling': 'contract_data__contract_bundling_descrip',
