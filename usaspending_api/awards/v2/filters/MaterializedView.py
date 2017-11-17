@@ -1,4 +1,8 @@
-from usaspending_api.awards.models_matviews import SummaryAwardView, SummaryView, SumaryPscCodesView, SumaryCfdaNumbersView
+from usaspending_api.awards.models_matviews import SummaryView
+from usaspending_api.awards.models_matviews import SummaryAwardView
+from usaspending_api.awards.models_matviews import SumaryCfdaNumbersView
+from usaspending_api.awards.models_matviews import SumaryNaicsCodesView
+from usaspending_api.awards.models_matviews import SumaryPscCodesView
 from usaspending_api.common.exceptions import InvalidParameterException
 
 import logging
@@ -21,6 +25,10 @@ MATVIEW_SELECTOR = {
     'SumaryCfdaNumbersView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'model': SumaryCfdaNumbersView.objects
+    },
+    'SumaryNaicsCodesView': {
+        'allowed_filters': ['time_period', 'award_type_codes'],
+        'model': SumaryNaicsCodesView.objects
     }
 }
 
@@ -107,19 +115,22 @@ def view_filter(filters, view_name):
 
 
 def can_use_view(filters, view_name):
+    print("checking if we can use Ed's view")
     try:
         key_list = MATVIEW_SELECTOR[view_name]['allowed_filters']
     except Exception as e:
         print(e)
         return False
 
-    # Make sure only the keys in the key list are in the fileters
-    if len(filters.keys() - key_list) > 0:
+    # Make sure *only* acceptable keys are in the filters for that view_name
+    if not set(key_list).issuperset(set(filters.keys())):
         return False
 
     agencies = filters.get('agencies')
-    if agencies is not None:
+    if agencies:
         for v in agencies:
             if v["tier"] == "subtier":
                 return False
+
+    print('Can use Ed matview')
     return True

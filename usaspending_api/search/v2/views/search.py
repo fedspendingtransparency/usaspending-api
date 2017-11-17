@@ -424,7 +424,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 print('==================')
                 print("Using Ed's Matview")
                 queryset = queryset \
-                    .filter(
+                    .filter(federal_action_obligation__isnull=False,
                         cfda_number__isnull=False) \
                     .values(cfda_program_number=F("cfda_number")) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
@@ -442,9 +442,12 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 for trans in results:
                     trans['popular_name'] = None
                     # small DB hit every loop here
-                    cfda = Cfda.objects.filter(
-                        program_title=trans['program_title'],
-                        program_number=trans['cfda_program_number']).values('popular_name').first()
+                    cfda = Cfda.objects \
+                        .filter(
+                            program_title=trans['program_title'],
+                            program_number=trans['cfda_program_number']) \
+                        .values('popular_name').first()
+
                     if cfda:
                         trans['popular_name'] = cfda['popular_name']
 
@@ -501,7 +504,16 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         elif category == "industry_codes":  # industry_codes
             if scope == "psc":
-                if USE_NEW_MATVIEW:
+                if can_use_view(filters, 'SumaryPscCodesView'):
+                    queryset = view_filter(filters, 'SumaryPscCodesView')
+                    print('==================')
+                    print("Using Ed's Matview")
+                    queryset = queryset \
+                        .filter(product_or_service_code__isnull=False) \
+                        .values(psc_code=F("product_or_service_code")) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount')
+                elif USE_NEW_MATVIEW:
                     queryset = queryset \
                         .filter(psc_code__isnull=False) \
                         .values("psc_code") \
@@ -527,7 +539,20 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 return Response(response)
 
             elif scope == "naics":
-                if USE_NEW_MATVIEW:
+                if can_use_view(filters, 'SumaryNaicsCodesView'):
+                    queryset = view_filter(filters, 'SumaryNaicsCodesView')
+                    print('==================')
+                    print("Using Ed's Matview")
+                    queryset = queryset \
+                        .filter(naics__isnull=False) \
+                        .values(naics_code=F("naics")) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount') \
+                        .values(
+                            'naics_code',
+                            'aggregated_amount',
+                            'naics_description')
+                elif USE_NEW_MATVIEW:
                     queryset = queryset \
                         .filter(naics_code__isnull=False) \
                         .values("naics_code") \
