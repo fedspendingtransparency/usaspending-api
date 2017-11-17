@@ -52,7 +52,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             raise InvalidParameterException('group does not have a valid value')
 
         # build sql query filters
-        if can_use_view(filters):
+        if can_use_view(filters, 'SummaryView'):
             queryset = view_filter(filters, 'SummaryView')
             print('==================')
             print("Using Ed's Matview")
@@ -419,7 +419,36 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             return Response(response)
 
         elif category == "cfda_programs":
-            if USE_NEW_MATVIEW:
+            if can_use_view(filters, 'SumaryCfdaNumbersView'):
+                queryset = view_filter(filters, 'SumaryCfdaNumbersView')
+                print('==================')
+                print("Using Ed's Matview")
+                queryset = queryset \
+                    .filter(
+                        cfda_number__isnull=False) \
+                    .values(cfda_program_number=F("cfda_number")) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values(
+                        "aggregated_amount",
+                        "cfda_program_number",
+                        program_title=F("cfda_title")) \
+                    .order_by('-aggregated_amount')
+                # Begin DB hits here
+                print('====================================')
+                print(generate_raw_quoted_query(queryset))
+                results = list(queryset[lower_limit:upper_limit + 1])
+                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                results = results[:limit]
+                for trans in results:
+                    trans['popular_name'] = None
+                    # small DB hit every loop here
+                    cfda = Cfda.objects.filter(
+                        program_title=trans['program_title'],
+                        program_number=trans['cfda_program_number']).values('popular_name').first()
+                    if cfda:
+                        trans['popular_name'] = cfda['popular_name']
+
+            elif USE_NEW_MATVIEW:
                 queryset = queryset \
                     .filter(
                         cfda_number__isnull=False) \
@@ -854,7 +883,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         response = None
-        if can_use_view(filters):
+        if can_use_view(filters, 'SummaryAwardView'):
             print('************************************')
             print('SpendingByAwardCount matview')
             response = self.process_with_view(filters)

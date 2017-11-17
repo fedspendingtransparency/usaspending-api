@@ -5,23 +5,32 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+MATVIEW_SELECTOR = {
+    'SummaryView': {
+        'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
+        'model': SummaryView.objects
+    },
+    'SummaryAwardView': {
+        'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
+        'model': SummaryAwardView.objects
+    },
+    'SumaryPscCodesView': {
+        'allowed_filters': ['time_period', 'award_type_codes'],
+        'model': SumaryPscCodesView.objects
+    },
+    'SumaryCfdaNumbersView': {
+        'allowed_filters': ['time_period', 'award_type_codes'],
+        'model': SumaryCfdaNumbersView.objects
+    }
+}
+
 
 def view_filter(filters, view_name):
 
-    key_list = ['time_period',
-                'award_type_codes',
-                'agencies']
-
-    view_objects = None
-    if view_name == 'SummaryView':
-        view_objects = SummaryView.objects
-    elif view_name == 'SummaryAwardView':
-        view_objects = SummaryAwardView.objects
-    elif view_name == 'SumaryPscCodesView':
-        view_objects = SumaryPscCodesView.objects
-    elif view_name == 'SumaryCfdaNumbersView':
-        view_objects = SumaryCfdaNumbersView.objects
-    else:
+    try:
+        view_objects = MATVIEW_SELECTOR[view_name]['model']
+    except Exception as e:
+        print(e)
         raise InvalidParameterException('Invalid view: ' + view_name + ' does not exist.')
 
     queryset = view_objects.all()
@@ -30,9 +39,6 @@ def view_filter(filters, view_name):
         # check for valid key
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
-
-        if key not in key_list:
-            raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
         # time_period
         if key == "time_period":
@@ -100,11 +106,12 @@ def view_filter(filters, view_name):
     return queryset
 
 
-def can_use_view(filters):
-
-    key_list = ['time_period',
-                'award_type_codes',
-                'agencies']
+def can_use_view(filters, view_name):
+    try:
+        key_list = MATVIEW_SELECTOR[view_name]['allowed_filters']
+    except Exception as e:
+        print(e)
+        return False
 
     # Make sure only the keys in the key list are in the fileters
     if len(filters.keys() - key_list) > 0:
@@ -115,5 +122,4 @@ def can_use_view(filters):
         for v in agencies:
             if v["tier"] == "subtier":
                 return False
-
     return True
