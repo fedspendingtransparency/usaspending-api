@@ -9,11 +9,13 @@ from usaspending_api.awards.models import Award, Subaward
 from usaspending_api.references.models import LegalEntity, Agency, Cfda
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.helpers import get_or_create_location
+from usaspending_api.etl.award_helpers import update_award_subawards
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
 QUERY_LIMIT = 10000
+award_update_id_list = []
 
 
 class Command(BaseCommand):
@@ -53,9 +55,9 @@ class Command(BaseCommand):
             agency = get_valid_awarding_agency(row)
 
             if not agency:
-                logger.warning(
-                    "Internal ID {} cannot find matching agency with subtier code {}".
-                    format(row['internal_id'], row['contracting_office_aid']))
+                # logger.warning(
+                #     "Internal ID {} cannot find matching agency with subtier code {}".
+                #     format(row['internal_id'], row['contracting_office_aid']))
                 return None, None
 
             # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
@@ -81,9 +83,9 @@ class Command(BaseCommand):
                 order_by("-date_signed").first()
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                logger.warning(
-                    "Internal ID {} cannot find award with fain {}; skipping...".
-                    format(row['internal_id'], row['fain']))
+                # logger.warning(
+                #     "Internal ID {} cannot find award with fain {}; skipping...".
+                #     format(row['internal_id'], row['fain']))
                 return None, None
 
             recipient_name = row['awardee_name']
@@ -101,7 +103,7 @@ class Command(BaseCommand):
         skip_count = 0
         for row in data:
             counter += 1
-            if counter % 1000 == 0:
+            if counter % 10000 == 0:
                 logger.info(
                     "Processed " + str(counter) + " of " + str(new_awards) + " new awards. Skipped " + str(skip_count)
                 )
@@ -165,10 +167,8 @@ class Command(BaseCommand):
 
         query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + " AS award " + \
                 "JOIN fsrs_" + subaward_type + " AS sub_award ON sub_award.parent_id = award.id WHERE award.id > " + \
-                str(max_id) + "AND sub_award.subcontract_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT " + \
+                str(max_id) + " ORDER BY award.id, sub_award.id LIMIT " + \
                 str(QUERY_LIMIT) + " OFFSET " + str(offset)
-
-        print(query)
 
         db_cursor.execute(query)
 
@@ -214,6 +214,7 @@ class Command(BaseCommand):
             # Either we're starting with an empty table in regards to this award type or we've deleted all
             # subawards related to the internal_id, either way we just create the subaward
             Subaward.objects.create(**subaward_dict)
+            award_update_id_list.append(shared_mappings['award'].id)
 
     def process_subawards(self, db_cursor, shared_award_mappings, award_type, subaward_type, max_id):
         """ Process the subawards and insert them as we go """
@@ -265,6 +266,11 @@ class Command(BaseCommand):
 
         logger.info('Completed FSRS data load...')
 
+        logger.info('Updating related award metadata...')
+        update_award_subawards(tuple(award_update_id_list))
+        logger.info('Finished updating award metadata...')
+
+        logger.info('Load FSRS Script Complete!')
 
 def get_valid_awarding_agency(row):
     agency = None
