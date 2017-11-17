@@ -473,7 +473,7 @@ def load_data_into_model(model_instance, data, **kwargs):
     """
     field_map = kwargs.get('field_map')
     value_map = kwargs.get('value_map')
-    save = kwargs.get('save')
+    save = kwargs.get('save', False)
     as_dict = kwargs.get('as_dict', False)
     reverse = kwargs.get('reverse')
 
@@ -524,7 +524,7 @@ def load_data_into_model(model_instance, data, **kwargs):
         return model_instance
 
 
-def get_or_create_location(location_map, row, location_value_map=None, empty_location=None, d_file=False):
+def get_or_create_location(location_map, row, location_value_map=None, empty_location=None, d_file=False, save=True):
     """
     Retrieve or create a location object
 
@@ -578,20 +578,18 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
 
     del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
     if len(location_data):
-        try:
-            if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
-                location_object = None
-                created = False
-            else:
-                location_object, created = Location.objects.get_or_create(**location_data,
-                                                                          defaults={'data_source': 'DBR'})
-        except MultipleObjectsReturned:
-            # incoming location data is so sparse that comparing it to existing locations
-            # yielded multiple records. create a new location with this limited info.
-            # note: this will need fixed up to prevent duplicate location records with the
-            # same sparse data
-            location_object = Location.objects.create(**location_data)
+
+        if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
+            location_object = None
+            created = False
+        elif save:
+            location_object = load_data_into_model(Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False, save=True)
+            created = False
+        else:
+            location_object = load_data_into_model(Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False)
+            # location_object = Location.objects.create(**location_data)
             created = True
+
         return location_object, created
     else:
         # record had no location information at all

@@ -29,12 +29,18 @@ def s3_get_url(path, checksum):
     return None
 
 
+def sqs_queue(region_name=settings.CSV_AWS_REGION, QueueName=settings.CSV_SQS_QUEUE_NAME):
+    # stuff that's in get_queue
+    sqs = boto3.resource('sqs', region_name=region_name)
+    queue = sqs.get_queue_by_name(QueueName=QueueName)
+    return queue
+
+
 def sqs_add_to_queue(path, checksum):
     '''
     Adds a request to generate a CSV file to the SQS queue
     '''
-    sqs = boto3.resource('sqs', region_name=settings.CSV_AWS_REGION)
-    queue = sqs.get_queue_by_name(QueueName=settings.CSV_SQS_QUEUE_NAME)
+    queue = sqs_queue()
 
     queue.send_message(MessageBody=json.dumps({
         "request_checksum": checksum,
