@@ -161,16 +161,21 @@ class Command(BaseCommand):
                                   'sub_award.overall_description', 'sub_award.recovery_model_q1 AS q1_flag',
                                   'sub_award.recovery_model_q2 AS q2_flag',
                                   'sub_award.subcontract_date AS subaward_date'])
+
+            query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + " AS award " + \
+                    "JOIN fsrs_" + subaward_type + " AS sub_award ON sub_award.parent_id = award.id WHERE award.id > " + \
+                    str(max_id) + " AND sub_award.subcontract_num IS NOT NULL ORDER BY award.id, sub_award.id LIMIT " + \
+                    str(QUERY_LIMIT) + " OFFSET " + str(offset)
         else:
             query_columns.extend(['sub_award.cfda_numbers', 'sub_award.subaward_num', 'sub_award.subaward_amount',
                                   'sub_award.project_description AS overall_description',
                                   'sub_award.compensation_q1 AS q1_flag', 'sub_award.compensation_q2 AS q2_flag',
                                   'sub_award.subaward_date'])
 
-        query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + " AS award " + \
-                "JOIN fsrs_" + subaward_type + " AS sub_award ON sub_award.parent_id = award.id WHERE award.id > " + \
-                str(max_id) + " ORDER BY award.id, sub_award.id LIMIT " + \
-                str(QUERY_LIMIT) + " OFFSET " + str(offset)
+            query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + " AS award " + \
+                    "JOIN fsrs_" + subaward_type + " AS sub_award ON sub_award.parent_id = award.id WHERE award.id > " + \
+                    str(max_id) + " ORDER BY award.id, sub_award.id LIMIT " + \
+                    str(QUERY_LIMIT) + " OFFSET " + str(offset)
 
         db_cursor.execute(query)
 
