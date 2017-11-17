@@ -78,10 +78,15 @@ def get_or_create_location(row, mapper):
 
     # Country-specific adjustments
     if country_code and country_code.country_code == "USA":
-        location_dict.update(
-            zip5=location_dict["location_zip"][:5],
-            zip_last4=location_dict["location_zip"][5:])
+
+        # Apparently zip codes are optional...
+        if location_dict["location_zip"]:
+            location_dict.update(
+                zip5=location_dict["location_zip"][:5],
+                zip_last4=location_dict["location_zip"][5:])
+
         location_dict.pop("location_zip")
+
     else:
         location_dict.update(
             foreign_postal_code=location_dict.pop("location_zip", None),
