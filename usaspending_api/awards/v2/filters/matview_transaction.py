@@ -1,6 +1,6 @@
+from django.db.models import Q
+
 from usaspending_api.awards.models_matviews import MatviewAwardSearch
-from usaspending_api.awards.models import LegalEntity
-from usaspending_api.references.models import NAICS, PSC
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 
@@ -128,63 +128,30 @@ def matview_transaction_filter(filters):
         if key == "keyword":
             keyword = value  # alias
 
-            # description_match = False
-            # description_qs = queryset.filter(description__icontains=keyword)
-            # if description_qs.exists():
-            #     description_match = True
-
-            recipient_match = False
-            recipient_list = LegalEntity.objects.all().values('legal_entity_id').filter(
-                recipient_name__icontains=keyword)
-            if recipient_list.exists():
-                recipient_match = True
-                recipient_qs = queryset.filter(recipient_id__in=recipient_list)
-
-            naics_match = False
             if keyword.isnumeric():
-                naics_list = NAICS.objects.all().filter(code__icontains=keyword).values('code')
+                compound_q = Q(recipient_unique_id__in=keyword) | \
+                    Q(parent_recipient_unique_id__in=keyword) | \
+                    Q(naics_code__icontains=keyword) | \
+                    Q(psc_code__in=keyword)
+                # if len(keyword) == 4:
             else:
-                naics_list = NAICS.objects.all().filter(
-                    description__icontains=keyword).values('code')
-            if naics_list.exists():
-                naics_match = True
-                naics_qs = queryset.filter(naics_code__in=naics_list)
+                compound_q = Q(naics_description__icontains=keyword) | \
+                    Q(psc_description__icontains=keyword)
 
-            psc_match = False
-            if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
-                psc_list = PSC.objects.all().filter(code=keyword).values('code')
-            else:
-                psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
-            if psc_list.exists():
-                psc_match = True
-                psc_qs = queryset.filter(psc_code__in=psc_list)
+            # if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
+            #     psc_list = PSC.objects.all().filter(code=keyword).values('code')
+            # else:
+            #     psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
 
-            duns_match = False
-            non_parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
-                recipient_unique_id=keyword)
-            parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
-                parent_recipient_unique_id=keyword)
-            duns_list = non_parent_duns_list | parent_duns_list
-            if duns_list.exists():
-                duns_match = True
-                duns_qs = queryset.filter(recipient_id__in=duns_list)
-
-            piid_qs = queryset.filter(piid=keyword)
-            # fain_qs = queryset.filter(fain=keyword)
-
-            # Always filter on fain/piid because fast:
-            queryset = piid_qs
-            # queryset |= fain_qs
-            # if description_match:
-            #     queryset |= description_qs
-            if recipient_match:
-                queryset |= recipient_qs
-            if naics_match:
-                queryset |= naics_qs
-            if psc_match:
-                queryset |= psc_qs
-            if duns_match:
-                queryset |= duns_qs
+            print('KEYWORD FILTER')
+            queryset = queryset.filter(
+                Q(recipient_name__icontains=keyword) |
+                Q(piid=keyword) |
+                Q(fain=keyword) |
+                compound_q
+                # Q(transaction_description__icontains=keyword)
+            )
+            print(queryset.query)
 
         # time_period
         elif key == "time_period":

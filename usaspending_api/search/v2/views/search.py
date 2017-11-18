@@ -56,13 +56,12 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             queryset = view_filter(filters, 'SummaryView')
             print('==================')
             print("Using Ed's Matview")
+        elif USE_NEW_MATVIEW:
+            queryset = matview_transaction_filter(filters)
+            print('====================')
+            print("Using Tony's Matview")
         else:
-            if USE_NEW_MATVIEW:
-                queryset = matview_transaction_filter(filters)
-                print('====================')
-                print("Using Tony's Matview")
-            else:
-                queryset = transaction_filter(filters)
+            queryset = transaction_filter(filters)
 
         # define what values are needed in the sql query
         queryset = queryset.values('action_date', 'federal_action_obligation')

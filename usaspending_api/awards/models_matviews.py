@@ -35,12 +35,15 @@ class MatviewAwardSearch(models.Model):
     pop_congressional_code = models.TextField()
 
     issued_date = models.TextField()
-    face_value_loan_guarentee = models.TextField()
+    face_value_loan_guarantee = models.TextField()
     original_loan_subsidy_cost = models.TextField()
+    transaction_description = models.TextField()
     awarding_agency_id = models.IntegerField()
     awarding_agency_code = models.TextField()
+    awarding_agency_name = models.TextField()
     funding_agency_id = models.IntegerField()
     funding_agency_code = models.TextField()
+    funding_agency_name = models.TextField()
 
     naics_code = models.TextField()
     naics_description = models.TextField()

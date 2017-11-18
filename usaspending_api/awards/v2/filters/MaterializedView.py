@@ -115,7 +115,6 @@ def view_filter(filters, view_name):
 
 
 def can_use_view(filters, view_name):
-    print("checking if we can use Ed's view")
     try:
         key_list = MATVIEW_SELECTOR[view_name]['allowed_filters']
     except Exception as e:
