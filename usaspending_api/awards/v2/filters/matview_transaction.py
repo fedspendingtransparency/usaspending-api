@@ -1,6 +1,6 @@
 from django.db.models import Q
 
-from usaspending_api.awards.models_matviews import MatviewAwardSearch
+from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 
@@ -20,7 +20,7 @@ def date_or_fy_queryset(time_object):
                 fys.append(key)
                 break
     if len(fys) == len(time_object):
-        return True, MatviewAwardSearch.objects.filter(fiscal_year__in=fys)
+        return True, UniversalTransactionView.objects.filter(fiscal_year__in=fys)
 
     or_queryset = None
     queryset_init = False
@@ -33,10 +33,10 @@ def date_or_fy_queryset(time_object):
             kwargs["action_date__lte"] = v.get("end_date")
         # (may have to cast to date) (oct 1 to sept 30)
         if queryset_init:
-            or_queryset |= MatviewAwardSearch.objects.filter(**kwargs)
+            or_queryset |= UniversalTransactionView.objects.filter(**kwargs)
         else:
             queryset_init = True
-            or_queryset = MatviewAwardSearch.objects.filter(**kwargs)
+            or_queryset = UniversalTransactionView.objects.filter(**kwargs)
     if queryset_init:
         return True, or_queryset
     return False, None
@@ -53,7 +53,7 @@ def total_obligation_queryset(amount_obj):
                 break
 
     if len(bins) == len(amount_obj):
-        return True, MatviewAwardSearch.objects.filter(total_obl_bin__in=bins)
+        return True, UniversalTransactionView.objects.filter(total_obl_bin__in=bins)
     else:
         or_queryset = None
         queryset_init = False
@@ -61,32 +61,32 @@ def total_obligation_queryset(amount_obj):
         for v in amount_obj:
             if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                 if queryset_init:
-                    or_queryset |= MatviewAwardSearch.objects.filter(
+                    or_queryset |= UniversalTransactionView.objects.filter(
                         total_obligation__gt=v["lower_bound"],
                         total_obligation__lt=v["upper_bound"]
                     )
                 else:
                     queryset_init = True
-                    or_queryset = MatviewAwardSearch.objects.filter(
+                    or_queryset = UniversalTransactionView.objects.filter(
                         total_obligation__gt=v["lower_bound"],
                         total_obligation__lt=v["upper_bound"])
             elif v.get("lower_bound") is not None:
                 if queryset_init:
-                    or_queryset |= MatviewAwardSearch.objects.filter(
+                    or_queryset |= UniversalTransactionView.objects.filter(
                         total_obligation__gt=v["lower_bound"]
                     )
                 else:
                     queryset_init = True
-                    or_queryset = MatviewAwardSearch.objects.filter(
+                    or_queryset = UniversalTransactionView.objects.filter(
                         total_obligation__gt=v["lower_bound"])
             elif v.get("upper_bound") is not None:
                 if queryset_init:
-                    or_queryset |= MatviewAwardSearch.objects.filter(
+                    or_queryset |= UniversalTransactionView.objects.filter(
                         total_obligation__lt=v["upper_bound"]
                     )
                 else:
                     queryset_init = True
-                    or_queryset = MatviewAwardSearch.objects.filter(
+                    or_queryset = UniversalTransactionView.objects.filter(
                         total_obligation__lt=v["upper_bound"])
             else:
                 raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
@@ -97,7 +97,7 @@ def total_obligation_queryset(amount_obj):
 
 # TODO: Performance when multiple false values are initially provided
 def matview_transaction_filter(filters):
-    queryset = MatviewAwardSearch.objects.all()
+    queryset = UniversalTransactionView.objects.all()
     for key, value in filters.items():
         # check for valid key
         if value is None:
@@ -165,7 +165,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(type__in=or_queryset)
+                queryset &= UniversalTransactionView.objects.filter(type__in=or_queryset)
 
         # agencies
         elif key == "agencies":
@@ -195,19 +195,19 @@ def matview_transaction_filter(filters):
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
             if len(funding_toptier) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     funding_toptier_agency_name__in=funding_toptier
                 )
             if len(funding_subtier) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     funding_subtier_agency_name__in=funding_subtier
                 )
             if len(awarding_toptier) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     awarding_toptier_agency_name__in=awarding_toptier
                 )
             if len(awarding_subtier) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     awarding_subtier_agency_name__in=awarding_subtier
                 )
 
@@ -217,7 +217,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     recipient_id__in=or_queryset
                 )
 
@@ -238,7 +238,7 @@ def matview_transaction_filter(filters):
         # recipient_location
         elif key == "recipient_locations":
             or_queryset = geocode_filter_locations(
-                'recipient_location', value, 'MatviewAwardSearch', True
+                'recipient_location', value, 'UniversalTransactionView', True
             )
 
             queryset &= or_queryset
@@ -249,7 +249,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     business_types_description__in=or_queryset
                 )
 
@@ -265,7 +265,7 @@ def matview_transaction_filter(filters):
         # place_of_performance
         elif key == "place_of_performance_locations":
             or_queryset = geocode_filter_locations(
-                'pop', value, 'MatviewAwardSearch', True
+                'pop', value, 'UniversalTransactionView', True
             )
 
             queryset &= or_queryset
@@ -282,7 +282,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(award_id__in=or_queryset)
+                queryset &= UniversalTransactionView.objects.filter(award_id__in=or_queryset)
 
         # program_numbers
         elif key == "program_numbers":
@@ -290,7 +290,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     cfda_number__in=or_queryset)
 
         # naics_codes
@@ -299,7 +299,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     naics_code__in=or_queryset)
 
         # psc_codes
@@ -308,7 +308,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     psc_code__in=or_queryset)
 
         # contract_pricing_type_codes
@@ -317,7 +317,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     type_of_contract_pricing__in=or_queryset)
 
         # set_aside_type_codes
@@ -326,7 +326,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     type_set_aside__in=or_queryset)
 
         # extent_competed_type_codes
@@ -335,7 +335,7 @@ def matview_transaction_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= MatviewAwardSearch.objects.filter(
+                queryset &= UniversalTransactionView.objects.filter(
                     extent_competed__in=or_queryset)
 
     return queryset

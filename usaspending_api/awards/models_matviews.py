@@ -5,7 +5,7 @@ from django.core.cache import CacheKeyWarning
 warnings.simplefilter("ignore", CacheKeyWarning)
 
 
-class MatviewAwardSearch(models.Model):
+class UniversalTransactionView(models.Model):
     # Fields
     transaction_id = models.IntegerField(blank=False, null=False, primary_key=True)
     action_date = models.DateField(blank=True, null=False)
@@ -85,7 +85,7 @@ class MatviewAwardSearch(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'award_search_matview'
+        db_table = 'universal_transaction_matview'
 
 
 class SummaryAwardView(models.Model):

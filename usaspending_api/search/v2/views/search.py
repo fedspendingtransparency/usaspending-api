@@ -15,7 +15,7 @@ from functools import total_ordering
 from datetime import date
 from fiscalyear import FiscalDate
 
-from usaspending_api.awards.v2.filters.MaterializedView import view_filter, can_use_view
+from usaspending_api.awards.v2.filters.view_selector import view_filter, can_use_view
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
@@ -596,12 +596,107 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
-        scope = json_request.get("scope")
-        filters = json_request.get("filters", {})
+        self.scope = json_request.get("scope")
+        self.filters = json_request.get("filters", {})
         self.geo_layer = json_request.get("geo_layer")
         self.geo_layer_filters = json_request.get("geo_layer_filters")
+
+        if USE_NEW_MATVIEW:
+            return self.use_matview(request)
+        else:
+            return self.non_matview(request)
+
+    def use_matview(self, request):
+        print('Using Matview')
+        fields_list = []  # fields to include in the aggregate query
+
+        loc_dict = {
+            'state': 'state_code',
+            'county': 'county_code',
+            'district': 'congressional_code'
+        }
+
+        model_dict = {
+            'place_of_performance': 'pop',
+            'recipient_location': 'recipient_location'
+        }
+
+        # Build the query based on the scope fields and geo_layers
+        # Fields not in the reference objects above then request is invalid
+
+        scope_field_name = model_dict.get(self.scope)
+        loc_field_name = loc_dict.get(self.geo_layer)
+        loc_lookup = '{}_{}'.format(scope_field_name, loc_field_name)
+
+        if scope_field_name is None:
+            raise InvalidParameterException("Invalid request parameters: scope")
+
+        if loc_field_name is None:
+            raise InvalidParameterException("Invalid request parameters: geo_layer")
+
+        # build sql query filters
+        self.queryset = matview_transaction_filter(self.filters)
+
+        if self.geo_layer == 'state':
+            # State will have one field (state_code) containing letter A-Z
+            kwargs = {
+                '{}_country_code'.format(scope_field_name): 'USA',
+                'federal_action_obligation__isnull': False
+            }
+
+            # Only state scope will add its own state code
+            # State codes are consistent in db ie AL, AK
+            fields_list.append(loc_lookup)
+
+            state_response = {
+                'scope': self.scope,
+                'geo_layer': self.geo_layer,
+                'results': self.state_results_matview(kwargs, fields_list, loc_lookup)
+            }
+
+            return Response(state_response)
+
+        else:
+            # County and district scope will need to select multiple fields
+            # State code is needed for county/district aggregation
+            state_lookup = '{}_{}'.format(scope_field_name, loc_dict['state'])
+            fields_list.append(state_lookup)
+
+            # Adding regex to county/district codes to remove entries with letters since
+            # can't be surfaced by map
+            kwargs = {'federal_action_obligation__isnull': False}
+
+            if self.geo_layer == 'county':
+                # County name added to aggregation since consistent in db
+                county_name = '{}_{}'.format(scope_field_name, 'county_name')
+                fields_list.append(county_name)
+                self.county_district_queryset_matview(kwargs, fields_list,
+                                              loc_lookup, state_lookup, scope_field_name
+                                              )
+
+                county_response = {
+                    'scope': self.scope,
+                    'geo_layer': self.geo_layer,
+                    'results': self.county_results(state_lookup, county_name)
+                }
+
+                return Response(county_response)
+            else:
+                self.county_district_queryset_matview(kwargs, fields_list,
+                                              loc_lookup, state_lookup, scope_field_name
+                                              )
+
+                district_response = {
+                    'scope': self.scope,
+                    'geo_layer': self.geo_layer,
+                    'results': self.district_results(state_lookup)
+                }
+
+                return Response(district_response)
+
+    def non_matview(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
         fields_list = []  # fields to include in the aggregate query
 
         loc_dict = {
@@ -618,7 +713,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Build the query based on the scope fields and geo_layers
         # Fields not in the reference objects above then request is invalid
 
-        scope_field_name = model_dict.get(scope)
+        scope_field_name = model_dict.get(self.scope)
         loc_field_name = loc_dict.get(self.geo_layer)
         loc_lookup = '{}__{}'.format(scope_field_name, loc_field_name)
 
@@ -629,7 +724,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             raise InvalidParameterException("Invalid request parameters: geo_layer")
 
         # build sql query filters
-        self.queryset = transaction_filter(filters)
+        self.queryset = transaction_filter(self.filters)
 
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
@@ -643,7 +738,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             fields_list.append(loc_lookup)
 
             state_response = {
-                'scope': scope,
+                'scope': self.scope,
                 'geo_layer': self.geo_layer,
                 'results': self.state_results(kwargs, fields_list, loc_lookup)
             }
@@ -669,7 +764,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                                               )
 
                 county_response = {
-                    'scope': scope,
+                    'scope': self.scope,
                     'geo_layer': self.geo_layer,
                     'results': self.county_results(state_lookup, county_name)
                 }
@@ -681,12 +776,40 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                                               )
 
                 district_response = {
-                    'scope': scope,
+                    'scope': self.scope,
                     'geo_layer': self.geo_layer,
                     'results': self.district_results(state_lookup)
                 }
 
                 return Response(district_response)
+
+    def state_results_matview(self, filter_args, lookup_fields, loc_lookup):
+        # Adding additional state filters if specified
+        if self.geo_layer_filters:
+            self.queryset = self.queryset.filter(**{'{}__{}'.format(loc_lookup, 'in'): self.geo_layer_filters})
+        else:
+            # Adding null filter for state for specific partial index
+            # when not using geocode_filter
+            filter_args['{}_{}'.format(loc_lookup, 'isnull')] = False
+
+        self.geo_queryset = self.queryset.filter(**filter_args) \
+            .values(*lookup_fields) \
+            .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+        print('====================================')
+        print(generate_raw_quoted_query(self.geo_queryset))
+
+        # State names are inconsistent in database (upper, lower, null)
+        # Used lookup instead to be consistent
+        results = [
+            {
+                'shape_code': x[loc_lookup],
+                'aggregated_amount': x['federal_action_obligation'],
+                'display_name': code_to_state.get(x[loc_lookup], {'name': 'None'}).get('name').title()
+            } for x in self.geo_queryset
+        ]
+
+        return results
 
     def state_results(self, filter_args, lookup_fields, loc_lookup):
         # Adding additional state filters if specified
@@ -701,6 +824,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             .values(*lookup_fields) \
             .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
+        print('====================================')
+        print(generate_raw_quoted_query(self.geo_queryset))
+
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
         results = [
@@ -712,6 +838,34 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         ]
 
         return results
+
+    def county_district_queryset_matview(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
+        # Filtering queryset to specific county/districts if requested
+        # Since geo_layer_filters comes as concat of state fips and county/district codes
+        # need to split for the geocode_filter
+        if self.geo_layer_filters:
+            self.queryset &= geocode_filter_locations(scope_field_name, [
+                {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
+                for x in self.geo_layer_filters
+            ], 'UniversalTransactionView')
+        else:
+            # Adding null,USA, not number filters for specific partial index
+            # when not using geocode_filter
+            kwargs['{}__{}'.format(loc_lookup, 'isnull')] = False
+            kwargs['{}__{}'.format(state_lookup, 'isnull')] = False
+            kwargs['{}_country_code'.format(scope_field_name)] = 'USA'
+            kwargs['{}__{}'.format(loc_lookup, 'iregex')] = r'^[0-9]*(\.\d+)?$'
+
+        # Turn county/district codes into float since inconsistent in database
+        # Codes in location table ex: '01', '1', '1.0'
+        # Cast will group codes as a float and will combine inconsistent codes
+        self.geo_queryset = self.queryset.filter(**kwargs) \
+            .values(*fields_list) \
+            .annotate(federal_action_obligation=Sum('federal_action_obligation'),
+                      code_as_float=Cast(loc_lookup, FloatField())
+                      )
+
+        return self.geo_queryset
 
     def county_district_queryset(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
         # Filtering queryset to specific county/districts if requested
@@ -743,6 +897,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
+        print('====================================')
+        print(generate_raw_quoted_query(self.geo_queryset))
+
         results = [
             {
                 'shape_code': code_to_state.get(x[state_lookup])['fips'] +
@@ -758,6 +915,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def district_results(self, state_lookup):
         # Returns congressional district results formatted for map
+        print('====================================')
+        print(generate_raw_quoted_query(self.geo_queryset))
         results = [
             {
                 'shape_code': code_to_state.get(x[state_lookup])['fips'] +
