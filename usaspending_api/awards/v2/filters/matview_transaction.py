@@ -148,8 +148,8 @@ def matview_transaction_filter(filters):
                 Q(recipient_name__icontains=keyword) |
                 Q(piid=keyword) |
                 Q(fain=keyword) |
-                compound_q
-                # Q(transaction_description__icontains=keyword)
+                compound_q |
+                Q(transaction_description__icontains=keyword)
             )
             print(queryset.query)
 

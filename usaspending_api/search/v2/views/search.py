@@ -213,7 +213,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 print('====================================')
                 print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
-                print('\n\nCompleted')
 
             else:
                 if scope == "agency":
@@ -671,9 +670,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 # County name added to aggregation since consistent in db
                 county_name = '{}_{}'.format(scope_field_name, 'county_name')
                 fields_list.append(county_name)
-                self.county_district_queryset_matview(kwargs, fields_list,
-                                              loc_lookup, state_lookup, scope_field_name
-                                              )
+                self.county_district_queryset_matview(
+                    kwargs,
+                    fields_list,
+                    loc_lookup,
+                    state_lookup,
+                    scope_field_name
+                )
 
                 county_response = {
                     'scope': self.scope,
@@ -683,9 +686,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
                 return Response(county_response)
             else:
-                self.county_district_queryset_matview(kwargs, fields_list,
-                                              loc_lookup, state_lookup, scope_field_name
-                                              )
+                self.county_district_queryset_matview(
+                    kwargs,
+                    fields_list,
+                    loc_lookup,
+                    state_lookup,
+                    scope_field_name
+                )
 
                 district_response = {
                     'scope': self.scope,
