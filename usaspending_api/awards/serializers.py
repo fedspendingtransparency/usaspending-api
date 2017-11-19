@@ -58,37 +58,6 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
         }
 
 
-class SubawardSerializer(LimitableSerializer):
-
-    prefetchable = False
-
-    class Meta:
-        model = Subaward
-        fields = '__all__'
-        nested_serializers = {
-            "recipient": {
-                "class": LegalEntitySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "awarding_agency": {
-                "class": AgencySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "funding_agency": {
-                "class": AgencySerializer,
-                "kwargs": {"read_only": True}
-            },
-            "place_of_performance": {
-                "class": LocationSerializer,
-                "kwargs": {"read_only": True}
-            },
-            "cfda": {
-                "class": CfdaSerializer,
-                "kwargs": {"read_only": True}
-            },
-        }
-
-
 class TransactionFABSSerializer(LimitableSerializer):
 
     prefetchable = False
@@ -250,3 +219,38 @@ class AwardSerializer(LimitableSerializer):
 
     def get_date_signed__fy(self, obj):
         return fy(obj.date_signed)
+
+
+class SubawardSerializer(LimitableSerializer):
+
+    prefetchable = False
+
+    class Meta:
+        model = Subaward
+        fields = '__all__'
+        nested_serializers = {
+            "award": {
+                "class": AwardSerializer,
+                "kwargs": {"read_only": True}
+            },
+            "recipient": {
+                "class": LegalEntitySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "awarding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "funding_agency": {
+                "class": AgencySerializer,
+                "kwargs": {"read_only": True}
+            },
+            "place_of_performance": {
+                "class": LocationSerializer,
+                "kwargs": {"read_only": True}
+            },
+            "cfda": {
+                "class": CfdaSerializer,
+                "kwargs": {"read_only": True}
+            },
+        }
