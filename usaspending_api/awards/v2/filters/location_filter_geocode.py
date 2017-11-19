@@ -28,6 +28,7 @@ def geocode_filter_locations(scope, values, model, use_matview=False):
         check_location_fields(fields)
 
         kwargs = {}
+        or_queryset = None
 
         for loc_scope in fields:
             if loc_dict.get(loc_scope) is not None:
