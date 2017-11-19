@@ -857,7 +857,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         has_next = len(limited_queryset) > limit
 
         for award in limited_queryset[:limit]:
-            row = {"internal_id": award["id"]}
+            row = {"internal_id": award["award_id"]}
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 for field in fields:
                     row[field] = award[award_contracts_mapping[field]]
