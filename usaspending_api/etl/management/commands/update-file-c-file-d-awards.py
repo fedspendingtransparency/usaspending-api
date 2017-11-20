@@ -9,7 +9,7 @@ logger = logging.getLogger('console')
 
 
 class Command(BaseCommand):
-    """    
+    """
     This command will grab a file c award and remap it to the correct file d award
     """
 
