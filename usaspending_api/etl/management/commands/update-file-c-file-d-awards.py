@@ -9,10 +9,11 @@ logger = logging.getLogger('console')
 
 
 class Command(BaseCommand):
-    """
+    """    
     This command will grab a file c award and remap it to the correct file d award
     """
-    help = "remap file c awards to their corresponding file d award "
+
+    help = "remap file c awards to their corresponding file d award"
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -28,7 +29,7 @@ class Command(BaseCommand):
                                                                  treasury_account__federal_account_id=1411
                                                                  ).values("piid", "fain", "uri", "award_id",
                                                                           "financial_accounts_by_awards_id",
-                                                                          "award__awarding_agency__toptier_agency_id")[:1000]
+                                                                          "award__awarding_agency__toptier_agency_id")
 
         start_time = datetime.now()
         size_of = str(len(faba_queryset))
