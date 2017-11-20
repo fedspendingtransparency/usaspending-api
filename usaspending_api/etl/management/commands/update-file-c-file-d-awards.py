@@ -6,6 +6,8 @@ from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.references.models import Agency
 from django.core.management.base import BaseCommand
 logger = logging.getLogger('console')
+
+
 class Command(BaseCommand):
     """
     This command will grab a file c award and remap it to the correct file d award
@@ -26,7 +28,6 @@ class Command(BaseCommand):
                                                                           "financial_accounts_by_awards_id",
                                                                           "award__awarding_agency__toptier_agency_id")[:1000]
 
-
         start_time = datetime.now()
         size_of = str(len(faba_queryset))
         awards = Award.objects  # this stops the property lookup each iteration, saving 3+ seconds every 100 rows!
@@ -43,12 +44,15 @@ class Command(BaseCommand):
 
             possible_agencies = possible_agencies_cache[ttaid]
 
-            #split up the query based on null vals
+            # split up the query based on null vals
             kwargs = {}
             kwargs['recipient_id__isnull'] = False
-            if faba['piid'] is not None: kwargs['piid'] = faba['piid']
-            if faba['fain'] is not None: kwargs['fain'] = faba['fain']
-            if faba['uri'] is not None: kwargs['uri'] = faba['uri']
+            if faba['piid'] is not None:
+                kwargs['piid'] = faba['piid']
+            if faba['fain'] is not None:
+                kwargs['fain'] = faba['fain']
+            if faba['uri'] is not None:
+                kwargs['uri'] = faba['uri']
 
             award_queryset = awards.filter(**kwargs).values("id", "awarding_agency_id")
 
