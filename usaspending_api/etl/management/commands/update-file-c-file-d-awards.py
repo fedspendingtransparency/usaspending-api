@@ -16,6 +16,8 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        args = None
+        options = None
         remapped_awards = []
         bad_faba = []
         logger.info('starting File C awards remapping')
