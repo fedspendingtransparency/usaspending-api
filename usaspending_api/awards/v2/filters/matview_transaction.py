@@ -4,7 +4,7 @@ from django.db.models import Q
 from usaspending_api.awards.models_matviews import UniversalTransactionView, UniversalAwardView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-
+from usaspending_api.references.models import PSC
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
 from usaspending_api.common.helpers import dates_are_fiscal_year_bookends
@@ -140,7 +140,7 @@ def transaction_filter(filters):
             else:
                 naics_q = Q(naics_description__icontains=keyword)
 
-            if len(keyword) == 4:
+            if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
                 psc_q = Q(psc_code__in=keyword)
             else:
                 psc_q = Q(psc_description__icontains=keyword)
@@ -152,8 +152,8 @@ def transaction_filter(filters):
                 naics_q |
                 psc_q |
                 Q(transaction_description__icontains=keyword) |
-                Q(recipient_unique_id__in=keyword) |
-                Q(parent_recipient_unique_id__in=keyword)
+                Q(recipient_unique_id=keyword) |
+                Q(parent_recipient_unique_id=keyword)
             )
 
         # time_period
@@ -384,10 +384,10 @@ def award_filter(filters):
             else:
                 naics_q = Q(naics_description__icontains=keyword)
 
-            if len(keyword) == 4:
-                psc_q = Q(psc_code__in=keyword)
+            if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
+                psc_q = Q(product_or_service_code=keyword)
             else:
-                psc_q = Q(psc_description__icontains=keyword)
+                psc_q = Q(product_or_service_description__icontains=keyword)
 
             queryset = queryset.filter(
                 Q(recipient_name__icontains=keyword) |
@@ -396,8 +396,8 @@ def award_filter(filters):
                 naics_q |
                 psc_q |
                 Q(description__icontains=keyword) |
-                Q(recipient_unique_id__in=keyword) |
-                Q(parent_recipient_unique_id__in=keyword)
+                Q(recipient_unique_id=keyword) |
+                Q(parent_recipient_unique_id=keyword)
             )
 
         elif key == "time_period":
