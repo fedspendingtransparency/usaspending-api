@@ -67,7 +67,7 @@ class Command(BaseCommand):
         # by the Broker's PK since every modification is a new row
         db_query = 'SELECT * ' \
                    'FROM detached_award_procurement ' \
-                   "WHERE piid = '0005' AND parent_award_id = 'W52P1J07D0008' " \
+                   'WHERE updated_at >= %s ' \
                    'ORDER BY detached_award_procurement_id ASC'
         db_args = [date]
 
@@ -204,7 +204,7 @@ class Command(BaseCommand):
             awarding_agency = (Agency.get_by_toptier_subtier(
                 row['awarding_agency_code'],
                 row["awarding_sub_tier_agency_c"]
-                ) or (
+                )) or (
                 Agency.get_by_subtier_only(
                     row["awarding_sub_tier_agency_c"]))
 
