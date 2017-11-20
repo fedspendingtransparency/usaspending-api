@@ -257,7 +257,8 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
             if required_param not in filters:
                 raise InvalidParameterException('{} filter not provided'.format(required_param))
 
-        and_queryset_filters = {}
+        table = value_mappings[award_level]['table']
+        queryset = table.objects.all()
 
         # Adding award type filter
         award_types = []
@@ -271,7 +272,15 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('award_types parameter not provided as a list')
         # if the filter is calling everything, just remove the filter, save on the query performance
         if set(award_types) != set(itertools.chain(*award_type_mappings.values())):
-            and_queryset_filters['{}__in'.format(value_mappings[award_level]['type'])] = award_types
+            type_queryset_filters = {}
+            type_queryset_filters['{}__in'.format(value_mappings[award_level]['type'])] = award_types
+            type_queryset = table.objects.filter(**type_queryset_filters)
+            if (filters['award_types'] == ['contracts']):
+                # IDV Flag
+                idv_queryset_filters = {'{}__isnull'.format(value_mappings[award_level]['type']): True,
+                                        '{}__pulled_from'.format(value_mappings[award_level]['contract_data']): 'IDV'}
+                type_queryset |= table.objects.filter(**idv_queryset_filters)
+            queryset &= type_queryset
 
         # Adding date range filters
         # Get the date type attribute
@@ -284,34 +293,26 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('Invalid parameter for date_type: {}'.format(filters['date_type']))
         # Get the date ranges
         try:
+            date_range_filters = {}
             if 'start_date' in filters['date_range'] and filters['date_range']['start_date']:
-                and_queryset_filters['{}__gte'.format(date_attribute)] = filters['date_range']['start_date']
+                date_range_filters['{}__gte'.format(date_attribute)] = filters['date_range']['start_date']
             if 'end_date' in filters['date_range'] and filters['date_range']['end_date']:
-                and_queryset_filters['{}__lte'.format(date_attribute)] = filters['date_range']['end_date']
+                date_range_filters['{}__lte'.format(date_attribute)] = filters['date_range']['end_date']
+            queryset &= table.objects.filter(**date_range_filters)
         except TypeError:
             raise InvalidParameterException('date_range parameter not provided as an object')
 
         # Agencies are to be OR'd together and then AND'd to the major query
-        or_queryset = None
+        agencies_queryset = None
         if filters['agency'] != 'all':
-            or_queryset = (Q(awarding_agency__toptier_agency_id=filters['agency']) |
+            agencies_queryset = (Q(awarding_agency__toptier_agency_id=filters['agency']) |
                            Q(funding_agency__toptier_agency_id=filters['agency']))
             if 'sub_agency' in filters and filters['sub_agency']:
-                or_queryset = (or_queryset & (Q(awarding_agency__subtier_agency_id=filters['sub_agency']) |
-                                              Q(funding_agency__subtier_agency_id=filters['sub_agency'])))
+                agencies_queryset = (agencies_queryset & (Q(awarding_agency__subtier_agency_id=filters['sub_agency']) |
+                                                          Q(funding_agency__subtier_agency_id=filters['sub_agency'])))
+            queryset &= table.objects.filter(agencies_queryset)
 
-        # Put it all together
-        table = value_mappings[award_level]['table']
-        if and_queryset_filters is not None and or_queryset is not None:
-            filtered_queryset = table.objects.filter(**and_queryset_filters).filter(or_queryset)
-        elif and_queryset_filters is not None:
-            filtered_queryset = table.objects.filter(**and_queryset_filters)
-        elif or_queryset is not None:
-            filtered_queryset = table.objects.filter(or_queryset)
-        else:
-            filtered_queryset = table.objects.all()
-
-        return filtered_queryset
+        return queryset
 
     def get_csv_sources(self, json_request):
         """
