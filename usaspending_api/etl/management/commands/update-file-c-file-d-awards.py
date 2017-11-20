@@ -5,17 +5,13 @@ from django.db import connections, transaction, connection
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.references.models import Agency
 from django.core.management.base import BaseCommand
-# This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
 logger = logging.getLogger('console')
 class Command(BaseCommand):
     """
-    This command will load a single submission from the DATA Act broker. If
-    we've already loaded the specified broker submisison, this command
-    will remove the existing records before loading them again.
+    This command will grab a file c award and remap it to the correct file d award
     """
     help = "remap file c awards to their corresponding file d award "
-    # def add_arguments(self, parser):
-    #     pass
+
     @transaction.atomic
     def handle(self, *args, **options):
         remapped_awards = []
@@ -24,24 +20,19 @@ class Command(BaseCommand):
 
         # 1) Get all file C awards
         faba_queryset = FinancialAccountsByAwards.objects.filter(award__isnull=False,
-                                                                 # award__latest_transaction_id__isnull=True,
                                                                  award__recipient_id__isnull=True,
                                                                  treasury_account__federal_account_id=1411
                                                                  ).values("piid", "fain", "uri", "award_id",
                                                                           "financial_accounts_by_awards_id",
                                                                           "award__awarding_agency__toptier_agency_id")[:1000]
 
-        # # awards that the file D should map to (pandas)
-        # file_d_award_queryset = Award.objects.filter(recipient_id__isnull=False, date_signed__gt='2016-01-01')\
-        #     .values("id", "piid", "fain", "uri","awarding_agency__toptier_agency_id")
 
         start_time = datetime.now()
         size_of = str(len(faba_queryset))
-        print(size_of)
         awards = Award.objects  # this stops the property lookup each iteration, saving 3+ seconds every 100 rows!
         possible_agencies_cache = {}
         for index, faba in enumerate(faba_queryset, 1):
-            if not (index % 100):
+            if not (index % 1000):
                 logger.info('command update: Loading row {} of {} ({})'.format(str(index), size_of,
                                                                                datetime.now() - start_time))
             file_c_award_id = faba['award_id']
@@ -54,30 +45,23 @@ class Command(BaseCommand):
 
             #split up the query based on null vals
             kwargs = {}
-            # kwargs['awarding_agency__in'] = possible_agencies
             kwargs['recipient_id__isnull'] = False
             if faba['piid'] is not None: kwargs['piid'] = faba['piid']
             if faba['fain'] is not None: kwargs['fain'] = faba['fain']
             if faba['uri'] is not None: kwargs['uri'] = faba['uri']
 
-            # print(kwargs)
             award_queryset = awards.filter(**kwargs).values("id", "awarding_agency_id")
 
-            # print(conn ection.queries)
             award_count = len(award_queryset)
-            # print(connection.queries)
 
             file_d_award = None
             if award_count == 1:
                 file_d_award = award_queryset[0]
-            # #if file_d_award and file_d_award['awarding_agency_id'] in possible_agencies:
             if file_d_award and file_d_award["awarding_agency_id"] in map(lambda d: d['id'], possible_agencies):
                 faba['award_id'] = file_d_award['id']
                 remapped_awards.append("{} to {}.".format(file_c_award_id, file_d_award['id']))
             else:
                 bad_faba.append(faba['financial_accounts_by_awards_id'])
-            # if index==1:
-            #     break
 
         logger.info('ending File C awards remapping. Elapsed Time ({})'.format(datetime.now() - start_time))
         logger.info('REMAPPED:  {}'.format(remapped_awards))
