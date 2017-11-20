@@ -37,8 +37,7 @@ def view_filter(filters, view_name):
 
     try:
         view_objects = MATVIEW_SELECTOR[view_name]['model']
-    except Exception as e:
-        print(e)
+    except Exception:
         raise InvalidParameterException('Invalid view: ' + view_name + ' does not exist.')
 
     queryset = view_objects.all()
@@ -104,12 +103,8 @@ def view_filter(filters, view_name):
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
             if len(funding_toptier) != 0:
                 queryset &= view_objects.filter(funding_agency_name__in=funding_toptier)
-            # if len(funding_subtier) != 0:
-            #     queryset &= viewObjects.filter(funding_agency__subtier_agency__name__in=funding_subtier)
             if len(awarding_toptier) != 0:
                 queryset &= view_objects.filter(awarding_agency_name__in=awarding_toptier)
-            # if len(awarding_subtier) != 0:
-            #     queryset &= viewObjects.filter(awarding_agency__subtier_agency__name__in=awarding_subtier)
 
     return queryset
 
@@ -130,6 +125,4 @@ def can_use_view(filters, view_name):
         for v in agencies:
             if v["tier"] == "subtier":
                 return False
-
-    print('Can use Ed matview')
     return True

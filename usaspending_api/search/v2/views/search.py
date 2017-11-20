@@ -36,7 +36,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        print('<<<<< SpendingOverTime >>>>>')
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
         group = json_request.get('group', None)
@@ -53,8 +52,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # build sql query filters
         if can_use_view(filters, 'SummaryView'):
             queryset = view_filter(filters, 'SummaryView')
-            print('==================')
-            print("Using Ed's Matview")
         else:
             queryset = transaction_filter(filters)
 
@@ -72,8 +69,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             fy_set = queryset.values('fiscal_year')\
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
-            print('====================================')
-            print(generate_raw_quoted_query(fy_set))
             for trans in fy_set:
                 key = {'fiscal_year': str(trans['fiscal_year'])}
                 key = str(key)
@@ -85,8 +80,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 .values('fiscal_year', 'month') \
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
-            print('====================================')
-            print(generate_raw_quoted_query(month_set))
             for trans in month_set:
                 # Convert month to fiscal month
                 fiscal_month = generate_fiscal_month(date(year=2017, day=1, month=trans['month']))
@@ -101,8 +94,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 .values('fiscal_year', 'month') \
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
-            print('====================================')
-            print(generate_raw_quoted_query(month_set))
             for trans in month_set:
                 # Convert month to quarter
                 quarter = FiscalDate(2017, trans['month'], 1).quarter
@@ -146,7 +137,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        print('<<<<< SpendingByCategory >>>>>')
         """Return all budget function/subfunction titles matching the provided search text"""
         # TODO: check logic in name_dict[x]["aggregated_amount"] statements
 
@@ -200,8 +190,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     # NOT IMPLEMENTED IN UI
                     raise NotImplementedError
 
-            print('====================================')
-            print(generate_raw_quoted_query(queryset))
             results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -237,8 +225,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 # NOT IMPLEMENTED IN UI
                 raise NotImplementedError
 
-            print('====================================')
-            print(generate_raw_quoted_query(queryset))
             results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -257,8 +243,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .order_by("-aggregated_amount")
 
                 # Begin DB hits here
-                print('====================================')
-                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
 
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -275,8 +259,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
-                print('====================================')
-                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
@@ -304,9 +286,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         "cfda_program_number",
                         program_title=F("cfda_title")) \
                     .order_by('-aggregated_amount')
+
                 # Begin DB hits here
-                print('====================================')
-                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
@@ -334,9 +315,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         popular_name=F("cfda_popular_name"),
                         program_title=F("cfda_title")) \
                     .order_by('-aggregated_amount')
+
                 # Begin DB hits here
-                print('====================================')
-                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
@@ -348,8 +328,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             if scope == "psc":
                 if can_use_view(filters, 'SumaryPscCodesView'):
                     queryset = view_filter(filters, 'SumaryPscCodesView')
-                    print('==================')
-                    print("Using Ed's Matview")
                     queryset = queryset \
                         .filter(product_or_service_code__isnull=False) \
                         .values(psc_code=F("product_or_service_code")) \
@@ -363,8 +341,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         .order_by('-aggregated_amount')
 
                 # Begin DB hits here
-                print('====================================')
-                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
 
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -377,8 +353,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             elif scope == "naics":
                 if can_use_view(filters, 'SumaryNaicsCodesView'):
                     queryset = view_filter(filters, 'SumaryNaicsCodesView')
-                    print('==================')
-                    print("Using Ed's Matview")
                     queryset = queryset \
                         .filter(naics__isnull=False) \
                         .values(naics_code=F("naics")) \
@@ -400,8 +374,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                             'naics_description')
 
                 # Begin DB hits here
-                print('====================================')
-                print(generate_raw_quoted_query(queryset))
                 results = list(queryset[lower_limit:upper_limit + 1])
 
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -523,94 +495,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
                 return Response(district_response)
 
-    # def non_matview(self, request):
-    #     """Return all budget function/subfunction titles matching the provided search text"""
-    #     fields_list = []  # fields to include in the aggregate query
-
-    #     loc_dict = {
-    #         'state': 'state_code',
-    #         'county': 'county_code',
-    #         'district': 'congressional_code'
-    #     }
-
-    #     model_dict = {
-    #         'place_of_performance': 'place_of_performance',
-    #         'recipient_location': 'recipient__location'
-    #     }
-
-    #     # Build the query based on the scope fields and geo_layers
-    #     # Fields not in the reference objects above then request is invalid
-
-    #     scope_field_name = model_dict.get(self.scope)
-    #     loc_field_name = loc_dict.get(self.geo_layer)
-    #     loc_lookup = '{}__{}'.format(scope_field_name, loc_field_name)
-
-    #     if scope_field_name is None:
-    #         raise InvalidParameterException("Invalid request parameters: scope")
-
-    #     if loc_field_name is None:
-    #         raise InvalidParameterException("Invalid request parameters: geo_layer")
-
-    #     # build sql query filters
-    #     self.queryset = transaction_filter(self.filters)
-
-    #     if self.geo_layer == 'state':
-    #         # State will have one field (state_code) containing letter A-Z
-    #         kwargs = {
-    #             '{}__location_country_code'.format(scope_field_name): 'USA',
-    #             'federal_action_obligation__isnull': False
-    #         }
-
-    #         # Only state scope will add its own state code
-    #         # State codes are consistent in db ie AL, AK
-    #         fields_list.append(loc_lookup)
-
-    #         state_response = {
-    #             'scope': self.scope,
-    #             'geo_layer': self.geo_layer,
-    #             'results': self.state_results(kwargs, fields_list, loc_lookup)
-    #         }
-
-    #         return Response(state_response)
-
-    #     else:
-    #         # County and district scope will need to select multiple fields
-    #         # State code is needed for county/district aggregation
-    #         state_lookup = '{}__{}'.format(scope_field_name, loc_dict['state'])
-    #         fields_list.append(state_lookup)
-
-    #         # Adding regex to county/district codes to remove entries with letters since
-    #         # can't be surfaced by map
-    #         kwargs = {'federal_action_obligation__isnull': False}
-
-    #         if self.geo_layer == 'county':
-    #             # County name added to aggregation since consistent in db
-    #             county_name = '{}__{}'.format(scope_field_name, 'county_name')
-    #             fields_list.append(county_name)
-    #             self.county_district_queryset(kwargs, fields_list,
-    #                                           loc_lookup, state_lookup, scope_field_name
-    #                                           )
-
-    #             county_response = {
-    #                 'scope': self.scope,
-    #                 'geo_layer': self.geo_layer,
-    #                 'results': self.county_results(state_lookup, county_name)
-    #             }
-
-    #             return Response(county_response)
-    #         else:
-    #             self.county_district_queryset(kwargs, fields_list,
-    #                                           loc_lookup, state_lookup, scope_field_name
-    #                                           )
-
-    #             district_response = {
-    #                 'scope': self.scope,
-    #                 'geo_layer': self.geo_layer,
-    #                 'results': self.district_results(state_lookup)
-    #             }
-
-    #             return Response(district_response)
-
     def state_results_matview(self, filter_args, lookup_fields, loc_lookup):
         # Adding additional state filters if specified
         if self.geo_layer_filters:
@@ -623,9 +507,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.geo_queryset = self.queryset.filter(**filter_args) \
             .values(*lookup_fields) \
             .annotate(federal_action_obligation=Sum('federal_action_obligation'))
-
-        print('====================================')
-        print(generate_raw_quoted_query(self.geo_queryset))
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
@@ -652,8 +533,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             .values(*lookup_fields) \
             .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
-        print('====================================')
-        print(generate_raw_quoted_query(self.geo_queryset))
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
@@ -725,8 +604,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
-        print('====================================')
-        print(generate_raw_quoted_query(self.geo_queryset))
 
         results = [
             {
@@ -743,8 +620,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def district_results(self, state_lookup):
         # Returns congressional district results formatted for map
-        print('====================================')
-        print(generate_raw_quoted_query(self.geo_queryset))
         results = [
             {
                 'shape_code': code_to_state.get(x[state_lookup])['fips'] +
@@ -851,9 +726,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 queryset = queryset.order_by(*sort_filters)
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
-        print('====================================')
-        print(generate_raw_quoted_query(queryset))
-        print('^^^ SpendingByAward ^^^')
         has_next = len(limited_queryset) > limit
 
         for award in limited_queryset[:limit]:
@@ -895,8 +767,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         response = None
         if can_use_view(filters, 'SummaryAwardView'):
-            print('************************************')
-            print('SpendingByAwardCount matview')
             response = self.process_with_view(filters)
         else:
             response = self.process_with_tables(filters)

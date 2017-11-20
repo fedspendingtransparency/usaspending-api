@@ -35,7 +35,7 @@ def geocode_filter_locations(scope, values, model, use_matview=False):
                 key_str = q_str.format(scope, loc_dict.get(loc_scope))
                 kwargs[key_str] = get_fields_list(loc_dict.get(loc_scope), v.get(loc_scope))
 
-        model_name = apps.get_model('awards', model)
+        model_name = apps.get_model(model)
         qs = model_name.objects.filter(**kwargs)
 
         if queryset_init:

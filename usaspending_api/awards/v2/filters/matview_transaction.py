@@ -4,7 +4,7 @@ from django.db.models import Q
 from usaspending_api.awards.models_matviews import UniversalTransactionView, UniversalAwardView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.references.models import PSC
+from usaspending_api.references.models import PSC, NAICS
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
 from usaspending_api.common.helpers import dates_are_fiscal_year_bookends
@@ -135,26 +135,31 @@ def transaction_filter(filters):
         if key == "keyword":
             keyword = value
 
+            compound_or = Q(recipient_name__icontains=keyword) | \
+                Q(piid=keyword) | \
+                Q(fain=keyword) | \
+                Q(transaction_description__icontains=keyword) | \
+                Q(recipient_unique_id=keyword) | \
+                Q(parent_recipient_unique_id=keyword)
+
             if keyword.isnumeric():
-                naics_q = Q(naics_code__icontains=keyword)
+                naics_list = NAICS.objects.all().filter(
+                    code__icontains=keyword).values('code')
             else:
-                naics_q = Q(naics_description__icontains=keyword)
+                naics_list = NAICS.objects.all().filter(
+                    description__icontains=keyword).values('code')
+
+            if naics_list:
+                compound_or |= Q(naics_code__in=naics_list)
 
             if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
-                psc_q = Q(psc_code__in=keyword)
+                psc_list = PSC.objects.all().filter(code=keyword).values('code')
             else:
-                psc_q = Q(psc_description__icontains=keyword)
+                psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
+            if psc_list.exists():
+                compound_or |= Q(psc_code__in=psc_list)
 
-            queryset = queryset.filter(
-                Q(recipient_name__icontains=keyword) |
-                Q(piid=keyword) |
-                Q(fain=keyword) |
-                naics_q |
-                psc_q |
-                Q(transaction_description__icontains=keyword) |
-                Q(recipient_unique_id=keyword) |
-                Q(parent_recipient_unique_id=keyword)
-            )
+            queryset = queryset.filter(compound_or)
 
         # time_period
         elif key == "time_period":
@@ -379,26 +384,32 @@ def award_filter(filters):
         if key == "keyword":
             keyword = value
 
+            compound_or = Q(recipient_name__icontains=keyword) | \
+                Q(piid=keyword) | \
+                Q(fain=keyword) | \
+                Q(description__icontains=keyword) | \
+                Q(recipient_unique_id=keyword) | \
+                Q(parent_recipient_unique_id=keyword)
+
             if keyword.isnumeric():
-                naics_q = Q(naics_code__icontains=keyword)
+                naics_list = NAICS.objects.all().filter(
+                    code__icontains=keyword).values('code')
             else:
-                naics_q = Q(naics_description__icontains=keyword)
+                naics_list = NAICS.objects.all().filter(
+                    description__icontains=keyword).values('code')
+
+            if naics_list:
+                compound_or |= Q(naics_code__in=naics_list)
+                # naics_q = Q(naics_code__in=naics_list)
 
             if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
-                psc_q = Q(product_or_service_code=keyword)
+                psc_list = PSC.objects.all().filter(code=keyword).values('code')
             else:
-                psc_q = Q(product_or_service_description__icontains=keyword)
+                psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
+            if psc_list.exists():
+                compound_or |= Q(product_or_service_code__in=psc_list)
 
-            queryset = queryset.filter(
-                Q(recipient_name__icontains=keyword) |
-                Q(piid=keyword) |
-                Q(fain=keyword) |
-                naics_q |
-                psc_q |
-                Q(description__icontains=keyword) |
-                Q(recipient_unique_id=keyword) |
-                Q(parent_recipient_unique_id=keyword)
-            )
+            queryset = queryset.filter(compound_or)
 
         elif key == "time_period":
             or_queryset = None
@@ -482,7 +493,7 @@ def award_filter(filters):
                 raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
         elif key == "recipient_locations":
-            or_queryset = geocode_filter_locations('recipient__location', value, 'Award')
+            or_queryset = geocode_filter_locations('recipient_location', value, 'UniversalAwardView', True)
             queryset &= or_queryset
 
         elif key == "recipient_type_names":
@@ -501,7 +512,7 @@ def award_filter(filters):
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
         elif key == "place_of_performance_locations":
-            or_queryset = geocode_filter_locations('place_of_performance', value, 'Award')
+            or_queryset = geocode_filter_locations('place_of_performance', value, 'UniversalTransactionView', True)
 
             queryset &= or_queryset
 
