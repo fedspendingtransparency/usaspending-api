@@ -10,15 +10,6 @@ engines:
         enabled: false
   radon:
     enabled: true
-  duplication:
-    enabled: true
-    config:
-      languages:
-        python:
-          # bump up the mass, as the default
-          # was creating some unnecessary noise
-          # in duplication reports
-          mass_threshold: 40
 
 ratings:
   paths:
