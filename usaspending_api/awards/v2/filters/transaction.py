@@ -205,12 +205,9 @@ def transaction_filter(filters):
 
         # recipient_type_names
         elif key == "recipient_type_names":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
+            if len(value) != 0:
                 queryset &= TransactionNormalized.objects.filter(
-                    recipient__business_types_description__in=or_queryset
+                    recipient__business_categories__overlap=value
                 )
 
         # place_of_performance_scope (broken till data reload

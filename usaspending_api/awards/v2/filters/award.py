@@ -188,11 +188,10 @@ def award_filter(filters):
             queryset &= or_queryset
 
         elif key == "recipient_type_names":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(recipient__business_types_description__in=or_queryset)
+            if len(value) != 0:
+                queryset &= Award.objects.filter(
+                    recipient__business_categories__overlap=value
+                )
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
