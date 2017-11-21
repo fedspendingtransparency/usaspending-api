@@ -261,7 +261,7 @@ class Command(BaseCommand):
             dest="date",
             nargs='+',
             type=str,
-            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM"
+            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: MM/DD/YYYY"
         )
 
     @transaction.atomic
