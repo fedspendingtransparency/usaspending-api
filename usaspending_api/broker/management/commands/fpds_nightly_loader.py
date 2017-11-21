@@ -79,7 +79,8 @@ class Command(BaseCommand):
         for item in file_list:
             # if the date on the file is the same day as we're checking
             if re.search('.*_delete_records_(IDV|award).*', item) and '/' not in item and \
-                            datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= date:
+                            datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= \
+                            datetime.strptime(date, '%Y-%m-%d').date():
                 # make the url params to pass
                 url_params = {
                     'Bucket': fpds_bucket_name,
@@ -221,7 +222,7 @@ class Command(BaseCommand):
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
-                "last_modified_date": row['last_modified']
+                "last_modified_date": datetime.strptime(str(row['last_modified']), "%Y-%m-%d %H:%M:%S").date()
             }
 
             contract_field_map = {
@@ -260,7 +261,7 @@ class Command(BaseCommand):
             dest="date",
             nargs='+',
             type=str,
-            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: MM/DD/YYYY"
+            help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM"
         )
 
     @transaction.atomic
