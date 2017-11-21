@@ -702,7 +702,7 @@ query_paths = {
             'subaward_report_year': 'award_report_fy_year',
             'subaward_report_month': 'award_report_fy_month',
             'prime_awarding_agency_code': 'award__latest_transaction__contract_data__awarding_agency_code',
-            'prime_awarding_agency_name': 'award__latest_transaction__contract_data__awarding_agency_code',
+            'prime_awarding_agency_name': 'award__latest_transaction__contract_data__awarding_agency_name',
             'prime_awarding_sub_agency_code': 'award__latest_transaction__contract_data__awarding_sub_tier_agency_c',
             'prime_awarding_sub_agency_name': 'award__latest_transaction__contract_data__awarding_sub_tier_agency_n',
             'prime_awarding_office_code': 'award__latest_transaction__contract_data__awarding_office_code',
@@ -735,17 +735,16 @@ query_paths = {
             'subaward_naics_description': 'award__latest_transaction__contract_data__naics_description',
             'subawardee_business_type_code': 'recipient__business_types',
             'subawardee_business_type_description': 'recipient__business_types_description',
-            # Commented out as LegalEntity doesn't have a foreign key to LegalEntityOfficers
-            # 'highly_compensated_officer_1_name': '',
-            # 'highly_compensated_officer_1_amount': '',
-            # 'highly_compensated_officer_2_name': '',
-            # 'highly_compensated_officer_2_amount': '',
-            # 'highly_compensated_officer_3_name': '',
-            # 'highly_compensated_officer_3_amount': '',
-            # 'highly_compensated_officer_4_name': '',
-            # 'highly_compensated_officer_4_amount': '',
-            # 'highly_compensated_officer_5_name': '',
-            # 'highly_compensated_officer_5_amount': ''
+            'highly_compensated_officer_1_name': 'recipient__officers__officer_1_name',
+            'highly_compensated_officer_1_amount': 'recipient__officers__officer_1_amount',
+            'highly_compensated_officer_2_name': 'recipient__officers__officer_2_name',
+            'highly_compensated_officer_2_amount': 'recipient__officers__officer_2_amount',
+            'highly_compensated_officer_3_name': 'recipient__officers__officer_3_name',
+            'highly_compensated_officer_3_amount': 'recipient__officers__officer_3_amount',
+            'highly_compensated_officer_4_name': 'recipient__officers__officer_4_name',
+            'highly_compensated_officer_4_amount': 'recipient__officers__officer_4_amount',
+            'highly_compensated_officer_5_name': 'recipient__officers__officer_5_name',
+            'highly_compensated_officer_5_amount': 'recipient__officers__officer_5_amount'
         },
         'd2': {
             'subaward_number': 'subaward_number',
@@ -784,17 +783,16 @@ query_paths = {
             'cfda_title': 'award__latest_transaction__assistance_data__cfda_title',
             'subawardee_business_type_code': 'recipient__business_types',
             'subawardee_business_type_description': 'recipient__business_types_description',
-            # Commented out as LegalEntity doesn't have a foreign key to LegalEntityOfficers
-            # 'highly_compensated_officer_1_name': '',
-            # 'highly_compensated_officer_1_amount': '',
-            # 'highly_compensated_officer_2_name': '',
-            # 'highly_compensated_officer_2_amount': '',
-            # 'highly_compensated_officer_3_name': '',
-            # 'highly_compensated_officer_3_amount': '',
-            # 'highly_compensated_officer_4_name': '',
-            # 'highly_compensated_officer_4_amount': '',
-            # 'highly_compensated_officer_5_name': '',
-            # 'highly_compensated_officer_5_amount': ''
+            'highly_compensated_officer_1_name': 'recipient__officers__officer_1_name',
+            'highly_compensated_officer_1_amount': 'recipient__officers__officer_1_amount',
+            'highly_compensated_officer_2_name': 'recipient__officers__officer_2_name',
+            'highly_compensated_officer_2_amount': 'recipient__officers__officer_2_amount',
+            'highly_compensated_officer_3_name': 'recipient__officers__officer_3_name',
+            'highly_compensated_officer_3_amount': 'recipient__officers__officer_3_amount',
+            'highly_compensated_officer_4_name': 'recipient__officers__officer_4_name',
+            'highly_compensated_officer_4_amount': 'recipient__officers__officer_4_amount',
+            'highly_compensated_officer_5_name': 'recipient__officers__officer_5_name',
+            'highly_compensated_officer_5_amount': 'recipient__officers__officer_5_amount'
         }
     }
 }
@@ -1457,17 +1455,16 @@ human_names = {
             'subaward_naics_description',
             'subawardee_business_type_code',
             'subawardee_business_type_description',
-            # Commented out as LegalEntity doesn't have a foreign key to LegalEntityOfficers
-            # 'highly_compensated_officer_1_name',
-            # 'highly_compensated_officer_1_amount',
-            # 'highly_compensated_officer_2_name',
-            # 'highly_compensated_officer_2_amount',
-            # 'highly_compensated_officer_3_name',
-            # 'highly_compensated_officer_3_amount',
-            # 'highly_compensated_officer_4_name',
-            # 'highly_compensated_officer_4_amount',
-            # 'highly_compensated_officer_5_name',
-            # 'highly_compensated_officer_5_amount'
+            'highly_compensated_officer_1_name',
+            'highly_compensated_officer_1_amount',
+            'highly_compensated_officer_2_name',
+            'highly_compensated_officer_2_amount',
+            'highly_compensated_officer_3_name',
+            'highly_compensated_officer_3_amount',
+            'highly_compensated_officer_4_name',
+            'highly_compensated_officer_4_amount',
+            'highly_compensated_officer_5_name',
+            'highly_compensated_officer_5_amount'
         ],
         'd2': [
             'subaward_number',
@@ -1506,17 +1503,16 @@ human_names = {
             'cfda_title',
             'subawardee_business_type_code',
             'subawardee_business_type_description',
-            # Commented out as LegalEntity doesn't have a foreign key to LegalEntityOfficers
-            # 'highly_compensated_officer_1_name',
-            # 'highly_compensated_officer_1_amount',
-            # 'highly_compensated_officer_2_name',
-            # 'highly_compensated_officer_2_amount',
-            # 'highly_compensated_officer_3_name',
-            # 'highly_compensated_officer_3_amount',
-            # 'highly_compensated_officer_4_name',
-            # 'highly_compensated_officer_4_amount',
-            # 'highly_compensated_officer_5_name',
-            # 'highly_compensated_officer_5_amount'
+            'highly_compensated_officer_1_name',
+            'highly_compensated_officer_1_amount',
+            'highly_compensated_officer_2_name',
+            'highly_compensated_officer_2_amount',
+            'highly_compensated_officer_3_name',
+            'highly_compensated_officer_3_amount',
+            'highly_compensated_officer_4_name',
+            'highly_compensated_officer_4_amount',
+            'highly_compensated_officer_5_name',
+            'highly_compensated_officer_5_amount'
         ]
     }
 }
