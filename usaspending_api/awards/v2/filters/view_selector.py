@@ -112,8 +112,7 @@ def view_filter(filters, view_name):
 def can_use_view(filters, view_name):
     try:
         key_list = MATVIEW_SELECTOR[view_name]['allowed_filters']
-    except Exception as e:
-        print(e)
+    except KeyError:
         return False
 
     # Make sure *only* acceptable keys are in the filters for that view_name

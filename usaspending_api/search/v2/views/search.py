@@ -27,8 +27,6 @@ from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_ma
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
 
-from usaspending_api.common.helpers import generate_raw_quoted_query
-
 logger = logging.getLogger(__name__)
 
 
