@@ -20,6 +20,7 @@ def geocode_filter_locations(scope, values, model, use_matview=False, default_mo
     """
     q_str, loc_dict = return_query_strings(use_matview)
     queryset_init = False
+    or_queryset = None
 
     for v in values:
         fields = v.keys()
@@ -27,8 +28,6 @@ def geocode_filter_locations(scope, values, model, use_matview=False, default_mo
         check_location_fields(fields)
 
         kwargs = {}
-        or_queryset = None
-
         for loc_scope in fields:
             if loc_dict.get(loc_scope) is not None:
                 key_str = q_str.format(scope, loc_dict.get(loc_scope))
