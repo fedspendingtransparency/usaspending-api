@@ -246,7 +246,8 @@ def transaction_filter(filters):
         # recipient_location
         elif key == "recipient_locations":
             or_queryset = geocode_filter_locations(
-                'recipient_location', value, 'UniversalTransactionView', True
+                'recipient_location', value, 'UniversalTransactionView', True,
+                'universal_transaction_matview'
             )
 
             queryset &= or_queryset
@@ -273,7 +274,8 @@ def transaction_filter(filters):
         # place_of_performance
         elif key == "place_of_performance_locations":
             or_queryset = geocode_filter_locations(
-                'pop', value, 'UniversalTransactionView', True
+                'pop', value, 'UniversalTransactionView', True,
+                'universal_transaction_matview'
             )
 
             queryset &= or_queryset
@@ -493,7 +495,10 @@ def award_filter(filters):
                 raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
         elif key == "recipient_locations":
-            or_queryset = geocode_filter_locations('recipient_location', value, 'UniversalAwardView', True)
+            or_queryset = geocode_filter_locations(
+                'recipient_location', value, 'UniversalAwardView', True,
+                'universal_award_matview'
+            )
             queryset &= or_queryset
 
         elif key == "recipient_type_names":
@@ -512,7 +517,10 @@ def award_filter(filters):
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
         elif key == "place_of_performance_locations":
-            or_queryset = geocode_filter_locations('place_of_performance', value, 'UniversalTransactionView', True)
+            or_queryset = geocode_filter_locations(
+                'pop', value, 'UniversalAwardView', True,
+                'universal_award_matview'
+            )
 
             queryset &= or_queryset
 
@@ -572,7 +580,7 @@ def award_filter(filters):
                 or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= UniversalAwardView.objects.filter(
-                    naics__in=or_queryset)
+                    naics_code__in=or_queryset)
 
         elif key == "psc_codes":
             or_queryset = []
