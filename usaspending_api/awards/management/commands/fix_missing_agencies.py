@@ -7,11 +7,10 @@ Idempotent, and only assigns in unambiguous cases (subtier code uniquely matches
 import logging
 import time
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import connection
 
 logger = logging.getLogger('console')
-exception_logger = logging.getLogger("exceptions")
 
 BATCH_SIZE = 10000
 
@@ -44,7 +43,9 @@ class Command(BaseCommand):
 
     BOUNDARY_FINDER = """
         SELECT MIN(id) AS floor, MAX(id) AS ceiling
-        FROM   {}"""
+        FROM   {}
+        WHERE  awarding_agency_id IS NULL
+        OR     funding_agency_id IS NULL"""
 
     # Tuples of ( description, query)
     UPDATERS = (
@@ -78,6 +79,8 @@ class Command(BaseCommand):
         JOIN    subtier_agency st ON (st.subtier_code = t.funding_sub_tier_agency_co)
         JOIN    agency a ON (a.subtier_agency_id = st.subtier_agency_id)
         WHERE   aw.funding_agency_id IS NULL
+        AND     aw.id >= {floor}
+        AND     aw.id < {ceiling}
         GROUP BY aw.id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
@@ -85,8 +88,6 @@ class Command(BaseCommand):
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.award_id = awards.id
-    AND    awards.id >= {floor}
-    AND    awards.id < {ceiling};
     """),
         ('Awarding agency for FABS', """
     WITH    match_by_subtier AS (
@@ -98,6 +99,8 @@ class Command(BaseCommand):
         JOIN    subtier_agency st ON (st.subtier_code = t.awarding_sub_tier_agency_c)
         JOIN    agency a ON (a.subtier_agency_id = st.subtier_agency_id)
         WHERE   aw.awarding_agency_id IS NULL
+        AND     aw.id >= {floor}
+        AND     aw.id < {ceiling}
         GROUP BY aw.id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
@@ -105,8 +108,6 @@ class Command(BaseCommand):
     SET    awarding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.award_id = awards.id
-    AND    awards.id >= {floor}
-    AND    awards.id < {ceiling};
     """),
         ('Funding agency for FABS', """
     WITH    match_by_subtier AS (
@@ -118,6 +119,8 @@ class Command(BaseCommand):
         JOIN    subtier_agency st ON (st.subtier_code = t.funding_sub_tier_agency_co)
         JOIN    agency a ON (a.subtier_agency_id = st.subtier_agency_id)
         WHERE   aw.funding_agency_id IS NULL
+        AND     aw.id >= {floor}
+        AND     aw.id < {ceiling}
         GROUP BY aw.id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
@@ -125,7 +128,5 @@ class Command(BaseCommand):
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.award_id = awards.id
-    AND    awards.id >= {floor}
-    AND    awards.id < {ceiling};
     """),
     )
