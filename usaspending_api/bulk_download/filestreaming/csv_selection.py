@@ -12,6 +12,7 @@ import math
 import multiprocessing
 from filechunkio import FileChunkIO
 import mimetypes
+from collections import OrderedDict
 
 import boto
 from django.conf import settings
@@ -175,7 +176,7 @@ def apply_annotations_to_sql(raw_query, aliases):
     selects = [select.strip() for select in select_string.split(',')]
     if len(selects) != len(aliases):
         raise Exception("Length of alises doesn't match the columns in selects")
-    selects_mapping = dict(zip(aliases, selects))
+    selects_mapping = OrderedDict(zip(aliases, selects))
     new_select_string = ", ".join(['{} AS \"{}\"'.format(select, alias)
                                    for alias, select in selects_mapping.items()])
     return raw_query.replace(select_string, new_select_string)

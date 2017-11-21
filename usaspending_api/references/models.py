@@ -297,7 +297,10 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
             if not self.state_code:
                 self.state_code = state_to_code.get(self.state_name)
             elif not self.state_name:
-                self.state_name = code_to_state.get(self.state_code)['name']
+                state_obj = code_to_state.get(self.state_code)
+
+                if state_obj:
+                    self.state_name = state_obj['name']
 
     zip_code_pattern = re.compile('^(\d{5})\-?(\d{4})?$')
 
