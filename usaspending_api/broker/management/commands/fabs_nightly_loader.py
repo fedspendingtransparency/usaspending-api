@@ -48,7 +48,7 @@ class Command(BaseCommand):
         # by the Broker's PK since every modification is a new row
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
-                   'WHERE created_at >= %s' \
+                   'WHERE created_at >= %s ' \
                    'ORDER BY published_award_financial_assistance_id ASC'
         db_args = [date]
 
@@ -205,7 +205,7 @@ class Command(BaseCommand):
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
-                "last_modified_date": row['modified_at']
+                "last_modified_date": datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
             }
 
             fad_field_map = {
