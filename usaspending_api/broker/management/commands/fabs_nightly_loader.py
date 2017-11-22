@@ -184,9 +184,7 @@ class Command(BaseCommand):
             awarding_agency = (Agency.get_by_toptier_subtier(
                 row['awarding_agency_code'],
                 row["awarding_sub_tier_agency_c"]
-            ) or (
-                Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
-            )
+            ) or Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"]))
 
             (created, award) = Award.get_or_create_summary_award(
                 awarding_agency=awarding_agency,
