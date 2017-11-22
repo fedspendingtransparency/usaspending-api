@@ -1,10 +1,11 @@
 """
-Creates legal entities and adds them to transaction normalized rows and award rows based on Cathrine's table.  
+Creates legal entities and adds them to transaction normalized rows and award rows based on transaction_location_data from `create_locations`
 """
 
 import logging
 
 from django.core.management.base import BaseCommand
+from django.core.management import call_command
 from django.db import connection
 
 logger = logging.getLogger('console')
@@ -14,6 +15,9 @@ exception_logger = logging.getLogger("exceptions")
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
+
+        logger.info("Preparing location data")
+        call_command('create_locations')
 
         with connection.cursor() as curs:
             curs.execute(self.CREATE_TRANS_LE_TABLE)
@@ -36,7 +40,7 @@ class Command(BaseCommand):
     CREATE_LE_AND_TRANS_LE = """
         WITH trans_to_loc AS
         (
-        SELECT * FROM cathtable
+        SELECT transaction_id, location_id FROM transaction_location_data
         ),
         inserted_les AS
         (
@@ -45,7 +49,7 @@ class Command(BaseCommand):
           ON CONFLICT ON CONSTRAINT legal_entity_uc DO UPDATE SET data_source = 'DBR' -- lol
           RETURNING legal_entity_id, location_id
         )
-        INSERT INTO trans_to_le (transaction_id, legal_entity_id) 
+        INSERT INTO trans_to_le (transaction_id, legal_entity_id)
           SELECT trans_to_loc.transaction_id, inserted_les.legal_entity_id FROM trans_to_loc, inserted_les
           WHERE trans_to_loc.location_id = inserted_les.location_id
           ON CONFLICT ON CONSTRAINT trans_to_le_uc DO NOTHING;

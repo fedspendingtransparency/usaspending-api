@@ -1,6 +1,5 @@
 """
-Creates needed locations from transaction_fpds / fabs tables, and populates
-Idempotently re-runs location creation / matching code from broker FPDS data
+Creates needed locations from transaction_fpds / fabs tables, and populates `transaction_location_data`
 """
 
 import logging
