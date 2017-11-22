@@ -198,12 +198,9 @@ class Command(BaseCommand):
 
             award_update_id_list.append(award.id)
 
-            funding_agency = (
-                Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                              row["funding_sub_tier_agency_co"])
-                or
-                Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
-            )
+            funding_agency = (Agency.get_by_toptier_subtier(row['funding_agency_code'],
+                                                            row["funding_sub_tier_agency_co"]) or
+                              Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"]))
 
             parent_txn_value_map = {
                 "award": award,

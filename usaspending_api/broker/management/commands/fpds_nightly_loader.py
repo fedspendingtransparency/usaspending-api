@@ -221,8 +221,7 @@ class Command(BaseCommand):
 
             funding_agency = (
                 Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                              row["funding_sub_tier_agency_co"])
-                or
+                                              row["funding_sub_tier_agency_co"]) or
                 Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"]))
 
             parent_txn_value_map = {
