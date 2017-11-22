@@ -1,6 +1,4 @@
 from django.apps import apps
-
-from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.common.exceptions import InvalidParameterException
 
 loc_dict = {
@@ -12,7 +10,7 @@ loc_dict = {
 }
 
 
-def geocode_filter_locations(scope, values, model):
+def geocode_filter_locations(scope, values, model, use_matview=False, default_model='awards'):
     """
     Function filter querysets on location table
     scope- place of performance or recipient location mappings
@@ -20,8 +18,9 @@ def geocode_filter_locations(scope, values, model):
     model- awards or transactions will create queryset for model
     returns queryset
     """
-    or_queryset = None
+    q_str, loc_dict = return_query_strings(use_matview)
     queryset_init = False
+    or_queryset = None
 
     for v in values:
         fields = v.keys()
@@ -29,13 +28,12 @@ def geocode_filter_locations(scope, values, model):
         check_location_fields(fields)
 
         kwargs = {}
-
         for loc_scope in fields:
             if loc_dict.get(loc_scope) is not None:
-                key_str = '{0}__{1}__in'.format(scope, loc_dict.get(loc_scope))
+                key_str = q_str.format(scope, loc_dict.get(loc_scope))
                 kwargs[key_str] = get_fields_list(loc_dict.get(loc_scope), v.get(loc_scope))
 
-        model_name = apps.get_model('awards', model)
+        model_name = apps.get_model(default_model, model)
         qs = model_name.objects.filter(**kwargs)
 
         if queryset_init:
@@ -59,9 +57,20 @@ def check_location_fields(fields):
 
 
 def get_fields_list(scope, field_value):
-    """List of values to search for; `field_value`, plus possibley variants on it"""
-
+    """List of values to search for; `field_value`, plus possibly variants on it"""
     if scope not in ['state_code', 'location_country_code', 'zip5']:
         return [str(int(field_value)), field_value, str(float(field_value))]
 
     return [field_value]
+
+
+def return_query_strings(use_matview):
+    # Returns query strings according based on mat view or database
+
+    q_str = '{0}__{1}__in'
+
+    if use_matview:
+        q_str = '{0}_{1}__in'
+        loc_dict['country'] = 'country_code'
+
+    return q_str, loc_dict

@@ -7,6 +7,7 @@ from usaspending_api.search.tests.test_mock_data_search \
     import budget_function_data, all_filters
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_over_time_success(client, budget_function_data):
 
@@ -33,8 +34,9 @@ def test_spending_over_time_success(client, budget_function_data):
     assert resp.status_code == status.HTTP_200_OK
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
-def test_naics_autocomplete_failure(client):
+def test_spending_over_time_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
