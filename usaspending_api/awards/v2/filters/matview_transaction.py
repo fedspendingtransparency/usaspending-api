@@ -4,7 +4,7 @@ from django.db.models import Q
 from usaspending_api.awards.models_matviews import UniversalTransactionView, UniversalAwardView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.references.models import PSC, NAICS, LegalEntity
+from usaspending_api.references.models import PSC, NAICS
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
 from usaspending_api.common.helpers import dates_are_fiscal_year_bookends
@@ -258,7 +258,7 @@ def transaction_filter(filters):
                 or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= UniversalTransactionView.objects.filter(
-                    business_types_description__overlap=value
+                    business_categories__overlap=value
                 )
 
         # place_of_performance_scope
@@ -503,9 +503,7 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                duns_values = LegalEntity.objects.filter(business_types_description__overlap=or_queryset).\
-                    values('recipient_unique_id')
-                queryset &= UniversalAwardView.objects.filter(recipient_unique_id__in=duns_values)
+                queryset &= UniversalAwardView.objects.filter(business_categories__overlap=or_queryset)
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
