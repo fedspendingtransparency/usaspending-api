@@ -5,7 +5,6 @@ Creates legal entities and adds them to transaction normalized rows and award ro
 import logging
 
 from django.core.management.base import BaseCommand
-from django.core.management import call_command
 from django.db import connection
 
 logger = logging.getLogger('console')
@@ -15,9 +14,6 @@ exception_logger = logging.getLogger("exceptions")
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-
-        logger.info("Preparing location data")
-        call_command('create_locations')
 
         with connection.cursor() as curs:
             curs.execute(self.CREATE_TRANS_LE_TABLE)
