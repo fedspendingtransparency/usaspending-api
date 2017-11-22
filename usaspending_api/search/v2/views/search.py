@@ -531,7 +531,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             .values(*lookup_fields) \
             .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
-
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
         results = [

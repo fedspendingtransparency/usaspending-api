@@ -160,7 +160,7 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
 
 class DownloadTransactionCountViewSet(APIView):
 
-    @cache_response
+    @cache_response()
     def post(self, request):
         """Returns boolean of whether a download request is greater
         than the max limit. """
