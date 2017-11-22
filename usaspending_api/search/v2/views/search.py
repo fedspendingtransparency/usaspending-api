@@ -69,6 +69,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             fy_set = queryset.values('fiscal_year')\
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
+            print('SpendingOverTime_fiscalyear')
+            print(generate_raw_quoted_query(fy_set))
+            print('***************************************')
+
             for trans in fy_set:
                 key = {'fiscal_year': str(trans['fiscal_year'])}
                 key = str(key)
@@ -79,6 +83,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
                 .values('fiscal_year', 'month') \
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+            print('SpendingOverTime|month')
+            print(generate_raw_quoted_query(month_set))
+            print('***************************************')
 
             for trans in month_set:
                 # Convert month to fiscal month
@@ -93,6 +101,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
                 .values('fiscal_year', 'month') \
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+            print('SpendingOverTime|quarterly')
+            print(generate_raw_quoted_query(month_set))
+            print('***************************************')
 
             for trans in month_set:
                 # Convert month to quarter
@@ -190,6 +202,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     # NOT IMPLEMENTED IN UI
                     raise NotImplementedError
 
+            print('SpendingByCategory')
+            print(generate_raw_quoted_query(queryset))
+            print('***************************************')
+
             results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -225,6 +241,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 # NOT IMPLEMENTED IN UI
                 raise NotImplementedError
 
+            print('SpendingByCategory')
+            print(generate_raw_quoted_query(queryset))
+            print('***************************************')
+
             results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -243,6 +263,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .order_by("-aggregated_amount")
 
                 # Begin DB hits here
+                print('SpendingByCategory|duns')
+                print(generate_raw_quoted_query(queryset))
+                print('***************************************')
                 results = list(queryset[lower_limit:upper_limit + 1])
 
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -259,6 +282,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
+                print('SpendingByCategory|parent_duns')
+                print(generate_raw_quoted_query(queryset))
+                print('***************************************')
                 results = list(queryset[lower_limit:upper_limit + 1])
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
@@ -273,8 +299,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif category == "cfda_programs":
             if can_use_view(filters, 'SumaryCfdaNumbersView'):
                 queryset = view_filter(filters, 'SumaryCfdaNumbersView')
-                print('==================')
-                print("Using Ed's Matview")
                 queryset = queryset \
                     .filter(
                         federal_action_obligation__isnull=False,
@@ -288,6 +312,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
+                print('SpendingByCategory|cfda')
+                print(generate_raw_quoted_query(queryset))
+                print('***************************************')
                 results = list(queryset[lower_limit:upper_limit + 1])
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
@@ -317,6 +344,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
+                print('SpendingByCategory|cfda')
+                print(generate_raw_quoted_query(queryset))
+                print('***************************************')
                 results = list(queryset[lower_limit:upper_limit + 1])
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
@@ -341,6 +371,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         .order_by('-aggregated_amount')
 
                 # Begin DB hits here
+                print('SpendingByCategory|psc')
+                print(generate_raw_quoted_query(queryset))
+                print('***************************************')
                 results = list(queryset[lower_limit:upper_limit + 1])
 
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -374,6 +407,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                             'naics_description')
 
                 # Begin DB hits here
+                print('SpendingByCategory|naics')
+                print(generate_raw_quoted_query(queryset))
+                print('***************************************')
                 results = list(queryset[lower_limit:upper_limit + 1])
 
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -444,7 +480,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             state_response = {
                 'scope': self.scope,
                 'geo_layer': self.geo_layer,
-                'results': self.state_results_matview(kwargs, fields_list, loc_lookup)
+                'results': self.state_results(kwargs, fields_list, loc_lookup)
             }
 
             return Response(state_response)
@@ -463,7 +499,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 # County name added to aggregation since consistent in db
                 county_name = '{}_{}'.format(scope_field_name, 'county_name')
                 fields_list.append(county_name)
-                self.county_district_queryset_matview(
+                self.county_district_queryset(
                     kwargs,
                     fields_list,
                     loc_lookup,
@@ -479,7 +515,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
                 return Response(county_response)
             else:
-                self.county_district_queryset_matview(
+                self.county_district_queryset(
                     kwargs,
                     fields_list,
                     loc_lookup,
@@ -495,7 +531,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
                 return Response(district_response)
 
-    def state_results_matview(self, filter_args, lookup_fields, loc_lookup):
+    def state_results(self, filter_args, lookup_fields, loc_lookup):
         # Adding additional state filters if specified
         if self.geo_layer_filters:
             self.queryset = self.queryset.filter(**{'{}__{}'.format(loc_lookup, 'in'): self.geo_layer_filters})
@@ -510,6 +546,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
+        print('SpendingByGeography|state')
+        print(generate_raw_quoted_query(self.geo_queryset))
+        print('***************************************')
         results = [
             {
                 'shape_code': x[loc_lookup],
@@ -519,20 +558,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         ]
 
         return results
-
-    def state_results(self, filter_args, lookup_fields, loc_lookup):
-        # Adding additional state filters if specified
-        if self.geo_layer_filters:
-            self.queryset = self.queryset.filter(**{'{}__{}'.format(loc_lookup, 'in'): self.geo_layer_filters})
-        else:
-            # Adding null filter for state for specific partial index
-            # when not using geocode_filter
-            filter_args['{}__{}'.format(loc_lookup, 'isnull')] = False
-
-        self.geo_queryset = self.queryset.filter(**filter_args) \
-            .values(*lookup_fields) \
-            .annotate(federal_action_obligation=Sum('federal_action_obligation'))
-
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
@@ -546,7 +571,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return results
 
-    def county_district_queryset_matview(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
+    def county_district_queryset(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
         # Filtering queryset to specific county/districts if requested
         # Since geo_layer_filters comes as concat of state fips and county/district codes
         # need to split for the geocode_filter
@@ -574,37 +599,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return self.geo_queryset
 
-    def county_district_queryset(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
-        # Filtering queryset to specific county/districts if requested
-        # Since geo_layer_filters comes as concat of state fips and county/district codes
-        # need to split for the geocode_filter
-        if self.geo_layer_filters:
-            self.queryset &= geocode_filter_locations(scope_field_name, [
-                {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
-                for x in self.geo_layer_filters
-            ], 'TransactionNormalized')
-        else:
-            # Adding null,USA, not number filters for specific partial index
-            # when not using geocode_filter
-            kwargs['{}__{}'.format(loc_lookup, 'isnull')] = False
-            kwargs['{}__{}'.format(state_lookup, 'isnull')] = False
-            kwargs['{}__location_country_code'.format(scope_field_name)] = 'USA'
-            kwargs['{}__{}'.format(loc_lookup, 'iregex')] = r'^[0-9]*(\.\d+)?$'
-
-        # Turn county/district codes into float since inconsistent in database
-        # Codes in location table ex: '01', '1', '1.0'
-        # Cast will group codes as a float and will combine inconsistent codes
-        self.geo_queryset = self.queryset.filter(**kwargs) \
-            .values(*fields_list) \
-            .annotate(federal_action_obligation=Sum('federal_action_obligation'),
-                      code_as_float=Cast(loc_lookup, FloatField())
-                      )
-
-        return self.geo_queryset
-
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
-
+        print('SpendingByGeography|county')
+        print(generate_raw_quoted_query(self.geo_queryset))
+        print('***************************************')
         results = [
             {
                 'shape_code': code_to_state.get(x[state_lookup])['fips'] +
@@ -620,6 +619,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def district_results(self, state_lookup):
         # Returns congressional district results formatted for map
+        print('SpendingByGeography|district')
+        print(generate_raw_quoted_query(self.geo_queryset))
+        print('***************************************')
         results = [
             {
                 'shape_code': code_to_state.get(x[state_lookup])['fips'] +
@@ -704,6 +706,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         # build sql query filters
         queryset = award_filter(filters).values(*values)
+        print('---------------------------------------------------------------')
+        print(generate_raw_quoted_query(queryset))
 
         # build response
         response = {"limit": limit, "results": []}
@@ -727,6 +731,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit
+
+        print('===============================================================')
+        print(generate_raw_quoted_query(limited_queryset))
 
         for award in limited_queryset[:limit]:
             row = {"internal_id": award["award_id"]}
