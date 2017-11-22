@@ -188,7 +188,7 @@ class Command(BaseCommand):
                 Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
             )
 
-            created, award = Award.get_or_create_summary_award(
+            (created, award) = Award.get_or_create_summary_award(
                 awarding_agency=awarding_agency,
                 piid=row.get('piid'),
                 fain=row.get('fain'),
