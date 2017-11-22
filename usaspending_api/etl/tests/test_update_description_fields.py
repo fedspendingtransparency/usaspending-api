@@ -41,6 +41,7 @@ def description_updatable_models():
     transaction_assistance_recipe.make(_quantity=10)
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_description_fields(description_updatable_models):
     update_model_description_fields()

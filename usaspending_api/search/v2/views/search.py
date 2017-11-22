@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, Q, F
+from django.db.models import Sum, Count, F
 from django.db.models.functions import ExtractMonth, Cast
 from django.db.models import FloatField
 
@@ -15,15 +15,17 @@ from functools import total_ordering
 from datetime import date
 from fiscalyear import FiscalDate
 
+from usaspending_api.awards.v2.filters.view_selector import view_filter, can_use_view
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
-from usaspending_api.awards.v2.filters.transaction import transaction_filter
-from usaspending_api.awards.v2.filters.award import award_filter
+from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter, award_filter
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.awards.v2.lookups.lookups import award_contracts_mapping, contract_type_mapping, \
-    loan_type_mapping, loan_award_mapping, non_loan_assistance_award_mapping, non_loan_assistance_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, loan_type_mapping, \
+    non_loan_assistance_type_mapping
+from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_mapping, loan_award_mapping, \
+    non_loan_assistance_award_mapping
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
-from usaspending_api.references.models import Cfda, LegalEntity
+from usaspending_api.references.models import Cfda
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +48,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             raise InvalidParameterException('group does not have a valid value')
 
         # build sql query filters
-        queryset = transaction_filter(filters)
+        if can_use_view(filters, 'SummaryView'):
+            queryset = view_filter(filters, 'SummaryView')
+        else:
+            queryset = transaction_filter(filters)
+
         # define what values are needed in the sql query
         queryset = queryset.values('action_date', 'federal_action_obligation')
 
@@ -162,36 +168,27 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 raise InvalidParameterException("scope does not have a valid value")
 
             if scope == "agency":
-                agency_set = queryset \
-                    .filter(
-                        awarding_agency__isnull=False,
-                        awarding_agency__toptier_agency__name__isnull=False) \
+                queryset = queryset \
+                    .filter(awarding_toptier_agency_name__isnull=False) \
                     .values(
-                        agency_name=F('awarding_agency__toptier_agency__name'),
-                        agency_abbreviation=F('awarding_agency__toptier_agency__abbreviation')) \
+                        agency_name=F('awarding_toptier_agency_name'),
+                        agency_abbreviation=F('awarding_toptier_agency_abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
-
-                # Begin DB hits here
-                results = list(agency_set[lower_limit:upper_limit + 1])
-
             elif scope == "subagency":
-                subagency_set = queryset \
+                queryset = queryset \
                     .filter(
-                        awarding_agency__isnull=False,
-                        awarding_agency__subtier_agency__name__isnull=False) \
+                        awarding_subtier_agency_name__isnull=False) \
                     .values(
-                        agency_name=F('awarding_agency__subtier_agency__name'),
-                        agency_abbreviation=F('awarding_agency__subtier_agency__abbreviation')) \
+                        agency_name=F('awarding_subtier_agency_name'),
+                        agency_abbreviation=F('awarding_subtier_agency_abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation'))\
                     .order_by('-aggregated_amount')
-
-                # Begin DB hits here
-                results = list(subagency_set[lower_limit:upper_limit + 1])
-
             elif scope == "office":
-                # NOT IMPLEMENTED IN UI
-                raise NotImplementedError
+                    # NOT IMPLEMENTED IN UI
+                    raise NotImplementedError
+
+            results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
             results = results[:limit]
@@ -206,37 +203,27 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 raise InvalidParameterException("scope does not have a valid value")
 
             if scope == "agency":
-                agency_set = queryset \
-                    .filter(
-                        funding_agency__isnull=False,
-                        funding_agency__toptier_agency__name__isnull=False) \
+                queryset = queryset \
+                    .filter(funding_toptier_agency_name__isnull=False) \
                     .values(
-                        agency_name=F('funding_agency__toptier_agency__name'),
-                        agency_abbreviation=F('funding_agency__toptier_agency__abbreviation')) \
-                    .annotate(
-                        aggregated_amount=Sum('federal_action_obligation')) \
+                        agency_name=F('funding_toptier_agency_name'),
+                        agency_abbreviation=F('funding_toptier_agency_abbreviation')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
-
-                # Begin DB hits here
-                results = list(agency_set[lower_limit:upper_limit + 1])
-
             elif scope == "subagency":
-                subagency_set = queryset \
+                queryset = queryset \
                     .filter(
-                        funding_agency__isnull=False,
-                        funding_agency__subtier_agency__name__isnull=False) \
+                        funding_subtier_agency_name__isnull=False) \
                     .values(
-                        agency_name=F('funding_agency__subtier_agency__name'),
-                        agency_abbreviation=F('funding_agency__subtier_agency__abbreviation')) \
-                    .annotate(
-                        aggregated_amount=Sum('federal_action_obligation')) \
+                        agency_name=F('funding_subtier_agency_name'),
+                        agency_abbreviation=F('funding_subtier_agency_abbreviation')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
                     .order_by('-aggregated_amount')
-
-                results = list(subagency_set[lower_limit:upper_limit + 1])
-
             elif scope == "office":
                 # NOT IMPLEMENTED IN UI
                 raise NotImplementedError
+
+            results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
             results = results[:limit]
@@ -248,10 +235,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif category == "recipient":
             if scope == "duns":
                 queryset = queryset \
-                    .filter(federal_action_obligation__isnull=False) \
                     .values(legal_entity_id=F("recipient_id")) \
                     .annotate(aggregated_amount=Sum("federal_action_obligation")) \
-                    .values("aggregated_amount", "legal_entity_id") \
+                    .values("aggregated_amount", "legal_entity_id", "recipient_name") \
                     .order_by("-aggregated_amount")
 
                 # Begin DB hits here
@@ -260,30 +246,14 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
 
-                # The below code (here to the `elif`) is necessary due to django ORM
-                # Overview: sort list by legal-entity ids, then fetch le names by id,
-                #   sort into the same order, then add names to result list.
-                #   reorder results by aggregated amount
-                results = sorted(results, key=lambda result: result["legal_entity_id"])
-                # (Small) DB hit here
-                le_names = LegalEntity.objects \
-                    .filter(legal_entity_id__in=[result["legal_entity_id"] for result in results]) \
-                    .order_by('legal_entity_id') \
-                    .values_list('recipient_name', flat=True)
-
-                for i in range(len(results)):
-                    results[i]['recipient_name'] = le_names[i]
-
-                results = sorted(results, key=lambda result: result["aggregated_amount"], reverse=True)
-
             elif scope == "parent_duns":
                 queryset = queryset \
-                    .filter(recipient__parent_recipient_unique_id__isnull=False) \
+                    .filter(parent_recipient_unique_id__isnull=False) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .values(
                         'aggregated_amount',
-                        recipient_name=F('recipient__recipient_name'),
-                        parent_recipient_unique_id=F('recipient__parent_recipient_unique_id')) \
+                        'recipient_name',
+                        'parent_recipient_unique_id') \
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
@@ -299,43 +269,74 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             return Response(response)
 
         elif category == "cfda_programs":
-            queryset = queryset \
-                .filter(
-                    assistance_data__cfda_number__isnull=False,
-                    federal_action_obligation__isnull=False) \
-                .values(cfda_program_number=F("assistance_data__cfda_number")) \
-                .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                .values(
-                    "aggregated_amount",
-                    "cfda_program_number",
-                    program_title=F("assistance_data__cfda_title")) \
-                .order_by('-aggregated_amount')
+            if can_use_view(filters, 'SumaryCfdaNumbersView'):
+                queryset = view_filter(filters, 'SumaryCfdaNumbersView')
+                print('==================')
+                print("Using Ed's Matview")
+                queryset = queryset \
+                    .filter(
+                        federal_action_obligation__isnull=False,
+                        cfda_number__isnull=False) \
+                    .values(cfda_program_number=F("cfda_number")) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values(
+                        "aggregated_amount",
+                        "cfda_program_number",
+                        program_title=F("cfda_title")) \
+                    .order_by('-aggregated_amount')
 
-            # Begin DB hits here
-            results = list(queryset[lower_limit:upper_limit + 1])
+                # Begin DB hits here
+                results = list(queryset[lower_limit:upper_limit + 1])
+                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                results = results[:limit]
+                for trans in results:
+                    trans['popular_name'] = None
+                    # small DB hit every loop here
+                    cfda = Cfda.objects \
+                        .filter(
+                            program_title=trans['program_title'],
+                            program_number=trans['cfda_program_number']) \
+                        .values('popular_name').first()
 
-            page_metadata = get_simple_pagination_metadata(len(results), limit, page)
-            results = results[:limit]
+                    if cfda:
+                        trans['popular_name'] = cfda['popular_name']
 
-            for trans in results:
-                trans['popular_name'] = None
-                # small DB hit every loop here
-                cfda = Cfda.objects.filter(
-                    program_title=trans['program_title'],
-                    program_number=trans['cfda_program_number']).values('popular_name').first()
-                if cfda:
-                    trans['popular_name'] = cfda['popular_name']
+            else:
+                queryset = queryset \
+                    .filter(
+                        cfda_number__isnull=False) \
+                    .values(cfda_program_number=F("cfda_number")) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values(
+                        "aggregated_amount",
+                        "cfda_program_number",
+                        popular_name=F("cfda_popular_name"),
+                        program_title=F("cfda_title")) \
+                    .order_by('-aggregated_amount')
+
+                # Begin DB hits here
+                results = list(queryset[lower_limit:upper_limit + 1])
+                page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+                results = results[:limit]
 
             response = {"category": category, "limit": limit, "results": results, "page_metadata": page_metadata}
             return Response(response)
 
         elif category == "industry_codes":  # industry_codes
             if scope == "psc":
-                queryset = queryset \
-                    .filter(contract_data__product_or_service_code__isnull=False) \
-                    .values(psc_code=F('contract_data__product_or_service_code')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                    .order_by('-aggregated_amount')
+                if can_use_view(filters, 'SumaryPscCodesView'):
+                    queryset = view_filter(filters, 'SumaryPscCodesView')
+                    queryset = queryset \
+                        .filter(product_or_service_code__isnull=False) \
+                        .values(psc_code=F("product_or_service_code")) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount')
+                else:
+                    queryset = queryset \
+                        .filter(psc_code__isnull=False) \
+                        .values("psc_code") \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount')
 
                 # Begin DB hits here
                 results = list(queryset[lower_limit:upper_limit + 1])
@@ -348,15 +349,27 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 return Response(response)
 
             elif scope == "naics":
-                queryset = queryset \
-                    .filter(contract_data__naics__isnull=False) \
-                    .values(naics_code=F('contract_data__naics')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                    .order_by('-aggregated_amount') \
-                    .values(
-                        'naics_code',
-                        'aggregated_amount',
-                        naics_description=F('contract_data__naics_description'))
+                if can_use_view(filters, 'SumaryNaicsCodesView'):
+                    queryset = view_filter(filters, 'SumaryNaicsCodesView')
+                    queryset = queryset \
+                        .filter(naics__isnull=False) \
+                        .values(naics_code=F("naics")) \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount') \
+                        .values(
+                            'naics_code',
+                            'aggregated_amount',
+                            'naics_description')
+                else:
+                    queryset = queryset \
+                        .filter(naics_code__isnull=False) \
+                        .values("naics_code") \
+                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .order_by('-aggregated_amount') \
+                        .values(
+                            'naics_code',
+                            'aggregated_amount',
+                            'naics_description')
 
                 # Begin DB hits here
                 results = list(queryset[lower_limit:upper_limit + 1])
@@ -380,12 +393,12 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
-        scope = json_request.get("scope")
-        filters = json_request.get("filters", {})
+        self.scope = json_request.get("scope")
+        self.filters = json_request.get("filters", {})
         self.geo_layer = json_request.get("geo_layer")
         self.geo_layer_filters = json_request.get("geo_layer_filters")
+
         fields_list = []  # fields to include in the aggregate query
 
         loc_dict = {
@@ -395,16 +408,16 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         }
 
         model_dict = {
-            'place_of_performance': 'place_of_performance',
-            'recipient_location': 'recipient__location'
+            'place_of_performance': 'pop',
+            'recipient_location': 'recipient_location'
         }
 
         # Build the query based on the scope fields and geo_layers
         # Fields not in the reference objects above then request is invalid
 
-        scope_field_name = model_dict.get(scope)
+        scope_field_name = model_dict.get(self.scope)
         loc_field_name = loc_dict.get(self.geo_layer)
-        loc_lookup = '{}__{}'.format(scope_field_name, loc_field_name)
+        loc_lookup = '{}_{}'.format(scope_field_name, loc_field_name)
 
         if scope_field_name is None:
             raise InvalidParameterException("Invalid request parameters: scope")
@@ -413,23 +426,23 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             raise InvalidParameterException("Invalid request parameters: geo_layer")
 
         # build sql query filters
-        self.queryset = transaction_filter(filters)
+        self.queryset = transaction_filter(self.filters)
 
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
             kwargs = {
-                      '{}__location_country_code'.format(scope_field_name): 'USA',
-                      'federal_action_obligation__isnull': False
-                      }
+                '{}_country_code'.format(scope_field_name): 'USA',
+                'federal_action_obligation__isnull': False
+            }
 
             # Only state scope will add its own state code
             # State codes are consistent in db ie AL, AK
             fields_list.append(loc_lookup)
 
             state_response = {
-                'scope': scope,
+                'scope': self.scope,
                 'geo_layer': self.geo_layer,
-                'results': self.state_results(kwargs, fields_list, loc_lookup)
+                'results': self.state_results_matview(kwargs, fields_list, loc_lookup)
             }
 
             return Response(state_response)
@@ -437,7 +450,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         else:
             # County and district scope will need to select multiple fields
             # State code is needed for county/district aggregation
-            state_lookup = '{}__{}'.format(scope_field_name, loc_dict['state'])
+            state_lookup = '{}_{}'.format(scope_field_name, loc_dict['state'])
             fields_list.append(state_lookup)
 
             # Adding regex to county/district codes to remove entries with letters since
@@ -446,31 +459,64 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
             if self.geo_layer == 'county':
                 # County name added to aggregation since consistent in db
-                county_name = '{}__{}'.format(scope_field_name, 'county_name')
+                county_name = '{}_{}'.format(scope_field_name, 'county_name')
                 fields_list.append(county_name)
-                self.county_district_queryset(kwargs, fields_list,
-                                              loc_lookup, state_lookup, scope_field_name
-                                              )
+                self.county_district_queryset_matview(
+                    kwargs,
+                    fields_list,
+                    loc_lookup,
+                    state_lookup,
+                    scope_field_name
+                )
 
                 county_response = {
-                    'scope': scope,
+                    'scope': self.scope,
                     'geo_layer': self.geo_layer,
                     'results': self.county_results(state_lookup, county_name)
                 }
 
                 return Response(county_response)
             else:
-                self.county_district_queryset(kwargs, fields_list,
-                                              loc_lookup, state_lookup, scope_field_name
-                                              )
+                self.county_district_queryset_matview(
+                    kwargs,
+                    fields_list,
+                    loc_lookup,
+                    state_lookup,
+                    scope_field_name
+                )
 
                 district_response = {
-                    'scope': scope,
+                    'scope': self.scope,
                     'geo_layer': self.geo_layer,
                     'results': self.district_results(state_lookup)
                 }
 
                 return Response(district_response)
+
+    def state_results_matview(self, filter_args, lookup_fields, loc_lookup):
+        # Adding additional state filters if specified
+        if self.geo_layer_filters:
+            self.queryset = self.queryset.filter(**{'{}__{}'.format(loc_lookup, 'in'): self.geo_layer_filters})
+        else:
+            # Adding null filter for state for specific partial index
+            # when not using geocode_filter
+            filter_args['{}_{}'.format(loc_lookup, 'isnull')] = False
+
+        self.geo_queryset = self.queryset.filter(**filter_args) \
+            .values(*lookup_fields) \
+            .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+        # State names are inconsistent in database (upper, lower, null)
+        # Used lookup instead to be consistent
+        results = [
+            {
+                'shape_code': x[loc_lookup],
+                'aggregated_amount': x['federal_action_obligation'],
+                'display_name': code_to_state.get(x[loc_lookup], {'name': 'None'}).get('name').title()
+            } for x in self.geo_queryset
+        ]
+
+        return results
 
     def state_results(self, filter_args, lookup_fields, loc_lookup):
         # Adding additional state filters if specified
@@ -496,6 +542,34 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         ]
 
         return results
+
+    def county_district_queryset_matview(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
+        # Filtering queryset to specific county/districts if requested
+        # Since geo_layer_filters comes as concat of state fips and county/district codes
+        # need to split for the geocode_filter
+        if self.geo_layer_filters:
+            self.queryset &= geocode_filter_locations(scope_field_name, [
+                {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
+                for x in self.geo_layer_filters
+            ], 'UniversalTransactionView')
+        else:
+            # Adding null,USA, not number filters for specific partial index
+            # when not using geocode_filter
+            kwargs['{}__{}'.format(loc_lookup, 'isnull')] = False
+            kwargs['{}__{}'.format(state_lookup, 'isnull')] = False
+            kwargs['{}_country_code'.format(scope_field_name)] = 'USA'
+            kwargs['{}__{}'.format(loc_lookup, 'iregex')] = r'^[0-9]*(\.\d+)?$'
+
+        # Turn county/district codes into float since inconsistent in database
+        # Codes in location table ex: '01', '1', '1.0'
+        # Cast will group codes as a float and will combine inconsistent codes
+        self.geo_queryset = self.queryset.filter(**kwargs) \
+            .values(*fields_list) \
+            .annotate(federal_action_obligation=Sum('federal_action_obligation'),
+                      code_as_float=Cast(loc_lookup, FloatField())
+                      )
+
+        return self.geo_queryset
 
     def county_district_queryset(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
         # Filtering queryset to specific county/districts if requested
@@ -527,30 +601,31 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
+
         results = [
-                {
-                    'shape_code': code_to_state.get(x[state_lookup])['fips'] +
-                    pad_codes(self.geo_layer, x['code_as_float']),
-                    'aggregated_amount': x['federal_action_obligation'],
-                    'display_name': x[county_name].title() if x[county_name] is not None
-                    else x[county_name]
-                }
-                for x in self.geo_queryset
-            ]
+            {
+                'shape_code': code_to_state.get(x[state_lookup])['fips'] +
+                pad_codes(self.geo_layer, x['code_as_float']),
+                'aggregated_amount': x['federal_action_obligation'],
+                'display_name': x[county_name].title() if x[county_name] is not None
+                else x[county_name]
+            }
+            for x in self.geo_queryset
+        ]
 
         return results
 
     def district_results(self, state_lookup):
         # Returns congressional district results formatted for map
         results = [
-                {
-                    'shape_code': code_to_state.get(x[state_lookup])['fips'] +
-                    pad_codes(self.geo_layer, x['code_as_float']),
-                    'aggregated_amount': x['federal_action_obligation'],
-                    'display_name': x[state_lookup] + '-' +
-                    pad_codes(self.geo_layer, x['code_as_float'])
-                } for x in self.geo_queryset
-            ]
+            {
+                'shape_code': code_to_state.get(x[state_lookup])['fips'] +
+                pad_codes(self.geo_layer, x['code_as_float']),
+                'aggregated_amount': x['federal_action_obligation'],
+                'display_name': x[state_lookup] + '-' +
+                pad_codes(self.geo_layer, x['code_as_float'])
+            } for x in self.geo_queryset
+        ]
 
         return results
 
@@ -596,7 +671,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
         # get a list of values to queryset on instead of pinging the database for every field
-        values = ["id"]
+        values = ["award_id"]
         if "Award ID" in fields:
             values += ["fain", "piid", "uri"]
         if set(filters["award_type_codes"]) <= set(contract_type_mapping):
@@ -651,7 +726,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         has_next = len(limited_queryset) > limit
 
         for award in limited_queryset[:limit]:
-            row = {"internal_id": award["id"]}
+            row = {"internal_id": award["award_id"]}
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 for field in fields:
                     row[field] = award[award_contracts_mapping[field]]
@@ -678,7 +753,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
 
 class SpendingByAwardCountVisualizationViewSet(APIView):
-
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -688,14 +762,47 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
+        response = None
+        if can_use_view(filters, 'SummaryAwardView'):
+            response = self.process_with_view(filters)
+        else:
+            response = self.process_with_tables(filters)
+
+        return response
+
+    def process_with_view(self, filters):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        if filters is None:
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
+
+        # build sql query filters
+        queryset = view_filter(filters=filters, view_name='SummaryAwardView')
+        queryset = queryset.values("category").annotate(category_count=Sum('counts')).exclude(category__isnull=True)
+
+        results = self.get_results(queryset)
+
+        # build response
+        return Response({"results": results})
+
+    def process_with_tables(self, filters):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        if filters is None:
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
+
         # build sql query filters
         queryset = award_filter(filters)
 
         # define what values are needed in the sql query
         queryset = queryset.values('category')
-        queryset = queryset.annotate(category_count=Count('category')).exclude(category__isnull=True).\
+        queryset = queryset.annotate(category_count=Count('category')).exclude(category__isnull=True). \
             values('category', 'category_count')
 
+        results = self.get_results(queryset)
+
+        # build response
+        return Response({"results": results})
+
+    def get_results(self, queryset):
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
         for award in queryset:
@@ -703,5 +810,4 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             result_key += 's' if result_key not in ['other', 'loans'] else ''
             results[result_key] = award['category_count']
 
-        # build response
-        return Response({"results": results})
+        return results
