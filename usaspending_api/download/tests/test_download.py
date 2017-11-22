@@ -392,6 +392,7 @@ def test_download_transactions_excessive_limit(client, award_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.skip
 def test_download_transactions_count(client, award_data):
     """Test transaction count endpoint when filters return zero"""
     resp = client.post(

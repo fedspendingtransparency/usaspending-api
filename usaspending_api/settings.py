@@ -75,7 +75,7 @@ INSTALLED_APPS = [
     'usaspending_api.download',
     'usaspending_api.bulk_download',
     'django_spaghetti',
-    'simple_history',
+    'simple_history'
 ]
 
 INTERNAL_IPS = ()

@@ -6,8 +6,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound, ParseError
 
+from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
+from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter as matview_transaction_filter
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.filestreaming import csv_selection
@@ -157,6 +159,8 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
 
 
 class DownloadTransactionCountViewSet(APIView):
+
+    @cache_response()
     def post(self, request):
         """Returns boolean of whether a download request is greater
         than the max limit. """
@@ -167,7 +171,7 @@ class DownloadTransactionCountViewSet(APIView):
         filters = json_request.get('filters', {})
         is_over_limit = False
 
-        queryset = transaction_filter(filters)
+        queryset = matview_transaction_filter(filters)
 
         try:
             queryset[settings.MAX_DOWNLOAD_LIMIT]
