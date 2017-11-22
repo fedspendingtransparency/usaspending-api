@@ -1,9 +1,9 @@
 """
-Last step in process to fix locations from transaction_fpds / fabs tables
+Second step in process to fix locations from transaction_fpds / fabs tables
 
 1. populate_transaction_location_data
 2. match_translations_to_locations - probably in parallel (it is the slow step)
-3. this script - AFTER all parallel instances of match_translations_to_locations have finished
+3. create_locations - AFTER all parallel instances of match_translations_to_locations have finished
 
 At the end, transaction_location_data is populated with transaction_id and location_id
 """
@@ -68,81 +68,37 @@ class Command(BaseCommand):
 
 
 QUERIES = """
-ALTER TABLE references_location
-ADD COLUMN IF NOT EXISTS transaction_ids INTEGER[];
-
-
-  INSERT INTO references_location (
-    transaction_ids,
-    data_source,
-    country_name,
-    state_code,
-    state_name,
-    state_description,
-    city_name,
-    city_code,
-    county_name,
-    county_code,
-    address_line1,
-    address_line2,
-    address_line3,
-    foreign_location_description,
-    zip4,
-    zip_4a,
-    congressional_code,
-    performance_code,
-    zip_last4,
-    zip5,
-    foreign_postal_code,
-    foreign_province,
-    foreign_city_name,
-    place_of_performance_flag,
-    recipient_flag,
-    location_country_code
-  )
-  SELECT
-    ARRAY_AGG(transaction_id),  -- ==> transaction_ids
-    data_source,  -- ==> data_source
-    country_name,  -- ==> country_name
-    state_code,  -- ==> state_code
-    state_name,  -- ==> state_name
-    state_description,  -- ==> state_description
-    city_name,  -- ==> city_name
-    city_code,  -- ==> city_code
-    county_name,  -- ==> county_name
-    county_code,  -- ==> county_code
-    address_line1,  -- ==> address_line1
-    address_line2,  -- ==> address_line2
-    address_line3,  -- ==> address_line3
-    foreign_location_description,  -- ==> foreign_location_description
-    zip4,  -- ==> zip4
-    zip_4a,  -- ==> zip_4a
-    congressional_code,  -- ==> congressional_code
-    performance_code,  -- ==> performance_code
-    zip_last4,  -- ==> zip_last4
-    zip5,  -- ==> zip5
-    foreign_postal_code,  -- ==> foreign_postal_code
-    foreign_province,  -- ==> foreign_province
-    foreign_city_name,  -- ==> foreign_city_name
-    place_of_performance_flag,  -- ==> place_of_performance_flag
-    recipient_flag,  -- ==> recipient_flag
-    location_country_code  -- ==> location_country_code
-  FROM transaction_location_data
-  WHERE transaction_location_data.location_id IS NULL
-  GROUP BY 2, 3, 4, 5, 6, 7, 8, 9, 10,
-           11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-           21, 22, 23, 24, 25, 26
-  ;
-
-
+-- match existing locations
 UPDATE transaction_location_data
 SET    location_id = l.location_id
 FROM   references_location l
-WHERE  transaction_location_data.transaction_id = ANY(l.transaction_ids)
-AND    transaction_location_data.location_id IS NULL
-AND    transaction_location_data.transaction_id >= ${floor}
-AND    transaction_location_data.transaction_id < ${ceiling};
-
-
-ALTER TABLE references_location DROP COLUMN transaction_ids;
+WHERE
+  transaction_location_data.data_source IS NOT DISTINCT FROM l.data_source AND
+  transaction_location_data.country_name IS NOT DISTINCT FROM l.country_name AND
+  transaction_location_data.state_code IS NOT DISTINCT FROM l.state_code AND
+  transaction_location_data.state_name IS NOT DISTINCT FROM l.state_name AND
+  transaction_location_data.state_description IS NOT DISTINCT FROM l.state_description AND
+  transaction_location_data.city_name IS NOT DISTINCT FROM l.city_name AND
+  transaction_location_data.city_code IS NOT DISTINCT FROM l.city_code AND
+  transaction_location_data.county_name IS NOT DISTINCT FROM l.county_name AND
+  transaction_location_data.county_code IS NOT DISTINCT FROM l.county_code AND
+  transaction_location_data.address_line1 IS NOT DISTINCT FROM l.address_line1 AND
+  transaction_location_data.address_line2 IS NOT DISTINCT FROM l.address_line2 AND
+  transaction_location_data.address_line3 IS NOT DISTINCT FROM l.address_line3 AND
+  transaction_location_data.foreign_location_description IS NOT DISTINCT FROM l.foreign_location_description AND
+  transaction_location_data.zip4 IS NOT DISTINCT FROM l.zip4 AND
+  transaction_location_data.zip_4a IS NOT DISTINCT FROM l.zip_4a AND
+  transaction_location_data.congressional_code IS NOT DISTINCT FROM l.congressional_code AND
+  transaction_location_data.performance_code IS NOT DISTINCT FROM l.performance_code AND
+  transaction_location_data.zip_last4 IS NOT DISTINCT FROM l.zip_last4 AND
+  transaction_location_data.zip5 IS NOT DISTINCT FROM l.zip5 AND
+  transaction_location_data.foreign_postal_code IS NOT DISTINCT FROM l.foreign_postal_code AND
+  transaction_location_data.foreign_province IS NOT DISTINCT FROM l.foreign_province AND
+  transaction_location_data.foreign_city_name IS NOT DISTINCT FROM l.foreign_city_name AND
+  transaction_location_data.place_of_performance_flag IS NOT DISTINCT FROM l.place_of_performance_flag AND
+  transaction_location_data.recipient_flag IS NOT DISTINCT FROM l.recipient_flag AND
+  transaction_location_data.location_country_code IS NOT DISTINCT FROM l.location_country_code
+AND transaction_location_data.transaction_id >= ${floor}
+AND transaction_location_data.transaction_id < ${ceiling};
+  ;
 """
