@@ -14,7 +14,7 @@ from usaspending_api.common.helpers import generate_date_from_string
 logger = logging.getLogger(__name__)
 
 
-def date_or_fy_queryset(date_dict):
+def date_or_fy_queryset(date_dict, table, fiscal_year_column):
     full_fiscal_years = []
     for v in date_dict:
         s = generate_date_from_string(v.get("start_date"))
@@ -27,7 +27,8 @@ def date_or_fy_queryset(date_dict):
         for s, e in full_fiscal_years:
             fys.append(generate_all_fiscal_years_in_range(s, e))
         all_fiscal_years = set([x for sublist in fys for x in sublist])
-        return True, UniversalTransactionView.objects.filter(fiscal_year__in=all_fiscal_years)
+        fiscal_year_filters = {"{}__in".format(fiscal_year_column): all_fiscal_years}
+        return True, table.objects.filter(**fiscal_year_filters)
 
     or_queryset = None
     queryset_init = False
@@ -40,10 +41,10 @@ def date_or_fy_queryset(date_dict):
             kwargs["action_date__lte"] = v.get("end_date")
         # (may have to cast to date) (oct 1 to sept 30)
         if queryset_init:
-            or_queryset |= UniversalTransactionView.objects.filter(**kwargs)
+            or_queryset |= table.objects.filter(**kwargs)
         else:
             queryset_init = True
-            or_queryset = UniversalTransactionView.objects.filter(**kwargs)
+            or_queryset = table.objects.filter(**kwargs)
     if queryset_init:
         return True, or_queryset
     return False, None
@@ -162,7 +163,7 @@ def transaction_filter(filters):
 
         # time_period
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value)
+            success, or_queryset = date_or_fy_queryset(value, UniversalTransactionView, "fiscal_year")
             if success:
                 queryset &= or_queryset
 
@@ -409,21 +410,8 @@ def award_filter(filters):
             queryset = queryset.filter(compound_or)
 
         elif key == "time_period":
-            or_queryset = None
-            queryset_init = False
-            for v in value:
-                kwargs = {}
-                if v.get("start_date") is not None:
-                    kwargs["issued_date__gte"] = v.get("start_date")
-                if v.get("end_date") is not None:
-                    kwargs["issued_date__lte"] = v.get("end_date")
-                # (may have to cast to date) (oct 1 to sept 30)
-                if queryset_init:
-                    or_queryset |= UniversalAwardView.objects.filter(**kwargs)
-                else:
-                    queryset_init = True
-                    or_queryset = UniversalAwardView.objects.filter(**kwargs)
-            if queryset_init:
+            success, or_queryset = date_or_fy_queryset(value, UniversalAwardView, "issued_date_fiscal_year")
+            if success:
                 queryset &= or_queryset
 
         elif key == "award_type_codes":
