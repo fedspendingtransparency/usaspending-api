@@ -1,14 +1,6 @@
 from django.apps import apps
 from usaspending_api.common.exceptions import InvalidParameterException
 
-loc_dict = {
-    'country': 'location_country_code',
-    'state': 'state_code',
-    'county': 'county_code',
-    'district': 'congressional_code',
-    'zip': 'zip5',
-}
-
 
 def geocode_filter_locations(scope, values, model, use_matview=False, default_model='awards'):
     """
@@ -58,7 +50,7 @@ def check_location_fields(fields):
 
 def get_fields_list(scope, field_value):
     """List of values to search for; `field_value`, plus possibly variants on it"""
-    if scope not in ['state_code', 'location_country_code', 'zip5']:
+    if scope not in ['state_code', 'location_country_code', 'country_code', 'zip5']:
         return [str(int(field_value)), field_value, str(float(field_value))]
 
     return [field_value]
@@ -66,6 +58,14 @@ def get_fields_list(scope, field_value):
 
 def return_query_strings(use_matview):
     # Returns query strings according based on mat view or database
+
+    loc_dict = {
+        'country': 'location_country_code',
+        'state': 'state_code',
+        'county': 'county_code',
+        'district': 'congressional_code',
+        'zip': 'zip5',
+    }
 
     q_str = '{0}__{1}__in'
 
