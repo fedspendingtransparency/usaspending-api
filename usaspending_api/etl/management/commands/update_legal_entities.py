@@ -1,0 +1,66 @@
+"""
+Creates legal entities and adds them to transaction normalized rows and award rows based on transaction_location_data from `create_locations`
+"""
+
+import logging
+
+from django.core.management.base import BaseCommand
+from django.db import connection
+
+logger = logging.getLogger('console')
+exception_logger = logging.getLogger("exceptions")
+
+
+class Command(BaseCommand):
+
+    def handle(self, *args, **options):
+
+        with connection.cursor() as curs:
+            curs.execute(self.CREATE_TRANS_LE_TABLE)
+            curs.execute(self.ALTER_TRANS_LE_TABLE)
+            curs.execute(self.CREATE_LE_AND_TRANS_LE)
+            curs.execute(self.UPDATE_TN)
+            curs.execute(self.UPDATE_AWARD)
+
+    CREATE_TRANS_LE_TABLE = """
+        CREATE TEMPORARY TABLE trans_to_le (
+        transaction_id int,
+        legal_entity_id int
+        );
+    """
+
+    ALTER_TRANS_LE_TABLE = """
+        ALTER TABLE trans_to_le ADD CONSTRAINT trans_to_le_uc UNIQUE (transaction_id, legal_entity_id);
+    """
+
+    CREATE_LE_AND_TRANS_LE = """
+        WITH trans_to_loc AS
+        (
+        SELECT transaction_id, location_id FROM transaction_location_data
+        ),
+        inserted_les AS
+        (
+          INSERT INTO legal_entity (business_categories, data_source, business_types_description, create_date, update_date, recipient_unique_id, recipient_name, location_id)
+            SELECT '{}', 'DBR', 'Unknown Types', NOW(), NOW(), '', 'Multiple Recipients', location_id FROM trans_to_loc
+          ON CONFLICT ON CONSTRAINT legal_entity_uc DO UPDATE SET data_source = 'DBR' -- lol
+          RETURNING legal_entity_id, location_id
+        )
+        INSERT INTO trans_to_le (transaction_id, legal_entity_id)
+          SELECT trans_to_loc.transaction_id, inserted_les.legal_entity_id FROM trans_to_loc, inserted_les
+          WHERE trans_to_loc.location_id = inserted_les.location_id
+          ON CONFLICT ON CONSTRAINT trans_to_le_uc DO NOTHING;
+    """
+
+    UPDATE_TN = """
+        UPDATE transaction_normalized tn
+        SET tn.recipient_id = trans_to_le.legal_entity_id
+        FROM trans_to_le
+        WHERE tn.id = trans_to_le.transaction_id;
+    """
+
+    UPDATE_AWARD = """
+        UPDATE awards a
+        SET a.recipient_id = trans_to_le.legal_entity_id
+        FROM trans_to_le
+        WHERE awards.latest_transaction_id = trans_to_le.transaction_id;
+    """

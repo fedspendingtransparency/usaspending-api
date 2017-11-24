@@ -245,8 +245,7 @@ def transaction_filter(filters):
         # recipient_location
         elif key == "recipient_locations":
             or_queryset = geocode_filter_locations(
-                'recipient_location', value, 'UniversalTransactionView', True,
-                'universal_transaction_matview'
+                'recipient_location', value, 'UniversalTransactionView', True
             )
 
             queryset &= or_queryset
@@ -273,8 +272,7 @@ def transaction_filter(filters):
         # place_of_performance
         elif key == "place_of_performance_locations":
             or_queryset = geocode_filter_locations(
-                'pop', value, 'UniversalTransactionView', True,
-                'universal_transaction_matview'
+                'pop', value, 'UniversalTransactionView', True
             )
             queryset &= or_queryset
 
@@ -493,8 +491,7 @@ def award_filter(filters):
 
         elif key == "recipient_locations":
             or_queryset = geocode_filter_locations(
-                'recipient_location', value, 'UniversalAwardView', True,
-                'universal_award_matview'
+                'recipient_location', value, 'UniversalAwardView', True
             )
             queryset &= or_queryset
 
@@ -517,8 +514,7 @@ def award_filter(filters):
 
         elif key == "place_of_performance_locations":
             or_queryset = geocode_filter_locations(
-                'pop', value, 'UniversalAwardView', True,
-                'universal_award_matview'
+                'pop', value, 'UniversalAwardView', True
             )
 
             queryset &= or_queryset
