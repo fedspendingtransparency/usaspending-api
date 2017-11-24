@@ -258,7 +258,7 @@ def transaction_filter(filters):
                 or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= UniversalTransactionView.objects.filter(
-                    business_types_description__overlap=value
+                    business_categories__overlap=value
                 )
 
         # place_of_performance_scope

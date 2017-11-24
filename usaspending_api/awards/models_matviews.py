@@ -1,6 +1,7 @@
 import warnings
 from django.db import models
 from django.core.cache import CacheKeyWarning
+from django.contrib.postgres.fields import ArrayField
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
@@ -62,7 +63,7 @@ class UniversalTransactionView(models.Model):
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
-    business_types_description = models.TextField()
+    business_categories = ArrayField(models.TextField(), default=list)
 
     recipient_location_id = models.TextField()
     recipient_location_country_code = models.TextField()
@@ -112,6 +113,7 @@ class UniversalAwardView(models.Model):
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
     issued_date = models.DateField()
+    business_categories = ArrayField(models.TextField(), default=list)
     issued_date_fiscal_year = models.IntegerField()
     face_value_loan_guarantee = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True,
