@@ -422,9 +422,10 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= UniversalAwardView.objects.filter(type__in=or_queryset)
-            if idv_flag:
-                queryset |= UniversalAwardView.objects.filter(type__isnull=True, pulled_from='IDV')
+                filter_obj = Q(type__in=or_queryset)
+                if idv_flag:
+                    filter_obj |= Q(pulled_from='IDV')
+                queryset &= UniversalAwardView.objects.filter(filter_obj)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error

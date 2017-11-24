@@ -124,7 +124,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         for key, value in sorted_group_results:
             key_dict = ast.literal_eval(key)
-            result = {'time_period': key_dict, 'aggregated_amount': float(value)}
+            result = {'time_period': key_dict, 'aggregated_amount': float(value) if value else float(0)}
             results.append(result)
         response['results'] = results
 
