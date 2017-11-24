@@ -134,6 +134,29 @@ class Agency(models.Model):
             subtier_agency__subtier_code=subtier_code
         ).order_by('-update_date').first()
 
+    @staticmethod
+    def get_by_subtier_only(subtier_code):
+        """
+        Lookup an Agency record by subtier code only
+
+        Useful when data source has an inaccurate top tier code,
+        but an accurate subtier code.  Will return an Agency
+        if and only if a single match for the subtier code exists.
+
+        Args:
+            subtier_code: an agency subtier code
+
+        Returns:
+            an Agency instance
+
+        """
+        agencies = Agency.objects.filter(
+            subtier_agency__subtier_code=subtier_code)
+        if agencies.count() == 1:
+            return agencies.first()
+        else:
+            return None
+
     class Meta:
         managed = True
         db_table = 'agency'
@@ -297,7 +320,10 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
             if not self.state_code:
                 self.state_code = state_to_code.get(self.state_name)
             elif not self.state_name:
-                self.state_name = code_to_state.get(self.state_code)['name']
+                state_obj = code_to_state.get(self.state_code)
+
+                if state_obj:
+                    self.state_name = state_obj['name']
 
     zip_code_pattern = re.compile('^(\d{5})\-?(\d{4})?$')
 

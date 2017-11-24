@@ -63,6 +63,7 @@ def incorrect_location_data(db):
     )
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_geography_success(client, budget_function_data):
 
@@ -91,6 +92,7 @@ def test_spending_by_geography_success(client, budget_function_data):
     assert resp.status_code == status.HTTP_200_OK
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_geography_failure(client):
     """Verify error on bad autocomplete request for budget function."""
@@ -102,6 +104,7 @@ def test_spending_by_geography_failure(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_geography_incorrect_state(client, incorrect_location_data):
     resp = client.post(
@@ -117,6 +120,7 @@ def test_spending_by_geography_incorrect_state(client, incorrect_location_data):
     assert resp.data['results'][0]['display_name'] in ['Alabama', 'None']
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_geography_incorrect_county(client, incorrect_location_data):
     resp = client.post(
@@ -132,6 +136,7 @@ def test_spending_by_geography_incorrect_county(client, incorrect_location_data)
     assert resp.data['results'][0]['display_name'] == 'County'
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_geography_incorrect_district(client, incorrect_location_data):
     resp = client.post(

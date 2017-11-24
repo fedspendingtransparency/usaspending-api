@@ -58,6 +58,35 @@ def generate_fiscal_month(date):
     return date.month + 3
 
 
+def generate_date_from_string(date_str):
+    """ Expects a string with format YYYY-MM-DD. returns datetime.date """
+    try:
+        return datetime.date(*[int(x) for x in date_str.split('-')])
+    except Exception as e:
+        logger.error(str(e))
+    return None
+
+
+def dates_are_fiscal_year_bookends(start, end):
+    """ Returns true if the start and end dates fall on fiscal year(s) start and end date """
+    try:
+        if start.month == 10 and start.day == 1 and end.month == 9 and end.day == 30 and start.year < end.year:
+            return True
+    except Exception as e:
+        logger.error(str(e))
+    return False
+
+
+def generate_all_fiscal_years_in_range(start, end):
+    """ For a given date-range, provide the inclusive fiscal years """
+    fiscal_years = []
+    temp_date = start
+    while temp_date < end:
+        fiscal_years.append(generate_fiscal_year(temp_date))
+        temp_date = datetime.date(temp_date.year + 1, temp_date.month, temp_date.day)
+    return fiscal_years
+
+
 def generate_raw_quoted_query(queryset):
     """
     Generates the raw sql from a queryset with quotable types quoted.
