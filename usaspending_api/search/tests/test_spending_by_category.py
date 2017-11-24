@@ -49,6 +49,7 @@ def budget_function_data(db):
         federal_action_obligation=50)
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_category_success(client, budget_function_data):
 
@@ -126,6 +127,7 @@ def test_spending_by_category_success(client, budget_function_data):
     # test for similar matches (with no duplicates)
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_naics_autocomplete_failure(client):
     """Verify error on bad autocomplete request for budget function."""
