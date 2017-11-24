@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from usaspending_api.awards.models import Award, LegalEntity
 from usaspending_api.references.models import NAICS, PSC
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -128,9 +130,10 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(type__in=or_queryset)
-            if idv_flag:
-                queryset |= Award.objects.filter(type__isnull=True, latest_transaction__contract_data__pulled_from='IDV')
+                filter_obj = Q(type__in=or_queryset)
+                if idv_flag:
+                    filter_obj |= Q(latest_transaction__contract_data__pulled_from='IDV')
+                queryset &= Award.objects.filter(filter_obj)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
