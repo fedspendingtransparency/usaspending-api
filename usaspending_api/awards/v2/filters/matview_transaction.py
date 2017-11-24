@@ -424,7 +424,7 @@ def award_filter(filters):
             if len(or_queryset) != 0:
                 filter_obj = Q(type__in=or_queryset)
                 if idv_flag:
-                    filter_obj |= Q(pulled_from='IDV')
+                    filter_obj |= Q(latest_transaction__contract_data__pulled_from='IDV')
                 queryset &= UniversalAwardView.objects.filter(filter_obj)
 
         elif key == "agencies":
