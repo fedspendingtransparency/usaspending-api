@@ -3,6 +3,7 @@ import timeit
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import connections, connection, transaction as db_transaction
+from django.db.models import Count
 from usaspending_api.common.helpers import fy
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -98,6 +99,11 @@ class Command(BaseCommand):
         self.agency_toptier_map = {
             agency.toptier_agency.cgac_code: agency
             for agency in Agency.objects.filter(toptier_flag=True)
+            }
+        self.agency_subtier_map = {
+            sa.subtier_code: sa.agency_set.first()
+            for sa in SubtierAgency.objects
+            .annotate(n_agencies=Count('agency')).filter(n_agencies=1)
             }
         self.award_map = {award.piid: award for award in Award.objects.filter(piid__isnull=False)}
         self.le_map = {(le.recipient_unique_id, le.recipient_name): le for le in LegalEntity.objects.all()}
@@ -373,6 +379,10 @@ class Command(BaseCommand):
             if awarding_agency is None:
                 awarding_agency = self.agency_sub_only_map.get(row['awarding_agency_code'])
 
+            # If we still haven't found the agency, try surmising it from subtier
+            if awarding_agency is None:
+                awarding_agency = self.agency_subtier_map.get(row['awarding_sub_tier_agency_c'])
+
             funding_agency = self.agency_no_sub_map.get((
                 row['funding_agency_code'],
                 row["funding_sub_tier_agency_co"]
@@ -380,6 +390,9 @@ class Command(BaseCommand):
 
             if funding_agency is None:
                 funding_agency = self.agency_sub_only_map.get(row['funding_agency_code'])
+
+            if funding_agency is None:
+                funding_agency = self.agency_subtier_map.get(row['funding_sub_tier_agency_co'])
 
             awarding_agency_list.append(awarding_agency)
             funding_agency_list.append(funding_agency)
