@@ -159,8 +159,14 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
-        if can_use_view(filters, 'SummaryView') and scope == "agency":
-            queryset = view_filter(filters, 'SummaryView')
+        if can_use_view(filters, 'SummaryView'):
+            potential_scopes = ["agency", "subagency"]
+            if scope not in potential_scopes:
+                raise InvalidParameterException("scope does not have a valid value")
+            if scope == 'agency':
+                queryset = view_filter(filters, 'SummaryView')
+            else:
+                queryset = view_filter(filters, 'SummarySubagencyView')
 
             if category == "awarding_agency":
                 queryset = queryset \
@@ -191,7 +197,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         else:
             queryset = transaction_filter(filters)
 
-            # filter the transactions by category
         if category == "awarding_agency":
             potential_scopes = ["agency", "subagency"]
             if scope not in potential_scopes:

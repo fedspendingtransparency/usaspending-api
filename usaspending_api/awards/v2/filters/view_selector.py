@@ -1,4 +1,5 @@
 from usaspending_api.awards.models_matviews import SummaryView
+from usaspending_api.awards.models_matviews import SummarySubagencyView
 from usaspending_api.awards.models_matviews import SummaryAwardView
 from usaspending_api.awards.models_matviews import SumaryCfdaNumbersView
 from usaspending_api.awards.models_matviews import SumaryNaicsCodesView
@@ -13,6 +14,10 @@ MATVIEW_SELECTOR = {
     'SummaryView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
         'model': SummaryView.objects
+    },
+    'SummarySubagencyView': {
+        'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
+        'model': SummarySubagencyView.objects
     },
     'SummaryAwardView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
