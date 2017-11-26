@@ -158,10 +158,40 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
-        # filter queryset
-        queryset = transaction_filter(filters)
+        # build sql query filters
+        if can_use_view(filters, 'SummaryView') and scope == "agency":
+            queryset = view_filter(filters, 'SummaryView')
 
-        # filter the transactions by category
+            if category == "awarding_agency":
+                queryset = queryset \
+                    .filter(awarding_agency_name__isnull=False) \
+                    .values(
+                        agency_name=F('awarding_agency_name'),
+                        agency_abbreviation=F('awarding_agency_abbr')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .order_by('-aggregated_amount')
+            elif category == "funding_agency":
+                queryset = queryset \
+                    .filter(funding_agency_name__isnull=False) \
+                    .values(
+                        agency_name=F('funding_agency_name'),
+                        agency_abbreviation=F('funding_agency_abbr')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .order_by('-aggregated_amount')
+
+            # Begin DB hits here
+            results = list(queryset[lower_limit:upper_limit + 1])
+            page_metadata = get_simple_pagination_metadata(len(results), limit, page)
+            results = results[:limit]
+
+            response = {"category": category, "scope": scope, "limit": limit, "results": results,
+                        "page_metadata": page_metadata}
+            return Response(response)
+
+        else:
+            queryset = transaction_filter(filters)
+
+            # filter the transactions by category
         if category == "awarding_agency":
             potential_scopes = ["agency", "subagency"]
             if scope not in potential_scopes:
@@ -188,6 +218,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     # NOT IMPLEMENTED IN UI
                     raise NotImplementedError
 
+            # Begin DB hits here
             results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -223,6 +254,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 # NOT IMPLEMENTED IN UI
                 raise NotImplementedError
 
+            # Begin DB hits here
             results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -271,8 +303,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif category == "cfda_programs":
             if can_use_view(filters, 'SumaryCfdaNumbersView'):
                 queryset = view_filter(filters, 'SumaryCfdaNumbersView')
-                print('==================')
-                print("Using Ed's Matview")
                 queryset = queryset \
                     .filter(
                         federal_action_obligation__isnull=False,
