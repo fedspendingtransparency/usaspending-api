@@ -2,7 +2,7 @@
 First step in process to fix locations from transaction_fpds / fabs tables
 
 1. This script
-2. match_translations_to_locations - probably in parallel (it is the slow step)
+2. match_transactions_to_locations - probably in parallel (it is the slow step)
 3. create_locations - AFTER all parallel instances of match_translations_to_locations have finished
 
 At the end, transaction_location_data is populated with transaction_id and location_id

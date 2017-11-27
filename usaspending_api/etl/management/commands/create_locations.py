@@ -2,7 +2,7 @@
 Last step in process to fix locations from transaction_fpds / fabs tables
 
 1. populate_transaction_location_data
-2. match_translations_to_locations - probably in parallel (it is the slow step)
+2. match_transactions_to_locations - probably in parallel (it is the slow step)
 3. this script - AFTER all parallel instances of match_translations_to_locations have finished
 
 At the end, transaction_location_data is populated with transaction_id and location_id
@@ -68,12 +68,7 @@ class Command(BaseCommand):
 
 
 QUERIES = """
-ALTER TABLE references_location
-ADD COLUMN IF NOT EXISTS transaction_ids INTEGER[];
-
-
   INSERT INTO references_location (
-    transaction_ids,
     data_source,
     country_name,
     state_code,
@@ -100,8 +95,7 @@ ADD COLUMN IF NOT EXISTS transaction_ids INTEGER[];
     recipient_flag,
     location_country_code
   )
-  SELECT
-    ARRAY_AGG(transaction_id),  -- ==> transaction_ids
+  SELECT DISTINCT
     data_source,  -- ==> data_source
     country_name,  -- ==> country_name
     state_code,  -- ==> state_code
@@ -129,20 +123,68 @@ ADD COLUMN IF NOT EXISTS transaction_ids INTEGER[];
     location_country_code  -- ==> location_country_code
   FROM transaction_location_data
   WHERE transaction_location_data.location_id IS NULL
-  GROUP BY 2, 3, 4, 5, 6, 7, 8, 9, 10,
-           11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-           21, 22, 23, 24, 25, 26
   ;
 
 
 UPDATE transaction_location_data
 SET    location_id = l.location_id
 FROM   references_location l
-WHERE  transaction_location_data.transaction_id = ANY(l.transaction_ids)
-AND    transaction_location_data.location_id IS NULL
-AND    transaction_location_data.transaction_id >= ${floor}
-AND    transaction_location_data.transaction_id < ${ceiling};
-
-
-ALTER TABLE references_location DROP COLUMN transaction_ids;
+WHERE  transaction_location_data.location_id IS NULL
+AND
+  MD5(
+    COALESCE(transaction_location_data.data_source, '') ||
+    COALESCE(transaction_location_data.country_name, '') ||
+    COALESCE(transaction_location_data.state_code, '') ||
+    COALESCE(transaction_location_data.state_name, '') ||
+    COALESCE(transaction_location_data.state_description, '') ||
+    COALESCE(transaction_location_data.city_name, '') ||
+    COALESCE(transaction_location_data.city_code, '') ||
+    COALESCE(transaction_location_data.county_name, '') ||
+    COALESCE(transaction_location_data.county_code, '') ||
+    COALESCE(transaction_location_data.address_line1, '') ||
+    COALESCE(transaction_location_data.address_line2, '') ||
+    COALESCE(transaction_location_data.address_line3, '') ||
+    COALESCE(transaction_location_data.foreign_location_description, '') ||
+    COALESCE(transaction_location_data.zip4, '') ||
+    COALESCE(transaction_location_data.zip_4a, '') ||
+    COALESCE(transaction_location_data.congressional_code, '') ||
+    COALESCE(transaction_location_data.performance_code, '') ||
+    COALESCE(transaction_location_data.zip_last4, '') ||
+    COALESCE(transaction_location_data.zip5, '') ||
+    COALESCE(transaction_location_data.foreign_postal_code, '') ||
+    COALESCE(transaction_location_data.foreign_province, '') ||
+    COALESCE(transaction_location_data.foreign_city_name, '') ||
+    COALESCE(transaction_location_data.place_of_performance_flag::TEXT, '') ||
+    COALESCE(transaction_location_data.recipient_flag::TEXT, '') ||
+    COALESCE(transaction_location_data.location_country_code, '')
+) =
+MD5(
+    COALESCE(l.data_source, '') ||
+    COALESCE(l.country_name, '') ||
+    COALESCE(l.state_code, '') ||
+    COALESCE(l.state_name, '') ||
+    COALESCE(l.state_description, '') ||
+    COALESCE(l.city_name, '') ||
+    COALESCE(l.city_code, '') ||
+    COALESCE(l.county_name, '') ||
+    COALESCE(l.county_code, '') ||
+    COALESCE(l.address_line1, '') ||
+    COALESCE(l.address_line2, '') ||
+    COALESCE(l.address_line3, '') ||
+    COALESCE(l.foreign_location_description, '') ||
+    COALESCE(l.zip4, '') ||
+    COALESCE(l.zip_4a, '') ||
+    COALESCE(l.congressional_code, '') ||
+    COALESCE(l.performance_code, '') ||
+    COALESCE(l.zip_last4, '') ||
+    COALESCE(l.zip5, '') ||
+    COALESCE(l.foreign_postal_code, '') ||
+    COALESCE(l.foreign_province, '') ||
+    COALESCE(l.foreign_city_name, '') ||
+    COALESCE(l.place_of_performance_flag::TEXT, '') ||
+    COALESCE(l.recipient_flag::TEXT, '') ||
+    COALESCE(l.location_country_code, '')
+)
+AND transaction_location_data.transaction_id >= ${floor}
+AND transaction_location_data.transaction_id < ${ceiling};
 """
