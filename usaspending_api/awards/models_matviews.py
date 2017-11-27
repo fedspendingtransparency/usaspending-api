@@ -170,7 +170,7 @@ class UniversalAwardView(models.Model):
     small_business_competitive = models.TextField()
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
-    naics = models.TextField()
+    naics_code = models.TextField()
     naics_description = models.TextField()
     dod_claimant_program_code = models.TextField()
     program_system_or_equipmen = models.TextField()
