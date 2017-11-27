@@ -251,7 +251,8 @@ LEFT OUTER JOIN state_abbrevs ON (
     AND (    REPLACE(transaction_fabs.legal_entity_state_code, '.', '') = state_abbrevs.abbrev
          OR  UPPER(TRIM(REGEXP_REPLACE(transaction_fabs.legal_entity_state_name, '\s+', ' '))) = state_abbrevs.name))
 WHERE transaction_id >= ${floor}
-AND   transaction_id < ${ceiling};
+AND   transaction_id < ${ceiling}
+AND awardee_or_recipient_uniqu is NULL;
 
 
 
@@ -329,7 +330,8 @@ LEFT OUTER JOIN state_abbrevs ON (
     AND REPLACE(transaction_fpds.legal_entity_state_code, '.', '') = state_abbrevs.abbrev
          )
 WHERE transaction_id >= ${floor}
-AND   transaction_id < ${ceiling};
+AND   transaction_id < ${ceiling}
+AND   awardee_or_recipient_uniqu is NULL;
 
 
 -- transaction_location_data: place of performance, FABS
@@ -403,7 +405,8 @@ LEFT OUTER JOIN state_abbrevs ON (
     ref_country_code.country_code = 'USA'
     AND UPPER(TRIM(REGEXP_REPLACE(transaction_fabs.place_of_perform_state_nam, '\s+', ' '))) = state_abbrevs.name)
 WHERE transaction_id >= ${floor}
-AND   transaction_id < ${ceiling};
+AND   transaction_id < ${ceiling}
+AND awardee_or_recipient_uniqu is NULL;
 
 
 -- transaction_location_data: place of performance, FPDS
@@ -478,7 +481,8 @@ LEFT OUTER JOIN state_abbrevs ON (
     ref_country_code.country_code = 'USA'
     AND UPPER(TRIM(REGEXP_REPLACE(transaction_fpds.place_of_performance_state, '\s+', ' '))) = state_abbrevs.name)
 WHERE transaction_id >= ${floor}
-AND   transaction_id < ${ceiling};
+AND   transaction_id < ${ceiling}
+AND awardee_or_recipient_uniqu is NULL;
 
 
 CREATE INDEX ON transaction_location_data (transaction_id);
