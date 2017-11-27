@@ -68,39 +68,6 @@ class Command(BaseCommand):
 
 
 QUERIES = """
-CREATE INDEX
-IF NOT EXISTS
-references_location_composite__idx1
-ON references_location
-( MD5(
-    COALESCE(data_source, '') ||
-    COALESCE(country_name, '') ||
-    COALESCE(state_code, '') ||
-    COALESCE(state_name, '') ||
-    COALESCE(state_description, '') ||
-    COALESCE(city_name, '') ||
-    COALESCE(city_code, '') ||
-    COALESCE(county_name, '') ||
-    COALESCE(county_code, '') ||
-    COALESCE(address_line1, '') ||
-    COALESCE(address_line2, '') ||
-    COALESCE(address_line3, '') ||
-    COALESCE(foreign_location_description, '') ||
-    COALESCE(zip4, '') ||
-    COALESCE(zip_4a, '') ||
-    COALESCE(congressional_code, '') ||
-    COALESCE(performance_code, '') ||
-    COALESCE(zip_last4, '') ||
-    COALESCE(zip5, '') ||
-    COALESCE(foreign_postal_code, '') ||
-    COALESCE(foreign_province, '') ||
-    COALESCE(foreign_city_name, '') ||
-    COALESCE(place_of_performance_flag::TEXT, '') ||
-    COALESCE(recipient_flag::TEXT, '') ||
-    COALESCE(location_country_code, '')
-));
-
-
 UPDATE transaction_location_data
 SET    location_id = l.location_id
 FROM   references_location l
