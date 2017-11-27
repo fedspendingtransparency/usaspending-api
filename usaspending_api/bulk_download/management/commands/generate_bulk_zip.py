@@ -2,6 +2,8 @@ import logging
 import csv
 import json
 import jsonpickle
+import multiprocessing
+import threading
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -18,6 +20,10 @@ from usaspending_api.bulk_download.v2.views import value_mappings
 #                     datefmt='%m/%d/%Y %I:%M:%S %p',
 #                     level=logging.INFO)
 logger = logging.getLogger('console')
+
+# Average time for Bulk Download's an hour so far but theoretically someone could request
+# all data from all agencies from all fiscal years, max is 12 hours
+BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 43200
 
 # # AWS parameters
 # BULK_DOWNLOAD_S3_BUCKET_NAME = os.environ.get('BULK_DOWNLOAD_S3_BUCKET_NAME')
@@ -52,18 +58,17 @@ class Command(BaseCommand):
         # update job status
         job.job_status_id = JOB_STATUS_DICT[status_name]
 
-    def handle(self, *args, **options):
+    def poller(self, queue):
         """Run the application."""
-
-        queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
-                          QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
 
         logger.info('Starting SQS polling')
         while True:
             processed_messages = []
             try:
                 # Grabs one (or more) messages from the queue
-                messages = queue.receive_messages(WaitTimeSeconds=10, MessageAttributeNames=['All'])
+                messages = queue.receive_messages(WaitTimeSeconds=10,
+                                                  VisibilityTimeout=BULK_DOWNLOAD_VISIBILITY_TIMEOUT,
+                                                  MessageAttributeNames=['All'])
                 for message in messages:
                     logger.info('Message Received: {}'.format(message))
                     if message.message_attributes is not None:
@@ -111,3 +116,17 @@ class Command(BaseCommand):
                 for message in messages:
                     if message not in processed_messages:
                         message.change_visibility(VisibilityTimeout=0)
+
+    def handle(self, *args, **options):
+        queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
+                          QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+
+        cpu_count = multiprocessing.cpu_count()
+        logger.info("Generating {} workers to poll {}".format(cpu_count, settings.BULK_DOWNLOAD_SQS_QUEUE_NAME))
+        worker_threads = []
+        for index in range(0, cpu_count):
+            worker_thread = threading.Thread(target=self.poller, kwargs={"queue": queue})
+            worker_threads.append(worker_thread)
+            worker_thread.start()
+        for thread in worker_threads:
+            thread.join()

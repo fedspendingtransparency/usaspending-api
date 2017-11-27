@@ -68,37 +68,97 @@ class Command(BaseCommand):
 
 
 QUERIES = """
--- match existing locations
+CREATE INDEX
+IF NOT EXISTS
+references_location_composite__idx1
+ON references_location
+( MD5(
+    COALESCE(data_source, '') ||
+    COALESCE(country_name, '') ||
+    COALESCE(state_code, '') ||
+    COALESCE(state_name, '') ||
+    COALESCE(state_description, '') ||
+    COALESCE(city_name, '') ||
+    COALESCE(city_code, '') ||
+    COALESCE(county_name, '') ||
+    COALESCE(county_code, '') ||
+    COALESCE(address_line1, '') ||
+    COALESCE(address_line2, '') ||
+    COALESCE(address_line3, '') ||
+    COALESCE(foreign_location_description, '') ||
+    COALESCE(zip4, '') ||
+    COALESCE(zip_4a, '') ||
+    COALESCE(congressional_code, '') ||
+    COALESCE(performance_code, '') ||
+    COALESCE(zip_last4, '') ||
+    COALESCE(zip5, '') ||
+    COALESCE(foreign_postal_code, '') ||
+    COALESCE(foreign_province, '') ||
+    COALESCE(foreign_city_name, '') ||
+    COALESCE(place_of_performance_flag::TEXT, '') ||
+    COALESCE(recipient_flag::TEXT, '') ||
+    COALESCE(location_country_code, '')
+));
+
+
 UPDATE transaction_location_data
 SET    location_id = l.location_id
 FROM   references_location l
 WHERE
-  transaction_location_data.data_source IS NOT DISTINCT FROM l.data_source AND
-  transaction_location_data.country_name IS NOT DISTINCT FROM l.country_name AND
-  transaction_location_data.state_code IS NOT DISTINCT FROM l.state_code AND
-  transaction_location_data.state_name IS NOT DISTINCT FROM l.state_name AND
-  transaction_location_data.state_description IS NOT DISTINCT FROM l.state_description AND
-  transaction_location_data.city_name IS NOT DISTINCT FROM l.city_name AND
-  transaction_location_data.city_code IS NOT DISTINCT FROM l.city_code AND
-  transaction_location_data.county_name IS NOT DISTINCT FROM l.county_name AND
-  transaction_location_data.county_code IS NOT DISTINCT FROM l.county_code AND
-  transaction_location_data.address_line1 IS NOT DISTINCT FROM l.address_line1 AND
-  transaction_location_data.address_line2 IS NOT DISTINCT FROM l.address_line2 AND
-  transaction_location_data.address_line3 IS NOT DISTINCT FROM l.address_line3 AND
-  transaction_location_data.foreign_location_description IS NOT DISTINCT FROM l.foreign_location_description AND
-  transaction_location_data.zip4 IS NOT DISTINCT FROM l.zip4 AND
-  transaction_location_data.zip_4a IS NOT DISTINCT FROM l.zip_4a AND
-  transaction_location_data.congressional_code IS NOT DISTINCT FROM l.congressional_code AND
-  transaction_location_data.performance_code IS NOT DISTINCT FROM l.performance_code AND
-  transaction_location_data.zip_last4 IS NOT DISTINCT FROM l.zip_last4 AND
-  transaction_location_data.zip5 IS NOT DISTINCT FROM l.zip5 AND
-  transaction_location_data.foreign_postal_code IS NOT DISTINCT FROM l.foreign_postal_code AND
-  transaction_location_data.foreign_province IS NOT DISTINCT FROM l.foreign_province AND
-  transaction_location_data.foreign_city_name IS NOT DISTINCT FROM l.foreign_city_name AND
-  transaction_location_data.place_of_performance_flag IS NOT DISTINCT FROM l.place_of_performance_flag AND
-  transaction_location_data.recipient_flag IS NOT DISTINCT FROM l.recipient_flag AND
-  transaction_location_data.location_country_code IS NOT DISTINCT FROM l.location_country_code
+  MD5(
+    COALESCE(transaction_location_data.data_source, '') ||
+    COALESCE(transaction_location_data.country_name, '') ||
+    COALESCE(transaction_location_data.state_code, '') ||
+    COALESCE(transaction_location_data.state_name, '') ||
+    COALESCE(transaction_location_data.state_description, '') ||
+    COALESCE(transaction_location_data.city_name, '') ||
+    COALESCE(transaction_location_data.city_code, '') ||
+    COALESCE(transaction_location_data.county_name, '') ||
+    COALESCE(transaction_location_data.county_code, '') ||
+    COALESCE(transaction_location_data.address_line1, '') ||
+    COALESCE(transaction_location_data.address_line2, '') ||
+    COALESCE(transaction_location_data.address_line3, '') ||
+    COALESCE(transaction_location_data.foreign_location_description, '') ||
+    COALESCE(transaction_location_data.zip4, '') ||
+    COALESCE(transaction_location_data.zip_4a, '') ||
+    COALESCE(transaction_location_data.congressional_code, '') ||
+    COALESCE(transaction_location_data.performance_code, '') ||
+    COALESCE(transaction_location_data.zip_last4, '') ||
+    COALESCE(transaction_location_data.zip5, '') ||
+    COALESCE(transaction_location_data.foreign_postal_code, '') ||
+    COALESCE(transaction_location_data.foreign_province, '') ||
+    COALESCE(transaction_location_data.foreign_city_name, '') ||
+    COALESCE(transaction_location_data.place_of_performance_flag::TEXT, '') ||
+    COALESCE(transaction_location_data.recipient_flag::TEXT, '') ||
+    COALESCE(transaction_location_data.location_country_code, '')
+) =
+MD5(
+    COALESCE(l.data_source, '') ||
+    COALESCE(l.country_name, '') ||
+    COALESCE(l.state_code, '') ||
+    COALESCE(l.state_name, '') ||
+    COALESCE(l.state_description, '') ||
+    COALESCE(l.city_name, '') ||
+    COALESCE(l.city_code, '') ||
+    COALESCE(l.county_name, '') ||
+    COALESCE(l.county_code, '') ||
+    COALESCE(l.address_line1, '') ||
+    COALESCE(l.address_line2, '') ||
+    COALESCE(l.address_line3, '') ||
+    COALESCE(l.foreign_location_description, '') ||
+    COALESCE(l.zip4, '') ||
+    COALESCE(l.zip_4a, '') ||
+    COALESCE(l.congressional_code, '') ||
+    COALESCE(l.performance_code, '') ||
+    COALESCE(l.zip_last4, '') ||
+    COALESCE(l.zip5, '') ||
+    COALESCE(l.foreign_postal_code, '') ||
+    COALESCE(l.foreign_province, '') ||
+    COALESCE(l.foreign_city_name, '') ||
+    COALESCE(l.place_of_performance_flag::TEXT, '') ||
+    COALESCE(l.recipient_flag::TEXT, '') ||
+    COALESCE(l.location_country_code, '')
+)
 AND transaction_location_data.transaction_id >= ${floor}
 AND transaction_location_data.transaction_id < ${ceiling};
-  ;
 """
