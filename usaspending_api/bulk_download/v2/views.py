@@ -274,13 +274,12 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         if set(award_types) != set(itertools.chain(*award_type_mappings.values())):
             type_queryset_filters = {}
             type_queryset_filters['{}__in'.format(value_mappings[award_level]['type'])] = award_types
-            type_queryset = table.objects.filter(**type_queryset_filters)
+            type_queryset = Q(**type_queryset_filters)
             if (filters['award_types'] == ['contracts']):
                 # IDV Flag
-                idv_queryset_filters = {'{}__isnull'.format(value_mappings[award_level]['type']): True,
-                                        '{}__pulled_from'.format(value_mappings[award_level]['contract_data']): 'IDV'}
-                type_queryset |= table.objects.filter(**idv_queryset_filters)
-            queryset &= type_queryset
+                idv_queryset_filters = {'{}__pulled_from'.format(value_mappings[award_level]['contract_data']): 'IDV'}
+                type_queryset |= Q(**idv_queryset_filters)
+            queryset &= table.objects.filter(type_queryset)
 
         # Adding date range filters
         # Get the date type attribute
