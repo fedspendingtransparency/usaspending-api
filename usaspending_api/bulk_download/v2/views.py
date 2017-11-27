@@ -274,13 +274,12 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         if set(award_types) != set(itertools.chain(*award_type_mappings.values())):
             type_queryset_filters = {}
             type_queryset_filters['{}__in'.format(value_mappings[award_level]['type'])] = award_types
-            type_queryset = table.objects.filter(**type_queryset_filters)
+            type_queryset = Q(**type_queryset_filters)
             if (filters['award_types'] == ['contracts']):
                 # IDV Flag
-                idv_queryset_filters = {'{}__isnull'.format(value_mappings[award_level]['type']): True,
-                                        '{}__pulled_from'.format(value_mappings[award_level]['contract_data']): 'IDV'}
-                type_queryset |= table.objects.filter(**idv_queryset_filters)
-            queryset &= type_queryset
+                idv_queryset_filters = {'{}__pulled_from'.format(value_mappings[award_level]['contract_data']): 'IDV'}
+                type_queryset |= Q(**idv_queryset_filters)
+            queryset &= table.objects.filter(type_queryset)
 
         # Adding date range filters
         # Get the date type attribute
@@ -305,11 +304,9 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         # Agencies are to be OR'd together and then AND'd to the major query
         agencies_queryset = None
         if filters['agency'] != 'all':
-            agencies_queryset = (Q(awarding_agency__toptier_agency_id=filters['agency']) |
-                           Q(funding_agency__toptier_agency_id=filters['agency']))
+            agencies_queryset = Q(awarding_agency__toptier_agency_id=filters['agency'])
             if 'sub_agency' in filters and filters['sub_agency']:
-                agencies_queryset = (agencies_queryset & (Q(awarding_agency__subtier_agency_id=filters['sub_agency']) |
-                                                          Q(funding_agency__subtier_agency_id=filters['sub_agency'])))
+                agencies_queryset &= Q(awarding_agency__subtier_agency_id=filters['sub_agency'])
             queryset &= table.objects.filter(agencies_queryset)
 
         return queryset
