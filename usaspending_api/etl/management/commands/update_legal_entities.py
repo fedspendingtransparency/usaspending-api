@@ -29,7 +29,7 @@ class Command(BaseCommand):
         );
     """
 
-    ALTER_TRANS_LE_TABLE= """
+    ALTER_TRANS_LE_TABLE = """
         ALTER TABLE trans_to_le ADD CONSTRAINT trans_to_le_uc UNIQUE (transaction_id, legal_entity_id);
     """
 

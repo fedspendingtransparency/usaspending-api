@@ -181,11 +181,12 @@ class Command(BaseCommand):
                 row['funding_agency_code'] = funding_cgac_code
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = Agency.get_by_toptier_subtier(
+            awarding_agency = (Agency.get_by_toptier_subtier(
                 row['awarding_agency_code'],
                 row["awarding_sub_tier_agency_c"]
-            )
-            created, award = Award.get_or_create_summary_award(
+            ) or Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"]))
+
+            (created, award) = Award.get_or_create_summary_award(
                 awarding_agency=awarding_agency,
                 piid=row.get('piid'),
                 fain=row.get('fain'),
@@ -195,11 +196,14 @@ class Command(BaseCommand):
 
             award_update_id_list.append(award.id)
 
+            funding_agency = (Agency.get_by_toptier_subtier(row['funding_agency_code'],
+                                                            row["funding_sub_tier_agency_co"]) or
+                              Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"]))
+
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": awarding_agency,
-                "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                                                row["funding_sub_tier_agency_co"]),
+                "funding_agency": funding_agency,
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
