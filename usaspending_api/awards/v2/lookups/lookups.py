@@ -1021,7 +1021,7 @@ grant_award_mapping = {
     'Award Amount': 'total_obligation',
     'Awarding Agency': 'awarding_agency__toptier_agency__name',
     'Awarding Sub Agency': 'awarding_agency__subtier_agency__name',
-    'Award Type': 'type',
+    'Award Type': 'type_description',
     'Funding Agency': 'funding_agency__toptier_agency__name',
     'Funding Sub Agency': 'funding_agency__subtier_agency__name'
 }
@@ -1046,7 +1046,7 @@ direct_payment_award_mapping = {
     'Award Amount': 'total_obligation',
     'Awarding Agency': 'awarding_agency__toptier_agency__name',
     'Awarding Sub Agency': 'awarding_agency__subtier_agency__name',
-    'Award Type': 'type',
+    'Award Type': 'type_description',
     'Funding Agency': 'funding_agency__toptier_agency__name',
     'Funding Sub Agency': 'funding_agency__subtier_agency__name'
 }
@@ -1059,7 +1059,7 @@ other_award_mapping = {
     'Award Amount': 'total_obligation',
     'Awarding Agency': 'awarding_agency__toptier_agency__name',
     'Awarding Sub Agency': 'awarding_agency__subtier_agency__name',
-    'Award Type': 'type',
+    'Award Type': 'type_description',
     'Funding Agency': 'funding_agency__toptier_agency__name',
     'Funding Sub Agency': 'funding_agency__subtier_agency__name'
 }
