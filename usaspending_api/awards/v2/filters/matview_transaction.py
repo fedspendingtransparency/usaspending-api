@@ -14,7 +14,7 @@ from usaspending_api.common.helpers import generate_date_from_string
 logger = logging.getLogger(__name__)
 
 
-def date_or_fy_queryset(date_dict, table, fiscal_year_column):
+def date_or_fy_queryset(date_dict, table, fiscal_year_column, action_date_column):
     full_fiscal_years = []
     for v in date_dict:
         s = generate_date_from_string(v.get("start_date"))
@@ -36,9 +36,9 @@ def date_or_fy_queryset(date_dict, table, fiscal_year_column):
     for v in date_dict:
         kwargs = {}
         if v.get("start_date") is not None:
-            kwargs["action_date__gte"] = v.get("start_date")
+            kwargs["{}__gte".format(action_date_column)] = v.get("start_date")
         if v.get("end_date") is not None:
-            kwargs["action_date__lte"] = v.get("end_date")
+            kwargs["{}__lte".format(action_date_column)] = v.get("end_date")
         # (may have to cast to date) (oct 1 to sept 30)
         if queryset_init:
             or_queryset |= table.objects.filter(**kwargs)
@@ -163,7 +163,8 @@ def transaction_filter(filters):
 
         # time_period
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value, UniversalTransactionView, "fiscal_year")
+            success, or_queryset = date_or_fy_queryset(value, UniversalTransactionView, "fiscal_year",
+                                                       "action_date")
             if success:
                 queryset &= or_queryset
 
@@ -410,7 +411,8 @@ def award_filter(filters):
             queryset = queryset.filter(compound_or)
 
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value, UniversalAwardView, "issued_date_fiscal_year")
+            success, or_queryset = date_or_fy_queryset(value, UniversalAwardView, "issued_date_fiscal_year",
+                                                       "issued_date")
             if success:
                 queryset &= or_queryset
 
