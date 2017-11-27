@@ -304,11 +304,9 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         # Agencies are to be OR'd together and then AND'd to the major query
         agencies_queryset = None
         if filters['agency'] != 'all':
-            agencies_queryset = (Q(awarding_agency__toptier_agency_id=filters['agency']) |
-                           Q(funding_agency__toptier_agency_id=filters['agency']))
+            agencies_queryset = Q(awarding_agency__toptier_agency_id=filters['agency'])
             if 'sub_agency' in filters and filters['sub_agency']:
-                agencies_queryset = (agencies_queryset & (Q(awarding_agency__subtier_agency_id=filters['sub_agency']) |
-                                                          Q(funding_agency__subtier_agency_id=filters['sub_agency'])))
+                agencies_queryset &= Q(awarding_agency__subtier_agency_id=filters['sub_agency'])
             queryset &= table.objects.filter(agencies_queryset)
 
         return queryset
