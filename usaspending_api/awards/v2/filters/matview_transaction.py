@@ -489,7 +489,7 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                duns_values = LegalEntity.objects.filter(business_types_description__overlap=or_queryset).\
+                duns_values = LegalEntity.objects.filter(business_categories__overlap=or_queryset).\
                     values('recipient_unique_id')
                 queryset &= UniversalAwardView.objects.filter(recipient_unique_id__in=duns_values)
 
