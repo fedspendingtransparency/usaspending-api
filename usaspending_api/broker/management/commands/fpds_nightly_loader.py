@@ -83,8 +83,7 @@ class Command(BaseCommand):
         for item in file_list:
             # if the date on the file is the same day as we're checking
             if re.search('.*_delete_records_(IDV|award).*', item) and '/' not in item and \
-                            datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= \
-                            datetime.strptime(date, '%Y-%m-%d').date():
+                            datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= date:
                 # make the url params to pass
                 url_params = {
                     'Bucket': fpds_bucket_name,
@@ -281,6 +280,7 @@ class Command(BaseCommand):
 
         if options.get('date'):
             date = options.get('date')[0]
+            date = datetime.strptime(date, '%Y-%m-%d').date()
         else:
             data_load_date_obj = ExternalDataLoadDate.objects. \
                 filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fpds']).first()
