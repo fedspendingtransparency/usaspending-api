@@ -362,7 +362,7 @@ def award_filter(filters):
                     'time_period',
                     'award_type_codes',
                     'agencies',
-                    'legal_entities',
+                    'recipient_search_text',
                     'recipient_scope',
                     'recipient_locations',
                     'recipient_type_names',
@@ -465,12 +465,17 @@ def award_filter(filters):
             if len(awarding_subtier) != 0:
                 queryset &= UniversalAwardView.objects.filter(awarding_subtier_agency_name__in=awarding_subtier)
 
-        elif key == "legal_entities":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= UniversalAwardView.objects.filter(recipient_id__in=or_queryset)
+        elif key == "recipient_search_text":
+            if len(value) != 1:
+                raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
+            recipient_string = str(value[0])
+
+            filter_obj = Q(recipient_name__icontains=recipient_string)
+
+            if len(recipient_string) == 9:
+                filter_obj |= Q(recipient_unique_id__iexact=recipient_string)
+
+            queryset &= UniversalAwardView.objects.filter(filter_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":
