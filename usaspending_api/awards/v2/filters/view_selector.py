@@ -32,19 +32,20 @@ MATVIEW_SELECTOR = {
         'model': SumaryNaicsCodesView.objects
     },
     'SummaryTransactionView': {
-        'allowed_filters': ['time_period',
-                    'award_type_codes',
-                    'legal_entities',
-                    'recipient_scope',
-                    'recipient_locations',
-                    'recipient_type_names',
-                    'place_of_performance_scope',
-                    'place_of_performance_locations',
-                    'naics_codes',
-                    'psc_codes',
-                    'contract_pricing_type_codes',
-                    'set_aside_type_codes',
-                    'extent_competed_type_codes'],
+        'allowed_filters': [
+            'time_period',
+            'award_type_codes',
+            'legal_entities',
+            'recipient_scope',
+            'recipient_locations',
+            'recipient_type_names',
+            'place_of_performance_scope',
+            'place_of_performance_locations',
+            'naics_codes',
+            'psc_codes',
+            'contract_pricing_type_codes',
+            'set_aside_type_codes',
+            'extent_competed_type_codes'],
         'model': SummaryTransactionView.objects
     }
 }

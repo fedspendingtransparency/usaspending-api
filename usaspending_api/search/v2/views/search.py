@@ -496,6 +496,31 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
                 return Response(district_response)
 
+    def state_results(self, filter_args, lookup_fields, loc_lookup):
+        # Adding additional state filters if specified
+        if self.geo_layer_filters:
+            self.queryset = self.queryset.filter(**{'{}__{}'.format(loc_lookup, 'in'): self.geo_layer_filters})
+        else:
+            # Adding null filter for state for specific partial index
+            # when not using geocode_filter
+            filter_args['{}_{}'.format(loc_lookup, 'isnull')] = False
+
+        self.geo_queryset = self.queryset.filter(**filter_args) \
+            .values(*lookup_fields) \
+            .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+        # State names are inconsistent in database (upper, lower, null)
+        # Used lookup instead to be consistent
+        results = [
+            {
+                'shape_code': x[loc_lookup],
+                'aggregated_amount': x['federal_action_obligation'],
+                'display_name': code_to_state.get(x[loc_lookup], {'name': 'None'}).get('name').title()
+            } for x in self.geo_queryset
+        ]
+
+        return results
+
     def county_district_queryset(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
         # Filtering queryset to specific county/districts if requested
         # Since geo_layer_filters comes as concat of state fips and county/district codes
@@ -526,31 +551,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                       )
 
         return self.geo_queryset
-
-    def state_results(self, filter_args, lookup_fields, loc_lookup):
-        # Adding additional state filters if specified
-        if self.geo_layer_filters:
-            self.queryset = self.queryset.filter(**{'{}__{}'.format(loc_lookup, 'in'): self.geo_layer_filters})
-        else:
-            # Adding null filter for state for specific partial index
-            # when not using geocode_filter
-            filter_args['{}_{}'.format(loc_lookup, 'isnull')] = False
-
-        self.geo_queryset = self.queryset.filter(**filter_args) \
-            .values(*lookup_fields) \
-            .annotate(federal_action_obligation=Sum('federal_action_obligation'))
-
-        # State names are inconsistent in database (upper, lower, null)
-        # Used lookup instead to be consistent
-        results = [
-            {
-                'shape_code': x[loc_lookup],
-                'aggregated_amount': x['federal_action_obligation'],
-                'display_name': code_to_state.get(x[loc_lookup], {'name': 'None'}).get('name').title()
-            } for x in self.geo_queryset
-        ]
-
-        return results
 
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
