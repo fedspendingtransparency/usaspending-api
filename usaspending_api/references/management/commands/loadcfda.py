@@ -38,16 +38,16 @@ class Command(BaseCommand):
             logger.info('Updating {} with new file {}...'.format(cfda_abs_path, most_recent))
             ftp_conn.retrbinary("RETR " + most_recent, open(cfda_abs_path, 'wb').write)
 
-        load_cfda()
+        load_cfda(cfda_abs_path)
 
 
-def load_cfda():
+def load_cfda(abs_path):
     """
-    Using file at cfda_abs_path, update/create CFDA objects.
+    Using file at abs_path, update/create CFDA objects.
     """
     try:
 
-        with open(cfda_abs_path, errors='backslashreplace') as csvfile:
+        with open(abs_path, errors='backslashreplace') as csvfile:
 
             reader = csv.DictReader(csvfile, delimiter=',', quotechar='"', skipinitialspace='true')
 
