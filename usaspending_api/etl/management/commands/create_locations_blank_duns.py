@@ -1,11 +1,7 @@
 """
 First step in process to fix locations from transaction_fpds / fabs tables
 
-1. This script
-2. match_translations_to_locations - probably in parallel (it is the slow step)
-3. create_locations - AFTER all parallel instances of match_translations_to_locations have finished
-
-At the end, transaction_location_data is populated with transaction_id and location_id
+At the end, transaction_to_location is populated with transaction_id and location_id
 """
 
 import logging
@@ -25,8 +21,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument('--batch', type=int, default=BATCH_DOWNLOAD_SIZE, help="ID range to update per query")
-        parser.add_argument('--min_location_id', type=int, default=1, help="Begin at transaction ID")
-        parser.add_argument('--max_location_id', type=int, default=0, help="End at transaction ID")
+        parser.add_argument('--min_transaction_id', type=int, default=1, help="Begin at transaction ID")
+        parser.add_argument('--max_transaction_id', type=int, default=0, help="End at transaction ID")
 
     def handle(self, *args, **options):
 
@@ -54,9 +50,9 @@ class Command(BaseCommand):
         batch = options['batch']
         curs.execute(self.BOUNDARY_FINDER)
         (lowest, highest) = curs.fetchone()
-        lowest = max(lowest, options['min_location_id'])
-        if options['max_location_id']:
-            highest = min(highest, options['max_location_id'])
+        lowest = max(lowest, options['min_transaction_id'])
+        if options['max_transaction_id']:
+            highest = min(highest, options['max_transaction_id'])
         floor = (lowest // batch) * batch
         while floor <= highest:
             yield (floor, floor + batch)
@@ -487,4 +483,90 @@ AND awardee_or_recipient_uniqu is NULL;
 
 CREATE INDEX ON transaction_location_data (transaction_id);
 
+
+ALTER TABLE references_location ADD COLUMN IF NOT EXISTS transaction_ids INTEGER[];
+
+
+DROP TABLE IF EXISTS transaction_to_location;
+
+
+CREATE TABLE transaction_to_location AS
+SELECT t.transaction_id,
+       l.location_id
+FROM   transaction_location_data t,
+       references_location l
+WHERE  false;
+
+
+WITH new_locs AS (
+  INSERT INTO references_location (
+    transaction_ids,
+    data_source,
+    country_name,
+    state_code,
+    state_name,
+    state_description,
+    city_name,
+    city_code,
+    county_name,
+    county_code,
+    address_line1,
+    address_line2,
+    address_line3,
+    foreign_location_description,
+    zip4,
+    zip_4a,
+    congressional_code,
+    performance_code,
+    zip_last4,
+    zip5,
+    foreign_postal_code,
+    foreign_province,
+    foreign_city_name,
+    place_of_performance_flag,
+    recipient_flag,
+    location_country_code
+  )
+  SELECT ARRAY_AGG(transaction_id),
+    data_source,  -- ==> data_source
+    country_name,  -- ==> country_name
+    state_code,  -- ==> state_code
+    state_name,  -- ==> state_name
+    state_description,  -- ==> state_description
+    city_name,  -- ==> city_name
+    city_code,  -- ==> city_code
+    county_name,  -- ==> county_name
+    county_code,  -- ==> county_code
+    address_line1,  -- ==> address_line1
+    address_line2,  -- ==> address_line2
+    address_line3,  -- ==> address_line3
+    foreign_location_description,  -- ==> foreign_location_description
+    zip4,  -- ==> zip4
+    zip_4a,  -- ==> zip_4a
+    congressional_code,  -- ==> congressional_code
+    performance_code,  -- ==> performance_code
+    zip_last4,  -- ==> zip_last4
+    zip5,  -- ==> zip5
+    foreign_postal_code,  -- ==> foreign_postal_code
+    foreign_province,  -- ==> foreign_province
+    foreign_city_name,  -- ==> foreign_city_name
+    place_of_performance_flag,  -- ==> place_of_performance_flag
+    recipient_flag,  -- ==> recipient_flag
+    location_country_code  -- ==> location_country_code
+  FROM transaction_location_data
+  WHERE transaction_location_data.transaction_id >= ${floor}
+  AND   transaction_location_data.transaction_id < ${ceiling}
+  GROUP BY
+    2, 3, 4, 5, 6, 7, 8, 9, 10,
+    11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26
+  RETURNING transaction_ids, location_id
+)
+INSERT INTO transaction_to_location (transaction_id, location_id)
+SELECT UNNEST(transaction_ids), location_id
+FROM   new_locs
+;
+
+
+ALTER TABLE references_location DROP COLUMN transaction_ids;
 """
