@@ -22,8 +22,8 @@ from usaspending_api.bulk_download.v2.views import value_mappings
 logger = logging.getLogger('console')
 
 # Average time for Bulk Download's an hour so far but theoretically someone could request
-# all data from all agencies from all fiscal years, max is 12 hours
-BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 43200
+# all data from all agencies from all fiscal years, max is 12 hours, setting this to 3
+BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 10800
 
 # # AWS parameters
 # BULK_DOWNLOAD_S3_BUCKET_NAME = os.environ.get('BULK_DOWNLOAD_S3_BUCKET_NAME')
