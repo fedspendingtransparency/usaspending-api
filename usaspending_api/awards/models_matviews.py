@@ -89,6 +89,55 @@ class UniversalTransactionView(models.Model):
         db_table = 'universal_transaction_matview'
 
 
+class SummaryTransactionView(models.Model):
+    # Fields
+    action_date = models.DateField(blank=True, null=False)
+    fiscal_year = models.IntegerField()
+    month = models.TextField()
+    type = models.TextField(blank=True, null=True)
+    total_obl_bin = models.TextField()
+    federal_action_obligation = models.DecimalField(
+        max_digits=20, db_index=True, decimal_places=2, blank=True,
+        null=True)
+
+    recipient_location_country_code = models.TextField()
+    recipient_location_country_name = models.TextField()
+    recipient_location_state_code = models.TextField()
+    recipient_location_county_code = models.TextField()
+    recipient_location_county_name = models.TextField()
+    recipient_location_congressional_code = models.TextField()
+    recipient_location_zip5 = models.TextField()
+    pop_country_code = models.TextField()
+    pop_country_name = models.TextField()
+    pop_zip5 = models.TextField()
+    pop_county_code = models.TextField()
+    pop_county_name = models.TextField()
+    pop_state_code = models.TextField()
+    pop_congressional_code = models.TextField()
+
+    awarding_toptier_agency_name = models.TextField()
+    funding_toptier_agency_name = models.TextField()
+    awarding_toptier_agency_abbreviation = models.TextField()
+    funding_toptier_agency_abbreviation = models.TextField()
+
+    business_categories = ArrayField(models.TextField(), default=list)
+    cfda_number = models.TextField()
+    cfda_title = models.TextField()
+    cfda_popular_name = models.TextField()
+    psc_code = models.TextField()
+    psc_description = models.TextField()
+    naics_code = models.TextField()
+    naics_description = models.TextField()
+    type_of_contract_pricing = models.TextField()
+    type_set_aside = models.TextField()
+    extent_competed = models.TextField()
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_transaction_view'
+
+
 class UniversalAwardView(models.Model):
     award_id = models.IntegerField(blank=False, null=False, primary_key=True)
     category = models.TextField()
