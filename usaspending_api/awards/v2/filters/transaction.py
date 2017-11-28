@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.models import LegalEntity
 from usaspending_api.references.models import NAICS, PSC
@@ -122,10 +124,16 @@ def transaction_filter(filters):
         # award_type_codes
         elif key == "award_type_codes":
             or_queryset = []
+
+            idv_flag = all(i in value for i in ['A', 'B', 'C', 'D'])
+
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= TransactionNormalized.objects.filter(type__in=or_queryset)
+                filter_obj = Q(type__in=or_queryset)
+                if idv_flag:
+                    filter_obj |= Q(contract_data__pulled_from='IDV')
+                queryset &= TransactionNormalized.objects.filter(filter_obj)
 
         # agencies
         elif key == "agencies":
