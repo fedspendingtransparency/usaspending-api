@@ -36,7 +36,7 @@ class Command(BaseCommand):
     CREATE_LE_AND_TRANS_LE = """
         WITH trans_to_loc AS
         (
-        SELECT transaction_id, location_id FROM transaction_location_data
+        SELECT transaction_id, location_id FROM transaction_to_location
         ),
         inserted_les AS
         (
