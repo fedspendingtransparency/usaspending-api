@@ -1,7 +1,7 @@
 import logging
 from django.db.models import Q
 
-from usaspending_api.awards.models_matviews import UniversalTransactionView, UniversalAwardView
+from usaspending_api.awards.models_matviews import UniversalTransactionView, UniversalAwardView, RecipientLookupView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.references.models import PSC, NAICS, LegalEntity
