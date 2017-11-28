@@ -46,7 +46,7 @@ def load_cfda():
     Update from ftp.cfda.gov and then create/update references_cfda table
     """
     try:
-        print(cfda_abs_path)
+
         with open(cfda_abs_path, errors='backslashreplace') as csvfile:
 
             reader = csv.DictReader(csvfile, delimiter=',', quotechar='"', skipinitialspace='true')
