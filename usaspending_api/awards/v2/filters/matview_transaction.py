@@ -115,7 +115,7 @@ def transaction_filter(filters):
                     'time_period',
                     'award_type_codes',
                     'agencies',
-                    'legal_entities',
+                    'recipient_search_text',
                     'recipient_scope',
                     'recipient_locations',
                     'recipient_type_names',
@@ -220,15 +220,18 @@ def transaction_filter(filters):
                     awarding_subtier_agency_name__in=awarding_subtier
                 )
 
-        # legal_entities
-        elif key == "legal_entities":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= UniversalTransactionView.objects.filter(
-                    recipient_id__in=or_queryset
-                )
+        # recipient_search_text
+        elif key == "recipient_search_text":
+            if len(value) != 1:
+                raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
+            recipient_string = str(value[0])
+
+            filter_obj = Q(recipient_name__icontains=recipient_string)
+
+            if len(recipient_string) == 9:
+                filter_obj |= Q(recipient_unique_id__iexact=recipient_string)
+
+            queryset &= UniversalTransactionView.objects.filter(filter_obj)
 
         # recipient_location_scope (broken till data reload)
         elif key == "recipient_scope":
