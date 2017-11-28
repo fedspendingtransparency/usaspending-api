@@ -532,7 +532,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 values=[
                     {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
                     for x in self.geo_layer_filters
-                ], model=self.matview_model, use_matview=True)
+                ],
+                model=self.matview_model,
+                use_matview=True)
         else:
             # Adding null,USA, not number filters for specific partial index
             # when not using geocode_filter
@@ -546,9 +548,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Cast will group codes as a float and will combine inconsistent codes
         self.geo_queryset = self.queryset.filter(**kwargs) \
             .values(*fields_list) \
-            .annotate(federal_action_obligation=Sum('federal_action_obligation'),
-                      code_as_float=Cast(loc_lookup, FloatField())
-                      )
+            .annotate(
+                federal_action_obligation=Sum('federal_action_obligation'),
+                code_as_float=Cast(loc_lookup, FloatField()))
 
         return self.geo_queryset
 
