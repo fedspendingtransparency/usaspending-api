@@ -171,6 +171,7 @@ def award_filter(filters):
             if len(awarding_subtier) != 0:
                 queryset &= Award.objects.filter(awarding_agency__subtier_agency__name__in=awarding_subtier)
 
+        # TODO update this to recipient_search_text if we ever switch back from the matview
         elif key == "legal_entities":
             or_queryset = []
             for v in value:

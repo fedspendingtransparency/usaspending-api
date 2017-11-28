@@ -171,6 +171,7 @@ def transaction_filter(filters):
                     awarding_agency__subtier_agency__name__in=awarding_subtier
                 )
 
+        # TODO update this to recipient_search_text if we ever switch back from the matview
         # legal_entities
         elif key == "legal_entities":
             or_queryset = []
