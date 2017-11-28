@@ -14,7 +14,7 @@ cfda_abs_path = os.path.join(django.conf.settings.BASE_DIR + cfda_relative_path)
 
 class Command(BaseCommand):
 
-    help = "Loads program information obtained from csv file on ftp.cfda.gov"
+    help = 'Loads program information obtained from csv file on ftp.cfda.gov'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -113,4 +113,4 @@ def load_cfda(abs_path):
                 cfda_program.save()
 
     except IOError:
-        logger.info("Could not open file to load from")
+        logger.info('Could not open file to load: {}'.format(abs_path))
