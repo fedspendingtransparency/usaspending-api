@@ -43,7 +43,7 @@ class Command(BaseCommand):
 
 def load_cfda():
     """
-    Update from ftp.cfda.gov and then create/update references_cfda table
+    Using file at cfda_abs_path, update/create CFDA objects.
     """
     try:
 
