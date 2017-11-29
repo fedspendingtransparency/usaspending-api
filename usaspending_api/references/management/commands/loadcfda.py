@@ -5,40 +5,60 @@ import os
 import csv
 import logging
 import django
+import ftplib
+
+logger = logging.getLogger('console')
+cfda_relative_path = '/usaspending_api/references/management/commands/programs-full-usaspending.csv'
+cfda_abs_path = os.path.join(django.conf.settings.BASE_DIR + cfda_relative_path)
 
 
 class Command(BaseCommand):
-    help = "Loads program information obtained from csv file on ftp.cfda.gov"
 
-    logger = logging.getLogger('console')
-
-    DEFAULT_DIRECTORY = os.path.normpath('usaspending_api/references/management/commands/')
-    DEFAULT_FILEPATH = os.path.join(DEFAULT_DIRECTORY,  'programs-full-usaspending.csv')
+    help = 'Loads program information obtained from csv file on ftp.cfda.gov'
 
     def add_arguments(self, parser):
-            parser.add_argument(
-                '-f', '--file',
-                default=self.DEFAULT_FILEPATH,
-                help='path to CSV file to load',
-            )
+        parser.add_argument(
+            '--update-file',
+            action='store_true',
+            dest='update-file',
+            default=False,
+            help='Pull the updated CSV from ftp.cfda.gov before running.'
+        )
 
     def handle(self, *args, **options):
 
-        filepath = options['file']
-        fullpath = os.path.join(django.conf.settings.BASE_DIR, filepath)
+        if options['update-file']:
 
-        load_cfda(fullpath)
+            ftp_conn = ftplib.FTP()
+            ftp_conn.connect("ftp.cfda.gov")
+            ftp_conn.login()
+            ftp_conn.cwd('usaspending')
+            most_recent = sorted(ftp_conn.nlst(), reverse=True)[0]
+
+            logger.info('Updating {} with new file {}...'.format(cfda_abs_path, most_recent))
+            ftp_conn.retrbinary("RETR " + most_recent, open(cfda_abs_path, 'wb').write)
+
+        load_cfda(cfda_abs_path)
 
 
-def load_cfda(fullpath):
+def load_cfda(abs_path):
     """
-    Create CFDA Program records from a CSV of historical data.
+    Using file at abs_path, update/create CFDA objects.
     """
     try:
-        with open(fullpath, errors='backslashreplace') as csvfile:
+
+        with open(abs_path, errors='backslashreplace') as csvfile:
 
             reader = csv.DictReader(csvfile, delimiter=',', quotechar='"', skipinitialspace='true')
-            for row in reader:
+
+            rows = list(reader)
+            total_rows = len(rows)
+
+            for index, row in enumerate(rows, 1):
+
+                if not (index % 100):
+                    logger.info('CFDA loading/updating row {} of {}'.format(index, total_rows))
+
                 cfda_program, created = Cfda.objects.get_or_create(
                                 program_number=row['Program Number'])
 
@@ -85,10 +105,12 @@ def load_cfda(fullpath):
                 if row['Archived Date']:
                     cfda_program.archived_date = datetime.strptime(row['Archived Date'], '%b, %d %Y')
 
+                # TODO: add way to check/print out any cfda codes that got updated (not just created)
+                if created:
+                    logger.info('Created a new cfda code for {} ({})'.format(row['Program Number'],
+                                                                             row['Program Title']))
+
                 cfda_program.save()
 
-                # self.logger.log(20, "loaded %s %s ", cfda_program.program_number, cfda_program)
-
     except IOError:
-        logger = logging.getLogger('console')
-        logger.log("Could not open file to load from")
+        logger.info('Could not open file to load: {}'.format(abs_path))

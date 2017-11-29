@@ -48,7 +48,7 @@ class Command(BaseCommand):
         # by the Broker's PK since every modification is a new row
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
-                   'WHERE created_at >= %s' \
+                   'WHERE created_at >= %s ' \
                    'ORDER BY published_award_financial_assistance_id ASC'
         db_args = [date]
 
@@ -181,11 +181,12 @@ class Command(BaseCommand):
                 row['funding_agency_code'] = funding_cgac_code
 
             # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = Agency.get_by_toptier_subtier(
+            awarding_agency = (Agency.get_by_toptier_subtier(
                 row['awarding_agency_code'],
                 row["awarding_sub_tier_agency_c"]
-            )
-            created, award = Award.get_or_create_summary_award(
+            ) or Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"]))
+
+            (created, award) = Award.get_or_create_summary_award(
                 awarding_agency=awarding_agency,
                 piid=row.get('piid'),
                 fain=row.get('fain'),
@@ -195,17 +196,20 @@ class Command(BaseCommand):
 
             award_update_id_list.append(award.id)
 
+            funding_agency = (Agency.get_by_toptier_subtier(row['funding_agency_code'],
+                                                            row["funding_sub_tier_agency_co"]) or
+                              Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"]))
+
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": awarding_agency,
-                "funding_agency": Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                                                row["funding_sub_tier_agency_co"]),
+                "funding_agency": funding_agency,
                 "recipient": legal_entity,
                 "place_of_performance": pop_location,
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
-                "last_modified_date": row['modified_at']
+                "last_modified_date": datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
             }
 
             fad_field_map = {

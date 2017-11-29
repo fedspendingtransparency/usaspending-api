@@ -17,7 +17,8 @@ def transaction_data():
         'references.Location',
         location_country_code=country_1,
         state_code="AA", county_code='001',
-        congressional_code='01'
+        congressional_code='01',
+        zip5='12345',
     )
 
     location_2 = mommy.make(
@@ -25,7 +26,8 @@ def transaction_data():
         location_country_code=country_1,
         state_code="AB",
         county_code='002',
-        congressional_code='02'
+        congressional_code='02',
+        zip5='54321',
     )
 
     txn_1 = mommy.make(
@@ -104,3 +106,25 @@ def test_award_filter_recipient_error(transaction_data):
             {'country': 'ABC', 'state': 'AB', 'district': '02'}
         ]}
         award_filter(filter_error)
+
+
+@pytest.mark.django_db
+def test_award_filter_pop_zip(transaction_data):
+    # Testing zip
+    filter_zip = {'place_of_performance_locations': [
+        {'country': 'ABC', 'zip': '12345', }
+    ]}
+    result = award_filter(filter_zip)
+    assert len(result) == 1
+
+    filter_zip = {'place_of_performance_locations': [
+        {'country': 'ABC', 'zip': '54321', }
+    ]}
+    result = award_filter(filter_zip)
+    assert len(result) == 1
+
+    filter_zip = {'place_of_performance_locations': [
+        {'country': 'ABC', 'zip': '11111', }
+    ]}
+    result = award_filter(filter_zip)
+    assert len(result) == 0

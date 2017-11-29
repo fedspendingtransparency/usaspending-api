@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from usaspending_api.awards.models import Award, LegalEntity
 from usaspending_api.references.models import NAICS, PSC
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -22,6 +24,7 @@ def award_filter(filters):
                     'award_type_codes',
                     'agencies',
                     'legal_entities',
+                    'recipient_search_text',
                     'recipient_scope',
                     'recipient_locations',
                     'recipient_type_names',
@@ -128,9 +131,10 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(type__in=or_queryset)
-            if idv_flag:
-                queryset |= Award.objects.filter(type__isnull=True, latest_transaction__contract_data__pulled_from='IDV')
+                filter_obj = Q(type__in=or_queryset)
+                if idv_flag:
+                    filter_obj |= Q(latest_transaction__contract_data__pulled_from='IDV')
+                queryset &= Award.objects.filter(filter_obj)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -175,6 +179,18 @@ def award_filter(filters):
             if len(or_queryset) != 0:
                 queryset &= Award.objects.filter(recipient__legal_entity_id__in=or_queryset)
 
+        elif key == "recipient_search_text":
+            if len(value) != 1:
+                raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
+            recipient_string = str(value[0])
+
+            filter_obj = Q(recipient__recipient_name__icontains=recipient_string)
+
+            if len(recipient_string) == 9:
+                filter_obj |= Q(recipient__recipient_unique_id__iexact=recipient_string)
+
+            queryset &= Award.objects.filter(filter_obj)
+
         elif key == "recipient_scope":
             if value == "domestic":
                 queryset = queryset.filter(recipient__location__country_name="UNITED STATES")
@@ -188,11 +204,10 @@ def award_filter(filters):
             queryset &= or_queryset
 
         elif key == "recipient_type_names":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(recipient__business_types_description__in=or_queryset)
+            if len(value) != 0:
+                queryset &= Award.objects.filter(
+                    recipient__business_categories__overlap=value
+                )
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
