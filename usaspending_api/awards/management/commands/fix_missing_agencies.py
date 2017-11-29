@@ -129,5 +129,4 @@ class Command(BaseCommand):
     FROM   match_by_subtier
     WHERE  match_by_subtier.award_id = awards.id
     """),
-        ('Vacuum', 'VACUUM awards'),
     )
