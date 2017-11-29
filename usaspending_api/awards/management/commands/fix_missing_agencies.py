@@ -58,7 +58,7 @@ class Command(BaseCommand):
             FROM agency as a
             JOIN subtier_agency as st
                 ON a.subtier_agency_id = st.subtier_agency_id;
-        
+
         CREATE INDEX subtier_code_idx ON full_agency_data (subtier_code);
         CREATE INDEX id_idx ON full_agency_data (id);
         CREATE INDEX id_desc_idx ON full_agency_data (id DESC);"""
