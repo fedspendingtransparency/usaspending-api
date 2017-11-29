@@ -290,3 +290,14 @@ class SumaryCfdaNumbersView(models.Model):
     class Meta:
         managed = False
         db_table = 'summary_view_cfda_number'
+
+
+class RecipientLookupView(models.Model):
+
+    # Fields
+    recipient_unique_id = models.TextField()
+    recipient_name = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'recipient_lookup_view'
