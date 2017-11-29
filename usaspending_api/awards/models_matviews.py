@@ -160,6 +160,7 @@ class UniversalAwardView(models.Model):
     solicitation_identifier = models.TextField()
     solicitation_procedures = models.TextField()
     number_of_offers_received = models.TextField()
+    extent_competed = models.TextField()
     extent_compete_description = models.TextField()
     type_set_aside = models.TextField()
     type_set_aside_description = models.TextField()
