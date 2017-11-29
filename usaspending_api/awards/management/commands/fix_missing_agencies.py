@@ -24,6 +24,12 @@ class Command(BaseCommand):
 
         start = time.time()
         with connection.cursor() as curs:
+            # create matview
+            logger.info('Creating matview')
+            curs.execute(self.MATVIEW_CREATE)
+            logger.info('Time to create matview: {}'.format(time.time() - start))
+
+            # run the queries
             for (descrip, base_qry) in self.UPDATERS:
                 batches = self.find_batches(curs=curs, table='awards', options=options)
                 for (floor, ceiling) in batches:
@@ -31,6 +37,10 @@ class Command(BaseCommand):
                     curs.execute(qry)
                     elapsed = time.time() - start
                     logger.info('{}: ID {} to {}, {} s'.format(descrip, floor, ceiling, elapsed))
+
+            # drop the matview
+            logger.info('Dropping matview')
+            curs.execute(self.MATVIEW_DELETE)
 
     def find_batches(self, curs, table, options):
         batch = options['batch']
@@ -40,6 +50,21 @@ class Command(BaseCommand):
         while floor <= highest:
             yield (floor, floor + batch)
             floor += batch
+
+    MATVIEW_CREATE = """
+        CREATE MATERIALIZED VIEW full_agency_data AS
+            SELECT a.id as id,
+                st.subtier_code as subtier_code
+            FROM agency as a
+            JOIN subtier_agency as st
+                ON a.subtier_agency_id = st.subtier_agency_id;
+        
+        CREATE INDEX subtier_code_idx ON full_agency_data (subtier_code);
+        CREATE INDEX id_idx ON full_agency_data (id);
+        CREATE INDEX id_desc_idx ON full_agency_data (id DESC);"""
+
+    MATVIEW_DELETE = """
+        DROP MATERIALIZED VIEW full_agency_data;"""
 
     BOUNDARY_FINDER = """
         SELECT MIN(id) AS floor, MAX(id) AS ceiling
@@ -56,8 +81,7 @@ class Command(BaseCommand):
         FROM    transaction_fpds t
         JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
         JOIN    awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
-        JOIN    subtier_agency st ON (st.subtier_code = t.awarding_sub_tier_agency_c)
-        JOIN    agency a ON (a.subtier_agency_id = st.subtier_agency_id)
+        JOIN    full_agency_data a ON (a.subtier_code = t.awarding_sub_tier_agency_c)
         WHERE   aw.awarding_agency_id IS NULL
         AND     aw.id >= {floor}
         AND     aw.id < {ceiling}
@@ -76,8 +100,7 @@ class Command(BaseCommand):
         FROM    transaction_fpds t
         JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
         JOIN    awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
-        JOIN    subtier_agency st ON (st.subtier_code = t.funding_sub_tier_agency_co)
-        JOIN    agency a ON (a.subtier_agency_id = st.subtier_agency_id)
+        JOIN    full_agency_data a ON (a.subtier_code = t.funding_sub_tier_agency_co)
         WHERE   aw.funding_agency_id IS NULL
         AND     aw.id >= {floor}
         AND     aw.id < {ceiling}
@@ -96,8 +119,7 @@ class Command(BaseCommand):
         FROM    transaction_fabs t
         JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
         JOIN    awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
-        JOIN    subtier_agency st ON (st.subtier_code = t.awarding_sub_tier_agency_c)
-        JOIN    agency a ON (a.subtier_agency_id = st.subtier_agency_id)
+        JOIN    full_agency_data a ON (a.subtier_code = t.awarding_sub_tier_agency_c)
         WHERE   aw.awarding_agency_id IS NULL
         AND     aw.id >= {floor}
         AND     aw.id < {ceiling}
@@ -116,8 +138,7 @@ class Command(BaseCommand):
         FROM    transaction_fabs t
         JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
         JOIN    awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
-        JOIN    subtier_agency st ON (st.subtier_code = t.funding_sub_tier_agency_co)
-        JOIN    agency a ON (a.subtier_agency_id = st.subtier_agency_id)
+        JOIN    full_agency_data a ON (a.subtier_code = t.funding_sub_tier_agency_co)
         WHERE   aw.funding_agency_id IS NULL
         AND     aw.id >= {floor}
         AND     aw.id < {ceiling}
