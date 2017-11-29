@@ -535,7 +535,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         else:
             # Adding null filter for state for specific partial index
             # when not using geocode_filter
-            filter_args['{}_{}'.format(loc_lookup, 'isnull')] = False
+            filter_args['{}__isnull'.format(loc_lookup)] = False
 
         self.geo_queryset = self.queryset.filter(**filter_args) \
             .values(*lookup_fields) \
@@ -586,7 +586,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             self.queryset &= geocode_filter_locations(scope_field_name, [
                 {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
                 for x in self.geo_layer_filters
-            ], 'UniversalTransactionView')
+            ], 'UniversalTransactionView', True)
         else:
             # Adding null,USA, not number filters for specific partial index
             # when not using geocode_filter

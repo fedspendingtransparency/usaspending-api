@@ -51,7 +51,12 @@ def check_location_fields(fields):
 def get_fields_list(scope, field_value):
     """List of values to search for; `field_value`, plus possibly variants on it"""
     if scope not in ['state_code', 'location_country_code', 'country_code', 'zip5']:
-        return [str(int(field_value)), field_value, str(float(field_value))]
+        try:
+            return [str(int(field_value)), field_value, str(float(field_value))]
+        except ValueError:
+            # if filter causes an error when casting to a float or integer
+            # Example: 'ZZ' for an area without a congressional code
+            return [field_value]
 
     return [field_value]
 

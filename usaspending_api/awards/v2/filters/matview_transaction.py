@@ -14,7 +14,7 @@ from usaspending_api.common.helpers import generate_date_from_string
 logger = logging.getLogger(__name__)
 
 
-def date_or_fy_queryset(date_dict, table, fiscal_year_column):
+def date_or_fy_queryset(date_dict, table, fiscal_year_column, action_date_column):
     full_fiscal_years = []
     for v in date_dict:
         s = generate_date_from_string(v.get("start_date"))
@@ -36,9 +36,9 @@ def date_or_fy_queryset(date_dict, table, fiscal_year_column):
     for v in date_dict:
         kwargs = {}
         if v.get("start_date") is not None:
-            kwargs["action_date__gte"] = v.get("start_date")
+            kwargs["{}__gte".format(action_date_column)] = v.get("start_date")
         if v.get("end_date") is not None:
-            kwargs["action_date__lte"] = v.get("end_date")
+            kwargs["{}__lte".format(action_date_column)] = v.get("end_date")
         # (may have to cast to date) (oct 1 to sept 30)
         if queryset_init:
             or_queryset |= table.objects.filter(**kwargs)
@@ -116,6 +116,7 @@ def transaction_filter(filters):
                     'award_type_codes',
                     'agencies',
                     'legal_entities',
+                    'recipient_search_text',
                     'recipient_scope',
                     'recipient_locations',
                     'recipient_type_names',
@@ -163,7 +164,8 @@ def transaction_filter(filters):
 
         # time_period
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value, UniversalTransactionView, "fiscal_year")
+            success, or_queryset = date_or_fy_queryset(value, UniversalTransactionView, "fiscal_year",
+                                                       "action_date")
             if success:
                 queryset &= or_queryset
 
@@ -219,7 +221,6 @@ def transaction_filter(filters):
                     awarding_subtier_agency_name__in=awarding_subtier
                 )
 
-        # legal_entities
         elif key == "legal_entities":
             or_queryset = []
             for v in value:
@@ -228,6 +229,19 @@ def transaction_filter(filters):
                 queryset &= UniversalTransactionView.objects.filter(
                     recipient_id__in=or_queryset
                 )
+
+        # recipient_search_text
+        elif key == "recipient_search_text":
+            if len(value) != 1:
+                raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
+            recipient_string = str(value[0])
+
+            filter_obj = Q(recipient_name__icontains=recipient_string)
+
+            if len(recipient_string) == 9:
+                filter_obj |= Q(recipient_unique_id__iexact=recipient_string)
+
+            queryset &= UniversalTransactionView.objects.filter(filter_obj)
 
         # recipient_location_scope (broken till data reload)
         elif key == "recipient_scope":
@@ -362,6 +376,7 @@ def award_filter(filters):
                     'award_type_codes',
                     'agencies',
                     'legal_entities',
+                    'recipient_search_text',
                     'recipient_scope',
                     'recipient_locations',
                     'recipient_type_names',
@@ -410,7 +425,8 @@ def award_filter(filters):
             queryset = queryset.filter(compound_or)
 
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value, UniversalAwardView, "issued_date_fiscal_year")
+            success, or_queryset = date_or_fy_queryset(value, UniversalAwardView, "issued_date_fiscal_year",
+                                                       "issued_date")
             if success:
                 queryset &= or_queryset
 
@@ -470,6 +486,18 @@ def award_filter(filters):
             if len(or_queryset) != 0:
                 queryset &= UniversalAwardView.objects.filter(recipient_id__in=or_queryset)
 
+        elif key == "recipient_search_text":
+            if len(value) != 1:
+                raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
+            recipient_string = str(value[0])
+
+            filter_obj = Q(recipient_name__icontains=recipient_string)
+
+            if len(recipient_string) == 9:
+                filter_obj |= Q(recipient_unique_id__iexact=recipient_string)
+
+            queryset &= UniversalAwardView.objects.filter(filter_obj)
+
         elif key == "recipient_scope":
             if value == "domestic":
                 queryset = queryset.filter(recipient_location_country_name="UNITED STATES")
@@ -489,7 +517,7 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                duns_values = LegalEntity.objects.filter(business_types_description__overlap=or_queryset).\
+                duns_values = LegalEntity.objects.filter(business_categories__overlap=or_queryset).\
                     values('recipient_unique_id')
                 queryset &= UniversalAwardView.objects.filter(recipient_unique_id__in=duns_values)
 
