@@ -19,7 +19,7 @@ class Command(BaseCommand):
             type=str,
             help='The original authoritative agencies list',
             default=os.path.join(django.conf.settings.BASE_DIR,
-                      'usaspending_api', 'data', 'authoritative_agency_list.csv')
+                                 'usaspending_api', 'data', 'authoritative_agency_list.csv')
         )
         parser.add_argument(
             '--broker_agency_list',
@@ -27,7 +27,7 @@ class Command(BaseCommand):
             type=str,
             help='List that displays which entries from the agencies list are used in the broker',
             default=os.path.join(django.conf.settings.BASE_DIR,
-                      'usaspending_api', 'data', 'broker_agency_list.csv')
+                                 'usaspending_api', 'data', 'broker_agency_list.csv')
         )
 
     def handle(self, *args, **options):

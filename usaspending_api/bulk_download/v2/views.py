@@ -270,8 +270,8 @@ class BulkDownloadListAgenciesViewSet(APIView):
             # double check the right used subtier_agency by cross checking the cgac_code
             # see the last 2 lines of the list comprehension below
             response_data['sub_agencies'] = [subagency for subagency in response_data['sub_agencies']
-                                             if subagency['subtier_agency_code'] in self.sub_agencies_map
-                                             and self.sub_agencies_map[subagency['subtier_agency_code']] ==
+                                             if subagency['subtier_agency_code'] in self.sub_agencies_map and
+                                             self.sub_agencies_map[subagency['subtier_agency_code']] ==
                                              top_tier_agency['cgac_code']]
 
             response_data['federal_accounts'] = FederalAccount.objects\
