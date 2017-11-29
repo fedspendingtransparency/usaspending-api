@@ -205,9 +205,8 @@ def verify_requested_columns_available(sources, requested):
 
 class BulkDownloadListAgenciesViewSet(APIView):
     modified_agencies_list = os.path.join(django.conf.settings.BASE_DIR,
-                      'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
+                                          'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
     sub_agencies_map = {}
-
 
     def pull_modified_agencies_cgacs_subiters(self):
         # Get a dict of used subtiers and their associated CGAC code pulled from
@@ -219,7 +218,6 @@ class BulkDownloadListAgenciesViewSet(APIView):
             .apply(lambda x: x.zfill(3))
         for _, row in mod_gencies_list_df.iterrows():
             self.sub_agencies_map[row['SUBTIER CODE']] = row['CGAC AGENCY CODE']
-
 
     def post(self, request):
         """Return list of agencies if no POST data is provided.
@@ -273,8 +271,8 @@ class BulkDownloadListAgenciesViewSet(APIView):
             # see the last 2 lines of the list comprehension below
             response_data['sub_agencies'] = [subagency for subagency in response_data['sub_agencies']
                                              if subagency['subtier_agency_code'] in self.sub_agencies_map
-                                             and self.sub_agencies_map[subagency['subtier_agency_code']]
-                                             == top_tier_agency['cgac_code']]
+                                             and self.sub_agencies_map[subagency['subtier_agency_code']] ==
+                                             top_tier_agency['cgac_code']]
 
             response_data['federal_accounts'] = FederalAccount.objects\
                 .filter(agency_identifier=top_tier_agency['cgac_code'])\

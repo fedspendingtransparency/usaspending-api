@@ -12,9 +12,7 @@ class Command(BaseCommand):
 
     logger = logging.getLogger('console')
 
-
     def add_arguments(self, parser):
-
         parser.add_argument(
             '--authoritative_agencies_list',
             dest='agencies_list',
@@ -23,7 +21,6 @@ class Command(BaseCommand):
             default=os.path.join(django.conf.settings.BASE_DIR,
                       'usaspending_api', 'data', 'authoritative_agency_list.csv')
         )
-
         parser.add_argument(
             '--broker_agency_list',
             dest='broker_agency_list',
@@ -33,9 +30,7 @@ class Command(BaseCommand):
                       'usaspending_api', 'data', 'broker_agency_list.csv')
         )
 
-
     def handle(self, *args, **options):
-
         agencies_list_path = options.get('agencies_list')
         agencies_dir = os.path.dirname(agencies_list_path)
         broker_agency_list_path = options.get('broker_agency_list')
@@ -46,7 +41,6 @@ class Command(BaseCommand):
                 agencies_list_df = pd.read_csv(agencies_list_csv, dtype=str)
         except IOError:
             self.logger.log('Could not open file: {}'.format(agencies_list_path))
-
         try:
             # Get the broker agencies list
             with open(broker_agency_list_path, encoding='Latin-1') as broker_agency_list_csv:
@@ -61,9 +55,8 @@ class Command(BaseCommand):
         broker_agency_list_df = broker_agency_list_df[pd.notnull(
             broker_agency_list_df['awarding_agency_name'])]
         # Remove other columns and duplicates
-        broker_agency_list_df = broker_agency_list_df[['CGAC.AGENCY.CODE','SUBTIER.CODE']]\
+        broker_agency_list_df = broker_agency_list_df[['CGAC.AGENCY.CODE', 'SUBTIER.CODE']]\
             .drop_duplicates()
-
         # keep only the rows from agency list that have a cgac and subtier combo from broker_agency_list
         modified_agency_list = pd.merge(agencies_list_df, broker_agency_list_df,
                                         left_on=['CGAC AGENCY CODE', 'SUBTIER CODE'],
@@ -74,7 +67,5 @@ class Command(BaseCommand):
         # Export to csv in the same directory as the authoritative_agencies_list.csv
         modified_agency_list.to_csv(os.path.join(agencies_dir,
                                                  'modified_authoritative_agency_list.csv'),
-                                    mode = 'w', index=False)
+                                    mode='w', index=False)
         self.logger.info('Complete')
-
-
