@@ -20,6 +20,15 @@ class Command(BaseCommand):
 
         parser.add_argument('--batch', type=int, default=BATCH_SIZE, help="ID range to update per query")
 
+    def _run_updaters(self, curs, table, updaters, options, start_time):
+        for (descrip, base_qry) in updaters:
+            batches = self.find_batches(curs=curs, table=table, options=options)
+            for (floor, ceiling) in batches:
+                qry = base_qry.format(floor=floor, ceiling=ceiling)
+                curs.execute(qry)
+                elapsed = time.time() - start_time
+                logger.info('{}: ID {} to {}, {} s'.format(descrip, floor, ceiling, elapsed))
+
     def handle(self, *args, **options):
 
         start = time.time()
@@ -30,13 +39,14 @@ class Command(BaseCommand):
             logger.info('Time to create matview: {}'.format(time.time() - start))
 
             # run the queries
-            for (descrip, base_qry) in self.UPDATERS:
-                batches = self.find_batches(curs=curs, table='awards', options=options)
-                for (floor, ceiling) in batches:
-                    qry = base_qry.format(floor=floor, ceiling=ceiling)
-                    curs.execute(qry)
-                    elapsed = time.time() - start
-                    logger.info('{}: ID {} to {}, {} s'.format(descrip, floor, ceiling, elapsed))
+            self._run_updaters(
+                curs=curs, table='awards', updaters=self.AWARD_UPDATERS, options=options, start_time=start)
+            self._run_updaters(
+                curs=curs,
+                table='transaction_normalized',
+                updaters=self.TRANSACTION_NORMALIZED_UPDATERS,
+                options=options,
+                start_time=start)
 
             # drop the matview
             logger.info('Dropping matview')
@@ -52,6 +62,8 @@ class Command(BaseCommand):
             floor += batch
 
     MATVIEW_CREATE = """
+        DROP MATERIALIZED VIEW IF EXISTS full_agency_data;
+
         CREATE MATERIALIZED VIEW full_agency_data AS
             SELECT a.id as id,
                 st.subtier_code as subtier_code
@@ -73,7 +85,7 @@ class Command(BaseCommand):
         OR     funding_agency_id IS NULL"""
 
     # Tuples of ( description, query)
-    UPDATERS = (
+    AWARD_UPDATERS = (
         ('Awarding agency for FPDS', """
     WITH    match_by_subtier AS (
         SELECT  aw.id AS award_id,
@@ -149,5 +161,81 @@ class Command(BaseCommand):
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
     WHERE  match_by_subtier.award_id = awards.id
+    """),
+    )
+
+    TRANSACTION_NORMALIZED_UPDATERS = (
+        ('Awarding agency in transaction_normalized for FPDS', """
+    WITH    match_by_subtier AS (
+        SELECT  tn.id AS transaction_id,
+                MAX(a.id) AS agency_id
+        FROM    transaction_fpds t
+        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
+        JOIN    full_agency_data a ON (a.subtier_code = t.awarding_sub_tier_agency_c)
+        WHERE   tn.awarding_agency_id IS NULL
+        AND     tn.id >= {floor}
+        AND     tn.id < {ceiling}
+        GROUP BY tn.id
+        HAVING  COUNT(DISTINCT a.id) = 1
+    )
+    UPDATE transaction_normalized
+    SET    awarding_agency_id = match_by_subtier.agency_id
+    FROM   match_by_subtier
+    WHERE  match_by_subtier.transaction_id = transaction_normalized.id
+    """),
+        ('Funding agency in transaction_normalized for FPDS', """
+    WITH    match_by_subtier AS (
+        SELECT  tn.id AS transaction_id,
+                MAX(a.id) AS agency_id
+        FROM    transaction_fpds t
+        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
+        JOIN    awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
+        JOIN    full_agency_data a ON (a.subtier_code = t.funding_sub_tier_agency_co)
+        WHERE   tn.funding_agency_id IS NULL
+        AND     tn.id >= {floor}
+        AND     tn.id < {ceiling}
+        GROUP BY tn.id
+        HAVING  COUNT(DISTINCT a.id) = 1
+    )
+    UPDATE transaction_normalized
+    SET    funding_agency_id = match_by_subtier.agency_id
+    FROM   match_by_subtier
+    WHERE  match_by_subtier.transaction_id = transaction_normalized.id
+    """),
+        ('Awarding agency in transaction_normalized for FABS', """
+    WITH    match_by_subtier AS (
+        SELECT  tn.id AS transaction_id,
+                MAX(a.id) AS agency_id
+        FROM    transaction_fabs t
+        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
+        JOIN    full_agency_data a ON (a.subtier_code = t.awarding_sub_tier_agency_c)
+        WHERE   tn.awarding_agency_id IS NULL
+        AND     tn.id >= {floor}
+        AND     tn.id < {ceiling}
+        GROUP BY tn.id
+        HAVING  COUNT(DISTINCT a.id) = 1
+    )
+    UPDATE transaction_normalized
+    SET    awarding_agency_id = match_by_subtier.agency_id
+    FROM   match_by_subtier
+    WHERE  match_by_subtier.transaction_id = transaction_normalized.id
+    """),
+        ('Funding agency in transaction_normalized for FABS', """
+    WITH    match_by_subtier AS (
+        SELECT  tn.id AS transaction_id,
+                MAX(a.id) AS agency_id
+        FROM    transaction_fabs t
+        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
+        JOIN    full_agency_data a ON (a.subtier_code = t.funding_sub_tier_agency_co)
+        WHERE   tn.funding_agency_id IS NULL
+        AND     tn.id >= {floor}
+        AND     tn.id < {ceiling}
+        GROUP BY tn.id
+        HAVING  COUNT(DISTINCT a.id) = 1
+    )
+    UPDATE transaction_normalized
+    SET    funding_agency_id = match_by_subtier.agency_id
+    FROM   match_by_subtier
+    WHERE  match_by_subtier.transaction_id = transaction_normalized.id
     """),
     )
