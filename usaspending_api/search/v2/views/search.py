@@ -503,7 +503,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         else:
             # Adding null filter for state for specific partial index
             # when not using geocode_filter
-            filter_args['{}_{}'.format(loc_lookup, 'isnull')] = False
+            filter_args['{}__{}'.format(loc_lookup, 'isnull')] = False
 
         self.geo_queryset = self.queryset.filter(**filter_args) \
             .values(*lookup_fields) \
