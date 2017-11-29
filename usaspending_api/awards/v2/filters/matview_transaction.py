@@ -115,6 +115,7 @@ def transaction_filter(filters):
                     'time_period',
                     'award_type_codes',
                     'agencies',
+                    'legal_entities',
                     'recipient_search_text',
                     'recipient_scope',
                     'recipient_locations',
@@ -218,6 +219,15 @@ def transaction_filter(filters):
             if len(awarding_subtier) != 0:
                 queryset &= UniversalTransactionView.objects.filter(
                     awarding_subtier_agency_name__in=awarding_subtier
+                )
+
+        elif key == "legal_entities":
+            or_queryset = []
+            for v in value:
+                or_queryset.append(v)
+            if len(or_queryset) != 0:
+                queryset &= UniversalTransactionView.objects.filter(
+                    recipient_id__in=or_queryset
                 )
 
         # recipient_search_text
@@ -365,6 +375,7 @@ def award_filter(filters):
                     'time_period',
                     'award_type_codes',
                     'agencies',
+                    'legal_entities',
                     'recipient_search_text',
                     'recipient_scope',
                     'recipient_locations',
@@ -467,6 +478,13 @@ def award_filter(filters):
                 queryset &= UniversalAwardView.objects.filter(awarding_toptier_agency_name__in=awarding_toptier)
             if len(awarding_subtier) != 0:
                 queryset &= UniversalAwardView.objects.filter(awarding_subtier_agency_name__in=awarding_subtier)
+
+        elif key == "legal_entities":
+            or_queryset = []
+            for v in value:
+                or_queryset.append(v)
+            if len(or_queryset) != 0:
+                queryset &= UniversalAwardView.objects.filter(recipient_id__in=or_queryset)
 
         elif key == "recipient_search_text":
             if len(value) != 1:

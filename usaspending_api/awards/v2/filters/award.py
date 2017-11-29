@@ -24,6 +24,7 @@ def award_filter(filters):
                     'award_type_codes',
                     'agencies',
                     'legal_entities',
+                    'recipient_search_text',
                     'recipient_scope',
                     'recipient_locations',
                     'recipient_type_names',
@@ -171,13 +172,24 @@ def award_filter(filters):
             if len(awarding_subtier) != 0:
                 queryset &= Award.objects.filter(awarding_agency__subtier_agency__name__in=awarding_subtier)
 
-        # TODO update this to recipient_search_text if we ever switch back from the matview
         elif key == "legal_entities":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= Award.objects.filter(recipient__legal_entity_id__in=or_queryset)
+
+        elif key == "recipient_search_text":
+            if len(value) != 1:
+                raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
+            recipient_string = str(value[0])
+
+            filter_obj = Q(recipient__recipient_name__icontains=recipient_string)
+
+            if len(recipient_string) == 9:
+                filter_obj |= Q(recipient__recipient_unique_id__iexact=recipient_string)
+
+            queryset &= Award.objects.filter(filter_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":
