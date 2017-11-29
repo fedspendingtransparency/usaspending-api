@@ -945,7 +945,7 @@ class LegalEntity(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'legal_entity'
-        unique_together = ['recipient_unique_id', 'recipient_name', 'location_id']
+        unique_together = ['recipient_unique_id', 'recipient_name', 'location']
 
 
 class LegalEntityOfficers(models.Model):
