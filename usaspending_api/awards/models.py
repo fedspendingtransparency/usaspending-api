@@ -795,7 +795,9 @@ class TransactionFABS(models.Model):
 
     @property
     def cfda_objectives(self):
-        return 'cows'
+        cfda = Cfda.objects.filter(program_number = self.cfda_number).first()
+        if cfda:
+            return cfda.objectives
 
     class Meta:
         db_table = 'transaction_fabs'
