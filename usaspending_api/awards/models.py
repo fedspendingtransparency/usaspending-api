@@ -795,7 +795,7 @@ class TransactionFABS(models.Model):
 
     @property
     def cfda_objectives(self):
-        cfda = Cfda.objects.filter(program_number = self.cfda_number).first()
+        cfda = Cfda.objects.filter(program_number=self.cfda_number).first()
         if cfda:
             return cfda.objectives
 

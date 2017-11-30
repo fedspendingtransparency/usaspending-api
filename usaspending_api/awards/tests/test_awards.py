@@ -290,7 +290,7 @@ def test_get_or_create_summary_award():
 def test_cfda_objectives():
     """Verify that cfda_objectives property works."""
 
-    cfda = mommy.make('references.Cfda', program_number = '1.001', objectives='a brighter tomorrow')
+    cfda = mommy.make('references.Cfda', program_number='1.001', objectives='a brighter tomorrow')
     tfabs = mommy.make('awards.TransactionFABS', cfda_number='1.001')
     assert tfabs.cfda_objectives == 'a brighter tomorrow'
     tfabs2 = mommy.make('awards.TransactionFABS', cfda_number='1.001xxx')
