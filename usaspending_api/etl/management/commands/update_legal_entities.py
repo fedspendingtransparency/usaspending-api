@@ -63,14 +63,14 @@ class Command(BaseCommand):
 
     UPDATE_TN = """
         UPDATE transaction_normalized tn
-        SET tn.recipient_id = trans_to_le.legal_entity_id
+        SET recipient_id = trans_to_le.legal_entity_id
         FROM trans_to_le
         WHERE tn.id = trans_to_le.transaction_id;
     """
 
     UPDATE_AWARD = """
         UPDATE awards a
-        SET a.recipient_id = trans_to_le.legal_entity_id
+        SET recipient_id = trans_to_le.legal_entity_id
         FROM trans_to_le
-        WHERE awards.latest_transaction_id = trans_to_le.transaction_id;
+        WHERE a.latest_transaction_id = trans_to_le.transaction_id;
     """
