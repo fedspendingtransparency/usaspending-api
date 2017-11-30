@@ -38,12 +38,22 @@ class Command(BaseCommand):
         (
         SELECT transaction_id, location_id FROM transaction_to_location
         ),
-        inserted_les AS
+        existing_legal_entities AS
+        (
+        SELECT legal_entity_id, location_id FROM legal_entity WHERE recipient_unique_id='' AND recipient_name='Multiple Recipients' AND legal_entity.location_id= ANY(SELECT DISTINCT location_id from trans_to_loc)
+        ),
+        new_legal_entities AS
         (
           INSERT INTO legal_entity (business_categories, data_source, business_types_description, create_date, update_date, recipient_unique_id, recipient_name, location_id)
             SELECT '{}', 'DBR', 'Unknown Types', NOW(), NOW(), '', 'Multiple Recipients', location_id FROM trans_to_loc
-          ON CONFLICT ON CONSTRAINT legal_entity_recipient_unique_id_reci_58a49e8b_uniq DO UPDATE SET data_source = 'DBR'
+          ON CONFLICT ON CONSTRAINT legal_entity_recipient_unique_id_reci_58a49e8b_uniq DO NOTHING
           RETURNING legal_entity_id, location_id
+        ),
+        inserted_les AS
+        (
+        SELECT * FROM existing_legal_entities
+        UNION ALL
+        SELECT * FROM new_legal_entities
         )
         INSERT INTO trans_to_le (transaction_id, legal_entity_id)
           SELECT trans_to_loc.transaction_id, inserted_les.legal_entity_id FROM trans_to_loc, inserted_les
