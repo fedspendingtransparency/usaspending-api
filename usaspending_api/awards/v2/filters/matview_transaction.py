@@ -4,7 +4,7 @@ from django.db.models import Q
 from usaspending_api.awards.models_matviews import UniversalTransactionView, UniversalAwardView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.references.models import PSC, NAICS, LegalEntity
+from usaspending_api.references.models import PSC, NAICS
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
 from usaspending_api.common.helpers import dates_are_fiscal_year_bookends
