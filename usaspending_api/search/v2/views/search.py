@@ -794,8 +794,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         # define what values are needed in the sql query
         queryset = queryset.values('category')
-        queryset = queryset.annotate(category_count=Count('category')).exclude(category__isnull=True). \
-            values('category', 'category_count')
+        queryset = queryset.annotate(category_count=Count('category')).values('category', 'category_count')
 
         results = self.get_results(queryset)
 
