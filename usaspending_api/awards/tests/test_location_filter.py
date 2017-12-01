@@ -42,10 +42,15 @@ def transaction_data():
         recipient__location=location_2
     )
 
+    recipient_1 =mommy.make(
+        'references.LegalEntity',
+        recipient_name='',
+        location=location_2
+    )
     award_1 = mommy.make(
         'awards.Award',
         place_of_performance=location_1,
-        recipient__location=location_2,
+        recipient=recipient_1,
         latest_transaction=txn_1,
         category="A"
     )
