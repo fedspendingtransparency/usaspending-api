@@ -30,23 +30,24 @@ def transaction_data():
         zip5='54321',
     )
 
-    txn_1 = mommy.make(
-        'awards.TransactionNormalized',
-        place_of_performance=location_1,
-        recipient__location=location_2
-    )
-
-    txn_2 = mommy.make(
-        'awards.TransactionNormalized',
-        place_of_performance=location_2,
-        recipient__location=location_2
-    )
-
     recipient_1 = mommy.make(
         'references.LegalEntity',
         recipient_name='',
         location=location_2
     )
+
+    txn_1 = mommy.make(
+        'awards.TransactionNormalized',
+        place_of_performance=location_1,
+        recipient=recipient_1
+    )
+
+    txn_2 = mommy.make(
+        'awards.TransactionNormalized',
+        place_of_performance=location_2,
+        recipient=recipient_1,
+    )
+
     award_1 = mommy.make(
         'awards.Award',
         place_of_performance=location_1,
