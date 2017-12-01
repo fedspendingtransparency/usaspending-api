@@ -275,6 +275,8 @@ class Command(BaseCommand):
             if recipient_name is None:
                 recipient_name = ''
             recipient_unique_id = row['awardee_or_recipient_uniqu']
+            if recipient_unique_id is None:
+                recipient_unique_id = ''
 
             lookup_key = (recipient_unique_id, recipient_name)
             legal_entity = self.le_map.get(lookup_key)
