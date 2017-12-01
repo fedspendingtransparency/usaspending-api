@@ -503,7 +503,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         else:
             # Adding null filter for state for specific partial index
             # when not using geocode_filter
-            filter_args['{}__{}'.format(loc_lookup, 'isnull')] = False
+            filter_args['{}__isnull'.format(loc_lookup)] = False
 
         self.geo_queryset = self.queryset.filter(**filter_args) \
             .values(*lookup_fields) \
@@ -525,16 +525,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Filtering queryset to specific county/districts if requested
         # Since geo_layer_filters comes as concat of state fips and county/district codes
         # need to split for the geocode_filter
-        # geocode_filter_locations(scope, values, model, use_matview=False, default_model='awards'):
         if self.geo_layer_filters:
-            self.queryset &= geocode_filter_locations(
-                scope=scope_field_name,
-                values=[
-                    {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
-                    for x in self.geo_layer_filters
-                ],
-                model=self.matview_model,
-                use_matview=True)
+            self.queryset &= geocode_filter_locations(scope_field_name, [
+                {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
+                for x in self.geo_layer_filters
+            ], 'UniversalTransactionView', True)
         else:
             # Adding null,USA, not number filters for specific partial index
             # when not using geocode_filter
@@ -548,9 +543,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Cast will group codes as a float and will combine inconsistent codes
         self.geo_queryset = self.queryset.filter(**kwargs) \
             .values(*fields_list) \
-            .annotate(
-                federal_action_obligation=Sum('federal_action_obligation'),
-                code_as_float=Cast(loc_lookup, FloatField()))
+            .annotate(federal_action_obligation=Sum('federal_action_obligation'),
+                      code_as_float=Cast(loc_lookup, FloatField())
+                      )
 
         return self.geo_queryset
 
