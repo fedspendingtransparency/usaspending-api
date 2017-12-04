@@ -4,6 +4,8 @@ from usaspending_api.awards.models_matviews import SumaryPscCodesView
 from usaspending_api.awards.models_matviews import SummaryAwardView
 from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
+from usaspending_api.awards.models_matviews import UniversalAwardView
+from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
 from usaspending_api.awards.v2.filters.matview_award import award_filter
@@ -14,26 +16,31 @@ logger = logging.getLogger(__name__)
 MATVIEW_SELECTOR = {
     'SummaryView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
+        'prevent_values': {'agencies': {'tier': 'subtier'}},
         'model': SummaryView,
-        'base_model': 'transaction'
+        'base_model': 'transaction',
     },
     'SummaryAwardView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
+        'prevent_values': {'agencies': {'tier': 'subtier'}},
         'model': SummaryAwardView,
         'base_model': 'award'
     },
     'SumaryPscCodesView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
+        'prevent_values': {},
         'model': SumaryPscCodesView,
         'base_model': 'transaction'
     },
     'SumaryCfdaNumbersView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
+        'prevent_values': {},
         'model': SumaryCfdaNumbersView,
         'base_model': 'transaction'
     },
     'SumaryNaicsCodesView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
+        'prevent_values': {},
         'model': SumaryNaicsCodesView,
         'base_model': 'transaction'
     },
@@ -52,8 +59,59 @@ MATVIEW_SELECTOR = {
             'contract_pricing_type_codes',
             'set_aside_type_codes',
             'extent_competed_type_codes'],
+        'prevent_values': {},
         'model': SummaryTransactionView,
         'base_model': 'transaction'
+    },
+    'UniversalTransactionView': {
+        'allowed_filters': [
+            'keyword',
+            'time_period',
+            'award_type_codes',
+            'agencies',
+            'legal_entities',
+            'recipient_search_text',
+            'recipient_scope',
+            'recipient_locations',
+            'recipient_type_names',
+            'place_of_performance_scope',
+            'place_of_performance_locations',
+            'award_amounts',
+            'award_ids',
+            'program_numbers',
+            'naics_codes',
+            'psc_codes',
+            'contract_pricing_type_codes',
+            'set_aside_type_codes',
+            'extent_competed_type_codes'],
+        'prevent_values': {},
+        'model': UniversalTransactionView,
+        'base_model': 'transaction'
+    },
+    'UniversalAwardView': {
+        'allowed_filters': [
+            'keyword',
+            'time_period',
+            'award_type_codes',
+            'agencies',
+            'legal_entities',
+            'recipient_search_text',
+            'recipient_scope',
+            'recipient_locations',
+            'recipient_type_names',
+            'place_of_performance_scope',
+            'place_of_performance_locations',
+            'award_amounts',
+            'award_ids',
+            'program_numbers',
+            'naics_codes',
+            'psc_codes',
+            'contract_pricing_type_codes',
+            'set_aside_type_codes',
+            'extent_competed_type_codes'],
+        'prevent_values': {},
+        'model': UniversalAwardView,
+        'base_model': 'award'
     }
 }
 
@@ -76,15 +134,50 @@ def can_use_view(filters, view_name):
     try:
         key_list = MATVIEW_SELECTOR[view_name]['allowed_filters']
     except KeyError:
+        print('#1 killed for view {} with filters {}'.format(view_name, filters))
         return False
 
     # Make sure *only* acceptable keys are in the filters for that view_name
     if not set(key_list).issuperset(set(filters.keys())):
+        print('#2 killed for view {} with filters {}'.format(view_name, filters))
         return False
 
-    agencies = filters.get('agencies')
-    if agencies:
-        for v in agencies:
-            if v["tier"] == "subtier":
-                return False
+    for key, val in MATVIEW_SELECTOR[view_name]['prevent_values'].items():
+        for k, v in val.items():
+            try:
+                if filters[key][k] == v:
+                    print('#3 killed for view {} with filters {}'.format(view_name, filters))
+                    return False
+            except KeyError:
+                pass
+
+    # agencies = filters.get('agencies')
+    # if agencies:
+    #     for v in agencies:
+    #         if v["tier"] == "subtier":
+    #             return False
     return True
+
+
+def spending_over_time(filters):
+    view_chain = ['SummaryView', 'SummaryTransactionView', 'UniversalTransactionView']
+    for view in view_chain:
+        if can_use_view(filters, view):
+                queryset = get_view_queryset(filters, view)
+                break
+    else:
+        raise InvalidParameterException
+
+    return queryset
+
+
+def spending_by_award_count(filters):
+    view_chain = ['SummaryAwardView', 'UniversalAwardView']
+    for view in view_chain:
+        if can_use_view(filters, view):
+                queryset = get_view_queryset(filters, view)
+                break
+    else:
+        raise InvalidParameterException
+
+    return queryset
