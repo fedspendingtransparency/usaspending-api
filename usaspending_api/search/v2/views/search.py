@@ -17,7 +17,7 @@ from fiscalyear import FiscalDate
 
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
-from usaspending_api.awards.v2.filters.view_selector import view_filter, can_use_view
+from usaspending_api.awards.v2.filters.view_selector import get_view_queryset, can_use_view
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
@@ -52,7 +52,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # build sql query filters
         if can_use_view(filters, 'SummaryView'):
-            queryset = view_filter(filters, 'SummaryView')
+            queryset = get_view_queryset(filters, 'SummaryView')
         else:
             queryset = transaction_filter(filters, UniversalTransactionView)
 
@@ -273,7 +273,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         elif category == "cfda_programs":
             if can_use_view(filters, 'SumaryCfdaNumbersView'):
-                queryset = view_filter(filters, 'SumaryCfdaNumbersView')
+                queryset = get_view_queryset(filters, 'SumaryCfdaNumbersView')
                 queryset = queryset \
                     .filter(
                         federal_action_obligation__isnull=False,
@@ -326,7 +326,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif category == "industry_codes":  # industry_codes
             if scope == "psc":
                 if can_use_view(filters, 'SumaryPscCodesView'):
-                    queryset = view_filter(filters, 'SumaryPscCodesView')
+                    queryset = get_view_queryset(filters, 'SumaryPscCodesView')
                     queryset = queryset \
                         .filter(product_or_service_code__isnull=False) \
                         .values(psc_code=F("product_or_service_code")) \
@@ -351,7 +351,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "naics":
                 if can_use_view(filters, 'SumaryNaicsCodesView'):
-                    queryset = view_filter(filters, 'SumaryNaicsCodesView')
+                    queryset = get_view_queryset(filters, 'SumaryNaicsCodesView')
                     queryset = queryset \
                         .filter(naics__isnull=False) \
                         .values(naics_code=F("naics")) \
@@ -429,7 +429,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # build sql query filters
         if can_use_view(self.filters, 'SummaryTransactionView'):
             self.matview_model = 'SummaryTransactionView'
-            self.queryset = view_filter(self.filters, self.matview_model)
+            self.queryset = get_view_queryset(self.filters, self.matview_model)
         else:
             self.matview_model = 'UniversalTransactionView'
             self.queryset = transaction_filter(self.filters, UniversalTransactionView)
@@ -728,7 +728,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
-        queryset = view_filter(filters=filters, view_name='SummaryAwardView')
+        queryset = get_view_queryset(filters=filters, view_name='SummaryAwardView')
         queryset = queryset.values("category").annotate(category_count=Sum('counts')).exclude(category__isnull=True)
 
         results = self.get_results(queryset)
