@@ -34,7 +34,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
+        '''Return all budget function/subfunction titles matching the provided search text'''
         json_request = request.data
         group = json_request.get('group', None)
         filters = json_request.get('filters', None)
@@ -60,7 +60,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         response = {'group': group, 'results': []}
         nested_order = ''
 
-        group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
+        group_results = OrderedDict()  # list of time_period objects ie {'fy': '2017', 'quarter': '3'} : 1000
 
         if group == 'fy' or group == 'fiscal_year':
 
@@ -135,40 +135,40 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-        # TODO: check logic in name_dict[x]["aggregated_amount"] statements
+        '''Return all budget function/subfunction titles matching the provided search text'''
+        # TODO: check logic in name_dict[x]['aggregated_amount'] statements
 
         json_request = request.data
-        category = json_request.get("category", None)
-        scope = json_request.get("scope", None)
-        filters = json_request.get("filters", None)
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
+        category = json_request.get('category', None)
+        scope = json_request.get('scope', None)
+        filters = json_request.get('filters', None)
+        limit = json_request.get('limit', 10)
+        page = json_request.get('page', 1)
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
         if category is None:
-            raise InvalidParameterException("Missing one or more required request parameters: category")
-        potential_categories = ["awarding_agency", "funding_agency", "recipient", "cfda_programs", "industry_codes"]
+            raise InvalidParameterException('Missing one or more required request parameters: category')
+        potential_categories = ['awarding_agency', 'funding_agency', 'recipient', 'cfda_programs', 'industry_codes']
         if category not in potential_categories:
-            raise InvalidParameterException("Category does not have a valid value")
-        if (scope is None) and (category != "cfda_programs"):
-            raise InvalidParameterException("Missing one or more required request parameters: scope")
+            raise InvalidParameterException('Category does not have a valid value')
+        if (scope is None) and (category != 'cfda_programs'):
+            raise InvalidParameterException('Missing one or more required request parameters: scope')
         if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
 
         # build sql query filters
         if can_use_view(filters, 'SummaryView'):
-            potential_scopes = ["agency", "subagency"]
+            potential_scopes = ['agency', 'subagency']
             if scope not in potential_scopes:
-                raise InvalidParameterException("scope does not have a valid value")
+                raise InvalidParameterException('scope does not have a valid value')
             if scope == 'agency':
                 queryset = view_filter(filters, 'SummaryView')
             else:
                 queryset = view_filter(filters, 'SummarySubagencyView')
 
-            if category == "awarding_agency":
+            if category == 'awarding_agency':
                 queryset = queryset \
                     .filter(awarding_agency_name__isnull=False) \
                     .values(
@@ -176,7 +176,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         agency_abbreviation=F('awarding_agency_abbr')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
-            elif category == "funding_agency":
+            elif category == 'funding_agency':
                 queryset = queryset \
                     .filter(funding_agency_name__isnull=False) \
                     .values(
@@ -190,19 +190,19 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
             results = results[:limit]
 
-            response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": page_metadata}
+            response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                        'page_metadata': page_metadata}
             return Response(response)
 
         else:
             queryset = transaction_filter(filters)
 
-        if category == "awarding_agency":
-            potential_scopes = ["agency", "subagency"]
+        if category == 'awarding_agency':
+            potential_scopes = ['agency', 'subagency']
             if scope not in potential_scopes:
-                raise InvalidParameterException("scope does not have a valid value")
+                raise InvalidParameterException('scope does not have a valid value')
 
-            if scope == "agency":
+            if scope == 'agency':
                 queryset = queryset \
                     .filter(awarding_toptier_agency_name__isnull=False) \
                     .values(
@@ -210,7 +210,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         agency_abbreviation=F('awarding_toptier_agency_abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
-            elif scope == "subagency":
+            elif scope == 'subagency':
                 queryset = queryset \
                     .filter(
                         awarding_subtier_agency_name__isnull=False) \
@@ -219,7 +219,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         agency_abbreviation=F('awarding_subtier_agency_abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation'))\
                     .order_by('-aggregated_amount')
-            elif scope == "office":
+            elif scope == 'office':
                     # NOT IMPLEMENTED IN UI
                     raise NotImplementedError
 
@@ -229,16 +229,16 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
             results = results[:limit]
 
-            response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": page_metadata}
+            response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                        'page_metadata': page_metadata}
             return Response(response)
 
-        elif category == "funding_agency":
-            potential_scopes = ["agency", "subagency"]
+        elif category == 'funding_agency':
+            potential_scopes = ['agency', 'subagency']
             if scope not in potential_scopes:
-                raise InvalidParameterException("scope does not have a valid value")
+                raise InvalidParameterException('scope does not have a valid value')
 
-            if scope == "agency":
+            if scope == 'agency':
                 queryset = queryset \
                     .filter(funding_toptier_agency_name__isnull=False) \
                     .values(
@@ -246,7 +246,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         agency_abbreviation=F('funding_toptier_agency_abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .order_by('-aggregated_amount')
-            elif scope == "subagency":
+            elif scope == 'subagency':
                 queryset = queryset \
                     .filter(
                         funding_subtier_agency_name__isnull=False) \
@@ -255,7 +255,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         agency_abbreviation=F('funding_subtier_agency_abbreviation')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation'))\
                     .order_by('-aggregated_amount')
-            elif scope == "office":
+            elif scope == 'office':
                 # NOT IMPLEMENTED IN UI
                 raise NotImplementedError
 
@@ -265,17 +265,17 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
             results = results[:limit]
 
-            response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": page_metadata}
+            response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                        'page_metadata': page_metadata}
             return Response(response)
 
-        elif category == "recipient":
-            if scope == "duns":
+        elif category == 'recipient':
+            if scope == 'duns':
                 queryset = queryset \
-                    .values(legal_entity_id=F("recipient_id")) \
-                    .annotate(aggregated_amount=Sum("federal_action_obligation")) \
-                    .values("aggregated_amount", "legal_entity_id", "recipient_name") \
-                    .order_by("-aggregated_amount")
+                    .values(legal_entity_id=F('recipient_id')) \
+                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values('aggregated_amount', 'legal_entity_id', 'recipient_name') \
+                    .order_by('-aggregated_amount')
 
                 # Begin DB hits here
                 results = list(queryset[lower_limit:upper_limit + 1])
@@ -283,7 +283,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
 
-            elif scope == "parent_duns":
+            elif scope == 'parent_duns':
                 queryset = queryset \
                     .filter(parent_recipient_unique_id__isnull=False) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
@@ -299,25 +299,25 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 results = results[:limit]
 
             else:  # recipient_type
-                raise InvalidParameterException("recipient type is not yet implemented")
+                raise InvalidParameterException('recipient type is not yet implemented')
 
-            response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                        "page_metadata": page_metadata}
+            response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                        'page_metadata': page_metadata}
             return Response(response)
 
-        elif category == "cfda_programs":
+        elif category == 'cfda_programs':
             if can_use_view(filters, 'SumaryCfdaNumbersView'):
                 queryset = view_filter(filters, 'SumaryCfdaNumbersView')
                 queryset = queryset \
                     .filter(
                         federal_action_obligation__isnull=False,
                         cfda_number__isnull=False) \
-                    .values(cfda_program_number=F("cfda_number")) \
+                    .values(cfda_program_number=F('cfda_number')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .values(
-                        "aggregated_amount",
-                        "cfda_program_number",
-                        program_title=F("cfda_title")) \
+                        'aggregated_amount',
+                        'cfda_program_number',
+                        program_title=F('cfda_title')) \
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
@@ -340,13 +340,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 queryset = queryset \
                     .filter(
                         cfda_number__isnull=False) \
-                    .values(cfda_program_number=F("cfda_number")) \
+                    .values(cfda_program_number=F('cfda_number')) \
                     .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                     .values(
-                        "aggregated_amount",
-                        "cfda_program_number",
-                        popular_name=F("cfda_popular_name"),
-                        program_title=F("cfda_title")) \
+                        'aggregated_amount',
+                        'cfda_program_number',
+                        popular_name=F('cfda_popular_name'),
+                        program_title=F('cfda_title')) \
                     .order_by('-aggregated_amount')
 
                 # Begin DB hits here
@@ -354,22 +354,22 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
 
-            response = {"category": category, "limit": limit, "results": results, "page_metadata": page_metadata}
+            response = {'category': category, 'limit': limit, 'results': results, 'page_metadata': page_metadata}
             return Response(response)
 
-        elif category == "industry_codes":  # industry_codes
-            if scope == "psc":
+        elif category == 'industry_codes':  # industry_codes
+            if scope == 'psc':
                 if can_use_view(filters, 'SumaryPscCodesView'):
                     queryset = view_filter(filters, 'SumaryPscCodesView')
                     queryset = queryset \
                         .filter(product_or_service_code__isnull=False) \
-                        .values(psc_code=F("product_or_service_code")) \
+                        .values(psc_code=F('product_or_service_code')) \
                         .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                         .order_by('-aggregated_amount')
                 else:
                     queryset = queryset \
                         .filter(psc_code__isnull=False) \
-                        .values("psc_code") \
+                        .values('psc_code') \
                         .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                         .order_by('-aggregated_amount')
 
@@ -379,16 +379,16 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
 
-                response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                            "page_metadata": page_metadata}
+                response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                            'page_metadata': page_metadata}
                 return Response(response)
 
-            elif scope == "naics":
+            elif scope == 'naics':
                 if can_use_view(filters, 'SumaryNaicsCodesView'):
                     queryset = view_filter(filters, 'SumaryNaicsCodesView')
                     queryset = queryset \
                         .filter(naics__isnull=False) \
-                        .values(naics_code=F("naics")) \
+                        .values(naics_code=F('naics')) \
                         .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                         .order_by('-aggregated_amount') \
                         .values(
@@ -398,7 +398,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 else:
                     queryset = queryset \
                         .filter(naics_code__isnull=False) \
-                        .values("naics_code") \
+                        .values('naics_code') \
                         .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                         .order_by('-aggregated_amount') \
                         .values(
@@ -412,12 +412,12 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
                 results = results[:limit]
 
-                response = {"category": category, "scope": scope, "limit": limit, "results": results,
-                            "page_metadata": page_metadata}
+                response = {'category': category, 'scope': scope, 'limit': limit, 'results': results,
+                            'page_metadata': page_metadata}
                 return Response(response)
 
             else:  # recipient_type
-                raise InvalidParameterException("recipient type is not yet implemented")
+                raise InvalidParameterException('recipient type is not yet implemented')
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):
@@ -429,10 +429,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         json_request = request.data
-        self.scope = json_request.get("scope")
-        self.filters = json_request.get("filters", {})
-        self.geo_layer = json_request.get("geo_layer")
-        self.geo_layer_filters = json_request.get("geo_layer_filters")
+        self.scope = json_request.get('scope')
+        self.filters = json_request.get('filters', {})
+        self.geo_layer = json_request.get('geo_layer')
+        self.geo_layer_filters = json_request.get('geo_layer_filters')
 
         fields_list = []  # fields to include in the aggregate query
 
@@ -455,10 +455,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         loc_lookup = '{}_{}'.format(scope_field_name, loc_field_name)
 
         if scope_field_name is None:
-            raise InvalidParameterException("Invalid request parameters: scope")
+            raise InvalidParameterException('Invalid request parameters: scope')
 
         if loc_field_name is None:
-            raise InvalidParameterException("Invalid request parameters: geo_layer")
+            raise InvalidParameterException('Invalid request parameters: geo_layer')
 
         # build sql query filters
         self.queryset = transaction_filter(self.filters)
@@ -678,80 +678,80 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
+        '''Return all budget function/subfunction titles matching the provided search text'''
         json_request = request.data
-        fields = json_request.get("fields", None)
-        filters = json_request.get("filters", None)
-        order = json_request.get("order", "asc")
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
+        fields = json_request.get('fields', None)
+        filters = json_request.get('filters', None)
+        order = json_request.get('order', 'asc')
+        limit = json_request.get('limit', 10)
+        page = json_request.get('page', 1)
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
         if fields is None:
-            raise InvalidParameterException("Missing one or more required request parameters: fields")
+            raise InvalidParameterException('Missing one or more required request parameters: fields')
         elif fields == []:
-            raise InvalidParameterException("Please provide a field in the fields request parameter.")
+            raise InvalidParameterException('Please provide a field in the fields request parameter.')
         if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
-        if "award_type_codes" not in filters:
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
+        if 'award_type_codes' not in filters:
             raise InvalidParameterException(
-                "Missing one or more required request parameters: filters['award_type_codes']")
-        if order not in ["asc", "desc"]:
-            raise InvalidParameterException("Invalid value for order: {}".format(order))
+                'Missing one or more required request parameters: filters["award_type_codes"]')
+        if order not in ['asc', 'desc']:
+            raise InvalidParameterException('Invalid value for order: {}'.format(order))
 
-        sort = json_request.get("sort", fields[0])
+        sort = json_request.get('sort', fields[0])
         if sort not in fields:
-            raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
+            raise InvalidParameterException('Sort value not found in fields: {}'.format(sort))
 
         # get a list of values to queryset on instead of pinging the database for every field
-        values = ["award_id"]
-        if "Award ID" in fields:
-            values += ["fain", "piid", "uri"]
-        if set(filters["award_type_codes"]) <= set(contract_type_mapping):
+        values = ['award_id']
+        if 'Award ID' in fields:
+            values += ['fain', 'piid', 'uri']
+        if set(filters['award_type_codes']) <= set(contract_type_mapping):
             for field in fields:
-                if field == "Award ID":
+                if field == 'Award ID':
                     continue
                 try:
                     values.append(award_contracts_mapping[field])
                 except Exception:
-                    raise InvalidParameterException("Invalid field value: {}".format(field))
-        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+                    raise InvalidParameterException('Invalid field value: {}'.format(field))
+        elif set(filters['award_type_codes']) <= set(loan_type_mapping):  # loans
             for field in fields:
-                if field == "Award ID":
+                if field == 'Award ID':
                     continue
                 try:
                     values.append(loan_award_mapping[field])
                 except Exception:
-                    raise InvalidParameterException("Invalid field value: {}".format(field))
-        elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
+                    raise InvalidParameterException('Invalid field value: {}'.format(field))
+        elif set(filters['award_type_codes']) <= set(non_loan_assistance_type_mapping):  # assistance data
             for field in fields:
-                if field == "Award ID":
+                if field == 'Award ID':
                     continue
                 try:
                     values.append(non_loan_assistance_award_mapping[field])
                 except Exception:
-                    raise InvalidParameterException("Invalid field value: {}".format(field))
+                    raise InvalidParameterException('Invalid field value: {}'.format(field))
 
         # build sql query filters
         queryset = award_filter(filters).values(*values)
 
         # build response
-        response = {"limit": limit, "results": []}
+        response = {'limit': limit, 'results': []}
         results = []
 
-        # Modify queryset to be ordered if we specify "sort" in the request
+        # Modify queryset to be ordered if we specify 'sort' in the request
         if sort:
             sort_filters = []
-            if set(filters["award_type_codes"]) <= set(contract_type_mapping):
+            if set(filters['award_type_codes']) <= set(contract_type_mapping):
                 sort_filters = [award_contracts_mapping[sort]]
-            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+            elif set(filters['award_type_codes']) <= set(loan_type_mapping):  # loans
                 sort_filters = [loan_award_mapping[sort]]
             else:  # assistance data
                 sort_filters = [non_loan_assistance_award_mapping[sort]]
-            if sort == "Award ID":
-                sort_filters = ["piid", "fain", "uri"]
+            if sort == 'Award ID':
+                sort_filters = ['piid', 'fain', 'uri']
             if order == 'desc':
                 sort_filters = ['-' + sort_filter for sort_filter in sort_filters]
             if sort_filters:
@@ -761,28 +761,28 @@ class SpendingByAwardVisualizationViewSet(APIView):
         has_next = len(limited_queryset) > limit
 
         for award in limited_queryset[:limit]:
-            row = {"internal_id": award["award_id"]}
-            if set(filters["award_type_codes"]) <= set(contract_type_mapping):
+            row = {'internal_id': award['award_id']}
+            if set(filters['award_type_codes']) <= set(contract_type_mapping):
                 for field in fields:
                     row[field] = award[award_contracts_mapping[field]]
-            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+            elif set(filters['award_type_codes']) <= set(loan_type_mapping):  # loans
                 for field in fields:
                     row[field] = award[loan_award_mapping[field]]
-            elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
+            elif set(filters['award_type_codes']) <= set(non_loan_assistance_type_mapping):  # assistance data
                 for field in fields:
                     row[field] = award[non_loan_assistance_award_mapping[field]]
-            if "Award ID" in fields and not row["Award ID"]:
-                for id_type in ["piid", "fain", "uri"]:
+            if 'Award ID' in fields and not row['Award ID']:
+                for id_type in ['piid', 'fain', 'uri']:
                     if award[id_type]:
-                        row["Award ID"] = award[id_type]
+                        row['Award ID'] = award[id_type]
                         break
             results.append(row)
 
         sorted_results = sorted(results, key=lambda result: self.Min if result[sort] is None else result[sort],
-                                reverse=(order == "desc"))
+                                reverse=(order == 'desc'))
 
-        response["results"] = sorted_results
-        response["page_metadata"] = {'page': page, 'hasNext': has_next}
+        response['results'] = sorted_results
+        response['page_metadata'] = {'page': page, 'hasNext': has_next}
 
         return Response(response)
 
@@ -790,12 +790,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
 class SpendingByAwardCountVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
+        '''Return all budget function/subfunction titles matching the provided search text'''
         json_request = request.data
-        filters = json_request.get("filters", None)
+        filters = json_request.get('filters', None)
 
         if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
 
         response = None
         if can_use_view(filters, 'SummaryAwardView'):
@@ -806,23 +806,23 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         return response
 
     def process_with_view(self, filters):
-        """Return all budget function/subfunction titles matching the provided search text"""
+        '''Return all budget function/subfunction titles matching the provided search text'''
         if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
 
         # build sql query filters
         queryset = view_filter(filters=filters, view_name='SummaryAwardView')
-        queryset = queryset.values("category").annotate(category_count=Sum('counts')).exclude(category__isnull=True)
+        queryset = queryset.values('category').annotate(category_count=Sum('counts')).exclude(category__isnull=True)
 
         results = self.get_results(queryset)
 
         # build response
-        return Response({"results": results})
+        return Response({'results': results})
 
     def process_with_tables(self, filters):
-        """Return all budget function/subfunction titles matching the provided search text"""
+        '''Return all budget function/subfunction titles matching the provided search text'''
         if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
+            raise InvalidParameterException('Missing one or more required request parameters: filters')
 
         # build sql query filters
         queryset = award_filter(filters)
@@ -834,10 +834,10 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         results = self.get_results(queryset)
 
         # build response
-        return Response({"results": results})
+        return Response({'results': results})
 
     def get_results(self, queryset):
-        results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
+        results = {'contracts': 0, 'grants': 0, 'direct_payments': 0, 'loans': 0, 'other': 0}
 
         for award in queryset:
             result_key = award['category'].replace(' ', '_')
