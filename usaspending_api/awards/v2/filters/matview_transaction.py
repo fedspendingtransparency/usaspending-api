@@ -172,10 +172,16 @@ def transaction_filter(filters):
         # award_type_codes
         elif key == "award_type_codes":
             or_queryset = []
+
+            idv_flag = all(i in value for i in contract_type_mapping.keys())
+
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= UniversalTransactionView.objects.filter(type__in=or_queryset)
+                filter_obj = Q(type__in=or_queryset)
+                if idv_flag:
+                    filter_obj |= Q(pulled_from='IDV')
+                queryset &= UniversalTransactionView.objects.filter(filter_obj)
 
         # agencies
         elif key == "agencies":
