@@ -1,23 +1,18 @@
 import logging
 from django.db.models import Q
-
-from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.references.models import PSC, NAICS, LegalEntity
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
-from usaspending_api.references.constants import WEBSITE_AWARD_BINS
-from usaspending_api.common.helpers import dates_are_fiscal_year_bookends
-from usaspending_api.common.helpers import generate_all_fiscal_years_in_range
-from usaspending_api.common.helpers import generate_date_from_string
+from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
 logger = logging.getLogger(__name__)
 
 
 # TODO: Performance when multiple false values are initially provided
-def award_filter(filters):
+def award_filter(filters, model):
 
-    queryset = UniversalAwardView.objects.filter()
+    queryset = model.objects.filter()
     for key, value in filters.items():
 
         if value is None:
@@ -77,7 +72,7 @@ def award_filter(filters):
             queryset = queryset.filter(compound_or)
 
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value, UniversalAwardView, "issued_date_fiscal_year",
+            success, or_queryset = date_or_fy_queryset(value, model, "issued_date_fiscal_year",
                                                        "issued_date")
             if success:
                 queryset &= or_queryset
@@ -93,7 +88,7 @@ def award_filter(filters):
                 filter_obj = Q(type__in=or_queryset)
                 if idv_flag:
                     filter_obj |= Q(pulled_from='IDV')
-                queryset &= UniversalAwardView.objects.filter(filter_obj)
+                queryset &= model.objects.filter(filter_obj)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -123,20 +118,20 @@ def award_filter(filters):
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
             if len(funding_toptier) != 0:
-                queryset &= UniversalAwardView.objects.filter(funding_toptier_agency_name__in=funding_toptier)
+                queryset &= model.objects.filter(funding_toptier_agency_name__in=funding_toptier)
             if len(funding_subtier) != 0:
-                queryset &= UniversalAwardView.objects.filter(funding_subtier_agency_name__in=funding_subtier)
+                queryset &= model.objects.filter(funding_subtier_agency_name__in=funding_subtier)
             if len(awarding_toptier) != 0:
-                queryset &= UniversalAwardView.objects.filter(awarding_toptier_agency_name__in=awarding_toptier)
+                queryset &= model.objects.filter(awarding_toptier_agency_name__in=awarding_toptier)
             if len(awarding_subtier) != 0:
-                queryset &= UniversalAwardView.objects.filter(awarding_subtier_agency_name__in=awarding_subtier)
+                queryset &= model.objects.filter(awarding_subtier_agency_name__in=awarding_subtier)
 
         elif key == "legal_entities":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= UniversalAwardView.objects.filter(recipient_id__in=or_queryset)
+                queryset &= model.objects.filter(recipient_id__in=or_queryset)
 
         elif key == "recipient_search_text":
             if len(value) != 1:
@@ -148,7 +143,7 @@ def award_filter(filters):
             if len(recipient_string) == 9:
                 filter_obj |= Q(recipient_unique_id__iexact=recipient_string)
 
-            queryset &= UniversalAwardView.objects.filter(filter_obj)
+            queryset &= model.objects.filter(filter_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":
@@ -160,7 +155,7 @@ def award_filter(filters):
 
         elif key == "recipient_locations":
             or_queryset = geocode_filter_locations(
-                'recipient_location', value, 'UniversalAwardView', True
+                'recipient_location', value, model, True
             )
             queryset &= or_queryset
 
@@ -171,7 +166,7 @@ def award_filter(filters):
             if len(or_queryset) != 0:
                 duns_values = LegalEntity.objects.filter(business_categories__overlap=or_queryset).\
                     values('recipient_unique_id')
-                queryset &= UniversalAwardView.objects.filter(recipient_unique_id__in=duns_values)
+                queryset &= model.objects.filter(recipient_unique_id__in=duns_values)
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
@@ -183,44 +178,14 @@ def award_filter(filters):
 
         elif key == "place_of_performance_locations":
             or_queryset = geocode_filter_locations(
-                'pop', value, 'UniversalAwardView', True
+                'pop', value, model, True
             )
 
             queryset &= or_queryset
 
         elif key == "award_amounts":
-            or_queryset = None
-            queryset_init = False
-            for v in value:
-                if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
-                    if queryset_init:
-                        or_queryset |= UniversalAwardView.objects.filter(
-                            total_obligation__gt=v["lower_bound"],
-                            total_obligation__lt=v["upper_bound"])
-                    else:
-                        queryset_init = True
-                        or_queryset = UniversalAwardView.objects.filter(
-                            total_obligation__gt=v["lower_bound"],
-                            total_obligation__lt=v["upper_bound"])
-                elif v.get("lower_bound") is not None:
-                    if queryset_init:
-                        or_queryset |= UniversalAwardView.objects.filter(
-                            total_obligation__gt=v["lower_bound"])
-                    else:
-                        queryset_init = True
-                        or_queryset = UniversalAwardView.objects.filter(
-                            total_obligation__gt=v["lower_bound"])
-                elif v.get("upper_bound") is not None:
-                    if queryset_init:
-                        or_queryset |= UniversalAwardView.objects.filter(
-                            total_obligation__lt=v["upper_bound"])
-                    else:
-                        queryset_init = True
-                        or_queryset = UniversalAwardView.objects.filter(
-                            total_obligation__lt=v["upper_bound"])
-                else:
-                    raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
-            if queryset_init:
+            success, or_queryset = total_obligation_queryset(value, model)
+            if success:
                 queryset &= or_queryset
 
         elif key == "award_ids":
@@ -228,14 +193,14 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= UniversalAwardView.objects.filter(award_id__in=or_queryset)
+                queryset &= model.objects.filter(award_id__in=or_queryset)
 
         elif key == "program_numbers":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= UniversalAwardView.objects.filter(
+                queryset &= model.objects.filter(
                     cfda_number__in=or_queryset)
 
         elif key == "naics_codes":
@@ -243,7 +208,7 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= UniversalAwardView.objects.filter(
+                queryset &= model.objects.filter(
                     naics_code__in=or_queryset)
 
         elif key == "psc_codes":
@@ -251,7 +216,7 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= UniversalAwardView.objects.filter(
+                queryset &= model.objects.filter(
                     product_or_service_code__in=or_queryset)
 
         elif key == "contract_pricing_type_codes":
@@ -259,7 +224,7 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= UniversalAwardView.objects.filter(
+                queryset &= model.objects.filter(
                     type_of_contract_pricing__in=or_queryset)
 
         elif key == "set_aside_type_codes":
@@ -267,7 +232,7 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= UniversalAwardView.objects.filter(
+                queryset &= model.objects.filter(
                     type_set_aside__in=or_queryset)
 
         elif key == "extent_competed_type_codes":
@@ -275,7 +240,7 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= UniversalAwardView.objects.filter(
+                queryset &= model.objects.filter(
                     extent_competed__in=or_queryset)
 
     return queryset
