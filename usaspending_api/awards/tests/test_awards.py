@@ -284,3 +284,14 @@ def test_get_or_create_summary_award():
     m16 = mommy.make('awards.Award', piid='imjustapiidchild', awarding_agency=a3)
     t16 = Award.get_or_create_summary_award(piid='imjustapiidchild', parent_award_id='imjustapiidparent', awarding_agency=a4)[1]
     assert t16 != m16
+
+
+@pytest.mark.django_db
+def test_cfda_objectives():
+    """Verify that cfda_objectives property works."""
+
+    cfda = mommy.make('references.Cfda', program_number='1.001', objectives='a brighter tomorrow')
+    tfabs = mommy.make('awards.TransactionFABS', cfda_number='1.001')
+    assert tfabs.cfda_objectives == 'a brighter tomorrow'
+    tfabs2 = mommy.make('awards.TransactionFABS', cfda_number='1.001xxx')
+    assert tfabs2.cfda_objectives is None
