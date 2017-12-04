@@ -219,6 +219,27 @@ class SummaryView(models.Model):
         db_table = 'summary_view'
 
 
+class SummarySubagencyView(models.Model):
+
+    # Fields
+    action_date = models.DateField(blank=True, null=True)
+    fiscal_year = models.IntegerField()
+    type = models.TextField(blank=True, null=True)
+    awarding_agency_id = models.TextField(blank=True, null=True)
+    awarding_agency_name = models.TextField(blank=True, null=True)
+    awarding_agency_abbr = models.TextField(blank=True, null=True)
+    funding_agency_id = models.TextField(blank=True, null=True)
+    funding_agency_name = models.TextField(blank=True, null=True)
+    funding_agency_abbr = models.TextField(blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
+                                                    blank=True, null=True)
+    counts = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'summary_subagencies_view'
+
+
 class SumaryNaicsCodesView(models.Model):
 
     # Fields
