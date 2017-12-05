@@ -1,6 +1,5 @@
 import random
 
-from usaspending_api.common.models import RequestCatalog
 from usaspending_api.references.models import FilterHash
 
 """
@@ -17,7 +16,7 @@ class ReadReplicaRouter(object):
 
     def db_for_read(self, model, **hints):
 
-        if model in [RequestCatalog, FilterHash]:
+        if model in [FilterHash]:
             return 'db_source'
         return random.choice(['db_source', 'db_r1'])
 
