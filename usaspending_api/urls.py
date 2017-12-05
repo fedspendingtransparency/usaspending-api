@@ -17,7 +17,6 @@ from django.conf import settings
 from django.conf.urls import url, include
 from usaspending_api import views as views
 from usaspending_api.common.views import MarkdownView
-from usaspending_api.common.csv_views import CsvDownloadView
 from django.conf.urls.static import static
 
 
@@ -25,7 +24,6 @@ urlpatterns = [
     url(r'^$', MarkdownView.as_view(markdown='landing_page.md')),
     url(r'^api/v1/accounts/', include('usaspending_api.accounts.urls')),
     url(r'^api/v1/awards/', include('usaspending_api.awards.v1.urls_awards')),
-    url(r'^api/v1/download/(?P<path>.*)', CsvDownloadView.as_view()),
     url(r'^api/v1/federal_accounts/', include('usaspending_api.accounts.urls_federal_account')),
     url(r'^api/v1/references/', include('usaspending_api.references.v1.urls')),
     url(r'^api/v1/subawards/', include('usaspending_api.awards.v1.urls_subawards')),
