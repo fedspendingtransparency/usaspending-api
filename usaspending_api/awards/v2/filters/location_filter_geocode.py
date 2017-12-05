@@ -2,6 +2,15 @@ from django.apps import apps
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
+LOCATION_MAPPING = {
+    'country': 'location_country_code',
+    'state': 'state_code',
+    'county': 'county_code',
+    'district': 'congressional_code',
+    'zip': 'zip5',
+}
+
+
 def geocode_filter_locations(scope, values, model, use_matview=False, default_model='awards'):
     """
     Function filter querysets on location table
@@ -23,7 +32,7 @@ def geocode_filter_locations(scope, values, model, use_matview=False, default_mo
         for loc_scope in fields:
             if loc_dict.get(loc_scope) is not None:
                 key_str = q_str.format(scope, loc_dict.get(loc_scope))
-                kwargs[key_str] = get_fields_list(loc_dict.get(loc_scope), v.get(loc_scope))
+                kwargs[key_str] = get_fields_list(loc_dict.get(loc_scope), v.get(loc_scope), loc_dict)
 
         model_name = apps.get_model(default_model, model)
         qs = model_name.objects.filter(**kwargs)
@@ -48,30 +57,21 @@ def check_location_fields(fields):
         )
 
 
-def get_fields_list(scope, field_value):
+def get_fields_list(scope, field_value, loc_dict):
     """List of values to search for; `field_value`, plus possibly variants on it"""
-    if scope not in ['state_code', 'location_country_code', 'country_code', 'zip5']:
+    if scope not in loc_dict.values():
         try:
             return [str(int(field_value)), field_value, str(float(field_value))]
         except ValueError:
             # if filter causes an error when casting to a float or integer
             # Example: 'ZZ' for an area without a congressional code
             return [field_value]
-
     return [field_value]
 
 
 def return_query_strings(use_matview):
     # Returns query strings according based on mat view or database
-
-    loc_dict = {
-        'country': 'location_country_code',
-        'state': 'state_code',
-        'county': 'county_code',
-        'district': 'congressional_code',
-        'zip': 'zip5',
-    }
-
+    loc_dict = LOCATION_MAPPING
     q_str = '{0}__{1}__in'
 
     if use_matview:
