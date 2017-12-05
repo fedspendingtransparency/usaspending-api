@@ -208,7 +208,7 @@ class BulkDownloadListAgenciesViewSet(APIView):
                                           'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
     sub_agencies_map = {}
 
-    def pull_modified_agencies_cgacs_subiters(self):
+    def pull_modified_agencies_cgacs_subtiers(self):
         # Get a dict of used subtiers and their associated CGAC code pulled from
         # modified_agencies_list
         with open(self.modified_agencies_list, encoding='Latin-1') as modified_agencies_list_csv:
@@ -227,7 +227,7 @@ class BulkDownloadListAgenciesViewSet(APIView):
                          'federal_accounts': []}
         if not self.sub_agencies_map:
             # populate the sub_agencies dictionary
-            self.pull_modified_agencies_cgacs_subiters()
+            self.pull_modified_agencies_cgacs_subtiers()
         used_cgacs = set(self.sub_agencies_map.values())
         # Adding 1601 as Department of Labor uses the FREC instead of the CGAC '0016'
         used_cgacs.add('1601')
