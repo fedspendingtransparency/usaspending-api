@@ -203,10 +203,10 @@ class AwardAutocompleteViewSet(APIView):
 
         all_qs = Award.objects.all()
 
-        piid_qs = all_qs.filter(piid=search_text)
-        parent_award_qs = all_qs.filter(parent_award__piid=search_text)
-        fain_qs = all_qs.filter(fain=search_text)
-        uri_qs = all_qs.filter(uri=search_text)
+        piid_qs = all_qs.filter(piid__iexact=search_text)
+        parent_award_qs = all_qs.filter(parent_award__piid__iexact=search_text)
+        fain_qs = all_qs.filter(fain__iexact=search_text)
+        uri_qs = all_qs.filter(uri__iexact=search_text)
 
         response = {}
         matched_objects = {}
