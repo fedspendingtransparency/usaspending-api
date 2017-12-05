@@ -9,4 +9,3 @@ def sqs_queue(region_name=settings.CSV_AWS_REGION, QueueName=settings.CSV_SQS_QU
     sqs = boto3.resource('sqs', region_name=region_name)
     queue = sqs.get_queue_by_name(QueueName=QueueName)
     return queue
-
