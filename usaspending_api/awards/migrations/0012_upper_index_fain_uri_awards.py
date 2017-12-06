@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-# Created by Alisa 1.11.4 on 2017-12-05 19:20
+# Created by Alisa 1.11.4 on 2017-12-06 11:10
 from __future__ import unicode_literals
 
-import django.contrib.postgres.fields
 from django.db import migrations
 
 
