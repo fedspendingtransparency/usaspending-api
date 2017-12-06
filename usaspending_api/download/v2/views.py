@@ -11,6 +11,7 @@ from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter as matview_transaction_filter
 from usaspending_api.awards.models import Award, TransactionNormalized
+from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.filestreaming import csv_selection
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
@@ -171,7 +172,7 @@ class DownloadTransactionCountViewSet(APIView):
         filters = json_request.get('filters', {})
         is_over_limit = False
 
-        queryset = matview_transaction_filter(filters)
+        queryset = matview_transaction_filter(filters, UniversalTransactionView)
 
         try:
             queryset[settings.MAX_DOWNLOAD_LIMIT]

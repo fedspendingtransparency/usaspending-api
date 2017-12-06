@@ -1,19 +1,20 @@
 import logging
 from django.db.models import Q
-
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.references.models import PSC, NAICS
+from usaspending_api.references.models import PSC, NAICS, LegalEntity
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
 logger = logging.getLogger(__name__)
 
 
 # TODO: Performance when multiple false values are initially provided
-def transaction_filter(filters, model):
-    queryset = model.objects.all()
+def award_filter(filters, model):
+
+    queryset = model.objects.filter()
     for key, value in filters.items():
-        # check for valid key
+
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
@@ -35,7 +36,8 @@ def transaction_filter(filters, model):
                     'psc_codes',
                     'contract_pricing_type_codes',
                     'set_aside_type_codes',
-                    'extent_competed_type_codes']
+                    'extent_competed_type_codes'
+                    ]
 
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
@@ -58,34 +60,39 @@ def transaction_filter(filters, model):
 
             if naics_list:
                 compound_or |= Q(naics_code__in=naics_list)
+                # naics_q = Q(naics_code__in=naics_list)
 
             if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
                 psc_list = PSC.objects.all().filter(code=keyword).values('code')
             else:
                 psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
             if psc_list.exists():
-                compound_or |= Q(psc_code__in=psc_list)
+                compound_or |= Q(product_or_service_code__in=psc_list)
 
             queryset = queryset.filter(compound_or)
 
-        # time_period
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value, model, "fiscal_year",
-                                                       "action_date")
+            success, or_queryset = date_or_fy_queryset(value, model, "issued_date_fiscal_year",
+                                                       "issued_date")
             if success:
                 queryset &= or_queryset
 
-        # award_type_codes
         elif key == "award_type_codes":
             or_queryset = []
+
+            idv_flag = all(i in value for i in contract_type_mapping.keys())
+
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= model.objects.filter(type__in=or_queryset)
+                filter_obj = Q(type__in=or_queryset)
+                if idv_flag:
+                    filter_obj |= Q(pulled_from='IDV')
+                queryset &= model.objects.filter(filter_obj)
 
-        # agencies
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
+            or_queryset = None
             funding_toptier = []
             funding_subtier = []
             awarding_toptier = []
@@ -111,32 +118,21 @@ def transaction_filter(filters, model):
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
             if len(funding_toptier) != 0:
-                queryset &= model.objects.filter(
-                    funding_toptier_agency_name__in=funding_toptier
-                )
+                queryset &= model.objects.filter(funding_toptier_agency_name__in=funding_toptier)
             if len(funding_subtier) != 0:
-                queryset &= model.objects.filter(
-                    funding_subtier_agency_name__in=funding_subtier
-                )
+                queryset &= model.objects.filter(funding_subtier_agency_name__in=funding_subtier)
             if len(awarding_toptier) != 0:
-                queryset &= model.objects.filter(
-                    awarding_toptier_agency_name__in=awarding_toptier
-                )
+                queryset &= model.objects.filter(awarding_toptier_agency_name__in=awarding_toptier)
             if len(awarding_subtier) != 0:
-                queryset &= model.objects.filter(
-                    awarding_subtier_agency_name__in=awarding_subtier
-                )
+                queryset &= model.objects.filter(awarding_subtier_agency_name__in=awarding_subtier)
 
         elif key == "legal_entities":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= model.objects.filter(
-                    recipient_id__in=or_queryset
-                )
+                queryset &= model.objects.filter(recipient_id__in=or_queryset)
 
-        # recipient_search_text
         elif key == "recipient_search_text":
             if len(value) != 1:
                 raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
@@ -149,39 +145,29 @@ def transaction_filter(filters, model):
 
             queryset &= model.objects.filter(filter_obj)
 
-        # recipient_location_scope (broken till data reload)
         elif key == "recipient_scope":
             if value == "domestic":
-                queryset = queryset.filter(
-                    recipient_location_country_name="UNITED STATES"
-                )
+                queryset = queryset.filter(recipient_location_country_name="UNITED STATES")
             elif value == "foreign":
-                queryset = queryset.exclude(
-                    recipient_location_country_name="UNITED STATES"
-                )
+                queryset = queryset.exclude(recipient_location_country_name="UNITED STATES")
             else:
-                raise InvalidParameterException(
-                    'Invalid filter: recipient_scope type is invalid.')
+                raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
-        # recipient_location
         elif key == "recipient_locations":
             or_queryset = geocode_filter_locations(
                 'recipient_location', value, model, True
             )
-
             queryset &= or_queryset
 
-        # recipient_type_names
         elif key == "recipient_type_names":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= model.objects.filter(
-                    business_categories__overlap=value
-                )
+                duns_values = LegalEntity.objects.filter(business_categories__overlap=or_queryset).\
+                    values('recipient_unique_id')
+                queryset &= model.objects.filter(recipient_unique_id__in=duns_values)
 
-        # place_of_performance_scope
         elif key == "place_of_performance_scope":
             if value == "domestic":
                 queryset = queryset.filter(pop_country_name="UNITED STATES")
@@ -190,20 +176,18 @@ def transaction_filter(filters, model):
             else:
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
-        # place_of_performance
         elif key == "place_of_performance_locations":
             or_queryset = geocode_filter_locations(
                 'pop', value, model, True
             )
+
             queryset &= or_queryset
 
-        # award_amounts
         elif key == "award_amounts":
             success, or_queryset = total_obligation_queryset(value, model)
             if success:
                 queryset &= or_queryset
 
-        # award_ids
         elif key == "award_ids":
             or_queryset = []
             for v in value:
@@ -211,7 +195,6 @@ def transaction_filter(filters, model):
             if len(or_queryset) != 0:
                 queryset &= model.objects.filter(award_id__in=or_queryset)
 
-        # program_numbers
         elif key == "program_numbers":
             or_queryset = []
             for v in value:
@@ -220,7 +203,6 @@ def transaction_filter(filters, model):
                 queryset &= model.objects.filter(
                     cfda_number__in=or_queryset)
 
-        # naics_codes
         elif key == "naics_codes":
             or_queryset = []
             for v in value:
@@ -229,16 +211,14 @@ def transaction_filter(filters, model):
                 queryset &= model.objects.filter(
                     naics_code__in=or_queryset)
 
-        # psc_codes
         elif key == "psc_codes":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
                 queryset &= model.objects.filter(
-                    psc_code__in=or_queryset)
+                    product_or_service_code__in=or_queryset)
 
-        # contract_pricing_type_codes
         elif key == "contract_pricing_type_codes":
             or_queryset = []
             for v in value:
@@ -247,7 +227,6 @@ def transaction_filter(filters, model):
                 queryset &= model.objects.filter(
                     type_of_contract_pricing__in=or_queryset)
 
-        # set_aside_type_codes
         elif key == "set_aside_type_codes":
             or_queryset = []
             for v in value:
@@ -256,7 +235,6 @@ def transaction_filter(filters, model):
                 queryset &= model.objects.filter(
                     type_set_aside__in=or_queryset)
 
-        # extent_competed_type_codes
         elif key == "extent_competed_type_codes":
             or_queryset = []
             for v in value:

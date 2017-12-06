@@ -15,10 +15,13 @@ from functools import total_ordering
 from datetime import date
 from fiscalyear import FiscalDate
 
-from usaspending_api.awards.v2.filters.view_selector import view_filter, can_use_view
+from usaspending_api.awards.models_matviews import UniversalAwardView
+from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.awards.v2.filters.view_selector import get_view_queryset, can_use_view
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
-from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter, award_filter
+from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
+from usaspending_api.awards.v2.filters.matview_award import award_filter
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, loan_type_mapping, \
     non_loan_assistance_type_mapping
@@ -49,9 +52,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # build sql query filters
         if can_use_view(filters, 'SummaryView'):
-            queryset = view_filter(filters, 'SummaryView')
+            queryset = get_view_queryset(filters, 'SummaryView')
         else:
-            queryset = transaction_filter(filters)
+            queryset = transaction_filter(filters, UniversalTransactionView)
 
         # define what values are needed in the sql query
         queryset = queryset.values('action_date', 'federal_action_obligation')
@@ -159,7 +162,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # filter queryset
-        queryset = transaction_filter(filters)
+        queryset = transaction_filter(filters, UniversalTransactionView)
 
         # filter the transactions by category
         if category == "awarding_agency":
@@ -270,7 +273,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         elif category == "cfda_programs":
             if can_use_view(filters, 'SumaryCfdaNumbersView'):
-                queryset = view_filter(filters, 'SumaryCfdaNumbersView')
+                queryset = get_view_queryset(filters, 'SumaryCfdaNumbersView')
                 queryset = queryset \
                     .filter(
                         federal_action_obligation__isnull=False,
@@ -323,7 +326,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif category == "industry_codes":  # industry_codes
             if scope == "psc":
                 if can_use_view(filters, 'SumaryPscCodesView'):
-                    queryset = view_filter(filters, 'SumaryPscCodesView')
+                    queryset = get_view_queryset(filters, 'SumaryPscCodesView')
                     queryset = queryset \
                         .filter(product_or_service_code__isnull=False) \
                         .values(psc_code=F("product_or_service_code")) \
@@ -348,7 +351,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "naics":
                 if can_use_view(filters, 'SumaryNaicsCodesView'):
-                    queryset = view_filter(filters, 'SumaryNaicsCodesView')
+                    queryset = get_view_queryset(filters, 'SumaryNaicsCodesView')
                     queryset = queryset \
                         .filter(naics__isnull=False) \
                         .values(naics_code=F("naics")) \
@@ -426,10 +429,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # build sql query filters
         if can_use_view(self.filters, 'SummaryTransactionView'):
             self.matview_model = 'SummaryTransactionView'
-            self.queryset = view_filter(self.filters, self.matview_model)
+            self.queryset = get_view_queryset(self.filters, self.matview_model)
         else:
             self.matview_model = 'UniversalTransactionView'
-            self.queryset = transaction_filter(self.filters)
+            self.queryset = transaction_filter(self.filters, UniversalTransactionView)
 
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
@@ -529,7 +532,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             self.queryset &= geocode_filter_locations(scope_field_name, [
                 {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
                 for x in self.geo_layer_filters
-            ], 'UniversalTransactionView', True)
+            ], self.matview_model, True)
         else:
             # Adding null,USA, not number filters for specific partial index
             # when not using geocode_filter
@@ -649,7 +652,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     raise InvalidParameterException("Invalid field value: {}".format(field))
 
         # build sql query filters
-        queryset = award_filter(filters).values(*values)
+        queryset = award_filter(filters, UniversalAwardView).values(*values)
 
         # build response
         response = {"limit": limit, "results": []}
@@ -725,7 +728,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
-        queryset = view_filter(filters=filters, view_name='SummaryAwardView')
+        queryset = get_view_queryset(filters=filters, view_name='SummaryAwardView')
         queryset = queryset.values("category").annotate(category_count=Sum('counts')).exclude(category__isnull=True)
 
         results = self.get_results(queryset)
@@ -739,7 +742,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
-        queryset = award_filter(filters)
+        queryset = award_filter(filters, UniversalAwardView)
 
         # define what values are needed in the sql query
         queryset = queryset.values('category')
