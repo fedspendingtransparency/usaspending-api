@@ -9,11 +9,14 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0010_recipientlookupview_summarytransactionview'),
+        ('awards', '0011_upper_index_awards'),
     ]
 
     operations = [
         migrations.RunSQL(
-            "CREATE INDEX awards_piid_uppr_idx ON awards (UPPER(piid));"
+            "CREATE INDEX awards_fain_uppr_idx ON awards (UPPER(fain));"
+        ),
+        migrations.RunSQL(
+            "CREATE INDEX awards_uri_uppr_idx ON awards (UPPER(uri));"
         ),
     ]
