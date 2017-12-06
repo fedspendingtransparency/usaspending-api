@@ -1,12 +1,9 @@
-from collections import OrderedDict
 from django.db.models import Avg, Count, F, Q, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
-from django.core.serializers.json import json, DjangoJSONEncoder
 from django.utils.timezone import now
 
 from usaspending_api.common.api_request_utils import FilterGenerator, AutoCompleteHandler
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.models import RequestCatalog
 from rest_framework_tracking.mixins import LoggingMixin
 
 import logging
@@ -25,8 +22,8 @@ class AggregateQuerysetMixin(object):
         # regardless of request type (e.g., GET, POST)
         # (not sure if this is a good practice, or we should be more
         # prescriptive that aggregate requests can only be of one type)
-        params = dict(self.req.request["query_params"])
-        params.update(dict(self.req.request["data"]))
+        params = dict(request.query_params)
+        params.update(dict(request.data))
 
         # get the queryset to be aggregated
         queryset = kwargs.get('queryset', None)
@@ -189,12 +186,11 @@ class FilterQuerysetMixin(object):
         filter_map = kwargs.get('filter_map', {})
         fg = FilterGenerator(queryset.model, filter_map=filter_map)
 
-        # req here is the request catalog entry for this request
-        if len(self.req.request["data"]):
+        if len(request.data):
             fg = FilterGenerator(queryset.model)
-            filters = fg.create_from_request_body(self.req.request["data"])
+            filters = fg.create_from_request_body(request.data)
         else:
-            filters = Q(**fg.create_from_query_params(self.req.request["query_params"]))
+            filters = Q(**fg.create_from_query_params(request.query_params))
 
         # Handle FTS vectors
         if len(fg.search_vectors) > 0:
@@ -220,8 +216,8 @@ class FilterQuerysetMixin(object):
         # (not sure if this is a good practice, or we should be more
         # prescriptive that aggregate requests can only be of one type)
 
-        params = dict(self.req.request["query_params"])
-        params.update(dict(self.req.request["data"]))
+        params = dict(request.query_params)
+        params.update(dict(request.data))
         ordering = params.get('order')
         if ordering is not None:
             return queryset.order_by(*ordering)
@@ -281,7 +277,7 @@ class SuperLoggingMixin(LoggingMixin):
             view_method = method.lower()
 
         # save to log (as a dict, instead of to the db)
-        self.request.log = {
+        request.log = {
             "requested_at": now(),
             "path": request.path,
             "view": view_name,
@@ -299,7 +295,7 @@ class SuperLoggingMixin(LoggingMixin):
         user = request.user
         if user.is_anonymous():
             user = None
-        self.request.log["user"] = user
+        request.log["user"] = user
 
         # get data dict
         try:
@@ -307,9 +303,9 @@ class SuperLoggingMixin(LoggingMixin):
             # ParseError and UnsupportedMediaType exceptions. It's important not to swallow these,
             # as (depending on implementation details) they may only get raised this once, and
             # DRF logic needs them to be raised by the view for error handling to work correctly.
-            self.request.log["data"] = self.request.data.dict()
+            request.log["data"] = request.data.dict()
         except AttributeError:  # if already a dict, can't dictify
-            self.request.log["data"] = self.request.data
+            request.log["data"] = request.data
 
     def finalize_response(self, request, response, *args, **kwargs):
         response = super(LoggingMixin, self).finalize_response(request, response, *args, **kwargs)
@@ -319,12 +315,12 @@ class SuperLoggingMixin(LoggingMixin):
             return response
 
         # compute response time
-        response_timedelta = now() - self.request.log["requested_at"]
+        response_timedelta = now() - request.log["requested_at"]
         response_ms = int(response_timedelta.total_seconds() * 1000)
 
-        self.request.log["status_code"] = response.status_code
-        self.request.log["response_ms"] = response_ms
+        request.log["status_code"] = response.status_code
+        request.log["response_ms"] = response_ms
 
-        self.events_logger.info(self.request.log)
+        self.events_logger.info(request.log)
         # Return response
         return response

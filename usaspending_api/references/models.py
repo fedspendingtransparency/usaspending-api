@@ -478,7 +478,7 @@ class LegalEntity(DataSourceTrackedModel):
     '''
     business_categories = ArrayField(models.TextField(), default=list)
 
-    recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="DUNS Number", db_index=True)
+    recipient_unique_id = models.TextField(blank=True, default='', null=True, verbose_name="DUNS Number", db_index=True)
     limited_liability_corporation = models.TextField(blank=True, null=True)
     sole_proprietorship = models.TextField(blank=True, null=True)
     partnership_or_limited_liability_partnership = models.TextField(blank=True, null=True)
@@ -945,6 +945,7 @@ class LegalEntity(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'legal_entity'
+        unique_together = ['recipient_unique_id', 'recipient_name', 'location']
 
 
 class LegalEntityOfficers(models.Model):
