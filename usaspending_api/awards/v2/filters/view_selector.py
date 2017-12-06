@@ -48,7 +48,6 @@ MATVIEW_SELECTOR = {
         'allowed_filters': [
             'time_period',
             'award_type_codes',
-            'legal_entities',
             'recipient_scope',
             'recipient_locations',
             'recipient_type_names',

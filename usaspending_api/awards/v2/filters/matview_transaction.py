@@ -64,7 +64,7 @@ def transaction_filter(filters, model):
             else:
                 psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
             if psc_list.exists():
-                compound_or |= Q(psc_code__in=psc_list)
+                compound_or |= Q(product_or_service_code__in=psc_list)
 
             queryset = queryset.filter(compound_or)
 
