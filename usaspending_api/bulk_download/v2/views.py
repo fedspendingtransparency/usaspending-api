@@ -2,8 +2,11 @@ import sys
 import itertools
 import json
 import logging
+import os
+import pandas as pd
 from collections import OrderedDict
 
+import django
 from django.conf import settings
 from django.db.models import F, Q
 from rest_framework.response import Response
@@ -201,12 +204,33 @@ def verify_requested_columns_available(sources, requested):
 
 
 class BulkDownloadListAgenciesViewSet(APIView):
+    modified_agencies_list = os.path.join(django.conf.settings.BASE_DIR,
+                                          'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
+    sub_agencies_map = {}
+
+    def pull_modified_agencies_cgacs_subtiers(self):
+        # Get a dict of used subtiers and their associated CGAC code pulled from
+        # modified_agencies_list
+        with open(self.modified_agencies_list, encoding='Latin-1') as modified_agencies_list_csv:
+            mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
+        mod_gencies_list_df = mod_gencies_list_df[['CGAC AGENCY CODE', 'SUBTIER CODE']]
+        mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'] \
+            .apply(lambda x: x.zfill(3))
+        for _, row in mod_gencies_list_df.iterrows():
+            self.sub_agencies_map[row['SUBTIER CODE']] = row['CGAC AGENCY CODE']
+
     def post(self, request):
         """Return list of agencies if no POST data is provided.
         Otherwise, returns sub_agencies/federal_accounts associated with the agency provided"""
         response_data = {'agencies': [],
                          'sub_agencies': [],
                          'federal_accounts': []}
+        if not self.sub_agencies_map:
+            # populate the sub_agencies dictionary
+            self.pull_modified_agencies_cgacs_subtiers()
+        used_cgacs = set(self.sub_agencies_map.values())
+        # Adding 1601 as Department of Labor uses the FREC instead of the CGAC '0016'
+        used_cgacs.add('1601')
 
         agency_id = None
         post_data = request.data
@@ -216,7 +240,8 @@ class BulkDownloadListAgenciesViewSet(APIView):
             agency_id = post_data['agency']
 
         # Get all the top tier agencies
-        toptier_agencies = list(ToptierAgency.objects.all().values('name', 'toptier_agency_id', 'cgac_code'))
+        toptier_agencies = list(ToptierAgency.objects.filter(cgac_code__in=used_cgacs)
+                                .values('name', 'toptier_agency_id', 'cgac_code'))
 
         if not agency_id:
             # Return all the agencies if no agency id provided
@@ -230,15 +255,24 @@ class BulkDownloadListAgenciesViewSet(APIView):
                                          "other_agencies": other_agencies}
         else:
             # Get the top tier agency object based on the agency id provided
-            top_tier_agency = list(filter(lambda toptier: toptier['toptier_agency_id'] == agency_id, toptier_agencies))
+            top_tier_agency = list(filter(lambda toptier: toptier['toptier_agency_id'] == agency_id,
+                                          toptier_agencies))
             if not top_tier_agency:
                 raise InvalidParameterException('Agency ID not found')
             top_tier_agency = top_tier_agency[0]
             # Get the sub agencies and federal accounts associated with that top tier agency
             response_data['sub_agencies'] = Agency.objects.filter(toptier_agency_id=agency_id)\
                 .values(subtier_agency_name=F('subtier_agency__name'),
-                        subtier_agency_id=F('subtier_agency__subtier_agency_id'))\
+                        subtier_agency_id=F('subtier_agency__subtier_agency_id'),
+                        subtier_agency_code=F('subtier_agency__subtier_code'))\
                 .order_by('subtier_agency_name')
+            # Tried converting this to queryset filtering but ran into issues trying to
+            # double check the right used subtier_agency by cross checking the cgac_code
+            # see the last 2 lines of the list comprehension below
+            response_data['sub_agencies'] = [subagency for subagency in response_data['sub_agencies']
+                                             if subagency['subtier_agency_code'] in self.sub_agencies_map and
+                                             self.sub_agencies_map[subagency['subtier_agency_code']] ==
+                                             top_tier_agency['cgac_code']]
 
             response_data['federal_accounts'] = FederalAccount.objects\
                 .filter(agency_identifier=top_tier_agency['cgac_code'])\
