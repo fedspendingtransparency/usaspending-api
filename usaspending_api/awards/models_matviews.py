@@ -35,7 +35,6 @@ class UniversalTransactionView(models.Model):
     pop_state_code = models.TextField()
     pop_congressional_code = models.TextField()
 
-    issued_date = models.TextField()
     face_value_loan_guarantee = models.TextField()
     original_loan_subsidy_cost = models.TextField()
     transaction_description = models.TextField()
@@ -48,6 +47,8 @@ class UniversalTransactionView(models.Model):
 
     naics_code = models.TextField()
     naics_description = models.TextField()
+    product_or_service_code = models.TextField()
+    product_or_service_description = models.TextField()
     psc_code = models.TextField()
     psc_description = models.TextField()
 
@@ -93,7 +94,6 @@ class SummaryTransactionView(models.Model):
     # Fields
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
-    month = models.TextField()
     type = models.TextField(blank=True, null=True)
     total_obl_bin = models.TextField()
     federal_action_obligation = models.DecimalField(
@@ -124,6 +124,8 @@ class SummaryTransactionView(models.Model):
     cfda_number = models.TextField()
     cfda_title = models.TextField()
     cfda_popular_name = models.TextField()
+    product_or_service_code = models.TextField()
+    product_or_service_description = models.TextField()
     psc_code = models.TextField()
     psc_description = models.TextField()
     naics_code = models.TextField()
@@ -165,6 +167,8 @@ class UniversalAwardView(models.Model):
     parent_recipient_unique_id = models.TextField()
     business_categories = ArrayField(models.TextField(), default=list)
 
+    action_date = models.DateField()
+    fiscal_year = models.IntegerField()
     issued_date = models.DateField()
     issued_date_fiscal_year = models.IntegerField()
 
@@ -238,6 +242,12 @@ class SummaryAwardView(models.Model):
     funding_agency_id = models.TextField(blank=True, null=True)
     funding_agency_name = models.TextField(blank=True, null=True)
     funding_agency_abbr = models.TextField(blank=True, null=True)
+    awarding_toptier_agency_id = models.TextField(blank=True, null=True)
+    awarding_toptier_agency_name = models.TextField(blank=True, null=True)
+    awarding_toptier_agency_abbreviation = models.TextField(blank=True, null=True)
+    funding_toptier_agency_id = models.TextField(blank=True, null=True)
+    funding_toptier_agency_name = models.TextField(blank=True, null=True)
+    funding_toptier_agency_abbreviation = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
                                                     blank=True, null=True)
     counts = models.IntegerField()
@@ -259,6 +269,12 @@ class SummaryView(models.Model):
     funding_agency_id = models.TextField(blank=True, null=True)
     funding_agency_name = models.TextField(blank=True, null=True)
     funding_agency_abbr = models.TextField(blank=True, null=True)
+    awarding_toptier_agency_id = models.TextField(blank=True, null=True)
+    awarding_toptier_agency_name = models.TextField(blank=True, null=True)
+    awarding_toptier_agency_abbreviation = models.TextField(blank=True, null=True)
+    funding_toptier_agency_id = models.TextField(blank=True, null=True)
+    funding_toptier_agency_name = models.TextField(blank=True, null=True)
+    funding_toptier_agency_abbreviation = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
                                                     blank=True, null=True)
     counts = models.IntegerField()
@@ -275,6 +291,7 @@ class SumaryNaicsCodesView(models.Model):
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     naics = models.TextField(blank=True, null=True)
+    naics_code = models.TextField(blank=True, null=True)
     naics_description = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
                                                     blank=True, null=True)
