@@ -30,23 +30,24 @@ class Command(BaseCommand):
                                  'usaspending_api', 'data', 'broker_agency_list.csv')
         )
 
+    def csv_to_df(self, csv_path, skiprows=0):
+        csv_df = None
+        try:
+            with open(csv_path, encoding='Latin-1') as csv_file:
+                csv_df = pd.read_csv(csv_file, dtype=str, skiprows=skiprows)
+        except IOError:
+            self.logger.log('Could not open file: {}'.format(csv_path))
+        return csv_df
+
     def handle(self, *args, **options):
         agencies_list_path = options.get('agencies_list')
         agencies_dir = os.path.dirname(agencies_list_path)
         broker_agency_list_path = options.get('broker_agency_list')
 
-        try:
-            # Get the authoritative agencies list
-            with open(agencies_list_path, encoding='Latin-1') as agencies_list_csv:
-                agencies_list_df = pd.read_csv(agencies_list_csv, dtype=str)
-        except IOError:
-            self.logger.log('Could not open file: {}'.format(agencies_list_path))
-        try:
-            # Get the broker agencies list
-            with open(broker_agency_list_path, encoding='Latin-1') as broker_agency_list_csv:
-                broker_agency_list_df = pd.read_csv(broker_agency_list_csv, dtype=str, skiprows=1)
-        except IOError:
-            self.logger.log('Could not open file: {}'.format(broker_agency_list_path)())
+        # Get the authoritative agencies list
+        agencies_list_df = self.csv_to_df(agencies_list_path)
+        # Get the broker agencies list
+        broker_agency_list_df = self.csv_to_df(broker_agency_list_path, skiprows=1)
         # Padding cgac to 3 chars for matching later on
         broker_agency_list_df['CGAC.AGENCY.CODE'] = broker_agency_list_df['CGAC.AGENCY.CODE']\
             .apply(lambda x: x.zfill(3))
