@@ -72,8 +72,8 @@ def award_filter(filters, model):
             queryset = queryset.filter(compound_or)
 
         elif key == "time_period":
-            success, or_queryset = date_or_fy_queryset(value, model, "issued_date_fiscal_year",
-                                                       "issued_date")
+            success, or_queryset = date_or_fy_queryset(value, model, "fiscal_year",
+                                                       "action_date")
             if success:
                 queryset &= or_queryset
 
