@@ -13,6 +13,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            "CREATE INDEX awards_piid_uppr_idx ON awards (UPPER(piid));"
+            ["CREATE INDEX awards_piid_uppr_idx ON awards (UPPER(piid));"],
+            ["DROP INDEX awards_piid_uppr_idx;"]
         ),
     ]
