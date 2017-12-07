@@ -18,19 +18,18 @@ class Command(BaseCommand):
     help = "Update specific FABS transactions and its related tables"
     pop_location = None
     legal_entity_location = None
-    legal_entity = None
 
     place_of_performance_field_map = {
-            'city_name': 'place_of_performance_city',
-            'performance_code': 'place_of_performance_code',
-            'congressional_code': 'place_of_performance_congr',
-            'county_name': 'place_of_perform_county_na',
-            'county_code': 'place_of_perform_county_co',
-            'foreign_location_description': 'place_of_performance_forei',
-            'state_name': 'place_of_perform_state_nam',
-            'zip4': 'place_of_performance_zip4a',
-            'location_country_code': 'place_of_perform_country_c',
-            'country_name': 'place_of_perform_country_n'
+        'city_name': 'place_of_performance_city',
+        'performance_code': 'place_of_performance_code',
+        'congressional_code': 'place_of_performance_congr',
+        'county_name': 'place_of_perform_county_na',
+        'county_code': 'place_of_perform_county_co',
+        'foreign_location_description': 'place_of_performance_forei',
+        'state_name': 'place_of_perform_state_nam',
+        'zip4': 'place_of_performance_zip4a',
+        'location_country_code': 'place_of_perform_country_c',
+        'country_name': 'place_of_perform_country_n'
         }
 
     legal_entity_location_field_map = {
@@ -54,76 +53,40 @@ class Command(BaseCommand):
     }
 
     def add_arguments(self, parser):
-
-        parser.add_argument('--batch', type=int, default=100000, help='Batch size to fetch from broker db cursor')
-        parser.add_argument('--date', type=str, help='Required: Updated date to choose from to pull from broker')
+        parser.add_argument('--fiscal_year', type=int, help='Fiscal year to chose to pull from Broker')
 
     def handle(self, *args, **options):
+        query_parameters = {}
         start = datetime.now()
-        parameters = {
-            'updated_date': options.get('date'),
-            'batch': options.get('batch')
-        }
-        rows_remaining = True
 
-        if not parameters['updated_date']:
-            raise CommandError('Must specify --date')
+        fiscal_year = options.get('fiscal_year')
+
+        if not fiscal_year:
+            raise CommandError('Must specify --fiscal_year')
+
+        query_parameters['fy_start'] = '10/01/' + str(fiscal_year - 1)
+        query_parameters['fy_end'] = '09/30/' + str(fiscal_year)
 
         db_cursor = connection.cursor()
-        # Creates cursor for foreign data wrapper connecting to broker
-        run_sql_file('usaspending_api/broker/management/commands/get_broker_server.sql', parameters)
 
-        while rows_remaining:
-            # Fetches rows that need to be updated based on batches pulled from the cursor
-            run_sql_file('usaspending_api/broker/management/commands/get_updated_fabs_data.sql', parameters)
+        # Fetches rows that need to be updated based on batches pulled from the cursor
+        run_sql_file('usaspending_api/broker/management/commands/get_updated_fabs_data.sql', query_parameters)
 
-            # Retrieves temporary table with FABS rows that need to be updated
-            db_cursor.execute('SELECT * from fabs_transactions_to_update;')
-            db_rows = dictfetchall(db_cursor)
-            for index, row in enumerate(db_rows, 1):
+        # Retrieves temporary table with FABS rows that need to be updated
+        db_cursor.execute('SELECT * from fabs_transactions_to_update;')
+        db_rows = dictfetchall(db_cursor)
+        for index, row in enumerate(db_rows, 1):
+            if not (index % 1000):
                 logger.info('Updating FABS Rows: Inserting row {} of {} ({})'.format(str(index),
-                                                                                     str(parameters['batch']),
+                                                                                     str(len(db_rows)),
                                                                                      datetime.now() - start))
-                # Arguments to updated in transaction_normalized
-                updated_args = {}
-
-                fabs_qs = TransactionFABS.objects.filter(afa_generated_unique=row['afa_generated_unique'])
-
-                # If FABS transactions does not exist then script will skip row
-                # The FABS nightly loader will create the new transaction
-                if fabs_qs.exists():
-                    self.update_transaction_fabs(row, fabs_qs)
-                else:
-                    continue
-
-                # Creates a new place_of_performance location if the data has changed
-                if row['pop_change']:
-                    self.update_pop_locations_fabs(row)
-                    updated_args['place_of_performance'] = self.pop_location
-
-                # Creates a new recipient if the data has changed or new recipient location
-                if row['le_change'] or row['le_loc_change']:
-                    self.update_le_locations_fabs(row)
-                    self.update_legal_entity_fabs(row)
-                    updated_args['recipient'] = self.legal_entity
-
-                self.update_transaction_normalized(row, updated_args)
-
-            elapsed = time.time() - start
-            logger.info('Time to process {} rows: {} seconds'.format(options.get('batch'), elapsed))
 
             # clear properties for next row
             self.pop_location = None
             self.legal_entity_location = None
-            self.legal_entity = None
-
-            if len(db_rows) < parameters['batch']:
-                rows_remaining = False
-                db_cursor.execute('DROP TABLE fabs_transactions_to_update;')
-                logger.info('Finished with first batch updating FABS: {} rows ({})'.format(str(parameters['batch']),
-                                                                                           datetime.now() - start
-                                                                                           ))
-
+        db_cursor.execute('DROP TABLE fabs_transactions_to_update;')
+        elapsed = datetime.now() - start
+        logger.info('Time to process {} rows: {} seconds'.format(len(db_rows), elapsed))
         logger.info('FABS UPDATE FINISHED!')
 
     @staticmethod
@@ -135,6 +98,7 @@ class Command(BaseCommand):
             as_dict=True)
 
         fab_qs.update(**financial_assistance_data)
+
 
     @staticmethod
     def update_transaction_normalized(row, updated_args):
@@ -153,15 +117,14 @@ class Command(BaseCommand):
 
         if len(updated_args) > 0:
             transaction_id = TransactionFABS.objects.filter(afa_generated_unique=row['afa_generated_unique']) \
-                .values('transaction_id').first()['transaction_id']
+                .values_list('transaction_id', flat=True).first()
 
-            trans_qs = TransactionNormalized.objects.filter(id=transaction_id)
-            trans_qs.update(**updated_args)
+            TransactionNormalized.objects.filter(id=transaction_id).update(**updated_args)
 
-            award_id = TransactionNormalized.objects.filter(id=transaction_id).values('award_id').first['award_id']
+            award_id = TransactionNormalized.objects.filter(id=transaction_id).values_list('id', flat=True).first()
 
             if award_id:
-                Award.objects.filter(latest_transaction_id=transaction_id).update(**updated_args)
+                Award.objects.filter(id=award_id).update(**updated_args)
 
     def update_pop_locations_fabs(self, row):
         """Creates or gets Place of Performance Location"""
