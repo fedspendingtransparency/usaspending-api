@@ -15,9 +15,11 @@ class ExternalDataType(models.Model):
 
 class ExternalDataLoadDate(models.Model):
 
-    last_load_date = models.DateField(primary_key=True)
-    external_data_type = models.ForeignKey(ExternalDataType, models.DO_NOTHING, null=False)
+    external_data_load_date_id = models.AutoField(primary_key=True)
+    last_load_date = models.DateField(blank=False, null=False)
+    external_data_type = models.ForeignKey(ExternalDataType, models.DO_NOTHING, blank=False, null=False)
 
     class Meta:
         managed = True
+        unique_together = (('last_load_date', 'external_data_type'),)
         db_table = 'external_data_load_date'
