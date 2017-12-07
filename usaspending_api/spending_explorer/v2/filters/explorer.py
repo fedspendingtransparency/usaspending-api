@@ -3,6 +3,10 @@ from decimal import Decimal
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
+# Moving agency mapping outside function to reduce response time
+agency_queryet = Agency.objects.filter(toptier_flag=True).values('id', 'toptier_agency__cgac_code')
+agency_ids = {agency['toptier_agency__cgac_code']: agency['id'] for agency in agency_queryet}
+
 
 class Explorer(object):
     def __init__(self, alt_set, queryset):
@@ -85,9 +89,6 @@ class Explorer(object):
 
     def agency(self):
         # Funding Top Tier Agencies Querysets
-        agency_queryet = Agency.objects.filter(toptier_flag=True).values('id', 'toptier_agency__cgac_code')
-        agency_ids = {agency['toptier_agency__cgac_code']: agency['id'] for agency in agency_queryet}
-
         queryset = self.queryset.filter(treasury_account__funding_toptier_agency__isnull=False).annotate(
             type=Value('agency', output_field=CharField()),
             name=Case(
