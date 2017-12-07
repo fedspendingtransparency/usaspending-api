@@ -2,7 +2,7 @@ import logging
 from django.db.models import Q
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.references.models import PSC, NAICS, LegalEntity
+from usaspending_api.references.models import PSC, NAICS
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
@@ -78,14 +78,10 @@ def award_filter(filters, model):
                 queryset &= or_queryset
 
         elif key == "award_type_codes":
-            or_queryset = []
-
             idv_flag = all(i in value for i in contract_type_mapping.keys())
 
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                filter_obj = Q(type__in=or_queryset)
+            if len(value) != 0:
+                filter_obj = Q(type__in=value)
                 if idv_flag:
                     filter_obj |= Q(pulled_from='IDV')
                 queryset &= model.objects.filter(filter_obj)
@@ -160,13 +156,8 @@ def award_filter(filters, model):
             queryset &= or_queryset
 
         elif key == "recipient_type_names":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                duns_values = LegalEntity.objects.filter(business_categories__overlap=or_queryset).\
-                    values('recipient_unique_id')
-                queryset &= model.objects.filter(recipient_unique_id__in=duns_values)
+            if len(value) != 0:
+                queryset &= model.objects.filter(business_categories__overlap=value)
 
         elif key == "place_of_performance_scope":
             if value == "domestic":
