@@ -2,8 +2,6 @@ import logging
 import csv
 import json
 import jsonpickle
-import multiprocessing
-import threading
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -58,8 +56,11 @@ class Command(BaseCommand):
         # update job status
         job.job_status_id = JOB_STATUS_DICT[status_name]
 
-    def poller(self, queue):
+    def handle(self, *args, **options):
         """Run the application."""
+
+        queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
+                          QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
 
         logger.info('Starting SQS polling')
         while True:
@@ -116,17 +117,3 @@ class Command(BaseCommand):
                 for message in messages:
                     if message not in processed_messages:
                         message.change_visibility(VisibilityTimeout=0)
-
-    def handle(self, *args, **options):
-        queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
-                          QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
-
-        cpu_count = multiprocessing.cpu_count()
-        logger.info("Generating {} workers to poll {}".format(cpu_count, settings.BULK_DOWNLOAD_SQS_QUEUE_NAME))
-        worker_threads = []
-        for index in range(0, cpu_count):
-            worker_thread = threading.Thread(target=self.poller, kwargs={"queue": queue})
-            worker_threads.append(worker_thread)
-            worker_thread.start()
-        for thread in worker_threads:
-            thread.join()
