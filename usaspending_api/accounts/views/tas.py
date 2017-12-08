@@ -128,8 +128,7 @@ class TASCategoryQuarterList(SuperLoggingMixin,
         return ordered_queryset
 
 
-class TreasuryAppropriationAccountAutocomplete(SuperLoggingMixin,
-                                               FilterQuerysetMixin,
+class TreasuryAppropriationAccountAutocomplete(FilterQuerysetMixin,
                                                AutocompleteView):
     """Handle autocomplete requests for appropriation account (i.e., TAS) information."""
     serializer_class = TasSerializer

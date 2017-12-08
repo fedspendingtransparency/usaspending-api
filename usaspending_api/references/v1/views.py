@@ -69,6 +69,7 @@ class HashEndpoint(SuperLoggingMixin, APIView):
 class LocationEndpoint(SuperLoggingMixin,
                        FilterQuerysetMixin,
                        DetailViewSet):
+
     """Return an agency"""
     serializer_class = LocationSerializer
 
@@ -97,8 +98,7 @@ class LocationGeoCompleteEndpoint(SuperLoggingMixin, APIView):
         return Response(response_data)
 
 
-class AgencyAutocomplete(SuperLoggingMixin,
-                         FilterQuerysetMixin,
+class AgencyAutocomplete(FilterQuerysetMixin,
                          AutocompleteView):
     """Autocomplete support for agency objects."""
     serializer_class = AgencySerializer
@@ -161,8 +161,7 @@ class RecipientViewSet(SuperLoggingMixin,
         return queryset
 
 
-class RecipientAutocomplete(SuperLoggingMixin,
-                            FilterQuerysetMixin,
+class RecipientAutocomplete(FilterQuerysetMixin,
                             AutocompleteView):
     """Autocomplete support for legal entity (recipient) objects."""
     serializer_class = LegalEntitySerializer
@@ -224,7 +223,7 @@ class AwardAutocompleteViewSet(SuperLoggingMixin, APIView):
         )
 
 
-class GlossaryAutocomplete(SuperLoggingMixin, FilterQuerysetMixin, AutocompleteView):
+class GlossaryAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """Autocomplete support for legal entity (recipient) objects."""
     serializer_class = DefinitionSerializer
 

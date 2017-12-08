@@ -278,7 +278,6 @@ class SuperLoggingMixin(LoggingMixin):
 
         # save to log (as a dict, instead of to the db)
         request.log = {
-            "message": "foo",
             "requested_at": now(),
             "path": request.path,
             "view": view_name,
