@@ -2,7 +2,7 @@ import logging
 from django.db.models import Q
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.references.models import PSC, NAICS
+from usaspending_api.references.models import PSC
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
@@ -14,30 +14,30 @@ def award_filter(filters, model):
 
     queryset = model.objects.filter()
     for key, value in filters.items():
-
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
-        key_list = ['keyword',
-                    'time_period',
-                    'award_type_codes',
-                    'agencies',
-                    'legal_entities',
-                    'recipient_search_text',
-                    'recipient_scope',
-                    'recipient_locations',
-                    'recipient_type_names',
-                    'place_of_performance_scope',
-                    'place_of_performance_locations',
-                    'award_amounts',
-                    'award_ids',
-                    'program_numbers',
-                    'naics_codes',
-                    'psc_codes',
-                    'contract_pricing_type_codes',
-                    'set_aside_type_codes',
-                    'extent_competed_type_codes'
-                    ]
+        key_list = [
+            'keyword',
+            'time_period',
+            'award_type_codes',
+            'agencies',
+            'legal_entities',
+            'recipient_search_text',
+            'recipient_scope',
+            'recipient_locations',
+            'recipient_type_names',
+            'place_of_performance_scope',
+            'place_of_performance_locations',
+            'award_amounts',
+            'award_ids',
+            'program_numbers',
+            'naics_codes',
+            'psc_codes',
+            'contract_pricing_type_codes',
+            'set_aside_type_codes',
+            'extent_competed_type_codes'
+        ]
 
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
@@ -52,22 +52,14 @@ def award_filter(filters, model):
                 Q(parent_recipient_unique_id=keyword)
 
             if keyword.isnumeric():
-                naics_list = NAICS.objects.all().filter(
-                    code__icontains=keyword).values('code')
+                compound_or |= Q(naics_code__contains=keyword)
             else:
-                naics_list = NAICS.objects.all().filter(
-                    description__icontains=keyword).values('code')
+                compound_or |= Q(naics_description__icontains=keyword)
 
-            if naics_list:
-                compound_or |= Q(naics_code__in=naics_list)
-                # naics_q = Q(naics_code__in=naics_list)
-
-            if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
-                psc_list = PSC.objects.all().filter(code=keyword).values('code')
+            if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
+                compound_or |= Q(product_or_service_code__iexact=keyword)
             else:
-                psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
-            if psc_list.exists():
-                compound_or |= Q(product_or_service_code__in=psc_list)
+                compound_or |= Q(product_or_service_description__icontains=keyword)
 
             queryset = queryset.filter(compound_or)
 
@@ -139,11 +131,9 @@ def award_filter(filters, model):
                 queryset &= queryset.filter(or_queryset)
 
         elif key == "legal_entities":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= model.objects.filter(recipient_id__in=or_queryset)
+            in_query = [v for v in value]
+            if len(in_query) != 0:
+                queryset &= model.objects.filter(recipient_id__in=in_query)
 
         elif key == "recipient_search_text":
             if len(value) != 1:
@@ -184,70 +174,54 @@ def award_filter(filters, model):
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
         elif key == "place_of_performance_locations":
-            or_queryset = geocode_filter_locations(
+            queryset &= geocode_filter_locations(
                 'pop', value, model, True
             )
 
-            queryset &= or_queryset
-
         elif key == "award_amounts":
-            success, or_queryset = total_obligation_queryset(value, model)
+            success, and_queryset = total_obligation_queryset(value, model)
             if success:
-                queryset &= or_queryset
+                queryset &= and_queryset
 
         elif key == "award_ids":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= model.objects.filter(award_id__in=or_queryset)
+            in_query = [v for v in value]
+            if len(in_query) != 0:
+                queryset &= model.objects.filter(award_id__in=in_query)
 
         elif key == "program_numbers":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
+            in_query = [v for v in value]
+            if len(in_query) != 0:
                 queryset &= model.objects.filter(
-                    cfda_number__in=or_queryset)
+                    cfda_number__in=in_query)
 
         elif key == "naics_codes":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
+            in_query = [v for v in value]
+            if len(in_query) != 0:
                 queryset &= model.objects.filter(
-                    naics_code__in=or_queryset)
+                    naics_code__in=in_query)
 
         elif key == "psc_codes":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
+            in_query = [v for v in value]
+            if len(in_query) != 0:
                 queryset &= model.objects.filter(
-                    product_or_service_code__in=or_queryset)
+                    product_or_service_code__in=in_query)
 
         elif key == "contract_pricing_type_codes":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
+            in_query = [v for v in value]
+            if len(in_query) != 0:
                 queryset &= model.objects.filter(
-                    type_of_contract_pricing__in=or_queryset)
+                    type_of_contract_pricing__in=in_query)
 
         elif key == "set_aside_type_codes":
-            or_queryset = []
+            or_queryset = Q()
             for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= model.objects.filter(
-                    type_set_aside__in=or_queryset)
+                or_queryset |= Q(type_set_aside__iexact=v)
+            queryset &= queryset.filter(or_queryset)
 
         elif key == "extent_competed_type_codes":
-            or_queryset = []
+            or_queryset = Q()
             for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= model.objects.filter(
-                    extent_competed__in=or_queryset)
+                or_queryset |= Q(extent_competed__iexact=v)
+            queryset &= queryset.filter(or_queryset)
 
     return queryset

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, F
+from django.db.models import Sum, Count, F
 from django.db.models.functions import ExtractMonth, Cast
 from django.db.models import FloatField
 
@@ -30,6 +30,9 @@ from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_ma
     non_loan_assistance_award_mapping
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
+
+from usaspending_api.common.helpers import generate_raw_quoted_query
+from time import perf_counter
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +75,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             fy_set = queryset.values('fiscal_year')\
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
+            print('=======================================')
+            print(request.path)
+            print(generate_raw_quoted_query(fy_set))
+
             for trans in fy_set:
                 key = {'fiscal_year': str(trans['fiscal_year'])}
                 key = str(key)
@@ -82,6 +89,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
                 .values('fiscal_year', 'month') \
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+            print('=======================================')
+            print(request.path)
+            print(generate_raw_quoted_query(month_set))
 
             for trans in month_set:
                 # Convert month to fiscal month
@@ -96,6 +107,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
                 .values('fiscal_year', 'month') \
                 .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+
+            print('=======================================')
+            print(request.path)
+            print(generate_raw_quoted_query(month_set))
 
             for trans in month_set:
                 # Convert month to quarter
@@ -510,6 +525,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
+        print('=======================================')
+        print(self.request.path)
+        print(generate_raw_quoted_query(self.geo_queryset))
         results = [
             {
                 'shape_code': x[loc_lookup],
@@ -550,6 +568,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
+        print('=======================================')
+        print(self.request.path)
+        print(generate_raw_quoted_query(self.geo_queryset))
         results = [
             {
                 'shape_code': code_to_state.get(x[state_lookup])['fips'] +
@@ -565,6 +586,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     def district_results(self, state_lookup):
         # Returns congressional district results formatted for map
+        print('=======================================')
+        print(self.request.path)
+        print(generate_raw_quoted_query(self.geo_queryset))
         results = [
             {
                 'shape_code': code_to_state.get(x[state_lookup])['fips'] +
@@ -601,6 +625,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
+
+        start = perf_counter()
 
         if fields is None:
             raise InvalidParameterException("Missing one or more required request parameters: fields")
@@ -647,9 +673,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 except Exception:
                     raise InvalidParameterException("Invalid field value: {}".format(field))
 
+        has_filters = perf_counter()
+        print('---')
+        print('time to have filters: {}'.format(has_filters - start))
         # build sql query filters
         queryset = award_filter(filters, UniversalAwardView).values(*values)
 
+        has_queryset = perf_counter()
+        print('time to have queryset: {}'.format(has_queryset - has_filters))
         # build response
         response = {"limit": limit, "results": []}
         results = []
@@ -671,6 +702,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 queryset = queryset.order_by(*sort_filters)
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
+
+        print('have sort filters:" {}'.format(has_queryset - perf_counter()))
+
+        print('=======================================')
+        print(request.path)
+        print(generate_raw_quoted_query(limited_queryset))
         has_next = len(limited_queryset) > limit
 
         for award in limited_queryset[:limit]:
@@ -711,14 +748,26 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
-        queryset = spending_by_award_count(filters)
-        # queryset = get_view_queryset(filters=filters, view_name='SummaryAwardView')
-        queryset = queryset.values("category") \
-            .annotate(category_count=Sum('counts')) \
-            .exclude(category__isnull=True)
+        queryset, model = spending_by_award_count(filters)
+        if model == 'SummaryAwardView':
+            queryset = queryset \
+                .values("category") \
+                .annotate(category_count=Sum('counts')) \
+                .exclude(category__isnull=True)
+        else:
+            queryset = queryset \
+                .values('category') \
+                .annotate(category_count=Count('category')) \
+                .values('category', 'category_count') \
+                .exclude(category__isnull=True)
+
+        print('=======================================')
+        print(request.path)
+        print(generate_raw_quoted_query(queryset))
 
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
+        # DB hit here
         for award in queryset:
             result_key = award['category'].replace(' ', '_')
             result_key += 's' if result_key not in ['other', 'loans'] else ''

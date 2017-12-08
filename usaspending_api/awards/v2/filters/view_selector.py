@@ -18,7 +18,7 @@ MATVIEW_SELECTOR = {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
         'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
         'model': SummaryView,
-        'base_model': 'transaction',
+        'base_model': 'transaction'
     },
     'SummaryAwardView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
@@ -191,11 +191,13 @@ def spending_by_geography(filters):
 
 def spending_by_award_count(filters):
     view_chain = ['SummaryAwardView', 'UniversalAwardView']
+    model = None
     for view in view_chain:
         if can_use_view(filters, view):
                 queryset = get_view_queryset(filters, view)
+                model = view
                 break
     else:
         raise InvalidParameterException
 
-    return queryset
+    return queryset, model
