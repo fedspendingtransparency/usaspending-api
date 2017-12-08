@@ -49,6 +49,7 @@ class Command(BaseCommand):
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
                    'WHERE created_at >= %s ' \
+                   'AND (is_active = True OR UPPER(correction_late_delete_ind) = \'D\') ' \
                    'ORDER BY published_award_financial_assistance_id ASC'
         db_args = [date]
 
