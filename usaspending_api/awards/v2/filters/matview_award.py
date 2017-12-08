@@ -117,14 +117,30 @@ def award_filter(filters, model):
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
-            if len(funding_toptier) != 0:
-                queryset &= model.objects.filter(funding_toptier_agency_name__in=funding_toptier)
-            if len(funding_subtier) != 0:
-                queryset &= model.objects.filter(funding_subtier_agency_name__in=funding_subtier)
-            if len(awarding_toptier) != 0:
-                queryset &= model.objects.filter(awarding_toptier_agency_name__in=awarding_toptier)
-            if len(awarding_subtier) != 0:
-                queryset &= model.objects.filter(awarding_subtier_agency_name__in=awarding_subtier)
+
+            if funding_toptier:
+                or_queryset = Q()
+                for name in funding_toptier:
+                    or_queryset |= Q(funding_toptier_agency_name__icontains=name)
+                queryset &= queryset.filter(or_queryset)
+
+            if funding_subtier:
+                or_queryset = Q()
+                for name in funding_subtier:
+                    or_queryset |= Q(funding_subtier_agency_name__icontains=name)
+                queryset &= queryset.filter(or_queryset)
+
+            if awarding_toptier:
+                or_queryset = Q()
+                for name in awarding_toptier:
+                    or_queryset |= Q(awarding_toptier_agency_name__icontains=name)
+                queryset &= queryset.filter(or_queryset)
+
+            if awarding_subtier:
+                or_queryset = Q()
+                for name in awarding_subtier:
+                    or_queryset |= Q(awarding_subtier_agency_name__icontains=name)
+                queryset &= queryset.filter(or_queryset)
 
         elif key == "legal_entities":
             or_queryset = []

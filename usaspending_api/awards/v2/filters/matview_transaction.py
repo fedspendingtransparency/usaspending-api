@@ -49,22 +49,32 @@ def transaction_filter(filters, model):
                 Q(recipient_unique_id=keyword) | \
                 Q(parent_recipient_unique_id=keyword)
 
-            if keyword.isnumeric():
-                naics_list = NAICS.objects.all().filter(
-                    code__icontains=keyword).values('code')
-            else:
-                naics_list = NAICS.objects.all().filter(
-                    description__icontains=keyword).values('code')
+            # if keyword.isnumeric():
+            #     naics_list = NAICS.objects.all().filter(
+            #         code__icontains=keyword).values('code')
+            # else:
+            #     naics_list = NAICS.objects.all().filter(
+            #         description__icontains=keyword).values('code')
 
-            if naics_list:
-                compound_or |= Q(naics_code__in=naics_list)
+            # if naics_list:
+            #     compound_or |= Q(naics_code__in=naics_list)
+
+            # if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
+            #     psc_list = PSC.objects.all().filter(code=keyword).values('code')
+            # else:
+            #     psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
+            # if psc_list.exists():
+            #     compound_or |= Q(product_or_service_code__in=psc_list)
+
+            if keyword.isnumeric():
+                compound_or |= Q(naics_code__contains=keyword)
+            else:
+                compound_or |= Q(naics_description__icontains=keyword)
 
             if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
-                psc_list = PSC.objects.all().filter(code=keyword).values('code')
+                compound_or |= Q(product_or_service_code__icontains=keyword)
             else:
-                psc_list = PSC.objects.all().filter(description__icontains=keyword).values('code')
-            if psc_list.exists():
-                compound_or |= Q(product_or_service_code__in=psc_list)
+                compound_or |= Q(product_or_service_description__icontains=keyword)
 
             queryset = queryset.filter(compound_or)
 
@@ -110,6 +120,7 @@ def transaction_filter(filters, model):
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
+
             if funding_toptier:
                 or_queryset = Q()
                 for name in funding_toptier:
