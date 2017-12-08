@@ -87,11 +87,8 @@ def transaction_filter(filters, model):
 
         # award_type_codes
         elif key == "award_type_codes":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= model.objects.filter(type__in=or_queryset)
+            if len(value) != 0:
+                queryset &= model.objects.filter(type__in=value)
 
         # agencies
         elif key == "agencies":
@@ -191,13 +188,8 @@ def transaction_filter(filters, model):
 
         # recipient_type_names
         elif key == "recipient_type_names":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= model.objects.filter(
-                    business_categories__overlap=value
-                )
+            if len(value) != 0:
+                queryset &= model.objects.filter(business_categories__overlap=value)
 
         # place_of_performance_scope
         elif key == "place_of_performance_scope":

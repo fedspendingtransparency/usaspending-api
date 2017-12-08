@@ -1,7 +1,8 @@
 import random
 
-from usaspending_api.common.models import RequestCatalog
 from usaspending_api.references.models import FilterHash
+from usaspending_api.download.models import DownloadJob
+from usaspending_api.bulk_download.models import BulkDownloadJob
 
 """
 The USAspending API is a *mostly* readonly application. This
@@ -16,15 +17,13 @@ It splits requests among two databases but you can add more.
 class ReadReplicaRouter(object):
 
     def db_for_read(self, model, **hints):
-
-        if model in [RequestCatalog, FilterHash]:
+        # these are the only models we write to; to deal with replication lag just get them from the source db
+        if model in [FilterHash, DownloadJob, BulkDownloadJob]:
             return 'db_source'
         return random.choice(['db_source', 'db_r1'])
 
     def db_for_write(self, model, **hints):
-        """"
-        write to source db only (bc read replicas)
-        """
+        # write to source db only (bc read replicas)
         return 'db_source'
 
     def allow_relation(self, obj1, obj2, **hints):

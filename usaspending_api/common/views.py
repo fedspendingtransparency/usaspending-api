@@ -5,8 +5,7 @@ from rest_framework import status
 from rest_framework_extensions.cache.decorators import cache_response
 from django.views.generic import TemplateView
 
-from usaspending_api.common.models import RequestCatalog
-from usaspending_api.common.mixins import AutocompleteResponseMixin, FilterQuerysetMixin
+from usaspending_api.common.mixins import AutocompleteResponseMixin
 
 from usaspending_api.common.exceptions import InvalidParameterException
 
@@ -20,21 +19,17 @@ class AutocompleteView(AutocompleteResponseMixin,
 
     def get_serializer_context(self):
         context = super(AutocompleteView, self).get_serializer_context()
-        return {'req': self.req, **context}
+        return {**context}
 
     @cache_response()
     def post(self, request, *args, **kwargs):
         try:
-            created, self.req = RequestCatalog.get_or_create_from_request(request)
             response = self.build_response(
                 request, queryset=self.get_queryset(), serializer=self.serializer_class)
             status_code = status.HTTP_200_OK
         except InvalidParameterException as e:
             response = {"message": str(e)}
             status_code = status.HTTP_400_BAD_REQUEST
-            if 'req' in self.__dict__:
-                # If we've made a request catalog, but the request is bad, we need to delete it
-                self.req.delete()
             self.exception_logger.exception(e)
         except Exception as e:
             response = {"message": str(e)}
@@ -55,15 +50,11 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_serializer_context(self):
         context = super(DetailViewSet, self).get_serializer_context()
-        return {'req': self.req, **context}
+        return {**context}
 
     @cache_response()
     def list(self, request, *args, **kwargs):
         try:
-            # First, get the req object from RequestCatalog
-            created, self.req = RequestCatalog.get_or_create_from_request(request)
-            # Pass this to the paginator
-            self.paginator.req = self.req
             # Get the queryset (this will handle filtering and ordering)
             queryset = self.get_queryset()
             # Grab the page of data
@@ -76,22 +67,15 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             response = {"message": str(e)}
             status_code = status.HTTP_400_BAD_REQUEST
             self.exception_logger.exception(e)
-            if 'req' in self.__dict__:
-                # If we've made a request catalog, but the request is bad, we need to delete it
-                self.req.delete()
             return Response(response, status=status_code)
         except Exception as e:
             response = {"message": str(e)}
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
             self.exception_logger.exception(e)
-            if 'req' in self.__dict__:
-                # If we've made a request catalog, but the request is bad, we need to delete it
-                self.req.delete()
             return Response(response, status=status_code)
 
     @cache_response()
     def retrieve(self, request, *args, **kwargs):
-        created, self.req = RequestCatalog.get_or_create_from_request(request)
         return super().retrieve(request, *args, **kwargs)
 
 
