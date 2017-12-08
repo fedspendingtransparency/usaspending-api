@@ -2,6 +2,7 @@ from usaspending_api.awards.models_matviews import SumaryCfdaNumbersView
 from usaspending_api.awards.models_matviews import SumaryNaicsCodesView
 from usaspending_api.awards.models_matviews import SumaryPscCodesView
 from usaspending_api.awards.models_matviews import SummaryAwardView
+from usaspending_api.awards.models_matviews import SummaryTransactionMonthView
 from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
 from usaspending_api.awards.models_matviews import UniversalAwardView
@@ -48,6 +49,7 @@ MATVIEW_SELECTOR = {
         'allowed_filters': [
             'time_period',
             'award_type_codes',
+            'agencies',
             'recipient_scope',
             'recipient_locations',
             'recipient_type_names',
@@ -58,8 +60,27 @@ MATVIEW_SELECTOR = {
             'contract_pricing_type_codes',
             'set_aside_type_codes',
             'extent_competed_type_codes'],
-        'prevent_values': {},
+        'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
         'model': SummaryTransactionView,
+        'base_model': 'transaction'
+    },
+    'SummaryTransactionMonthView': {
+        'allowed_filters': [
+            'time_period',
+            'award_type_codes',
+            'agencies',
+            'recipient_scope',
+            'recipient_locations',
+            'recipient_type_names',
+            'place_of_performance_scope',
+            'place_of_performance_locations',
+            'naics_codes',
+            'psc_codes',
+            'contract_pricing_type_codes',
+            'set_aside_type_codes',
+            'extent_competed_type_codes'],
+        'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
+        'model': SummaryTransactionMonthView,
         'base_model': 'transaction'
     },
     'UniversalTransactionView': {
@@ -142,6 +163,11 @@ def can_use_view(filters, view_name):
         return False
 
     for key, rules in MATVIEW_SELECTOR[view_name]['prevent_values'].items():
+        '''
+            slightly counter-intuitive. The loop is necessary to ensure that
+            allowed filters don't have sub-(tier|scope|child) filters which are
+            not compatible with the materialized view.
+        '''
         if rules['type'] == 'list':
             try:
                 for field in filters[key]:
@@ -149,22 +175,15 @@ def can_use_view(filters, view_name):
                         print('#3 killed for view {} with filters {}'.format(view_name, filters))
                         return False
             except KeyError:
+                # Since a postive equality test produces a False, a key error is acceptable
                 pass
         elif rules['type'] == 'dict':
             raise NotImplementedError
-
-    # agencies = filters.get('agencies')
-    # if agencies:
-    #     for v in agencies:
-    #         if v["tier"] == "subtier":
-    #             return False
-    print('-------------------------------')
-    print("Will use view for {}".format(view_name))
     return True
 
 
 def spending_over_time(filters):
-    view_chain = ['SummaryView', 'SummaryTransactionView', 'UniversalTransactionView']
+    view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'UniversalTransactionView']
     for view in view_chain:
         if can_use_view(filters, view):
                 queryset = get_view_queryset(filters, view)
@@ -176,7 +195,7 @@ def spending_over_time(filters):
 
 
 def spending_by_geography(filters):
-    view_chain = ['SummaryTransactionView', 'UniversalTransactionView']
+    view_chain = ['SummaryTransactionMonthView', 'UniversalTransactionView']
     model = None
     for view in view_chain:
         if can_use_view(filters, view):
