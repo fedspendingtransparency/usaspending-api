@@ -68,7 +68,8 @@ class SubawardAggregateViewSet(SuperLoggingMixin,
         return queryset
 
 
-class SubawardAutocomplete(FilterQuerysetMixin,
+class SubawardAutocomplete(SuperLoggingMixin,
+                           FilterQuerysetMixin,
                            AutocompleteView):
     """Autocomplete support for subaward objects."""
     # Maybe refactor this out into a nifty autocomplete abstract class we can just inherit?
@@ -83,7 +84,7 @@ class SubawardAutocomplete(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class SubawardViewSet(FilterQuerysetMixin, DetailViewSet):
+class SubawardViewSet(SuperLoggingMixin, FilterQuerysetMixin, DetailViewSet):
     """
     ## Spending data by Subaward
 

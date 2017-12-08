@@ -24,6 +24,7 @@ from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference
 # TODO: Find a solution that marks the CFO agencies in the database AND have the correct order
@@ -203,7 +204,7 @@ def verify_requested_columns_available(sources, requested):
         raise InvalidParameterException('Unknown columns: {}'.format(bad_cols))
 
 
-class BulkDownloadListAgenciesViewSet(APIView):
+class BulkDownloadListAgenciesViewSet(SuperLoggingMixin, APIView):
     modified_agencies_list = os.path.join(django.conf.settings.BASE_DIR,
                                           'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
     sub_agencies_map = {}
@@ -281,7 +282,7 @@ class BulkDownloadListAgenciesViewSet(APIView):
         return Response(response_data)
 
 
-class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
+class BulkDownloadAwardsViewSet(SuperLoggingMixin, BaseDownloadViewSet):
     """Generate bulk download for awards"""
 
     def process_filters(self, filters, award_level):
@@ -392,7 +393,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         return tuple(csv_sources)
 
 
-class BulkDownloadStatusViewSet(BaseDownloadViewSet):
+class BulkDownloadStatusViewSet(SuperLoggingMixin, BaseDownloadViewSet):
     def get(self, request):
         """Obtain status for the download job matching the file name provided"""
 

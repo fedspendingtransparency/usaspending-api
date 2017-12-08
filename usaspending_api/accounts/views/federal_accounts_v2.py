@@ -3,9 +3,10 @@ from rest_framework.response import Response
 from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from rest_framework.views import APIView
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 
-class ObjectClassFederalAccountsViewSet(APIView):
+class ObjectClassFederalAccountsViewSet(SuperLoggingMixin, APIView):
     """Returns financial spending data by object class."""
 
     @cache_response()

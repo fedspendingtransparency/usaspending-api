@@ -6,9 +6,10 @@ from usaspending_api.common.views import DetailViewSet
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 
-class FederalAccountByObligationViewSet(DetailViewSet):
+class FederalAccountByObligationViewSet(SuperLoggingMixin, DetailViewSet):
     """Returns a Appropriation Account Balance's obligated amount broken up by TAS."""
     serializer_class = FederalAccountByObligationSerializer
 

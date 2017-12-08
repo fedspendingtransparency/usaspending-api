@@ -4,9 +4,10 @@ from usaspending_api.accounts.serializers import BudgetAuthoritySerializer
 from usaspending_api.accounts.models import BudgetAuthority
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import DetailViewSet
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 
-class BudgetAuthorityViewSet(DetailViewSet):
+class BudgetAuthorityViewSet(SuperLoggingMixin, DetailViewSet):
     """Return historical budget authority for a given agency id"""
 
     serializer_class = BudgetAuthoritySerializer

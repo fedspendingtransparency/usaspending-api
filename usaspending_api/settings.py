@@ -231,7 +231,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/events.log'),
-            'maxBytes': 1024*1024*2,  # 2 MB
+            'maxBytes': 1024*1024*100,  # 100 MB,
             'backupCount': 5,
             'formatter': 'json'
         },

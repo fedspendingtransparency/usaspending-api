@@ -11,12 +11,12 @@ from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
 from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter as matview_transaction_filter
 from usaspending_api.awards.models import Award, TransactionNormalized
-from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.filestreaming import csv_selection
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 
 class BaseDownloadViewSet(APIView):
@@ -108,7 +108,7 @@ def verify_requested_columns_available(sources, requested):
         raise InvalidParameterException('Unknown columns: {}'.format(bad_cols))
 
 
-class DownloadAwardsViewSet(BaseDownloadViewSet):
+class DownloadAwardsViewSet(SuperLoggingMixin, BaseDownloadViewSet):
     def get_csv_sources(self, json_request):
         d1_source = csv_selection.CsvSource('award', 'd1')
         d2_source = csv_selection.CsvSource('award', 'd2')
@@ -122,7 +122,7 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
     DOWNLOAD_NAME = 'awards'
 
 
-class DownloadTransactionsViewSet(BaseDownloadViewSet):
+class DownloadTransactionsViewSet(SuperLoggingMixin, BaseDownloadViewSet):
     def get_csv_sources(self, json_request):
         limit = parse_limit(json_request)
         contract_source = csv_selection.CsvSource('transaction', 'd1')
@@ -145,7 +145,7 @@ class DownloadTransactionsViewSet(BaseDownloadViewSet):
     DOWNLOAD_NAME = 'transactions'
 
 
-class DownloadStatusViewSet(BaseDownloadViewSet):
+class DownloadStatusViewSet(SuperLoggingMixin, BaseDownloadViewSet):
     def get(self, request):
         """Obtain status for the download job matching the file name provided"""
 
@@ -159,7 +159,7 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
         return self.get_download_response(file_name=file_name)
 
 
-class DownloadTransactionCountViewSet(APIView):
+class DownloadTransactionCountViewSet(SuperLoggingMixin, APIView):
 
     @cache_response()
     def post(self, request):
@@ -172,7 +172,7 @@ class DownloadTransactionCountViewSet(APIView):
         filters = json_request.get('filters', {})
         is_over_limit = False
 
-        queryset = matview_transaction_filter(filters, UniversalTransactionView)
+        queryset = matview_transaction_filter(filters)
 
         try:
             queryset[settings.MAX_DOWNLOAD_LIMIT]

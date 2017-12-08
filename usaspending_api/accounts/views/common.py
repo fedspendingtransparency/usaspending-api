@@ -1,11 +1,12 @@
 from usaspending_api.awards.serializers import FinancialAccountsByAwardsSerializer
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
+from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin, SuperLoggingMixin
 from usaspending_api.common.views import DetailViewSet
 from usaspending_api.common.serializers import AggregateSerializer
 
 
-class FinancialAccountsByAwardAggregateViewSet(FilterQuerysetMixin,
+class FinancialAccountsByAwardAggregateViewSet(SuperLoggingMixin,
+                                               FilterQuerysetMixin,
                                                AggregateQuerysetMixin,
                                                DetailViewSet):
 
@@ -21,6 +22,7 @@ class FinancialAccountsByAwardAggregateViewSet(FilterQuerysetMixin,
 
 
 class FinancialAccountsByAwardListViewSet(
+        SuperLoggingMixin,
         FilterQuerysetMixin,
         DetailViewSet):
     """

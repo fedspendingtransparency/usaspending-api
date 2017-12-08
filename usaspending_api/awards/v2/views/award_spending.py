@@ -8,9 +8,10 @@ from usaspending_api.common.helpers import check_valid_toptier_agency
 from usaspending_api.common.views import DetailViewSet
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 
-class AwardTypeAwardSpendingViewSet(DetailViewSet):
+class AwardTypeAwardSpendingViewSet(SuperLoggingMixin, DetailViewSet):
     """Return all award spending by award type for a given fiscal year and agency id"""
 
     serializer_class = AwardTypeAwardSpendingSerializer
@@ -48,7 +49,7 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
         return queryset
 
 
-class RecipientAwardSpendingViewSet(DetailViewSet):
+class RecipientAwardSpendingViewSet(SuperLoggingMixin, DetailViewSet):
     """Return all award spending by recipient for a given fiscal year and agency id"""
 
     serializer_class = RecipientAwardSpendingSerializer

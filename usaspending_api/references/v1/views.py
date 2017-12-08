@@ -17,7 +17,7 @@ from usaspending_api.references.v1.serializers import LocationSerializer, Agency
     CfdaSerializer, DefinitionSerializer, FilterSerializer, HashSerializer
 
 
-class FilterEndpoint(APIView):
+class FilterEndpoint(SuperLoggingMixin, APIView):
     serializer_class = FilterSerializer
 
     def post(self, request, format=None):
@@ -47,7 +47,7 @@ class FilterEndpoint(APIView):
         return Response({'hash': hash})
 
 
-class HashEndpoint(APIView):
+class HashEndpoint(SuperLoggingMixin, APIView):
     serializer_class = HashSerializer
 
     def post(self, request, format=None):
@@ -81,7 +81,7 @@ class LocationEndpoint(SuperLoggingMixin,
         return ordered_queryset
 
 
-class LocationGeoCompleteEndpoint(APIView):
+class LocationGeoCompleteEndpoint(SuperLoggingMixin, APIView):
     """Return location information."""
 
     @cache_response()
@@ -97,7 +97,8 @@ class LocationGeoCompleteEndpoint(APIView):
         return Response(response_data)
 
 
-class AgencyAutocomplete(FilterQuerysetMixin,
+class AgencyAutocomplete(SuperLoggingMixin,
+                         FilterQuerysetMixin,
                          AutocompleteView):
     """Autocomplete support for agency objects."""
     serializer_class = AgencySerializer
@@ -160,7 +161,8 @@ class RecipientViewSet(SuperLoggingMixin,
         return queryset
 
 
-class RecipientAutocomplete(FilterQuerysetMixin,
+class RecipientAutocomplete(SuperLoggingMixin,
+                            FilterQuerysetMixin,
                             AutocompleteView):
     """Autocomplete support for legal entity (recipient) objects."""
     serializer_class = LegalEntitySerializer
@@ -174,7 +176,7 @@ class RecipientAutocomplete(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class GlossaryViewSet(FilterQuerysetMixin, DetailViewSet):
+class GlossaryViewSet(SuperLoggingMixin, FilterQuerysetMixin, DetailViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -189,7 +191,7 @@ class GlossaryViewSet(FilterQuerysetMixin, DetailViewSet):
         return filtered_queryset
 
 
-class AwardAutocompleteViewSet(APIView):
+class AwardAutocompleteViewSet(SuperLoggingMixin, APIView):
 
     @cache_response()
     # TODO: This only returns one response for each, we have duplicate PIIDs that need to be dealt with in the DB
@@ -222,7 +224,7 @@ class AwardAutocompleteViewSet(APIView):
         )
 
 
-class GlossaryAutocomplete(FilterQuerysetMixin, AutocompleteView):
+class GlossaryAutocomplete(SuperLoggingMixin, FilterQuerysetMixin, AutocompleteView):
     """Autocomplete support for legal entity (recipient) objects."""
     serializer_class = DefinitionSerializer
 
