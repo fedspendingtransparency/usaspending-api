@@ -52,6 +52,7 @@ class UniversalTransactionView(models.Model):
     psc_code = models.TextField()
     psc_description = models.TextField()
 
+    pulled_from = models.TextField()
     type_of_contract_pricing = models.TextField()
     type_set_aside = models.TextField()
     extent_competed = models.TextField()
@@ -95,6 +96,7 @@ class SummaryTransactionView(models.Model):
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
+    pulled_from = models.TextField()
     total_obl_bin = models.TextField()
     federal_action_obligation = models.DecimalField(
         max_digits=20, db_index=True, decimal_places=2, blank=True,
@@ -235,6 +237,7 @@ class SummaryAwardView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
+    pulled_from = models.TextField()
     category = models.TextField(blank=True, null=True)
     awarding_agency_id = models.TextField(blank=True, null=True)
     awarding_agency_name = models.TextField(blank=True, null=True)
@@ -263,6 +266,7 @@ class SummaryView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
+    pulled_from = models.TextField()
     awarding_agency_id = models.TextField(blank=True, null=True)
     awarding_agency_name = models.TextField(blank=True, null=True)
     awarding_agency_abbr = models.TextField(blank=True, null=True)
@@ -290,6 +294,7 @@ class SumaryNaicsCodesView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
+    pulled_from = models.TextField()
     naics = models.TextField(blank=True, null=True)
     naics_code = models.TextField(blank=True, null=True)
     naics_description = models.TextField(blank=True, null=True)
@@ -308,6 +313,7 @@ class SumaryPscCodesView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
+    pulled_from = models.TextField()
     product_or_service_code = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
                                                     blank=True, null=True)
@@ -324,6 +330,7 @@ class SumaryCfdaNumbersView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
+    pulled_from = models.TextField()
     cfda_number = models.TextField(blank=True, null=True)
     cfda_title = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
