@@ -7,10 +7,10 @@ from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
-from usaspending_api.awards.v2.filters.matview_award import award_filter
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation
+from usaspending_api.awards.v2.filters.matview_award import award_filter
+from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
+from usaspending_api.common.exceptions import InvalidParameterException
 import logging
 
 logger = logging.getLogger(__name__)
@@ -164,12 +164,10 @@ def can_use_view(filters, view_name):
     try:
         key_list = MATVIEW_SELECTOR[view_name]['allowed_filters']
     except KeyError:
-        print('#1 killed for view {} with filters {}'.format(view_name, filters))
         return False
 
     # Make sure *only* acceptable keys are in the filters for that view_name
     if not set(key_list).issuperset(set(filters.keys())):
-        print('#2 killed for view {} with filters {}'.format(view_name, filters))
         return False
 
     for key, rules in MATVIEW_SELECTOR[view_name]['prevent_values'].items():
@@ -182,7 +180,6 @@ def can_use_view(filters, view_name):
             try:
                 for field in filters[key]:
                     if field[rules['key']] == rules['value']:
-                        print('#3 killed for view {} with filters {}'.format(view_name, filters))
                         return False
             except KeyError:
                 # Since a postive equality test produces a False, a key error is acceptable
@@ -193,7 +190,6 @@ def can_use_view(filters, view_name):
     for key, func in MATVIEW_SELECTOR[view_name]['examine_values'].items():
         try:
             if not func(filters[key]):
-                print('#4 killed for view {} with filters {}'.format(view_name, filters))
                 return False
         except KeyError:
             pass

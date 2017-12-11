@@ -214,13 +214,13 @@ def transaction_filter(filters, model):
         elif key == "set_aside_type_codes":
             or_queryset = Q()
             for v in value:
-                or_queryset |= Q(type_set_aside__iexact=v)
+                or_queryset |= Q(type_set_aside__exact=v)
             queryset = queryset.filter(or_queryset)
 
         elif key == "extent_competed_type_codes":
             or_queryset = Q()
             for v in value:
-                or_queryset |= Q(extent_competed__iexact=v)
+                or_queryset |= Q(extent_competed__exact=v)
             queryset = queryset.filter(or_queryset)
 
     return queryset
