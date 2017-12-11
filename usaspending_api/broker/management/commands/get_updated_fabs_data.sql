@@ -1,12 +1,11 @@
-
 --Create table in website database to select rows in transaction_fabs need to be updated
+--Alter table to include which rows have a change in location for place of performance or recipient
 
 CREATE TABLE public.fabs_transactions_to_update AS
 SELECT * from dblink('broker_server','
     SELECT
         published_award_financial_assistance_id ,
 		afa_generated_unique ,
-		action_date ,
 		legal_entity_address_line1 ,
 		legal_entity_address_line2 ,
 		legal_entity_address_line3 ,
@@ -33,8 +32,7 @@ SELECT * from dblink('broker_server','
 		place_of_perform_county_na ,
 		place_of_performance_forei ,
 		place_of_perform_state_nam ,
-		place_of_performance_zip4a ,
-		updated_at
+		place_of_performance_zip4a
         from published_award_financial_assistance
         where is_active = TRUE and action_date::date >= '%(fy_start)s'::date and
         action_date::date <= '%(fy_end)s'::date;
@@ -42,7 +40,6 @@ SELECT * from dblink('broker_server','
 AS (
 		published_award_financial_assistance_id  text,
         afa_generated_unique  text,
-        action_date  text,
         legal_entity_address_line1  text,
         legal_entity_address_line2  text,
         legal_entity_address_line3  text,
@@ -69,14 +66,12 @@ AS (
         place_of_perform_county_na  text,
         place_of_performance_forei  text,
         place_of_perform_state_nam  text,
-        place_of_performance_zip4a  text,
-        updated_at timestamp
+        place_of_performance_zip4a  text
       )
        EXCEPT
       	SELECT
       	published_award_financial_assistance_id ,
 		afa_generated_unique ,
-		replace(action_date, '-', ''),
 		legal_entity_address_line1 ,
 		legal_entity_address_line2 ,
 		legal_entity_address_line3 ,
@@ -103,11 +98,12 @@ AS (
 		place_of_perform_county_na ,
 		place_of_performance_forei ,
 		place_of_perform_state_nam ,
-		place_of_performance_zip4a ,
-		updated_at
+		place_of_performance_zip4a
         from transaction_fabs
         where action_date::date >= %(fy_start)s::date and
         action_date::date <= %(fy_end)s::date;
+
+
 
 -- Include columns to determine whether we need a place of performance change or recipient location
 ALTER TABLE fabs_transactions_to_update
@@ -116,7 +112,6 @@ add COLUMN pop_change boolean, add COLUMN le_loc_change boolean;
 update fabs_transactions_to_update tmp_fabs
 SET pop_change = (
 	CASE  WHEN
-			transaction_fabs.place_of_performance_city IS DISTINCT FROM tmp_fabs.place_of_performance_city or
 			transaction_fabs.place_of_performance_city IS DISTINCT FROM tmp_fabs.place_of_performance_city or
 			transaction_fabs.place_of_performance_code IS DISTINCT FROM tmp_fabs.place_of_performance_code or
 			transaction_fabs.place_of_performance_congr IS DISTINCT FROM tmp_fabs.place_of_performance_congr or
@@ -151,7 +146,9 @@ SET pop_change = (
 		THEN TRUE ELSE FALSE END
 	)
 	FROM transaction_fabs
-	WHERE tmp_fabs.published_award_financial_assistance_id = transaction_fabs.published_award_financial_assistance_id;
+	WHERE tmp_fabs.afa_generated_unique = transaction_fabs.afa_generated_unique;
+
+
 
 -- Delete rows where there is no transaction in the table
 DELETE FROM fabs_transactions_to_update where pop_change is null and le_loc_change is null;
