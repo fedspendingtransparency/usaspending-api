@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from usaspending_api.common.helpers import get_params_from_req_or_request
 
 
 class LimitableSerializer(serializers.ModelSerializer):
@@ -14,14 +13,16 @@ class LimitableSerializer(serializers.ModelSerializer):
         kwargs_include_fields = kwargs.pop('fields', [])
         kwargs_exclude_fields = kwargs.pop('exclude', [])
 
-        # Intialize now that kwargs have been cleared
+        # Initialize now that kwargs have been cleared
         super(LimitableSerializer, self).__init__(*args, **kwargs)
 
-        # Get params from our request or req object
-        req = self.context.get('req', None)
-        request = self.context.get('request', None)
         current_viewset = self.context.get('view')
-        params = get_params_from_req_or_request(request=request, req=req)
+
+        request = self.context.get('request', None)
+        params = {}
+        if request:
+            params = dict(request.query_params)
+            params.update(dict(request.data))
 
         param_exclude_fields = []
         param_include_fields = []
@@ -166,20 +167,18 @@ class AggregateSerializer(serializers.Serializer):
     def __init__(self, *args, **kwargs):
         super(AggregateSerializer, self).__init__(*args, **kwargs)
 
-        include_fields = None
+        request = self.context.get('request', None)
+        params = dict(request.query_params)
+        params.update(dict(request.data))
 
-        req = self.context.get('req')
-        if req:
-            params = get_params_from_req_or_request(req=req)
-            include_fields = params.get('group')
-            if not isinstance(include_fields, list):
-                include_fields = [include_fields]
+        include_fields = params.get('group')
+        if not isinstance(include_fields, list):
+            include_fields = [include_fields]
 
-        if include_fields:
-            for field_name in include_fields:
-                if field_name is None:
-                    continue
-                self.fields[field_name] = serializers.CharField(required=False)
+        for field_name in include_fields:
+            if field_name is None:
+                continue
+            self.fields[field_name] = serializers.CharField(required=False)
 
     item = serializers.CharField(required=False)
     aggregate = serializers.DecimalField(20, 2)
