@@ -183,9 +183,11 @@ def transaction_filter(filters, model):
                 queryset &= or_queryset
 
         elif key == "award_ids":
-            in_query = [v for v in value]
-            if len(in_query) != 0:
-                queryset &= model.objects.filter(award_id__in=in_query)
+            if len(value) != 0:
+                filter_obj = Q()
+                for val in value:
+                    filter_obj |= Q(piid__icontains=val) | Q(fain__icontains=val) | Q(uri__icontains=val)
+                queryset &= model.objects.filter(filter_obj)
 
         elif key == "program_numbers":
             in_query = [v for v in value]

@@ -586,7 +586,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return True
 
         def __eq__(self, other):
-            return (self is other)
+            return self is other
     Min = MinType()
 
     @cache_response()
@@ -602,9 +602,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
+        # input validation
         if fields is None:
             raise InvalidParameterException("Missing one or more required request parameters: fields")
-        elif fields == []:
+        elif len(fields) == 0:
             raise InvalidParameterException("Please provide a field in the fields request parameter.")
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
@@ -618,84 +619,67 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
-        # get a list of values to queryset on instead of pinging the database for every field
-        values = ["award_id"]
-        if "Award ID" in fields:
-            values += ["fain", "piid", "uri"]
-        if set(filters["award_type_codes"]) <= set(contract_type_mapping):
-            for field in fields:
-                if field == "Award ID":
-                    continue
-                try:
-                    values.append(award_contracts_mapping[field])
-                except Exception:
-                    raise InvalidParameterException("Invalid field value: {}".format(field))
-        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
-            for field in fields:
-                if field == "Award ID":
-                    continue
-                try:
-                    values.append(loan_award_mapping[field])
-                except Exception:
-                    raise InvalidParameterException("Invalid field value: {}".format(field))
-        elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
-            for field in fields:
-                if field == "Award ID":
-                    continue
-                try:
-                    values.append(non_loan_assistance_award_mapping[field])
-                except Exception:
-                    raise InvalidParameterException("Invalid field value: {}".format(field))
-
         # build sql query filters
-        queryset = award_filter(filters, UniversalAwardView).values(*values)
+        queryset = award_filter(filters, UniversalAwardView).values()
 
-        # build response
-        response = {"limit": limit, "results": []}
-        results = []
+        values = {'award_id', 'piid', 'fain', 'uri', 'type'}  # always get at least these columns
+        for field in fields:
+            if award_contracts_mapping.get(field):
+                values.add(award_contracts_mapping.get(field))
+            if loan_award_mapping.get(field):
+                values.add(loan_award_mapping.get(field))
+            if non_loan_assistance_award_mapping.get(field):
+                values.add(non_loan_assistance_award_mapping.get(field))
 
         # Modify queryset to be ordered if we specify "sort" in the request
         if sort:
-            sort_filters = []
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 sort_filters = [award_contracts_mapping[sort]]
             elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
                 sort_filters = [loan_award_mapping[sort]]
             else:  # assistance data
                 sort_filters = [non_loan_assistance_award_mapping[sort]]
+
             if sort == "Award ID":
                 sort_filters = ["piid", "fain", "uri"]
             if order == 'desc':
                 sort_filters = ['-' + sort_filter for sort_filter in sort_filters]
-            if sort_filters:
-                queryset = queryset.order_by(*sort_filters)
+
+            queryset = queryset.order_by(*sort_filters).values(*list(values))
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit
 
+        results = []
         for award in limited_queryset[:limit]:
             row = {"internal_id": award["award_id"]}
-            if set(filters["award_type_codes"]) <= set(contract_type_mapping):
+
+            if award['type'] in contract_type_mapping:
                 for field in fields:
-                    row[field] = award[award_contracts_mapping[field]]
-            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+                    row[field] = award.get(award_contracts_mapping.get(field))
+            elif award['type'] in loan_type_mapping:  # loans
                 for field in fields:
-                    row[field] = award[loan_award_mapping[field]]
-            elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
+                    row[field] = award.get(loan_award_mapping.get(field))
+            elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
                 for field in fields:
-                    row[field] = award[non_loan_assistance_award_mapping[field]]
-            if "Award ID" in fields and not row["Award ID"]:
+                    row[field] = award.get(non_loan_assistance_award_mapping.get(field))
+
+            if "Award ID" in fields:
                 for id_type in ["piid", "fain", "uri"]:
                     if award[id_type]:
                         row["Award ID"] = award[id_type]
                         break
             results.append(row)
 
-        sorted_results = sorted(results, key=lambda result: self.Min if result[sort] is None else result[sort],
-                                reverse=(order == "desc"))
-
-        response["results"] = sorted_results
-        response["page_metadata"] = {'page': page, 'hasNext': has_next}
+        # build response
+        response = {
+            'limit': limit,
+            'results': results,
+            'page_metadata': {
+                'page': page,
+                'hasNext': has_next
+            }
+        }
 
         return Response(response)
 
@@ -710,7 +694,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
-        # build sql query filters
         queryset, model = spending_by_award_count(filters)
         if model == 'SummaryAwardView':
             queryset = queryset \
