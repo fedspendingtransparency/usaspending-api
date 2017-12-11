@@ -1,13 +1,12 @@
 import json
 
-import pytest
 from rest_framework import status
 
 
 def check_autocomplete(route, client, fields, value, expected):
     """Shared internals for autocomplete tests.
 
-    Don't use indpendently; call from a test function
+    Don't use independently; call from a test function
     """
     for match_objs in (0, 1):
         resp = client.post(
@@ -18,6 +17,7 @@ def check_autocomplete(route, client, fields, value, expected):
                 'value': value,
                 'matched_objects': match_objs
             }))
+        print(resp.status_code)
         assert resp.status_code == status.HTTP_200_OK
 
         # TODO: make this a truly v2 endpoint or change frontend to accept 'matched_awards' as top level key

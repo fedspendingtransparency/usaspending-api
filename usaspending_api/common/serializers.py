@@ -19,8 +19,10 @@ class LimitableSerializer(serializers.ModelSerializer):
         current_viewset = self.context.get('view')
 
         request = self.context.get('request', None)
-        params = dict(request.query_params)
-        params.update(dict(request.data))
+        params = {}
+        if request:
+            params = dict(request.query_params)
+            params.update(dict(request.data))
 
         param_exclude_fields = []
         param_include_fields = []
