@@ -20,6 +20,7 @@ def check_valid_toptier_agency(agency_id):
     agency = Agency.objects.filter(id=agency_id, toptier_flag=True).first()
     return agency is not None
 
+
 def generate_fiscal_year(date):
     """ Generate fiscal year based on the date provided """
     year = date.year
