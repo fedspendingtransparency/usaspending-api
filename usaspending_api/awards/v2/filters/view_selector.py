@@ -10,6 +10,7 @@ from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
 from usaspending_api.awards.v2.filters.matview_award import award_filter
+from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,32 +19,37 @@ MATVIEW_SELECTOR = {
     'SummaryView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
         'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
+        'examine_values': {},
         'model': SummaryView,
-        'base_model': 'transaction'
+        'base_model': 'transaction',
     },
     'SummaryAwardView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
         'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
+        'examine_values': {},
         'model': SummaryAwardView,
-        'base_model': 'award'
+        'base_model': 'award',
     },
     'SumaryPscCodesView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
+        'examine_values': {},
         'model': SumaryPscCodesView,
-        'base_model': 'transaction'
+        'base_model': 'transaction',
     },
     'SumaryCfdaNumbersView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
+        'examine_values': {},
         'model': SumaryCfdaNumbersView,
-        'base_model': 'transaction'
+        'base_model': 'transaction',
     },
     'SumaryNaicsCodesView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
+        'examine_values': {},
         'model': SumaryNaicsCodesView,
-        'base_model': 'transaction'
+        'base_model': 'transaction',
     },
     'SummaryTransactionView': {
         'allowed_filters': [
@@ -61,8 +67,9 @@ MATVIEW_SELECTOR = {
             'set_aside_type_codes',
             'extent_competed_type_codes'],
         'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
+        'examine_values': {},
         'model': SummaryTransactionView,
-        'base_model': 'transaction'
+        'base_model': 'transaction',
     },
     'SummaryTransactionMonthView': {
         'allowed_filters': [
@@ -80,8 +87,9 @@ MATVIEW_SELECTOR = {
             'set_aside_type_codes',
             'extent_competed_type_codes'],
         'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
+        'examine_values': {'time_period': can_use_month_aggregation},
         'model': SummaryTransactionMonthView,
-        'base_model': 'transaction'
+        'base_model': 'transaction',
     },
     'UniversalTransactionView': {
         'allowed_filters': [
@@ -105,8 +113,9 @@ MATVIEW_SELECTOR = {
             'set_aside_type_codes',
             'extent_competed_type_codes'],
         'prevent_values': {},
+        'examine_values': {},
         'model': UniversalTransactionView,
-        'base_model': 'transaction'
+        'base_model': 'transaction',
     },
     'UniversalAwardView': {
         'allowed_filters': [
@@ -130,8 +139,9 @@ MATVIEW_SELECTOR = {
             'set_aside_type_codes',
             'extent_competed_type_codes'],
         'prevent_values': {},
+        'examine_values': {},
         'model': UniversalAwardView,
-        'base_model': 'award'
+        'base_model': 'award',
     }
 }
 
@@ -179,11 +189,19 @@ def can_use_view(filters, view_name):
                 pass
         elif rules['type'] == 'dict':
             raise NotImplementedError
+
+    for key, func in MATVIEW_SELECTOR[view_name]['examine_values'].items():
+        try:
+            if not func(filters[key]):
+                print('#4 killed for view {} with filters {}'.format(view_name, filters))
+                return False
+        except KeyError:
+            pass
     return True
 
 
 def spending_over_time(filters):
-    view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'UniversalTransactionView']
+    view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
     for view in view_chain:
         if can_use_view(filters, view):
                 queryset = get_view_queryset(filters, view)
@@ -195,7 +213,7 @@ def spending_over_time(filters):
 
 
 def spending_by_geography(filters):
-    view_chain = ['SummaryTransactionMonthView', 'UniversalTransactionView']
+    view_chain = ['SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
     model = None
     for view in view_chain:
         if can_use_view(filters, view):
