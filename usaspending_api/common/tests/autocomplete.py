@@ -17,7 +17,6 @@ def check_autocomplete(route, client, fields, value, expected):
                 'value': value,
                 'matched_objects': match_objs
             }))
-        print(resp.status_code)
         assert resp.status_code == status.HTTP_200_OK
 
         # TODO: make this a truly v2 endpoint or change frontend to accept 'matched_awards' as top level key
