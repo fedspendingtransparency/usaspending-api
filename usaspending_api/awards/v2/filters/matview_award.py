@@ -110,25 +110,25 @@ def award_filter(filters, model):
                 or_queryset = Q()
                 for name in funding_toptier:
                     or_queryset |= Q(funding_toptier_agency_name__icontains=name)
-                queryset &= queryset.filter(or_queryset)
+                queryset = queryset.filter(or_queryset)
 
             if funding_subtier:
                 or_queryset = Q()
                 for name in funding_subtier:
                     or_queryset |= Q(funding_subtier_agency_name__icontains=name)
-                queryset &= queryset.filter(or_queryset)
+                queryset = queryset.filter(or_queryset)
 
             if awarding_toptier:
                 or_queryset = Q()
                 for name in awarding_toptier:
                     or_queryset |= Q(awarding_toptier_agency_name__icontains=name)
-                queryset &= queryset.filter(or_queryset)
+                queryset = queryset.filter(or_queryset)
 
             if awarding_subtier:
                 or_queryset = Q()
                 for name in awarding_subtier:
                     or_queryset |= Q(awarding_subtier_agency_name__icontains=name)
-                queryset &= queryset.filter(or_queryset)
+                queryset = queryset.filter(or_queryset)
 
         elif key == "legal_entities":
             in_query = [v for v in value]
@@ -216,12 +216,12 @@ def award_filter(filters, model):
             or_queryset = Q()
             for v in value:
                 or_queryset |= Q(type_set_aside__iexact=v)
-            queryset &= queryset.filter(or_queryset)
+            queryset = queryset.filter(or_queryset)
 
         elif key == "extent_competed_type_codes":
             or_queryset = Q()
             for v in value:
                 or_queryset |= Q(extent_competed__iexact=v)
-            queryset &= queryset.filter(or_queryset)
+            queryset = queryset.filter(or_queryset)
 
     return queryset
