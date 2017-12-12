@@ -793,6 +793,12 @@ class TransactionFABS(models.Model):
             transaction.assistance_data = cls(**kwargs)
         return transaction.assistance_data
 
+    @property
+    def cfda_objectives(self):
+        cfda = Cfda.objects.filter(program_number=self.cfda_number).first()
+        if cfda:
+            return cfda.objectives
+
     class Meta:
         db_table = 'transaction_fabs'
         unique_together = (('awarding_sub_tier_agency_c', 'award_modification_amendme', 'fain', 'uri'),)

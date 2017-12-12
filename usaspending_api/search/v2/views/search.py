@@ -15,10 +15,13 @@ from functools import total_ordering
 from datetime import date
 from fiscalyear import FiscalDate
 
-from usaspending_api.awards.v2.filters.view_selector import view_filter, can_use_view
+from usaspending_api.awards.models_matviews import UniversalAwardView
+from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.awards.v2.filters.view_selector import get_view_queryset, can_use_view
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
-from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter, award_filter
+from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
+from usaspending_api.awards.v2.filters.matview_award import award_filter
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, loan_type_mapping, \
     non_loan_assistance_type_mapping
@@ -49,9 +52,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # build sql query filters
         if can_use_view(filters, 'SummaryView'):
-            queryset = view_filter(filters, 'SummaryView')
+            queryset = get_view_queryset(filters, 'SummaryView')
         else:
-            queryset = transaction_filter(filters)
+            queryset = transaction_filter(filters, UniversalTransactionView)
 
         # define what values are needed in the sql query
         queryset = queryset.values('action_date', 'federal_action_obligation')
@@ -159,7 +162,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # filter queryset
-        queryset = transaction_filter(filters)
+        queryset = transaction_filter(filters, UniversalTransactionView)
 
         # filter the transactions by category
         if category == "awarding_agency":
@@ -270,9 +273,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         elif category == "cfda_programs":
             if can_use_view(filters, 'SumaryCfdaNumbersView'):
-                queryset = view_filter(filters, 'SumaryCfdaNumbersView')
-                print('==================')
-                print("Using Ed's Matview")
+                queryset = get_view_queryset(filters, 'SumaryCfdaNumbersView')
                 queryset = queryset \
                     .filter(
                         federal_action_obligation__isnull=False,
@@ -325,7 +326,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif category == "industry_codes":  # industry_codes
             if scope == "psc":
                 if can_use_view(filters, 'SumaryPscCodesView'):
-                    queryset = view_filter(filters, 'SumaryPscCodesView')
+                    queryset = get_view_queryset(filters, 'SumaryPscCodesView')
                     queryset = queryset \
                         .filter(product_or_service_code__isnull=False) \
                         .values(psc_code=F("product_or_service_code")) \
@@ -350,7 +351,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "naics":
                 if can_use_view(filters, 'SumaryNaicsCodesView'):
-                    queryset = view_filter(filters, 'SumaryNaicsCodesView')
+                    queryset = get_view_queryset(filters, 'SumaryNaicsCodesView')
                     queryset = queryset \
                         .filter(naics__isnull=False) \
                         .values(naics_code=F("naics")) \
@@ -426,7 +427,12 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             raise InvalidParameterException("Invalid request parameters: geo_layer")
 
         # build sql query filters
-        self.queryset = transaction_filter(self.filters)
+        if can_use_view(self.filters, 'SummaryTransactionView'):
+            self.matview_model = 'SummaryTransactionView'
+            self.queryset = get_view_queryset(self.filters, self.matview_model)
+        else:
+            self.matview_model = 'UniversalTransactionView'
+            self.queryset = transaction_filter(self.filters, UniversalTransactionView)
 
         if self.geo_layer == 'state':
             # State will have one field (state_code) containing letter A-Z
@@ -442,7 +448,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             state_response = {
                 'scope': self.scope,
                 'geo_layer': self.geo_layer,
-                'results': self.state_results_matview(kwargs, fields_list, loc_lookup)
+                'results': self.state_results(kwargs, fields_list, loc_lookup)
             }
 
             return Response(state_response)
@@ -461,7 +467,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 # County name added to aggregation since consistent in db
                 county_name = '{}_{}'.format(scope_field_name, 'county_name')
                 fields_list.append(county_name)
-                self.county_district_queryset_matview(
+                self.county_district_queryset(
                     kwargs,
                     fields_list,
                     loc_lookup,
@@ -477,7 +483,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
                 return Response(county_response)
             else:
-                self.county_district_queryset_matview(
+                self.county_district_queryset(
                     kwargs,
                     fields_list,
                     loc_lookup,
@@ -493,7 +499,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
                 return Response(district_response)
 
-    def state_results_matview(self, filter_args, lookup_fields, loc_lookup):
+    def state_results(self, filter_args, lookup_fields, loc_lookup):
         # Adding additional state filters if specified
         if self.geo_layer_filters:
             self.queryset = self.queryset.filter(**{'{}__{}'.format(loc_lookup, 'in'): self.geo_layer_filters})
@@ -518,32 +524,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return results
 
-    def state_results(self, filter_args, lookup_fields, loc_lookup):
-        # Adding additional state filters if specified
-        if self.geo_layer_filters:
-            self.queryset = self.queryset.filter(**{'{}__{}'.format(loc_lookup, 'in'): self.geo_layer_filters})
-        else:
-            # Adding null filter for state for specific partial index
-            # when not using geocode_filter
-            filter_args['{}__{}'.format(loc_lookup, 'isnull')] = False
-
-        self.geo_queryset = self.queryset.filter(**filter_args) \
-            .values(*lookup_fields) \
-            .annotate(federal_action_obligation=Sum('federal_action_obligation'))
-
-        # State names are inconsistent in database (upper, lower, null)
-        # Used lookup instead to be consistent
-        results = [
-            {
-                'shape_code': x[loc_lookup],
-                'aggregated_amount': x['federal_action_obligation'],
-                'display_name': code_to_state.get(x[loc_lookup], {'name': 'None'}).get('name').title()
-            } for x in self.geo_queryset
-        ]
-
-        return results
-
-    def county_district_queryset_matview(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
+    def county_district_queryset(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
         # Filtering queryset to specific county/districts if requested
         # Since geo_layer_filters comes as concat of state fips and county/district codes
         # need to split for the geocode_filter
@@ -551,7 +532,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             self.queryset &= geocode_filter_locations(scope_field_name, [
                 {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
                 for x in self.geo_layer_filters
-            ], 'UniversalTransactionView', True)
+            ], self.matview_model, True)
         else:
             # Adding null,USA, not number filters for specific partial index
             # when not using geocode_filter
@@ -571,37 +552,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return self.geo_queryset
 
-    def county_district_queryset(self, kwargs, fields_list, loc_lookup, state_lookup, scope_field_name):
-        # Filtering queryset to specific county/districts if requested
-        # Since geo_layer_filters comes as concat of state fips and county/district codes
-        # need to split for the geocode_filter
-        if self.geo_layer_filters:
-            self.queryset &= geocode_filter_locations(scope_field_name, [
-                {'state': fips_to_code.get(x[:2]), self.geo_layer: x[2:], 'country': 'USA'}
-                for x in self.geo_layer_filters
-            ], 'TransactionNormalized')
-        else:
-            # Adding null,USA, not number filters for specific partial index
-            # when not using geocode_filter
-            kwargs['{}__{}'.format(loc_lookup, 'isnull')] = False
-            kwargs['{}__{}'.format(state_lookup, 'isnull')] = False
-            kwargs['{}__location_country_code'.format(scope_field_name)] = 'USA'
-            kwargs['{}__{}'.format(loc_lookup, 'iregex')] = r'^[0-9]*(\.\d+)?$'
-
-        # Turn county/district codes into float since inconsistent in database
-        # Codes in location table ex: '01', '1', '1.0'
-        # Cast will group codes as a float and will combine inconsistent codes
-        self.geo_queryset = self.queryset.filter(**kwargs) \
-            .values(*fields_list) \
-            .annotate(federal_action_obligation=Sum('federal_action_obligation'),
-                      code_as_float=Cast(loc_lookup, FloatField())
-                      )
-
-        return self.geo_queryset
-
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
-
         results = [
             {
                 'shape_code': code_to_state.get(x[state_lookup])['fips'] +
@@ -638,7 +590,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return True
 
         def __eq__(self, other):
-            return (self is other)
+            return self is other
     Min = MinType()
 
     @cache_response()
@@ -654,9 +606,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
+        # input validation
         if fields is None:
             raise InvalidParameterException("Missing one or more required request parameters: fields")
-        elif fields == []:
+        elif len(fields) == 0:
             raise InvalidParameterException("Please provide a field in the fields request parameter.")
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
@@ -670,84 +623,67 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
-        # get a list of values to queryset on instead of pinging the database for every field
-        values = ["award_id"]
-        if "Award ID" in fields:
-            values += ["fain", "piid", "uri"]
-        if set(filters["award_type_codes"]) <= set(contract_type_mapping):
-            for field in fields:
-                if field == "Award ID":
-                    continue
-                try:
-                    values.append(award_contracts_mapping[field])
-                except Exception:
-                    raise InvalidParameterException("Invalid field value: {}".format(field))
-        elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
-            for field in fields:
-                if field == "Award ID":
-                    continue
-                try:
-                    values.append(loan_award_mapping[field])
-                except Exception:
-                    raise InvalidParameterException("Invalid field value: {}".format(field))
-        elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
-            for field in fields:
-                if field == "Award ID":
-                    continue
-                try:
-                    values.append(non_loan_assistance_award_mapping[field])
-                except Exception:
-                    raise InvalidParameterException("Invalid field value: {}".format(field))
-
         # build sql query filters
-        queryset = award_filter(filters).values(*values)
+        queryset = award_filter(filters, UniversalAwardView).values()
 
-        # build response
-        response = {"limit": limit, "results": []}
-        results = []
+        values = {'award_id', 'piid', 'fain', 'uri', 'type'}  # always get at least these columns
+        for field in fields:
+            if award_contracts_mapping.get(field):
+                values.add(award_contracts_mapping.get(field))
+            if loan_award_mapping.get(field):
+                values.add(loan_award_mapping.get(field))
+            if non_loan_assistance_award_mapping.get(field):
+                values.add(non_loan_assistance_award_mapping.get(field))
 
         # Modify queryset to be ordered if we specify "sort" in the request
         if sort:
-            sort_filters = []
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 sort_filters = [award_contracts_mapping[sort]]
             elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
                 sort_filters = [loan_award_mapping[sort]]
             else:  # assistance data
                 sort_filters = [non_loan_assistance_award_mapping[sort]]
+
             if sort == "Award ID":
                 sort_filters = ["piid", "fain", "uri"]
             if order == 'desc':
                 sort_filters = ['-' + sort_filter for sort_filter in sort_filters]
-            if sort_filters:
-                queryset = queryset.order_by(*sort_filters)
+
+            queryset = queryset.order_by(*sort_filters).values(*list(values))
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit
 
+        results = []
         for award in limited_queryset[:limit]:
             row = {"internal_id": award["award_id"]}
-            if set(filters["award_type_codes"]) <= set(contract_type_mapping):
+
+            if award['type'] in contract_type_mapping:
                 for field in fields:
-                    row[field] = award[award_contracts_mapping[field]]
-            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+                    row[field] = award.get(award_contracts_mapping.get(field))
+            elif award['type'] in loan_type_mapping:  # loans
                 for field in fields:
-                    row[field] = award[loan_award_mapping[field]]
-            elif set(filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):  # assistance data
+                    row[field] = award.get(loan_award_mapping.get(field))
+            elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
                 for field in fields:
-                    row[field] = award[non_loan_assistance_award_mapping[field]]
-            if "Award ID" in fields and not row["Award ID"]:
+                    row[field] = award.get(non_loan_assistance_award_mapping.get(field))
+
+            if "Award ID" in fields:
                 for id_type in ["piid", "fain", "uri"]:
                     if award[id_type]:
                         row["Award ID"] = award[id_type]
                         break
             results.append(row)
 
-        sorted_results = sorted(results, key=lambda result: self.Min if result[sort] is None else result[sort],
-                                reverse=(order == "desc"))
-
-        response["results"] = sorted_results
-        response["page_metadata"] = {'page': page, 'hasNext': has_next}
+        # build response
+        response = {
+            'limit': limit,
+            'results': results,
+            'page_metadata': {
+                'page': page,
+                'hasNext': has_next
+            }
+        }
 
         return Response(response)
 
@@ -762,7 +698,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
-        response = None
         if can_use_view(filters, 'SummaryAwardView'):
             response = self.process_with_view(filters)
         else:
@@ -776,7 +711,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
-        queryset = view_filter(filters=filters, view_name='SummaryAwardView')
+        queryset = get_view_queryset(filters=filters, view_name='SummaryAwardView')
         queryset = queryset.values("category").annotate(category_count=Sum('counts')).exclude(category__isnull=True)
 
         results = self.get_results(queryset)
@@ -790,12 +725,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # build sql query filters
-        queryset = award_filter(filters)
+        queryset = award_filter(filters, UniversalAwardView)
 
         # define what values are needed in the sql query
         queryset = queryset.values('category')
-        queryset = queryset.annotate(category_count=Count('category')).exclude(category__isnull=True). \
-            values('category', 'category_count')
+        queryset = queryset.annotate(category_count=Count('category')).values('category', 'category_count')
 
         results = self.get_results(queryset)
 
