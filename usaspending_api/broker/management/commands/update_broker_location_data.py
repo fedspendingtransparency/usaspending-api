@@ -58,6 +58,7 @@ class Command(BaseCommand):
         query_parameters['fy_end'] = '09/30/' + str(fiscal_year)
 
         # Fetches rows that need to be updated based on batches pulled from the cursor
+        logger.info('Fetching rows to update from broker for FY{} {} data'.format(fiscal_year, website_source.upper()))
         run_sql_file('usaspending_api/broker/management/commands/get_updated_{}_data.sql'.format(website_source), query_parameters)
 
         elapsed = datetime.now() - start
@@ -71,7 +72,8 @@ class Command(BaseCommand):
         logger.info("Completed fetching {} rows to update in {} seconds".format(db_rows, elapsed))
 
         start = datetime.now()
-        run_sql_file('usaspending_api/broker/management/commands/update_{}_location_data.sql'.format(website_source), {})
+        if db_rows > 0:
+            run_sql_file('usaspending_api/broker/management/commands/update_{}_location_data.sql'.format(website_source), {})
 
         elapsed = datetime.now() - start
         logger.info("Completed updating: {} {} rows in {} seconds".format(website_source.upper(), db_rows, elapsed))

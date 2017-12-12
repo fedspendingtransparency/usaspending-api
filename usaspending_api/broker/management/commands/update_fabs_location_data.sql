@@ -28,6 +28,7 @@ SET
     place_of_perform_county_na = broker.place_of_perform_county_na,
     place_of_performance_forei = broker.place_of_performance_forei,
     place_of_perform_state_nam = broker.place_of_perform_state_nam,
+--    place_of_performance_zip5 = broker.place_of_performance_zip5, TODO: Uncomment when fields added to broker
     place_of_performance_zip4a = broker.place_of_performance_zip4a
 FROM
     fabs_transactions_to_update as broker
@@ -82,7 +83,7 @@ SET
     county_name = broker.place_of_perform_county_na,
     foreign_location_description = broker.place_of_performance_forei,
     state_name = broker.place_of_perform_state_nam,
-    zip5 = SUBSTRING(broker.place_of_performance_zip4a FROM '^(\d{5})\-?(\d{4})?$'),
+--    zip5 = broker.place_of_performance_zip5, TODO: Uncomment when fields added to broker
     zip4 = broker.place_of_performance_zip4a
 FROM fabs_transactions_to_update broker,
     transaction_fabs,
