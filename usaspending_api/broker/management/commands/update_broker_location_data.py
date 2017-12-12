@@ -40,8 +40,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         query_parameters = {}
-        start = datetime.now()
-
         fiscal_year = options.get('fiscal_year')
 
         if options.get('contracts', None):
@@ -58,24 +56,21 @@ class Command(BaseCommand):
         query_parameters['fy_end'] = '09/30/' + str(fiscal_year)
 
         # Fetches rows that need to be updated based on batches pulled from the cursor
+        start = datetime.now()
         logger.info('Fetching rows to update from broker for FY{} {} data'.format(fiscal_year, website_source.upper()))
         run_sql_file('usaspending_api/broker/management/commands/get_updated_{}_data.sql'.format(website_source), query_parameters)
 
-        elapsed = datetime.now() - start
         # Retrieves temporary table with FABS rows that need to be updated
-        start = datetime.now()
         db_cursor = connection.cursor()
         db_cursor.execute('SELECT count(*) from {}_transactions_to_update;'.format(website_source))
         db_rows = db_cursor.fetchall()[0][0]
-        elapsed = datetime.now()-start
 
-        logger.info("Completed fetching {} rows to update in {} seconds".format(db_rows, elapsed))
+        logger.info("Completed fetching {} rows to update in {} seconds".format(db_rows, datetime.now()-start))
 
         start = datetime.now()
         if db_rows > 0:
             run_sql_file('usaspending_api/broker/management/commands/update_{}_location_data.sql'.format(website_source), {})
 
-        elapsed = datetime.now() - start
-        logger.info("Completed updating: {} {} rows in {} seconds".format(website_source.upper(), db_rows, elapsed))
+        logger.info("Completed updating: {} {} rows in {} seconds".format(website_source.upper(), db_rows, datetime.now() - start))
 
         db_cursor.execute('DROP TABLE {}_transactions_to_update;'.format(website_source))
