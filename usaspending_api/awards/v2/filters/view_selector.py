@@ -5,9 +5,11 @@ from usaspending_api.awards.models_matviews import SummaryAwardView
 from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 # from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
 # from usaspending_api.awards.v2.filters.matview_award import award_filter
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
+from django.db.models import Q
 import logging
 
 logger = logging.getLogger(__name__)
@@ -113,11 +115,13 @@ def temp_view_filter(filters, view_name):
 
         # award_type_codes
         elif key == "award_type_codes":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= queryset.filter(type__in=or_queryset)
+            idv_flag = all(i in value for i in contract_type_mapping.keys())
+
+            if len(value) != 0:
+                filter_obj = Q(type__in=value)
+                if idv_flag:
+                    filter_obj |= Q(pulled_from='IDV')
+                queryset = queryset.filter(filter_obj)
 
         # agencies
         elif key == "agencies":

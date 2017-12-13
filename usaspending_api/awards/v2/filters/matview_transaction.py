@@ -4,6 +4,7 @@ from django.db.models import Q
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.references.models import PSC, NAICS
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
 logger = logging.getLogger(__name__)
@@ -77,8 +78,13 @@ def transaction_filter(filters, model):
 
         # award_type_codes
         elif key == "award_type_codes":
+            idv_flag = all(i in value for i in contract_type_mapping.keys())
+
             if len(value) != 0:
-                queryset &= model.objects.filter(type__in=value)
+                filter_obj = Q(type__in=value)
+                if idv_flag:
+                    filter_obj |= Q(pulled_from='IDV')
+                queryset &= model.objects.filter(filter_obj)
 
         # agencies
         elif key == "agencies":
