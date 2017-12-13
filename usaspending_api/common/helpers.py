@@ -1,6 +1,7 @@
 import datetime
 import logging
 import time
+from calendar import monthrange
 
 from fiscalyear import *
 
@@ -54,6 +55,16 @@ def dates_are_fiscal_year_bookends(start, end):
     """ Returns true if the start and end dates fall on fiscal year(s) start and end date """
     try:
         if start.month == 10 and start.day == 1 and end.month == 9 and end.day == 30 and start.year < end.year:
+            return True
+    except Exception as e:
+        logger.error(str(e))
+    return False
+
+
+def dates_are_month_bookends(start, end):
+    try:
+        last_day_of_month = monthrange(end.year, end.month)[1]
+        if start.day == 1 and end.day == last_day_of_month:
             return True
     except Exception as e:
         logger.error(str(e))
