@@ -58,7 +58,7 @@ class Command(BaseCommand):
         # Fetches rows that need to be updated based on batches pulled from the cursor
         start = datetime.now()
         logger.info('Fetching rows to update from broker for FY{} {} data'.format(fiscal_year, website_source.upper()))
-        run_sql_file('usaspending_api/broker/management/commands/get_updated_{}_data.sql'.format(website_source), query_parameters)
+        run_sql_file('usaspending_api/broker/management/sql/get_updated_{}_data.sql'.format(website_source), query_parameters)
 
         # Retrieves temporary table with FABS rows that need to be updated
         db_cursor = connection.cursor()
@@ -69,7 +69,7 @@ class Command(BaseCommand):
 
         start = datetime.now()
         if db_rows > 0:
-            run_sql_file('usaspending_api/broker/management/commands/update_{}_location_data.sql'.format(website_source), {})
+            run_sql_file('usaspending_api/broker/management/sql/update_{}_location_data.sql'.format(website_source), {})
 
         logger.info("Completed updating: {} {} rows in {} seconds".format(website_source.upper(), db_rows, datetime.now() - start))
 
