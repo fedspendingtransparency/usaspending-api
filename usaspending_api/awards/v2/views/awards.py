@@ -1,11 +1,12 @@
 from rest_framework_extensions.cache.decorators import cache_response
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 from usaspending_api.awards.models import Award
 
 
-class AwardLastUpdatedViewSet(APIView):
+class AwardLastUpdatedViewSet(SuperLoggingMixin, APIView):
     """Return all award spending by award type for a given fiscal year and agency id"""
 
     @cache_response()

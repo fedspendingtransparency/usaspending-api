@@ -2,9 +2,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.spending_explorer.v2.filters.type_filter import type_filter
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 
-class SpendingExplorerViewSet(APIView):
+class SpendingExplorerViewSet(SuperLoggingMixin, APIView):
 
     @cache_response()
     def post(self, request):

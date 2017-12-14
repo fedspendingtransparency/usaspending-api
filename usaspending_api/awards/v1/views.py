@@ -83,7 +83,7 @@ class SubawardAutocomplete(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class SubawardViewSet(FilterQuerysetMixin, DetailViewSet):
+class SubawardViewSet(SuperLoggingMixin, FilterQuerysetMixin, DetailViewSet):
     """
     ## Spending data by Subaward
 

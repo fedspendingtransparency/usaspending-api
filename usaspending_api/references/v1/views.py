@@ -17,7 +17,7 @@ from usaspending_api.references.v1.serializers import LocationSerializer, Agency
     CfdaSerializer, DefinitionSerializer, FilterSerializer, HashSerializer
 
 
-class FilterEndpoint(APIView):
+class FilterEndpoint(SuperLoggingMixin, APIView):
     serializer_class = FilterSerializer
 
     def post(self, request, format=None):
@@ -47,7 +47,7 @@ class FilterEndpoint(APIView):
         return Response({'hash': hash})
 
 
-class HashEndpoint(APIView):
+class HashEndpoint(SuperLoggingMixin, APIView):
     serializer_class = HashSerializer
 
     def post(self, request, format=None):
@@ -69,6 +69,7 @@ class HashEndpoint(APIView):
 class LocationEndpoint(SuperLoggingMixin,
                        FilterQuerysetMixin,
                        DetailViewSet):
+
     """Return an agency"""
     serializer_class = LocationSerializer
 
@@ -81,7 +82,7 @@ class LocationEndpoint(SuperLoggingMixin,
         return ordered_queryset
 
 
-class LocationGeoCompleteEndpoint(APIView):
+class LocationGeoCompleteEndpoint(SuperLoggingMixin, APIView):
     """Return location information."""
 
     @cache_response()
@@ -174,7 +175,7 @@ class RecipientAutocomplete(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class GlossaryViewSet(FilterQuerysetMixin, DetailViewSet):
+class GlossaryViewSet(SuperLoggingMixin, FilterQuerysetMixin, DetailViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -189,7 +190,7 @@ class GlossaryViewSet(FilterQuerysetMixin, DetailViewSet):
         return filtered_queryset
 
 
-class AwardAutocompleteViewSet(APIView):
+class AwardAutocompleteViewSet(SuperLoggingMixin, APIView):
 
     @cache_response()
     # TODO: This only returns one response for each, we have duplicate PIIDs that need to be dealt with in the DB

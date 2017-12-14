@@ -7,6 +7,7 @@ from usaspending_api.awards.models import LegalEntity
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Agency, Cfda, NAICS, PSC
 from usaspending_api.references.v1.serializers import AgencySerializer
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -51,21 +52,21 @@ class BaseAutocompleteViewSet(APIView):
         )
 
 
-class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
+class AwardingAgencyAutocompleteViewSet(SuperLoggingMixin, BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
         return self.agency_autocomplete(request)
 
 
-class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
+class FundingAgencyAutocompleteViewSet(SuperLoggingMixin, BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
         return self.agency_autocomplete(request)
 
 
-class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
+class CFDAAutocompleteViewSet(SuperLoggingMixin, BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
@@ -87,7 +88,7 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
         )
 
 
-class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
+class NAICSAutocompleteViewSet(SuperLoggingMixin, BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
@@ -110,7 +111,7 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
         )
 
 
-class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
+class PSCAutocompleteViewSet(SuperLoggingMixin, BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
@@ -134,7 +135,7 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
         )
 
 
-class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
+class RecipientAutocompleteViewSet(SuperLoggingMixin, BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):

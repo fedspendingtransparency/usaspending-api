@@ -8,11 +8,13 @@ from django.views.generic import TemplateView
 from usaspending_api.common.mixins import AutocompleteResponseMixin
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 import logging
 
 
-class AutocompleteView(AutocompleteResponseMixin,
+class AutocompleteView(SuperLoggingMixin,
+                       AutocompleteResponseMixin,
                        APIView):
 
     exception_logger = logging.getLogger("exceptions")

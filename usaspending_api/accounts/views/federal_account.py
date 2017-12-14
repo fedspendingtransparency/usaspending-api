@@ -2,7 +2,7 @@ from usaspending_api.accounts.serializers import FederalAccountSerializer
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.mixins import FilterQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
-
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 class FederalAccountAutocomplete(FilterQuerysetMixin,
                                  AutocompleteView):
@@ -18,7 +18,8 @@ class FederalAccountAutocomplete(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class FederalAccountViewSet(FilterQuerysetMixin,
+class FederalAccountViewSet(SuperLoggingMixin,
+                            FilterQuerysetMixin,
                             DetailViewSet):
     """Handle requests for federal account information."""
     serializer_class = FederalAccountSerializer

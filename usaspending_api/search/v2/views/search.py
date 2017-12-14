@@ -15,6 +15,7 @@ from functools import total_ordering
 from datetime import date
 from fiscalyear import FiscalDate
 
+from usaspending_api.common.mixins import SuperLoggingMixin
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.filters.view_selector import get_view_queryset, can_use_view
@@ -33,7 +34,7 @@ from usaspending_api.references.models import Cfda
 logger = logging.getLogger(__name__)
 
 
-class SpendingOverTimeVisualizationViewSet(APIView):
+class SpendingOverTimeVisualizationViewSet(SuperLoggingMixin, APIView):
 
     @cache_response()
     def post(self, request):
@@ -134,7 +135,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return Response(response)
 
 
-class SpendingByCategoryVisualizationViewSet(APIView):
+class SpendingByCategoryVisualizationViewSet(SuperLoggingMixin, APIView):
 
     @cache_response()
     def post(self, request):
@@ -386,7 +387,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 raise InvalidParameterException("recipient type is not yet implemented")
 
 
-class SpendingByGeographyVisualizationViewSet(APIView):
+class SpendingByGeographyVisualizationViewSet(SuperLoggingMixin, APIView):
     geo_layer = None  # State, county or District
     geo_layer_filters = None  # Specific geo_layers to filter on
     queryset = None  # Transaction queryset
@@ -582,7 +583,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         return results
 
 
-class SpendingByAwardVisualizationViewSet(APIView):
+class SpendingByAwardVisualizationViewSet(SuperLoggingMixin, APIView):
 
     @total_ordering
     class MinType(object):
@@ -704,7 +705,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         return Response(response)
 
 
-class SpendingByAwardCountVisualizationViewSet(APIView):
+class SpendingByAwardCountVisualizationViewSet(SuperLoggingMixin, APIView):
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""

@@ -8,9 +8,10 @@ from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.views import DetailViewSet
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.mixins import SuperLoggingMixin
 
 
-class AgenciesFinancialBalancesViewSet(DetailViewSet):
+class AgenciesFinancialBalancesViewSet(SuperLoggingMixin, DetailViewSet):
     """Returns financial balances by agency and the latest quarter for the given fiscal year."""
 
     serializer_class = AgenciesFinancialBalancesSerializer
