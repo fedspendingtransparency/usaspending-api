@@ -1,0 +1,63 @@
+{
+  "final_name": "summary_view",
+  "matview_sql": [
+    "",
+    "SELECT",
+    "  \"transaction_normalized\".\"action_date\",",
+    "  \"transaction_normalized\".\"fiscal_year\",",
+    "  \"awards\".\"type\",",
+    "  \"transaction_fpds\".\"pulled_from\",",
+    "  AT.toptier_agency_id AS awarding_agency_id,",
+    "  AT.name AS awarding_agency_name,",
+    "  AT.abbreviation AS awarding_agency_abbr,",
+    "  FT.toptier_agency_id AS funding_agency_id,",
+    "  FT.name AS funding_agency_name,",
+    "  FT.abbreviation AS funding_agency_abbr,",
+    "  AT.toptier_agency_id AS awarding_toptier_agency_id,",
+    "  AT.name AS awarding_toptier_agency_name,",
+    "  AT.abbreviation AS awarding_toptier_agency_abbreviation,",
+    "  FT.toptier_agency_id AS funding_toptier_agency_id,",
+    "  FT.name AS funding_toptier_agency_name,",
+    "  FT.abbreviation AS funding_toptier_agency_abbreviation,",
+    "  SUM(\"transaction_normalized\".\"federal_action_obligation\") AS \"federal_action_obligation\",",
+    "  COUNT(*) AS counts",
+    "FROM",
+    "  \"transaction_normalized\"",
+    "INNER JOIN",
+    "  \"awards\" ON (\"transaction_normalized\".\"award_id\" = \"awards\".\"id\")",
+    "LEFT OUTER JOIN",
+    "  \"transaction_fpds\" ON (\"transaction_normalized\".\"id\" = \"transaction_fpds\".\"transaction_id\")",
+    "LEFT OUTER JOIN",
+    "  \"agency\" AS AA ON (\"transaction_normalized\".\"awarding_agency_id\" = AA.\"id\")",
+    "LEFT OUTER JOIN",
+    "  \"agency\" AS FA ON (\"transaction_normalized\".\"funding_agency_id\" = FA.\"id\")",
+    "LEFT OUTER JOIN",
+    "  \"toptier_agency\" AS AT ON (AA.\"toptier_agency_id\" = AT.\"toptier_agency_id\")",
+    "LEFT OUTER JOIN",
+    "  \"toptier_agency\" AS FT ON (FA.\"toptier_agency_id\" = FT.\"toptier_agency_id\")",
+    "WHERE",
+    "  \"transaction_normalized\".\"action_date\" >= '2007-10-01'",
+    "GROUP BY",
+    "  \"transaction_normalized\".\"action_date\",",
+    "  \"transaction_normalized\".\"fiscal_year\",",
+    "  \"awards\".\"type\",",
+    "  \"transaction_fpds\".\"pulled_from\",",
+    "  AT.toptier_agency_id,",
+    "  AT.name,",
+    "  AT.abbreviation,",
+    "  FT.toptier_agency_id,",
+    "  FT.name,",
+    "  FT.abbreviation"
+  ],
+  "indexes": [
+  {
+    "name": "action_date",
+    "columns": "\"action_date\" DESC",
+    "type": "BTREE"
+  },{
+    "name": "type",
+    "columns": "\"action_date\" DESC, \"type\"",
+    "type": "BTREE"
+  }
+  ]
+}
