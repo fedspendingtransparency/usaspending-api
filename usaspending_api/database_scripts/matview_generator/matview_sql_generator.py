@@ -4,22 +4,22 @@ import sys
 
 
 TEMPLATE = {
-    'create_matview': 'CREATE MATERIALIZED VIEW {} AS {};',
+    'create_matview': 'CREATE MATERIALIZED VIEW {} AS\n{};',
     'drop_matview': 'DROP MATERIALIZED VIEW IF EXISTS {};',
     'rename_matview': 'ALTER MATERIALIZED VIEW {}{} RENAME TO {};',
     'create_index': 'CREATE INDEX {} ON {} USING {}({} COLLATE "{}");',
     'rename_index': 'ALTER INDEX {}{} RENAME TO {};',
 }
-DEST_FOLDER = '../../../usaspending-api/usaspending_api/database_scripts/matviews/'
+DEST_FOLDER = '../matviews/'
 OVERWRITE_FILE = True
 HEADER = [
-    '-----------------------------------------------------',
-    '-- Created using matview_sql_generator.py          --',
-    '--    The SQL definition is stored in a json file  --',
-    '--    Look in usaspending_config repo for code.    --',
-    '--                                                 --',
-    '--  DO NOT DIRECTLY EDIT THIS FILE!!!              --',
-    '-----------------------------------------------------',
+    '--------------------------------------------------------',
+    '-- Created using matview_sql_generator.py             --',
+    '--    The SQL definition is stored in a json file     --',
+    '--    Look in matview_generator for the code.         --',
+    '--                                                    --',
+    '--  DO NOT DIRECTLY EDIT THIS FILE!!!                 --',
+    '--------------------------------------------------------',
 ]
 
 
@@ -80,6 +80,7 @@ def create_sql_strings(sql_json):
     final_sql_strings.append('')
     final_sql_strings.append(TEMPLATE['rename_matview'].format('', matview_temp_name, matview_name))
     final_sql_strings += rename_new_indexes
+    final_sql_strings.append('')
     return final_sql_strings
 
 

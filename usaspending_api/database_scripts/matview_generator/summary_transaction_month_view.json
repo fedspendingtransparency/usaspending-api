@@ -1,7 +1,6 @@
 {
   "final_name": "summary_transaction_month_view",
   "matview_sql": [
-    "",
     "SELECT",
     "  cast(date_trunc('month', \"transaction_normalized\".\"action_date\") as date) as \"action_date\",",
     "  \"transaction_normalized\".\"fiscal_year\",",
@@ -140,7 +139,7 @@
         "where":"\"type\" IS NOT NULL"
     }, {
         "name": "pulled_from",
-        "columns": "\"action_date\" DESC",
+        "columns": "\"pulled_from\" DESC",
         "where": "\"pulled_from\" IS NOT NULL"
     }, {
         "name": "recipient_country_code",
@@ -159,8 +158,7 @@
         "columns": "\"pop_country_code\""
     }, {
         "name": "pop_state_code",
-        "columns": "\"pop_state_code\"",
-        "type": "BTREE"
+        "columns": "\"pop_state_code\""
     }, {
         "name": "pop_county_code",
         "columns": "\"pop_county_code\""
@@ -174,8 +172,7 @@
         "name": "cfda_num",
         "columns": "\"cfda_number\"",
         "where": "\"cfda_number\" IS NOT NULL"
-    },
-        {
+    }, {
         "name": "cfda_title",
         "columns": "\"cfda_title\"",
         "where": "\"cfda_title\" IS NOT NULL"

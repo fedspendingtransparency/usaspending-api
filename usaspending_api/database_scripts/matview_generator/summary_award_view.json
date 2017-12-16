@@ -1,7 +1,6 @@
 {
   "final_name": "summary_award_view",
   "matview_sql": [
-    "",
     "SELECT",
     "  \"transaction_normalized\".\"action_date\",",
     "  \"transaction_normalized\".\"fiscal_year\",",
@@ -54,14 +53,12 @@
     "  \"action_date\" DESC"
   ],
   "indexes": [
-  {
-    "name": "action_date",
-    "columns": "\"action_date\" DESC",
-    "type": "BTREE"
-  },{
-    "name": "type",
-    "columns": "\"action_date\" DESC, \"type\"",
-    "type": "BTREE"
-  }
+    {
+      "name": "action_date",
+      "columns": "\"action_date\" DESC"
+    },{
+      "name": "type",
+      "columns": "\"action_date\" DESC, \"type\""
+    }
   ]
 }

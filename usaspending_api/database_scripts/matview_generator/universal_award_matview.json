@@ -1,7 +1,6 @@
 {
   "final_name": "universal_award_matview",
   "matview_sql": [
-    "",
     "SELECT",
     "  \"awards\".\"id\" AS award_id,",
     "  \"awards\".\"category\",",

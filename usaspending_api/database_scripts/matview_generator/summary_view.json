@@ -1,7 +1,6 @@
 {
   "final_name": "summary_view",
   "matview_sql": [
-    "",
     "SELECT",
     "  \"transaction_normalized\".\"action_date\",",
     "  \"transaction_normalized\".\"fiscal_year\",",
@@ -50,14 +49,12 @@
     "  FT.abbreviation"
   ],
   "indexes": [
-  {
-    "name": "action_date",
-    "columns": "\"action_date\" DESC",
-    "type": "BTREE"
-  },{
-    "name": "type",
-    "columns": "\"action_date\" DESC, \"type\"",
-    "type": "BTREE"
-  }
+    {
+      "name": "action_date",
+      "columns": "\"action_date\" DESC"
+    },{
+      "name": "type",
+      "columns": "\"action_date\" DESC, \"type\""
+    }
   ]
 }
