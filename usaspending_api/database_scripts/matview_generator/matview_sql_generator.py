@@ -7,7 +7,24 @@ TEMPLATE = {
     'create_matview': 'CREATE MATERIALIZED VIEW {} AS\n{};',
     'drop_matview': 'DROP MATERIALIZED VIEW IF EXISTS {};',
     'rename_matview': 'ALTER MATERIALIZED VIEW {}{} RENAME TO {};',
-    'create_index': 'CREATE INDEX {} ON {} USING {}({} COLLATE "{}");',
+    # CREATE [ UNIQUE ] INDEX [ name ] ON table_name [ USING method ]
+    # ( { column_name | ( expression ) } [ COLLATE collation ] [ opclass ] [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [, ...] )
+    # [ WHERE predicate ]
+    # TODO:
+    '''
+    Allow Unique
+      Restructure columns (change columns to list, allow collation and ordering by column)
+        "columns": [
+          {
+            "column": "<col_name>",
+            "collation": "",
+            "opclass": "",
+            "order": "",
+            "nulls": "",
+          }
+        ]
+    '''
+    'create_index': 'CREATE INDEX {} ON {} USING {}({} COLLATE {} {});',
     'rename_index': 'ALTER INDEX {}{} RENAME TO {};',
 }
 DEST_FOLDER = '../matviews/'
@@ -59,13 +76,17 @@ def create_sql_strings(sql_json):
         tmp_index = final_index + '_temp'
         old_index = final_index + '_old'
 
-        idx_type = 'BTREE'
-        idx_collate = 'default'
-        if 'collate' in idx:
-            idx_collate = idx['collate']
-        if 'type' in idx:
-            idx_type = idx['type']
-        idx_str = TEMPLATE['create_index'].format(tmp_index, matview_temp_name, idx_type, idx['columns'], idx_collate)
+        idx_method = idx.get('method', 'BTREE')
+        idx_collate = idx.get('collate', '"default"')
+        idx_opclass = idx.get('opclass', 'text_ops')
+        idx_str = TEMPLATE['create_index'].format(
+            tmp_index,
+            matview_temp_name,
+            idx_method,
+            idx['columns'],
+            idx_collate,
+            idx_opclass
+        )
         if 'where' in idx:
             idx_str = idx_str[:-1] + ' WHERE {};'.format(idx['where'])
         create_indexes.append(idx_str)

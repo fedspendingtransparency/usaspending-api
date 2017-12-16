@@ -157,8 +157,8 @@
     },{
       "name": "gin_pid",
       "columns": "UPPER(\"piid\")",
-      "type": "GIN",
-      "collate": "gin_trgm_ops"
+      "method": "GIN",
+      "opclass": "gin_trgm_ops"
     },{
       "name": "fain",
       "columns": "\"fain\"",
@@ -169,16 +169,16 @@
     },{
       "name": "gin_fain",
       "columns": "UPPER(\"fain\")",
-      "type": "GIN",
-      "collate": "gin_trgm_ops"
+      "method": "GIN",
+      "opclass": "gin_trgm_ops"
     },{
       "name": "uri",
       "columns": "UPPER(\"uri\") DESC NULLS LAST"
     },{
       "name": "gin_uri",
       "columns": "UPPER(\"uri\")",
-      "type": "GIN",
-      "collate": "gin_trgm_ops"
+      "method": "GIN",
+      "opclass": "gin_trgm_ops"
     },{
       "name": "total_obligation",
       "columns": "\"total_obligation\"",
@@ -198,8 +198,8 @@
     },{
       "name": "gin_recipient_name",
       "columns": "UPPER(\"recipient_name\")",
-      "type": "GIN",
-      "collate": "gin_trgm_ops"
+      "method": "GIN",
+      "opclass": "gin_trgm_ops"
     },{
       "name": "recipient_name",
       "columns": "\"recipient_name\"",
@@ -228,10 +228,10 @@
       "name": "fiscal_year",
       "columns": "\"fiscal_year\""
     },{
-      "name": "ordered_awarding_subtier_agency_name",
+      "name": "awarding_subtier_agency_name",
       "columns": "\"awarding_subtier_agency_name\" DESC NULLS LAST"
     },{
-      "name": "ordered_awarding_toptier_agency_name",
+      "name": "awarding_toptier_agency_name",
       "columns": "\"awarding_toptier_agency_name\" DESC NULLS LAST"
     },{
       "name": "recipient_location_country_code",
@@ -250,7 +250,7 @@
       "columns": "\"recipient_location_zip5\"",
       "where": "\"recipient_location_zip5\" IS NOT NULL"
     },{
-      "name": "recipient_location_congressional_code",
+      "name": "recipient_location_cong_code",
       "columns": "\"recipient_location_congressional_code\"",
       "where": "\"recipient_location_congressional_code\" IS NOT NULL"
     },{
@@ -300,18 +300,18 @@
     },{
       "name": "gin_product_or_service_description",
       "columns": "(\"product_or_service_description\")",
-      "type": "GIN",
-      "collate": "gin_trgm_ops"
+      "method": "GIN",
+      "opclass": "gin_trgm_ops"
     },{
       "name": "naics_code",
       "columns": "\"naics_code\"",
-      "type": "GIN",
-      "collate": "gin_trgm_ops"
+      "method": "GIN",
+      "opclass": "gin_trgm_ops"
     },{
       "name": "naics_description",
       "columns": "UPPER(\"naics_description\")",
-      "type": "GIN",
-      "collate": "gin_trgm_ops"
+      "method": "GIN",
+      "opclass": "gin_trgm_ops"
     }
   ]
 }
