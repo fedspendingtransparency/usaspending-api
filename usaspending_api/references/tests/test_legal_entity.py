@@ -123,7 +123,6 @@ def test_update_business_type_categories(recipients_data):
     assert 'government' in le.business_categories
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_update_business_type_categories_faads_format(recipients_data):
     le = LegalEntity.objects.filter(legal_entity_id=1111).first()
