@@ -601,12 +601,12 @@ class LegalEntity(DataSourceTrackedModel):
         if (
             le.small_business == "1" or
 
-            le.business_types == "R"  # For-Profit Organization (Other than Small Business)
+            le.business_types in ("R", "23")  # For-Profit Organization (Other than Small Business)
         ):
             categories.append("small_business")
 
         if (
-            le.business_types == "Q"  # For-Profit Organization (Other than Small Business)
+            le.business_types in ("Q", "22")  # For-Profit Organization (Other than Small Business)
         ):
             categories.append("other_than_small_business")
 
@@ -820,6 +820,7 @@ class LegalEntity(DataSourceTrackedModel):
         if (
             le.business_types == "M" or  # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
             le.business_types == "N" or  # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
+            le.business_types == "12" or  # FAADS+ equivalent for M/N
 
             le.nonprofit_organization == "1" or
             le.other_not_for_profit_organization == "1" or
@@ -831,7 +832,7 @@ class LegalEntity(DataSourceTrackedModel):
 
         # Higher Education Category
         if (
-            le.business_types == "H" or  # Public/State Controlled Institution of Higher Education
+            le.business_types in ("H", "06") or  # Public/State Controlled Institution of Higher Education
 
             le.state_controlled_institution_of_higher_learning == "1" or
             le.c1862_land_grant_college == "1" or
@@ -840,7 +841,7 @@ class LegalEntity(DataSourceTrackedModel):
         ):
             categories.append("public_institution_of_higher_education")
         if (
-            le.business_types == "O" or  # Private Institution of Higher Education
+            le.business_types in ("O", "20") or  # Private Institution of Higher Education
 
             le.private_university_or_college == "1"
         ):
@@ -876,7 +877,7 @@ class LegalEntity(DataSourceTrackedModel):
         ):
             categories.append("national_government")
         if (
-            le.business_types == "A" or  # State government
+            le.business_types in ("A", "00") or  # State government
             le.business_types == "E" or  # Regional Organization
 
             le.us_state_government == "1" or
@@ -888,10 +889,10 @@ class LegalEntity(DataSourceTrackedModel):
         ):
             categories.append("us_territory_or_possession")
         if (
-            le.business_types == "C" or  # City or Township Government
-            le.business_types == "B" or  # County Government
-            le.business_types == "D" or  # Special District Government
-            le.business_types == "G" or  # Independent School District
+            le.business_types in ("C", "02") or  # City or Township Government
+            le.business_types in ("B", "01") or  # County Government
+            le.business_types in ("D", "04") or  # Special District Government
+            le.business_types in ("G", "05") or  # Independent School District
 
             le.city_local_government == "1" or
             le.county_local_government == "1" or
@@ -904,7 +905,7 @@ class LegalEntity(DataSourceTrackedModel):
         ):
             categories.append("local_government")
         if (
-            le.business_types == "I" or  # Indian/Native American Tribal Government (Federally Recognized)
+            le.business_types in ("I", "11") or  # Indian/Native American Tribal Government (Federally Recognized)
             le.business_types == "J" or  # Indian/Native American Tribal Government (Other than Federally Recognized)
 
             le.us_tribal_government == "1" or
@@ -935,7 +936,7 @@ class LegalEntity(DataSourceTrackedModel):
         # Individuals Category
         if (
             le.individual == "1" or
-            le.business_types == "P"  # Individual
+            le.business_types in ("P", "21") # Individual
         ):
             categories.append("individuals")
         # End Individuals category
