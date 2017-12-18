@@ -128,7 +128,7 @@ LEFT OUTER JOIN
     ON (FA."office_agency_id" = FAO."office_agency_id")
 WHERE
   "awards"."latest_transaction_id" IS NOT NULL AND
-  "awards"."category" IS NOT NULL AND
+  ("awards"."category" IS NOT NULL or ("contract_data"."pulled_from"='IDV')AND
   latest_transaction."action_date" >= '2007-10-01';
 
 
