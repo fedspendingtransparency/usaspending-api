@@ -28,8 +28,10 @@
     "  \"transaction_fabs\".\"cfda_number\",",
     "  \"references_cfda\".\"program_title\" AS \"cfda_title\",",
     "  \"references_cfda\".\"popular_name\" AS \"cfda_popular_name\",",
+    "  -- Added duplicate rows 12/5 remove by Jan 1, 2018",
     "  \"transaction_fpds\".\"product_or_service_code\" AS \"psc_code\",",
     "  \"psc\".\"description\" AS \"psc_description\",",
+    "  -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
     "  \"transaction_fpds\".\"product_or_service_code\",",
     "  \"psc\".\"description\" AS product_or_service_description,",
     "  \"transaction_fpds\".\"naics\" AS \"naics_code\",",
@@ -113,7 +115,7 @@
   ],
   "indexes": [
     {
-        "name": "ordered_date",
+        "name": "ordered_action_date",
         "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {
         "name": "ordered_fy",
@@ -187,7 +189,7 @@
         "name": "type_of_contract",
         "columns": [{"name": "\"type_of_contract_pricing\""}]
     }, {
-        "name": "fy_set_aside",
+        "name": "ordered_fy_set_aside",
         "columns": [
           {"name": "\"fiscal_year\"", "order": "DESC NULLS LAST"},
           {"name": "\"type_set_aside\""}

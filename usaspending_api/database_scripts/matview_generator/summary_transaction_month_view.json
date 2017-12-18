@@ -32,9 +32,10 @@
     "  \"transaction_fabs\".\"cfda_number\",",
     "  \"references_cfda\".\"program_title\" AS \"cfda_title\",",
     "  \"references_cfda\".\"popular_name\" AS \"cfda_popular_name\",",
-
+    "  -- Added duplicate rows 12/5 remove by Jan 1, 2018",
     "  \"transaction_fpds\".\"product_or_service_code\" AS \"psc_code\",",
     "  \"psc\".\"description\" AS \"psc_description\",",
+    "  -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
     "  \"transaction_fpds\".\"product_or_service_code\",",
     "  \"psc\".\"description\" AS product_or_service_description,",
 
@@ -132,7 +133,7 @@
       "name": "fy",
       "columns": [{"name": "\"fiscal_year\"", "order": "DESC NULLS LAST"}]
     }, {
-      "name": "type",
+      "name": "fy_type",
       "columns": [
           {"name": "\"fiscal_year\"", "order": "DESC NULLS LAST"},
           {"name": "\"type\""}
