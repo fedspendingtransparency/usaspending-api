@@ -297,12 +297,11 @@ class ListMonthylDownloadsViewset(APIView):
         response_data = {}
 
         post_data = request.data
-        if post_data:
-            agency_id = post_data['agency'] if 'agency' in post_data else None
-            fiscal_year = post_data['fiscal_year'] if 'fiscal_year' in post_data else None
-            download_type = post_data['type'] if 'type' in post_data else None
+        agency_id = post_data['agency'] if 'agency' in post_data else None
+        fiscal_year = post_data['fiscal_year'] if 'fiscal_year' in post_data else None
+        download_type = post_data['type'] if 'type' in post_data else None
 
-        bulk_download_filters = {'monthly_download': True}
+        bulk_download_filters = {'monthly_download': True, 'job_status_id':'3'}
         if fiscal_year:
             date_range = {'start_date': '{}-10-01'.format(fiscal_year - 1),
                           'end_date': '{}-09-30'.format(fiscal_year)}
@@ -314,10 +313,13 @@ class ListMonthylDownloadsViewset(APIView):
         downloads = (BulkDownloadJob.objects.filter(**bulk_download_filters)
                      .annotate(max_updated_date=Max('update_date'))
                      .filter(update_date=F('max_updated_date'))
-                     .values('file_name', updated_date=Cast('update_date', DateField())))
+                     .values('file_name', 'end_date', updated_date=Cast('update_date', DateField()),
+                             agency_name=F('agency__name'), agency_acronym=F('agency__abbreviation')))
         logger.info('Finding downloads: {}'.format(generate_raw_quoted_query(downloads)))
         for download in downloads:
             download['url'] = self.s3_handler.get_simple_url(file_name=download['file_name'])
+            download['fiscal_year'] = download['end_date'].year
+            del download['end_date']
         response_data['monthly_files'] = downloads
         return Response(response_data)
 
