@@ -48,17 +48,18 @@
     "  AT.abbreviation,",
     "  FT.toptier_agency_id,",
     "  FT.name,",
-    "  FT.abbreviation",
-    "ORDER BY",
-    "  \"action_date\" DESC"
+    "  FT.abbreviation"
   ],
   "indexes": [
     {
       "name": "action_date",
-      "columns": "\"action_date\" DESC"
-    },{
+      "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
+    }, {
       "name": "type",
-      "columns": "\"action_date\" DESC, \"type\""
+      "columns": [
+        {"name": "\"action_date\"", "order": "DESC NULLS LAST"},
+        {"name": "\"type\""}
+      ]
     }
   ]
 }

@@ -125,86 +125,93 @@
   ],
   "indexes": [
     {
-        "name": "date",
-        "columns": "\"action_date\" DESC"
+      "cluster_on_this": true,
+      "name": "date",
+      "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {
-        "name": "fy",
-        "columns": "\"fiscal_year\" DESC"
+      "name": "fy",
+      "columns": [{"name": "\"fiscal_year\"", "order": "DESC NULLS LAST"}]
     }, {
-        "name": "type",
-        "columns": "\"fiscal_year\" DESC, \"type\""
+      "name": "type",
+      "columns": [
+          {"name": "\"fiscal_year\"", "order": "DESC NULLS LAST"},
+          {"name": "\"type\""}
+      ]
     }, {
-        "name": "type",
-        "columns": "\"type\"",
-        "where":"\"type\" IS NOT NULL"
+      "name": "type",
+      "where":"\"type\" IS NOT NULL",
+      "columns": [{"name": "\"type\""}]
     }, {
-        "name": "pulled_from",
-        "columns": "\"pulled_from\" DESC",
-        "where": "\"pulled_from\" IS NOT NULL"
+      "name": "pulled_from",
+      "where": "\"pulled_from\" IS NOT NULL",
+      "columns": [{"name": "\"pulled_from\"", "order": "DESC NULLS LAST"}]
     }, {
-        "name": "recipient_country_code",
-        "columns": "\"recipient_location_country_code\""
+      "name": "recipient_country_code",
+      "columns": [{"name": "\"recipient_location_country_code\""}]
     }, {
-        "name": "recipient_state_code",
-        "columns": "\"recipient_location_state_code\""
+      "name": "recipient_state_code",
+      "columns": [{"name": "\"recipient_location_state_code\""}]
     }, {
-        "name": "recipient_county_code",
-        "columns": "\"recipient_location_county_code\""
+      "name": "recipient_county_code",
+      "columns": [{"name": "\"recipient_location_county_code\""}]
     }, {
-        "name": "recipient_zip",
-        "columns": "\"recipient_location_zip5\""
+      "name": "recipient_zip",
+      "columns": [{"name": "\"recipient_location_zip5\""}]
     }, {
-        "name": "pop_country_code",
-        "columns": "\"pop_country_code\""
+      "name": "pop_country_code",
+      "columns": [{"name": "\"pop_country_code\""}]
     }, {
-        "name": "pop_state_code",
-        "columns": "\"pop_state_code\""
+      "name": "pop_state_code",
+      "columns": [{"name": "\"pop_state_code\""}]
     }, {
-        "name": "pop_county_code",
-        "columns": "\"pop_county_code\""
+      "name": "pop_county_code",
+      "columns": [{"name": "\"pop_county_code\""}]
     }, {
-        "name": "pop_zip",
-        "columns": "\"pop_zip5\""
+      "name": "pop_zip",
+      "columns": [{"name": "\"pop_zip5\""}]
     }, {
-        "name": "award_agency_name",
-        "columns": "\"awarding_toptier_agency_name\""
+      "name": "award_agency_name",
+      "columns": [{"name": "\"awarding_toptier_agency_name\""}]
     }, {
-        "name": "cfda_num",
-        "columns": "\"cfda_number\"",
-        "where": "\"cfda_number\" IS NOT NULL"
+      "name": "cfda_number",
+      "where": "\"cfda_number\" IS NOT NULL",
+      "columns": [{"name": "\"cfda_number\""}]
     }, {
-        "name": "cfda_title",
-        "columns": "\"cfda_title\"",
-        "where": "\"cfda_title\" IS NOT NULL"
+      "name": "cfda_title",
+      "where": "\"cfda_title\" IS NOT NULL",
+      "columns": [{"name": "\"cfda_title\""}]
     }, {
-        "name": "psc2",
-        "columns": "\"psc_code\"",
-        "where": "\"psc_code\" IS NOT NULL"
+      "name": "psc2",
+      "where": "\"psc_code\" IS NOT NULL",
+      "columns": [{"name": "\"psc_code\""}]
     }, {
-        "name": "psc",
-        "columns": "\"product_or_service_code\"",
-        "where": "\"product_or_service_code\" IS NOT NULL"
+      "name": "psc",
+      "where": "\"product_or_service_code\" IS NOT NULL",
+      "columns": [{"name": "\"product_or_service_code\""}]
     }, {
-        "name": "naics",
-        "columns": "\"naics_code\"",
-        "where": "\"naics_code\" IS NOT NULL"
+      "name": "naics",
+      "where": "\"naics_code\" IS NOT NULL",
+      "columns": [{"name": "\"naics_code\""}]
     }, {
-        "name": "total_obl_bin",
-        "columns": "\"total_obl_bin\"",
-        "where": "\"total_obl_bin\" IS NOT NULL"
+      "name": "total_obl_bin",
+      "where": "\"total_obl_bin\" IS NOT NULL",
+      "columns": [{"name": "\"total_obl_bin\""}]
     }, {
-        "name": "type_of_contract",
-        "columns": "\"type_of_contract_pricing\""
+      "name": "type_of_contract",
+      "columns": [{"name": "\"type_of_contract_pricing\""}]
     }, {
-        "name": "fy_set_aside",
-        "columns": "\"fiscal_year\" DESC, \"type_set_aside\""
+      "name": "fy_set_aside",
+      "columns": [
+          {"name": "\"fiscal_year\"", "order": "DESC NULLS LAST"},
+          {"name": "\"type_set_aside\""}
+      ]
     }, {
-        "name": "extent_competed",
-        "columns": "\"extent_competed\""
+      "name": "extent_competed",
+      "columns": [{"name": "\"extent_competed\""}]
     }, {
-        "name": "type_set_aside",
-        "columns": "\"type_set_aside\"",
-        "where": "\"type_set_aside\" IS NOT NULL"
+      "name": "type_set_aside",
+      "where": "\"type_set_aside\" IS NOT NULL",
+      "columns": [{"name": "\"type_set_aside\""}]
     }
   ]
 }

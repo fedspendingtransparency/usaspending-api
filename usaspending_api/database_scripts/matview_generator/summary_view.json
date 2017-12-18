@@ -51,10 +51,13 @@
   "indexes": [
     {
       "name": "action_date",
-      "columns": "\"action_date\" DESC"
+      "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     },{
       "name": "type",
-      "columns": "\"action_date\" DESC, \"type\""
+      "columns": [
+        {"name": "\"action_date\"", "order": "DESC NULLS LAST"},
+        {"name": "\"type\""}
+      ]
     }
   ]
 }
