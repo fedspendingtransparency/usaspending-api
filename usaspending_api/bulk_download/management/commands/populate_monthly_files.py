@@ -22,6 +22,7 @@ award_mappings = {
     'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
 }
 
+
 class Command(BaseCommand):
     # TODO: This function reveals most of bulk download relies on its REST origins.
     #       This and most of Bulk Download will definitely need to be refactored to address this.
