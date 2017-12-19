@@ -301,7 +301,7 @@ class ListMonthylDownloadsViewset(APIView):
         fiscal_year = post_data['fiscal_year'] if 'fiscal_year' in post_data else None
         download_type = post_data['type'] if 'type' in post_data else None
 
-        bulk_download_filters = {'monthly_download': True, 'job_status_id':'3'}
+        bulk_download_filters = {'monthly_download': True, 'job_status_id': '3'}
         if fiscal_year:
             date_range = {'start_date': '{}-10-01'.format(fiscal_year - 1),
                           'end_date': '{}-09-30'.format(fiscal_year)}
