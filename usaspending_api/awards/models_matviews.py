@@ -7,7 +7,6 @@ warnings.simplefilter("ignore", CacheKeyWarning)
 
 
 class UniversalTransactionView(models.Model):
-    # Fields
     transaction_id = models.IntegerField(blank=False, null=False, primary_key=True)
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
@@ -49,8 +48,6 @@ class UniversalTransactionView(models.Model):
     naics_description = models.TextField()
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
-    psc_code = models.TextField()
-    psc_description = models.TextField()
 
     pulled_from = models.TextField()
     type_of_contract_pricing = models.TextField()
@@ -92,7 +89,6 @@ class UniversalTransactionView(models.Model):
 
 
 class SummaryTransactionView(models.Model):
-    # Fields
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -128,8 +124,6 @@ class SummaryTransactionView(models.Model):
     cfda_popular_name = models.TextField()
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
-    psc_code = models.TextField()
-    psc_description = models.TextField()
     naics_code = models.TextField()
     naics_description = models.TextField()
     type_of_contract_pricing = models.TextField()
@@ -171,8 +165,6 @@ class UniversalAwardView(models.Model):
 
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
-    issued_date = models.DateField()
-    issued_date_fiscal_year = models.IntegerField()
 
     face_value_loan_guarantee = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True,
@@ -232,19 +224,11 @@ class UniversalAwardView(models.Model):
 
 
 class SummaryAwardView(models.Model):
-
-    # Fields
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
     category = models.TextField(blank=True, null=True)
-    awarding_agency_id = models.TextField(blank=True, null=True)
-    awarding_agency_name = models.TextField(blank=True, null=True)
-    awarding_agency_abbr = models.TextField(blank=True, null=True)
-    funding_agency_id = models.TextField(blank=True, null=True)
-    funding_agency_name = models.TextField(blank=True, null=True)
-    funding_agency_abbr = models.TextField(blank=True, null=True)
     awarding_toptier_agency_id = models.TextField(blank=True, null=True)
     awarding_toptier_agency_name = models.TextField(blank=True, null=True)
     awarding_toptier_agency_abbreviation = models.TextField(blank=True, null=True)
@@ -261,18 +245,10 @@ class SummaryAwardView(models.Model):
 
 
 class SummaryView(models.Model):
-
-    # Fields
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
-    awarding_agency_id = models.TextField(blank=True, null=True)
-    awarding_agency_name = models.TextField(blank=True, null=True)
-    awarding_agency_abbr = models.TextField(blank=True, null=True)
-    funding_agency_id = models.TextField(blank=True, null=True)
-    funding_agency_name = models.TextField(blank=True, null=True)
-    funding_agency_abbr = models.TextField(blank=True, null=True)
     awarding_toptier_agency_id = models.TextField(blank=True, null=True)
     awarding_toptier_agency_name = models.TextField(blank=True, null=True)
     awarding_toptier_agency_abbreviation = models.TextField(blank=True, null=True)
@@ -288,14 +264,11 @@ class SummaryView(models.Model):
         db_table = 'summary_view'
 
 
-class SumaryNaicsCodesView(models.Model):
-
-    # Fields
+class SummaryNaicsCodesView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
     pulled_from = models.TextField()
-    naics = models.TextField(blank=True, null=True)
     naics_code = models.TextField(blank=True, null=True)
     naics_description = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2,
@@ -307,9 +280,7 @@ class SumaryNaicsCodesView(models.Model):
         db_table = 'summary_view_naics_codes'
 
 
-class SumaryPscCodesView(models.Model):
-
-    # Fields
+class SummaryPscCodesView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -324,9 +295,7 @@ class SumaryPscCodesView(models.Model):
         db_table = 'summary_view_psc_codes'
 
 
-class SumaryCfdaNumbersView(models.Model):
-
-    # Fields
+class SummaryCfdaNumbersView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
@@ -343,8 +312,6 @@ class SumaryCfdaNumbersView(models.Model):
 
 
 class SummaryTransactionMonthView(models.Model):
-
-    # Fields
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
@@ -378,8 +345,6 @@ class SummaryTransactionMonthView(models.Model):
     cfda_popular_name = models.TextField(blank=True, null=True)
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
-    psc_code = models.TextField()
-    psc_description = models.TextField()
     naics_code = models.TextField(blank=True, null=True)
     naics_description = models.TextField(blank=True, null=True)
 
