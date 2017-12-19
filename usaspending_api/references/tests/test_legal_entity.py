@@ -144,5 +144,3 @@ def test_update_business_type_categories_faads_format(recipients_data):
     LegalEntity.update_business_type_categories(le)
     assert 'small_business' in le.business_categories
     assert 'category_business' in le.business_categories
-
-

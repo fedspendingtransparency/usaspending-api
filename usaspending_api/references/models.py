@@ -227,7 +227,13 @@ class FilterHash(models.Model):
 
 class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     location_id = models.AutoField(primary_key=True)
-    location_country_code = models.ForeignKey('RefCountryCode', models.DO_NOTHING, db_column='location_country_code', blank=True, null=True, verbose_name="Country Code")
+    location_country_code = models.ForeignKey(
+        'RefCountryCode',
+        models.DO_NOTHING,
+        db_column='location_country_code',
+        blank=True,
+        null=True,
+        verbose_name="Country Code")
     country_name = models.TextField(blank=True, null=True, verbose_name="Country Name")
     state_code = models.TextField(blank=True, null=True, verbose_name="State Code")
     state_name = models.TextField(blank=True, null=True, verbose_name="State Name")
@@ -243,7 +249,8 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     zip4 = models.TextField(blank=True, null=True, verbose_name="ZIP+4")
     zip_4a = models.TextField(blank=True, null=True)
     congressional_code = models.TextField(blank=True, null=True, verbose_name="Congressional District Code")
-    performance_code = models.TextField(blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
+    performance_code = models.TextField(
+        blank=True, null=True, verbose_name="Primary Place Of Performance Location Code")
     zip_last4 = models.TextField(blank=True, null=True)
     zip5 = models.TextField(blank=True, null=True)
     foreign_postal_code = models.TextField(blank=True, null=True)
@@ -386,14 +393,17 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
                 self.city_name = matched_reference.city_name
                 self.county_name = matched_reference.county_name
             else:
-                logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" + str(q_kwargs) + "; got " + str(matched_reference.count()))
+                logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" +
+                                                str(q_kwargs) + "; got " + str(matched_reference.count()))
 
     class Meta:
-        unique_together = ['location_country_code', 'country_name', 'state_code', 'state_name', 'state_description', 'city_name',
-                           'city_code', 'county_name', 'county_code', 'address_line1', 'address_line2', 'address_line3',
-                           'foreign_location_description', 'zip4', 'congressional_code', 'performance_code', 'zip_last4', 'zip5',
-                           'foreign_postal_code', 'foreign_province', 'foreign_city_name', 'reporting_period_start',
-                           'reporting_period_end']
+        unique_together = [
+            'location_country_code', 'country_name', 'state_code', 'state_name', 'state_description', 'city_name',
+            'city_code', 'county_name', 'county_code', 'address_line1', 'address_line2', 'address_line3',
+            'foreign_location_description', 'zip4', 'congressional_code', 'performance_code', 'zip_last4', 'zip5',
+            'foreign_postal_code', 'foreign_province', 'foreign_city_name', 'reporting_period_start',
+            'reporting_period_end'
+        ]
 
 
 class LegalEntity(DataSourceTrackedModel):
@@ -406,7 +416,6 @@ class LegalEntity(DataSourceTrackedModel):
     vendor_fax_number = models.TextField(blank=True, null=True)
     business_types = models.TextField(blank=True, null=True, db_index=True)
     business_types_description = models.TextField(blank=True, null=True)
-
     '''
     Business Type Categories
     Make sure to leave default as 'list', as [] would share across instances
@@ -509,7 +518,9 @@ class LegalEntity(DataSourceTrackedModel):
     international_organization = models.TextField(blank=True, null=True)
     us_government_entity = models.TextField(blank=True, null=True)
     emerging_small_business = models.TextField(blank=True, null=True)
-    c8a_program_participant = models.TextField(db_column='8a_program_participant', max_length=1, blank=True, null=True, verbose_name="8a Program Participant")  # Field renamed because it wasn't a valid Python identifier.
+    c8a_program_participant = models.TextField(
+        db_column='8a_program_participant', max_length=1, blank=True, null=True,
+        verbose_name="8a Program Participant")  # Field renamed because it wasn't a valid Python identifier.
     sba_certified_8a_joint_venture = models.TextField(blank=True, null=True)
     dot_certified_disadvantage = models.TextField(blank=True, null=True)
     self_certified_small_disadvantaged_business = models.TextField(blank=True, null=True)
@@ -517,9 +528,24 @@ class LegalEntity(DataSourceTrackedModel):
     small_disadvantaged_business = models.TextField(blank=True, null=True)
     the_ability_one_program = models.TextField(blank=True, null=True)
     historically_black_college = models.TextField(blank=True, null=True)
-    c1862_land_grant_college = models.TextField(db_column='1862_land_grant_college', max_length=1, blank=True, null=True, verbose_name="1862 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
-    c1890_land_grant_college = models.TextField(db_column='1890_land_grant_college', max_length=1, blank=True, null=True, verbose_name="1890 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
-    c1994_land_grant_college = models.TextField(db_column='1994_land_grant_college', max_length=1, blank=True, null=True, verbose_name="1894 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
+    c1862_land_grant_college = models.TextField(
+        db_column='1862_land_grant_college',
+        max_length=1,
+        blank=True,
+        null=True,
+        verbose_name="1862 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
+    c1890_land_grant_college = models.TextField(
+        db_column='1890_land_grant_college',
+        max_length=1,
+        blank=True,
+        null=True,
+        verbose_name="1890 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
+    c1994_land_grant_college = models.TextField(
+        db_column='1994_land_grant_college',
+        max_length=1,
+        blank=True,
+        null=True,
+        verbose_name="1894 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
     minority_institution = models.TextField(blank=True, null=True)
     private_university_or_college = models.TextField(blank=True, null=True)
     school_of_forestry = models.TextField(blank=True, null=True)
@@ -527,7 +553,8 @@ class LegalEntity(DataSourceTrackedModel):
     tribal_college = models.TextField(blank=True, null=True)
     veterinary_college = models.TextField(blank=True, null=True)
     educational_institution = models.TextField(blank=True, null=True)
-    alaskan_native_servicing_institution = models.TextField(blank=True, null=True, verbose_name="Alaskan Native Owned Servicing Institution")
+    alaskan_native_servicing_institution = models.TextField(
+        blank=True, null=True, verbose_name="Alaskan Native Owned Servicing Institution")
     community_development_corporation = models.TextField(blank=True, null=True)
     native_hawaiian_servicing_institution = models.TextField(blank=True, null=True)
     domestic_shelter = models.TextField(blank=True, null=True)
@@ -554,12 +581,15 @@ class LegalEntity(DataSourceTrackedModel):
     port_authority = models.TextField(blank=True, null=True)
     transit_authority = models.TextField(blank=True, null=True)
     foreign_owned_and_located = models.TextField(blank=True, null=True)
-    american_indian_owned_business = models.TextField(blank=True, null=True, verbose_name="American Indian Owned Business")
-    alaskan_native_owned_corporation_or_firm = models.TextField(blank=True, null=True, verbose_name="Alaskan Native Owned Corporation or Firm")
+    american_indian_owned_business = models.TextField(
+        blank=True, null=True, verbose_name="American Indian Owned Business")
+    alaskan_native_owned_corporation_or_firm = models.TextField(
+        blank=True, null=True, verbose_name="Alaskan Native Owned Corporation or Firm")
     indian_tribe_federally_recognized = models.TextField(blank=True, null=True)
     native_hawaiian_owned_business = models.TextField(blank=True, null=True)
     tribally_owned_business = models.TextField(blank=True, null=True)
-    asian_pacific_american_owned_business = models.TextField(blank=True, null=True, verbose_name="Asian Pacific American Owned business")
+    asian_pacific_american_owned_business = models.TextField(
+        blank=True, null=True, verbose_name="Asian Pacific American Owned business")
     black_american_owned_business = models.TextField(blank=True, null=True)
     hispanic_american_owned_business = models.TextField(blank=True, null=True)
     native_american_owned_business = models.TextField(blank=True, null=True)
@@ -817,16 +847,13 @@ class LegalEntity(DataSourceTrackedModel):
             le.community_developed_corporation_owned_firm == "1"
         ):
             categories.append("community_development_corporations")
-        if (
-            le.business_types == "M" or  # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
-            le.business_types == "N" or  # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
-            le.business_types == "12" or  # FAADS+ equivalent for M/N
-
-            le.nonprofit_organization == "1" or
-            le.other_not_for_profit_organization == "1" or
-            "foundation" in categories or
-            "community_development_corporations" in categories
-        ):
+        if (le.business_types == "M"
+                or  # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
+                le.business_types == "N"
+                or  # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
+                le.business_types == "12" or  # FAADS+ equivalent for M/N
+                le.nonprofit_organization == "1" or le.other_not_for_profit_organization == "1" or
+                "foundation" in categories or "community_development_corporations" in categories):
             categories.append("nonprofit")
         # End Non-profit category
 
@@ -936,7 +963,7 @@ class LegalEntity(DataSourceTrackedModel):
         # Individuals Category
         if (
             le.individual == "1" or
-            le.business_types in ("P", "21") # Individual
+            le.business_types in ("P", "21")  # Individual
         ):
             categories.append("individuals")
         # End Individuals category
@@ -1108,6 +1135,7 @@ class FrecMap(models.Model):
     class Meta:
         db_table = 'frec_map'
 
+
 class NAICS(models.Model):
     """Based on United States Census Bureau"""
     code = models.TextField(primary_key=True)
@@ -1116,6 +1144,7 @@ class NAICS(models.Model):
     class Meta:
         managed = True
         db_table = 'naics'
+
 
 class PSC(models.Model):
     """Based on https://www.acquisition.gov/PSC_Manual"""
