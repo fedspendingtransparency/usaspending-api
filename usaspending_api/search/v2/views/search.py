@@ -700,9 +700,10 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 .values("category") \
                 .annotate(category_count=Sum('counts'))
         else:
+            # for IDV CONTRACTS category is null. change to contract
             queryset = queryset \
                 .values('category') \
-                .annotate(category_count=Count(Coalesce('category', Value('')))) \
+                .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
                 .values('category', 'category_count')
 
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
@@ -717,10 +718,8 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         # DB hit here
         for award in queryset:
-            if award['category'] in ['', None]:  # IDV CONTRACTS
-                result_key = "contracts"
-            elif award['category'] not in categories.keys():
-                result_key = "other"
+            if award['category'] not in categories.keys():
+                result_key = 'other'
             else:
                 result_key = categories[award['category']]
             results[result_key] = award['category_count']
