@@ -1,13 +1,13 @@
-from usaspending_api.awards.models_matviews import SumaryCfdaNumbersView
-from usaspending_api.awards.models_matviews import SumaryNaicsCodesView
-from usaspending_api.awards.models_matviews import SumaryPscCodesView
+from usaspending_api.awards.models_matviews import SummaryCfdaNumbersView
+from usaspending_api.awards.models_matviews import SummaryNaicsCodesView
+from usaspending_api.awards.models_matviews import SummaryPscCodesView
 from usaspending_api.awards.models_matviews import SummaryAwardView
 from usaspending_api.awards.models_matviews import SummaryTransactionMonthView
 from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
-from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation
+from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation, can_use_total_obligation_enum
 from usaspending_api.awards.v2.filters.matview_award import award_filter
 from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -30,25 +30,25 @@ MATVIEW_SELECTOR = {
         'model': SummaryAwardView,
         'base_model': 'award',
     },
-    'SumaryPscCodesView': {
+    'SummaryPscCodesView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
         'examine_values': {},
-        'model': SumaryPscCodesView,
+        'model': SummaryPscCodesView,
         'base_model': 'transaction',
     },
-    'SumaryCfdaNumbersView': {
+    'SummaryCfdaNumbersView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
         'examine_values': {},
-        'model': SumaryCfdaNumbersView,
+        'model': SummaryCfdaNumbersView,
         'base_model': 'transaction',
     },
-    'SumaryNaicsCodesView': {
+    'SummaryNaicsCodesView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
         'examine_values': {},
-        'model': SumaryNaicsCodesView,
+        'model': SummaryNaicsCodesView,
         'base_model': 'transaction',
     },
     'SummaryTransactionView': {
@@ -81,13 +81,16 @@ MATVIEW_SELECTOR = {
             'recipient_type_names',
             'place_of_performance_scope',
             'place_of_performance_locations',
+            'award_amounts',
             'naics_codes',
             'psc_codes',
             'contract_pricing_type_codes',
             'set_aside_type_codes',
             'extent_competed_type_codes'],
         'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
-        'examine_values': {'time_period': can_use_month_aggregation},
+        'examine_values': {
+            'time_period': can_use_month_aggregation,
+            'award_amounts': can_use_total_obligation_enum},
         'model': SummaryTransactionMonthView,
         'base_model': 'transaction',
     },
