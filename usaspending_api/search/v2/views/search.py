@@ -274,8 +274,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             return Response(response)
 
         elif category == "cfda_programs":
-            if can_use_view(filters, 'SumaryCfdaNumbersView'):
-                queryset = get_view_queryset(filters, 'SumaryCfdaNumbersView')
+            if can_use_view(filters, 'SummaryCfdaNumbersView'):
+                queryset = get_view_queryset(filters, 'SummaryCfdaNumbersView')
                 queryset = queryset \
                     .filter(
                         federal_action_obligation__isnull=False,
@@ -327,8 +327,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         elif category == "industry_codes":  # industry_codes
             if scope == "psc":
-                if can_use_view(filters, 'SumaryPscCodesView'):
-                    queryset = get_view_queryset(filters, 'SumaryPscCodesView')
+                if can_use_view(filters, 'SummaryPscCodesView'):
+                    queryset = get_view_queryset(filters, 'SummaryPscCodesView')
                     queryset = queryset \
                         .filter(product_or_service_code__isnull=False) \
                         .values(psc_code=F("product_or_service_code")) \
@@ -352,8 +352,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 return Response(response)
 
             elif scope == "naics":
-                if can_use_view(filters, 'SumaryNaicsCodesView'):
-                    queryset = get_view_queryset(filters, 'SumaryNaicsCodesView')
+                if can_use_view(filters, 'SummaryNaicsCodesView'):
+                    queryset = get_view_queryset(filters, 'SummaryNaicsCodesView')
                     queryset = queryset \
                         .filter(naics__isnull=False) \
                         .values(naics_code=F("naics")) \

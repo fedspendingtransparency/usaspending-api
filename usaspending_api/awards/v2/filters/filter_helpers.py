@@ -108,3 +108,21 @@ def can_use_month_aggregation(time_period):
     except Exception:
         return False
     return True
+
+
+def can_use_total_obligation_enum(amount_obj):
+    bins = []
+    try:
+        for v in amount_obj:
+            lower_bound = v.get("lower_bound")
+            upper_bound = v.get("upper_bound")
+            for key, limits in WEBSITE_AWARD_BINS.items():
+                if lower_bound == limits['lower'] and upper_bound == limits['upper']:
+                    bins.append(key)
+                    break
+
+        if len(bins) == len(amount_obj):
+            return True
+    except Exception:
+        pass
+    return False

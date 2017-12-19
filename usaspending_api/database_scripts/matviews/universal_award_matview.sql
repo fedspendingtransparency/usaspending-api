@@ -128,7 +128,7 @@ LEFT OUTER JOIN
     ON (FA."office_agency_id" = FAO."office_agency_id")
 WHERE
   "awards"."latest_transaction_id" IS NOT NULL AND
-  "awards"."category" IS NOT NULL AND
+  ("awards"."category" IS NOT NULL or "contract_data"."pulled_from"='IDV')AND
   latest_transaction."action_date" >= '2007-10-01';
 
 
@@ -141,10 +141,10 @@ CREATE INDEX universal_award_matview_type_desc_tmp             ON universal_awar
 CREATE INDEX universal_award_matview_type_descr_desc_tmp       ON universal_award_matview_temp("type_description"                       DESC NULLS LAST);
 
 CREATE INDEX universal_award_matview_piid_tmp                  ON universal_award_matview_temp("piid")                                  WHERE "piid" IS NOT NULL;
-CREATE INDEX universal_award_matview_piid_desc_tmp             ON universal_award_matview_temp(UPPER("piid"                             DESC NULLS LAST));
+CREATE INDEX universal_award_matview_piid_desc_tmp             ON universal_award_matview_temp(UPPER("piid")                            DESC NULLS LAST);
 CREATE INDEX universal_award_matview_piid_gin_trgm_tmp         ON universal_award_matview_temp                                          USING gin (UPPER(piid) gin_trgm_ops);
 CREATE INDEX universal_award_matview_fain_tmp                  ON universal_award_matview_temp("fain")                                  WHERE "fain" IS NOT NULL;
-CREATE INDEX universal_award_matview_fain_desc_tmp             ON universal_award_matview_temp(UPPER("fain"                             DESC NULLS LAST));
+CREATE INDEX universal_award_matview_fain_desc_tmp             ON universal_award_matview_temp(UPPER("fain")                            DESC NULLS LAST);
 CREATE INDEX universal_award_matview_fain_gin_trgm_tmp         ON universal_award_matview_temp                                          USING gin (UPPER(fain) gin_trgm_ops);
 CREATE INDEX universal_award_matview_uri_desc_tmp              ON universal_award_matview_temp("uri"                                    DESC NULLS LAST);
 CREATE INDEX universal_award_matview_uri_gin_trgm_tmp          ON universal_award_matview_temp                                          USING gin (UPPER(uri) gin_trgm_ops);
