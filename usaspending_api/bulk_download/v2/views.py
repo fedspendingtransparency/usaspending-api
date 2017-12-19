@@ -201,6 +201,12 @@ class BaseDownloadViewSet(APIView):
         download_job = BulkDownloadJob(**download_job_kwargs)
         download_job.save()
 
+        logger.info('Added Bulk Download Job: {}\n'
+                    'Filename: {}\n'
+                    'Request Params: {}'.format(download_job.bulk_download_job_id,
+                                                download_job.file_name,
+                                                download_job.json_request))
+
         kwargs = {'download_job': download_job,
                   'file_name': timestamped_file_name,
                   'columns': json_request.get('columns', None),

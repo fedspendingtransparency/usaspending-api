@@ -65,6 +65,12 @@ class Command(BaseCommand):
         download_job = BulkDownloadJob(**download_job_kwargs)
         download_job.save()
 
+        logger.info('Added Bulk Download Job: {}\n'
+                    'Filename: {}\n'
+                    'Request Params: {}'.format(download_job.bulk_download_job_id,
+                                                download_job.file_name,
+                                                download_job.json_request))
+
         kwargs = {
             'download_job': download_job,
             'file_name': file_name,
@@ -72,7 +78,6 @@ class Command(BaseCommand):
             'sources': tuple(sources)
         }
         if not use_sqs:
-            logger.info('Populating {}'.format(file_name))
             csv_selection.write_csvs(**kwargs)
         else:
             # Send a SQS message that will be processed by another server
@@ -196,7 +201,6 @@ class Command(BaseCommand):
                 for award_type in ['contracts', 'assistance']:
                     file_name = '{}_{}_{}_Full_{}.zip'.format(fiscal_year, agency['cgac_code'],
                                                               award_type.capitalize(), updated_date_timestamp)
-                    logger.info('Generating {}'.format(file_name))
                     if placeholders:
                         empty_file = empty_contracts_file if award_type == 'contracts' else empty_asssistance_file
                         self.upload_placeholder(file_name=file_name, empty_file=empty_file)
