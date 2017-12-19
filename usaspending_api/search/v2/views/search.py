@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, F
-from django.db.models.functions import ExtractMonth, Cast
+from django.db.models import Sum, Count, F, Value
+from django.db.models.functions import ExtractMonth, Cast, Coalesce
 from django.db.models import FloatField
 
 from collections import OrderedDict
@@ -702,7 +702,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         else:
             queryset = queryset \
                 .values('category') \
-                .annotate(category_count=Count('category')) \
+                .annotate(category_count=Count(Coalesce('category', Value('')))) \
                 .values('category', 'category_count')
 
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
@@ -717,7 +717,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         # DB hit here
         for award in queryset:
-            if award['category'] is None:  # IDV CONTRACTS
+            if award['category'] in ['', None]:  # IDV CONTRACTS
                 result_key = "contracts"
             elif award['category'] not in categories.keys():
                 result_key = "other"
