@@ -847,13 +847,16 @@ class LegalEntity(DataSourceTrackedModel):
             le.community_developed_corporation_owned_firm == "1"
         ):
             categories.append("community_development_corporations")
-        if (le.business_types == "M"
-                or  # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
-                le.business_types == "N"
-                or  # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
-                le.business_types == "12" or  # FAADS+ equivalent for M/N
-                le.nonprofit_organization == "1" or le.other_not_for_profit_organization == "1" or
-                "foundation" in categories or "community_development_corporations" in categories):
+        if (
+            le.business_types == "M" or  # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
+            le.business_types == "N" or  # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
+            le.business_types == "12" or  # FAADS+ equivalent for M/N
+
+            le.nonprofit_organization == "1" or
+            le.other_not_for_profit_organization == "1" or
+            "foundation" in categories or
+            "community_development_corporations" in categories
+        ):
             categories.append("nonprofit")
         # End Non-profit category
 
