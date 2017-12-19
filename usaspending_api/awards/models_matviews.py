@@ -345,8 +345,6 @@ class SummaryTransactionMonthView(models.Model):
     cfda_popular_name = models.TextField(blank=True, null=True)
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
-    psc_code = models.TextField()
-    psc_description = models.TextField()
     naics_code = models.TextField(blank=True, null=True)
     naics_description = models.TextField(blank=True, null=True)
 
