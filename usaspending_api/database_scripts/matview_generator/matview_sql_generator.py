@@ -111,16 +111,16 @@ def create_index_string(matview_name, index_name, idx):
 
 
 def create_sql_strings(sql_json):
-    ''' Steps:
-        1. Drop temp-named matviews
-        2. Create matview
-        3. Create temp indexes
-        4. Rename existing matview, append _old
-        5. Rename all existing matview indexes
-        6. Rename new matview
-        7. Rename new matview indexes
-        8. Cluster matview on index
-        9. vacuum analyze verbose
+    ''' Desired ordering of steps for final SQL:
+        1. Drop existing "_temp" and "_old" matviews
+        2. Create new matview
+        3. Create indexes for new matview
+        4. (optional) Cluster matview on index
+        5. vacuum analyze verbose <matview>
+        6. Rename existing matview, append with _old
+        7. Rename all existing matview indexes to avoid name collisions
+        8. Rename new matview
+        9. Rename new matview indexes
     '''
     unique_name_list = []
     final_sql_strings = []
