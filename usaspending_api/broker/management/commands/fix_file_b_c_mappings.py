@@ -53,8 +53,7 @@ class Command(BaseCommand):
         broker_connection = connections['data_broker'].cursor()
         broker_connection.execute('SELECT submission_id from submission sub ' +
                                   'WHERE sub.publish_status_id = 2 ORDER BY submission_id;')
-        # return broker_connection.fetchall()
-        return [(3962,)]
+        return broker_connection.fetchall()
 
     @staticmethod
     def get_list_of_broker_cols(website_cols):
