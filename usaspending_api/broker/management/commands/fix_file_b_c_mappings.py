@@ -177,7 +177,7 @@ class Command(BaseCommand):
         submissions_to_update = self.get_list_of_submissions()
         logger.info('Finished retrieving submission in {} seconds'.format(str(start-timeit.default_timer())))
 
-        for submission in submissions_to_update[:4]:
+        for submission in submissions_to_update:
             submission_id = submission[0]
             logger.info('Loading rows data to update File B submission {}'.format(submission_id))
 
