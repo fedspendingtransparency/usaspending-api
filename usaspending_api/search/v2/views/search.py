@@ -698,25 +698,31 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if model == 'SummaryAwardView':
             queryset = queryset \
                 .values("category") \
-                .annotate(category_count=Sum('counts')) \
-                .exclude(latest_transaction__isnull=True)
+                .annotate(category_count=Sum('counts'))
         else:
             queryset = queryset \
                 .values('category') \
                 .annotate(category_count=Count('category')) \
-                .values('category', 'category_count') \
-                .exclude(latest_transaction__isnull=True)
+                .values('category', 'category_count')
 
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
+        categories = {
+            'contract': 'contracts',
+            'grant': 'grants',
+            'direct payment': 'direct_payments',
+            'loans': 'loans',
+            'other': 'other'
+        }
+
         # DB hit here
         for award in queryset:
-            result_key = None
             if award['category'] is None:  # IDV CONTRACTS
                 result_key = "contracts"
+            elif award['category'] not in categories.keys():
+                result_key = "other"
             else:
-                result_key = award['category'].replace(' ', '_')
-                result_key += 's' if result_key not in ['other', 'loans'] else ''
+                result_key = categories[award['category']]
             results[result_key] = award['category_count']
 
         # build response
