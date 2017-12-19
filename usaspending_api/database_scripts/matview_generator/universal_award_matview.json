@@ -26,8 +26,10 @@
 
     "  latest_transaction.\"action_date\",",
     "  latest_transaction.\"fiscal_year\",",
+    "  -- DUPLICATED ON 12/4. REMOVE `issued_date*` BEFORE JAN 1, 2018!!!!!!!!!!!!!!!",
     "  latest_transaction.\"action_date\" as issued_date,",
     "  latest_transaction.\"fiscal_year\" as issued_date_fiscal_year,",
+    "  -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
 
     "  assistance_data.\"face_value_loan_guarantee\",",
     "  assistance_data.\"original_loan_subsidy_cost\",",

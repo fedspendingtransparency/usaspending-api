@@ -55,8 +55,6 @@ TEMPLATE = {
     'create_index': 'CREATE {}INDEX {} ON {} USING {}({}){}{};',
     'rename_index': 'ALTER INDEX {}{} RENAME TO {};',
 }
-DEST_FOLDER = '../matviews/'
-OVERWRITE_FILE = True
 HEADER = [
     '--------------------------------------------------------',
     '-- Created using matview_sql_generator.py             --',
@@ -69,6 +67,8 @@ HEADER = [
 MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
 RANDOM_CHARS = str(uuid4())[:8]
 CLUSTERING_INDEX = None
+DEST_FOLDER = '../matviews/'
+OVERWRITE_FILE = True
 
 
 def ingest_json(path):
@@ -122,6 +122,7 @@ def create_sql_strings(sql_json):
         8. Cluster matview on index
         9. vacuum analyze verbose
     '''
+    unique_name_list = []
     final_sql_strings = []
     create_indexes = []
     rename_old_indexes = []
@@ -131,6 +132,8 @@ def create_sql_strings(sql_json):
     matview_temp_name = matview_name + '_temp'
     matview_archive_name = matview_name + '_old'
     matview_sql = '\n'.join(sql_json['matview_sql'])
+
+    unique_name_list.append(matview_name)
 
     final_sql_strings.append('\n'.join(HEADER))
     final_sql_strings.append(TEMPLATE['drop_matview'].format(matview_temp_name))
@@ -142,6 +145,7 @@ def create_sql_strings(sql_json):
         if len(idx['name']) > MAX_NAME_LENGTH:
             raise Exception('Desired index name is too long. Keep under {} chars'.format(MAX_NAME_LENGTH))
         final_index = 'idx_' + RANDOM_CHARS + '__' + idx['name']
+        unique_name_list.append(final_index)
         tmp_index = final_index + '_temp'
         old_index = final_index + '_old'
 
@@ -151,13 +155,15 @@ def create_sql_strings(sql_json):
         rename_old_indexes.append(TEMPLATE['rename_index'].format('IF EXISTS ', final_index, old_index))
         rename_new_indexes.append(TEMPLATE['rename_index'].format('', tmp_index, final_index))
 
+    if len(unique_name_list) != len(set(unique_name_list)):
+        raise Exception('Name collision detected. Examine JSON file')
     print('There are {} index creations'.format(len(create_indexes)))
 
     final_sql_strings.append('')
     final_sql_strings += create_indexes
     final_sql_strings.append('')
     if CLUSTERING_INDEX:
-        print('*** This matview has clustering on {} ***'.format(CLUSTERING_INDEX))
+        print('*** This matview will be clustered on {} ***'.format(CLUSTERING_INDEX))
         final_sql_strings.append(TEMPLATE['cluster_matview'].format(matview_temp_name, CLUSTERING_INDEX))
         final_sql_strings.append('')
     final_sql_strings.append(TEMPLATE['vacuum'].format(matview_temp_name))
