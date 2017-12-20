@@ -718,11 +718,13 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         # DB hit here
         for award in queryset:
-            if award['category'] not in categories.keys():
+            if award['category'] is None:
+                result_key = 'contracts'
+            elif award['category'] not in categories.keys():
                 result_key = 'other'
             else:
                 result_key = categories[award['category']]
-            results[result_key] = award['category_count']
+            results[result_key] += award['category_count']
 
         # build response
         return Response({"results": results})
