@@ -307,6 +307,8 @@ class ListMonthylDownloadsViewset(APIView):
                           'end_date': '{}-09-30'.format(fiscal_year)}
             bulk_download_filters.update(date_range)
         if agency_id:
+            if agency_id == 'all':
+                agency_id = None
             bulk_download_filters['agency_id'] = agency_id
         if download_type:
             bulk_download_filters.update({award_type: True for award_type in award_mappings[download_type]})
