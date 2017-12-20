@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, F
-from django.db.models.functions import ExtractMonth, Cast
+from django.db.models import Sum, Count, F, Value
+from django.db.models.functions import ExtractMonth, Cast, Coalesce
 from django.db.models import FloatField
 
 from collections import OrderedDict
@@ -698,22 +698,33 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if model == 'SummaryAwardView':
             queryset = queryset \
                 .values("category") \
-                .annotate(category_count=Sum('counts')) \
-                .exclude(category__isnull=True)
+                .annotate(category_count=Sum('counts'))
         else:
+            # for IDV CONTRACTS category is null. change to contract
             queryset = queryset \
                 .values('category') \
-                .annotate(category_count=Count('category')) \
-                .values('category', 'category_count') \
-                .exclude(category__isnull=True)
+                .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
+                .values('category', 'category_count')
 
         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
 
+        categories = {
+            'contract': 'contracts',
+            'grant': 'grants',
+            'direct payment': 'direct_payments',
+            'loans': 'loans',
+            'other': 'other'
+        }
+
         # DB hit here
         for award in queryset:
-            result_key = award['category'].replace(' ', '_')
-            result_key += 's' if result_key not in ['other', 'loans'] else ''
-            results[result_key] = award['category_count']
+            if award['category'] is None:
+                result_key = 'contracts'
+            elif award['category'] not in categories.keys():
+                result_key = 'other'
+            else:
+                result_key = categories[award['category']]
+            results[result_key] += award['category_count']
 
         # build response
         return Response({"results": results})

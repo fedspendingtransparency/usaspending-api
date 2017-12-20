@@ -1,10 +1,15 @@
--- Relies on functions_and_enums.sql
-
--- Drop the temporary materialized views if they exist
+--------------------------------------------------------
+-- Created using matview_sql_generator.py             --
+--    The SQL definition is stored in a json file     --
+--    Look in matview_generator for the code.         --
+--                                                    --
+--  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
+--------------------------------------------------------
 DROP MATERIALIZED VIEW IF EXISTS universal_award_matview_temp;
 DROP MATERIALIZED VIEW IF EXISTS universal_award_matview_old;
--- Temp matview
-CREATE MATERIALIZED VIEW universal_award_matview_temp AS SELECT
+
+CREATE MATERIALIZED VIEW universal_award_matview_temp AS
+SELECT
   "awards"."id" AS award_id,
   "awards"."category",
   "awards"."latest_transaction_id",
@@ -20,13 +25,11 @@ CREATE MATERIALIZED VIEW universal_award_matview_temp AS SELECT
   "awards"."period_of_performance_current_end_date",
   "awards"."date_signed",
   "awards"."base_and_all_options_value",
-
   "awards"."recipient_id",
-  recipient."recipient_name",
+  UPPER(recipient."recipient_name") AS recipient_name,
   recipient."recipient_unique_id",
   recipient."parent_recipient_unique_id",
-  "recipient"."business_categories",
-
+  recipient."business_categories",
   latest_transaction."action_date",
   latest_transaction."fiscal_year",
   -- DUPLICATED ON 12/4. REMOVE `issued_date*` BEFORE JAN 1, 2018!!!!!!!!!!!!!!!
@@ -35,14 +38,12 @@ CREATE MATERIALIZED VIEW universal_award_matview_temp AS SELECT
   -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   assistance_data."face_value_loan_guarantee",
   assistance_data."original_loan_subsidy_cost",
-
   TAA."name" AS awarding_toptier_agency_name,
   TFA."name" AS funding_toptier_agency_name,
   SAA."name" AS awarding_subtier_agency_name,
   SFA."name" AS funding_subtier_agency_name,
   AAO."name" AS awarding_agency_office_name,
   FAO."name" AS funding_agency_office_name,
-
   recipient_location."address_line1" AS recipient_location_address_line1,
   recipient_location."address_line2" AS recipient_location_address_line2,
   recipient_location."address_line3" AS recipient_location_address_line3,
@@ -55,7 +56,6 @@ CREATE MATERIALIZED VIEW universal_award_matview_temp AS SELECT
   recipient_location."zip5" AS recipient_location_zip5,
   recipient_location."congressional_code" AS recipient_location_congressional_code,
   recipient_location."foreign_province" AS recipient_location_foreign_province,
-
   place_of_performance."country_name" AS pop_country_name,
   place_of_performance."location_country_code" AS pop_country_code,
   place_of_performance."state_name" AS pop_state_name,
@@ -66,7 +66,6 @@ CREATE MATERIALIZED VIEW universal_award_matview_temp AS SELECT
   place_of_performance."zip5" AS pop_zip5,
   place_of_performance."congressional_code" AS pop_congressional_code,
   place_of_performance."foreign_province" AS pop_foreign_province,
-
   assistance_data."cfda_number",
   contract_data."pulled_from",
   contract_data."type_of_contract_pricing",
@@ -80,7 +79,6 @@ CREATE MATERIALIZED VIEW universal_award_matview_temp AS SELECT
   "psc"."description" AS product_or_service_description,
   contract_data."naics" AS naics_code,
   contract_data."naics_description"
-
 FROM
   "awards"
 LEFT OUTER JOIN
@@ -88,19 +86,19 @@ LEFT OUTER JOIN
     ON ("awards"."latest_transaction_id" = latest_transaction."id")
 LEFT OUTER JOIN
   "transaction_fabs" AS assistance_data
-  ON (latest_transaction."id" = assistance_data."transaction_id")
+    ON (latest_transaction."id" = assistance_data."transaction_id")
 LEFT OUTER JOIN
   "transaction_fpds" AS contract_data
-  ON (latest_transaction."id" = contract_data."transaction_id")
+    ON (latest_transaction."id" = contract_data."transaction_id")
 LEFT OUTER JOIN
   "legal_entity" AS recipient
-   ON ("awards"."recipient_id" = recipient."legal_entity_id")
+    ON ("awards"."recipient_id" = recipient."legal_entity_id")
 LEFT OUTER JOIN
   "references_location" AS recipient_location
-  ON (recipient."location_id" = recipient_location."location_id")
+    ON (recipient."location_id" = recipient_location."location_id")
 LEFT OUTER JOIN
   "references_location" AS place_of_performance
-  ON ("awards"."place_of_performance_id" = place_of_performance."location_id")
+    ON ("awards"."place_of_performance_id" = place_of_performance."location_id")
 LEFT OUTER JOIN
   "psc" ON (contract_data."product_or_service_code" = "psc"."code")
 LEFT OUTER JOIN
@@ -128,185 +126,158 @@ LEFT OUTER JOIN
     ON (FA."office_agency_id" = FAO."office_agency_id")
 WHERE
   "awards"."latest_transaction_id" IS NOT NULL AND
-  ("awards"."category" IS NOT NULL or "contract_data"."pulled_from"='IDV')AND
+  ("awards"."category" IS NOT NULL or "contract_data"."pulled_from"='IDV') AND
   latest_transaction."action_date" >= '2007-10-01';
 
+CREATE INDEX idx_fdbd0c97__id_temp ON universal_award_matview_temp USING BTREE("award_id") WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__category_temp ON universal_award_matview_temp USING BTREE("category") WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__latest_temp ON universal_award_matview_temp USING BTREE("latest_transaction_id") WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__type_temp ON universal_award_matview_temp USING BTREE("type") WITH (fillfactor = 100) WHERE "type" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__ordered_type_temp ON universal_award_matview_temp USING BTREE("type" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__ordered_type_desc_temp ON universal_award_matview_temp USING BTREE("type_description" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__piid_temp ON universal_award_matview_temp USING BTREE("piid") WITH (fillfactor = 100) WHERE "piid" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__ordered_piid_temp ON universal_award_matview_temp USING BTREE(UPPER("piid") DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__gin_pid_temp ON universal_award_matview_temp USING GIN(UPPER("piid") gin_trgm_ops);
+CREATE INDEX idx_fdbd0c97__fain_temp ON universal_award_matview_temp USING BTREE("fain") WITH (fillfactor = 100) WHERE "fain" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__ordered_fain_temp ON universal_award_matview_temp USING BTREE(UPPER("fain") DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__gin_fain_temp ON universal_award_matview_temp USING GIN(UPPER("fain") gin_trgm_ops);
+CREATE INDEX idx_fdbd0c97__uri_temp ON universal_award_matview_temp USING BTREE(UPPER("uri") DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__gin_uri_temp ON universal_award_matview_temp USING GIN(UPPER("uri") gin_trgm_ops);
+CREATE INDEX idx_fdbd0c97__total_obligation_temp ON universal_award_matview_temp USING BTREE("total_obligation") WITH (fillfactor = 100) WHERE "total_obligation" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__ordered_total_obligation_temp ON universal_award_matview_temp USING BTREE("total_obligation" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__total_obl_bin_temp ON universal_award_matview_temp USING BTREE("total_obl_bin") WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__period_of_performance_start_date_temp ON universal_award_matview_temp USING BTREE("period_of_performance_start_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__period_of_performance_current_end_date_temp ON universal_award_matview_temp USING BTREE("period_of_performance_current_end_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__gin_recipient_name_temp ON universal_award_matview_temp USING GIN("recipient_name" gin_trgm_ops);
+CREATE INDEX idx_fdbd0c97__recipient_name_temp ON universal_award_matview_temp USING BTREE("recipient_name") WITH (fillfactor = 100) WHERE "recipient_name" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__recipient_unique_id_temp ON universal_award_matview_temp USING BTREE("recipient_unique_id") WITH (fillfactor = 100) WHERE "recipient_unique_id" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__parent_recipient_unique_id_temp ON universal_award_matview_temp USING BTREE("parent_recipient_unique_id") WITH (fillfactor = 100) WHERE "parent_recipient_unique_id" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__issued_date_temp ON universal_award_matview_temp USING BTREE("issued_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__issued_date_fiscal_year_temp ON universal_award_matview_temp USING BTREE("issued_date_fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__action_date_temp ON universal_award_matview_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__fiscal_year_temp ON universal_award_matview_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__awarding_subtier_agency_name_temp ON universal_award_matview_temp USING BTREE("awarding_subtier_agency_name" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__awarding_toptier_agency_name_temp ON universal_award_matview_temp USING BTREE("awarding_toptier_agency_name" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_fdbd0c97__recipient_location_country_code_temp ON universal_award_matview_temp USING BTREE("recipient_location_country_code") WITH (fillfactor = 100) WHERE "recipient_location_country_code" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__recipient_location_state_code_temp ON universal_award_matview_temp USING BTREE("recipient_location_state_code") WITH (fillfactor = 100) WHERE "recipient_location_state_code" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__recipient_location_county_code_temp ON universal_award_matview_temp USING BTREE("recipient_location_county_code") WITH (fillfactor = 100) WHERE "recipient_location_county_code" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__recipient_location_zip5_temp ON universal_award_matview_temp USING BTREE("recipient_location_zip5") WITH (fillfactor = 100) WHERE "recipient_location_zip5" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__recipient_location_cong_code_temp ON universal_award_matview_temp USING BTREE("recipient_location_congressional_code") WITH (fillfactor = 100) WHERE "recipient_location_congressional_code" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__pop_country_code_temp ON universal_award_matview_temp USING BTREE("pop_country_code") WITH (fillfactor = 100) WHERE "pop_country_code" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__pop_state_code_temp ON universal_award_matview_temp USING BTREE("pop_state_code") WITH (fillfactor = 100) WHERE "pop_state_code" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__pop_county_code_temp ON universal_award_matview_temp USING BTREE("pop_county_code") WITH (fillfactor = 100) WHERE "pop_county_code" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__pop_zip5_temp ON universal_award_matview_temp USING BTREE("pop_zip5") WITH (fillfactor = 100) WHERE "pop_zip5" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__pop_congressional_code_temp ON universal_award_matview_temp USING BTREE("pop_congressional_code") WITH (fillfactor = 100) WHERE "pop_congressional_code" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__cfda_number_temp ON universal_award_matview_temp USING BTREE("cfda_number") WITH (fillfactor = 100) WHERE "cfda_number" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__pulled_from_temp ON universal_award_matview_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__type_of_contract_pricing_temp ON universal_award_matview_temp USING BTREE("type_of_contract_pricing") WITH (fillfactor = 100) WHERE "type_of_contract_pricing" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__extent_competed_temp ON universal_award_matview_temp USING BTREE("extent_competed") WITH (fillfactor = 100) WHERE "extent_competed" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__type_set_aside_temp ON universal_award_matview_temp USING BTREE("type_set_aside") WITH (fillfactor = 100) WHERE "type_set_aside" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__product_or_service_code_temp ON universal_award_matview_temp USING BTREE("product_or_service_code") WITH (fillfactor = 100) WHERE "product_or_service_code" IS NOT NULL;
+CREATE INDEX idx_fdbd0c97__gin_product_or_service_description_temp ON universal_award_matview_temp USING GIN(("product_or_service_description") gin_trgm_ops);
+CREATE INDEX idx_fdbd0c97__naics_code_temp ON universal_award_matview_temp USING GIN("naics_code" gin_trgm_ops);
+CREATE INDEX idx_fdbd0c97__naics_description_temp ON universal_award_matview_temp USING GIN(UPPER("naics_description") gin_trgm_ops);
 
--- Temp indexes
-CREATE INDEX universal_award_matview_id_tmp                    ON universal_award_matview_temp("award_id");
-CREATE INDEX universal_award_matview_category_tmp              ON universal_award_matview_temp("category");
-CREATE INDEX universal_award_matview_latest_tmp                ON universal_award_matview_temp("latest_transaction_id");
-CREATE INDEX universal_award_matview_type_tmp                  ON universal_award_matview_temp("type")                                  WHERE "type" IS NOT NULL;
-CREATE INDEX universal_award_matview_type_desc_tmp             ON universal_award_matview_temp("type"                                   DESC NULLS LAST);
-CREATE INDEX universal_award_matview_type_descr_desc_tmp       ON universal_award_matview_temp("type_description"                       DESC NULLS LAST);
+CLUSTER VERBOSE universal_award_matview_temp USING idx_fdbd0c97__action_date_temp;
 
-CREATE INDEX universal_award_matview_piid_tmp                  ON universal_award_matview_temp("piid")                                  WHERE "piid" IS NOT NULL;
-CREATE INDEX universal_award_matview_piid_desc_tmp             ON universal_award_matview_temp(UPPER("piid")                            DESC NULLS LAST);
-CREATE INDEX universal_award_matview_piid_gin_trgm_tmp         ON universal_award_matview_temp                                          USING gin (UPPER(piid) gin_trgm_ops);
-CREATE INDEX universal_award_matview_fain_tmp                  ON universal_award_matview_temp("fain")                                  WHERE "fain" IS NOT NULL;
-CREATE INDEX universal_award_matview_fain_desc_tmp             ON universal_award_matview_temp(UPPER("fain")                            DESC NULLS LAST);
-CREATE INDEX universal_award_matview_fain_gin_trgm_tmp         ON universal_award_matview_temp                                          USING gin (UPPER(fain) gin_trgm_ops);
-CREATE INDEX universal_award_matview_uri_desc_tmp              ON universal_award_matview_temp("uri"                                    DESC NULLS LAST);
-CREATE INDEX universal_award_matview_uri_gin_trgm_tmp          ON universal_award_matview_temp                                          USING gin (UPPER(uri) gin_trgm_ops);
+VACUUM ANALYZE VERBOSE universal_award_matview_temp;
 
-CREATE INDEX universal_award_matview_total_obligation_tmp      ON universal_award_matview_temp("total_obligation")                      WHERE "total_obligation" IS NOT NULL;
-CREATE INDEX universal_award_matview_total_obligation_desc_tmp ON universal_award_matview_temp("total_obligation"                       DESC NULLS LAST);
-CREATE INDEX universal_award_matview_total_obl_bin_tmp         ON universal_award_matview_temp("total_obl_bin");
-CREATE INDEX universal_award_matview_pop_start_desc_tmp        ON universal_award_matview_temp("period_of_performance_start_date"       DESC NULLS LAST);
-CREATE INDEX universal_award_matview_pop_end_desc_tmp          ON universal_award_matview_temp("period_of_performance_current_end_date" DESC NULLS LAST);
-
-CREATE INDEX universal_award_matview_recipient_name_gin_trgm_tmp ON universal_award_matview_temp                                        USING gin(UPPER(recipient_name) gin_trgm_ops);
-CREATE INDEX universal_award_matview_recipient_name_tmp          ON universal_award_matview_temp("recipient_name")                      WHERE "recipient_name" IS NOT NULL;
-CREATE INDEX universal_award_matview_recipient_name_desc_tmp     ON universal_award_matview_temp("recipient_name"                       DESC NULLS LAST);
-CREATE INDEX universal_award_matview_recipient_unique_tmp        ON universal_award_matview_temp("recipient_unique_id")                 WHERE "recipient_unique_id" IS NOT NULL;
-CREATE INDEX universal_award_matview_parent_recipient_tmp        ON universal_award_matview_temp("parent_recipient_unique_id")          WHERE "parent_recipient_unique_id" IS NOT NULL;
-
-CREATE INDEX universal_award_matview_issued_date_tmp  ON universal_award_matview_temp("issued_date");
-CREATE INDEX universal_award_matview_issued_fy_tmp    ON universal_award_matview_temp("issued_date_fiscal_year");
-CREATE INDEX universal_award_matview_date_tmp         ON universal_award_matview_temp("action_date");
-CREATE INDEX universal_award_matview_fy_tmp           ON universal_award_matview_temp("fiscal_year");
-
-CREATE INDEX universal_award_matview_subtier_agency_desc_tmp ON universal_award_matview_temp("awarding_subtier_agency_name" DESC);
-CREATE INDEX universal_award_matview_toptier_agency_desc_tmp ON universal_award_matview_temp("awarding_toptier_agency_name" DESC);
-
-CREATE INDEX universal_award_matview_rl_country_code_tmp ON universal_award_matview_temp("recipient_location_country_code")       WHERE "recipient_location_country_code" IS NOT NULL;
-CREATE INDEX universal_award_matview_rl_state_code_tmp   ON universal_award_matview_temp("recipient_location_state_code")         WHERE "recipient_location_state_code" IS NOT NULL;
-CREATE INDEX universal_award_matview_rl_county_code_tmp  ON universal_award_matview_temp("recipient_location_county_code")        WHERE "recipient_location_county_code" IS NOT NULL;
-CREATE INDEX universal_award_matview_rl_zip5_tmp         ON universal_award_matview_temp("recipient_location_zip5")               WHERE "recipient_location_zip5" IS NOT NULL;
-CREATE INDEX universal_award_matview_rl_congress_tmp     ON universal_award_matview_temp("recipient_location_congressional_code") WHERE "recipient_location_congressional_code" IS NOT NULL;
-
-CREATE INDEX universal_award_matview_pop_country_code_tmp ON universal_award_matview_temp("pop_country_code")       WHERE "pop_country_code" IS NOT NULL;
-CREATE INDEX universal_award_matview_pop_state_tmp        ON universal_award_matview_temp("pop_state_code")         WHERE "pop_state_code" IS NOT NULL;
-CREATE INDEX universal_award_matview_pop_county_code_tmp  ON universal_award_matview_temp("pop_county_code")        WHERE "pop_county_code" IS NOT NULL;
-CREATE INDEX universal_award_matview_pop_zip5_tmp         ON universal_award_matview_temp("pop_zip5")               WHERE "pop_zip5" IS NOT NULL;
-CREATE INDEX universal_award_matview_pop_congress_tmp     ON universal_award_matview_temp("pop_congressional_code") WHERE "pop_congressional_code" IS NOT NULL;
-
-CREATE INDEX universal_award_matview_cfda_tmp                     ON universal_award_matview_temp("cfda_number")              WHERE "cfda_number" IS NOT NULL;
-CREATE INDEX universal_award_matview_pulled_from_tmp              ON universal_award_matview_temp("pulled_from")              WHERE "pulled_from" IS NOT NULL;
-CREATE INDEX universal_award_matview_type_of_contract_pricing_tmp ON universal_award_matview_temp("type_of_contract_pricing") WHERE "type_of_contract_pricing" IS NOT NULL;
-CREATE INDEX universal_award_matview_extent_competed_tmp          ON universal_award_matview_temp("extent_competed")          WHERE "extent_competed" IS NOT NULL;
-CREATE INDEX universal_award_matview_type_set_aside_tmp           ON universal_award_matview_temp("type_set_aside")           WHERE "type_set_aside" IS NOT NULL;
-CREATE INDEX universal_award_matview_psc_tmp                      ON universal_award_matview_temp("product_or_service_code")  WHERE "product_or_service_code" IS NOT NULL;
-CREATE INDEX universal_award_matview_psc_desc_uppr_tmp            ON universal_award_matview_temp                             USING gin(UPPER("product_or_service_description") gin_trgm_ops);
-CREATE INDEX universal_award_matview_naics_tmp                    ON universal_award_matview_temp                             USING gin("naics_code"  gin_trgm_ops);
-CREATE INDEX universal_award_matview_naics_desc_uppr_tmp          ON universal_award_matview_temp                             USING gin(UPPER("naics_description") gin_trgm_ops);
-
--- Rename old matview/indexes
 ALTER MATERIALIZED VIEW IF EXISTS universal_award_matview RENAME TO universal_award_matview_old;
-ALTER INDEX IF EXISTS universal_award_matview_id_idx                    RENAME TO universal_award_matview_id_old;
-ALTER INDEX IF EXISTS universal_award_matview_category_idx              RENAME TO universal_award_matview_category_old;
-ALTER INDEX IF EXISTS universal_award_matview_latest_idx                RENAME TO universal_award_matview_latest_old;
-ALTER INDEX IF EXISTS universal_award_matview_type_idx                  RENAME TO universal_award_matview_type_old;
-ALTER INDEX IF EXISTS universal_award_matview_type_desc_idx             RENAME TO universal_award_matview_type_desc_old;
-ALTER INDEX IF EXISTS universal_award_matview_type_descr_desc_idx       RENAME TO universal_award_matview_type_descr_desc_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__id RENAME TO idx_fdbd0c97__id_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__category RENAME TO idx_fdbd0c97__category_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__latest RENAME TO idx_fdbd0c97__latest_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__type RENAME TO idx_fdbd0c97__type_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__ordered_type RENAME TO idx_fdbd0c97__ordered_type_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__ordered_type_desc RENAME TO idx_fdbd0c97__ordered_type_desc_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__piid RENAME TO idx_fdbd0c97__piid_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__ordered_piid RENAME TO idx_fdbd0c97__ordered_piid_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__gin_pid RENAME TO idx_fdbd0c97__gin_pid_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__fain RENAME TO idx_fdbd0c97__fain_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__ordered_fain RENAME TO idx_fdbd0c97__ordered_fain_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__gin_fain RENAME TO idx_fdbd0c97__gin_fain_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__uri RENAME TO idx_fdbd0c97__uri_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__gin_uri RENAME TO idx_fdbd0c97__gin_uri_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__total_obligation RENAME TO idx_fdbd0c97__total_obligation_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__ordered_total_obligation RENAME TO idx_fdbd0c97__ordered_total_obligation_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__total_obl_bin RENAME TO idx_fdbd0c97__total_obl_bin_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__period_of_performance_start_date RENAME TO idx_fdbd0c97__period_of_performance_start_date_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__period_of_performance_current_end_date RENAME TO idx_fdbd0c97__period_of_performance_current_end_date_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__gin_recipient_name RENAME TO idx_fdbd0c97__gin_recipient_name_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__recipient_name RENAME TO idx_fdbd0c97__recipient_name_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__recipient_unique_id RENAME TO idx_fdbd0c97__recipient_unique_id_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__parent_recipient_unique_id RENAME TO idx_fdbd0c97__parent_recipient_unique_id_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__issued_date RENAME TO idx_fdbd0c97__issued_date_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__issued_date_fiscal_year RENAME TO idx_fdbd0c97__issued_date_fiscal_year_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__action_date RENAME TO idx_fdbd0c97__action_date_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__fiscal_year RENAME TO idx_fdbd0c97__fiscal_year_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__awarding_subtier_agency_name RENAME TO idx_fdbd0c97__awarding_subtier_agency_name_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__awarding_toptier_agency_name RENAME TO idx_fdbd0c97__awarding_toptier_agency_name_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__recipient_location_country_code RENAME TO idx_fdbd0c97__recipient_location_country_code_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__recipient_location_state_code RENAME TO idx_fdbd0c97__recipient_location_state_code_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__recipient_location_county_code RENAME TO idx_fdbd0c97__recipient_location_county_code_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__recipient_location_zip5 RENAME TO idx_fdbd0c97__recipient_location_zip5_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__recipient_location_cong_code RENAME TO idx_fdbd0c97__recipient_location_cong_code_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__pop_country_code RENAME TO idx_fdbd0c97__pop_country_code_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__pop_state_code RENAME TO idx_fdbd0c97__pop_state_code_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__pop_county_code RENAME TO idx_fdbd0c97__pop_county_code_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__pop_zip5 RENAME TO idx_fdbd0c97__pop_zip5_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__pop_congressional_code RENAME TO idx_fdbd0c97__pop_congressional_code_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__cfda_number RENAME TO idx_fdbd0c97__cfda_number_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__pulled_from RENAME TO idx_fdbd0c97__pulled_from_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__type_of_contract_pricing RENAME TO idx_fdbd0c97__type_of_contract_pricing_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__extent_competed RENAME TO idx_fdbd0c97__extent_competed_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__type_set_aside RENAME TO idx_fdbd0c97__type_set_aside_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__product_or_service_code RENAME TO idx_fdbd0c97__product_or_service_code_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__gin_product_or_service_description RENAME TO idx_fdbd0c97__gin_product_or_service_description_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__naics_code RENAME TO idx_fdbd0c97__naics_code_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__naics_description RENAME TO idx_fdbd0c97__naics_description_old;
 
-ALTER INDEX IF EXISTS universal_award_matview_piid_idx                  RENAME TO universal_award_matview_piid_old;
-ALTER INDEX IF EXISTS universal_award_matview_piid_desc_idx             RENAME TO universal_award_matview_piid_desc_old;
-ALTER INDEX IF EXISTS universal_award_matview_piid_gin_trgm_idx         RENAME TO universal_award_matview_piid_gin_trgm_old;
-ALTER INDEX IF EXISTS universal_award_matview_fain_idx                  RENAME TO universal_award_matview_fain_old;
-ALTER INDEX IF EXISTS universal_award_matview_fain_desc_idx             RENAME TO universal_award_matview_fain_desc_old;
-ALTER INDEX IF EXISTS universal_award_matview_fain_gin_trgm_idx         RENAME TO universal_award_matview_fain_gin_trgm_old;
-ALTER INDEX IF EXISTS universal_award_matview_uri_desc_idx              RENAME TO universal_award_matview_uri_desc_old;
-ALTER INDEX IF EXISTS universal_award_matview_uri_gin_trgm_idx          RENAME TO universal_award_matview_uri_gin_trgm_old;
-
-ALTER INDEX IF EXISTS universal_award_matview_total_obligation_idx      RENAME TO universal_award_matview_total_obligation_old;
-ALTER INDEX IF EXISTS universal_award_matview_total_obligation_desc_idx RENAME TO universal_award_matview_total_obligation_desc_old;
-ALTER INDEX IF EXISTS universal_award_matview_total_obl_bin_idx         RENAME TO universal_award_matview_total_obl_bin_old;
-ALTER INDEX IF EXISTS universal_award_matview_pop_start_desc_idx        RENAME TO universal_award_matview_pop_start_desc_old;
-ALTER INDEX IF EXISTS universal_award_matview_pop_end_desc_idx          RENAME TO universal_award_matview_pop_end_desc_old;
-
-ALTER INDEX IF EXISTS universal_award_matview_recipient_name_gin_trgm_idx RENAME TO universal_award_matview_recipient_name_gin_trgm_old;
-ALTER INDEX IF EXISTS universal_award_matview_recipient_name_idx          RENAME TO universal_award_matview_recipient_name_old;
-ALTER INDEX IF EXISTS universal_award_matview_recipient_name_desc_idx     RENAME TO universal_award_matview_recipient_name_desc_old;
-ALTER INDEX IF EXISTS universal_award_matview_recipient_unique_idx        RENAME TO universal_award_matview_recipient_unique_old;
-ALTER INDEX IF EXISTS universal_award_matview_parent_recipient_idx        RENAME TO universal_award_matview_parent_recipient_old;
-
-ALTER INDEX IF EXISTS universal_award_matview_issued_date_idx   RENAME TO universal_award_matview_issued_date_old;
-ALTER INDEX IF EXISTS universal_award_matview_issued_fy_idx     RENAME TO universal_award_matview_issued_fy_old;
-ALTER INDEX IF EXISTS universal_award_matview_date_idx          RENAME TO universal_award_matview_date_old;
-ALTER INDEX IF EXISTS universal_award_matview_fy_idx            RENAME TO universal_award_matview_fy_old;
-
-ALTER INDEX IF EXISTS universal_award_matview_subtier_agency_desc_idx RENAME TO universal_award_matview_subtier_agency_desc_old;
-ALTER INDEX IF EXISTS universal_award_matview_toptier_agency_desc_idx RENAME TO universal_award_matview_toptier_agency_desc_old;
-
-ALTER INDEX IF EXISTS universal_award_matview_rl_country_code RENAME TO universal_award_matview_rl_country_code_old;
-ALTER INDEX IF EXISTS universal_award_matview_rl_state_code   RENAME TO universal_award_matview_rl_state_code_old;
-ALTER INDEX IF EXISTS universal_award_matview_rl_county_code  RENAME TO universal_award_matview_rl_county_code_old;
-ALTER INDEX IF EXISTS universal_award_matview_rl_zip5         RENAME TO universal_award_matview_rl_zip5_old;
-ALTER INDEX IF EXISTS universal_award_matview_rl_congress     RENAME TO universal_award_matview_rl_congress_old;
-
-ALTER INDEX IF EXISTS universal_award_matview_pop_country_code RENAME TO universal_award_matview_pop_country_code_old;
-ALTER INDEX IF EXISTS universal_award_matview_pop_state        RENAME TO universal_award_matview_pop_state_old;
-ALTER INDEX IF EXISTS universal_award_matview_pop_county_code  RENAME TO universal_award_matview_pop_county_code_old;
-ALTER INDEX IF EXISTS universal_award_matview_pop_zip5         RENAME TO universal_award_matview_pop_zip5_old;
-ALTER INDEX IF EXISTS universal_award_matview_pop_congress     RENAME TO universal_award_matview_pop_congress_old;
-
-ALTER INDEX IF EXISTS universal_award_matview_cfda_idx                     RENAME TO universal_award_matview_cfda_old;
-ALTER INDEX IF EXISTS universal_award_matview_pulled_from_idx              RENAME TO universal_award_matview_pulled_from_old;
-ALTER INDEX IF EXISTS universal_award_matview_type_of_contract_pricing_idx RENAME TO universal_award_matview_type_of_contract_pricing_old;
-ALTER INDEX IF EXISTS universal_award_matview_extent_competed_idx          RENAME TO universal_award_matview_extent_competed_old;
-ALTER INDEX IF EXISTS universal_award_matview_type_set_aside_idx           RENAME TO universal_award_matview_type_set_aside_old;
-ALTER INDEX IF EXISTS universal_award_matview_psc_idx                      RENAME TO universal_award_matview_psc_old;
-ALTER INDEX IF EXISTS universal_award_matview_naics_idx                    RENAME TO universal_award_matview_naics_old;
-ALTER INDEX IF EXISTS universal_award_matview_psc_desc_uppr_idx            RENAME TO universal_award_matview_psc_desc_uppr_old;
-ALTER INDEX IF EXISTS universal_award_matview_naics_desc_uppr_idx          RENAME TO universal_award_matview_naics_desc_uppr_old;
-
--- Rename temp matview/indexes
-ALTER MATERIALIZED VIEW universal_award_matview_temp          RENAME TO universal_award_matview;
-ALTER INDEX universal_award_matview_id_tmp                    RENAME TO universal_award_matview_id_idx;
-ALTER INDEX universal_award_matview_category_tmp              RENAME TO universal_award_matview_category_idx;
-ALTER INDEX universal_award_matview_latest_tmp                RENAME TO universal_award_matview_latest_idx;
-ALTER INDEX universal_award_matview_type_tmp                  RENAME TO universal_award_matview_type_idx;
-ALTER INDEX universal_award_matview_type_desc_tmp             RENAME TO universal_award_matview_type_desc_idx;
-ALTER INDEX universal_award_matview_type_descr_desc_tmp       RENAME TO universal_award_matview_type_descr_desc_idx;
-
-ALTER INDEX universal_award_matview_piid_tmp                  RENAME TO universal_award_matview_piid_idx;
-ALTER INDEX universal_award_matview_piid_desc_tmp             RENAME TO universal_award_matview_piid_desc_idx;
-ALTER INDEX universal_award_matview_piid_gin_trgm_tmp         RENAME TO universal_award_matview_piid_gin_trgm_idx;
-ALTER INDEX universal_award_matview_fain_tmp                  RENAME TO universal_award_matview_fain_idx;
-ALTER INDEX universal_award_matview_fain_desc_tmp             RENAME TO universal_award_matview_fain_desc_idx;
-ALTER INDEX universal_award_matview_fain_gin_trgm_tmp         RENAME TO universal_award_matview_fain_gin_trgm_idx;
-ALTER INDEX universal_award_matview_uri_desc_tmp              RENAME TO universal_award_matview_uri_desc_idx;
-ALTER INDEX universal_award_matview_uri_gin_trgm_tmp          RENAME TO universal_award_matview_uri_gin_trgm_idx;
-
-ALTER INDEX universal_award_matview_total_obligation_tmp      RENAME TO universal_award_matview_total_obligation_idx;
-ALTER INDEX universal_award_matview_total_obligation_desc_tmp RENAME TO universal_award_matview_total_obligation_desc_idx;
-ALTER INDEX universal_award_matview_total_obl_bin_tmp         RENAME TO universal_award_matview_total_obl_bin_idx;
-ALTER INDEX universal_award_matview_pop_start_desc_tmp        RENAME TO universal_award_matview_pop_start_desc_idx;
-ALTER INDEX universal_award_matview_pop_end_desc_tmp          RENAME TO universal_award_matview_pop_end_desc_idx;
-
-ALTER INDEX universal_award_matview_recipient_name_gin_trgm_tmp RENAME TO universal_award_matview_recipient_name_gin_trgm_idx;
-ALTER INDEX universal_award_matview_recipient_name_tmp          RENAME TO universal_award_matview_recipient_name_idx;
-ALTER INDEX universal_award_matview_recipient_name_desc_tmp     RENAME TO universal_award_matview_recipient_name_desc_idx;
-ALTER INDEX universal_award_matview_recipient_unique_tmp        RENAME TO universal_award_matview_recipient_unique_idx;
-ALTER INDEX universal_award_matview_parent_recipient_tmp        RENAME TO universal_award_matview_parent_recipient_idx;
-
-ALTER INDEX universal_award_matview_issued_date_tmp   RENAME TO universal_award_matview_issued_date_idx;
-ALTER INDEX universal_award_matview_issued_fy_tmp     RENAME TO universal_award_matview_issued_fy_idx;
-ALTER INDEX universal_award_matview_date_tmp          RENAME TO universal_award_matview_date_idx;
-ALTER INDEX universal_award_matview_fy_tmp            RENAME TO universal_award_matview_fy_idx;
-
-ALTER INDEX universal_award_matview_subtier_agency_desc_tmp RENAME TO universal_award_matview_subtier_agency_desc_idx;
-ALTER INDEX universal_award_matview_toptier_agency_desc_tmp RENAME TO universal_award_matview_toptier_agency_desc_idx;
-
-ALTER INDEX universal_award_matview_rl_country_code_tmp RENAME TO universal_award_matview_rl_country_code_old;
-ALTER INDEX universal_award_matview_rl_state_code_tmp   RENAME TO universal_award_matview_rl_state_code_old;
-ALTER INDEX universal_award_matview_rl_county_code_tmp  RENAME TO universal_award_matview_rl_county_code_old;
-ALTER INDEX universal_award_matview_rl_zip5_tmp         RENAME TO universal_award_matview_rl_zip5_old;
-ALTER INDEX universal_award_matview_rl_congress_tmp     RENAME TO universal_award_matview_rl_congress_old;
-
-ALTER INDEX universal_award_matview_pop_country_code_tmp RENAME TO universal_award_matview_pop_country_code_old;
-ALTER INDEX universal_award_matview_pop_state_tmp        RENAME TO universal_award_matview_pop_state_old;
-ALTER INDEX universal_award_matview_pop_county_code_tmp  RENAME TO universal_award_matview_pop_county_code_old;
-ALTER INDEX universal_award_matview_pop_zip5_tmp         RENAME TO universal_award_matview_pop_zip5_old;
-ALTER INDEX universal_award_matview_pop_congress_tmp     RENAME TO universal_award_matview_pop_congress_old;
-
-ALTER INDEX universal_award_matview_cfda_tmp                     RENAME TO universal_award_matview_cfda_idx;
-ALTER INDEX universal_award_matview_pulled_from_tmp              RENAME TO universal_award_matview_pulled_from_idx;
-ALTER INDEX universal_award_matview_type_of_contract_pricing_tmp RENAME TO universal_award_matview_type_of_contract_pricing_idx;
-ALTER INDEX universal_award_matview_extent_competed_tmp          RENAME TO universal_award_matview_extent_competed_idx;
-ALTER INDEX universal_award_matview_type_set_aside_tmp           RENAME TO universal_award_matview_type_set_aside_idx;
-ALTER INDEX universal_award_matview_psc_tmp                      RENAME TO universal_award_matview_psc_idx;
-ALTER INDEX universal_award_matview_naics_tmp                    RENAME TO universal_award_matview_naics_idx;
-ALTER INDEX universal_award_matview_psc_desc_uppr_tmp            RENAME TO universal_award_matview_psc_desc_uppr_idx;
-ALTER INDEX universal_award_matview_naics_desc_uppr_tmp          RENAME TO universal_award_matview_naics_desc_uppr_idx;
+ALTER MATERIALIZED VIEW universal_award_matview_temp RENAME TO universal_award_matview;
+ALTER INDEX idx_fdbd0c97__id_temp RENAME TO idx_fdbd0c97__id;
+ALTER INDEX idx_fdbd0c97__category_temp RENAME TO idx_fdbd0c97__category;
+ALTER INDEX idx_fdbd0c97__latest_temp RENAME TO idx_fdbd0c97__latest;
+ALTER INDEX idx_fdbd0c97__type_temp RENAME TO idx_fdbd0c97__type;
+ALTER INDEX idx_fdbd0c97__ordered_type_temp RENAME TO idx_fdbd0c97__ordered_type;
+ALTER INDEX idx_fdbd0c97__ordered_type_desc_temp RENAME TO idx_fdbd0c97__ordered_type_desc;
+ALTER INDEX idx_fdbd0c97__piid_temp RENAME TO idx_fdbd0c97__piid;
+ALTER INDEX idx_fdbd0c97__ordered_piid_temp RENAME TO idx_fdbd0c97__ordered_piid;
+ALTER INDEX idx_fdbd0c97__gin_pid_temp RENAME TO idx_fdbd0c97__gin_pid;
+ALTER INDEX idx_fdbd0c97__fain_temp RENAME TO idx_fdbd0c97__fain;
+ALTER INDEX idx_fdbd0c97__ordered_fain_temp RENAME TO idx_fdbd0c97__ordered_fain;
+ALTER INDEX idx_fdbd0c97__gin_fain_temp RENAME TO idx_fdbd0c97__gin_fain;
+ALTER INDEX idx_fdbd0c97__uri_temp RENAME TO idx_fdbd0c97__uri;
+ALTER INDEX idx_fdbd0c97__gin_uri_temp RENAME TO idx_fdbd0c97__gin_uri;
+ALTER INDEX idx_fdbd0c97__total_obligation_temp RENAME TO idx_fdbd0c97__total_obligation;
+ALTER INDEX idx_fdbd0c97__ordered_total_obligation_temp RENAME TO idx_fdbd0c97__ordered_total_obligation;
+ALTER INDEX idx_fdbd0c97__total_obl_bin_temp RENAME TO idx_fdbd0c97__total_obl_bin;
+ALTER INDEX idx_fdbd0c97__period_of_performance_start_date_temp RENAME TO idx_fdbd0c97__period_of_performance_start_date;
+ALTER INDEX idx_fdbd0c97__period_of_performance_current_end_date_temp RENAME TO idx_fdbd0c97__period_of_performance_current_end_date;
+ALTER INDEX idx_fdbd0c97__gin_recipient_name_temp RENAME TO idx_fdbd0c97__gin_recipient_name;
+ALTER INDEX idx_fdbd0c97__recipient_name_temp RENAME TO idx_fdbd0c97__recipient_name;
+ALTER INDEX idx_fdbd0c97__recipient_unique_id_temp RENAME TO idx_fdbd0c97__recipient_unique_id;
+ALTER INDEX idx_fdbd0c97__parent_recipient_unique_id_temp RENAME TO idx_fdbd0c97__parent_recipient_unique_id;
+ALTER INDEX idx_fdbd0c97__issued_date_temp RENAME TO idx_fdbd0c97__issued_date;
+ALTER INDEX idx_fdbd0c97__issued_date_fiscal_year_temp RENAME TO idx_fdbd0c97__issued_date_fiscal_year;
+ALTER INDEX idx_fdbd0c97__action_date_temp RENAME TO idx_fdbd0c97__action_date;
+ALTER INDEX idx_fdbd0c97__fiscal_year_temp RENAME TO idx_fdbd0c97__fiscal_year;
+ALTER INDEX idx_fdbd0c97__awarding_subtier_agency_name_temp RENAME TO idx_fdbd0c97__awarding_subtier_agency_name;
+ALTER INDEX idx_fdbd0c97__awarding_toptier_agency_name_temp RENAME TO idx_fdbd0c97__awarding_toptier_agency_name;
+ALTER INDEX idx_fdbd0c97__recipient_location_country_code_temp RENAME TO idx_fdbd0c97__recipient_location_country_code;
+ALTER INDEX idx_fdbd0c97__recipient_location_state_code_temp RENAME TO idx_fdbd0c97__recipient_location_state_code;
+ALTER INDEX idx_fdbd0c97__recipient_location_county_code_temp RENAME TO idx_fdbd0c97__recipient_location_county_code;
+ALTER INDEX idx_fdbd0c97__recipient_location_zip5_temp RENAME TO idx_fdbd0c97__recipient_location_zip5;
+ALTER INDEX idx_fdbd0c97__recipient_location_cong_code_temp RENAME TO idx_fdbd0c97__recipient_location_cong_code;
+ALTER INDEX idx_fdbd0c97__pop_country_code_temp RENAME TO idx_fdbd0c97__pop_country_code;
+ALTER INDEX idx_fdbd0c97__pop_state_code_temp RENAME TO idx_fdbd0c97__pop_state_code;
+ALTER INDEX idx_fdbd0c97__pop_county_code_temp RENAME TO idx_fdbd0c97__pop_county_code;
+ALTER INDEX idx_fdbd0c97__pop_zip5_temp RENAME TO idx_fdbd0c97__pop_zip5;
+ALTER INDEX idx_fdbd0c97__pop_congressional_code_temp RENAME TO idx_fdbd0c97__pop_congressional_code;
+ALTER INDEX idx_fdbd0c97__cfda_number_temp RENAME TO idx_fdbd0c97__cfda_number;
+ALTER INDEX idx_fdbd0c97__pulled_from_temp RENAME TO idx_fdbd0c97__pulled_from;
+ALTER INDEX idx_fdbd0c97__type_of_contract_pricing_temp RENAME TO idx_fdbd0c97__type_of_contract_pricing;
+ALTER INDEX idx_fdbd0c97__extent_competed_temp RENAME TO idx_fdbd0c97__extent_competed;
+ALTER INDEX idx_fdbd0c97__type_set_aside_temp RENAME TO idx_fdbd0c97__type_set_aside;
+ALTER INDEX idx_fdbd0c97__product_or_service_code_temp RENAME TO idx_fdbd0c97__product_or_service_code;
+ALTER INDEX idx_fdbd0c97__gin_product_or_service_description_temp RENAME TO idx_fdbd0c97__gin_product_or_service_description;
+ALTER INDEX idx_fdbd0c97__naics_code_temp RENAME TO idx_fdbd0c97__naics_code;
+ALTER INDEX idx_fdbd0c97__naics_description_temp RENAME TO idx_fdbd0c97__naics_description;
