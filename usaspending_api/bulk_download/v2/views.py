@@ -307,19 +307,27 @@ class ListMonthylDownloadsViewset(APIView):
                           'end_date': '{}-09-30'.format(fiscal_year)}
             bulk_download_filters.update(date_range)
         if agency_id:
+            if agency_id == 'all':
+                agency_id = None
             bulk_download_filters['agency_id'] = agency_id
         if download_type:
             bulk_download_filters.update({award_type: True for award_type in award_mappings[download_type]})
         downloads = (BulkDownloadJob.objects.filter(**bulk_download_filters)
                      .annotate(max_updated_date=Max('update_date'))
                      .filter(update_date=F('max_updated_date'))
-                     .values('file_name', 'end_date', updated_date=Cast('update_date', DateField()),
+                     .values('file_name', 'end_date', 'contracts', updated_date=Cast('update_date', DateField()),
                              agency_name=F('agency__name'), agency_acronym=F('agency__abbreviation')))
         logger.info('Finding downloads: {}'.format(generate_raw_quoted_query(downloads)))
         for download in downloads:
             download['url'] = self.s3_handler.get_simple_url(file_name=download['file_name'])
             download['fiscal_year'] = download['end_date'].year
-            del download['end_date']
+            # Note: We're basing this off of contracts because the monthly downloads
+            #        only creates contracts or assistance files and not specific
+            #        assistance files like just loans/grants/direct payments/other.
+            #       This should be updated if the monthly download script changes
+            #        to include said specific assistance files
+            download['type'] = 'contracts' if download['contracts'] else 'assistance'
+            del download['end_date'], download['contracts']
         response_data['monthly_files'] = downloads
         return Response(response_data)
 
