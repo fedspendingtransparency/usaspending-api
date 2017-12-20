@@ -155,7 +155,7 @@ class BaseDownloadViewSet(APIView):
 
         # TODO: Refactor with the bulk_download method in populate_monthly_files.py
         # Check if the same request has been called today
-        current_date = datetime.date.today()
+        current_date = datetime.datetime.utcnow()
         updated_date_timestamp = datetime.datetime.strftime(current_date, '%Y-%m-%d')
         cached_download = BulkDownloadJob.objects.filter(
             json_request=json.dumps(order_nested_object(json_request)),
