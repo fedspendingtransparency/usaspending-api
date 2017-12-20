@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import pandas as pd
+import datetime
 from collections import OrderedDict
 
 import django
@@ -18,11 +19,11 @@ from rest_framework.exceptions import NotFound
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, \
     grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping
 from usaspending_api.awards.models import Award, Subaward, Agency, TransactionNormalized
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models import ToptierAgency, SubtierAgency
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.csv_helpers import sqs_queue
-from usaspending_api.common.helpers import generate_raw_quoted_query
+from usaspending_api.common.helpers import generate_raw_quoted_query, order_nested_object
 from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
@@ -152,6 +153,18 @@ class BaseDownloadViewSet(APIView):
             if required_param not in json_request:
                 raise InvalidParameterException('{} parameter not provided'.format(required_param))
 
+        # TODO: Refactor with the bulk_download method in populate_monthly_files.py
+        # Check if the same request has been called today
+        current_date = datetime.datetime.utcnow()
+        updated_date_timestamp = datetime.datetime.strftime(current_date, '%Y-%m-%d')
+        cached_download = BulkDownloadJob.objects.filter(
+            json_request=json.dumps(order_nested_object(json_request)),
+            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
+        if cached_download:
+            # By returning the cached files, there should be no duplicates on a daily basis
+            cached_filename = cached_download[0]['file_name']
+            return self.get_download_response(file_name=cached_filename)
+
         csv_sources = self.get_csv_sources(json_request)
 
         # get timestamped name to provide unique file name
@@ -160,9 +173,39 @@ class BaseDownloadViewSet(APIView):
 
         # create download job in database to track progress. Starts at 'ready'
         # status by default.
-        download_job = BulkDownloadJob(job_status_id=JOB_STATUS_DICT['ready'],
-                                       file_name=timestamped_file_name)
+        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
+                               'json_request': json.dumps(order_nested_object(json_request)),
+                               'file_name': timestamped_file_name}
+        award_levels = json_request['award_levels']
+        award_types = json_request['filters']['award_types']
+        agency = json_request['filters']['agency']
+        sub_agency = json_request['filters'].get('sub_agency', None)
+        start_date = json_request['filters']['date_range'].get('start_date', None)
+        end_date = json_request['filters']['date_range'].get('end_date', None)
+        date_type = json_request['filters']['date_type']
+
+        for award_level in award_levels:
+            download_job_kwargs[award_level] = True
+        for award_type in award_types:
+            download_job_kwargs[award_type] = True
+        if agency and agency != 'all':
+            download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
+        if sub_agency:
+            download_job_kwargs['sub_agency'] = SubtierAgency.objects.filter(subtier_agency_id=sub_agency).first()
+        if start_date:
+            download_job_kwargs['start_date'] = start_date
+        if end_date:
+            download_job_kwargs['end_date'] = end_date
+        if date_type:
+            download_job_kwargs['date_type'] = date_type
+        download_job = BulkDownloadJob(**download_job_kwargs)
         download_job.save()
+
+        logger.info('Added Bulk Download Job: {}\n'
+                    'Filename: {}\n'
+                    'Request Params: {}'.format(download_job.bulk_download_job_id,
+                                                download_job.file_name,
+                                                download_job.json_request))
 
         kwargs = {'download_job': download_job,
                   'file_name': timestamped_file_name,
