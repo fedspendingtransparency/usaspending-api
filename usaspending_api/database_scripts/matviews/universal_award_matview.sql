@@ -177,6 +177,7 @@ CREATE INDEX idx_fdbd0c97__product_or_service_code_temp ON universal_award_matvi
 CREATE INDEX idx_fdbd0c97__gin_product_or_service_description_temp ON universal_award_matview_temp USING GIN(("product_or_service_description") gin_trgm_ops);
 CREATE INDEX idx_fdbd0c97__naics_code_temp ON universal_award_matview_temp USING GIN("naics_code" gin_trgm_ops);
 CREATE INDEX idx_fdbd0c97__naics_description_temp ON universal_award_matview_temp USING GIN(UPPER("naics_description") gin_trgm_ops);
+CREATE INDEX idx_fdbd0c97__business_categories_temp ON universal_award_matview_temp USING GIN("business_categories");
 
 CLUSTER VERBOSE universal_award_matview_temp USING idx_fdbd0c97__action_date_temp;
 
@@ -231,6 +232,7 @@ ALTER INDEX IF EXISTS idx_fdbd0c97__product_or_service_code RENAME TO idx_fdbd0c
 ALTER INDEX IF EXISTS idx_fdbd0c97__gin_product_or_service_description RENAME TO idx_fdbd0c97__gin_product_or_service_description_old;
 ALTER INDEX IF EXISTS idx_fdbd0c97__naics_code RENAME TO idx_fdbd0c97__naics_code_old;
 ALTER INDEX IF EXISTS idx_fdbd0c97__naics_description RENAME TO idx_fdbd0c97__naics_description_old;
+ALTER INDEX IF EXISTS idx_fdbd0c97__business_categories RENAME TO idx_fdbd0c97__business_categories_old;
 
 ALTER MATERIALIZED VIEW universal_award_matview_temp RENAME TO universal_award_matview;
 ALTER INDEX idx_fdbd0c97__id_temp RENAME TO idx_fdbd0c97__id;
@@ -281,3 +283,4 @@ ALTER INDEX idx_fdbd0c97__product_or_service_code_temp RENAME TO idx_fdbd0c97__p
 ALTER INDEX idx_fdbd0c97__gin_product_or_service_description_temp RENAME TO idx_fdbd0c97__gin_product_or_service_description;
 ALTER INDEX idx_fdbd0c97__naics_code_temp RENAME TO idx_fdbd0c97__naics_code;
 ALTER INDEX idx_fdbd0c97__naics_description_temp RENAME TO idx_fdbd0c97__naics_description;
+ALTER INDEX idx_fdbd0c97__business_categories_temp RENAME TO idx_fdbd0c97__business_categories;
