@@ -22,17 +22,17 @@ SELECT
   recipient_location."congressional_code" AS "recipient_location_congressional_code",
   recipient_location."zip5" AS "recipient_location_zip5",
   place_of_performance."location_country_code" AS "pop_country_code",
-  place_of_performance."county_name" AS "pop_country_name",
+  place_of_performance."country_name" AS "pop_country_name",
   place_of_performance."state_code" AS "pop_state_code",
   place_of_performance."county_code" AS "pop_county_code",
   place_of_performance."county_name" AS "pop_county_name",
   place_of_performance."congressional_code" AS "pop_congressional_code",
   place_of_performance."zip5" AS "pop_zip5",
+
   TAA."name" AS "awarding_toptier_agency_name",
   TAA."abbreviation" AS "awarding_toptier_agency_abbreviation",
   TFA."name" AS "funding_toptier_agency_name",
   TFA."abbreviation" AS "funding_toptier_agency_abbreviation",
-
   SAA."name" AS awarding_subtier_agency_name,
   SAA."abbreviation" AS awarding_subtier_agency_abbreviation,
   SFA."name" AS funding_subtier_agency_name,
@@ -46,6 +46,7 @@ SELECT
   "psc"."description" AS product_or_service_description,
   "transaction_fpds"."naics" AS "naics_code",
   "naics"."description" AS "naics_description",
+
   obligation_to_enum("awards"."total_obligation") AS "total_obl_bin",
   "transaction_fpds"."type_of_contract_pricing",
   "transaction_fpds"."type_set_aside",
@@ -92,6 +93,7 @@ GROUP BY
   "transaction_normalized"."fiscal_year",
   "transaction_normalized"."type",
   "transaction_fpds"."pulled_from",
+
   recipient_location."location_country_code",
   recipient_location."country_name",
   recipient_location."state_code",
@@ -99,6 +101,7 @@ GROUP BY
   recipient_location."county_name",
   recipient_location."congressional_code",
   recipient_location."zip5",
+
   place_of_performance."location_country_code",
   place_of_performance."county_name",
   place_of_performance."state_code",

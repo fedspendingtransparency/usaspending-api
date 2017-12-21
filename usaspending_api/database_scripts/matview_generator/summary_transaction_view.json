@@ -15,7 +15,7 @@
     "  recipient_location.\"congressional_code\" AS \"recipient_location_congressional_code\",",
     "  recipient_location.\"zip5\" AS \"recipient_location_zip5\",",
     "  place_of_performance.\"location_country_code\" AS \"pop_country_code\",",
-    "  place_of_performance.\"county_name\" AS \"pop_country_name\",",
+    "  place_of_performance.\"country_name\" AS \"pop_country_name\",",
     "  place_of_performance.\"state_code\" AS \"pop_state_code\",",
     "  place_of_performance.\"county_code\" AS \"pop_county_code\",",
     "  place_of_performance.\"county_name\" AS \"pop_county_name\",",
