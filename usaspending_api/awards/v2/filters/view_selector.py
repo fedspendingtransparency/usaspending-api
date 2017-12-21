@@ -18,14 +18,14 @@ logger = logging.getLogger(__name__)
 MATVIEW_SELECTOR = {
     'SummaryView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
-        'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
+        'prevent_values': {},  # Example: 'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}
         'examine_values': {},
         'model': SummaryView,
         'base_model': 'transaction',
     },
     'SummaryAwardView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
-        'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
+        'prevent_values': {},
         'examine_values': {},
         'model': SummaryAwardView,
         'base_model': 'award',
@@ -87,7 +87,7 @@ MATVIEW_SELECTOR = {
             'contract_pricing_type_codes',
             'set_aside_type_codes',
             'extent_competed_type_codes'],
-        'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
+        'prevent_values': {},
         'examine_values': {
             'time_period': can_use_month_aggregation,
             'award_amounts': can_use_total_obligation_enum},
