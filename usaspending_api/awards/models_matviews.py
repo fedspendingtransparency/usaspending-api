@@ -113,10 +113,14 @@ class SummaryTransactionView(models.Model):
     pop_state_code = models.TextField()
     pop_congressional_code = models.TextField()
 
-    awarding_toptier_agency_name = models.TextField()
-    funding_toptier_agency_name = models.TextField()
-    awarding_toptier_agency_abbreviation = models.TextField()
-    funding_toptier_agency_abbreviation = models.TextField()
+    awarding_toptier_agency_name = models.TextField(blank=True, null=True)
+    awarding_toptier_agency_abbreviation = models.TextField(blank=True, null=True)
+    funding_toptier_agency_name = models.TextField(blank=True, null=True)
+    funding_toptier_agency_abbreviation = models.TextField(blank=True, null=True)
+    awarding_subtier_agency_name = models.TextField(blank=True, null=True)
+    awarding_subtier_agency_abbreviation = models.TextField(blank=True, null=True)
+    funding_subtier_agency_name = models.TextField(blank=True, null=True)
+    funding_subtier_agency_abbreviation = models.TextField(blank=True, null=True)
 
     business_categories = ArrayField(models.TextField(), default=list)
     cfda_number = models.TextField()
@@ -243,7 +247,7 @@ class SummaryAwardView(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'summary_award_all_agencies_view'
+        db_table = 'summary_award_view'
 
 
 class SummaryView(models.Model):
@@ -265,7 +269,7 @@ class SummaryView(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'summary_view_all_agencies_view'
+        db_table = 'summary_view'
 
 
 class SummaryNaicsCodesView(models.Model):
@@ -366,4 +370,4 @@ class SummaryTransactionMonthView(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'summary_transaction_month_award_view'
+        db_table = 'summary_transaction_month_view'

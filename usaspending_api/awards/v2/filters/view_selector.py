@@ -66,7 +66,7 @@ MATVIEW_SELECTOR = {
             'contract_pricing_type_codes',
             'set_aside_type_codes',
             'extent_competed_type_codes'],
-        'prevent_values': {'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}},
+        'prevent_values': {},
         'examine_values': {},
         'model': SummaryTransactionView,
         'base_model': 'transaction',
