@@ -5,13 +5,12 @@ from urllib.error import HTTPError
 from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 logger = logging.getLogger(__name__)
-dod_agency = str(Agency.objects.filter(toptier_agency__cgac_code=DOD_CGAC).values_list('id', flat=True).first())
 
 
 def spending_filter(alt_set, queryset, filters, _type):
+
     for key, value in filters.items():
         # check for valid key
         if value is None:
@@ -68,20 +67,13 @@ def spending_filter(alt_set, queryset, filters, _type):
             # agency
             elif key == 'agency':
                 # TODO: Will need to incorporate "agency_type" here to filter based on toptier or subtier.
+
                 # Currently default to filtering on toptier
-                if value == dod_agency:
-                    dod_agencies = Agency.objects.filter(toptier_flag=True,
-                                                         toptier_agency__cgac_code__in=DOD_ARMED_FORCES_CGAC
-                                                         ).values_list('toptier_agency', flat=True)
+                agency = Agency.objects.filter(toptier_flag=True, id=value).first()
+                if agency is None:
+                    raise InvalidParameterException('Agency ID provided does not correspond to a toptier agency')
 
-                    and_alt_set = alt_set.filter(treasury_account__funding_toptier_agency__in=dod_agencies)
-                else:
-                    agency = Agency.objects.filter(toptier_flag=True, id=value).first()
-                    if agency is None:
-                        raise InvalidParameterException('Agency ID provided does not correspond to a toptier agency')
-
-                    and_alt_set = alt_set.filter(treasury_account__funding_toptier_agency=agency.toptier_agency)
-
+                and_alt_set = alt_set.filter(treasury_account__funding_toptier_agency=agency.toptier_agency)
                 alt_set &= and_alt_set
 
         # All other _type
@@ -133,19 +125,11 @@ def spending_filter(alt_set, queryset, filters, _type):
                 # TODO: Will need to incorporate "agency_type" here to filter based on toptier or subtier.
 
                 # Currently default to filtering on toptier
+                agency = Agency.objects.filter(toptier_flag=True, id=value).first()
+                if agency is None:
+                    raise InvalidParameterException('Agency ID provided does not correspond to a toptier agency')
 
-                if value == dod_agency:
-                    dod_agencies = Agency.objects.filter(toptier_flag=True,
-                                                         toptier_agency__cgac_code__in=DOD_ARMED_FORCES_CGAC
-                                                         ).values_list('toptier_agency', flat=True)
-
-                    and_queryset = queryset.filter(treasury_account__funding_toptier_agency__in=dod_agencies)
-                else:
-                    agency = Agency.objects.filter(toptier_flag=True, id=value).first()
-                    if agency is None:
-                        raise InvalidParameterException('Agency ID provided does not correspond to a toptier agency')
-
-                    and_queryset = queryset.filter(treasury_account__funding_toptier_agency=agency.toptier_agency)
+                and_queryset = queryset.filter(treasury_account__funding_toptier_agency=agency.toptier_agency)
                 queryset &= and_queryset
 
     return alt_set, queryset

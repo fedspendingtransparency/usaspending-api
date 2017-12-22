@@ -52,7 +52,7 @@ award_contracts_mapping = {
     'FedBizOpps': 'fed_biz_opps_description',
     'Small Business Competitiveness Demonstration Program': 'small_business_competitive',
     'PSC Code': 'product_or_service_code',
-    'NAICS Code': 'naics_code',
+    'NAICS Code': 'naics',
     'NAICS Description': 'naics_description',
     'DoD Claimant Program Code': 'dod_claimant_program_code',
     'Program, System, or Equipment Code': 'program_system_or_equipmen',
@@ -91,7 +91,7 @@ grant_award_mapping = {
 loan_award_mapping = {
     'Award ID': 'fain',
     'Recipient Name': 'recipient_name',
-    'Issued Date': 'action_date',
+    'Issued Date': 'issued_date',
     'Loan Value': 'face_value_loan_guarantee',
     'Subsidy Cost': 'original_loan_subsidy_cost',
     'Awarding Agency': 'awarding_toptier_agency_name',

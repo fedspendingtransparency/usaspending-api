@@ -189,6 +189,39 @@ class GlossaryViewSet(FilterQuerysetMixin, DetailViewSet):
         return filtered_queryset
 
 
+class AwardAutocompleteViewSet(APIView):
+
+    @cache_response()
+    # TODO: This only returns one response for each, we have duplicate PIIDs that need to be dealt with in the DB
+    def post(self, request):
+
+        json_request = request.data
+        search_text = json_request.get('value', None)
+
+        if not search_text:
+            raise InvalidParameterException('Missing one or more required request parameters: value')
+
+        all_qs = Award.objects.all()
+
+        piid_qs = all_qs.filter(piid__iexact=search_text)
+        parent_award_qs = all_qs.filter(parent_award__piid__iexact=search_text)
+        fain_qs = all_qs.filter(fain__iexact=search_text)
+        uri_qs = all_qs.filter(uri__iexact=search_text)
+
+        response = {}
+        matched_objects = {}
+        matched_objects['fain'] = list(fain_qs.values('id', 'fain')[:1])
+        matched_objects['parent_award__piid'] = list(parent_award_qs.values('id', 'parent_award__piid')[:1])
+        matched_objects['piid'] = list(piid_qs.values('id', 'piid')[:1])
+        matched_objects['uri'] = list(uri_qs.values('id', 'uri')[:1])
+
+        response['matched_objects'] = matched_objects
+
+        return Response(
+            response
+        )
+
+
 class GlossaryAutocomplete(FilterQuerysetMixin, AutocompleteView):
     """Autocomplete support for legal entity (recipient) objects."""
     serializer_class = DefinitionSerializer
