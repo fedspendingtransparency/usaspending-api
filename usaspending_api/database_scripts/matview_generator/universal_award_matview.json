@@ -305,6 +305,10 @@
       "name": "naics_description",
       "method": "GIN",
       "columns": [{"name": "UPPER(\"naics_description\")", "opclass": "gin_trgm_ops"}]
+    }, {
+      "name": "business_categories",
+      "method": "GIN",
+      "columns": [{"name": "\"business_categories\""}]
     }
   ]
 }

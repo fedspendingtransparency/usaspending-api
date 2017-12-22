@@ -145,6 +145,7 @@ CREATE INDEX idx_d625130a__type_of_contract_temp ON summary_transaction_view_tem
 CREATE INDEX idx_d625130a__ordered_fy_set_aside_temp ON summary_transaction_view_temp USING BTREE("fiscal_year" DESC NULLS LAST, "type_set_aside") WITH (fillfactor = 100);
 CREATE INDEX idx_d625130a__extent_competed_temp ON summary_transaction_view_temp USING BTREE("extent_competed") WITH (fillfactor = 100);
 CREATE INDEX idx_d625130a__type_set_aside_temp ON summary_transaction_view_temp USING BTREE("type_set_aside") WITH (fillfactor = 100) WHERE "type_set_aside" IS NOT NULL;
+CREATE INDEX idx_d625130a__business_categories_temp ON summary_transaction_view_temp USING GIN("business_categories");
 
 VACUUM ANALYZE VERBOSE summary_transaction_view_temp;
 
@@ -173,6 +174,7 @@ ALTER INDEX IF EXISTS idx_d625130a__type_of_contract RENAME TO idx_d625130a__typ
 ALTER INDEX IF EXISTS idx_d625130a__ordered_fy_set_aside RENAME TO idx_d625130a__ordered_fy_set_aside_old;
 ALTER INDEX IF EXISTS idx_d625130a__extent_competed RENAME TO idx_d625130a__extent_competed_old;
 ALTER INDEX IF EXISTS idx_d625130a__type_set_aside RENAME TO idx_d625130a__type_set_aside_old;
+ALTER INDEX IF EXISTS idx_d625130a__business_categories RENAME TO idx_d625130a__business_categories_old;
 
 ALTER MATERIALIZED VIEW summary_transaction_view_temp RENAME TO summary_transaction_view;
 ALTER INDEX idx_d625130a__ordered_action_date_temp RENAME TO idx_d625130a__ordered_action_date;
@@ -199,3 +201,4 @@ ALTER INDEX idx_d625130a__type_of_contract_temp RENAME TO idx_d625130a__type_of_
 ALTER INDEX idx_d625130a__ordered_fy_set_aside_temp RENAME TO idx_d625130a__ordered_fy_set_aside;
 ALTER INDEX idx_d625130a__extent_competed_temp RENAME TO idx_d625130a__extent_competed;
 ALTER INDEX idx_d625130a__type_set_aside_temp RENAME TO idx_d625130a__type_set_aside;
+ALTER INDEX idx_d625130a__business_categories_temp RENAME TO idx_d625130a__business_categories;
