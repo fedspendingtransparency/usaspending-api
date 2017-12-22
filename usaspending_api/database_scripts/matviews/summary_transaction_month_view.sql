@@ -145,6 +145,7 @@ CREATE INDEX idx_9e65a28f__type_of_contract_temp ON summary_transaction_month_vi
 CREATE INDEX idx_9e65a28f__fy_set_aside_temp ON summary_transaction_month_view_temp USING BTREE("fiscal_year" DESC NULLS LAST, "type_set_aside") WITH (fillfactor = 100);
 CREATE INDEX idx_9e65a28f__extent_competed_temp ON summary_transaction_month_view_temp USING BTREE("extent_competed") WITH (fillfactor = 100);
 CREATE INDEX idx_9e65a28f__type_set_aside_temp ON summary_transaction_month_view_temp USING BTREE("type_set_aside") WITH (fillfactor = 100) WHERE "type_set_aside" IS NOT NULL;
+CREATE INDEX idx_9e65a28f__business_categories_temp ON summary_transaction_month_view_temp USING GIN("business_categories");
 
 CLUSTER VERBOSE summary_transaction_month_view_temp USING idx_9e65a28f__date_temp;
 
@@ -175,6 +176,7 @@ ALTER INDEX IF EXISTS idx_9e65a28f__type_of_contract RENAME TO idx_9e65a28f__typ
 ALTER INDEX IF EXISTS idx_9e65a28f__fy_set_aside RENAME TO idx_9e65a28f__fy_set_aside_old;
 ALTER INDEX IF EXISTS idx_9e65a28f__extent_competed RENAME TO idx_9e65a28f__extent_competed_old;
 ALTER INDEX IF EXISTS idx_9e65a28f__type_set_aside RENAME TO idx_9e65a28f__type_set_aside_old;
+ALTER INDEX IF EXISTS idx_9e65a28f__business_categories RENAME TO idx_9e65a28f__business_categories_old;
 
 ALTER MATERIALIZED VIEW summary_transaction_month_view_temp RENAME TO summary_transaction_month_view;
 ALTER INDEX idx_9e65a28f__date_temp RENAME TO idx_9e65a28f__date;
@@ -201,3 +203,4 @@ ALTER INDEX idx_9e65a28f__type_of_contract_temp RENAME TO idx_9e65a28f__type_of_
 ALTER INDEX idx_9e65a28f__fy_set_aside_temp RENAME TO idx_9e65a28f__fy_set_aside;
 ALTER INDEX idx_9e65a28f__extent_competed_temp RENAME TO idx_9e65a28f__extent_competed;
 ALTER INDEX idx_9e65a28f__type_set_aside_temp RENAME TO idx_9e65a28f__type_set_aside;
+ALTER INDEX idx_9e65a28f__business_categories_temp RENAME TO idx_9e65a28f__business_categories;

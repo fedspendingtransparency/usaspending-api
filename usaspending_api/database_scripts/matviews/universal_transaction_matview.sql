@@ -178,6 +178,7 @@ CREATE INDEX idx_09492a43__naics_code_temp ON universal_transaction_matview_temp
 CREATE INDEX idx_09492a43__naics_description_temp ON universal_transaction_matview_temp USING GIN(UPPER("naics_description") gin_trgm_ops);
 CREATE INDEX idx_09492a43__face_value_loan_guarantee_temp ON universal_transaction_matview_temp USING BTREE("face_value_loan_guarantee") WITH (fillfactor = 100) WHERE "face_value_loan_guarantee" IS NOT NULL;
 CREATE INDEX idx_09492a43__original_loan_subsidy_cost_temp ON universal_transaction_matview_temp USING BTREE("original_loan_subsidy_cost") WITH (fillfactor = 100) WHERE "original_loan_subsidy_cost" IS NOT NULL;
+CREATE INDEX idx_09492a43__business_categories_temp ON universal_transaction_matview_temp USING GIN("business_categories");
 
 CLUSTER VERBOSE universal_transaction_matview_temp USING idx_09492a43__action_date_temp;
 
@@ -249,6 +250,7 @@ ALTER INDEX IF EXISTS idx_09492a43__naics_code RENAME TO idx_09492a43__naics_cod
 ALTER INDEX IF EXISTS idx_09492a43__naics_description RENAME TO idx_09492a43__naics_description_old;
 ALTER INDEX IF EXISTS idx_09492a43__face_value_loan_guarantee RENAME TO idx_09492a43__face_value_loan_guarantee_old;
 ALTER INDEX IF EXISTS idx_09492a43__original_loan_subsidy_cost RENAME TO idx_09492a43__original_loan_subsidy_cost_old;
+ALTER INDEX IF EXISTS idx_09492a43__business_categories RENAME TO idx_09492a43__business_categories_old;
 
 ALTER MATERIALIZED VIEW universal_transaction_matview_temp RENAME TO universal_transaction_matview;
 ALTER INDEX idx_09492a43__transaction_id_temp RENAME TO idx_09492a43__transaction_id;
@@ -316,3 +318,4 @@ ALTER INDEX idx_09492a43__naics_code_temp RENAME TO idx_09492a43__naics_code;
 ALTER INDEX idx_09492a43__naics_description_temp RENAME TO idx_09492a43__naics_description;
 ALTER INDEX idx_09492a43__face_value_loan_guarantee_temp RENAME TO idx_09492a43__face_value_loan_guarantee;
 ALTER INDEX idx_09492a43__original_loan_subsidy_cost_temp RENAME TO idx_09492a43__original_loan_subsidy_cost;
+ALTER INDEX idx_09492a43__business_categories_temp RENAME TO idx_09492a43__business_categories;
