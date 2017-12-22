@@ -78,5 +78,7 @@ def return_query_strings(use_matview):
     if use_matview:
         q_str = '{0}_{1}__in'
         loc_dict['country'] = 'country_code'
+    else:
+        loc_dict['country'] = 'location_country_code'
 
     return q_str, loc_dict
