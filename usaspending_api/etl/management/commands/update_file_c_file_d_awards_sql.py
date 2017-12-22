@@ -6,6 +6,8 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.db import connection
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
+
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
@@ -18,9 +20,18 @@ class Command(BaseCommand):
         with connection.cursor() as curs:
             curs.execute(self.CREATE_FABA_CORRECTOR_TABLE)
             curs.execute(self.ALTER_FABA_CORRECTOR_TABLE)
+            logger.info('FABA_CORRECTOR TABLE CREATED')
+
             curs.execute(self.UNLINK_FILE_C_FILE_D)
+            logger.info('FILE_C_FILE_D_UNLINKED. {} file C rows'.format(curs.rowcount))
+
             curs.execute(self.CREATE_FILE_C_FILE_D_MAPPING)
+            logger.info('NEW LINKAGES ADDED TO FABA CORRECTOR. {} potential links (including duplicates)'.format(curs.rowcount))
+
             curs.execute(self.LINK_FILE_C_FILE_D)
+            logger.info('NEW LINKAGES APPLIED TO FILE C: FILE D. {} successful links'.format(curs.rowcount))
+
+
 
     CREATE_FABA_CORRECTOR_TABLE = """
         CREATE TEMPORARY TABLE faba_corrector (
