@@ -210,6 +210,10 @@
         "name": "type_set_aside",
         "where": "\"type_set_aside\" IS NOT NULL",
         "columns": [{"name": "\"type_set_aside\""}]
+    }, {
+      "name": "business_categories",
+      "method": "GIN",
+      "columns": [{"name": "\"business_categories\""}]
     }
   ]
 }

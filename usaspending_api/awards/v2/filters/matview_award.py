@@ -45,7 +45,7 @@ def award_filter(filters, model):
         if key == "keyword":
             keyword = value
 
-            compound_or = Q(recipient_name__icontains=keyword) | \
+            compound_or = Q(recipient_name__contains=keyword.upper()) | \
                 Q(piid=keyword) | \
                 Q(fain=keyword) | \
                 Q(recipient_unique_id=keyword) | \
@@ -140,7 +140,7 @@ def award_filter(filters, model):
                 raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
             recipient_string = str(value[0])
 
-            filter_obj = Q(recipient_name__icontains=recipient_string)
+            filter_obj = Q(recipient_name__contains=recipient_string.upper())
 
             if len(recipient_string) == 9:
                 filter_obj |= Q(recipient_unique_id__iexact=recipient_string)

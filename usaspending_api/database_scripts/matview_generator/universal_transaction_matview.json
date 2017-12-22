@@ -358,6 +358,10 @@
       "name": "original_loan_subsidy_cost",
       "where": "\"original_loan_subsidy_cost\" IS NOT NULL",
       "columns": [{"name": "\"original_loan_subsidy_cost\""}]
+    }, {
+      "name": "business_categories",
+      "method": "GIN",
+      "columns": [{"name": "\"business_categories\""}]
     }
   ]
 }
