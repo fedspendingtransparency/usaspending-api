@@ -101,7 +101,7 @@ GROUP BY
   recipient_location."congressional_code",
   recipient_location."zip5",
   place_of_performance."location_country_code",
-  place_of_performance."county_name",
+  place_of_performance."country_name",
   place_of_performance."state_code",
   place_of_performance."county_code",
   place_of_performance."county_name",
