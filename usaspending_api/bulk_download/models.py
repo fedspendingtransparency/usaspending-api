@@ -3,11 +3,31 @@ import datetime
 from django.db import models
 from django.utils import timezone
 from usaspending_api.download.models import JobStatus
+from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
 
 class BulkDownloadJob(models.Model):
+    # Job data
     bulk_download_job_id = models.AutoField(primary_key=True)
     job_status = models.ForeignKey(JobStatus, models.DO_NOTHING, null=False)
+    monthly_download = models.BooleanField(default=False)
+
+    # Used to easily identify duplicate or search download jobs
+    json_request = models.TextField(blank=True, null=True)
+    prime_awards = models.BooleanField(default=False)
+    sub_awards = models.BooleanField(default=False)
+    contracts = models.BooleanField(default=False)
+    grants = models.BooleanField(default=False)
+    direct_payments = models.BooleanField(default=False)
+    loans = models.BooleanField(default=False)
+    other_financial_assistance = models.BooleanField(default=False)
+    agency = models.ForeignKey(ToptierAgency, models.DO_NOTHING, null=True)
+    sub_agency = models.ForeignKey(SubtierAgency, models.DO_NOTHING, null=True)
+    date_type = models.TextField(default="action_date")
+    start_date = models.DateField(null=True)
+    end_date = models.DateField(null=True)
+
+    # File details
     file_name = models.TextField(blank=False, null=False)
     file_size = models.BigIntegerField(blank=True, null=True)
     number_of_rows = models.BigIntegerField(blank=True, null=True)

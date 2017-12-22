@@ -1,8 +1,10 @@
 import datetime
 import logging
 import time
+from calendar import monthrange
 
 from fiscalyear import *
+from collections import OrderedDict
 
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.dateparse import parse_date
@@ -60,6 +62,16 @@ def dates_are_fiscal_year_bookends(start, end):
     return False
 
 
+def dates_are_month_bookends(start, end):
+    try:
+        last_day_of_month = monthrange(end.year, end.month)[1]
+        if start.day == 1 and end.day == last_day_of_month:
+            return True
+    except Exception as e:
+        logger.error(str(e))
+    return False
+
+
 def generate_all_fiscal_years_in_range(start, end):
     """ For a given date-range, provide the inclusive fiscal years """
     fiscal_years = []
@@ -84,6 +96,16 @@ def generate_raw_quoted_query(queryset):
         str_fix_param = '\'{}\''.format(param) if isinstance(param, QUOTABLE_TYPES) else param
         str_fix_params.append(str_fix_param)
     return sql % tuple(str_fix_params)
+
+
+def order_nested_object(nested_object):
+    ''' Simply recursively order the item. To be used for standardizing objects for JSON dumps'''
+    if isinstance(nested_object, list):
+        return sorted([order_nested_object(subitem) for subitem in nested_object])
+    elif isinstance(nested_object, dict):
+        return OrderedDict([(key, order_nested_object(nested_object[key])) for key in sorted(nested_object.keys())])
+    else:
+        return nested_object
 
 
 def generate_last_completed_fiscal_quarter(fiscal_year):

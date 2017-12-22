@@ -286,11 +286,13 @@ def transaction_filter(filters):
 
         # award_ids
         elif key == "award_ids":
-            or_queryset = []
-            for v in value:
-                or_queryset.append(v)
-            if len(or_queryset) != 0:
-                queryset &= TransactionNormalized.objects.filter(award__id__in=or_queryset)
+            if len(value) != 0:
+                filter_obj = Q()
+                for val in value:
+                    filter_obj |= Q(award__piid__icontains=val) | Q(award__fain__icontains=val) | \
+                                  Q(award__uri__icontains=val)
+
+                queryset &= TransactionNormalized.objects.filter(filter_obj)
 
         # program_numbers
         elif key == "program_numbers":

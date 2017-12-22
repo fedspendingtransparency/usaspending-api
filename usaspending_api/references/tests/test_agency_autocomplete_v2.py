@@ -31,6 +31,7 @@ def agency_data(db):
         Agency,
         toptier_agency__name="Department of Defence",
         subtier_agency__name="Department of the Army",
+        subtier_agency__abbreviation="USA",
         toptier_flag=False,
         _fill_optional=True)
 
@@ -104,3 +105,25 @@ def test_funding_agency_autocomplete_failure(client):
         content_type='application/json',
         data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_awarding_agency_autocomplete_by_abbrev(client, agency_data):
+    "Verify that search on subtier abbreviation works"
+
+    # test for exact match
+    resp = client.post(
+        '/api/v2/autocomplete/awarding_agency/',
+        content_type='application/json',
+        data=json.dumps({'search_text': 'USA'}))
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data['results']) == 1
+    assert resp.data['results'][0]['subtier_agency']['name'] == 'Department of the Army'
+
+    # test for failure
+    resp = client.post(
+        '/api/v2/autocomplete/awarding_agency/',
+        content_type='application/json',
+        data=json.dumps({'search_text': 'ABC'}))
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data['results']) == 0

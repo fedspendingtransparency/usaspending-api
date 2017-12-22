@@ -3,6 +3,7 @@ from usaspending_api.references.constants import WEBSITE_AWARD_BINS
 from usaspending_api.common.helpers import dates_are_fiscal_year_bookends
 from usaspending_api.common.helpers import generate_all_fiscal_years_in_range
 from usaspending_api.common.helpers import generate_date_from_string
+from usaspending_api.common.helpers import dates_are_month_bookends
 
 
 def date_or_fy_queryset(date_dict, table, fiscal_year_column, action_date_column):
@@ -92,3 +93,36 @@ def total_obligation_queryset(amount_obj, model):
     if queryset_init:
         return True, or_queryset
     return False, None
+
+
+def can_use_month_aggregation(time_period):
+    '''
+        time_period is the list of action_date ranges from API
+    '''
+    try:
+        for v in time_period:
+            s = generate_date_from_string(v.get("start_date"))
+            e = generate_date_from_string(v.get("end_date"))
+            if not dates_are_month_bookends(s, e):
+                return False
+    except Exception:
+        return False
+    return True
+
+
+def can_use_total_obligation_enum(amount_obj):
+    bins = []
+    try:
+        for v in amount_obj:
+            lower_bound = v.get("lower_bound")
+            upper_bound = v.get("upper_bound")
+            for key, limits in WEBSITE_AWARD_BINS.items():
+                if lower_bound == limits['lower'] and upper_bound == limits['upper']:
+                    bins.append(key)
+                    break
+
+        if len(bins) == len(amount_obj):
+            return True
+    except Exception:
+        pass
+    return False
