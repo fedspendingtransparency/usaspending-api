@@ -37,6 +37,10 @@ def documentation_test_data():
     ("/api/v1/awards/", {"order": ["recipient__recipient_name"]}),
     ("/api/v1/awards/", {"order": ["-recipient__recipient_name"]}),
     ("/api/v1/awards/", {"page": 5, "limit": 10}),
+    ("/api/v1/awards/autocomplete/", {"fields": ["description"], "value": "furniture"}),
+    ("/api/v1/awards/autocomplete/", {"fields": ["description", "latest_transaction__description"], "value": "furniture"}),
+    ("/api/v1/awards/autocomplete/", {"fields": ["description"], "value": "f", "limit": 5}),
+    ("/api/v1/awards/autocomplete/", {"fields": ["description"], "value": "f", "mode": "startswith"}),
     ("/api/v1/awards/total/", {"field": "total_obligation", "group": "date_signed__fy"}),
     ("/api/v1/awards/total/", {"field": "total_obligation", "group": "date_signed", "aggregate": "count", "date_part": "month"}),
 ])

@@ -1,4 +1,4 @@
-from django.db.models import F, Q
+from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
@@ -40,13 +40,11 @@ class BaseAutocompleteViewSet(APIView):
     # Shared autocomplete...
     def agency_autocomplete(self, request):
         """Search by subtier agencies, return all, with toptiers first"""
-
         search_text, limit = self.get_request_payload(request)
 
         queryset = Agency.objects.filter(
-            Q(subtier_agency__name__icontains=search_text)
-            | Q(subtier_agency__abbreviation__icontains=search_text)
-            ).order_by('-toptier_flag')
+            subtier_agency__name__icontains=search_text). \
+            order_by('-toptier_flag')
 
         return Response(
             {'results': AgencySerializer(queryset[:limit], many=True).data}

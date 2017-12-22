@@ -194,12 +194,6 @@ def write_csvs(download_job, file_name, columns, sources):
     download_job.file_size = 0
     download_job.save()
 
-    logger.info('Processing Job: {}\n'
-                'Filename: {}\n'
-                'Request Params: {}'.format(download_job.bulk_download_job_id,
-                                            download_job.file_name,
-                                            download_job.json_request))
-
     try:
         file_path = settings.BULK_DOWNLOAD_LOCAL_PATH + file_name
         working_dir = os.path.splitext(file_path)[0]
@@ -219,6 +213,7 @@ def write_csvs(download_job, file_name, columns, sources):
 
             source_query = source.row_emitter(columns)
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
+            start_writing = time.time()
             reached_end = False
             split_csv = 1
             while not reached_end:
@@ -230,7 +225,6 @@ def write_csvs(download_job, file_name, columns, sources):
                 split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
                 split_csv_query_raw = generate_raw_quoted_query(split_csv_query)
                 split_csv_query_raw = apply_annotations_to_sql(split_csv_query_raw, source.human_names)
-                logger.debug('PSQL Query: {}'.format(split_csv_query_raw))
                 # Generate the csv with \copy
                 psql_command = subprocess.Popen(
                     ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
@@ -248,6 +242,7 @@ def write_csvs(download_job, file_name, columns, sources):
                     reached_end = True
                 else:
                     split_csv += 1
+            logger.info('wrote {}.csv took {} seconds'.format(source_name, time.time() - start_writing))
 
         shutil.rmtree(working_dir)
         zipped_csvs.close()
@@ -267,15 +262,9 @@ def write_csvs(download_job, file_name, columns, sources):
         download_job.error_message = 'An exception was raised while attempting to write the CSV'
         if settings.DEBUG:
             download_job.error_message += '\n' + str(e)
-        logger.error(download_job.error_message + ': ' + str(e))
     else:
         download_job.job_status_id = JOB_STATUS_DICT['finished']
 
-    logger.info('Processed Job: {}\n'
-                'Filename: {}\n'
-                'Request Params: {}'.format(download_job.bulk_download_job_id,
-                                            download_job.file_name,
-                                            download_job.json_request))
     download_job.save()
 
     logger.info('generate_zips took {} seconds'.format(time.time() - start_zip_generation))

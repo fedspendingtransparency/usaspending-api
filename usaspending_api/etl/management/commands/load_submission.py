@@ -4,7 +4,6 @@ import re
 import signal
 import sys
 
-from django.core.management.base import CommandError
 from django.core.management import call_command
 from django.db import connections, transaction
 from django.db.models import Q
@@ -81,9 +80,9 @@ class Command(load_base.Command):
         logger.info('Finished getting submission {} from broker'.format(submission_id))
 
         if len(submission_data) == 0:
-            raise CommandError('Could not find submission with id ' + str(submission_id))
+            raise 'Could not find submission with id ' + str(submission_id)
         elif len(submission_data) > 1:
-            raise CommandError('Found multiple submissions with id ' + str(submission_id))
+            raise 'Found multiple submissions with id ' + str(submission_id)
 
         submission_data = submission_data[0]
         broker_submission_id = submission_data['submission_id']
