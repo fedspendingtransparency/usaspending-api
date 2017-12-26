@@ -11,8 +11,7 @@ def geocode_filter_locations(scope, values, model, use_matview=False, app_name='
     model- awards or transactions will create queryset for model
     returns queryset
     """
-    queryset_init = True
-    or_queryset = None
+    or_queryset = Q()
 
     # Accounts for differences between matview queries and regular queries
     q_str, country_code = return_query_string(use_matview)
@@ -23,44 +22,32 @@ def geocode_filter_locations(scope, values, model, use_matview=False, app_name='
     nested_values = create_nested_object(values)
 
     for country, state_zip in nested_values.items():
-        country_qs = Q(**{q_str.format(scope, country_code)+'__exact': country})
-
+        country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
         state_qs = Q()
 
         for state_zip_key, state_values in state_zip.items():
             if state_zip_key == 'zip':
-                state_qs |= Q(**{q_str.format(scope, 'zip5')+'__exact': state_values})
+                state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__exact': state_values})
             else:
-                state_inner_qs = Q(**{q_str.format(scope, 'state_code')+'__exact': state_zip_key})
+                state_inner_qs = Q(**{q_str.format(scope, 'state_code') + '__exact': state_zip_key})
+                county_qs = Q()
+                district_qs = Q()
 
-                if len(state_values['county']) > 0 and len(state_values['district']) > 0:
-                    # A user can filter on both a congressional district and a county code at the same time
-                    # Using 'OR' in this case for the behavior they are looking for both
-                    combine_qs = Q(**{q_str.format(scope, 'county_code')+'__in': state_values['county']})
-                    combine_qs |= Q(**{q_str.format(scope, 'congressional_code')+'__in': state_values['district']})
-                    state_inner_qs &= combine_qs
+                if state_values['county']:
+                    county_qs = Q(**{q_str.format(scope, 'county_code') + '__in': state_values['county']})
+                if state_values['district']:
+                    district_qs = Q(**{q_str.format(scope, 'congressional_code') + '__in': state_values['district']})
+                state_inner_qs &= (county_qs | district_qs)
 
-                elif len(state_values['county']) > 0:
-                    state_inner_qs &= Q(**{q_str.format(scope, 'county_code')+'__in': state_values['county']})
+            state_qs |= state_inner_qs
 
-                elif len(state_values['district']) > 0:
-                    state_inner_qs &= Q(**{q_str.format(scope, 'congressional_code')+'__in': state_values['district']})
-
-                state_qs |= state_inner_qs
-
-        country_qs &= state_qs
-
-        if queryset_init:
-            or_queryset = model.objects.filter(country_qs)
-        else:
-            or_queryset |= model.objects.filter(country_qs)
-    return or_queryset
+        or_queryset |= (country_qs & state_qs)
+    return model.objects.filter(or_queryset)
 
 
 def create_nested_object(values):
     nested_locations = {}
     for v in values:
-
         try:
             # First level in location filtering in country
             # All location requests must have a country otherwise there will be a key error
@@ -77,11 +64,11 @@ def create_nested_object(values):
             # Under state a user can filter on county and/or district (congressional_code)
             # Error will be thrown if no state value
             if v.get('county'):
-                    nested_locations[v['country']][v['state']]['county'].extend(get_fields_list('county', v['county']))
+                nested_locations[v['country']][v['state']]['county'].extend(get_fields_list('county', v['county']))
 
             if v.get('district'):
-                    nested_locations[v['country']][v['state']]['district'].extend(
-                        get_fields_list('district', v['district']))
+                nested_locations[v['country']][v['state']]['district'].extend(
+                    get_fields_list('district', v['district']))
 
         except KeyError:
             # This result if there is value for country or state where necessary
