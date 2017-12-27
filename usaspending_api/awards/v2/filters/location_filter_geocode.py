@@ -72,7 +72,7 @@ def get_fields_list(scope, field_value, loc_dict):
 
 def return_query_strings(use_matview):
     # Returns query strings according based on mat view or database
-    loc_dict = LOCATION_MAPPING
+    loc_dict = LOCATION_MAPPING.copy()
     q_str = '{0}__{1}__in'
 
     if use_matview:
