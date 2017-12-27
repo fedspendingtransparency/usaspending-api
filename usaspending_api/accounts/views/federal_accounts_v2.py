@@ -60,7 +60,18 @@ class DescriptionFederalAccountsViewSet(APIView):
 class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     @cache_response()
     def get(self, request, pk, format=None):
-        return None
+        result = {
+            "results": {
+                "outlay": 1,
+                "budget_authority": 1,
+                "obligated": 1,
+                "unobligated": 1,
+                "balance_brought_forward": 1,
+                "other_budgetary_resources": 1,
+                "appropriations": 1
+            }
+        }
+        return Response(result)
 
 
 class SpendingOverTimeFederalAccountsViewSet(APIView):

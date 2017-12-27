@@ -8,7 +8,7 @@ description_federal_accounts = views.DescriptionFederalAccountsViewSet.as_view()
 fiscal_year_snapshot_federal_accounts = views.FiscalYearSnapshotFederalAccountsViewSet.as_view()
 spending_over_time_federal_accounts = views.SpendingOverTimeFederalAccountsViewSet.as_view()
 spending_by_category_federal_accounts = views.SpendingByCategoryFederalAccountsViewSet.as_view()
-spending_by_award_count_federal_accounts = views.SpendingByAwardCountAccountsViewSet.as_view()
+spending_by_award_count_federal_accounts = views.SpendingByAwardCountFederalAccountsViewSet.as_view()
 spending_by_award_federal_accounts = views.SpendingByAwardFederalAccountsViewSet.as_view()
 
 
