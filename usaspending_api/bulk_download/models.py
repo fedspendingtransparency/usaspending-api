@@ -22,7 +22,7 @@ class BulkDownloadJob(models.Model):
     loans = models.BooleanField(default=False)
     other_financial_assistance = models.BooleanField(default=False)
     agency = models.ForeignKey(ToptierAgency, models.DO_NOTHING, null=True)
-    sub_agency = models.ForeignKey(SubtierAgency, models.DO_NOTHING, null=True)
+    sub_agency = models.TextField(blank=True, null=True)
     date_type = models.TextField(default="action_date")
     start_date = models.DateField(null=True)
     end_date = models.DateField(null=True)
