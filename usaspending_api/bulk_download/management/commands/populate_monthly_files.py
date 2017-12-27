@@ -2,6 +2,10 @@ import logging
 import datetime
 import json
 import multiprocessing
+import os
+import pandas as pd
+import boto
+import re
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -21,6 +25,10 @@ award_mappings = {
     'contracts': ['contracts'],
     'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
 }
+
+MODIFIED_AGENCIES_LIST = os.path.join(settings.BASE_DIR,
+                                      'usaspending_api', 'data',
+                                      'modified_authoritative_agency_list.csv')
 
 
 class Command(BaseCommand):
@@ -122,7 +130,44 @@ class Command(BaseCommand):
             default=False,
             help='Generate all the files locally. Note they will still be uploaded to the S3.'
         )
-
+        parser.add_argument(
+            '--exclude_reuploads',
+            action='store_true',
+            dest='exclude_reuploads',
+            default=False,
+            help='Only uploads files that are not already uploaded, regardless of update date'
+        )
+        parser.add_argument(
+            '--use_modified_list',
+            action='store_true',
+            dest='use_modified_list',
+            default=False,
+            help='Uses the modified agency list instead of the standard agency list'
+        )
+        parser.add_argument(
+            '--agencies',
+            dest='agencies',
+            nargs='+',
+            default=None,
+            type=int,
+            help='Specific toptier agency ids (overrides use_modified_list)'
+        )
+        parser.add_argument(
+            '--award_types',
+            dest='award_types',
+            nargs='+',
+            default=['assistance', 'contracts'],
+            type=str,
+            help='Specific award types, must be \'contracts\' and/or \'assistance\''
+        )
+        parser.add_argument(
+            '--fiscal_years',
+            dest='fiscal_years',
+            nargs='+',
+            default=None,
+            type=int,
+            help='Specific Fiscal Years'
+        )
         parser.add_argument(
             '--placeholders',
             action='store_true',
@@ -130,38 +175,30 @@ class Command(BaseCommand):
             default=False,
             help='Upload empty files as placeholders.'
         )
-
-        parser.add_argument(
-            '--agencies',
-            dest='agencies',
-            nargs='+',
-            default=None,
-            type=int,
-            help='Toptier agency ids for testing'
-        )
-
-        parser.add_argument(
-            '--fiscal_years',
-            dest='fiscal_years',
-            nargs='+',
-            default=None,
-            type=int,
-            help='Fiscal years for testing'
-        )
-
         parser.add_argument(
             '--empty-asssistance-file',
             dest='empty_asssistance_file',
             default='',
             help='Empty assisstance file for uploading'
         )
-
         parser.add_argument(
             '--empty-contracts-file',
             dest='empty_contracts_file',
             default='',
             help='Empty contracts file for uploading'
         )
+
+    def pull_modified_agencies_cgacs(self):
+        # Get a cgac_codes from the modified_agencies_list
+        cgac_codes = []
+        with open(MODIFIED_AGENCIES_LIST, encoding='Latin-1') as modified_agencies_list_csv:
+            mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
+        mod_gencies_list_df = mod_gencies_list_df[['CGAC AGENCY CODE']]
+        mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'] \
+            .apply(lambda x: x.zfill(3))
+        for _, row in mod_gencies_list_df.iterrows():
+            cgac_codes.append(row['CGAC AGENCY CODE'])
+        return cgac_codes
 
     def handle(self, *args, **options):
         """Run the application."""
@@ -173,9 +210,15 @@ class Command(BaseCommand):
         # are properly configured!
 
         local = options['local']
+        exclude_reuploads = options['exclude_reuploads']
+        use_modified_list = options['use_modified_list']
+        agencies = options['agencies']
+        award_types = options['award_types']
+        for award_type in award_types:
+            if award_type not in ['contracts', 'assistance']:
+                raise Exception('Unacceptable award type: {}'.format(award_type))
+        fiscal_years = options['fiscal_years']
         placeholders = options['placeholders']
-        agencies = options['agencies'] if options['agencies'] else None
-        fiscal_years = options['fiscal_years'] if options['fiscal_years'] else None
         empty_asssistance_file = options['empty_asssistance_file']
         empty_contracts_file = options['empty_contracts_file']
         if placeholders and (not empty_asssistance_file or not empty_contracts_file):
@@ -185,6 +228,9 @@ class Command(BaseCommand):
         updated_date_timestamp = datetime.datetime.strftime(current_date, '%Y%m%d')
 
         toptier_agencies = ToptierAgency.objects.all()
+        if use_modified_list:
+            used_cgacs = set(self.pull_modified_agencies_cgacs())
+            toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=used_cgacs)
         if agencies:
             toptier_agencies = ToptierAgency.objects.filter(toptier_agency_id__in=agencies)
         toptier_agencies = list(toptier_agencies.values('name', 'toptier_agency_id', 'cgac_code'))
@@ -193,19 +239,28 @@ class Command(BaseCommand):
         if not fiscal_years:
             fiscal_years = range(2001, generate_fiscal_year(current_date)+1)
 
+        if exclude_reuploads:
+            bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+            region_name = settings.BULK_DOWNLOAD_AWS_REGION
+            bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
+            reuploads = [re.findall('(.*)_Full_.*\.zip', key.name)[0] for key in bucket.list()]
+
         logger.info('Generating {} files...'.format(len(toptier_agencies)*len(fiscal_years)*2))
         for agency in toptier_agencies:
             for fiscal_year in fiscal_years:
                 start_date = '{}-10-01'.format(fiscal_year-1)
                 end_date = '{}-09-30'.format(fiscal_year)
-                for award_type in ['contracts', 'assistance']:
-                    file_name = '{}_{}_{}_Full_{}.zip'.format(fiscal_year, agency['cgac_code'],
-                                                              award_type.capitalize(), updated_date_timestamp)
+                for award_type in award_types:
+                    file_name = '{}_{}_{}'.format(fiscal_year, agency['cgac_code'], award_type.capitalize())
+                    full_file_name = '{}_Full_{}.zip'.format(file_name, updated_date_timestamp)
+                    if exclude_reuploads and file_name in reuploads:
+                        logger.info('Skipping already uploaded: {}'.format(full_file_name))
+                        continue
                     if placeholders:
                         empty_file = empty_contracts_file if award_type == 'contracts' else empty_asssistance_file
-                        self.upload_placeholder(file_name=file_name, empty_file=empty_file)
+                        self.upload_placeholder(file_name=full_file_name, empty_file=empty_file)
                     else:
-                        self.bulk_download(file_name, ['prime_awards'],
+                        self.bulk_download(full_file_name, ['prime_awards'],
                                            award_types=award_mappings[award_type],
                                            agency=agency['toptier_agency_id'],
                                            date_type='action_date',
