@@ -49,3 +49,15 @@ class ObjectClassFederalAccountsViewSet(APIView):
             for maj in major_classes
         ]
         return Response({'results': result})
+
+
+class DescriptionFederalAccountsViewSet(APIView):
+    @cache_response()
+    def get(self, request, pk, format=None):
+        return None
+
+
+class SankeyFederalAccountsViewSet(APIView):
+    @cache_response()
+    def get(self, request, pk, format=None):
+        return None
