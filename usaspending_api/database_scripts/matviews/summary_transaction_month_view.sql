@@ -22,28 +22,31 @@ SELECT
   recipient_location."congressional_code" AS "recipient_location_congressional_code",
   recipient_location."zip5" AS "recipient_location_zip5",
   place_of_performance."location_country_code" AS "pop_country_code",
-  place_of_performance."county_name" AS "pop_country_name",
+  place_of_performance."country_name" AS "pop_country_name",
   place_of_performance."state_code" AS "pop_state_code",
   place_of_performance."county_code" AS "pop_county_code",
   place_of_performance."county_name" AS "pop_county_name",
   place_of_performance."congressional_code" AS "pop_congressional_code",
   place_of_performance."zip5" AS "pop_zip5",
+
   TAA."name" AS "awarding_toptier_agency_name",
   TAA."abbreviation" AS "awarding_toptier_agency_abbreviation",
   TFA."name" AS "funding_toptier_agency_name",
   TFA."abbreviation" AS "funding_toptier_agency_abbreviation",
+  SAA."name" AS awarding_subtier_agency_name,
+  SAA."abbreviation" AS awarding_subtier_agency_abbreviation,
+  SFA."name" AS funding_subtier_agency_name,
+  SFA."abbreviation" AS funding_subtier_agency_abbreviation,
+
   "legal_entity"."business_categories",
   "transaction_fabs"."cfda_number",
   "references_cfda"."program_title" AS "cfda_title",
   "references_cfda"."popular_name" AS "cfda_popular_name",
-  -- Added duplicate rows 12/5 remove by Jan 1, 2018
-  "transaction_fpds"."product_or_service_code" AS "psc_code",
-  "psc"."description" AS "psc_description",
-  -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   "transaction_fpds"."product_or_service_code",
   "psc"."description" AS product_or_service_description,
   "transaction_fpds"."naics" AS "naics_code",
   "naics"."description" AS "naics_description",
+
   obligation_to_enum("awards"."total_obligation") AS "total_obl_bin",
   "transaction_fpds"."type_of_contract_pricing",
   "transaction_fpds"."type_set_aside",
@@ -90,6 +93,7 @@ GROUP BY
   "transaction_normalized"."fiscal_year",
   "transaction_normalized"."type",
   "transaction_fpds"."pulled_from",
+
   recipient_location."location_country_code",
   recipient_location."country_name",
   recipient_location."state_code",
@@ -97,17 +101,24 @@ GROUP BY
   recipient_location."county_name",
   recipient_location."congressional_code",
   recipient_location."zip5",
+
   place_of_performance."location_country_code",
-  place_of_performance."county_name",
+  place_of_performance."country_name",
   place_of_performance."state_code",
   place_of_performance."county_code",
   place_of_performance."county_name",
   place_of_performance."congressional_code",
   place_of_performance."zip5",
+
   TAA."name",
   TAA."abbreviation",
   TFA."name",
   TFA."abbreviation",
+  SAA."name",
+  SAA."abbreviation",
+  SFA."name",
+  SFA."abbreviation",
+
   "legal_entity"."business_categories",
   "transaction_fabs"."cfda_number",
   "references_cfda"."program_title",
@@ -145,8 +156,9 @@ CREATE INDEX idx_9e65a28f__type_of_contract_temp ON summary_transaction_month_vi
 CREATE INDEX idx_9e65a28f__fy_set_aside_temp ON summary_transaction_month_view_temp USING BTREE("fiscal_year" DESC NULLS LAST, "type_set_aside") WITH (fillfactor = 100);
 CREATE INDEX idx_9e65a28f__extent_competed_temp ON summary_transaction_month_view_temp USING BTREE("extent_competed") WITH (fillfactor = 100);
 CREATE INDEX idx_9e65a28f__type_set_aside_temp ON summary_transaction_month_view_temp USING BTREE("type_set_aside") WITH (fillfactor = 100) WHERE "type_set_aside" IS NOT NULL;
+CREATE INDEX idx_9e65a28f__business_categories_temp ON summary_transaction_month_view_temp USING GIN("business_categories");
 
-CLUSTER VERBOSE summary_transaction_month_view_temp USING idx_9e65a28f__date_temp;
+CLUSTER VERBOSE summary_transaction_month_view_temp USING idx_bbb498da__date_temp;
 
 VACUUM ANALYZE VERBOSE summary_transaction_month_view_temp;
 
@@ -175,6 +187,7 @@ ALTER INDEX IF EXISTS idx_9e65a28f__type_of_contract RENAME TO idx_9e65a28f__typ
 ALTER INDEX IF EXISTS idx_9e65a28f__fy_set_aside RENAME TO idx_9e65a28f__fy_set_aside_old;
 ALTER INDEX IF EXISTS idx_9e65a28f__extent_competed RENAME TO idx_9e65a28f__extent_competed_old;
 ALTER INDEX IF EXISTS idx_9e65a28f__type_set_aside RENAME TO idx_9e65a28f__type_set_aside_old;
+ALTER INDEX IF EXISTS idx_9e65a28f__business_categories RENAME TO idx_9e65a28f__business_categories_old;
 
 ALTER MATERIALIZED VIEW summary_transaction_month_view_temp RENAME TO summary_transaction_month_view;
 ALTER INDEX idx_9e65a28f__date_temp RENAME TO idx_9e65a28f__date;
@@ -201,3 +214,4 @@ ALTER INDEX idx_9e65a28f__type_of_contract_temp RENAME TO idx_9e65a28f__type_of_
 ALTER INDEX idx_9e65a28f__fy_set_aside_temp RENAME TO idx_9e65a28f__fy_set_aside;
 ALTER INDEX idx_9e65a28f__extent_competed_temp RENAME TO idx_9e65a28f__extent_competed;
 ALTER INDEX idx_9e65a28f__type_set_aside_temp RENAME TO idx_9e65a28f__type_set_aside;
+ALTER INDEX idx_9e65a28f__business_categories_temp RENAME TO idx_9e65a28f__business_categories;
