@@ -57,7 +57,31 @@ class DescriptionFederalAccountsViewSet(APIView):
         return None
 
 
-class SankeyFederalAccountsViewSet(APIView):
+class FiscalYearSnapshotFederalAccountsViewSet(APIView):
+    @cache_response()
+    def get(self, request, pk, format=None):
+        return None
+
+
+class SpendingOverTimeFederalAccountsViewSet(APIView):
+    @cache_response()
+    def get(self, request, pk, format=None):
+        return None
+
+
+class SpendingByCategoryFederalAccountsViewSet(APIView):
+    @cache_response()
+    def get(self, request, pk, format=None):
+        return None
+
+
+class SpendingByAwardCountFederalAccountsViewSet(APIView):
+    @cache_response()
+    def get(self, request, pk, format=None):
+        return None
+
+
+class SpendingByAwardFederalAccountsViewSet(APIView):
     @cache_response()
     def get(self, request, pk, format=None):
         return None
