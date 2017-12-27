@@ -141,12 +141,9 @@ class SummaryTransactionView(models.Model):
 
 
 class UniversalAwardView(models.Model):
-    award_id = models.IntegerField(blank=False, null=False, primary_key=True)
     category = models.TextField()
-    latest_transaction_id = models.IntegerField()
     type = models.TextField()
     type_description = models.TextField()
-    description = models.TextField()
     piid = models.TextField()
     fain = models.TextField()
     uri = models.TextField()
@@ -154,12 +151,6 @@ class UniversalAwardView(models.Model):
         max_digits=15, decimal_places=2, blank=True,
         null=True)
     total_obl_bin = models.TextField()
-    period_of_performance_start_date = models.DateField()
-    period_of_performance_current_end_date = models.DateField()
-    date_signed = models.DateField()
-    base_and_all_options_value = models.DecimalField(
-        max_digits=20, decimal_places=2, blank=True,
-        null=True)
 
     recipient_id = models.IntegerField()
     recipient_name = models.TextField()
@@ -169,6 +160,8 @@ class UniversalAwardView(models.Model):
 
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
+    period_of_performance_start_date = models.DateField()
+    period_of_performance_current_end_date = models.DateField()
 
     face_value_loan_guarantee = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True,
@@ -181,42 +174,27 @@ class UniversalAwardView(models.Model):
     funding_toptier_agency_name = models.TextField()
     awarding_subtier_agency_name = models.TextField()
     funding_subtier_agency_name = models.TextField()
-    awarding_agency_office_name = models.TextField()
-    funding_agency_office_name = models.TextField()
 
-    recipient_location_address_line1 = models.TextField()
-    recipient_location_address_line2 = models.TextField()
-    recipient_location_address_line3 = models.TextField()
     recipient_location_country_name = models.TextField()
     recipient_location_country_code = models.TextField()
     recipient_location_state_code = models.TextField()
-    recipient_location_county_name = models.TextField()
     recipient_location_county_code = models.TextField()
-    recipient_location_city_name = models.TextField()
     recipient_location_zip5 = models.TextField()
     recipient_location_congressional_code = models.TextField()
-    recipient_location_foreign_province = models.TextField()
 
     pop_country_name = models.TextField()
     pop_country_code = models.TextField()
-    pop_state_name = models.TextField()
     pop_state_code = models.TextField()
-    pop_county_name = models.TextField()
     pop_county_code = models.TextField()
-    pop_city_name = models.TextField()
     pop_zip5 = models.TextField()
     pop_congressional_code = models.TextField()
-    pop_foreign_province = models.TextField()
 
     cfda_number = models.TextField()
     pulled_from = models.TextField()
     type_of_contract_pricing = models.TextField()
-    parent_award_id = models.TextField()
-    idv_type = models.TextField()
     extent_competed = models.TextField()
-    extent_compete_description = models.TextField()
     type_set_aside = models.TextField()
-    type_set_aside_description = models.TextField()
+
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
     naics_code = models.TextField()
