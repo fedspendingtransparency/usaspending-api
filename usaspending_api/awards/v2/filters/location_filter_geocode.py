@@ -72,13 +72,11 @@ def get_fields_list(scope, field_value, loc_dict):
 
 def return_query_strings(use_matview):
     # Returns query strings according based on mat view or database
-    loc_dict = LOCATION_MAPPING
+    loc_dict = LOCATION_MAPPING.copy()
     q_str = '{0}__{1}__in'
 
     if use_matview:
         q_str = '{0}_{1}__in'
         loc_dict['country'] = 'country_code'
-    else:
-        loc_dict['country'] = 'location_country_code'
 
     return q_str, loc_dict
