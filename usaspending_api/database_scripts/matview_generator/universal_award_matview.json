@@ -106,14 +106,8 @@
   ],
   "indexes": [
     {
-      "name": "id",
-      "columns": [{"name": "\"award_id\""}]
-    },{
       "name": "category",
       "columns": [{"name": "\"category\""}]
-    },{
-      "name": "latest",
-      "columns": [{"name": "\"latest_transaction_id\""}]
     },{
       "name": "type",
       "where": "\"type\" IS NOT NULL",
