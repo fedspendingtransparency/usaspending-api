@@ -60,7 +60,7 @@ def check_location_fields(fields):
 
 def get_fields_list(scope, field_value, loc_dict):
     """List of values to search for; `field_value`, plus possibly variants on it"""
-    if scope not in loc_dict.values():
+    if scope in ['congressional_code', 'county_code']:
         try:
             return [str(int(field_value)), field_value, str(float(field_value))]
         except ValueError:
@@ -72,7 +72,7 @@ def get_fields_list(scope, field_value, loc_dict):
 
 def return_query_strings(use_matview):
     # Returns query strings according based on mat view or database
-    loc_dict = LOCATION_MAPPING
+    loc_dict = LOCATION_MAPPING.copy()
     q_str = '{0}__{1}__in'
 
     if use_matview:
