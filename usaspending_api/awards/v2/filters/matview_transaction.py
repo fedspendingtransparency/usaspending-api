@@ -3,6 +3,7 @@ from django.db.models import Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.references.models import PSC
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
@@ -44,7 +45,7 @@ def transaction_filter(filters, model):
         if key == "keyword":
             keyword = value
 
-            compound_or = Q(recipient_name__icontains=keyword) | \
+            compound_or = Q(recipient_name__contains=keyword.upper()) | \
                 Q(piid=keyword) | \
                 Q(fain=keyword) | \
                 Q(recipient_unique_id=keyword) | \
@@ -69,8 +70,13 @@ def transaction_filter(filters, model):
                 queryset &= or_queryset
 
         elif key == "award_type_codes":
+            idv_flag = all(i in value for i in contract_type_mapping.keys())
+
             if len(value) != 0:
-                queryset &= model.objects.filter(type__in=value)
+                filter_obj = Q(type__in=value)
+                if idv_flag:
+                    filter_obj |= Q(pulled_from='IDV')
+                queryset &= model.objects.filter(filter_obj)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -133,7 +139,7 @@ def transaction_filter(filters, model):
                 raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
             recipient_string = str(value[0])
 
-            filter_obj = Q(recipient_name__icontains=recipient_string)
+            filter_obj = Q(recipient_name__contains=recipient_string.upper())
 
             if len(recipient_string) == 9:
                 filter_obj |= Q(recipient_unique_id__iexact=recipient_string)

@@ -91,11 +91,9 @@ def location_error_handling(fields):
         )
 
 
-def get_fields_list(location_filter_key, field_value,):
-    """List of values to search for; `field_value`, plus possibly variants on it
-       Location filter can be the keys in the LOCATION_MAPPING
-    """
-    if location_filter_key in ['county', 'district']:
+def get_fields_list(scope, field_value):
+    """List of values to search for; `field_value`, plus possibly variants on it"""
+    if scope in ['congressional_code', 'county_code']:
         try:
             # Congressional and county codes are not uniform and contain multiple variables
             # In the location table Ex congressional code (01): '01', '1.0', '1'
@@ -103,7 +101,7 @@ def get_fields_list(location_filter_key, field_value,):
         except ValueError:
             # if filter causes an error when casting to a float or integer
             # Example: 'ZZ' for an area without a congressional code
-            return [field_value]
+            pass
     return [field_value]
 
 

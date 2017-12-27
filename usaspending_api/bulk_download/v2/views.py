@@ -19,7 +19,7 @@ from rest_framework.exceptions import NotFound
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, \
     grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping
 from usaspending_api.awards.models import Award, Subaward, Agency, TransactionNormalized
-from usaspending_api.references.models import ToptierAgency, SubtierAgency
+from usaspending_api.references.models import ToptierAgency
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.csv_helpers import sqs_queue
@@ -191,7 +191,7 @@ class BaseDownloadViewSet(APIView):
         if agency and agency != 'all':
             download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
         if sub_agency:
-            download_job_kwargs['sub_agency'] = SubtierAgency.objects.filter(subtier_agency_id=sub_agency).first()
+            download_job_kwargs['sub_agency'] = sub_agency
         if start_date:
             download_job_kwargs['start_date'] = start_date
         if end_date:
@@ -254,7 +254,7 @@ def verify_requested_columns_available(sources, requested):
 
 
 class BulkDownloadListAgenciesViewSet(APIView):
-    modified_agencies_list = os.path.join(django.conf.settings.BASE_DIR,
+    modified_agencies_list = os.path.join(settings.BASE_DIR,
                                           'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
     sub_agencies_map = {}
 
@@ -313,9 +313,9 @@ class BulkDownloadListAgenciesViewSet(APIView):
             # Get the sub agencies and federal accounts associated with that top tier agency
             response_data['sub_agencies'] = Agency.objects.filter(toptier_agency_id=agency_id)\
                 .values(subtier_agency_name=F('subtier_agency__name'),
-                        subtier_agency_id=F('subtier_agency__subtier_agency_id'),
                         subtier_agency_code=F('subtier_agency__subtier_code'))\
-                .order_by('subtier_agency_name')
+                .order_by('subtier_agency_name')\
+                .distinct('subtier_agency_name')
             # Tried converting this to queryset filtering but ran into issues trying to
             # double check the right used subtier_agency by cross checking the cgac_code
             # see the last 2 lines of the list comprehension below
@@ -323,6 +323,8 @@ class BulkDownloadListAgenciesViewSet(APIView):
                                              if subagency['subtier_agency_code'] in self.sub_agencies_map and
                                              self.sub_agencies_map[subagency['subtier_agency_code']] ==
                                              top_tier_agency['cgac_code']]
+            for subagency in response_data['sub_agencies']:
+                del subagency['subtier_agency_code']
 
             response_data['federal_accounts'] = FederalAccount.objects\
                 .filter(agency_identifier=top_tier_agency['cgac_code'])\
@@ -435,7 +437,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         if filters['agency'] != 'all':
             agencies_queryset = Q(awarding_agency__toptier_agency_id=filters['agency'])
             if 'sub_agency' in filters and filters['sub_agency']:
-                agencies_queryset &= Q(awarding_agency__subtier_agency_id=filters['sub_agency'])
+                agencies_queryset &= Q(awarding_agency__subtier_agency__name=filters['sub_agency'])
             queryset &= table.objects.filter(agencies_queryset)
 
         return queryset
