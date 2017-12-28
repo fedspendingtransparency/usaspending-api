@@ -48,6 +48,16 @@ BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
 BULK_DOWNLOAD_AWS_REGION = ""
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 
+# TODO: remove these and cleanup overuse of region env vars...
+if os.environ.get('MONTHLY_DOWNLOAD_S3_BUCKET_NAME'):
+    MONTHLY_DOWNLOAD_S3_BUCKET_NAME = os.environ.get('MONTHLY_DOWNLOAD_S3_BUCKET_NAME')
+if os.environ.get('BULK_DOWNLOAD_AWS_REGION'):
+    BULK_DOWNLOAD_AWS_REGION = os.environ.get('BULK_DOWNLOAD_AWS_REGION')
+if os.environ.get('CSV_AWS_REGION'):
+    CSV_AWS_REGION = os.environ.get('CSV_AWS_REGION')
+if os.envrion.get('IS_LOCAL'):
+    IS_LOCAL = os.environ.get('IS_LOCAL')
+
 # Application definition
 
 INSTALLED_APPS = [
