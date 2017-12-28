@@ -49,6 +49,33 @@ def financial_spending_data(db):
     )
 
 
+def test_federal_account_fiscal_year_snapshot_v2_endpoint(client, financial_spending_data):
+    """Test the award_type endpoint."""
+
+    resp = client.get('/api/v2/federal_accounts/1/fiscal_year_snapshot')
+    assert resp.status_code == status.HTTP_200_OK
+
+    # test response in correct form
+
+    assert 'results' in resp.json()
+    results = resp.json()['results']
+    assert 'outlay' in results
+    assert 'budget_authority' in results
+    assert 'obligated' in results
+    assert 'unobligated' in results
+    assert 'balance_brought_forward' in results
+    assert 'other_budgetary_resources' in results
+    assert 'appropriations' in results
+
+    assert results['outlay'] == 1000000
+    assert results['budget_authority'] == 2000000
+    assert results['obligated'] == 3000000
+    assert results['unobligated'] == 4000000
+    assert results['balance_brought_forward'] == 11000000
+    assert results['other_budgetary_resources'] == 7000000
+    assert results['appropriations'] == 8000000
+
+
 @pytest.mark.django_db
 def test_federal_account_fiscal_year_snapshot_v2_endpoint_no_results(client, financial_spending_data):
     """Test response when no AAB records found."""
