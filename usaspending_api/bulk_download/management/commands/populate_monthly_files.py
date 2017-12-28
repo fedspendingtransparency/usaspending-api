@@ -240,7 +240,7 @@ class Command(BaseCommand):
             fiscal_years = range(2001, generate_fiscal_year(current_date)+1)
 
         if exclude_reuploads:
-            bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+            bucket_name = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
             region_name = settings.BULK_DOWNLOAD_AWS_REGION
             bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
             reuploads = [re.findall('(.*)_Full_.*\.zip', key.name)[0] for key in bucket.list()]
