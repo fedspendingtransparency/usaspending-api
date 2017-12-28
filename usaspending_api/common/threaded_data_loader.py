@@ -66,7 +66,9 @@ class ThreadedDataLoader():
     # Loads data from a file using parameters set during creation of the loader
     # The filepath parameter should be the string location of the file for use with open()
     def load_from_file(self, filepath, encoding='utf-8', bucket_name=None):
-        self.logger.info('Started processing file ' + filepath)
+        if not bucket_name:
+            self.logger.info('Started processing file ' + filepath)
+
         # Create the Queue object - this will hold all the rows in the CSV
         row_queue = JoinableQueue(500)
 
@@ -100,6 +102,7 @@ class ThreadedDataLoader():
                     if not chunk:
                         break
                     for row in chunk:
+                        self.logger.info(row)
                         count = count + 1
                         row_queue.put(row)
                     self.logger.info("Queued row " + str(count))
