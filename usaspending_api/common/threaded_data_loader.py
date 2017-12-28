@@ -11,6 +11,7 @@ import csv
 import queue
 import sys
 import json
+import smart_open
 
 
 # This class is a threaded data loader
@@ -64,7 +65,7 @@ class ThreadedDataLoader():
 
     # Loads data from a file using parameters set during creation of the loader
     # The filepath parameter should be the string location of the file for use with open()
-    def load_from_file(self, filepath, encoding='utf-8'):
+    def load_from_file(self, filepath, encoding='utf-8', bucket_name=None):
         self.logger.info('Started processing file ' + filepath)
         # Create the Queue object - this will hold all the rows in the CSV
         row_queue = JoinableQueue(500)
@@ -91,13 +92,26 @@ class ThreadedDataLoader():
             process.start()
 
         count = 0
-        with open(filepath, encoding=encoding) as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                count = count + 1
-                row_queue.put(row)
-                if count % 1000 == 0:
+        if bucket_name:
+            # Remote file
+            with smart_open.smart_open(filepath, 'r') as reader:                
+                while True:
+                    chunk = reader.read(1000)
+                    if not chunk:
+                        break
+                    for row in chunk:
+                        count = count + 1
+                        row_queue.put(row)
                     self.logger.info("Queued row " + str(count))
+        else:
+            # Local file
+            with open(filepath, encoding=encoding) as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    count = count + 1
+                    row_queue.put(row)
+                    if count % 1000 == 0:
+                        self.logger.info("Queued row " + str(count))
 
         for i in range(self.processes):
             row_queue.put(None)
