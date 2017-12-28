@@ -112,8 +112,10 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
 
 class SpendingByCategoryFederalAccountsViewSet(APIView):
     @cache_response()
-    def get(self, request, pk, format=None):
-        return None
+    def post(self, request, pk, format=None):
+        result = {"results": {"Program Activity 1": 110, "Program Activity 2": 10, "Program Activity 3": 0}}
+
+        return Response(result)
 
 
 class SpendingByAwardCountFederalAccountsViewSet(APIView):
