@@ -43,11 +43,15 @@ class Command(BaseCommand):
             "availability_type_code": lambda row: row["A"].strip(),
             "main_account_code": lambda row: row["MAIN"].strip(),
             "sub_account_code": lambda row: row["SUB"].strip(),
-            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["ATA"].strip()).order_by("fpds_code").first(),
-            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(cgac_code=row["AID"].strip()).order_by("fpds_code").first()
+            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(
+                cgac_code=row["ATA"].strip()).order_by("fpds_code").first(),
+            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(
+                cgac_code=row["AID"].strip()).order_by("fpds_code").first()
         }
 
-        loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map, collision_field='treasury_account_identifier', collision_behavior='update', pre_row_function=self.skip_and_remove_financing_tas)
+        loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map,
+                                    collision_field='treasury_account_identifier', collision_behavior='update',
+                                    pre_row_function=self.skip_and_remove_financing_tas)
         loader.load_from_file(options['file'][0])
 
         # Match funding toptiers by FREC if they didn't match by AID
@@ -74,12 +78,8 @@ class Command(BaseCommand):
         insert_federal_accounts()
 
     def generate_tas_rendering_label(self, row):
-        return TreasuryAppropriationAccount.generate_tas_rendering_label(row["ATA"],
-                                                                         row["Agency AID"],
-                                                                         row["A"],
-                                                                         row["BPOA"],
-                                                                         row["EPOA"],
-                                                                         row["MAIN"],
+        return TreasuryAppropriationAccount.generate_tas_rendering_label(row["ATA"], row["Agency AID"], row["A"],
+                                                                         row["BPOA"], row["EPOA"], row["MAIN"],
                                                                          row["SUB"])
 
     def skip_and_remove_financing_tas(self, row, instance):
