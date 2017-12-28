@@ -96,8 +96,10 @@ class ThreadedDataLoader():
         count = 0
         if bucket_name:
             # Remote file
-            with smart_open.smart_open(filepath, 'r') as reader:  
-                for row in reader:
+            with smart_open.smart_open(filepath, 'r') as reader:
+                iterreader = iter(reader)
+                next(iterreader)
+                for row in iterreader:
                     count = count + 1
                     row_queue.put(row)
                     if count == 1:
@@ -153,6 +155,7 @@ class DataLoaderThread(Process):
                 self.data_queue.task_done()
                 connection.close()
                 return
+            self.references['logger'].info(row)
             row = cleanse_values(row)
             # Grab the collision field
             update = False
