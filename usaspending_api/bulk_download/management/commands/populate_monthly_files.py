@@ -86,6 +86,10 @@ class Command(BaseCommand):
             'sources': tuple(sources)
         }
         if not use_sqs:
+            # Note: Because of the line below, it's advised to only run this script
+            #        on a separate instance as this will modify your bulk download
+            #        settings.
+            settings.BULK_DOWNLOAD_S3_BUCKET_NAME = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
             csv_selection.write_csvs(**kwargs)
         else:
             # Send a SQS message that will be processed by another server
