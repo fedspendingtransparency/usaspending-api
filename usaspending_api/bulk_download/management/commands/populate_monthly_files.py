@@ -149,8 +149,10 @@ class Command(BaseCommand):
             dest='agencies',
             nargs='+',
             default=None,
-            type=int,
-            help='Specific toptier agency database ids (overrides use_modified_list)'
+            type=str,
+            help='Specific toptier agency database ids (overrides use_modified_list).'
+                 ' Note \'all\' may be provided to account for the downloads that comprise '
+                 ' all agencies for a fiscal_year.'
         )
         parser.add_argument(
             '--award_types',
@@ -228,14 +230,20 @@ class Command(BaseCommand):
         updated_date_timestamp = datetime.datetime.strftime(current_date, '%Y%m%d')
 
         toptier_agencies = ToptierAgency.objects.all()
+        include_all = True
         if use_modified_list:
             used_cgacs = set(self.pull_modified_agencies_cgacs())
             toptier_agencies = ToptierAgency.objects.filter(cgac_code__in=used_cgacs)
         if agencies:
+            if 'all' in agencies:
+                agencies.remove('all')
+            else:
+                include_all = False
             toptier_agencies = ToptierAgency.objects.filter(toptier_agency_id__in=agencies)
         toptier_agencies = list(toptier_agencies.values('name', 'toptier_agency_id', 'cgac_code'))
         # Adding 'all' to prevent duplication of code
-        toptier_agencies.append({'name': 'All', 'toptier_agency_id': 'all', 'cgac_code': 'all'})
+        if include_all:
+            toptier_agencies.append({'name': 'All', 'toptier_agency_id': 'all', 'cgac_code': 'all'})
         if not fiscal_years:
             fiscal_years = range(2001, generate_fiscal_year(current_date)+1)
 
