@@ -18,6 +18,13 @@ class Command(BaseCommand):
         parser.add_argument('file', nargs=1, help='the file to load')
 
     def handle(self, *args, **options):
+        if False: #options['file'][0]:
+            file_path = options['file'][0]
+        else:
+            s3connection = boto.s3.connect_to_region(os.environ.get('AWS_REGION'))
+            s3bucket = s3connection.lookup(os.environ.get('SF133_BUCKET'))
+            file_path = s3bucket.get_key("cars_tas.csv").generate_url(expires_in=600)
+
         field_map = {
             "treasury_account_identifier": "ACCT_NUM",
             "account_title": "GWA_TAS_NAME",
@@ -52,7 +59,7 @@ class Command(BaseCommand):
         loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map,
                                     collision_field='treasury_account_identifier', collision_behavior='update',
                                     pre_row_function=self.skip_and_remove_financing_tas)
-        loader.load_from_file(options['file'][0])
+        loader.load_from_file(file_path)
 
         # Match funding toptiers by FREC if they didn't match by AID
         unmapped_funding_agencies = TreasuryAppropriationAccount.objects.filter(funding_toptier_agency=None)
