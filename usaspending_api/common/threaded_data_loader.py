@@ -100,8 +100,9 @@ class ThreadedDataLoader():
                 for row in reader:
                     count = count + 1
                     row_queue.put(row)
-                    if count % 1000 == 0:
+                    if count == 1:
                         self.logger.info(row)
+                    elif count % 1000 == 0:
                         self.logger.info("Queued row " + str(count))
         else:
             # Local file
