@@ -55,7 +55,7 @@ if os.environ.get('BULK_DOWNLOAD_AWS_REGION'):
     BULK_DOWNLOAD_AWS_REGION = os.environ.get('BULK_DOWNLOAD_AWS_REGION')
 if os.environ.get('CSV_AWS_REGION'):
     CSV_AWS_REGION = os.environ.get('CSV_AWS_REGION')
-if os.envrion.get('IS_LOCAL'):
+if os.environ.get('IS_LOCAL'):
     IS_LOCAL = os.environ.get('IS_LOCAL')
 
 # Application definition
