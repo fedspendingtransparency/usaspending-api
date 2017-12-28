@@ -96,16 +96,13 @@ class ThreadedDataLoader():
         count = 0
         if bucket_name:
             # Remote file
-            with smart_open.smart_open(filepath, 'r') as reader:                
-                while True:
-                    chunk = reader.read(1000)
-                    if not chunk:
-                        break
-                    for row in chunk:
+            with smart_open.smart_open(filepath, 'r') as reader:  
+                for row in reader:
+                    count = count + 1
+                    row_queue.put(row)
+                    if count % 1000 == 0:
                         self.logger.info(row)
-                        count = count + 1
-                        row_queue.put(row)
-                    self.logger.info("Queued row " + str(count))
+                        self.logger.info("Queued row " + str(count))
         else:
             # Local file
             with open(filepath, encoding=encoding) as csvfile:
