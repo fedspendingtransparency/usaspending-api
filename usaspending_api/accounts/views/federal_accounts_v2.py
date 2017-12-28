@@ -67,25 +67,40 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
             pk)).filter(final_of_fy=True).filter(submission__reporting_fiscal_year=fy(datetime.today()))
         rq = queryset.first()
 
-        result = {
-            "results": {
-                "outlay":
-                rq.gross_outlay_amount_by_tas_cpe,
-                "budget_authority":
-                rq.budget_authority_available_amount_total_cpe,
-                "obligated":
-                rq.obligations_incurred_total_by_tas_cpe,
-                "unobligated":
-                rq.unobligated_balance_cpe,
-                "balance_brought_forward":
-                rq.budget_authority_unobligated_balance_brought_forward_fyb +
-                rq.adjustments_to_unobligated_balance_brought_forward_cpe,
-                "other_budgetary_resources":
-                rq.other_budgetary_resources_amount_cpe,
-                "appropriations":
-                rq.budget_authority_appropriated_amount_cpe
+        if rq:
+            result = {
+                "results": {
+                    "outlay":
+                    rq.gross_outlay_amount_by_tas_cpe,
+                    "budget_authority":
+                    rq.budget_authority_available_amount_total_cpe,
+                    "obligated":
+                    rq.obligations_incurred_total_by_tas_cpe,
+                    "unobligated":
+                    rq.unobligated_balance_cpe,
+                    "balance_brought_forward":
+                    rq.budget_authority_unobligated_balance_brought_forward_fyb
+                    +
+                    rq.adjustments_to_unobligated_balance_brought_forward_cpe,
+                    "other_budgetary_resources":
+                    rq.other_budgetary_resources_amount_cpe,
+                    "appropriations":
+                    rq.budget_authority_appropriated_amount_cpe
+                }
             }
-        }
+        else:
+            result = {
+                "results": {
+                    "outlay": 0,
+                    "budget_authority": 0,
+                    "obligated": 0,
+                    "unobligated": 0,
+                    "balance_brought_forward": 0,
+                    "other_budgetary_resources": 0,
+                    "appropriations": 0,
+                }
+            }
+
         return Response(result)
 
 

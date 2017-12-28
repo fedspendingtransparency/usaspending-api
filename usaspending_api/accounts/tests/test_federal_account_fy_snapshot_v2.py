@@ -6,18 +6,20 @@ from rest_framework import status
 
 from usaspending_api.common.helpers import fy
 
+
 @pytest.fixture
 def financial_spending_data(db):
     this_fy = fy(datetime.today())
-    subm2018 = mommy.make('submissions.SubmissionAttributes', submission_id=1, reporting_fiscal_year=this_fy)
+    latest_subm = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=this_fy)
+    last_year_subm = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=this_fy-1)
 
     # create Object classes
-    aab1 = mommy.make(
+    mommy.make(
         'accounts.AppropriationAccountBalances',
         treasury_account_identifier__federal_account__id=1,
         treasury_account_identifier__federal_account_id=1,
         final_of_fy=True,
-        submission=subm2018,
+        submission=latest_subm,
         gross_outlay_amount_by_tas_cpe=1000000,
         budget_authority_available_amount_total_cpe=2000000,
         obligations_incurred_total_by_tas_cpe=3000000,
@@ -28,12 +30,30 @@ def financial_spending_data(db):
         budget_authority_appropriated_amount_cpe=8000000,
     )
 
+    # these AAB records should not show up in the endpoint, they are too old
+    mommy.make(
+        'accounts.AppropriationAccountBalances',
+        treasury_account_identifier__federal_account__id=1,
+        treasury_account_identifier__federal_account_id=1,
+        final_of_fy=False,
+        submission=latest_subm,
+        gross_outlay_amount_by_tas_cpe=999,
+    )
+    mommy.make(
+        'accounts.AppropriationAccountBalances',
+        treasury_account_identifier__federal_account__id=1,
+        treasury_account_identifier__federal_account_id=1,
+        final_of_fy=True,
+        submission=last_year_subm,
+        gross_outlay_amount_by_tas_cpe=999,
+    )
+
 
 @pytest.mark.django_db
-def test_federal_account_fiscal_year_snapshot_v2_endpoint(client, financial_spending_data):
-    """Test the award_type endpoint."""
+def test_federal_account_fiscal_year_snapshot_v2_endpoint_no_results(client, financial_spending_data):
+    """Test response when no AAB records found."""
 
-    resp = client.get('/api/v2/federal_accounts/1/fiscal_year_snapshot')
+    resp = client.get('/api/v2/federal_accounts/999/fiscal_year_snapshot')
     assert resp.status_code == status.HTTP_200_OK
 
     # test response in correct form
@@ -48,10 +68,10 @@ def test_federal_account_fiscal_year_snapshot_v2_endpoint(client, financial_spen
     assert 'other_budgetary_resources' in results
     assert 'appropriations' in results
 
-    assert results['outlay'] == 1000000
-    assert results['budget_authority'] == 2000000
-    assert results['obligated'] == 3000000
-    assert results['unobligated'] == 4000000
-    assert results['balance_brought_forward'] == 11000000
-    assert results['other_budgetary_resources'] == 7000000
-    assert results['appropriations'] == 8000000
+    assert results['outlay'] == 0
+    assert results['budget_authority'] == 0
+    assert results['obligated'] == 0
+    assert results['unobligated'] == 0
+    assert results['balance_brought_forward'] == 0
+    assert results['other_budgetary_resources'] == 0
+    assert results['appropriations'] == 0
