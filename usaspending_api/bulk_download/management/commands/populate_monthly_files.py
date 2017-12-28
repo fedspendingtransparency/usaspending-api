@@ -150,7 +150,7 @@ class Command(BaseCommand):
             nargs='+',
             default=None,
             type=int,
-            help='Specific toptier agency ids (overrides use_modified_list)'
+            help='Specific toptier agency database ids (overrides use_modified_list)'
         )
         parser.add_argument(
             '--award_types',
