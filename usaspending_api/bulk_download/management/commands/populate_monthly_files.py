@@ -276,3 +276,4 @@ class Command(BaseCommand):
                                            end_date=end_date,
                                            monthly_download=True,
                                            use_sqs=(not local))
+        logger.info('Populate Monthly Files complete')
