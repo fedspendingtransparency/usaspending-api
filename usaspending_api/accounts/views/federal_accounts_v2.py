@@ -1,7 +1,9 @@
+from datetime import datetime
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.common.helpers import fy
 from rest_framework.response import Response
 from rest_framework_extensions.cache.decorators import cache_response
-from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
+from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount, AppropriationAccountBalances
 from rest_framework.views import APIView
 
 
@@ -60,15 +62,28 @@ class DescriptionFederalAccountsViewSet(APIView):
 class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     @cache_response()
     def get(self, request, pk, format=None):
+
+        queryset = AppropriationAccountBalances.objects.filter(treasury_account_identifier__federal_account_id=int(
+            pk)).filter(final_of_fy=True).filter(submission__reporting_fiscal_year=fy(datetime.today()))
+        rq = queryset.first()
+
         result = {
             "results": {
-                "outlay": 1,
-                "budget_authority": 1,
-                "obligated": 1,
-                "unobligated": 1,
-                "balance_brought_forward": 1,
-                "other_budgetary_resources": 1,
-                "appropriations": 1
+                "outlay":
+                rq.gross_outlay_amount_by_tas_cpe,
+                "budget_authority":
+                rq.budget_authority_available_amount_total_cpe,
+                "obligated":
+                rq.obligations_incurred_total_by_tas_cpe,
+                "unobligated":
+                rq.unobligated_balance_cpe,
+                "balance_brought_forward":
+                rq.budget_authority_unobligated_balance_brought_forward_fyb +
+                rq.adjustments_to_unobligated_balance_brought_forward_cpe,
+                "other_budgetary_resources":
+                rq.other_budgetary_resources_amount_cpe,
+                "appropriations":
+                rq.budget_authority_appropriated_amount_cpe
             }
         }
         return Response(result)

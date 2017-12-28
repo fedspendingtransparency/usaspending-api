@@ -1,40 +1,32 @@
 import pytest
-import json
-from datetime import date
+from datetime import datetime
 
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
-
+from usaspending_api.common.helpers import fy
 
 @pytest.fixture
 def financial_spending_data(db):
-    # federal Account
-    federal_account_1 = mommy.make('accounts.FederalAccount', id=1)
+    this_fy = fy(datetime.today())
+    subm2018 = mommy.make('submissions.SubmissionAttributes', submission_id=1, reporting_fiscal_year=this_fy)
 
     # create Object classes
-    object_class_1 = mommy.make('references.ObjectClass', major_object_class="10",
-                                major_object_class_name="mocName1", object_class="111", object_class_name="ocName1")
-    object_class_2 = mommy.make('references.ObjectClass', major_object_class="20",
-                                major_object_class_name="mocName2", object_class="222", object_class_name="ocName2")
-    object_class_3 = mommy.make('references.ObjectClass', major_object_class="30",
-                                major_object_class_name="mocName3", object_class="333", object_class_name="ocName3")
-    object_class_4 = mommy.make('references.ObjectClass', major_object_class="20",
-                                major_object_class_name="mocName2", object_class="444", object_class_name="ocName4")
-
-    # create TAS
-    tas = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=federal_account_1)
-    tas2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=federal_account_1)
-
-    # CREATE Financial account by program activity object class
-    fabpaoc = mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas,
-                         object_class=object_class_1)
-    fabpaoc2 = mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas,
-                          object_class=object_class_2)
-    fabpaoc3 = mommy.make('financial_activities.FinancialAccountsByProgramActivityObjectClass', treasury_account=tas,
-                          object_class=object_class_4)
+    aab1 = mommy.make(
+        'accounts.AppropriationAccountBalances',
+        treasury_account_identifier__federal_account__id=1,
+        treasury_account_identifier__federal_account_id=1,
+        final_of_fy=True,
+        submission=subm2018,
+        gross_outlay_amount_by_tas_cpe=1000000,
+        budget_authority_available_amount_total_cpe=2000000,
+        obligations_incurred_total_by_tas_cpe=3000000,
+        unobligated_balance_cpe=4000000,
+        budget_authority_unobligated_balance_brought_forward_fyb=5000000,
+        adjustments_to_unobligated_balance_brought_forward_cpe=6000000,
+        other_budgetary_resources_amount_cpe=7000000,
+        budget_authority_appropriated_amount_cpe=8000000,
+    )
 
 
 @pytest.mark.django_db
@@ -55,3 +47,11 @@ def test_federal_account_fiscal_year_snapshot_v2_endpoint(client, financial_spen
     assert 'balance_brought_forward' in results
     assert 'other_budgetary_resources' in results
     assert 'appropriations' in results
+
+    assert results['outlay'] == 1000000
+    assert results['budget_authority'] == 2000000
+    assert results['obligated'] == 3000000
+    assert results['unobligated'] == 4000000
+    assert results['balance_brought_forward'] == 11000000
+    assert results['other_budgetary_resources'] == 7000000
+    assert results['appropriations'] == 8000000
