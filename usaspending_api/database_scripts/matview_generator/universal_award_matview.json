@@ -2,6 +2,7 @@
   "final_name": "universal_award_matview",
   "matview_sql": [
     "SELECT",
+    "  \"awards\".\"id\" AS award_id,",
     "  \"awards\".\"category\",",
     "  \"awards\".\"type\",",
     "  \"awards\".\"type_description\",",
@@ -106,6 +107,9 @@
   ],
   "indexes": [
     {
+      "name": "id",
+      "columns": [{"name": "\"award_id\""}]
+    },{
       "name": "category",
       "columns": [{"name": "\"category\""}]
     },{

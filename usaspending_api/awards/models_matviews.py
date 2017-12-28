@@ -141,6 +141,7 @@ class SummaryTransactionView(models.Model):
 
 
 class UniversalAwardView(models.Model):
+    award_id = models.IntegerField(blank=False, null=False, primary_key=True)
     category = models.TextField()
     type = models.TextField()
     type_description = models.TextField()
