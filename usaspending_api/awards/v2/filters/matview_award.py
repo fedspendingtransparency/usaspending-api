@@ -1,18 +1,17 @@
 import logging
-from django.db.models import Q
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.references.models import PSC
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
+from django.db.models import Q
+from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.models import PSC
 
 logger = logging.getLogger(__name__)
 
 
 # TODO: Performance when multiple false values are initially provided
 def award_filter(filters, model):
-
-    queryset = model.objects.filter()
+    queryset = model.objects.all()
     for key, value in filters.items():
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
@@ -45,21 +44,16 @@ def award_filter(filters, model):
         if key == "keyword":
             keyword = value
 
-            compound_or = Q(recipient_name__contains=keyword.upper()) | \
-                Q(piid=keyword) | \
-                Q(fain=keyword) | \
+            compound_or = Q(keyword_string__contains=keyword.upper()) | \
+                Q(award_id_string__contains=keyword.upper()) | \
                 Q(recipient_unique_id=keyword) | \
                 Q(parent_recipient_unique_id=keyword)
 
             if keyword.isnumeric():
                 compound_or |= Q(naics_code__contains=keyword)
-            else:
-                compound_or |= Q(naics_description__icontains=keyword)
 
             if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
                 compound_or |= Q(product_or_service_code__iexact=keyword)
-            else:
-                compound_or |= Q(product_or_service_description__icontains=keyword)
 
             queryset = queryset.filter(compound_or)
 
@@ -80,7 +74,6 @@ def award_filter(filters, model):
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
-            or_queryset = None
             funding_toptier = []
             funding_subtier = []
             awarding_toptier = []
@@ -187,7 +180,7 @@ def award_filter(filters, model):
             if len(value) != 0:
                 filter_obj = Q()
                 for val in value:
-                    filter_obj |= Q(piid__icontains=val) | Q(fain__icontains=val) | Q(uri__icontains=val)
+                    filter_obj |= Q(award_id_string__contains=val.upper())
                 queryset &= model.objects.filter(filter_obj)
 
         elif key == "program_numbers":

@@ -1,11 +1,10 @@
 import logging
+from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 from django.db.models import Q
-
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
-from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
 logger = logging.getLogger(__name__)
 
@@ -45,21 +44,16 @@ def transaction_filter(filters, model):
         if key == "keyword":
             keyword = value
 
-            compound_or = Q(recipient_name__contains=keyword.upper()) | \
-                Q(piid=keyword) | \
-                Q(fain=keyword) | \
+            compound_or = Q(keyword_string__contains=keyword.upper()) | \
+                Q(award_id_string__contains=keyword.upper()) | \
                 Q(recipient_unique_id=keyword) | \
                 Q(parent_recipient_unique_id=keyword)
 
             if keyword.isnumeric():
                 compound_or |= Q(naics_code__contains=keyword)
-            else:
-                compound_or |= Q(naics_description__icontains=keyword)
 
             if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
                 compound_or |= Q(product_or_service_code__iexact=keyword)
-            else:
-                compound_or |= Q(product_or_service_description__icontains=keyword)
 
             queryset = queryset.filter(compound_or)
 
@@ -148,22 +142,16 @@ def transaction_filter(filters, model):
 
         elif key == "recipient_scope":
             if value == "domestic":
-                queryset = queryset.filter(
-                    recipient_location_country_name="UNITED STATES"
-                )
+                queryset = queryset.filter(recipient_location_country_name="UNITED STATES")
             elif value == "foreign":
-                queryset = queryset.exclude(
-                    recipient_location_country_name="UNITED STATES"
-                )
+                queryset = queryset.exclude(recipient_location_country_name="UNITED STATES")
             else:
-                raise InvalidParameterException(
-                    'Invalid filter: recipient_scope type is invalid.')
+                raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
         elif key == "recipient_locations":
             or_queryset = geocode_filter_locations(
                 'recipient_location', value, model, True
             )
-
             queryset &= or_queryset
 
         elif key == "recipient_type_names":
@@ -184,15 +172,15 @@ def transaction_filter(filters, model):
             )
 
         elif key == "award_amounts":
-            success, or_queryset = total_obligation_queryset(value, model)
+            success, and_queryset = total_obligation_queryset(value, model)
             if success:
-                queryset &= or_queryset
+                queryset &= and_queryset
 
         elif key == "award_ids":
             if len(value) != 0:
                 filter_obj = Q()
                 for val in value:
-                    filter_obj |= Q(piid__icontains=val) | Q(fain__icontains=val) | Q(uri__icontains=val)
+                    filter_obj |= Q(award_id_string__contains=val.upper())
                 queryset &= model.objects.filter(filter_obj)
 
         elif key == "program_numbers":

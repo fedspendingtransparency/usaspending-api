@@ -7,6 +7,8 @@ warnings.simplefilter("ignore", CacheKeyWarning)
 
 
 class UniversalTransactionView(models.Model):
+    keyword_string = models.TextField()
+    award_id_string = models.TextField()
     transaction_id = models.IntegerField(blank=False, null=False, primary_key=True)
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
@@ -141,6 +143,8 @@ class SummaryTransactionView(models.Model):
 
 
 class UniversalAwardView(models.Model):
+    keyword_string = models.TextField()
+    award_id_string = models.TextField()
     award_id = models.IntegerField(blank=False, null=False, primary_key=True)
     category = models.TextField()
     type = models.TextField()
