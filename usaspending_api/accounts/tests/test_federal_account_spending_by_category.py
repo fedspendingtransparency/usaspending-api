@@ -1,57 +1,67 @@
-import pytest
-from datetime import datetime
+import json
 
+import pytest
 from model_mommy import mommy
 from rest_framework import status
-
-from usaspending_api.common.helpers import fy
 
 
 @pytest.fixture
 def financial_spending_data(db):
-    this_fy = fy(datetime.today())
-    latest_subm = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=this_fy)
-    last_year_subm = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=this_fy - 1)
 
     # create Object classes
     mommy.make(
-        'accounts.AppropriationAccountBalances',
-        treasury_account_identifier__federal_account__id=1,
-        treasury_account_identifier__federal_account_id=1,
-        final_of_fy=True,
-        submission=latest_subm,
-        gross_outlay_amount_by_tas_cpe=1000000,
-        budget_authority_available_amount_total_cpe=2000000,
-        obligations_incurred_total_by_tas_cpe=3000000,
-        unobligated_balance_cpe=4000000,
-        budget_authority_unobligated_balance_brought_forward_fyb=5000000,
-        adjustments_to_unobligated_balance_brought_forward_cpe=6000000,
-        other_budgetary_resources_amount_cpe=7000000,
-        budget_authority_appropriated_amount_cpe=8000000,
-    )
-
-    # these AAB records should not show up in the endpoint, they are too old
-    mommy.make(
-        'accounts.AppropriationAccountBalances',
-        treasury_account_identifier__federal_account__id=1,
-        treasury_account_identifier__federal_account_id=1,
-        final_of_fy=False,
-        submission=latest_subm,
-        gross_outlay_amount_by_tas_cpe=999,
+        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        program_activity_id=1,
+        program_activity__id=1,
+        program_activity__program_activity_code=100,
+        program_activity__program_activity_name='cuttlefish training',
+        object_class_id=1,
+        object_class__id=1,
+        object_class__object_class='001',
+        object_class__object_class_name='Full-time permanent',
+        obligations_incurred_by_program_object_class_cpe=1000000,
     )
     mommy.make(
-        'accounts.AppropriationAccountBalances',
-        treasury_account_identifier__federal_account__id=1,
-        treasury_account_identifier__federal_account_id=1,
-        final_of_fy=True,
-        submission=last_year_subm,
-        gross_outlay_amount_by_tas_cpe=999,
+        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        program_activity_id=1,
+        program_activity__id=1,
+        program_activity__program_activity_code=100,
+        program_activity__program_activity_name='cuttlefish training',
+        object_class_id=1,
+        object_class__id=1,
+        object_class__object_class='001',
+        object_class__object_class_name='Full-time permanent',
+        obligations_incurred_by_program_object_class_cpe=1000000,
+    )
+    mommy.make(
+        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        program_activity_id=2,
+        program_activity__id=2,
+        program_activity__program_activity_code=200,
+        program_activity__program_activity_name='metaphysical optimization',
+        object_class_id=2,
+        object_class__id=2,
+        object_class__object_class='002',
+        object_class__object_class_name='Other than full-time permanent',
+        obligations_incurred_by_program_object_class_cpe=1000000,
+    )
+    mommy.make(
+        'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        program_activity_id=3,
+        program_activity__id=3,
+        program_activity__program_activity_code=300,
+        program_activity__program_activity_name='phase shift',
+        object_class_id=2,
+        object_class__id=2,
+        object_class__object_class='002',
+        object_class__object_class_name='Other than full-time permanent',
+        obligations_incurred_by_program_object_class_cpe=1000000,
     )
 
 
 @pytest.mark.django_db
 def test_federal_account_spending_by_category(client, financial_spending_data):
-    """Test response when no AAB records found."""
+    """Test grouping over all available categories"""
 
     payload = {
         "category": "program_activity",
@@ -72,7 +82,9 @@ def test_federal_account_spending_by_category(client, financial_spending_data):
             }]
         }
     }
-    resp = client.post('/api/v2/federal_accounts/1/spending_by_category', json=payload)
+
+    resp = client.post(
+        '/api/v2/federal_accounts/1/spending_by_category', content_type='application/json', data=json.dumps(payload))
     assert resp.status_code == status.HTTP_200_OK
 
     # test response in correct form
@@ -83,3 +95,16 @@ def test_federal_account_spending_by_category(client, financial_spending_data):
     for (k, v) in results.items():
         assert isinstance(k, str)
         assert hasattr(v, '__pow__')  # is a number
+
+    # test categorize by program_activity
+    assert results['phase shift'] == 1000000
+    assert results['cuttlefish training'] == 2000000
+    assert results['metaphysical optimization'] == 1000000
+
+    payload['category'] = 'object_class'
+    resp = client.post(
+        '/api/v2/federal_accounts/1/spending_by_category', content_type='application/json', data=json.dumps(payload))
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json()['results']
+    assert results['Full-time permanent'] == 2000000
+    assert results['Other than full-time permanent'] == 2000000

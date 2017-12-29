@@ -1,10 +1,15 @@
 from datetime import datetime
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.common.helpers import fy
+
+from django.db.models import F, Sum
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from rest_framework_extensions.cache.decorators import cache_response
-from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount, AppropriationAccountBalances
 from rest_framework.views import APIView
+from rest_framework_extensions.cache.decorators import cache_response
+
+from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.common.helpers import fy
+from usaspending_api.financial_activities.models import \
+    FinancialAccountsByProgramActivityObjectClass
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
@@ -110,10 +115,40 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         return None
 
 
+def federal_account_filter(queryset, filter):
+    return queryset
+
+
 class SpendingByCategoryFederalAccountsViewSet(APIView):
     @cache_response()
     def post(self, request, pk, format=None):
-        result = {"results": {"Program Activity 1": 110, "Program Activity 2": 10, "Program Activity 3": 0}}
+
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects
+        queryset = federal_account_filter(queryset, request.data['filters'])
+
+        if request.data.get('category') == 'program_activity':
+            queryset = queryset.annotate(
+                id=F('program_activity_id'),
+                code=F('program_activity__program_activity_code'),
+                name=F('program_activity__program_activity_name'))
+        elif request.data.get('category') == 'object_class':
+            queryset = queryset.annotate(
+                id=F('object_class_id'),
+                code=F('object_class__object_class'),
+                name=F('object_class__object_class_name'))
+        elif request.data.get('category') == 'treasury_account':
+            queryset = queryset.annotate(
+                id=F('treasury_account_id'),
+                code=F('treasury_account__treasury_account_identifier'),
+                name=F('treasury_account__tas_rendering_label'))
+        else:
+            raise ValidationError("category must be one of: program_activity, object_class, treasury_account")
+
+        queryset = queryset.values('id', 'code', 'name').annotate(
+            Sum('obligations_incurred_by_program_object_class_cpe'))
+
+        result = {"results": {q['name']: q['obligations_incurred_by_program_object_class_cpe__sum'] for q in queryset}}
+        # TODO: should code be included, too?
 
         return Response(result)
 
