@@ -43,15 +43,16 @@ class ThreadedDataLoader():
     #   pre_row_function - Like post_row_function, but before the model class is updated
     #   post_process_function - A function to call when all rows have been processed, uses the same
     #                           function parameters as post_row_function
-    def __init__(self, model_class, processes=None, field_map={}, value_map={}, collision_field=None, collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None, loghandler='console'):
+    def __init__(self, model_class, processes=None, field_map={}, value_map={}, collision_field=None,
+                 collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None,
+                 loghandler='console'):
         self.logger = logging.getLogger(loghandler)
         self.model_class = model_class
         self.processes = processes
         if self.processes is None:
-            # self.processes is set to 1 because the logger threading doesn't work, resulting in
-            # a bunch of garbage being spat to console whenever this loader is used.
-            # can change to self.processes = multiprocessing.cpu_count() * 2 or something else if we
-            # fix the logger issue
+            # self.processes is set to 1 because the logger threading doesn't work, resulting in a bunch of garbage
+            # being spat to console whenever this loader is used.
+            # can change to self.processes = multiprocessing.cpu_count() * 2 or something else if we fix this issue
             self.processes = 1
             self.logger.info('Setting processes count to ' + str(self.processes))
         self.field_map = field_map
@@ -82,39 +83,24 @@ class ThreadedDataLoader():
         }
 
         # Spawn our processes
-        # We have to kill any DB connections before forking processes, as Django
-        # will want to share the single connection with all processes and we
-        # don't want to have any deadlock/effeciency problems due to that
+        # We have to kill any DB connections before forking processes, as Django will want to share the single
+        # connection with all processes and we don't want to have any deadlock/effeciency problems due to that
         db.connections.close_all()
         pool = []
         for i in range(self.processes):
-            pool.append(DataLoaderThread("Process-" + str(len(pool)), self.model_class, row_queue, self.field_map.copy(), self.value_map.copy(), references))
+            pool.append(DataLoaderThread("Process-" + str(len(pool)), self.model_class, row_queue,
+                                         self.field_map.copy(), self.value_map.copy(), references))
 
         for process in pool:
             process.start()
 
         count = 0
         if bucket_name:
-            # Remote file
-            with smart_open.smart_open(filepath, 'r') as reader:
-                iterreader = iter(reader)
-                next(iterreader)
-                for row in iterreader:
-                    count = count + 1
-                    row_queue.put(row)
-                    if count == 1:
-                        self.logger.info(row)
-                    elif count % 1000 == 0:
-                        self.logger.info("Queued row " + str(count))
+            with smart_open.smart_open(filepath, 'r', encoding=encoding) as csv_file:
+                count, row_queue = self.csv_file_to_queue(row_queue, csv_file, count)
         else:
-            # Local file
-            with open(filepath, encoding=encoding) as csvfile:
-                reader = csv.DictReader(csvfile)
-                for row in reader:
-                    count = count + 1
-                    row_queue.put(row)
-                    if count % 1000 == 0:
-                        self.logger.info("Queued row " + str(count))
+            with open(filepath, encoding=encoding) as csv_file:
+                count, row_queue = self.csv_file_to_queue(row_queue, csv_file, count)
 
         for i in range(self.processes):
             row_queue.put(None)
@@ -128,6 +114,17 @@ class ThreadedDataLoader():
             self.post_process_function()
 
         self.logger.info('Finished processing all rows')
+
+    def csv_file_to_queue(row_queue, csv_file, count):
+        reader = csv.DictReader(csv_file)
+        row_count = count
+        temp_row_queue = row_queue
+        for row in reader:
+            count = count + 1
+            temp_row_queue.put(row)
+            if count % 1000 == 0:
+                self.logger.info("Queued row " + str(count))
+        return count, temp_row_queue
 
 
 class DataLoaderThread(Process):
@@ -195,12 +192,8 @@ class DataLoaderThread(Process):
                 if self.references["pre_row_function"] is not None:
                     self.references["pre_row_function"](row=row, instance=model_instance)
 
-                processed_row = self.load_data_into_model(model_instance,
-                                                          self.references["fields"],
-                                                          self.field_map,
-                                                          self.value_map,
-                                                          row,
-                                                          self.references["logger"])
+                processed_row = self.load_data_into_model(model_instance, self.references["fields"], self.field_map,
+                                                          self.value_map, row, self.references["logger"])
 
                 # If we have a post row function, run it before saving
                 if self.references["post_row_function"] is not None:
