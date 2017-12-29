@@ -55,7 +55,7 @@ class Command(BaseCommand):
         loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map,
                                     collision_field='treasury_account_identifier', collision_behavior='update',
                                     pre_row_function=self.skip_and_remove_financing_tas)
-        loader.load_from_file(filepath=file_path, bucket_name='gtas-sf133')
+        loader.load_from_file(filepath=file_path, remote_file=True)
 
         # Match funding toptiers by FREC if they didn't match by AID
         unmapped_funding_agencies = TreasuryAppropriationAccount.objects.filter(funding_toptier_agency=None)

@@ -66,8 +66,8 @@ class ThreadedDataLoader():
 
     # Loads data from a file using parameters set during creation of the loader
     # The filepath parameter should be the string location of the file for use with open()
-    def load_from_file(self, filepath, encoding='utf-8', bucket_name=None):
-        if not bucket_name:
+    def load_from_file(self, filepath, encoding='utf-8', remote_file=False):
+        if not remote_file:
             self.logger.info('Started processing file ' + filepath)
 
         # Create the Queue object - this will hold all the rows in the CSV
@@ -95,8 +95,9 @@ class ThreadedDataLoader():
             process.start()
 
         count = 0
-        if bucket_name:
-            with smart_open.smart_open(filepath, 'r', encoding=encoding) as csv_file:
+        if remote_file:
+            aws_region = os.environ.get('AWS_REGION')
+            with smart_open.smart_open(filepath, 'r', encoding=encoding, region=aws_region) as csv_file:
                 count, row_queue = self.csv_file_to_queue(row_queue, csv_file, count)
         else:
             with open(filepath, encoding=encoding) as csv_file:
