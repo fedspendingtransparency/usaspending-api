@@ -98,7 +98,7 @@ class ThreadedDataLoader():
         count = 0
         if remote_file:
             aws_region = os.environ.get('AWS_REGION')
-            with smart_open.smart_open(filepath, 'r', encoding=encoding, region=aws_region) as csv_file:
+            with smart_open.smart_open(filepath, 'r', encoding=encoding, region_name=aws_region) as csv_file:
                 count, row_queue = self.csv_file_to_queue(row_queue, csv_file, count)
         else:
             with open(filepath, encoding=encoding) as csv_file:
