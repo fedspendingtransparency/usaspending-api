@@ -95,14 +95,13 @@ class ThreadedDataLoader():
         for process in pool:
             process.start()
 
-        count = 0
         if remote_file:
             aws_region = os.environ.get('AWS_REGION')
             with smart_open.smart_open(filepath, 'r', encoding=encoding, region_name=aws_region) as csv_file:
-                count, row_queue = self.csv_file_to_queue(row_queue, csv_file, count)
+                row_queue = self.csv_file_to_queue(csv_file, row_queue)
         else:
             with open(filepath, encoding=encoding) as csv_file:
-                count, row_queue = self.csv_file_to_queue(row_queue, csv_file, count)
+                row_queue = self.csv_file_to_queue(csv_file, row_queue)
 
         for i in range(self.processes):
             row_queue.put(None)
@@ -117,16 +116,16 @@ class ThreadedDataLoader():
 
         self.logger.info('Finished processing all rows')
 
-    def csv_file_to_queue(self, row_queue, csv_file, count):
+    def csv_file_to_queue(self, csv_file, row_queue):
         reader = csv.DictReader(csv_file)
-        row_count = count
         temp_row_queue = row_queue
+        count = 0
         for row in reader:
             count = count + 1
             temp_row_queue.put(row)
             if count % 1000 == 0:
                 self.logger.info("Queued row " + str(count))
-        return count, temp_row_queue
+        return temp_row_queue
 
 
 class DataLoaderThread(Process):
@@ -154,7 +153,6 @@ class DataLoaderThread(Process):
                 self.data_queue.task_done()
                 connection.close()
                 return
-            self.references['logger'].info(row)
             row = cleanse_values(row)
             # Grab the collision field
             update = False
