@@ -654,15 +654,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
         for award in limited_queryset[:limit]:
             row = {"internal_id": award["award_id"]}
 
-            if award['type'] in contract_type_mapping:
-                for field in fields:
-                    row[field] = award.get(award_contracts_mapping.get(field))
-            elif award['type'] in loan_type_mapping:  # loans
+            if award['type'] in loan_type_mapping:  # loans
                 for field in fields:
                     row[field] = award.get(loan_award_mapping.get(field))
             elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
                 for field in fields:
                     row[field] = award.get(non_loan_assistance_award_mapping.get(field))
+            elif award['type'] is None or award['type'] in contract_type_mapping:  # IDV CONTRACT OR OTHER CONTRACT
+                for field in fields:
+                    row[field] = award.get(award_contracts_mapping.get(field))
 
             if "Award ID" in fields:
                 for id_type in ["piid", "fain", "uri"]:
