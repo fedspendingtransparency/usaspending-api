@@ -115,7 +115,7 @@ class ThreadedDataLoader():
 
         self.logger.info('Finished processing all rows')
 
-    def csv_file_to_queue(row_queue, csv_file, count):
+    def csv_file_to_queue(self, row_queue, csv_file, count):
         reader = csv.DictReader(csv_file)
         row_count = count
         temp_row_queue = row_queue

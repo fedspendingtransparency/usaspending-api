@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         s3connection = boto.s3.connect_to_region(os.environ.get('AWS_REGION'))
-        s3bucket = s3connection.lookup(os.environ.get('SF133_BUCKET'))
+        s3bucket = s3connection.lookup('gtas-sf133')
         file_path = s3bucket.get_key("cars_tas.csv").generate_url(expires_in=600)
 
         field_map = {
