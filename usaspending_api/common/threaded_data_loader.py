@@ -12,6 +12,7 @@ import queue
 import sys
 import json
 import smart_open
+import os
 
 
 # This class is a threaded data loader
