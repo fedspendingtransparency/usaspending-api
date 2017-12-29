@@ -86,7 +86,7 @@ class Command(BaseCommand):
                                                                          row["SUB"])
 
     def skip_and_remove_financing_tas(self, row, instance):
-        if row["Financial Indicator Type2"] == "F":
+        if row["financial_indicator_type2"] == "F":
             # If the instance already exists in the db, delete the instance.
             if instance.treasury_account_identifier:
                 instance.delete()
