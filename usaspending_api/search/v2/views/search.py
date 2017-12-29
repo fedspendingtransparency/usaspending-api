@@ -670,7 +670,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         row["Award ID"] = award[id_type]
                         break
             results.append(row)
-        print(values)
         # build response
         response = {
             'limit': limit,
