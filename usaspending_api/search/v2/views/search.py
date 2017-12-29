@@ -660,7 +660,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
                 for field in fields:
                     row[field] = award.get(non_loan_assistance_award_mapping.get(field))
-            elif (award['type'] is None and award['piid']) or award['type'] in contract_type_mapping:  # IDV CONTRACT OR OTHER CONTRACT
+            elif (award['type'] is None and award['piid']) or award['type'] in contract_type_mapping:  # IDV + contract
                 for field in fields:
                     row[field] = award.get(award_contracts_mapping.get(field))
 
