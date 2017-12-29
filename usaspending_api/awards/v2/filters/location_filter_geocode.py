@@ -19,8 +19,11 @@ def geocode_filter_locations(scope, values, model, use_matview=False, app_name='
     if type(model) == str:
         model = apps.get_model(app_name, model)
 
+    # creates a dictionary with all of the locations organized by country
+    # Counties and congressional districts are nested under state codes
     nested_values = create_nested_object(values)
 
+    # In this for-loop a django Q filter object is created from the python dict
     for country, state_zip in nested_values.items():
         country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
         state_qs = Q()
@@ -113,12 +116,12 @@ def return_query_string(use_matview):
         # Example "pop__county_code"
         q_str = '{0}_{1}'
         # Matviews use country_code ex: pop_country_code
-        country_code = 'country_code'
+        country_code_col = 'country_code'
     else:
         # Queries going through the references_location table will a join in the filter
         # Example "place_of_performance__county_code"
         q_str = '{0}__{1}'
         # References_location table uses the col location_country_code
-        country_code = 'location_country_code'
+        country_code_col = 'location_country_code'
 
-    return q_str, country_code
+    return q_str, country_code_col
