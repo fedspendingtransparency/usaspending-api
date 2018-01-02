@@ -82,8 +82,6 @@
     "WHERE",
     "  \"transaction_normalized\".\"action_date\" >= '2007-10-01' AND",
     "  \"transaction_normalized\".\"federal_action_obligation\" IS NOT NULL",
-    "ORDER BY",
-    "  \"transaction_normalized\".\"action_date\" DESC",
     "GROUP BY",
     "  cast(date_trunc('month', \"transaction_normalized\".\"action_date\") as date),",
     "  \"transaction_normalized\".\"fiscal_year\",",
@@ -123,11 +121,13 @@
     "  \"psc\".\"description\",",
     "  \"transaction_fpds\".\"naics\",",
     "  \"naics\".\"description\",",
-
+    "",
     "  obligation_to_enum(\"awards\".\"total_obligation\"),",
     "  \"transaction_fpds\".\"type_of_contract_pricing\",",
     "  \"transaction_fpds\".\"type_set_aside\",",
-    "  \"transaction_fpds\".\"extent_competed\""
+    "  \"transaction_fpds\".\"extent_competed\"",
+    "ORDER BY",
+    "  cast(date_trunc('month', \"transaction_normalized\".\"action_date\") as date) DESC"
   ],
   "indexes": [
     {
