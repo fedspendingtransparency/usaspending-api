@@ -3,7 +3,7 @@
   "matview_sql": [
     "SELECT",
     "  UPPER(CONCAT(\"legal_entity\".\"recipient_name\", ' ', \"transaction_fpds\".\"naics\", ' ', \"naics\".\"description\", ' ', \"psc\".\"description\")) AS keyword_string,",
-    "  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,",    "  \"transaction_normalized\".\"id\" AS transaction_id,",
+    "  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,",
     "  \"transaction_normalized\".\"action_date\"::date,",
     "  \"transaction_normalized\".\"fiscal_year\",",
     "  \"transaction_normalized\".\"type\",",
