@@ -21,8 +21,7 @@ from usaspending_api.awards.v2.filters.view_selector import get_view_queryset, c
     spending_by_award_count, spending_over_time, spending_by_geography
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
-from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
-from usaspending_api.awards.v2.filters.matview_award import award_filter
+from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, loan_type_mapping, \
     non_loan_assistance_type_mapping
@@ -164,7 +163,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         # filter queryset
-        queryset = transaction_filter(filters, UniversalTransactionView)
+        queryset = matview_search_filter(filters, UniversalTransactionView)
 
         # filter the transactions by category
         if category == "awarding_agency":
@@ -620,7 +619,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
         # build sql query filters
-        queryset = award_filter(filters, UniversalAwardView).values()
+        queryset = matview_search_filter(filters, UniversalAwardView).values()
 
         values = {'award_id', 'piid', 'fain', 'uri', 'type'}  # always get at least these columns
         for field in fields:
@@ -654,15 +653,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
         for award in limited_queryset[:limit]:
             row = {"internal_id": award["award_id"]}
 
-            if award['type'] in contract_type_mapping:
-                for field in fields:
-                    row[field] = award.get(award_contracts_mapping.get(field))
-            elif award['type'] in loan_type_mapping:  # loans
+            if award['type'] in loan_type_mapping:  # loans
                 for field in fields:
                     row[field] = award.get(loan_award_mapping.get(field))
             elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
                 for field in fields:
                     row[field] = award.get(non_loan_assistance_award_mapping.get(field))
+            elif (award['type'] is None and award['piid']) or award['type'] in contract_type_mapping:  # IDV + contract
+                for field in fields:
+                    row[field] = award.get(award_contracts_mapping.get(field))
 
             if "Award ID" in fields:
                 for id_type in ["piid", "fain", "uri"]:
@@ -670,7 +669,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         row["Award ID"] = award[id_type]
                         break
             results.append(row)
-
         # build response
         response = {
             'limit': limit,

@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: Performance when multiple false values are initially provided
-def transaction_filter(filters, model):
+
+def matview_search_filter(filters, model):
     queryset = model.objects.all()
     for key, value in filters.items():
         if value is None:
