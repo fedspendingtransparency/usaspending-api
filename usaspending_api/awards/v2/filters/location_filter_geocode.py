@@ -1,17 +1,9 @@
 from django.apps import apps
+from django.db.models import Q
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
-LOCATION_MAPPING = {
-    'country': 'location_country_code',
-    'state': 'state_code',
-    'county': 'county_code',
-    'district': 'congressional_code',
-    'zip': 'zip5',
-}
-
-
-def geocode_filter_locations(scope, values, model, use_matview=False, default_model='awards'):
+def geocode_filter_locations(scope, values, model, use_matview=False, app_name='awards'):
     """
     Function filter querysets on location table
     scope- place of performance or recipient location mappings
@@ -19,64 +11,117 @@ def geocode_filter_locations(scope, values, model, use_matview=False, default_mo
     model- awards or transactions will create queryset for model
     returns queryset
     """
-    q_str, loc_dict = return_query_strings(use_matview)
-    queryset_init = False
-    or_queryset = None
+    or_queryset = Q()
 
+    # Accounts for differences between matview queries and regular queries
+    q_str, country_code = return_query_string(use_matview)
+
+    if type(model) == str:
+        model = apps.get_model(app_name, model)
+
+    # creates a dictionary with all of the locations organized by country
+    # Counties and congressional districts are nested under state codes
+    nested_values = create_nested_object(values)
+
+    # In this for-loop a django Q filter object is created from the python dict
+    for country, state_zip in nested_values.items():
+        country_qs = Q(**{q_str.format(scope, country_code) + '__exact': country})
+        state_qs = Q()
+
+        for state_zip_key, state_values in state_zip.items():
+            if state_zip_key == 'zip':
+                state_inner_qs = Q(**{q_str.format(scope, 'zip5') + '__exact': state_values})
+            else:
+                state_inner_qs = Q(**{q_str.format(scope, 'state_code') + '__exact': state_zip_key})
+                county_qs = Q()
+                district_qs = Q()
+
+                if state_values['county']:
+                    county_qs = Q(**{q_str.format(scope, 'county_code') + '__in': state_values['county']})
+                if state_values['district']:
+                    district_qs = Q(**{q_str.format(scope, 'congressional_code') + '__in': state_values['district']})
+                state_inner_qs &= (county_qs | district_qs)
+
+            state_qs |= state_inner_qs
+
+        or_queryset |= (country_qs & state_qs)
+    return model.objects.filter(or_queryset)
+
+
+def create_nested_object(values):
+    nested_locations = {}
     for v in values:
-        fields = v.keys()
+        try:
+            # First level in location filtering in country
+            # All location requests must have a country otherwise there will be a key error
+            if nested_locations.get(v['country']) is None:
+                nested_locations[v['country']] = {}
 
-        check_location_fields(fields)
+            # Second level of filtering is zip and state
+            # Requests must have a country+zip or country+state combination
+            if 'zip' in v:
+                nested_locations[v['country']]['zip'] = v['zip']
+            elif 'state' in v and nested_locations[v['country']].get(v['state']) is None:
+                nested_locations[v['country']][v['state']] = {'county': [], 'district': []}
 
-        kwargs = {}
-        for loc_scope in fields:
-            if loc_dict.get(loc_scope) is not None:
-                key_str = q_str.format(scope, loc_dict.get(loc_scope))
-                kwargs[key_str] = get_fields_list(loc_dict.get(loc_scope), v.get(loc_scope), loc_dict)
+            # Under state a user can filter on county and/or district (congressional_code)
+            # Error will be thrown if no state value
+            if v.get('county'):
+                nested_locations[v['country']][v['state']]['county'].extend(get_fields_list('county', v['county']))
 
-        if type(model) == str:
-            model = apps.get_model(default_model, model)
-        qs = model.objects.filter(**kwargs)
+            if v.get('district'):
+                nested_locations[v['country']][v['state']]['district'].extend(
+                    get_fields_list('district', v['district']))
 
-        if queryset_init:
-            or_queryset |= qs
-        else:
-            queryset_init = True
-            or_queryset = qs
-    return or_queryset
+        except KeyError:
+            # This result if there is value for country or state where necessary
+            location_error_handling(v.keys())
+
+    return nested_locations
 
 
-def check_location_fields(fields):
+def location_error_handling(fields):
     # Request must have country, and can only have 3 fields,
     # and must have state if there is county or district
-    if 'country' not in fields or \
-            ('state' not in fields and
-                ('county' in fields or 'district' in fields)):
+    if 'country' not in fields:
 
         raise InvalidParameterException(
-            'Invalid filter: recipient has incorrect object.'
+            'Invalid filter:  Missing necessary location field: country.'
+        )
+    elif 'state' not in fields and('county' in fields or 'district' in fields):
+        raise InvalidParameterException(
+            'Invalid filter:  Missing necessary location field: state.'
         )
 
 
-def get_fields_list(scope, field_value, loc_dict):
+def get_fields_list(scope, field_value):
     """List of values to search for; `field_value`, plus possibly variants on it"""
     if scope in ['congressional_code', 'county_code']:
         try:
+            # Congressional and county codes are not uniform and contain multiple variables
+            # In the location table Ex congressional code (01): '01', '1.0', '1'
             return [str(int(field_value)), field_value, str(float(field_value))]
         except ValueError:
             # if filter causes an error when casting to a float or integer
             # Example: 'ZZ' for an area without a congressional code
-            return [field_value]
+            pass
     return [field_value]
 
 
-def return_query_strings(use_matview):
+def return_query_string(use_matview):
     # Returns query strings according based on mat view or database
-    loc_dict = LOCATION_MAPPING.copy()
-    q_str = '{0}__{1}__in'
 
     if use_matview:
-        q_str = '{0}_{1}__in'
-        loc_dict['country'] = 'country_code'
+        # Queries going through the references_location table will not require a join
+        # Example "pop__county_code"
+        q_str = '{0}_{1}'
+        # Matviews use country_code ex: pop_country_code
+        country_code_col = 'country_code'
+    else:
+        # Queries going through the references_location table will a join in the filter
+        # Example "place_of_performance__county_code"
+        q_str = '{0}__{1}'
+        # References_location table uses the col location_country_code
+        country_code_col = 'location_country_code'
 
-    return q_str, loc_dict
+    return q_str, country_code_col
