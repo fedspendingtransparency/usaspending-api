@@ -11,7 +11,7 @@ from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from rest_framework.views import APIView
-from django.db.models import Sum
+from django.db.models import Sum, F
 from usaspending_api.awards.v2.filters.filter_helpers import date_or_fy_queryset
 
 
@@ -85,45 +85,26 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     @cache_response()
     def get(self, request, pk, format=None):
 
+        # import pytest; pytest.set_trace()
         queryset = AppropriationAccountBalances.objects.filter(treasury_account_identifier__federal_account_id=int(
             pk)).filter(final_of_fy=True).filter(submission__reporting_fiscal_year=fy(datetime.today()))
-        rq = queryset.first()
-
-        if rq:
-            result = {
-                "results": {
-                    "outlay":
-                    rq.gross_outlay_amount_by_tas_cpe,
-                    "budget_authority":
-                    rq.budget_authority_available_amount_total_cpe,
-                    "obligated":
-                    rq.obligations_incurred_total_by_tas_cpe,
-                    "unobligated":
-                    rq.unobligated_balance_cpe,
-                    "balance_brought_forward":
-                    rq.budget_authority_unobligated_balance_brought_forward_fyb
+        queryset = queryset.aggregate(
+            outlay=Sum('gross_outlay_amount_by_tas_cpe'),
+            budget_authority=Sum('budget_authority_available_amount_total_cpe'),
+            obligated=Sum('obligations_incurred_total_by_tas_cpe'),
+            unobligated=Sum('unobligated_balance_cpe'),
+            balance_brought_forward=Sum(
+                    F('budget_authority_unobligated_balance_brought_forward_fyb')
                     +
-                    rq.adjustments_to_unobligated_balance_brought_forward_cpe,
-                    "other_budgetary_resources":
-                    rq.other_budgetary_resources_amount_cpe,
-                    "appropriations":
-                    rq.budget_authority_appropriated_amount_cpe
-                }
-            }
+                    F('adjustments_to_unobligated_balance_brought_forward_cpe')
+                    ),
+            other_budgetary_resources=Sum('other_budgetary_resources_amount_cpe'),
+            appropriations=Sum('budget_authority_appropriated_amount_cpe')
+            )
+        if queryset['outlay'] is not None:
+            return Response({'results': queryset})
         else:
-            result = {
-                "results": {
-                    "outlay": 0,
-                    "budget_authority": 0,
-                    "obligated": 0,
-                    "unobligated": 0,
-                    "balance_brought_forward": 0,
-                    "other_budgetary_resources": 0,
-                    "appropriations": 0,
-                }
-            }
-
-        return Response(result)
+            return Response({})
 
 
 class SpendingOverTimeFederalAccountsViewSet(APIView):
@@ -147,7 +128,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
             obligations_incurred_filtered=Sum('obligations_incurred_total_by_tas_cpe')
         )
 
-        unfiltered_fa = financial_account_queryset.aggragate(
+        unfiltered_fa = financial_account_queryset.aggregate(
             obligations_incurred_other=Sum('obligations_incurred_total_by_tas_cpe'),
             unobliged_balance=Sum('unobligated_balance_cpe')
         )
@@ -173,7 +154,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                 obligations_incurred_filtered=Sum('obligations_incurred_total_by_tas_cpe')
             )
 
-            unfiltered_fa = financial_account_queryset.aggragate(
+            unfiltered_fa = financial_account_queryset.aggregate(
                 obligations_incurred_other=Sum('obligations_incurred_total_by_tas_cpe'),
                 unobliged_balance=Sum('unobligated_balance_cpe')
             )
@@ -218,6 +199,8 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
         queryset = FinancialAccountsByProgramActivityObjectClass.objects
         queryset = federal_account_filter(queryset, request.data['filters'])
 
+        # `category` from request determines what to sum over
+        # `.annotate`... `F()` is much like using SQL column aliases
         if request.data.get('category') == 'program_activity':
             queryset = queryset.annotate(
                 id=F('program_activity_id'),
@@ -239,8 +222,10 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
         queryset = queryset.values('id', 'code', 'name').annotate(
             Sum('obligations_incurred_by_program_object_class_cpe'))
 
-        result = {"results": {q['name']: q['obligations_incurred_by_program_object_class_cpe__sum'] for q in queryset}}
-        # TODO: should code be included, too?
+        result = {
+            "results": {(q['code'], q['name']): q['obligations_incurred_by_program_object_class_cpe__sum']
+                        for q in queryset}
+        }
 
         return Response(result)
 

@@ -82,23 +82,5 @@ def test_federal_account_fiscal_year_snapshot_v2_endpoint_no_results(client, fin
 
     resp = client.get('/api/v2/federal_accounts/999/fiscal_year_snapshot')
     assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == {}
 
-    # test response in correct form
-
-    assert 'results' in resp.json()
-    results = resp.json()['results']
-    assert 'outlay' in results
-    assert 'budget_authority' in results
-    assert 'obligated' in results
-    assert 'unobligated' in results
-    assert 'balance_brought_forward' in results
-    assert 'other_budgetary_resources' in results
-    assert 'appropriations' in results
-
-    assert results['outlay'] == 0
-    assert results['budget_authority'] == 0
-    assert results['obligated'] == 0
-    assert results['unobligated'] == 0
-    assert results['balance_brought_forward'] == 0
-    assert results['other_budgetary_resources'] == 0
-    assert results['appropriations'] == 0
