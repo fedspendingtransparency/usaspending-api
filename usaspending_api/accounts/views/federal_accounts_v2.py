@@ -3,25 +3,18 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 from rest_framework.response import Response
 from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
-from usaspending_api.awards.models import FinancialAccountsByAwards, Award
+from usaspending_api.awards.models import FinancialAccountsByAwards
 from rest_framework.views import APIView
-from django.db.models import Sum, Count, F, Value
-from django.db.models.functions import ExtractMonth, Cast, Coalesce
-from usaspending_api.awards.models_matviews import UniversalAwardView
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, loan_type_mapping, \
-    non_loan_assistance_type_mapping
-from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_mapping, loan_award_mapping, \
-    non_loan_assistance_award_mapping
+from django.db.models import Sum
 from usaspending_api.awards.v2.filters.filter_helpers import date_or_fy_queryset
 
 
 def federal_account_filter(queryset, filter):
     for key, value in filter.items():
         if key == 'object_class':
-            queryset.objects.filters(object_class_id__in=filter['object_class'])
+            queryset.objects.filters(object_class_id__in=value)
         elif key == 'program_activity':
-            queryset.objects.filters(program_activity_id__in=filter['program_activites'])
+            queryset.objects.filters(program_activity_id__in=value)
         elif key == 'time_period':
             success, or_queryset = date_or_fy_queryset(value, FinancialAccountsByAwards, "fiscal_year",
                                                        "reporting_period_start")
@@ -179,147 +172,146 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
         return None
 
 
-class SpendingByAwardCountFederalAccountsViewSet(APIView):
-    @cache_response()
-    def post(self, request, pk, format=None):
-        """Return all budget function/subfunction titles matching the provided search text"""
-        fa_id = int(pk)
-        json_request = request.data
-        filters = json_request.get("filters", None)
-
-        if filters is None:
-            response = {'results': {}}
-
-        faba_queryset = FinancialAccountsByAwards.objects.filter(treasury_account__federal_account_id=fa_id)
-        faba_queryset = federal_account_filter(faba_queryset, filters)
-
-        faba_queryset = faba_queryset.value_list('award_id')
-        queryset = UniversalAwardView.objects.filter(award_id__in=faba_queryset)
-
-        # for IDV CONTRACTS category is null. change to contract
-        queryset = queryset \
-            .values('category') \
-            .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
-            .values('category', 'category_count')
-
-        results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
-
-        categories = {
-            'contract': 'contracts',
-            'grant': 'grants',
-            'direct payment': 'direct_payments',
-            'loans': 'loans',
-            'other': 'other'
-        }
-
-        # DB hit here
-        for award in queryset:
-            if award['category'] is None:
-                result_key = 'contracts'
-            elif award['category'] not in categories.keys():
-                result_key = 'other'
-            else:
-                result_key = categories[award['category']]
-            results[result_key] += award['category_count']
-
-        # build response
-        return Response({"results": results})
-
-
-class SpendingByAwardFederalAccountsViewSet(APIView):
-    @cache_response()
-    def post(self, request, pk, format=None):
-        """Return all budget function/subfunction titles matching the provided search text"""
-        fa_id = int(pk)
-        json_request = request.data
-        fields = json_request.get("fields", None)
-        filters = json_request.get("filters", None)
-        order = json_request.get("order", "asc")
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
-
-        lower_limit = (page - 1) * limit
-        upper_limit = page * limit
-
-        if fields is None:
-            raise InvalidParameterException("Missing one or more required request parameters: fields")
-        elif len(fields) == 0:
-            raise InvalidParameterException("Please provide a field in the fields request parameter.")
-        if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
-        if "award_type_codes" not in filters:
-            raise InvalidParameterException(
-                "Missing one or more required request parameters: filters['award_type_codes']")
-        if order not in ["asc", "desc"]:
-            raise InvalidParameterException("Invalid value for order: {}".format(order))
-        sort = json_request.get("sort", fields[0])
-        if sort not in fields:
-            raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
-
-        faba_queryset = FinancialAccountsByAwards.objects.filter(treasury_account__federal_account_id=fa_id)
-        faba_queryset = federal_account_filter(faba_queryset, filters)
-
-        faba_queryset = faba_queryset.value_list('award_id')
-        queryset = UniversalAwardView.objects.filter(award_id__in=faba_queryset)
+# class SpendingByAwardCountFederalAccountsViewSet(APIView):
+#     @cache_response()
+#     def post(self, request, pk, format=None):
+#         """Return all budget function/subfunction titles matching the provided search text"""
+#         fa_id = int(pk)
+#         json_request = request.data
+#         filters = json_request.get("filters", None)
+#
+#         if filters is None:
+#             response = {'results': {}}
+#
+#         faba_queryset = FinancialAccountsByAwards.objects.filter(treasury_account__federal_account_id=fa_id)
+#         faba_queryset = federal_account_filter(faba_queryset, filters)
+#
+#         faba_queryset = faba_queryset.value_list('award_id')
+#         queryset = UniversalAwardView.objects.filter(award_id__in=faba_queryset)
+#
+#         # for IDV CONTRACTS category is null. change to contract
+#         queryset = queryset \
+#             .values('category') \
+#             .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
+#             .values('category', 'category_count')
+#
+#         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
+#
+#         categories = {
+#             'contract': 'contracts',
+#             'grant': 'grants',
+#             'direct payment': 'direct_payments',
+#             'loans': 'loans',
+#             'other': 'other'
+#         }
+#
+#         # DB hit here
+#         for award in queryset:
+#             if award['category'] is None:
+#                 result_key = 'contracts'
+#             elif award['category'] not in categories.keys():
+#                 result_key = 'other'
+#             else:
+#                 result_key = categories[award['category']]
+#             results[result_key] += award['category_count']
+#
+#         # build response
+#         return Response({"results": results})
 
 
-        values = {'award_id', 'piid', 'fain', 'uri', 'type'}  # always get at least these columns
-        for field in fields:
-            if award_contracts_mapping.get(field):
-                values.add(award_contracts_mapping.get(field))
-            if loan_award_mapping.get(field):
-                values.add(loan_award_mapping.get(field))
-            if non_loan_assistance_award_mapping.get(field):
-                values.add(non_loan_assistance_award_mapping.get(field))
-
-        # Modify queryset to be ordered if we specify "sort" in the request
-        if sort:
-            if set(filters["award_type_codes"]) <= set(contract_type_mapping):
-                sort_filters = [award_contracts_mapping[sort]]
-            elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
-                sort_filters = [loan_award_mapping[sort]]
-            else:  # assistance data
-                sort_filters = [non_loan_assistance_award_mapping[sort]]
-
-            if sort == "Award ID":
-                sort_filters = ["piid", "fain", "uri"]
-            if order == 'desc':
-                sort_filters = ['-' + sort_filter for sort_filter in sort_filters]
-
-            queryset = queryset.order_by(*sort_filters).values(*list(values))
-
-        limited_queryset = queryset[lower_limit:upper_limit + 1]
-        has_next = len(limited_queryset) > limit
-
-        results = []
-        for award in limited_queryset[:limit]:
-            row = {"internal_id": award["award_id"]}
-
-            if award['type'] in contract_type_mapping:
-                for field in fields:
-                    row[field] = award.get(award_contracts_mapping.get(field))
-            elif award['type'] in loan_type_mapping:  # loans
-                for field in fields:
-                    row[field] = award.get(loan_award_mapping.get(field))
-            elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
-                for field in fields:
-                    row[field] = award.get(non_loan_assistance_award_mapping.get(field))
-
-            if "Award ID" in fields:
-                for id_type in ["piid", "fain", "uri"]:
-                    if award[id_type]:
-                        row["Award ID"] = award[id_type]
-                        break
-            results.append(row)
-
-        # build response
-        response = {
-            'limit': limit,
-            'results': results,
-            'page_metadata': {
-                'page': page,
-                'hasNext': has_next
-            }
-        }
-
-        return Response(response)
+# class SpendingByAwardFederalAccountsViewSet(APIView):
+#     @cache_response()
+#     def post(self, request, pk, format=None):
+#         """Return all budget function/subfunction titles matching the provided search text"""
+#         fa_id = int(pk)
+#         json_request = request.data
+#         fields = json_request.get("fields", None)
+#         filters = json_request.get("filters", None)
+#         order = json_request.get("order", "asc")
+#         limit = json_request.get("limit", 10)
+#         page = json_request.get("page", 1)
+#
+#         lower_limit = (page - 1) * limit
+#         upper_limit = page * limit
+#
+#         if fields is None:
+#             raise InvalidParameterException("Missing one or more required request parameters: fields")
+#         elif len(fields) == 0:
+#             raise InvalidParameterException("Please provide a field in the fields request parameter.")
+#         if filters is None:
+#             raise InvalidParameterException("Missing one or more required request parameters: filters")
+#         if "award_type_codes" not in filters:
+#             raise InvalidParameterException(
+#                 "Missing one or more required request parameters: filters['award_type_codes']")
+#         if order not in ["asc", "desc"]:
+#             raise InvalidParameterException("Invalid value for order: {}".format(order))
+#         sort = json_request.get("sort", fields[0])
+#         if sort not in fields:
+#             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
+#
+#         faba_queryset = FinancialAccountsByAwards.objects.filter(treasury_account__federal_account_id=fa_id)
+#         faba_queryset = federal_account_filter(faba_queryset, filters)
+#
+#         faba_queryset = faba_queryset.value_list('award_id')
+#         queryset = UniversalAwardView.objects.filter(award_id__in=faba_queryset)
+#
+#         values = {'award_id', 'piid', 'fain', 'uri', 'type'}  # always get at least these columns
+#         for field in fields:
+#             if award_contracts_mapping.get(field):
+#                 values.add(award_contracts_mapping.get(field))
+#             if loan_award_mapping.get(field):
+#                 values.add(loan_award_mapping.get(field))
+#             if non_loan_assistance_award_mapping.get(field):
+#                 values.add(non_loan_assistance_award_mapping.get(field))
+#
+#         # Modify queryset to be ordered if we specify "sort" in the request
+#         if sort:
+#             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
+#                 sort_filters = [award_contracts_mapping[sort]]
+#             elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
+#                 sort_filters = [loan_award_mapping[sort]]
+#             else:  # assistance data
+#                 sort_filters = [non_loan_assistance_award_mapping[sort]]
+#
+#             if sort == "Award ID":
+#                 sort_filters = ["piid", "fain", "uri"]
+#             if order == 'desc':
+#                 sort_filters = ['-' + sort_filter for sort_filter in sort_filters]
+#
+#             queryset = queryset.order_by(*sort_filters).values(*list(values))
+#
+#         limited_queryset = queryset[lower_limit:upper_limit + 1]
+#         has_next = len(limited_queryset) > limit
+#
+#         results = []
+#         for award in limited_queryset[:limit]:
+#             row = {"internal_id": award["award_id"]}
+#
+#             if award['type'] in contract_type_mapping:
+#                 for field in fields:
+#                     row[field] = award.get(award_contracts_mapping.get(field))
+#             elif award['type'] in loan_type_mapping:  # loans
+#                 for field in fields:
+#                     row[field] = award.get(loan_award_mapping.get(field))
+#             elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
+#                 for field in fields:
+#                     row[field] = award.get(non_loan_assistance_award_mapping.get(field))
+#
+#             if "Award ID" in fields:
+#                 for id_type in ["piid", "fain", "uri"]:
+#                     if award[id_type]:
+#                         row["Award ID"] = award[id_type]
+#                         break
+#             results.append(row)
+#
+#         # build response
+#         response = {
+#             'limit': limit,
+#             'results': results,
+#             'page_metadata': {
+#                 'page': page,
+#                 'hasNext': has_next
+#             }
+#         }
+#
+#         return Response(response)
