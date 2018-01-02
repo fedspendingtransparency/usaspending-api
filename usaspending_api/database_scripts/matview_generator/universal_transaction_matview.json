@@ -97,9 +97,6 @@
   ],
   "indexes": [
     {
-      "name": "transaction_id",
-      "columns": [{"name": "\"transaction_id\""}]
-    }, {
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {
@@ -197,22 +194,6 @@
       "where": "funding_subtier_agency_name IS NOT NULL",
       "columns": [{"name": "\"funding_subtier_agency_name\"", "order": "DESC NULLS LAST"}]
     }, {
-      "name": "awarding_toptier_agency_abbreviation",
-      "where": "awarding_toptier_agency_abbreviation IS NOT NULL",
-      "columns": [{"name": "\"awarding_toptier_agency_abbreviation\"", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "awarding_subtier_agency_abbreviation",
-      "where": "awarding_subtier_agency_abbreviation IS NOT NULL",
-      "columns": [{"name": "\"awarding_subtier_agency_abbreviation\"", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "funding_toptier_agency_abbreviation",
-      "where": "funding_toptier_agency_abbreviation IS NOT NULL",
-      "columns": [{"name": "\"funding_toptier_agency_abbreviation\"", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "funding_subtier_agency_abbreviation",
-      "where": "funding_subtier_agency_abbreviation IS NOT NULL",
-      "columns": [{"name": "\"funding_subtier_agency_abbreviation\"", "order": "DESC NULLS LAST"}]
-    }, {
       "name": "gin_awarding_toptier_agency_name",
       "method": "GIN",
       "columns": [{"name": "\"awarding_toptier_agency_name\"", "opclass": "gin_trgm_ops"}]
@@ -271,14 +252,6 @@
       "name": "type_set_aside",
       "where": "\"type_set_aside\" IS NOT NULL",
       "columns": [{"name": "\"type_set_aside\""}]
-    }, {
-      "name": "psc",
-      "where": "\"psc_code\" IS NOT NULL",
-      "columns": [{"name": "\"psc_code\""}]
-    }, {
-      "name": "psd",
-      "where": "\"psc_description\" IS NOT NULL",
-      "columns": [{"name": "\"psc_description\""}]
     }, {
       "name": "product_or_service_code",
       "where": "\"product_or_service_code\" IS NOT NULL",

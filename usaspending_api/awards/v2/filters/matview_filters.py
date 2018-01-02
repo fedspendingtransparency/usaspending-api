@@ -1,15 +1,13 @@
 import logging
-from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 from django.db.models import Q
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
+from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
 logger = logging.getLogger(__name__)
 
-
-# TODO: Performance when multiple false values are initially provided
 
 def matview_search_filter(filters, model):
     queryset = model.objects.all()

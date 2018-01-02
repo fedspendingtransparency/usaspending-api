@@ -6,7 +6,7 @@
     "  \"transaction_normalized\".\"fiscal_year\",",
     "  \"transaction_normalized\".\"type\",",
     "  \"transaction_fpds\".\"pulled_from\",",
-
+    "",
     "  recipient_location.\"location_country_code\" AS \"recipient_location_country_code\",",
     "  recipient_location.\"country_name\" AS \"recipient_location_country_name\",",
     "  recipient_location.\"state_code\" AS \"recipient_location_state_code\",",
@@ -14,7 +14,7 @@
     "  recipient_location.\"county_name\" AS \"recipient_location_county_name\",",
     "  recipient_location.\"congressional_code\" AS \"recipient_location_congressional_code\",",
     "  recipient_location.\"zip5\" AS \"recipient_location_zip5\",",
-
+    "",
     "  place_of_performance.\"location_country_code\" AS \"pop_country_code\",",
     "  place_of_performance.\"country_name\" AS \"pop_country_name\",",
     "  place_of_performance.\"state_code\" AS \"pop_state_code\",",
@@ -82,6 +82,8 @@
     "WHERE",
     "  \"transaction_normalized\".\"action_date\" >= '2007-10-01' AND",
     "  \"transaction_normalized\".\"federal_action_obligation\" IS NOT NULL",
+    "ORDER BY",
+    "  \"transaction_normalized\".\"action_date\" DESC",
     "GROUP BY",
     "  cast(date_trunc('month', \"transaction_normalized\".\"action_date\") as date),",
     "  \"transaction_normalized\".\"fiscal_year\",",
@@ -129,7 +131,6 @@
   ],
   "indexes": [
     {
-      "cluster_on_this": true,
       "name": "date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {
