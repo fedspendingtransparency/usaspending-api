@@ -186,10 +186,6 @@
       "where": "\"cfda_title\" IS NOT NULL",
       "columns": [{"name": "\"cfda_title\""}]
     }, {
-      "name": "psc2",
-      "where": "\"psc_code\" IS NOT NULL",
-      "columns": [{"name": "\"psc_code\""}]
-    }, {
       "name": "psc",
       "where": "\"product_or_service_code\" IS NOT NULL",
       "columns": [{"name": "\"product_or_service_code\""}]

@@ -42,10 +42,11 @@ def matview_search_filter(filters, model):
 
         if key == "keyword":
             keyword = value
+            upper_kw = keyword.upper()
 
-            compound_or = Q(keyword_string__contains=keyword.upper()) | \
-                Q(award_id_string__contains=keyword.upper()) | \
-                Q(recipient_unique_id=keyword) | \
+            compound_or = Q(keyword_string__contains=upper_kw) | \
+                Q(award_id_string__contains=upper_kw) | \
+                Q(recipient_unique_id=upper_kw) | \
                 Q(parent_recipient_unique_id=keyword)
 
             if keyword.isnumeric():
@@ -130,12 +131,12 @@ def matview_search_filter(filters, model):
         elif key == "recipient_search_text":
             if len(value) != 1:
                 raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
-            recipient_string = str(value[0])
+            upper_recipient_string = str(value[0]).upper()
 
-            filter_obj = Q(recipient_name__contains=recipient_string.upper())
+            filter_obj = Q(recipient_name__contains=upper_recipient_string)
 
-            if len(recipient_string) == 9:
-                filter_obj |= Q(recipient_unique_id__iexact=recipient_string)
+            if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
+                filter_obj |= Q(recipient_unique_id=upper_recipient_string)
 
             queryset &= model.objects.filter(filter_obj)
 
