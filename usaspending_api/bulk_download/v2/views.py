@@ -394,6 +394,7 @@ class ListMonthylDownloadsViewset(APIView):
                 if agency:
                     agency_name = agency[0]['name']
                     agency_abbr = agency[0]['abbreviation']
+            # Simply adds dashes for the date, 20180101 -> 2018-01-01, could also use strftime
             updated_date = '-'.join([name_data[3][:4], name_data[3][4:6], name_data[3][6:]])
             downloads.append({'fiscal_year': name_data[0],
                               'agency_name': agency_name,
