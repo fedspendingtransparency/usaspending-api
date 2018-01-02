@@ -1,9 +1,9 @@
 import logging
 from django.db.models import Q
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.references.models import PSC
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.models import PSC
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
 
@@ -84,7 +84,6 @@ def award_filter(filters, model):
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
-            or_queryset = None
             funding_toptier = []
             funding_subtier = []
             awarding_toptier = []
