@@ -5,9 +5,77 @@ import time
 from django.db import connection
 from django.core.management.base import BaseCommand, CommandError
 
-from usaspending_api.etl.management.load_base import run_sql_file
-
 logger = logging.getLogger('console')
+
+location_fields_mappings = {
+        'fabs': {
+            'recipient':  {
+                'address_line1': 'legal_entity_address_line1',
+                'address_line2': 'legal_entity_address_line2',
+                'address_line3': 'legal_entity_address_line3',
+                'city_name': 'legal_entity_city_name',
+                'city_code': 'legal_entity_city_code',
+                'congressional_code': 'legal_entity_congressional',
+                'location_country_code': 'legal_entity_country_code',
+                'country_name': 'legal_entity_country_name',
+                'county_code': 'legal_entity_county_code',
+                'county_name': 'legal_entity_county_name',
+                'foreign_city_name': 'legal_entity_foreign_city',
+                'foreign_postal_code': 'legal_entity_foreign_posta',
+                'foreign_province': 'legal_entity_foreign_provi',
+                'state_code': 'legal_entity_state_code',
+                'state_name': 'legal_entity_state_name',
+                'zip5': 'legal_entity_zip5',
+                'zip_last4': 'legal_entity_zip_last4'
+            },
+            'place_of_performance':  {
+                'city_name': 'place_of_performance_city',
+                'performance_code': 'place_of_performance_code',
+                'congressional_code': 'place_of_performance_congr',
+                'location_country_code': 'place_of_perform_country_c',
+                'country_name': 'place_of_perform_country_n',
+                'county_code': 'place_of_perform_county_co',
+                'county_name': 'place_of_perform_county_na',
+                'foreign_location_description': 'place_of_performance_forei',
+                'state_name': 'place_of_perform_state_nam',
+                'state_code': 'place_of_perfor_state_code',
+                'zip5': 'place_of_performance_zip5',
+                'zip_last4': 'place_of_perform_zip_last4',
+                'zip4': 'place_of_performance_zip4a'
+            }
+        },
+        'fpds': {
+            'recipient':  {
+                'address_line1': 'legal_entity_address_line1',
+                'address_line2': 'legal_entity_address_line2',
+                'address_line3': 'legal_entity_address_line3',
+                'city_name': 'legal_entity_city_name',
+                'congressional_code': 'legal_entity_congressional',
+                'location_country_code': 'legal_entity_country_code',
+                'country_name': 'legal_entity_country_name',
+                'county_code': 'legal_entity_county_code',
+                'county_name': 'legal_entity_county_name',
+                'state_code': 'legal_entity_state_code',
+                'state_name': 'legal_entity_state_descrip',
+                'zip5': 'legal_entity_zip5',
+                'zip_last4': 'legal_entity_zip_last4',
+                'zip4': 'broker.legal_entity_zip4'
+            },
+            'place_of_performance':  {
+                'city_name': 'place_of_performance_city_name',
+                'congressional_code': 'place_of_performance_congr',
+                'location_country_code': 'place_of_perform_country_c',
+                'country_name': 'place_of_perf_country_desc',
+                'county_code': 'place_of_perform_county_co',
+                'county_name': 'place_of_perform_county_na',
+                'state_name': 'place_of_perfor_state_desc',
+                'state_code': 'place_of_performance_state',
+                'zip5': 'place_of_performance_zip5',
+                'zip_last4': 'place_of_perform_zip_last4',
+                'zip4': 'place_of_performance_zip4a'
+            },
+        }
+    }
 
 
 class Command(BaseCommand):
@@ -82,15 +150,13 @@ class Command(BaseCommand):
         if file_type == 'fpds':
             database_columns = self.fpds_columns
             broker_table = 'detached_award_procurement'
-            website_table = f'transaction_{file_type}'
             unique_identifier = 'detached_award_proc_unique'
         else:
             database_columns = self.fabs_columns
             broker_table = 'published_award_financial_assistance'
-            website_table = f'transaction_{file_type}'
             unique_identifier = 'afa_generated_unique'
 
-        return database_columns, broker_table, website_table, unique_identifier
+        return database_columns, broker_table, unique_identifier
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -129,18 +195,19 @@ class Command(BaseCommand):
         fy_start = '10/01/' + str(fiscal_year - 1)
         fy_end = '09/30/' + str(fiscal_year)
 
-        database_columns, broker_table, website_table, unique_identifier = self.set_db_values(file_type)
+        database_columns, broker_table, unique_identifier = self.set_db_values(file_type)
 
         # Fetches rows that need to be updated based on batches pulled from the cursor
         start = datetime.now()
         logger.info('Fetching rows to update from broker for FY{} {} data'.format(fiscal_year, file_type.upper()))
 
         ds_cursor.execute(
-            get_data_to_update_from_broker(file_type, database_columns, broker_table, website_table, fy_start, fy_end, unique_identifier)
+            get_data_to_update_from_broker(file_type, database_columns, broker_table, fy_start, fy_end,
+                                           unique_identifier)
         )
 
         ds_cursor.execute(
-                update_tmp_table_location_changes(file_type, database_columns, unique_identifier, website_table)
+                update_tmp_table_location_changes(file_type, database_columns, unique_identifier)
         )
 
         # Retrieves temporary table with FABS rows that need to be updated
@@ -151,14 +218,18 @@ class Command(BaseCommand):
 
         start = datetime.now()
         if db_rows > 0:
-            ds_cursor.execute(update_transaction_table(file_type, database_columns, website_table, unique_identifier))
-            run_sql_file('usaspending_api/broker/management/sql/update_{}_location_data.sql'.format(file_type), {})
+            ds_cursor.execute(update_transaction_table(file_type, database_columns, unique_identifier))
+            ds_cursor.execute(update_location_table(file_type, 'recipient', database_columns, unique_identifier))
+            ds_cursor.execute(update_location_table(file_type, 'place_of_performance',
+                                                    database_columns, unique_identifier))
 
-        logger.info("Completed updating: {} {} rows in {} seconds".format(file_type.upper(), db_rows, datetime.now() - start))
+        logger.info("Completed updating: {} {} rows in {} seconds".format(file_type.upper(), db_rows,
+                                                                          datetime.now() - start))
+
         ds_cursor.execute('DROP TABLE {}_transactions_to_update_location;'.format(file_type))
 
 
-def get_data_to_update_from_broker(file_type, database_columns, broker_table, website_table, fy_start, fy_end,
+def get_data_to_update_from_broker(file_type, database_columns, broker_table, fy_start, fy_end,
                                    unique_identifier):
         is_active = 'is_active = TRUE and' if file_type == 'fabs' else ''
         location_columns = " ,".join(database_columns)
@@ -170,17 +241,17 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, we
            SELECT
                {location_columns}
                from {broker_table}
-               where {is_active} action_date::date >= ''{fy_start}''::date and
-               action_date::date <= ''{fy_end}''::date;
+               where {is_active} action_date:: date >= ''{fy_start}'':: date and
+               action_date:: date <= ''{fy_end}'':: date;
                ') AS (
                {location_columns_type}
                )
               EXCEPT
               SELECT
               {location_columns}
-               from {website_table}
-               where action_date::date >= '{fy_start}'::date and
-               action_date::date <= '{fy_end}'::date;
+               from transaction_{file_type}
+               where action_date:: date >= '{fy_start}':: date and
+               action_date:: date <= '{fy_end}':: date;
 
             -- Adding index to table to improve speed
            CREATE INDEX {file_type}_unique_idx ON {file_type}_transactions_to_update_location({unique_identifier});
@@ -189,51 +260,53 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, we
         return get_data_broker
 
 
-def update_tmp_table_location_changes(file_type, database_columns, unique_identifier, website_table):
+def update_tmp_table_location_changes(file_type, database_columns, unique_identifier):
     le_loc_columns_distinct = " OR ".join(['website.{column} IS DISTINCT FROM broker.{column}'.format(column=column)
-                                          for column in database_columns if column[:12] == 'legal_entity'])
+                                           for column in database_columns if column[: 12] == 'legal_entity'])
 
     pop_loc_columns_distinct = " OR ".join(['website.{column} IS DISTINCT FROM broker.{column}'.format(column=column)
-                                           for column in database_columns if column[:13] == 'place_of_perf'])
+                                            for column in database_columns if column[: 13] == 'place_of_perf'])
 
     update_loc_changes_tmp_table = f"""
          -- Include columns to determine whether we need a place of performance change or recipient location
        ALTER TABLE {file_type}_transactions_to_update_location
-       ADD COLUMN pop_change boolean, add COLUMN le_loc_change boolean;
+       ADD COLUMN place_of_performance_change boolean, add COLUMN recipient_change boolean;
 
         UPDATE {file_type}_transactions_to_update_location broker
         SET
-        le_loc_change = (
+        recipient_change = (
             CASE  WHEN
             {le_loc_columns_distinct}
             THEN TRUE ELSE FALSE END
             ),
-        pop_change = (
+        place_of_performance_change = (
             CASE  WHEN
            {pop_loc_columns_distinct}
            THEN TRUE ELSE FALSE END
            )
-        FROM {website_table} website
+        FROM transaction_{file_type} website
         WHERE broker.{unique_identifier} = website.{unique_identifier};
 
 
         -- Delete rows where there is no transaction in the table
-        DELETE FROM {file_type}_transactions_to_update_location where pop_change is null and le_loc_change is null;
+        DELETE FROM {file_type}_transactions_to_update_location
+        WHERE place_of_performance_change is null
+        AND recipient_change is null;
 
         -- Adding index to table to improve speed on update
-        CREATE INDEX {file_type}_le_loc_idx ON {file_type}_transactions_to_update_location(le_loc_change);
-        CREATE INDEX {file_type}_pop_idx ON {file_type}_transactions_to_update_location(pop_change);
+        CREATE INDEX {file_type}_le_loc_idx ON {file_type}_transactions_to_update_location(recipient_change);
+        CREATE INDEX {file_type}_pop_idx ON {file_type}_transactions_to_update_location(place_of_performance_change);
         ANALYZE {file_type}_transactions_to_update_location;
         """
     return update_loc_changes_tmp_table
 
 
-def update_transaction_table(file_type, database_columns, website_table, unique_identifier):
+def update_transaction_table(file_type, database_columns, unique_identifier):
     update_website_rows = " ,".join(['{column} = broker.{column}'.format(column=column)
                                      for column in database_columns[2:]]
                                     )
-    update_website_tables = f"""
-            UPDATE {website_table} as website
+    update_transaction_table = f"""
+            UPDATE transaction_{file_type} as website
             SET
                 {update_website_rows}
             FROM
@@ -243,4 +316,33 @@ def update_transaction_table(file_type, database_columns, website_table, unique_
 
             """
 
-    return update_website_tables
+    return update_transaction_table
+
+
+def update_location_table(file_type, loc_scope, database_columns, unique_identifier):
+
+    location_update_code = ', '.join([f'{loc_col} = broker.{broker_col}'
+                                      for loc_col, broker_col in location_fields_mappings[file_type][loc_scope].items()
+                                      if broker_col in database_columns
+                                      ])
+
+    legal_entity_table = ', legal_entity' if loc_scope == 'recipient' else ''
+    location_join = 'AND legal_entity.legal_entity_id = transaction_normalized.recipient_id' + \
+                    ' AND legal_entity.location_id = loc.location_id' if loc_scope == 'recipient' \
+                    else 'AND loc.location_id = transaction_normalized.place_of_performance_id'
+
+    update_location_table = f"""
+    UPDATE references_location AS loc
+    SET
+        {location_update_code}
+    FROM {file_type}_transactions_to_update_location broker,
+        transaction_{file_type},
+        transaction_normalized
+        {legal_entity_table}
+    WHERE broker.{unique_identifier} = transaction_{file_type}.{unique_identifier}
+    AND transaction_{file_type}.transaction_id = transaction_normalized.id
+    {location_join}
+    AND broker.{loc_scope}_change = TRUE;
+    """
+
+    return update_location_table

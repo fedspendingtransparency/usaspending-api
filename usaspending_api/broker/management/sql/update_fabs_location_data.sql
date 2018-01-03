@@ -47,8 +47,8 @@ SET
     state_name = broker.place_of_perform_state_nam,
 --    state_code = broker.place_of_perfor_state_code, TODO: Uncomment when fields added to broker
 --    zip5 = broker.place_of_performance_zip5, TODO: Uncomment when fields added to broker
+--    zip_last4 = broker.place_of_perform_zip_last4, TODO: Uncomment when fields added to broker
     zip4 = broker.place_of_performance_zip4a
---    zip_last4 = broker.place_of_perform_zip_last4 TODO: Uncomment when fields added to broker
 FROM fabs_transactions_to_update_location broker,
     transaction_fabs,
     transaction_normalized

@@ -51,4 +51,3 @@ WHERE  broker.detached_award_proc_unique = transaction_fpds.detached_award_proc_
 AND transaction_fpds.transaction_id = transaction_normalized.id
 AND loc.location_id = transaction_normalized.place_of_performance_id
 AND broker.pop_change = TRUE;
-
