@@ -3,13 +3,15 @@ from decimal import Decimal
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
-# Moving agency mapping outside function to reduce response time
-agency_queryet = Agency.objects.filter(toptier_flag=True).values('id', 'toptier_agency__cgac_code')
-agency_ids = {agency['toptier_agency__cgac_code']: agency['id'] for agency in agency_queryet}
-
 
 class Explorer(object):
     def __init__(self, alt_set, queryset):
+        # Moving agency mapping outside function to reduce response time
+        agency_queryet = Agency.objects.filter(toptier_flag=True).\
+            values('id', 'toptier_agency__cgac_code')
+        self.agency_ids = {agency['toptier_agency__cgac_code']: agency['id']
+                           for agency in agency_queryet}
+
         self.alt_set = alt_set
         self.queryset = queryset
 
@@ -104,7 +106,7 @@ class Explorer(object):
             amount=Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-amount')
 
         for element in queryset:
-            element['id'] = agency_ids[element['code']]
+            element['id'] = self.agency_ids[element['code']]
 
         return queryset
 
