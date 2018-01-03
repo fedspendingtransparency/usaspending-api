@@ -16,10 +16,17 @@ class Command(BaseCommand):
             the folder of this management command."
     logger = logging.getLogger('console')
 
+    def add_arguments(self, parser):
+        parser.add_argument('location', nargs=1, help='The location of the file to load')
+
     def handle(self, *args, **options):
-        s3connection = boto.s3.connect_to_region(os.environ.get('AWS_REGION'))
-        s3bucket = s3connection.lookup('gtas-sf133')
-        file_path = s3bucket.get_key("cars_tas.csv")
+        is_remote_file = len(options['location'][0].split('.')) == 1
+        if is_remote_file:
+            s3connection = boto.s3.connect_to_region(os.environ.get('AWS_REGION'))
+            s3bucket = s3connection.lookup(options['location'][0])
+            file_path = s3bucket.get_key('cars_tas.csv')
+        else:
+            file_path = options['location'][0]
 
         field_map = {
             "treasury_account_identifier": "ACCT_NUM",
@@ -55,7 +62,7 @@ class Command(BaseCommand):
         loader = ThreadedDataLoader(model_class=TreasuryAppropriationAccount, field_map=field_map, value_map=value_map,
                                     collision_field='treasury_account_identifier', collision_behavior='update',
                                     pre_row_function=self.skip_and_remove_financing_tas)
-        loader.load_from_file(filepath=file_path, remote_file=True)
+        loader.load_from_file(filepath=file_path, remote_file=is_remote_file)
 
         # Match funding toptiers by FREC if they didn't match by AID
         unmapped_funding_agencies = TreasuryAppropriationAccount.objects.filter(funding_toptier_agency=None)
