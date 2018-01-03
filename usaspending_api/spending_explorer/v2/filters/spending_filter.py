@@ -8,10 +8,10 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 logger = logging.getLogger(__name__)
-dod_agency = str(Agency.objects.filter(toptier_agency__cgac_code=DOD_CGAC).values_list('id', flat=True).first())
-
 
 def spending_filter(alt_set, queryset, filters, _type):
+    dod_agency = str(Agency.objects.filter(toptier_agency__cgac_code=DOD_CGAC)\
+                     .values_list('id', flat=True).first())
     for key, value in filters.items():
         # check for valid key
         if value is None:
