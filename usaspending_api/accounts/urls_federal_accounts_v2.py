@@ -8,8 +8,8 @@ description_federal_accounts = views.DescriptionFederalAccountsViewSet.as_view()
 fiscal_year_snapshot_federal_accounts = views.FiscalYearSnapshotFederalAccountsViewSet.as_view()
 spending_over_time_federal_accounts = views.SpendingOverTimeFederalAccountsViewSet.as_view()
 spending_by_category_federal_accounts = views.SpendingByCategoryFederalAccountsViewSet.as_view()
-# spending_by_award_count_federal_accounts = views.SpendingByAwardCountFederalAccountsViewSet.as_view()
-# spending_by_award_federal_accounts = views.SpendingByAwardFederalAccountsViewSet.as_view()
+spending_by_award_count_federal_accounts = views.SpendingByAwardCountFederalAccountsViewSet.as_view()
+spending_by_award_federal_accounts = views.SpendingByAwardFederalAccountsViewSet.as_view()
 
 
 urlpatterns = [
@@ -18,6 +18,6 @@ urlpatterns = [
     url(r'(?P<pk>[0-9]+)/fiscal_year_snapshot$', fiscal_year_snapshot_federal_accounts),
     url(r'(?P<pk>[0-9]+)/spending_over_time$', spending_over_time_federal_accounts),
     url(r'(?P<pk>[0-9]+)/spending_by_category$', spending_by_category_federal_accounts),
-#     url(r'(?P<pk>[0-9]+)/spending_by_award_count$', spending_by_award_count_federal_accounts),
-#     url(r'(?P<pk>[0-9]+)/spending_by_award$', spending_by_award_federal_accounts)
+    url(r'(?P<pk>[0-9]+)/spending_by_award_count$', spending_by_award_count_federal_accounts),
+    url(r'(?P<pk>[0-9]+)/spending_by_award$', spending_by_award_federal_accounts)
 ]
