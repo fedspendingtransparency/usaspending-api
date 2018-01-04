@@ -222,3 +222,17 @@ def spending_by_award_count(filters):
         raise InvalidParameterException
 
     return queryset, model
+
+
+def download_transaction_count(filters):
+    view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
+    model = None
+    for view in view_chain:
+        if can_use_view(filters, view):
+                queryset = get_view_queryset(filters, view)
+                model = view
+                break
+    else:
+        raise InvalidParameterException
+
+    return queryset, model
