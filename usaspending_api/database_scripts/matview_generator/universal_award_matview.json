@@ -4,81 +4,57 @@
     "SELECT",
     "  \"awards\".\"id\" AS award_id,",
     "  \"awards\".\"category\",",
-    "  \"awards\".\"latest_transaction_id\",",
     "  \"awards\".\"type\",",
     "  \"awards\".\"type_description\",",
-    "  \"awards\".\"description\",",
     "  \"awards\".\"piid\",",
     "  \"awards\".\"fain\",",
     "  \"awards\".\"uri\",",
     "  \"awards\".\"total_obligation\",",
     "  obligation_to_enum(\"awards\".\"total_obligation\") AS total_obl_bin,",
-    "  \"awards\".\"period_of_performance_start_date\",",
-    "  \"awards\".\"period_of_performance_current_end_date\",",
-    "  \"awards\".\"date_signed\",",
-    "  \"awards\".\"base_and_all_options_value\",",
-
+    "",
     "  \"awards\".\"recipient_id\",",
     "  UPPER(recipient.\"recipient_name\") AS recipient_name,",
     "  recipient.\"recipient_unique_id\",",
     "  recipient.\"parent_recipient_unique_id\",",
     "  recipient.\"business_categories\",",
-
+    "",
     "  latest_transaction.\"action_date\",",
     "  latest_transaction.\"fiscal_year\",",
-    "  -- DUPLICATED ON 12/4. REMOVE `issued_date*` BEFORE JAN 1, 2018!!!!!!!!!!!!!!!",
-    "  latest_transaction.\"action_date\" as issued_date,",
-    "  latest_transaction.\"fiscal_year\" as issued_date_fiscal_year,",
-    "  -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-
+    "  \"awards\".\"period_of_performance_start_date\",",
+    "  \"awards\".\"period_of_performance_current_end_date\",",
+    "",
     "  assistance_data.\"face_value_loan_guarantee\",",
     "  assistance_data.\"original_loan_subsidy_cost\",",
-
+    "",
     "  TAA.\"name\" AS awarding_toptier_agency_name,",
     "  TFA.\"name\" AS funding_toptier_agency_name,",
     "  SAA.\"name\" AS awarding_subtier_agency_name,",
     "  SFA.\"name\" AS funding_subtier_agency_name,",
-    "  AAO.\"name\" AS awarding_agency_office_name,",
-    "  FAO.\"name\" AS funding_agency_office_name,",
-
-    "  recipient_location.\"address_line1\" AS recipient_location_address_line1,",
-    "  recipient_location.\"address_line2\" AS recipient_location_address_line2,",
-    "  recipient_location.\"address_line3\" AS recipient_location_address_line3,",
+    "",
     "  recipient_location.\"country_name\" AS recipient_location_country_name,",
     "  recipient_location.\"location_country_code\" AS recipient_location_country_code,",
     "  recipient_location.\"state_code\" AS recipient_location_state_code,",
-    "  recipient_location.\"county_name\" AS recipient_location_county_name,",
     "  recipient_location.\"county_code\" AS recipient_location_county_code,",
-    "  recipient_location.\"city_name\" AS recipient_location_city_name,",
     "  recipient_location.\"zip5\" AS recipient_location_zip5,",
     "  recipient_location.\"congressional_code\" AS recipient_location_congressional_code,",
-    "  recipient_location.\"foreign_province\" AS recipient_location_foreign_province,",
-
+    "",
     "  place_of_performance.\"country_name\" AS pop_country_name,",
     "  place_of_performance.\"location_country_code\" AS pop_country_code,",
-    "  place_of_performance.\"state_name\" AS pop_state_name,",
     "  place_of_performance.\"state_code\" AS pop_state_code,",
-    "  place_of_performance.\"county_name\" AS pop_county_name,",
     "  place_of_performance.\"county_code\" AS pop_county_code,",
-    "  place_of_performance.\"city_name\" AS pop_city_name,",
     "  place_of_performance.\"zip5\" AS pop_zip5,",
     "  place_of_performance.\"congressional_code\" AS pop_congressional_code,",
-    "  place_of_performance.\"foreign_province\" AS pop_foreign_province,",
-
+    "",
     "  assistance_data.\"cfda_number\",",
     "  contract_data.\"pulled_from\",",
     "  contract_data.\"type_of_contract_pricing\",",
-    "  contract_data.\"parent_award_id\",",
-    "  contract_data.\"idv_type\",",
     "  contract_data.\"extent_competed\",",
-    "  contract_data.\"extent_compete_description\",",
     "  contract_data.\"type_set_aside\",",
-    "  contract_data.\"type_set_aside_description\",",
+    "",
     "  contract_data.\"product_or_service_code\",",
     "  \"psc\".\"description\" AS product_or_service_description,",
     "  contract_data.\"naics\" AS naics_code,",
     "  contract_data.\"naics_description\"",
-
     "FROM",
     "  \"awards\"",
     "LEFT OUTER JOIN",
@@ -136,9 +112,6 @@
     },{
       "name": "category",
       "columns": [{"name": "\"category\""}]
-    },{
-      "name": "latest",
-      "columns": [{"name": "\"latest_transaction_id\""}]
     },{
       "name": "type",
       "where": "\"type\" IS NOT NULL",
@@ -210,12 +183,6 @@
       "name": "parent_recipient_unique_id",
       "where": "\"parent_recipient_unique_id\" IS NOT NULL",
       "columns": [{"name": "\"parent_recipient_unique_id\""}]
-    },{
-      "name": "issued_date",
-      "columns": [{"name": "\"issued_date\"", "order": "DESC NULLS LAST"}]
-    },{
-      "name": "issued_date_fiscal_year",
-      "columns": [{"name": "\"issued_date_fiscal_year\"", "order": "DESC NULLS LAST"}]
     },{
       "cluster_on_this": true,
       "name": "action_date",
@@ -305,6 +272,10 @@
       "name": "naics_description",
       "method": "GIN",
       "columns": [{"name": "UPPER(\"naics_description\")", "opclass": "gin_trgm_ops"}]
+    }, {
+      "name": "business_categories",
+      "method": "GIN",
+      "columns": [{"name": "\"business_categories\""}]
     }
   ]
 }
