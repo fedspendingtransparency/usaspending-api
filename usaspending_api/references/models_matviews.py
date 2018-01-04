@@ -1,5 +1,13 @@
 from django.db import models
 
+class AgencyMatview(models.Model):
+    agency_id = models.IntegerField(blank=True, null=True)
+    subtier_code = models.TextField(blank=True, null=True, verbose_name="Sub-Tier Agency Code")
+
+    class Meta:
+        managed = False
+        db_table = 'agency_matview'
+
 class ExecCompMatview(models.Model):
     duns = models.TextField(blank=True, default='', null=True, verbose_name="DUNS Number")
     officer_1_name = models.TextField(null=True, blank=True)
