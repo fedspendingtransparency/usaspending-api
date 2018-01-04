@@ -43,7 +43,6 @@ create materialized view award_matview as (
     type_set_aside_description,
     assistance_type,
     original_loan_subsidy_cost,
-    record_type,
     business_funds_indicator,
     business_types,
     cfda_number,
@@ -153,7 +152,7 @@ from
         max(tf.period_of_performance_curr::date) over w as period_of_performance_current_end_date,
         null::float as potential_total_value_of_award,
         sum(coalesce(tf.base_and_all_options_value::double precision, 0::double precision)) over w as base_and_all_options_value,
-        tf.last_modified::date as last_modified_date, 
+        tf.last_modified::date as last_modified_date,
         max(tf.action_date) over w as certified_date,
         null::int as record_type,
         ''cont_tx_'' || tf.detached_award_proc_unique as latest_transaction_unique_id,
@@ -173,7 +172,6 @@ from
         tf.type_set_aside_description as type_set_aside_description,
         null::text as assistance_type,
         null::text as original_loan_subsidy_cost,
-        null::text as record_type,
         null::text as business_funds_indicator,
         null::text as business_types,
         null::text as cfda_number,
@@ -199,69 +197,69 @@ from
         tf.legal_entity_address_line1 as recipient_location_address_line1,
         tf.legal_entity_address_line2 as recipient_location_address_line2,
         tf.legal_entity_address_line3 as recipient_location_address_line3,
-        
+
         -- foreign province
         null::text as recipient_location_foreign_province,
-        
+
         -- country
         tf.legal_entity_country_code as recipient_location_country_code,
         tf.legal_entity_country_name as recipient_location_country_name,
-        
+
         -- state
         tf.legal_entity_state_code as recipient_location_state_code,
         tf.legal_entity_state_descrip as recipient_location_state_name,
-        
+
         -- county (NONE FOR FPDS)
         null::text as recipient_location_county_code,
         null::text as recipient_location_county_name,
-        
+
         -- city
         tf.legal_entity_city_name as recipient_location_city_name,
-        
+
         -- zip
         null::text as recipient_location_zip5,
-        
+
         -- congressional disctrict
         tf.legal_entity_congressional as recipient_location_congressional_code,
-        
+
         -- ppop data
-        
+
         -- foreign
         null::text as pop_foreign_province,
-        
+
         -- country
         tf.place_of_perform_country_c as pop_country_code,
         tf.place_of_perf_country_desc as pop_country_name,
-        
+
         -- state
         tf.place_of_performance_state as pop_state_code,
         tf.place_of_perfor_state_desc as pop_state_name,
-        
+
         -- county
         null::text as pop_county_code,
         tf.place_of_perform_county_na as pop_county_name,
-        
+
         -- city
         tf.place_of_perform_city_name as pop_city_name,
-        
+
         -- zip
         null::text as pop_zip5,
         -- tf.place_of_performance_zip4a as pop_zip4,
-        
+
         -- congressional disctrict
         tf.place_of_performance_congr as pop_congressional_code
-    from 
+    from
         detached_award_procurement tf -- aka latest transaction
         left outer join
         executive_compensation as exec_comp on exec_comp.awardee_or_recipient_uniqu = tf.awardee_or_recipient_uniqu
     window w as (partition by tf.piid, tf.parent_award_id, tf.agency_id, tf.referenced_idv_agency_iden)
-    order by 
-        tf.piid, 
-        tf.parent_award_id, 
-        tf.agency_id, 
-        tf.referenced_idv_agency_iden, 
-        tf.action_date desc, 
-        tf.award_modification_amendme desc, 
+    order by
+        tf.piid,
+        tf.parent_award_id,
+        tf.agency_id,
+        tf.referenced_idv_agency_iden,
+        tf.action_date desc,
+        tf.award_modification_amendme desc,
         tf.transaction_number desc') as fpds_uniq_awards
     (
         generated_unique_award_id text,
@@ -305,12 +303,11 @@ from
         type_set_aside_description text,
         assistance_type text,
         original_loan_subsidy_cost text,
-        record_type text,
         business_funds_indicator text,
         business_types text,
         cfda_number text,
         cfda_title text,
-        
+
         -- recipient data
         recipient_unique_id text, -- DUNS
         recipient_name text,
@@ -331,62 +328,62 @@ from
         recipient_location_address_line1 text,
         recipient_location_address_line2 text,
         recipient_location_address_line3 text,
-        
+
         -- foreign province
         recipient_location_foreign_province text,
-        
+
         -- country
         recipient_location_country_code text,
         recipient_location_country_name text,
-        
+
         -- state
         recipient_location_state_code text,
         recipient_location_state_name text,
-        
+
         -- county (NONE FOR FPDS)
         recipient_location_county_code text,
         recipient_location_county_name text,
-        
+
         -- city
         recipient_location_city_name text,
-        
+
         -- zip
         recipient_location_zip5 text,
-        
+
         -- congressional disctrict
         recipient_location_congressional_code text,
-        
+
         -- ppop data
-        
+
         -- foreign
         pop_foreign_province text,
-        
+
         -- country
         pop_country_code text,
         pop_country_name text,
-        
+
         -- state
         pop_state_code text,
         pop_state_name text,
-        
+
         -- county
         pop_county_code text,
         pop_county_name text,
-        
+
         -- city
         pop_city_name text,
-        
+
         -- zip
         pop_zip5 text,
         -- pop_zip4 text,
-        
+
         -- congressional disctrict
         pop_congressional_code text
     )
     inner join
     award_category as ac on ac.type_code = type
     inner join
-    agency_lookup as awarding_agency on awarding_agency.subtier_code = awarding_sub_tier_agency_c 
+    agency_lookup as awarding_agency on awarding_agency.subtier_code = awarding_sub_tier_agency_c
     left outer join
     agency_lookup as funding_agency on funding_agency.subtier_code = funding_sub_tier_agency_co)
 
@@ -434,7 +431,6 @@ union all
     type_set_aside_description,
     assistance_type,
     original_loan_subsidy_cost,
-    record_type,
     business_funds_indicator,
     business_types,
     cfda_number,
@@ -553,7 +549,7 @@ from
     uniq_award.period_of_performance_current_end_date as period_of_performance_current_end_date,
     null::float as potential_total_value_of_award,
     null::float as base_and_all_options_value,
-    tf.modified_at::date as last_modified_date,   
+    tf.modified_at::date as last_modified_date,
     uniq_award.certified_date as certified_date,
     tf.record_type as record_type,
     ''asst_tx_'' || tf.afa_generated_unique as latest_transaction_unique_id,
@@ -573,12 +569,11 @@ from
     null::text type_set_aside_description as type_set_aside_description,
     tf.assistance_type as assistance_type,
     tf.original_loan_subsidy_cost as original_loan_subsidy_cost,
-    tf.record_type as record_type,
     tf.business_funds_indicator as business_funds_indicator,
     tf.business_types as business_types,
     tf.cfda_number as cfda_number,
     tf.cfda_title as cfda_title,
-    
+
     -- recipient data
     tf.awardee_or_recipient_uniqu as recipient_unique_id,
     tf.awardee_or_recipient_legal as recipient_name,
@@ -599,60 +594,60 @@ from
     tf.legal_entity_address_line1 as recipient_location_address_line1,
     tf.legal_entity_address_line2 as recipient_location_address_line2,
     tf.legal_entity_address_line3 as recipient_location_address_line3,
-    
+
     -- foreign province
     tf.legal_entity_foreign_provi as recipient_location_foreign_province,
-    
+
     -- country
     tf.legal_entity_country_code as recipient_location_country_code,
     tf.legal_entity_country_name as recipient_location_country_name,
-     
+
     -- state
     tf.legal_entity_state_code as recipient_location_state_code,
     tf.legal_entity_state_name as recipient_location_state_name,
-    
+
     -- county
     tf.legal_entity_county_code as recipient_location_county_code,
     tf.legal_entity_county_name as recipient_location_county_name,
-    
+
     -- city
     tf.legal_entity_city_name as recipient_location_city_name,
-    
+
     -- zip
     tf.legal_entity_zip5 as recipient_location_zip5,
-    
+
     -- congressional disctrict
     tf.legal_entity_congressional as recipient_location_congressional_code,
-    
+
     -- ppop data
-    
+
     -- foreign
     null::text as pop_foreign_province,
-    
+
     -- country
     tf.place_of_perform_country_c as pop_country_code,
     tf.place_of_perform_country_n as pop_country_name,
-    
+
     -- state
     null::text as pop_state_code,
     tf.place_of_perform_state_nam as pop_state_name,
-    
+
     -- county
     tf.place_of_perform_county_co as pop_county_code,
     tf.place_of_perform_county_na as pop_county_name,
-    
+
     -- city
     tf.place_of_performance_city as pop_city_name,
-    
+
     -- zip
     null::text as pop_zip5,
     -- tf.place_of_performance_zip4a as pop_zip4,
-    
+
     -- congressional disctrict
     tf.place_of_performance_congr as pop_congressional_code
 from
     published_award_financial_assistance as tf -- aka latest transaction
-    inner join 
+    inner join
     (
         select
             distinct on (pafa.fain, pafa.awarding_sub_tier_agency_c)
@@ -671,10 +666,10 @@ from
         from published_award_financial_assistance as pafa
         where pafa.record_type = ''2'' and is_active=TRUE
         window w as (partition by pafa.fain, pafa.awarding_sub_tier_agency_c)
-        order by 
-            pafa.fain, 
-            pafa.awarding_sub_tier_agency_c,  
-            pafa.action_date desc, 
+        order by
+            pafa.fain,
+            pafa.awarding_sub_tier_agency_c,
+            pafa.action_date desc,
             pafa.award_modification_amendme desc
     ) as uniq_award on uniq_award.afa_generated_unique = tf.afa_generated_unique
     left outer join
@@ -721,12 +716,11 @@ from
         type_set_aside_description text,
         assistance_type text,
         original_loan_subsidy_cost text,
-        record_type text,
         business_funds_indicator text,
         business_types text,
         cfda_number text,
         cfda_title text,
-        
+
         -- recipient data
         recipient_unique_id text, -- DUNS
         recipient_name text,
@@ -747,62 +741,62 @@ from
         recipient_location_address_line1 text,
         recipient_location_address_line2 text,
         recipient_location_address_line3 text,
-        
+
         -- foreign province
         recipient_location_foreign_province text,
-        
+
         -- country
         recipient_location_country_code text,
         recipient_location_country_name text,
-        
+
         -- state
         recipient_location_state_code text,
         recipient_location_state_name text,
-        
+
         -- county (NONE FOR FPDS)
         recipient_location_county_code text,
         recipient_location_county_name text,
-        
+
         -- city
         recipient_location_city_name text,
-        
+
         -- zip
         recipient_location_zip5 text,
-        
+
         -- congressional disctrict
         recipient_location_congressional_code text,
-        
+
         -- ppop data
-        
+
         -- foreign
         pop_foreign_province text,
-        
+
         -- country
         pop_country_code text,
         pop_country_name text,
-        
+
         -- state
         pop_state_code text,
         pop_state_name text,
-        
+
         -- county
         pop_county_code text,
         pop_county_name text,
-        
+
         -- city
         pop_city_name text,
-        
+
         -- zip
         pop_zip5 text,
         -- pop_zip4 text,
-        
+
         -- congressional disctrict
         pop_congressional_code text
     )
     inner join
     award_category as ac on ac.type_code = type
     inner join
-    agency_lookup as awarding_agency on awarding_agency.subtier_code = awarding_sub_tier_agency_c 
+    agency_lookup as awarding_agency on awarding_agency.subtier_code = awarding_sub_tier_agency_c
     left outer join
     agency_lookup as funding_agency on funding_agency.subtier_code = funding_sub_tier_agency_co)
 
@@ -850,7 +844,6 @@ union all
     type_set_aside_description,
     assistance_type,
     original_loan_subsidy_cost,
-    record_type,
     business_funds_indicator,
     business_types,
     cfda_number,
@@ -969,7 +962,7 @@ from
     uniq_award.period_of_performance_current_end_date as period_of_performance_current_end_date,
     null::float as potential_total_value_of_award,
     null::float as base_and_all_options_value,
-    tf.modified_at::date as last_modified_date,   
+    tf.modified_at::date as last_modified_date,
     uniq_award.certified_date as certified_date,
     tf.record_type as record_type,
     ''asst_tx_'' || tf.afa_generated_unique as latest_transaction_unique_id,
@@ -989,12 +982,11 @@ from
     null::text type_set_aside_description as type_set_aside_description,
     tf.assistance_type as assistance_type,
     tf.original_loan_subsidy_cost as original_loan_subsidy_cost,
-    tf.record_type as record_type,
     tf.business_funds_indicator as business_funds_indicator,
     tf.business_types as business_types,
     tf.cfda_number as cfda_number,
     tf.cfda_title as cfda_title,
-    
+
     -- recipient data
     tf.awardee_or_recipient_uniqu as recipient_unique_id,
     tf.awardee_or_recipient_legal as recipient_name,
@@ -1015,60 +1007,60 @@ from
     tf.legal_entity_address_line1 as recipient_location_address_line1,
     tf.legal_entity_address_line2 as recipient_location_address_line2,
     tf.legal_entity_address_line3 as recipient_location_address_line3,
-    
+
     -- foreign province
     tf.legal_entity_foreign_provi as recipient_location_foreign_province,
-    
+
     -- country
     tf.legal_entity_country_code as recipient_location_country_code,
     tf.legal_entity_country_name as recipient_location_country_name,
-     
+
     -- state
     tf.legal_entity_state_code as recipient_location_state_code,
     tf.legal_entity_state_name as recipient_location_state_name,
-    
+
     -- county
     tf.legal_entity_county_code as recipient_location_county_code,
     tf.legal_entity_county_name as recipient_location_county_name,
-    
+
     -- city
     tf.legal_entity_city_name as recipient_location_city_name,
-    
+
     -- zip
     tf.legal_entity_zip5 as recipient_location_zip5,
-    
+
     -- congressional disctrict
     tf.legal_entity_congressional as recipient_location_congressional_code,
-    
+
     -- ppop data
-    
+
     -- foreign
     null::text as pop_foreign_province,
-    
+
     -- country
     tf.place_of_perform_country_c as pop_country_code,
     tf.place_of_perform_country_n as pop_country_name,
-    
+
     -- state
     null::text as pop_state_code,
     tf.place_of_perform_state_nam as pop_state_name,
-    
+
     -- county
     tf.place_of_perform_county_co as pop_county_code,
     tf.place_of_perform_county_na as pop_county_name,
-    
+
     -- city
     tf.place_of_performance_city as pop_city_name,
-    
+
     -- zip
     null::text as pop_zip5,
     -- tf.place_of_performance_zip4a as pop_zip4,
-    
+
     -- congressional disctrict
     tf.place_of_performance_congr as pop_congressional_code
 from
     published_award_financial_assistance as tf -- aka latest transaction
-    inner join 
+    inner join
     (
         select
             distinct on (pafa.uri, pafa.awarding_sub_tier_agency_c)
@@ -1087,10 +1079,10 @@ from
         from published_award_financial_assistance as pafa
         where pafa.record_type = ''1'' and is_active=TRUE
         window w as (partition by pafa.uri, pafa.awarding_sub_tier_agency_c)
-        order by 
-            pafa.uri, 
-            pafa.awarding_sub_tier_agency_c,  
-            pafa.action_date desc, 
+        order by
+            pafa.uri,
+            pafa.awarding_sub_tier_agency_c,
+            pafa.action_date desc,
             pafa.award_modification_amendme desc
     ) as uniq_award on uniq_award.afa_generated_unique = tf.afa_generated_unique
     left outer join
@@ -1137,7 +1129,6 @@ from
         type_set_aside_description text,
         assistance_type text,
         original_loan_subsidy_cost text,
-        record_type text,
         business_funds_indicator text,
         business_types text,
         cfda_number text,
