@@ -13,6 +13,9 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from rest_framework.views import APIView
 from django.db.models import Sum, F, Q
 from django.utils.dateparse import parse_date
+from django.db.models import Sum, F
+from fiscalyear import FiscalDate
+from collections import OrderedDict
 from usaspending_api.awards.v2.filters.filter_helpers import date_or_fy_queryset
 
 
@@ -120,52 +123,65 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         group = json_request.get('group', None)
         filters = json_request.get('filters', None)
 
-        # get fin based on tas, select oc, make distinct values
+        nested_order = ''
+        group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
+
         financial_account_queryset = \
             FinancialAccountsByProgramActivityObjectClass.objects.filter(treasury_account__federal_account_id=fa_id)
 
-        filtered_fa = federal_account_filter(financial_account_queryset, filters).aggragete(
-            outlay=Sum('gross_outlay_amount_by_tas_cpe'),
-            obligations_incurred_filtered=Sum('obligations_incurred_total_by_tas_cpe')
-        )
-
-        unfiltered_fa = financial_account_queryset.aggregate(
-            obligations_incurred_other=Sum('obligations_incurred_total_by_tas_cpe'),
-            unobliged_balance=Sum('unobligated_balance_cpe')
-        )
-
-        result = {
-            'outlay': filtered_fa['outlay'],                                                      # filter
-            'obligations_incurred_filtered': filtered_fa['obligations_incurred_filtered'],        # filter
-            'obligations_incurred_other': unfiltered_fa['obligations_incurred_other'],            # no filter
-            'unobligated_balance': unfiltered_fa['unobligated_balance']                           # no filter
-        }
-
-        return Response({'results': result})
-
-        # build response
-        response = {'group': group, 'results': []}
-        nested_order = ''
-
-        group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
-
         if group == 'fy' or group == 'fiscal_year':
-            filtered_fa = federal_account_filter(financial_account_queryset, filters).values('').annotate(
-                outlay=Sum('gross_outlay_amount_by_tas_cpe'),
-                obligations_incurred_filtered=Sum('obligations_incurred_total_by_tas_cpe')
+            filtered_fa = federal_account_filter(financial_account_queryset, filters).values('certified_date').annotate(
+                outlay=F('gross_outlay_amount_by_tas_cpe'),
+                obligations_incurred_filtered=F('obligations_incurred_total_by_tas_cpe')
             )
 
-            unfiltered_fa = financial_account_queryset.aggregate(
-                obligations_incurred_other=Sum('obligations_incurred_total_by_tas_cpe'),
-                unobliged_balance=Sum('unobligated_balance_cpe')
+            unfiltered_fa = financial_account_queryset.values('certified_date').annotate(
+                obligations_incurred_other=F('obligations_incurred_total_by_tas_cpe'),
+                unobliged_balance=F('unobligated_balance_cpe')
             )
-            fy_set = queryset.values('fiscal_year') \
-                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
 
-            for trans in fy_set:
-                key = {'fiscal_year': str(trans['fiscal_year'])}
+            for trans in filtered_fa:
+                if trans['certified_date'] is None:
+                    continue
+                fd = trans['certified_date'].split("-")
+                fy = FiscalDate(fd[0], fd[1], fd[2]).year
+
+                key = {'fiscal_year': str(fy)}
                 key = str(key)
-                group_results[key] = trans['federal_action_obligation']
+                if group_results[key] is None:
+                    group_results[key] = {"outlay": trans['outlay'] if trans['outlay'] else 0,
+                                          "obligations_incurred_filtered": trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else 0,
+                                          "obligations_incurred_other": 0,
+                                          "unobliged_balance": 0
+                                          }
+                else:
+                    group_results[key] = {"outlay": group_results[key]["outlay"]+trans['outlay'],
+                                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"]+trans["obligations_incurred_filtered"],
+                                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"],
+                                          "unobliged_balance": group_results[key]["unobliged_balance"]
+                                          }
+
+            for trans in unfiltered_fa:
+                if trans['certified_date'] is None:
+                    continue
+                fd = trans['certified_date'].split("-")
+                fy = FiscalDate(fd[0], fd[1], fd[2]).year
+
+                key = {'fiscal_year': str(fy)}
+                key = str(key)
+
+                if group_results[key] is None:
+                    group_results[key] = {"outlay": 0,
+                                          "obligations_incurred_filtered": 0,
+                                          "obligations_incurred_other": trans['obligations_incurred_other'] if trans['obligations_incurred_other'] else 0,
+                                          "unobliged_balance": trans["unobliged_balance"] if trans["unobliged_balance"] else 0
+                                          }
+                else:
+                    group_results[key] = {"outlay": group_results[key]["outlay"],
+                                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"],
+                                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"]+trans['obligations_incurred_other'],
+                                          "unobliged_balance": group_results[key]["unobliged_balance"]+trans["unobliged_balance"]
+                                          }
 
         else:  # quarterly, take months and add them up
 
@@ -186,7 +202,8 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
 
         for key, value in sorted_group_results:
             key_dict = ast.literal_eval(key)
-            result = {'time_period': key_dict, 'aggregated_amount': float(value) if value else float(0)}
+            #result = {'time_period': key_dict, 'aggregated_amount': float(value) if value else float(0)}
+            result = value['time_period'] = key_dict
             results.append(result)
         response['results'] = results
 

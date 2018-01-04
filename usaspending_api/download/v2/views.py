@@ -9,7 +9,7 @@ from rest_framework.exceptions import NotFound, ParseError
 from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
-from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter as matview_transaction_filter
+from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter as matview_transaction_filter
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.common.exceptions import InvalidParameterException
