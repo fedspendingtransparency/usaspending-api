@@ -15,14 +15,21 @@ from functools import total_ordering
 from datetime import date
 from fiscalyear import FiscalDate
 
-from usaspending_api.awards.models_matviews import UniversalAwardView
-from usaspending_api.awards.models_matviews import UniversalTransactionView
-from usaspending_api.awards.v2.filters.view_selector import get_view_queryset, can_use_view, \
-    spending_by_award_count, spending_over_time, spending_by_geography
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
+
+from usaspending_api.awards.models_matviews import UniversalAwardView
+from usaspending_api.awards.models_matviews import UniversalTransactionView
+
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
+from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
+from usaspending_api.awards.v2.filters.view_selector import can_use_view
+from usaspending_api.awards.v2.filters.view_selector import get_view_queryset
+from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
+from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
+from usaspending_api.awards.v2.filters.view_selector import spending_over_time
+from usaspending_api.awards.v2.filters.view_selector import transaction_spending_summary
+
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, loan_type_mapping, \
     non_loan_assistance_type_mapping
 from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_mapping, loan_award_mapping, \
@@ -723,6 +730,46 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             else:
                 result_key = categories[award['category']]
             results[result_key] += award['category_count']
+
+        # build response
+        return Response({"results": results})
+
+
+class TransactionSummaryVisualizationViewSet(APIView):
+    @cache_response()
+    def post(self, request):
+        """
+            Returns a summary of transactions which match the award search filter
+                Desired values:
+                total number of transactions
+                The federal_action_obligation sum of all those transaction
+
+            *Note* Only deals with prime awards.
+        """
+        json_request = request.data
+        filters = json_request.get("filters", None)
+
+        if filters is None:
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
+
+        queryset, model = transaction_spending_summary(filters)
+
+        if model in ['UniversalTransactionView']:
+            agg_results = queryset.aggregate(
+                award_count=Count('*'),
+                award_spending=Sum("federal_action_obligation"))
+        else:
+            # "summary" materialized views are pre-aggregated and contain a counts col
+            agg_results = queryset.aggregate(
+                award_count=Sum('counts'),
+                award_spending=Sum("federal_action_obligation"))
+
+        print('================================')
+        print(agg_results)
+        results = {
+            'prime_awards_count': agg_results['award_count'],
+            'prime_awards_obligation_amount': agg_results['award_spending'],
+        }
 
         # build response
         return Response({"results": results})
