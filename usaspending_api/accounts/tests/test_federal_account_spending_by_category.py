@@ -23,6 +23,7 @@ def financial_spending_data(db):
 
     mommy.make(
         'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        treasury_account__federal_account_id=1,
         reporting_period_start='2016-07-01',
         reporting_period_end='2016-12-01',
         program_activity=pa0001,
@@ -31,6 +32,7 @@ def financial_spending_data(db):
     )
     mommy.make(
         'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        treasury_account__federal_account_id=1,
         reporting_period_start='2016-07-01',
         reporting_period_end='2016-12-01',
         program_activity=pa0002,
@@ -40,6 +42,7 @@ def financial_spending_data(db):
 
     mommy.make(
         'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        treasury_account__federal_account_id=1,
         reporting_period_start='2017-07-01',
         reporting_period_end='2017-12-01',
         program_activity=pa0001,
@@ -48,6 +51,7 @@ def financial_spending_data(db):
     )
     mommy.make(
         'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        treasury_account__federal_account_id=1,
         reporting_period_start='2016-07-01',
         reporting_period_end='2016-12-01',
         program_activity=pa0002,
@@ -57,6 +61,7 @@ def financial_spending_data(db):
 
     mommy.make(
         'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        treasury_account__federal_account_id=1,
         reporting_period_start='2016-07-01',
         reporting_period_end='2016-12-01',
         program_activity=pa0001,
@@ -65,6 +70,7 @@ def financial_spending_data(db):
     )
     mommy.make(
         'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        treasury_account__federal_account_id=1,
         reporting_period_start='2017-07-01',
         reporting_period_end='2017-12-01',
         program_activity=pa0002,
@@ -74,6 +80,7 @@ def financial_spending_data(db):
 
     mommy.make(
         'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        treasury_account__federal_account_id=1,
         reporting_period_start='2016-07-01',
         reporting_period_end='2017-12-01',
         program_activity=pa0001,
@@ -82,6 +89,7 @@ def financial_spending_data(db):
     )
     mommy.make(
         'financial_activities.FinancialAccountsByProgramActivityObjectClass',
+        treasury_account__federal_account_id=1,
         reporting_period_start='2016-07-01',
         reporting_period_end='2016-12-01',
         program_activity=pa0002,

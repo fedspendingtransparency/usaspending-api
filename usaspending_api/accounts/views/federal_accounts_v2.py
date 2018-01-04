@@ -254,7 +254,9 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
     @cache_response()
     def post(self, request, pk, format=None):
 
-        queryset = FinancialAccountsByProgramActivityObjectClass.objects
+        # get fin based on tas, select oc, make distinct values
+        financial_account_queryset = \
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(treasury_account__federal_account_id=int(fa_id))
 
         # `category` from request determines what to sum over
         # `.annotate`... `F()` is much like using SQL column aliases
