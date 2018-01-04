@@ -351,6 +351,16 @@ class SummaryTransactionMonthView(models.Model):
         managed = False
         db_table = 'summary_transaction_month_view'
 
+
+class AwardCategory(models.Model):
+    type_code = models.TextField(blank=True, null=False)
+    type_name = models.TextField(blank=True, null=False)
+
+    class Meta:
+        managed = False
+        db_table = 'award_category'
+
+
 class TransactionMatView(models.Model):
     # unique ids + cols used for unique id
     detached_award_proc_unique = models.TextField(blank=True, null=True)
