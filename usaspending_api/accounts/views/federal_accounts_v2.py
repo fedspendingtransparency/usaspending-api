@@ -25,20 +25,6 @@ from usaspending_api.financial_activities.models import \
     FinancialAccountsByProgramActivityObjectClass
 
 
-def federal_account_filter(queryset, filter):
-    for key, value in filter.items():
-        if key == 'object_class':
-            queryset.objects.filters(object_class_id__in=value)
-        elif key == 'program_activity':
-            queryset.objects.filters(program_activity_id__in=value)
-        elif key == 'time_period':
-            success, or_queryset = date_or_fy_queryset(value, FinancialAccountsByAwards, "fiscal_year",
-                                                       "reporting_period_start")
-            if success:
-                queryset &= or_queryset
-    return queryset
-
-
 class ObjectClassFederalAccountsViewSet(APIView):
     """Returns financial spending data by object class."""
 
@@ -85,18 +71,12 @@ class ObjectClassFederalAccountsViewSet(APIView):
         return Response({'results': result})
 
 
-class DescriptionFederalAccountsViewSet(APIView):
-    @cache_response()
-    def get(self, request, pk, format=None):
-        return None
-
-
 class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     @cache_response()
     def get(self, request, pk, format=None):
 
         queryset = AppropriationAccountBalances.final_objects.filter(treasury_account_identifier__federal_account_id=int(
-            pk)).filter(submission__reporting_fiscal_year=fy(datetime.today()))
+            pk))#.filter(submission__reporting_fiscal_year=fy(datetime.today()))
         queryset = queryset.aggregate(
             outlay=Sum('gross_outlay_amount_by_tas_cpe'),
             budget_authority=Sum('budget_authority_available_amount_total_cpe'),
@@ -111,6 +91,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
             appropriations=Sum('budget_authority_appropriated_amount_cpe')
             )
         if queryset['outlay'] is not None:
+            # queryset['name']= FederalAccount.objects.filter(federal_account_id=int(pk)).values('account_title').first()['account_title']
             return Response({'results': queryset})
         else:
             return Response({})
@@ -125,17 +106,17 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         # get federal account id from url
         json_request = request.data
         group = json_request.get('group', None)
-        filters = json_request.get('filters', None)
+        filters = federal_account_filter2(json_request.get('filters', None))
 
         nested_order = ''
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
-        print(pk)
         # add final_objects
         financial_account_queryset = AppropriationAccountBalances.final_objects.filter(treasury_account_identifier__federal_account_id=int(pk))
-        print(financial_account_queryset)
         if group == 'fy' or group == 'fiscal_year':
-            filtered_fa = financial_account_queryset.annotate(
+
+            filtered_fa = financial_account_queryset.filter(filters)
+            filtered_fa = filtered_fa.annotate(
                 outlay=F('gross_outlay_amount_by_tas_cpe'),
                 obligations_incurred_filtered=F('obligations_incurred_total_by_tas_cpe')
             ).values("appropriation_account_balances_id", "submission__reporting_fiscal_year", "outlay", "obligations_incurred_filtered")
@@ -144,11 +125,9 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                 obligations_incurred_other=F('obligations_incurred_total_by_tas_cpe'),
                 unobliged_balance=F('unobligated_balance_cpe')
             ).values("appropriation_account_balances_id", "submission__reporting_fiscal_year", "obligations_incurred_other", "unobliged_balance")
-            print(filtered_fa)
+
             for trans in filtered_fa:
-                print(trans["appropriation_account_balances_id"])
                 if trans["submission__reporting_fiscal_year"] is None:
-                    print("here1212")
                     continue
                 # fd = trans['certified_date'].split("-")
                 # fy = FiscalDate(fd[0], fd[1], fd[2]).year
@@ -156,9 +135,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
 
                 key = {'fiscal_year': str(fy)}
                 key = str(key)
-                print(key)
                 if key not in group_results:
-                    print("here2323")
                     group_results[key] = \
                         {"outlay": trans['outlay'] if trans['outlay'] else 0,
                           "obligations_incurred_filtered": trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else 0,
@@ -166,7 +143,6 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                           "unobliged_balance": 0
                         }
                 else:
-                    print("here3434")
                     group_results[key] = \
                         {"outlay": group_results[key]["outlay"]+trans['outlay'] if trans['outlay'] else group_results[key]["outlay"],
                           "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"]+trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else group_results[key]["obligations_incurred_filtered"],
@@ -174,7 +150,6 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                           "unobliged_balance": group_results[key]["unobliged_balance"]
                         }
 
-            print("end")
             for trans in unfiltered_fa:
                 if trans['submission__reporting_fiscal_year'] is None:
                     continue
@@ -201,7 +176,8 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
 
         else:  # quarterly, take months and add them up
 
-            filtered_fa = financial_account_queryset.annotate(
+            filtered_fa = financial_account_queryset.filter(filters)
+            filtered_fa = filtered_fa.annotate(
                 outlay=F('gross_outlay_amount_by_tas_cpe'),
                 obligations_incurred_filtered=F('obligations_incurred_total_by_tas_cpe')
             ).values("appropriation_account_balances_id", "submission__reporting_fiscal_year", "submission__reporting_fiscal_quarter", "outlay",
@@ -212,11 +188,8 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                 unobliged_balance=F('unobligated_balance_cpe')
             ).values("appropriation_account_balances_id", "submission__reporting_fiscal_year", "submission__reporting_fiscal_quarter",
                      "obligations_incurred_other", "unobliged_balance")
-            print(filtered_fa)
             for trans in filtered_fa:
-                print(trans["appropriation_account_balances_id"])
                 if trans["submission__reporting_fiscal_year"] is None:
-                    print("here1212")
                     continue
                 # fd = trans['certified_date'].split("-")
                 # fy = FiscalDate(fd[0], fd[1], fd[2]).year
@@ -225,10 +198,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
 
                 key = {'fiscal_year': str(fy),
                        'quarter': str(fq)}
-                key = str(key)
-                print(key)
                 if key not in group_results:
-                    print("here2323")
                     group_results[key] = \
                         {"outlay": trans['outlay'] if trans['outlay'] else 0,
                          "obligations_incurred_filtered": trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else 0,
@@ -236,7 +206,6 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                          "unobliged_balance": 0
                          }
                 else:
-                    print("here3434")
                     group_results[key] = \
                         {"outlay": group_results[key]["outlay"] + trans['outlay'] if trans['outlay'] else group_results[key]["outlay"],
                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"] + trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else group_results[key]["obligations_incurred_filtered"],
@@ -244,7 +213,6 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                          "unobliged_balance": group_results[key]["unobliged_balance"]
                          }
 
-            print("end")
             for trans in unfiltered_fa:
                 if trans['submission__reporting_fiscal_year'] is None:
                     continue
@@ -280,14 +248,13 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         # 'time_period': {'fy': '2017', 'quarter': '3'},
         # 	'aggregated_amount': '200000000'
         # }]
-        print(group_results)
         sorted_group_results = sorted(
             group_results.items(),
             key=lambda k: (
                 ast.literal_eval(k[0])['fiscal_year'],
                 int(ast.literal_eval(k[0])[nested_order])) if nested_order else (ast.literal_eval(k[0])['fiscal_year']))
-        print("asdasda")
-        print(sorted_group_results)
+
+
         for key, value in sorted_group_results:
             key_dict = ast.literal_eval(key)
             value['time_period'] = key_dict
@@ -296,7 +263,6 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         response['results'] = results
 
         return Response(response)
-
 
 
 def filter_on(prefix, key, values):
