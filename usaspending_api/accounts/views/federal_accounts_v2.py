@@ -89,9 +89,8 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     @cache_response()
     def get(self, request, pk, format=None):
 
-        # import pytest; pytest.set_trace()
-        queryset = AppropriationAccountBalances.objects.filter(treasury_account_identifier__federal_account_id=int(
-            pk)).filter(final_of_fy=True).filter(submission__reporting_fiscal_year=fy(datetime.today()))
+        queryset = AppropriationAccountBalances.final_objects.filter(treasury_account_identifier__federal_account_id=int(
+            pk)).filter(submission__reporting_fiscal_year=fy(datetime.today()))
         queryset = queryset.aggregate(
             outlay=Sum('gross_outlay_amount_by_tas_cpe'),
             budget_authority=Sum('budget_authority_available_amount_total_cpe'),
@@ -272,8 +271,7 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
     def post(self, request, pk, format=None):
 
         # get fin based on tas, select oc, make distinct values
-        financial_account_queryset = \
-            FinancialAccountsByProgramActivityObjectClass.objects.filter(treasury_account__federal_account_id=int(fa_id))
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(treasury_account__treasury_account_identifier=int(pk))
 
         # `category` from request determines what to sum over
         # `.annotate`... `F()` is much like using SQL column aliases
