@@ -325,7 +325,7 @@ def award_filter(filters):
             faba_queryset &= FinancialAccountsByAwards.objects.filter(object_class_id__in=value)
 
         # Federal Account Filter
-        elif key == "program_activity_id":
+        elif key == "program_activity_ids":
             faba_flag = True
             faba_queryset &= FinancialAccountsByAwards.objects.filter(program_activity_id__in=value)
 

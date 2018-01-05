@@ -4,8 +4,12 @@ from datetime import datetime
 
 from django.db.models import F, Q, Sum
 from django.utils.dateparse import parse_date
-from fiscalyear import FiscalDate
 from rest_framework.response import Response
+
+from rest_framework_extensions.cache.decorators import cache_response
+from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount, AppropriationAccountBalances
+from usaspending_api.awards.models import FinancialAccountsByAwards
+
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
@@ -119,7 +123,6 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         response = {'results': {}}
 
         # get federal account id from url
-        fa_id = int(pk)
         json_request = request.data
         group = json_request.get('group', None)
         filters = json_request.get('filters', None)
@@ -127,66 +130,148 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         nested_order = ''
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
-        financial_account_queryset = \
-            FinancialAccountsByProgramActivityObjectClass.objects.filter(treasury_account__federal_account_id=fa_id)
-
+        print(pk)
+        # add final_objects
+        financial_account_queryset = AppropriationAccountBalances.final_objects.filter(treasury_account_identifier__federal_account_id=int(pk))
+        print(financial_account_queryset)
         if group == 'fy' or group == 'fiscal_year':
-            filtered_fa = federal_account_filter(financial_account_queryset, filters).values('certified_date').annotate(
+            filtered_fa = financial_account_queryset.annotate(
                 outlay=F('gross_outlay_amount_by_tas_cpe'),
                 obligations_incurred_filtered=F('obligations_incurred_total_by_tas_cpe')
-            )
+            ).values("appropriation_account_balances_id", "submission__reporting_fiscal_year", "outlay", "obligations_incurred_filtered")
 
-            unfiltered_fa = financial_account_queryset.values('certified_date').annotate(
+            unfiltered_fa = financial_account_queryset.annotate(
                 obligations_incurred_other=F('obligations_incurred_total_by_tas_cpe'),
                 unobliged_balance=F('unobligated_balance_cpe')
-            )
-
+            ).values("appropriation_account_balances_id", "submission__reporting_fiscal_year", "obligations_incurred_other", "unobliged_balance")
+            print(filtered_fa)
             for trans in filtered_fa:
-                if trans['certified_date'] is None:
+                print(trans["appropriation_account_balances_id"])
+                if trans["submission__reporting_fiscal_year"] is None:
+                    print("here1212")
                     continue
-                fd = trans['certified_date'].split("-")
-                fy = FiscalDate(fd[0], fd[1], fd[2]).year
+                # fd = trans['certified_date'].split("-")
+                # fy = FiscalDate(fd[0], fd[1], fd[2]).year
+                fy = trans["submission__reporting_fiscal_year"]
 
                 key = {'fiscal_year': str(fy)}
                 key = str(key)
-                if group_results[key] is None:
-                    group_results[key] = {"outlay": trans['outlay'] if trans['outlay'] else 0,
-                                          "obligations_incurred_filtered": trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else 0,
-                                          "obligations_incurred_other": 0,
-                                          "unobliged_balance": 0
-                                          }
+                print(key)
+                if key not in group_results:
+                    print("here2323")
+                    group_results[key] = \
+                        {"outlay": trans['outlay'] if trans['outlay'] else 0,
+                          "obligations_incurred_filtered": trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else 0,
+                          "obligations_incurred_other": 0,
+                          "unobliged_balance": 0
+                        }
                 else:
-                    group_results[key] = {"outlay": group_results[key]["outlay"]+trans['outlay'],
-                                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"]+trans["obligations_incurred_filtered"],
-                                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"],
-                                          "unobliged_balance": group_results[key]["unobliged_balance"]
-                                          }
+                    print("here3434")
+                    group_results[key] = \
+                        {"outlay": group_results[key]["outlay"]+trans['outlay'] if trans['outlay'] else group_results[key]["outlay"],
+                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"]+trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else group_results[key]["obligations_incurred_filtered"],
+                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"],
+                          "unobliged_balance": group_results[key]["unobliged_balance"]
+                        }
 
+            print("end")
             for trans in unfiltered_fa:
-                if trans['certified_date'] is None:
+                if trans['submission__reporting_fiscal_year'] is None:
                     continue
-                fd = trans['certified_date'].split("-")
-                fy = FiscalDate(fd[0], fd[1], fd[2]).year
-
+                # fd = trans['certified_date'].split("-")
+                # fy = FiscalDate(fd[0], fd[1], fd[2]).year
+                fy = trans["submission__reporting_fiscal_year"]
                 key = {'fiscal_year': str(fy)}
                 key = str(key)
 
-                if group_results[key] is None:
-                    group_results[key] = {"outlay": 0,
-                                          "obligations_incurred_filtered": 0,
-                                          "obligations_incurred_other": trans['obligations_incurred_other'] if trans['obligations_incurred_other'] else 0,
-                                          "unobliged_balance": trans["unobliged_balance"] if trans["unobliged_balance"] else 0
-                                          }
+                if key not in group_results:
+                    group_results[key] = \
+                        {"outlay": 0,
+                          "obligations_incurred_filtered": 0,
+                          "obligations_incurred_other": trans['obligations_incurred_other'] if trans['obligations_incurred_other'] else 0,
+                          "unobliged_balance": trans["unobliged_balance"] if trans["unobliged_balance"] else 0
+                        }
                 else:
-                    group_results[key] = {"outlay": group_results[key]["outlay"],
-                                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"],
-                                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"]+trans['obligations_incurred_other'],
-                                          "unobliged_balance": group_results[key]["unobliged_balance"]+trans["unobliged_balance"]
-                                          }
+                    group_results[key] = \
+                        {"outlay": group_results[key]["outlay"],
+                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"],
+                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"]+trans['obligations_incurred_other'] if trans['obligations_incurred_other'] else group_results[key]["obligations_incurred_other"],
+                          "unobliged_balance": group_results[key]["unobliged_balance"]+trans["unobliged_balance"] if trans["unobliged_balance"] else group_results[key]["unobliged_balance"]
+                        }
 
         else:  # quarterly, take months and add them up
 
-            pass
+            filtered_fa = financial_account_queryset.annotate(
+                outlay=F('gross_outlay_amount_by_tas_cpe'),
+                obligations_incurred_filtered=F('obligations_incurred_total_by_tas_cpe')
+            ).values("appropriation_account_balances_id", "submission__reporting_fiscal_year", "submission__reporting_fiscal_quarter", "outlay",
+                     "obligations_incurred_filtered")
+
+            unfiltered_fa = financial_account_queryset.annotate(
+                obligations_incurred_other=F('obligations_incurred_total_by_tas_cpe'),
+                unobliged_balance=F('unobligated_balance_cpe')
+            ).values("appropriation_account_balances_id", "submission__reporting_fiscal_year", "submission__reporting_fiscal_quarter",
+                     "obligations_incurred_other", "unobliged_balance")
+            print(filtered_fa)
+            for trans in filtered_fa:
+                print(trans["appropriation_account_balances_id"])
+                if trans["submission__reporting_fiscal_year"] is None:
+                    print("here1212")
+                    continue
+                # fd = trans['certified_date'].split("-")
+                # fy = FiscalDate(fd[0], fd[1], fd[2]).year
+                fy = trans["submission__reporting_fiscal_year"]
+                fq = trans["submission__reporting_fiscal_quarter"]
+
+                key = {'fiscal_year': str(fy),
+                       'quarter': str(fq)}
+                key = str(key)
+                print(key)
+                if key not in group_results:
+                    print("here2323")
+                    group_results[key] = \
+                        {"outlay": trans['outlay'] if trans['outlay'] else 0,
+                         "obligations_incurred_filtered": trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else 0,
+                         "obligations_incurred_other": 0,
+                         "unobliged_balance": 0
+                         }
+                else:
+                    print("here3434")
+                    group_results[key] = \
+                        {"outlay": group_results[key]["outlay"] + trans['outlay'] if trans['outlay'] else group_results[key]["outlay"],
+                         "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"] + trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else group_results[key]["obligations_incurred_filtered"],
+                         "obligations_incurred_other": group_results[key]["obligations_incurred_other"],
+                         "unobliged_balance": group_results[key]["unobliged_balance"]
+                         }
+
+            print("end")
+            for trans in unfiltered_fa:
+                if trans['submission__reporting_fiscal_year'] is None:
+                    continue
+                # fd = trans['certified_date'].split("-")
+                # fy = FiscalDate(fd[0], fd[1], fd[2]).year
+                fy = trans["submission__reporting_fiscal_year"]
+                fq = trans["submission__reporting_fiscal_quarter"]
+                key = {'fiscal_year': str(fy),
+                       'quarter': str(fq)
+                       }
+                key = str(key)
+
+                if key not in group_results:
+                    group_results[key] = \
+                        {"outlay": 0,
+                         "obligations_incurred_filtered": 0,
+                         "obligations_incurred_other": trans['obligations_incurred_other'] if trans['obligations_incurred_other'] else 0,
+                         "unobliged_balance": trans["unobliged_balance"] if trans["unobliged_balance"] else 0
+                         }
+                else:
+                    group_results[key] = \
+                        {"outlay": group_results[key]["outlay"],
+                         "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"],
+                         "obligations_incurred_other": group_results[key]["obligations_incurred_other"] + trans['obligations_incurred_other'] if trans['obligations_incurred_other'] else group_results[key]["obligations_incurred_other"],
+                         "unobliged_balance": group_results[key]["unobliged_balance"] + trans["unobliged_balance"] if trans["unobliged_balance"] else group_results[key]["unobliged_balance"]
+                         }
+            nested_order = 'quarter'
 
         # convert result into expected format, sort by key to meet front-end specs
         results = []
@@ -195,20 +280,23 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         # 'time_period': {'fy': '2017', 'quarter': '3'},
         # 	'aggregated_amount': '200000000'
         # }]
+        print(group_results)
         sorted_group_results = sorted(
             group_results.items(),
             key=lambda k: (
                 ast.literal_eval(k[0])['fiscal_year'],
                 int(ast.literal_eval(k[0])[nested_order])) if nested_order else (ast.literal_eval(k[0])['fiscal_year']))
-
+        print("asdasda")
+        print(sorted_group_results)
         for key, value in sorted_group_results:
             key_dict = ast.literal_eval(key)
-            #result = {'time_period': key_dict, 'aggregated_amount': float(value) if value else float(0)}
-            result = value['time_period'] = key_dict
+            value['time_period'] = key_dict
+            result = value
             results.append(result)
         response['results'] = results
 
         return Response(response)
+
 
 
 def filter_on(prefix, key, values):
@@ -311,146 +399,3 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
         return Response(result)
 
 
-# class SpendingByAwardCountFederalAccountsViewSet(APIView):
-#     @cache_response()
-#     def post(self, request, pk, format=None):
-#         """Return all budget function/subfunction titles matching the provided search text"""
-#         fa_id = int(pk)
-#         json_request = request.data
-#         filters = json_request.get("filters", None)
-#
-#         if filters is None:
-#             response = {'results': {}}
-#
-#         faba_queryset = FinancialAccountsByAwards.objects.filter(treasury_account__federal_account_id=fa_id)
-#         faba_queryset = federal_account_filter(faba_queryset, filters)
-#
-#         faba_queryset = faba_queryset.value_list('award_id')
-#         queryset = UniversalAwardView.objects.filter(award_id__in=faba_queryset)
-#
-#         # for IDV CONTRACTS category is null. change to contract
-#         queryset = queryset \
-#             .values('category') \
-#             .annotate(category_count=Count(Coalesce('category', Value('contract')))) \
-#             .values('category', 'category_count')
-#
-#         results = {"contracts": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
-#
-#         categories = {
-#             'contract': 'contracts',
-#             'grant': 'grants',
-#             'direct payment': 'direct_payments',
-#             'loans': 'loans',
-#             'other': 'other'
-#         }
-#
-#         # DB hit here
-#         for award in queryset:
-#             if award['category'] is None:
-#                 result_key = 'contracts'
-#             elif award['category'] not in categories.keys():
-#                 result_key = 'other'
-#             else:
-#                 result_key = categories[award['category']]
-#             results[result_key] += award['category_count']
-#
-#         # build response
-#         return Response({"results": results})
-
-
-# class SpendingByAwardFederalAccountsViewSet(APIView):
-#     @cache_response()
-#     def post(self, request, pk, format=None):
-#         """Return all budget function/subfunction titles matching the provided search text"""
-#         fa_id = int(pk)
-#         json_request = request.data
-#         fields = json_request.get("fields", None)
-#         filters = json_request.get("filters", None)
-#         order = json_request.get("order", "asc")
-#         limit = json_request.get("limit", 10)
-#         page = json_request.get("page", 1)
-#
-#         lower_limit = (page - 1) * limit
-#         upper_limit = page * limit
-#
-#         if fields is None:
-#             raise InvalidParameterException("Missing one or more required request parameters: fields")
-#         elif len(fields) == 0:
-#             raise InvalidParameterException("Please provide a field in the fields request parameter.")
-#         if filters is None:
-#             raise InvalidParameterException("Missing one or more required request parameters: filters")
-#         if "award_type_codes" not in filters:
-#             raise InvalidParameterException(
-#                 "Missing one or more required request parameters: filters['award_type_codes']")
-#         if order not in ["asc", "desc"]:
-#             raise InvalidParameterException("Invalid value for order: {}".format(order))
-#         sort = json_request.get("sort", fields[0])
-#         if sort not in fields:
-#             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
-#
-#         faba_queryset = FinancialAccountsByAwards.objects.filter(treasury_account__federal_account_id=fa_id)
-#         faba_queryset = federal_account_filter(faba_queryset, filters)
-#
-#         faba_queryset = faba_queryset.value_list('award_id')
-#         queryset = UniversalAwardView.objects.filter(award_id__in=faba_queryset)
-#
-#         values = {'award_id', 'piid', 'fain', 'uri', 'type'}  # always get at least these columns
-#         for field in fields:
-#             if award_contracts_mapping.get(field):
-#                 values.add(award_contracts_mapping.get(field))
-#             if loan_award_mapping.get(field):
-#                 values.add(loan_award_mapping.get(field))
-#             if non_loan_assistance_award_mapping.get(field):
-#                 values.add(non_loan_assistance_award_mapping.get(field))
-#
-#         # Modify queryset to be ordered if we specify "sort" in the request
-#         if sort:
-#             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
-#                 sort_filters = [award_contracts_mapping[sort]]
-#             elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
-#                 sort_filters = [loan_award_mapping[sort]]
-#             else:  # assistance data
-#                 sort_filters = [non_loan_assistance_award_mapping[sort]]
-#
-#             if sort == "Award ID":
-#                 sort_filters = ["piid", "fain", "uri"]
-#             if order == 'desc':
-#                 sort_filters = ['-' + sort_filter for sort_filter in sort_filters]
-#
-#             queryset = queryset.order_by(*sort_filters).values(*list(values))
-#
-#         limited_queryset = queryset[lower_limit:upper_limit + 1]
-#         has_next = len(limited_queryset) > limit
-#
-#         results = []
-#         for award in limited_queryset[:limit]:
-#             row = {"internal_id": award["award_id"]}
-#
-#             if award['type'] in contract_type_mapping:
-#                 for field in fields:
-#                     row[field] = award.get(award_contracts_mapping.get(field))
-#             elif award['type'] in loan_type_mapping:  # loans
-#                 for field in fields:
-#                     row[field] = award.get(loan_award_mapping.get(field))
-#             elif award['type'] in non_loan_assistance_type_mapping:  # assistance data
-#                 for field in fields:
-#                     row[field] = award.get(non_loan_assistance_award_mapping.get(field))
-#
-#             if "Award ID" in fields:
-#                 for id_type in ["piid", "fain", "uri"]:
-#                     if award[id_type]:
-#                         row["Award ID"] = award[id_type]
-#                         break
-#             results.append(row)
-#
-#         # build response
-#         response = {
-#             'limit': limit,
-#             'results': results,
-#             'page_metadata': {
-#                 'page': page,
-#                 'hasNext': has_next
-#             }
-#         }
-#
-#         return Response(response)
