@@ -1,22 +1,24 @@
+import ast
+from collections import OrderedDict
 from datetime import datetime
 
-from usaspending_api.accounts.models import AppropriationAccountBalances
+from django.db.models import F, Q, Sum
+from django.utils.dateparse import parse_date
+from fiscalyear import FiscalDate
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_extensions.cache.decorators import cache_response
+
+from usaspending_api.accounts.models import (AppropriationAccountBalances,
+                                             FederalAccount,
+                                             TreasuryAppropriationAccount)
+from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.awards.v2.filters.filter_helpers import \
+    date_or_fy_queryset
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import fy
 from usaspending_api.financial_activities.models import \
     FinancialAccountsByProgramActivityObjectClass
-import ast
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from rest_framework.response import Response
-from rest_framework_extensions.cache.decorators import cache_response
-from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
-from usaspending_api.awards.models import FinancialAccountsByAwards
-from rest_framework.views import APIView
-from django.db.models import Sum, F, Q
-from django.utils.dateparse import parse_date
-from django.db.models import Sum, F
-from fiscalyear import FiscalDate
-from collections import OrderedDict
-from usaspending_api.awards.v2.filters.filter_helpers import date_or_fy_queryset
 
 
 def federal_account_filter(queryset, filter):
@@ -229,6 +231,7 @@ def orred_filter_list(prefix, filters):
         result |= subresult
     return result
 
+
 def orred_date_filter_list(filters):
     '''Produces Q-object for a list of dicts, each of which may include start and/or end date
 
@@ -271,7 +274,8 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
     def post(self, request, pk, format=None):
 
         # get fin based on tas, select oc, make distinct values
-        queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(treasury_account__treasury_account_identifier=int(pk))
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+            treasury_account__treasury_account_identifier=int(pk))
 
         # `category` from request determines what to sum over
         # `.annotate`... `F()` is much like using SQL column aliases
