@@ -61,21 +61,21 @@ GROUP BY
   SFA.name,
   SFA.abbreviation;
 
-CREATE INDEX idx_a6b04e14__action_date_temp ON summary_award_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_a6b04e14__type_temp ON summary_award_view_temp USING BTREE("type") WITH (fillfactor = 100);
-CREATE INDEX idx_a6b04e14__fy_temp ON summary_award_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_a6b04e14__pulled_from_temp ON summary_award_view_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
+CREATE INDEX idx_f7c1fd44__action_date_temp ON summary_award_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_f7c1fd44__type_temp ON summary_award_view_temp USING BTREE("type") WITH (fillfactor = 100);
+CREATE INDEX idx_f7c1fd44__fy_temp ON summary_award_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_f7c1fd44__pulled_from_temp ON summary_award_view_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
 
-VACUUM ANALYZE VERBOSE summary_award_view_temp;
+ANALYZE VERBOSE summary_award_view_temp;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_award_view RENAME TO summary_award_view_old;
-ALTER INDEX IF EXISTS idx_a6b04e14__action_date RENAME TO idx_a6b04e14__action_date_old;
-ALTER INDEX IF EXISTS idx_a6b04e14__type RENAME TO idx_a6b04e14__type_old;
-ALTER INDEX IF EXISTS idx_a6b04e14__fy RENAME TO idx_a6b04e14__fy_old;
-ALTER INDEX IF EXISTS idx_a6b04e14__pulled_from RENAME TO idx_a6b04e14__pulled_from_old;
+ALTER INDEX IF EXISTS idx_f7c1fd44__action_date RENAME TO idx_f7c1fd44__action_date_old;
+ALTER INDEX IF EXISTS idx_f7c1fd44__type RENAME TO idx_f7c1fd44__type_old;
+ALTER INDEX IF EXISTS idx_f7c1fd44__fy RENAME TO idx_f7c1fd44__fy_old;
+ALTER INDEX IF EXISTS idx_f7c1fd44__pulled_from RENAME TO idx_f7c1fd44__pulled_from_old;
 
 ALTER MATERIALIZED VIEW summary_award_view_temp RENAME TO summary_award_view;
-ALTER INDEX idx_a6b04e14__action_date_temp RENAME TO idx_a6b04e14__action_date;
-ALTER INDEX idx_a6b04e14__type_temp RENAME TO idx_a6b04e14__type;
-ALTER INDEX idx_a6b04e14__fy_temp RENAME TO idx_a6b04e14__fy;
-ALTER INDEX idx_a6b04e14__pulled_from_temp RENAME TO idx_a6b04e14__pulled_from;
+ALTER INDEX idx_f7c1fd44__action_date_temp RENAME TO idx_f7c1fd44__action_date;
+ALTER INDEX idx_f7c1fd44__type_temp RENAME TO idx_f7c1fd44__type;
+ALTER INDEX idx_f7c1fd44__fy_temp RENAME TO idx_f7c1fd44__fy;
+ALTER INDEX idx_f7c1fd44__pulled_from_temp RENAME TO idx_f7c1fd44__pulled_from;

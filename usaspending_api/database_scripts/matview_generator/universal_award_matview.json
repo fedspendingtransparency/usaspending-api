@@ -2,6 +2,8 @@
   "final_name": "universal_award_matview",
   "matview_sql": [
     "SELECT",
+    "  UPPER(CONCAT(recipient.recipient_name, ' ', contract_data.naics, ' ', contract_data.naics_description, ' ', psc.description)) AS keyword_string,",
+    "  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,",
     "  \"awards\".\"id\" AS award_id,",
     "  \"awards\".\"category\",",
     "  \"awards\".\"type\",",
@@ -103,7 +105,9 @@
     "WHERE",
     "  \"awards\".\"latest_transaction_id\" IS NOT NULL AND",
     "  (\"awards\".\"category\" IS NOT NULL or \"contract_data\".\"pulled_from\"='IDV') AND",
-    "  latest_transaction.\"action_date\" >= '2007-10-01'"
+    "  latest_transaction.\"action_date\" >= '2007-10-01'",
+    "ORDER BY",
+    "  latest_transaction.\"action_date\" DESC"
   ],
   "indexes": [
     {
@@ -123,34 +127,13 @@
       "name": "ordered_type_desc",
       "columns": [{"name": "\"type_description\"", "order": "DESC NULLS LAST"}]
     },{
-      "name": "piid",
-      "where": "\"piid\" IS NOT NULL",
-      "columns": [{"name": "\"piid\""}]
-    },{
-      "name": "ordered_piid",
-      "columns": [{"name": "UPPER(\"piid\")", "order": "DESC NULLS LAST"}]
-    },{
-      "name": "gin_pid",
-      "method": "GIN",
-      "columns": [{"name": "UPPER(\"piid\")", "opclass": "gin_trgm_ops"}]
-    },{
-      "name": "fain",
-      "where": "\"fain\" IS NOT NULL",
-      "columns": [{"name": "\"fain\""}]
-    },{
       "name": "ordered_fain",
+      "where": "\"fain\" IS NOT NULL",
       "columns": [{"name": "UPPER(\"fain\")", "order": "DESC NULLS LAST"}]
     },{
-      "name": "gin_fain",
-      "method": "GIN",
-      "columns": [{"name": "UPPER(\"fain\")", "opclass": "gin_trgm_ops"}]
-    },{
-      "name": "uri",
-      "columns": [{"name": "UPPER(\"uri\")", "order": "DESC NULLS LAST"}]
-    },{
-      "name": "gin_uri",
-      "method": "GIN",
-      "columns": [{"name": "UPPER(\"uri\")", "opclass": "gin_trgm_ops"}]
+      "name": "ordered_piid",
+      "where": "\"piid\" IS NOT NULL",
+      "columns": [{"name": "UPPER(\"piid\")", "order": "DESC NULLS LAST"}]
     },{
       "name": "total_obligation",
       "where": "\"total_obligation\" IS NOT NULL",
@@ -184,7 +167,6 @@
       "where": "\"parent_recipient_unique_id\" IS NOT NULL",
       "columns": [{"name": "\"parent_recipient_unique_id\""}]
     },{
-      "cluster_on_this": true,
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     },{
@@ -276,6 +258,14 @@
       "name": "business_categories",
       "method": "GIN",
       "columns": [{"name": "\"business_categories\""}]
-    }
+    }, {
+      "name": "keyword_string",
+      "method": "GIN",
+      "columns": [{"name": "\"keyword_string\"", "opclass": "gin_trgm_ops"}]
+    }, {
+      "name": "award_id_string",
+      "method": "GIN",
+      "columns": [{"name": "\"award_id_string\"", "opclass": "gin_trgm_ops"}]
+     }
   ]
 }
