@@ -585,7 +585,7 @@ class TransactionFPDSMatview(models.Model):
     type_description = models.TextField(blank=True, null=True)
     category = models.TextField(blank=True, null=False)
     agency_id = models.TextField(blank=True, null=True)
-    referenced_idv_agency_iden =
+    referenced_idv_agency_iden = models.TextField(blank=True, null=True)
     piid = models.TextField(blank=True, null=True)
     parent_award_piid = models.TextField(blank=True, null=True)
     fain = models.TextField(blank=True, null=True)
