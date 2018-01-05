@@ -350,3 +350,554 @@ class SummaryTransactionMonthView(models.Model):
     class Meta:
         managed = False
         db_table = 'summary_transaction_month_view'
+
+
+class AwardMatview(models.Model):
+    generated_unique_award_id = models.TextField(blank=True, null=True)
+    type = models.TextField(blank=True, null=True)
+    type_description = models.TextField(blank=True, null=True)
+    agency_id = models.TextField(blank=True, null=True)
+    referenced_idv_agency_iden = models.TextField(blank=True, null=True)
+    piid = models.TextField(blank=True, null=True)
+    parent_award_piid = models.TextField(blank=True, null=True)
+    fain = models.TextField(blank=True, null=True)
+    uri = models.TextField(blank=True, null=True)
+    total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    awarding_sub_tier_agency_c = models.TextField(blank=True, null=True)
+    funding_sub_tier_agency_co = models.TextField(blank=True, null=True)
+    data_source = models.TextField(blank=True, null=True)
+    action_date = models.DateTimeField(blank=True, null=True)
+    date_signed = models.DateTimeField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    period_of_performance_start_date = models.DateTimeField(blank=True, null=True)
+    period_of_performance_current_end_date = models.DateTimeField(blank=True, null=True)
+    potential_total_value_of_award = models.DecimalField(max_digits=23, decimal_places=2,
+                                                         blank=True, null=True)
+    base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
+                                                     null=True)
+    last_modified_date = models.DateTimeField(blank=True, null=True)
+    certified_date = models.DateTimeField(blank=True, null=True)
+    record_type = models.IntegerField(blank=True, null=True)
+    latest_transaction_unique_id = models.TextField(blank=True, null=True)
+    total_subaward_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
+                                                null=True)
+    subaward_count = models.IntegerField(blank=True, null=True)
+    pulled_from = models.TextField(blank=True, null=True)
+    product_or_service_code = models.TextField(blank=True, null=True)
+    product_or_service_co_desc = models.TextField(blank=True, null=True)
+    extent_competed = models.TextField(blank=True, null=True)
+    extent_compete_description = models.TextField(blank=True, null=True)
+    type_of_contract_pricing = models.TextField(blank=True, null=True)
+    naics = models.TextField(blank=True, null=True)
+    naics_description = models.TextField(blank=True, null=True)
+    idv_type = models.TextField(blank=True, null=True)
+    idv_type_description = models.TextField(blank=True, null=True)
+    type_set_aside = models.TextField(blank=True, null=True)
+    type_set_aside_description = models.TextField(blank=True, null=True)
+    assistance_type = models.TextField(blank=True, null=True)
+    original_loan_subsidy_cost = models.TextField(blank=True, null=True)
+    business_funds_indicator = models.TextField(blank=True, null=True)
+    business_types = models.TextField(blank=True, null=True)
+    cfda_number = models.TextField(blank=True, null=True)
+    cfda_title = models.TextField(blank=True, null=True)
+
+    # recipient data
+    recipient_unique_id = models.TextField(blank=True, null=True)  # DUNS
+    recipient_name = models.TextField(blank=True, null=True)
+
+    # executive compensation data
+    officer_1_name = models.TextField(blank=True, null=True)
+    officer_1_amount = models.TextField(blank=True, null=True)
+    officer_2_name = models.TextField(blank=True, null=True)
+    officer_2_amount = models.TextField(blank=True, null=True)
+    officer_3_name = models.TextField(blank=True, null=True)
+    officer_3_amount = models.TextField(blank=True, null=True)
+    officer_4_name = models.TextField(blank=True, null=True)
+    officer_4_amount = models.TextField(blank=True, null=True)
+    officer_5_name = models.TextField(blank=True, null=True)
+    officer_5_amount = models.TextField(blank=True, null=True)
+
+    # business categories
+    recipient_location_address_line1 = models.TextField(blank=True, null=True)
+    recipient_location_address_line2 = models.TextField(blank=True, null=True)
+    recipient_location_address_line3 = models.TextField(blank=True, null=True)
+
+    # foreign province
+    recipient_location_foreign_province = models.TextField(blank=True, null=True)
+
+    # country
+    recipient_location_country_code = models.TextField(blank=True, null=True)
+    recipient_location_country_name = models.TextField(blank=True, null=True)
+
+    # state
+    recipient_location_state_code = models.TextField(blank=True, null=True)
+    recipient_location_state_name = models.TextField(blank=True, null=True)
+
+    # county (NONE FOR FPDS)
+    recipient_location_county_code = models.TextField(blank=True, null=True)
+    recipient_location_county_name = models.TextField(blank=True, null=True)
+
+    # city
+    recipient_location_city_name = models.TextField(blank=True, null=True)
+
+    # zip
+    recipient_location_zip5 = models.TextField(blank=True, null=True)
+
+    # congressional district
+    recipient_location_congressional_code = models.TextField(blank=True, null=True)
+
+    # ppop data
+
+    # foreign
+    pop_foreign_province = models.TextField(blank=True, null=True)
+
+    # country
+    pop_country_code = models.TextField(blank=True, null=True)
+    pop_country_name = models.TextField(blank=True, null=True)
+
+    # state
+    pop_state_code = models.TextField(blank=True, null=True)
+    pop_state_name = models.TextField(blank=True, null=True)
+
+    # county
+    pop_county_code = models.TextField(blank=True, null=True)
+    pop_county_name = models.TextField(blank=True, null=True)
+
+    # city
+    pop_city_name = models.TextField(blank=True, null=True)
+
+    # zip
+    pop_zip5 = models.TextField(blank=True, null=True)
+    # pop_zip4 = models.TextField(blank=True, null=True)
+
+    # congressional district
+    pop_congressional_code = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'award_matview'
+
+
+class AwardCategory(models.Model):
+    type_code = models.TextField(blank=True, null=False)
+    type_name = models.TextField(blank=True, null=False)
+
+    class Meta:
+        managed = False
+        db_table = 'award_category'
+
+
+class TransactionMatView(models.Model):
+    # unique ids + cols used for unique id
+    detached_award_proc_unique = models.TextField(blank=True, null=True)
+    afa_generated_unique = models.TextField(blank=True, null=True)
+    piid = models.TextField(blank=True, null=True)
+    parent_award_id = models.TextField(blank=True, null=True)
+    fain = models.TextField(blank=True, null=True)
+    uri = models.TextField(blank=True, null=True)
+    agency_id = models.TextField(blank=True, null=True)
+    referenced_idv_agency_iden = models.TextField(blank=True, null=True)
+    award_modification_amendme = models.TextField(blank=True, null=True)
+    transaction_number = models.IntegerField(blank=True, null=True)
+
+    # duns
+    awardee_or_recipient_uniqu = models.TextField(blank=True, null=True)
+    awardee_or_recipient_legal = models.TextField(blank=True, null=True)
+
+    # recipient
+    legal_entity_address_line1 = models.TextField(blank=True, null=True)
+    legal_entity_address_line2 = models.TextField(blank=True, null=True)
+    legal_entity_address_line3 = models.TextField(blank=True, null=True)
+    legal_entity_foreign_provi = models.TextField(blank=True, null=True)
+    legal_entity_country_code = models.TextField(blank=True, null=True)
+    legal_entity_country_name = models.TextField(blank=True, null=True)
+    legal_entity_state_code = models.TextField(blank=True, null=True)
+    legal_entity_state_name = models.TextField(blank=True, null=True)
+    legal_entity_county_code = models.TextField(blank=True, null=True)
+    legal_entity_county_name = models.TextField(blank=True, null=True)
+    legal_entity_city_name = models.TextField(blank=True, null=True)
+    legal_entity_zip5 = models.TextField(blank=True, null=True)
+    legal_entity_congressional = models.TextField(blank=True, null=True)
+
+    # place of performance
+    place_of_perform_country_code = models.TextField(blank=True, null=True)
+    place_of_perform_country_name = models.TextField(blank=True, null=True)
+    place_of_perform_state_code = models.TextField(blank=True, null=True)
+    place_of_perform_state_name = models.TextField(blank=True, null=True)
+    place_of_perform_county_code = models.TextField(blank=True, null=True)
+    place_of_perform_county_name = models.TextField(blank=True, null=True)
+    place_of_perform_city_name = models.TextField(blank=True, null=True)
+    place_of_performance_zip5 = models.TextField(blank=True, null=True)
+    place_of_performance_congr = models.TextField(blank=True, null=True)
+
+    # other(fpds specific)
+    awarding_sub_tier_agency_c = models.TextField(blank=True, null=True)
+    funding_sub_tier_agency_co = models.TextField(blank=True, null=True)
+    contract_award_type = models.TextField(blank=True, null=True)
+    contract_award_type_desc = models.TextField(blank=True, null=True)
+    referenced_idv_type = models.TextField(blank=True, null=True)
+    referenced_idv_type_desc = models.TextField(blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
+                                                    null=True)
+    action_date = models.DateTimeField(blank=True, null=True)
+    award_description = models.TextField(blank=True, null=True)
+    period_of_performance_star = models.DateTimeField(blank=True, null=True)
+    period_of_performance_curr = models.DateTimeField(blank=True, null=True)
+    base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
+                                                     null=True)
+    last_modified_date = models.DateTimeField(blank=True, null=True)
+    awarding_office_code = models.TextField(blank=True, null=True)
+    awarding_office_name = models.TextField(blank=True, null=True)
+    funding_office_code = models.TextField(blank=True, null=True)
+    funding_office_name = models.TextField(blank=True, null=True)
+    pulled_from = models.TextField(blank=True, null=True)
+    product_or_service_code = models.TextField(blank=True, null=True)
+    product_or_service_co_desc = models.TextField(blank=True, null=True)
+    extent_competed = models.TextField(blank=True, null=True)
+    extent_compete_description = models.TextField(blank=True, null=True)
+    type_of_contract_pricing = models.TextField(blank=True, null=True)
+    naics = models.TextField(blank=True, null=True)
+    naics_description = models.TextField(blank=True, null=True)
+    idv_type = models.TextField(blank=True, null=True)
+    idv_type_description = models.TextField(blank=True, null=True)
+    type_set_aside = models.TextField(blank=True, null=True)
+    type_set_aside_description = models.TextField(blank=True, null=True)
+
+    # other(fabs specific)
+    assistance_type = models.TextField(blank=True, null=True)
+    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True,
+                                                     null=True)
+    record_type = models.IntegerField(blank=True, null=True)
+    business_funds_indicator = models.TextField(blank=True, null=True)
+    business_types = models.TextField(blank=True, null=True)
+    cfda_number = models.TextField(blank=True, null=True)
+    cfda_title = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'transaction_matview'
+
+
+class TransactionFPDSMatview(models.Model):
+    generated_unique_award_id = models.TextField(blank=True, null=True)
+    type = models.TextField(blank=True, null=True)
+    type_description = models.TextField(blank=True, null=True)
+    category = models.TextField(blank=True, null=False)
+    agency_id = models.TextField(blank=True, null=True)
+    referenced_idv_agency_iden = models.TextField(blank=True, null=True)
+    piid = models.TextField(blank=True, null=True)
+    parent_award_piid = models.TextField(blank=True, null=True)
+    fain = models.TextField(blank=True, null=True)
+    uri = models.TextField(blank=True, null=True)
+    total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    awarding_agency_id = models.TextField(blank=True, null=True)
+    awarding_sub_tier_agency_c = models.TextField(blank=True, null=True)
+    funding_agency_id = models.TextField(blank=True, null=True)
+    data_source = models.TextField(blank=True, null=True)
+    action_date = models.DateTimeField(blank=True, null=True)
+    fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
+    date_signed = models.DateTimeField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    period_of_performance_start_date = models.DateTimeField(blank=True, null=True)
+    period_of_performance_current_end_date = models.DateTimeField(blank=True, null=True)
+    potential_total_value_of_award = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    last_modified_date = models.DateTimeField(blank=True, null=True)
+    certified_date = models.DateTimeField(blank=True, null=True)
+    latest_transaction_id = models.IntegerField(blank=True, null=True)
+    latest_transaction_unique = models.TextField(blank=True, null=True)
+    total_subaward_amount = models.IntegerField(blank=True, null=True)
+    subaward_count = models.IntegerField(blank=True, null=True)
+
+    # recipient data
+    recipient_unique_id = models.TextField(blank=True, null=True) # DUNS
+    recipient_name = models.TextField(blank=True, null=True)
+
+    # executive compensation data
+    officer_1_name = models.TextField(null=True, blank=True)
+    officer_1_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_2_name = models.TextField(null=True, blank=True)
+    officer_2_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_3_name = models.TextField(null=True, blank=True)
+    officer_3_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_4_name = models.TextField(null=True, blank=True)
+    officer_4_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_5_name = models.TextField(null=True, blank=True)
+    officer_5_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+
+    # business categories
+    recipient_location_address_line1 = models.TextField(blank=True, null=True)
+    recipient_location_address_line2 = models.TextField(blank=True, null=True)
+    recipient_location_address_line3 = models.TextField(blank=True, null=True)
+
+    # foreign province
+    recipient_location_foreign_province = models.TextField(blank=True, null=True)
+
+    # country
+    recipient_location_country_code = models.TextField(blank=True, null=True)
+    recipient_location_country_name = models.TextField(blank=True, null=True)
+
+    # state
+    recipient_location_state_code = models.TextField(blank=True, null=True)
+    recipient_location_state_name = models.TextField(blank=True, null=True)
+
+    # county (NONE FOR FPDS)
+    recipient_location_county_code = models.TextField(blank=True, null=True)
+    recipient_location_county_name = models.TextField(blank=True, null=True)
+
+    # city
+    recipient_location_city_name = models.TextField(blank=True, null=True)
+
+    # zip
+    recipient_location_zip5 = models.TextField(blank=True, null=True)
+
+    # congressional district
+    recipient_location_congressional_code = models.TextField(blank=True, null=True)
+
+    # ppop data
+
+    # foreign
+    pop_foreign_province = models.TextField(blank=True, null=True)
+
+    # country
+    pop_country_code = models.TextField(blank=True, null=True)
+    pop_country_name = models.TextField(blank=True, null=True)
+
+    # state
+    pop_state_code = models.TextField(blank=True, null=True)
+    pop_state_name = models.TextField(blank=True, null=True)
+
+    # county
+    pop_county_code = models.TextField(blank=True, null=True)
+    pop_county_name = models.TextField(blank=True, null=True)
+
+    # city
+    pop_city_name = models.TextField(blank=True, null=True)
+
+    # zip
+    pop_zip5 = models.TextField(blank=True, null=True)
+    pop_zip4 = models.TextField(blank=True, null=True)
+
+    # congressional district
+    pop_congressional_code = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'transaction_fpds_matview'
+
+
+class TransactionFABSFAINMatview(models.Model):
+    generated_unique_award_id = models.TextField(blank=True, null=True)
+    type = models.TextField(blank=True, null=True)
+    type_description = models.TextField(blank=True, null=True)
+    category = models.TextField(blank=True, null=False)
+    piid = models.TextField(blank=True, null=True)
+    fain = models.TextField(blank=True, null=True)
+    uri = models.TextField(blank=True, null=True)
+    total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    awarding_agency_id = models.TextField(blank=True, null=True)
+    awarding_sub_tier_agency_c = models.TextField(blank=True, null=True)
+    funding_agency_id = models.TextField(blank=True, null=True)
+    funding_sub_tier_agency_co = models.TextField(blank=True, null=True)
+    data_source = models.TextField(blank=True, null=True)
+    action_date = models.DateTimeField(blank=True, null=True)
+    fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
+    date_signed = models.DateTimeField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    period_of_performance_start_date = models.DateTimeField(blank=True, null=True)
+    period_of_performance_current_end_date = models.DateTimeField(blank=True, null=True)
+    potential_total_value_of_award = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    last_modified_date = models.DateTimeField(blank=True, null=True)
+    certified_date = models.DateTimeField(blank=True, null=True)
+    latest_transaction_id = models.IntegerField(blank=True, null=True)
+    record_type = models.TextField(blank=True, null=True)
+    latest_transaction_unique = models.TextField(blank=True, null=True)
+    total_subaward_amount = models.IntegerField(blank=True, null=True)
+    subaward_count = models.IntegerField(blank=True, null=True)
+
+    # recipient data
+    recipient_unique_id = models.TextField(blank=True, null=True) # DUNS
+    recipient_name = models.TextField(blank=True, null=True)
+
+    # executive compensation data
+    officer_1_name = models.TextField(null=True, blank=True)
+    officer_1_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_2_name = models.TextField(null=True, blank=True)
+    officer_2_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_3_name = models.TextField(null=True, blank=True)
+    officer_3_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_4_name = models.TextField(null=True, blank=True)
+    officer_4_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_5_name = models.TextField(null=True, blank=True)
+    officer_5_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+
+    # business categories
+    recipient_location_address_line1 = models.TextField(blank=True, null=True)
+    recipient_location_address_line2 = models.TextField(blank=True, null=True)
+    recipient_location_address_line3 = models.TextField(blank=True, null=True)
+
+    # foreign province
+    recipient_location_foreign_province = models.TextField(blank=True, null=True)
+
+    # country
+    recipient_location_country_code = models.TextField(blank=True, null=True)
+    recipient_location_country_name = models.TextField(blank=True, null=True)
+
+    # state
+    recipient_location_state_code = models.TextField(blank=True, null=True)
+    recipient_location_state_name = models.TextField(blank=True, null=True)
+
+    # county
+    recipient_location_county_code = models.TextField(blank=True, null=True)
+    recipient_location_county_name = models.TextField(blank=True, null=True)
+
+    # city
+    recipient_location_city_name = models.TextField(blank=True, null=True)
+
+    # zip
+    recipient_location_zip5 = models.TextField(blank=True, null=True)
+
+    # congressional district
+    recipient_location_congressional_code = models.TextField(blank=True, null=True)
+
+    # ppop data
+
+    # foreign
+    pop_foreign_province = models.TextField(blank=True, null=True)
+
+    # country
+    pop_country_code = models.TextField(blank=True, null=True)
+    pop_country_name = models.TextField(blank=True, null=True)
+
+    # state
+    pop_state_code = models.TextField(blank=True, null=True)
+    pop_state_name = models.TextField(blank=True, null=True)
+
+    # county
+    pop_county_code = models.TextField(blank=True, null=True)
+    pop_county_name = models.TextField(blank=True, null=True)
+
+    # city
+    pop_city_name = models.TextField(blank=True, null=True)
+
+    # zip
+    pop_zip5 = models.TextField(blank=True, null=True)
+    pop_zip4 = models.TextField(blank=True, null=True)
+
+    # congressional district
+    pop_congressional_code = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'transaction_fabs_fain_matview'
+
+class TransactionFABSURIMatview(models.Model):
+    generated_unique_award_id = models.TextField(blank=True, null=True)
+    type = models.TextField(blank=True, null=True)
+    type_description = models.TextField(blank=True, null=True)
+    category = models.TextField(blank=True, null=False)
+    piid = models.TextField(blank=True, null=True)
+    fain = models.TextField(blank=True, null=True)
+    uri = models.TextField(blank=True, null=True)
+    total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    awarding_agency_id = models.TextField(blank=True, null=True)
+    awarding_sub_tier_agency_c = models.TextField(blank=True, null=True)
+    funding_agency_id = models.TextField(blank=True, null=True)
+    funding_sub_tier_agency_co = models.TextField(blank=True, null=True)
+    data_source = models.TextField(blank=True, null=True)
+    action_date = models.DateTimeField(blank=True, null=True)
+    fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
+    date_signed = models.DateTimeField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    period_of_performance_start_date = models.DateTimeField(blank=True, null=True)
+    period_of_performance_current_end_date = models.DateTimeField(blank=True, null=True)
+    potential_total_value_of_award = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    last_modified_date = models.DateTimeField(blank=True, null=True)
+    certified_date = models.DateTimeField(blank=True, null=True)
+    latest_transaction_id = models.IntegerField(blank=True, null=True)
+    record_type = models.TextField(blank=True, null=True)
+    latest_transaction_unique = models.TextField(blank=True, null=True)
+    total_subaward_amount = models.IntegerField(blank=True, null=True)
+    subaward_count = models.IntegerField(blank=True, null=True)
+
+    # recipient data
+    recipient_unique_id = models.TextField(blank=True, null=True) # DUNS
+    recipient_name = models.TextField(blank=True, null=True)
+
+    # executive compensation data
+    officer_1_name = models.TextField(null=True, blank=True)
+    officer_1_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_2_name = models.TextField(null=True, blank=True)
+    officer_2_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_3_name = models.TextField(null=True, blank=True)
+    officer_3_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_4_name = models.TextField(null=True, blank=True)
+    officer_4_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    officer_5_name = models.TextField(null=True, blank=True)
+    officer_5_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+
+    # business categories
+    recipient_location_address_line1 = models.TextField(blank=True, null=True)
+    recipient_location_address_line2 = models.TextField(blank=True, null=True)
+    recipient_location_address_line3 = models.TextField(blank=True, null=True)
+
+    # foreign province
+    recipient_location_foreign_province = models.TextField(blank=True, null=True)
+
+    # country
+    recipient_location_country_code = models.TextField(blank=True, null=True)
+    recipient_location_country_name = models.TextField(blank=True, null=True)
+
+    # state
+    recipient_location_state_code = models.TextField(blank=True, null=True)
+    recipient_location_state_name = models.TextField(blank=True, null=True)
+
+    # county
+    recipient_location_county_code = models.TextField(blank=True, null=True)
+    recipient_location_county_name = models.TextField(blank=True, null=True)
+
+    # city
+    recipient_location_city_name = models.TextField(blank=True, null=True)
+
+    # zip
+    recipient_location_zip5 = models.TextField(blank=True, null=True)
+
+    # congressional district
+    recipient_location_congressional_code = models.TextField(blank=True, null=True)
+
+    # ppop data
+
+    # foreign
+    pop_foreign_province = models.TextField(blank=True, null=True)
+
+    # country
+    pop_country_code = models.TextField(blank=True, null=True)
+    pop_country_name = models.TextField(blank=True, null=True)
+
+    # state
+    pop_state_code = models.TextField(blank=True, null=True)
+    pop_state_name = models.TextField(blank=True, null=True)
+
+    # county
+    pop_county_code = models.TextField(blank=True, null=True)
+    pop_county_name = models.TextField(blank=True, null=True)
+
+    # city
+    pop_city_name = models.TextField(blank=True, null=True)
+
+    # zip
+    pop_zip5 = models.TextField(blank=True, null=True)
+    pop_zip4 = models.TextField(blank=True, null=True)
+
+    # congressional district
+    pop_congressional_code = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'transaction_fabs_uri_matview'
