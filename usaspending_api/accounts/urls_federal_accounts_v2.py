@@ -15,5 +15,5 @@ urlpatterns = [
     url(r'(?P<pk>[0-9]+)/description$', description_federal_accounts),
     url(r'(?P<pk>[0-9]+)/fiscal_year_snapshot$', fiscal_year_snapshot_federal_accounts),
     url(r'(?P<pk>[0-9]+)/spending_over_time$', spending_over_time_federal_accounts),
-    url(r'(?P<pk>[0-9]+)/spending_by_category$', spending_by_category_federal_accounts)
+    url(r'(?P<pk>[0-9]+)/spending_by_category$', spending_by_category_federal_accounts),
 ]

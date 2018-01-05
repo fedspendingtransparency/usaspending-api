@@ -1,15 +1,24 @@
 import ast
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from rest_framework.response import Response
-from rest_framework_extensions.cache.decorators import cache_response
-from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
-from usaspending_api.awards.models import FinancialAccountsByAwards
-from rest_framework.views import APIView
-from django.db.models import Sum, F
-from fiscalyear import FiscalDate
 from collections import OrderedDict
+from datetime import datetime
 
-from usaspending_api.awards.v2.filters.filter_helpers import date_or_fy_queryset
+from django.db.models import F, Q, Sum
+from django.utils.dateparse import parse_date
+from fiscalyear import FiscalDate
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_extensions.cache.decorators import cache_response
+
+from usaspending_api.accounts.models import (AppropriationAccountBalances,
+                                             FederalAccount,
+                                             TreasuryAppropriationAccount)
+from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.awards.v2.filters.filter_helpers import \
+    date_or_fy_queryset
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers import fy
+from usaspending_api.financial_activities.models import \
+    FinancialAccountsByProgramActivityObjectClass
 
 
 def federal_account_filter(queryset, filter):
@@ -81,7 +90,26 @@ class DescriptionFederalAccountsViewSet(APIView):
 class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     @cache_response()
     def get(self, request, pk, format=None):
-        return None
+
+        queryset = AppropriationAccountBalances.final_objects.filter(treasury_account_identifier__federal_account_id=int(
+            pk)).filter(submission__reporting_fiscal_year=fy(datetime.today()))
+        queryset = queryset.aggregate(
+            outlay=Sum('gross_outlay_amount_by_tas_cpe'),
+            budget_authority=Sum('budget_authority_available_amount_total_cpe'),
+            obligated=Sum('obligations_incurred_total_by_tas_cpe'),
+            unobligated=Sum('unobligated_balance_cpe'),
+            balance_brought_forward=Sum(
+                    F('budget_authority_unobligated_balance_brought_forward_fyb')
+                    +
+                    F('adjustments_to_unobligated_balance_brought_forward_cpe')
+                    ),
+            other_budgetary_resources=Sum('other_budgetary_resources_amount_cpe'),
+            appropriations=Sum('budget_authority_appropriated_amount_cpe')
+            )
+        if queryset['outlay'] is not None:
+            return Response({'results': queryset})
+        else:
+            return Response({})
 
 
 class SpendingOverTimeFederalAccountsViewSet(APIView):
@@ -182,10 +210,105 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
 
         return Response(response)
 
+
+def filter_on(prefix, key, values):
+    if not isinstance(values, (list, tuple)):
+        values = [values, ]
+    return Q(**{'{}__{}__in'.format(prefix, key): values})
+
+
+def orred_filter_list(prefix, filters):
+    '''Produces Q-object for a list of dicts
+
+    Each dict's (key: value) pairs are ANDed together (rows must satisfy all k:v)
+    List items are ORred together (satisfying any one is enough)
+    '''
+    result = Q()
+    for filter in filters:
+        subresult = Q()
+        for (key, values) in filter.items():
+            subresult &= filter_on(prefix, key, values)
+        result |= subresult
+    return result
+
+
+def orred_date_filter_list(filters):
+    '''Produces Q-object for a list of dicts, each of which may include start and/or end date
+
+    Each dict's (key: value) pairs are ANDed together (rows must satisfy all k:v)
+    List items are ORred together (satisfying any one is enough)
+    '''
+    result = Q()
+    for filter in filters:
+        subresult = Q()
+        if 'start_date' in filter:
+            start_date = parse_date(filter['start_date'])
+            subresult &= Q(reporting_period_start__gte=start_date)
+        if 'end_date' in filter:
+            end_date = parse_date(filter['end_date'])
+            subresult &= Q(reporting_period_end__lte=end_date)
+        result |= subresult
+    return result
+
+
+def federal_account_filter2(filters):
+    result = Q()
+    for (key, values) in filters.items():
+        if key == 'object_class':
+            result &= orred_filter_list('object_class', values)
+        elif key == 'program_activity':
+            result &= filter_on('program_activity', 'program_activity_code', values)
+        elif key == 'time_period':
+            result &= orred_date_filter_list(values)
+
+    return result
+
+
 class SpendingByCategoryFederalAccountsViewSet(APIView):
+
+    """
+
+    https://gist.github.com/catherinedevlin/aa510ed9020431d2cbb9cc4045fa5835
+    """
     @cache_response()
-    def get(self, request, pk, format=None):
-        return None
+    def post(self, request, pk, format=None):
+
+        # get fin based on tas, select oc, make distinct values
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+            treasury_account__treasury_account_identifier=int(pk))
+
+        # `category` from request determines what to sum over
+        # `.annotate`... `F()` is much like using SQL column aliases
+        if request.data.get('category') == 'program_activity':
+            queryset = queryset.annotate(
+                id=F('program_activity_id'),
+                code=F('program_activity__program_activity_code'),
+                name=F('program_activity__program_activity_name'))
+        elif request.data.get('category') == 'object_class':
+            queryset = queryset.annotate(
+                id=F('object_class_id'),
+                code=F('object_class__object_class'),
+                name=F('object_class__object_class_name'))
+        elif request.data.get('category') == 'treasury_account':
+            queryset = queryset.annotate(
+                id=F('treasury_account_id'),
+                code=F('treasury_account__treasury_account_identifier'),
+                name=F('treasury_account__tas_rendering_label'))
+        else:
+            raise InvalidParameterException("category must be one of: program_activity, object_class, treasury_account")
+
+        filters = federal_account_filter2(request.data['filters'])
+        queryset = queryset.filter(filters)
+
+        queryset = queryset.values('id', 'code', 'name').annotate(
+            Sum('obligations_incurred_by_program_object_class_cpe'))
+
+        result = {
+            "results": {q['name']: q['obligations_incurred_by_program_object_class_cpe__sum']
+                        for q in queryset}
+        }
+
+        return Response(result)
 
 
 # class SpendingByAwardCountFederalAccountsViewSet(APIView):
