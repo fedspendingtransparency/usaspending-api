@@ -87,7 +87,7 @@ select
     -- zip
     tf.legal_entity_zip5 as recipient_location_zip5,
     
-    -- congressional disctrict
+    -- congressional district
     tf.legal_entity_congressional as recipient_location_congressional_code,
     
     -- ppop data
@@ -114,7 +114,7 @@ select
     null::text as pop_zip5,
     tf.place_of_performance_zip4a as pop_zip4,
     
-    -- congressional disctrict
+    -- congressional district
     tf.place_of_performance_congr as pop_congressional_code
 from
     transaction_fabs as tf -- aka latest transaction

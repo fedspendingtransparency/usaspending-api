@@ -444,7 +444,7 @@ class AwardMatview(models.Model):
     # zip
     recipient_location_zip5 = models.TextField(blank=True, null=True)
 
-    # congressional disctrict
+    # congressional district
     recipient_location_congressional_code = models.TextField(blank=True, null=True)
 
     # ppop data
@@ -471,7 +471,7 @@ class AwardMatview(models.Model):
     pop_zip5 = models.TextField(blank=True, null=True)
     # pop_zip4 = models.TextField(blank=True, null=True)
 
-    # congressional disctrict
+    # congressional district
     pop_congressional_code = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -653,7 +653,7 @@ class TransactionFPDSMatview(models.Model):
     # zip
     recipient_location_zip5 = models.TextField(blank=True, null=True)
 
-    # congressional disctrict
+    # congressional district
     recipient_location_congressional_code = models.TextField(blank=True, null=True)
 
     # ppop data
@@ -680,7 +680,7 @@ class TransactionFPDSMatview(models.Model):
     pop_zip5 = models.TextField(blank=True, null=True)
     pop_zip4 = models.TextField(blank=True, null=True)
 
-    # congressional disctrict
+    # congressional district
     pop_congressional_code = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -761,7 +761,7 @@ class TransactionFABSFAINMatview(models.Model):
     # zip
     recipient_location_zip5 = models.TextField(blank=True, null=True)
 
-    # congressional disctrict
+    # congressional district
     recipient_location_congressional_code = models.TextField(blank=True, null=True)
 
     # ppop data
@@ -788,7 +788,7 @@ class TransactionFABSFAINMatview(models.Model):
     pop_zip5 = models.TextField(blank=True, null=True)
     pop_zip4 = models.TextField(blank=True, null=True)
 
-    # congressional disctrict
+    # congressional district
     pop_congressional_code = models.TextField(blank=True, null=True)
 
     class Meta:
