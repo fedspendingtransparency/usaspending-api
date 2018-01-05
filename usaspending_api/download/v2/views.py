@@ -180,7 +180,7 @@ class DownloadTransactionCountViewSet(APIView):
             # "summary" materialized views are pre-aggregated and contain a counts col
             total_count = queryset.aggregate(total_count=Sum('counts'))['total_count']
 
-        if total_count > settings.MAX_DOWNLOAD_LIMIT:
+        if total_count and total_count > settings.MAX_DOWNLOAD_LIMIT:
             is_over_limit = True
 
         result = {
