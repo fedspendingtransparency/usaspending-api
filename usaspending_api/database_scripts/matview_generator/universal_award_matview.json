@@ -2,7 +2,12 @@
   "final_name": "universal_award_matview",
   "matview_sql": [
     "SELECT",
-    "  UPPER(CONCAT(recipient.recipient_name, ' ', contract_data.naics, ' ', contract_data.naics_description, ' ', psc.description)) AS keyword_string,",
+    "  UPPER(CONCAT(",
+    "    recipient.\"recipient_name\",",
+    "    ' ', contract_data.\"naics\",",
+    "    ' ', contract_data.\"naics_description\",",
+    "    ' ', psc.\"description\",",
+    "    ' ', \"awards\".\"description\")) AS keyword_string,",
     "  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,",
     "  \"awards\".\"id\" AS award_id,",
     "  \"awards\".\"category\",",
