@@ -756,7 +756,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
 
         if model in ['UniversalTransactionView']:
             agg_results = queryset.aggregate(
-                award_count=Count('*'),
+                award_count=Count('*'),  # surprisingly, this works to create "SELECT COUNT(*) ..."
                 award_spending=Sum("federal_action_obligation"))
         else:
             # "summary" materialized views are pre-aggregated and contain a counts col
@@ -764,11 +764,11 @@ class TransactionSummaryVisualizationViewSet(APIView):
                 award_count=Sum('counts'),
                 award_spending=Sum("federal_action_obligation"))
 
-        print('================================')
-        print(agg_results)
         results = {
-            'prime_awards_count': agg_results['award_count'],
-            'prime_awards_obligation_amount': agg_results['award_spending'],
+            # The Django Aggregate command will return None if no rows are a match.
+            # It is cleaner to return 0 than "None"/null so the values are checked for None
+            'prime_awards_count': agg_results['award_count'] or 0,
+            'prime_awards_obligation_amount': agg_results['award_spending'] or 0.0,
         }
 
         # build response
