@@ -24,6 +24,7 @@ class UniversalTransactionView(models.Model):
     federal_action_obligation = models.DecimalField(
         max_digits=20, decimal_places=2, blank=True, null=True)
     transaction_description = models.TextField()
+    modification_number = models.TextField()
 
     pop_country_code = models.TextField()
     pop_country_name = models.TextField()
