@@ -247,4 +247,3 @@ class Command(BaseCommand):
             ds_cursor.execute("DROP TABLE file_c_rows_to_update")
 
         logger.info('Done updating file B and C mappings')
-
