@@ -1,14 +1,10 @@
 import ast
 from collections import OrderedDict
-from datetime import datetime
 
 from django.db.models import F, Q, Sum
 from django.utils.dateparse import parse_date
 from rest_framework.response import Response
 
-from rest_framework_extensions.cache.decorators import cache_response
-from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount, AppropriationAccountBalances
-from usaspending_api.awards.models import FinancialAccountsByAwards
 
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
@@ -16,11 +12,7 @@ from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.accounts.models import (AppropriationAccountBalances,
                                              FederalAccount,
                                              TreasuryAppropriationAccount)
-from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.awards.v2.filters.filter_helpers import \
-    date_or_fy_queryset
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import fy
 from usaspending_api.financial_activities.models import \
     FinancialAccountsByProgramActivityObjectClass
 
@@ -109,13 +101,14 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         group = json_request.get('group', None)
         filters = json_request.get('filters', None)
         if filters:
-            filters = federal_account_filter2(filters)
+            filters = federal_account_filter2(filters, "treasury_account_identifier__program_balances__")
 
         nested_order = ''
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
         financial_account_queryset = AppropriationAccountBalances.final_objects.filter(treasury_account_identifier__federal_account_id=int(pk))
         if group == 'fy' or group == 'fiscal_year':
+
             filtered_fa = financial_account_queryset
             if filters:
                  filtered_fa = filtered_fa.filter(filters)
@@ -175,7 +168,6 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                         }
 
         else:  # quarterly, take months and add them up
-
             filtered_fa = financial_account_queryset
             if filters:
                 filtered_fa = filtered_fa.filter(filters)
@@ -195,9 +187,9 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                     continue
                 fy = trans["submission__reporting_fiscal_year"]
                 fq = trans["submission__reporting_fiscal_quarter"]
-
                 key = {'fiscal_year': str(fy),
                        'quarter': str(fq)}
+                key = str(key)
                 if key not in group_results:
                     group_results[key] = \
                         {"outlay": trans['outlay'] if trans['outlay'] else 0,
@@ -212,7 +204,6 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"],
                          "unobliged_balance": group_results[key]["unobliged_balance"]
                          }
-
             for trans in unfiltered_fa:
                 if trans['submission__reporting_fiscal_year'] is None:
                     continue
@@ -222,7 +213,6 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                        'quarter': str(fq)
                        }
                 key = str(key)
-
                 if key not in group_results:
                     group_results[key] = \
                         {"outlay": 0,
@@ -302,17 +292,16 @@ def orred_date_filter_list(filters):
     return result
 
 
-def federal_account_filter2(filters):
-    print("faf")
+def federal_account_filter2(filters, extra=""):
+
     result = Q()
     for (key, values) in filters.items():
         if key == 'object_class':
-            result &= orred_filter_list('object_class', values)
+            result &= orred_filter_list(extra + 'object_class', values)
         elif key == 'program_activity':
-            result &= filter_on('program_activity', 'program_activity_code', values)
+            result &= filter_on(extra + 'program_activity', 'program_activity_code', values)
         elif key == 'time_period':
             result &= orred_date_filter_list(values)
-    print("faf2")
     return result
 
 
@@ -349,13 +338,12 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
                 name=F('treasury_account__tas_rendering_label'))
         else:
             raise InvalidParameterException("category must be one of: program_activity, object_class, treasury_account")
-
         if filters:
             filters = federal_account_filter2(filters)
             queryset = queryset.filter(filters)
 
         queryset = queryset.values('id', 'code', 'name').annotate(
-            Sum('obligations_incurred_by_program_object_class_cpe'))
+            Sum('obligations_incurred_by_program_object_class_cpe')).order_by('-obligations_incurred_by_program_object_class_cpe__sum')
 
         result = {
             "results": {q['name']: q['obligations_incurred_by_program_object_class_cpe__sum']
