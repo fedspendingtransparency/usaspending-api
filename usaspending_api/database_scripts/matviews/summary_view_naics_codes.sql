@@ -33,15 +33,17 @@ GROUP BY
   "transaction_fpds"."naics",
   "transaction_fpds"."naics_description";
 
-CREATE INDEX idx_0f3e599f__action_date_temp ON summary_view_naics_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_0f3e599f__type_temp ON summary_view_naics_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_0868aa97__action_date_temp ON summary_view_naics_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_0868aa97__type_temp ON summary_view_naics_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
 
 ANALYZE VERBOSE summary_view_naics_codes_temp;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_naics_codes RENAME TO summary_view_naics_codes_old;
-ALTER INDEX IF EXISTS idx_0f3e599f__action_date RENAME TO idx_0f3e599f__action_date_old;
-ALTER INDEX IF EXISTS idx_0f3e599f__type RENAME TO idx_0f3e599f__type_old;
+ALTER INDEX IF EXISTS idx_0868aa97__action_date RENAME TO idx_0868aa97__action_date_old;
+ALTER INDEX IF EXISTS idx_0868aa97__type RENAME TO idx_0868aa97__type_old;
 
 ALTER MATERIALIZED VIEW summary_view_naics_codes_temp RENAME TO summary_view_naics_codes;
-ALTER INDEX idx_0f3e599f__action_date_temp RENAME TO idx_0f3e599f__action_date;
-ALTER INDEX idx_0f3e599f__type_temp RENAME TO idx_0f3e599f__type;
+ALTER INDEX idx_0868aa97__action_date_temp RENAME TO idx_0868aa97__action_date;
+ALTER INDEX idx_0868aa97__type_temp RENAME TO idx_0868aa97__type;
+
+GRANT SELECT ON readonly TO summary_view_naics_codes;

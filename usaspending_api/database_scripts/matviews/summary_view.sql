@@ -60,21 +60,23 @@ GROUP BY
   SFA.name,
   SFA.abbreviation;
 
-CREATE INDEX idx_9ad750b3__action_date_temp ON summary_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_9ad750b3__type_temp ON summary_view_temp USING BTREE("type") WITH (fillfactor = 100);
-CREATE INDEX idx_9ad750b3__fy_temp ON summary_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_9ad750b3__pulled_from_temp ON summary_view_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
+CREATE INDEX idx_660cde69__action_date_temp ON summary_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_660cde69__type_temp ON summary_view_temp USING BTREE("type") WITH (fillfactor = 100);
+CREATE INDEX idx_660cde69__fy_temp ON summary_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_660cde69__pulled_from_temp ON summary_view_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
 
 ANALYZE VERBOSE summary_view_temp;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_view RENAME TO summary_view_old;
-ALTER INDEX IF EXISTS idx_9ad750b3__action_date RENAME TO idx_9ad750b3__action_date_old;
-ALTER INDEX IF EXISTS idx_9ad750b3__type RENAME TO idx_9ad750b3__type_old;
-ALTER INDEX IF EXISTS idx_9ad750b3__fy RENAME TO idx_9ad750b3__fy_old;
-ALTER INDEX IF EXISTS idx_9ad750b3__pulled_from RENAME TO idx_9ad750b3__pulled_from_old;
+ALTER INDEX IF EXISTS idx_660cde69__action_date RENAME TO idx_660cde69__action_date_old;
+ALTER INDEX IF EXISTS idx_660cde69__type RENAME TO idx_660cde69__type_old;
+ALTER INDEX IF EXISTS idx_660cde69__fy RENAME TO idx_660cde69__fy_old;
+ALTER INDEX IF EXISTS idx_660cde69__pulled_from RENAME TO idx_660cde69__pulled_from_old;
 
 ALTER MATERIALIZED VIEW summary_view_temp RENAME TO summary_view;
-ALTER INDEX idx_9ad750b3__action_date_temp RENAME TO idx_9ad750b3__action_date;
-ALTER INDEX idx_9ad750b3__type_temp RENAME TO idx_9ad750b3__type;
-ALTER INDEX idx_9ad750b3__fy_temp RENAME TO idx_9ad750b3__fy;
-ALTER INDEX idx_9ad750b3__pulled_from_temp RENAME TO idx_9ad750b3__pulled_from;
+ALTER INDEX idx_660cde69__action_date_temp RENAME TO idx_660cde69__action_date;
+ALTER INDEX idx_660cde69__type_temp RENAME TO idx_660cde69__type;
+ALTER INDEX idx_660cde69__fy_temp RENAME TO idx_660cde69__fy;
+ALTER INDEX idx_660cde69__pulled_from_temp RENAME TO idx_660cde69__pulled_from;
+
+GRANT SELECT ON readonly TO summary_view;

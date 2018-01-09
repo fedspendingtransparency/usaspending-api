@@ -9,6 +9,7 @@
     "    ' ', \"psc\".\"description\",",
     "    ' ', \"awards\".\"description\")) AS keyword_string,",
     "  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,",
+    "  \"transaction_normalized\".\"id\" AS transaction_id",
     "  \"transaction_normalized\".\"action_date\"::date,",
     "  \"transaction_normalized\".\"fiscal_year\",",
     "  \"transaction_normalized\".\"type\",",
@@ -103,6 +104,9 @@
   ],
   "indexes": [
     {
+      "name": "transaction_id",
+      "columns": [{"name": "\"transaction_id\"", "order": "ASC NULLS LAST"}]
+    }, {
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {
