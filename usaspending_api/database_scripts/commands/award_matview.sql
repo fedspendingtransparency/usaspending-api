@@ -251,7 +251,7 @@ from
     from
         detached_award_procurement tf -- aka latest transaction
         left outer join
-        executive_compensation as exec_comp on exec_comp.awardee_or_recipient_uniqu = tf.awardee_or_recipient_uniqu
+        exec_comp_lookup as exec_comp on exec_comp.awardee_or_recipient_uniqu = tf.awardee_or_recipient_uniqu
     window w as (partition by tf.piid, tf.parent_award_id, tf.agency_id, tf.referenced_idv_agency_iden)
     order by
         tf.piid,
@@ -514,69 +514,70 @@ union all
     fy(action_date) as fiscal_year
 from
     dblink ('broker_server', 'select
+    distinct on (pafa.fain, pafa.awarding_sub_tier_agency_c)
     ''asst_aw_'' ||
-        coalesce(tf.awarding_sub_tier_agency_c,''-none-'') || ''_'' ||
-        coalesce(tf.fain, ''-none-'') || ''_'' ||
+        coalesce(pafa.awarding_sub_tier_agency_c,''-none-'') || ''_'' ||
+        coalesce(pafa.fain, ''-none-'') || ''_'' ||
         ''-none-'' as generated_unique_award_id,
-    tf.assistance_type as type,
+    pafa.assistance_type as type,
     case
-        when tf.assistance_type = ''02'' then ''Block Grant''
-        when tf.assistance_type = ''03'' then ''Formula Grant''
-        when tf.assistance_type = ''04'' then ''Project Grant''
-        when tf.assistance_type = ''05'' then ''Cooperative Agreement''
-        when tf.assistance_type = ''06'' then ''Direct Payment for Specified Use''
-        when tf.assistance_type = ''07'' then ''Direct Loan''
-        when tf.assistance_type = ''08'' then ''Guaranteed/Insured Loan''
-        when tf.assistance_type = ''09'' then ''Insurance''
-        when tf.assistance_type = ''10'' then ''Direct Payment with Unrestricted Use''
-        when tf.assistance_type = ''11'' then ''Other Financial Assistance''
+        when pafa.assistance_type = ''02'' then ''Block Grant''
+        when pafa.assistance_type = ''03'' then ''Formula Grant''
+        when pafa.assistance_type = ''04'' then ''Project Grant''
+        when pafa.assistance_type = ''05'' then ''Cooperative Agreement''
+        when pafa.assistance_type = ''06'' then ''Direct Payment for Specified Use''
+        when pafa.assistance_type = ''07'' then ''Direct Loan''
+        when pafa.assistance_type = ''08'' then ''Guaranteed/Insured Loan''
+        when pafa.assistance_type = ''09'' then ''Insurance''
+        when pafa.assistance_type = ''10'' then ''Direct Payment with Unrestricted Use''
+        when pafa.assistance_type = ''11'' then ''Other Financial Assistance''
     end as type_description,
     null::text as agency_id,
     null::text as referenced_idv_agency_iden,
     null::text as piid,
     null::text as parent_award_piid,
-    tf.fain as fain,
+    pafa.fain as fain,
     null::text as uri,
-    uniq_award.total_obligation as total_obligation,
-    uniq_award.total_subsidy_cost as total_subsidy_cost,
+    sum(coalesce(pafa.federal_action_obligation::double precision, 0::double precision)) over w as total_obligation,
+    sum(coalesce(pafa.original_loan_subsidy_cost::double precision, 0::double precision)) over w as total_subsidy_cost,
     null::float as total_outlay,
-    tf.awarding_sub_tier_agency_c as awarding_sub_tier_agency_c,
-    tf.funding_sub_tier_agency_co as funding_sub_tier_agency_co,
+    pafa.awarding_sub_tier_agency_c as awarding_sub_tier_agency_c,
+    pafa.funding_sub_tier_agency_co as funding_sub_tier_agency_co,
     ''DBR''::text as data_source,
-    tf.action_date::date as action_date,
-    uniq_award.signed_date as date_signed,
-    tf.award_description as description,
-    uniq_award.period_of_performance_start_date as period_of_performance_start_date,
-    uniq_award.period_of_performance_current_end_date as period_of_performance_current_end_date,
+    pafa.action_date::date as action_date,
+    min(pafa.action_date) over w as date_signed,
+    pafa.award_description as description,
+    min(pafa.period_of_performance_star::date) over w as period_of_performance_start_date,
+    max(pafa.period_of_performance_curr::date) over w as period_of_performance_current_end_date,
     null::float as potential_total_value_of_award,
     null::float as base_and_all_options_value,
-    tf.modified_at::date as last_modified_date,
-    uniq_award.certified_date as certified_date,
-    tf.record_type as record_type,
-    ''asst_tx_'' || tf.afa_generated_unique as latest_transaction_unique_id,
+    pafa.modified_at::date as last_modified_date,
+    max(pafa.action_date) over w as certified_date,
+    pafa.record_type as record_type,
+    ''asst_tx_'' || pafa.afa_generated_unique as latest_transaction_unique_id,
     0 as total_subaward_amount,
     0 as subaward_count,
     null::text as pulled_from,
-    null::text product_or_service_code as product_or_service_code,
-    null::text product_or_service_co_desc as product_or_service_co_desc,
-    null::text extent_competed as extent_competed,
-    null::text extent_compete_description as extent_compete_description,
-    null::text type_of_contract_pricing as type_of_contract_pricing,
-    null::text naics as naics,
-    null::text naics_description as naics_description,
-    null::text idv_type as idv_type,
-    null::text idv_type_description as idv_type_description,
-    null::text type_set_aside as type_set_aside,
-    null::text type_set_aside_description as type_set_aside_description,
-    tf.assistance_type as assistance_type,
-    tf.business_funds_indicator as business_funds_indicator,
-    tf.business_types as business_types,
-    tf.cfda_number as cfda_number,
-    tf.cfda_title as cfda_title,
+    null::text as product_or_service_code,
+    null::text as product_or_service_co_desc,
+    null::text as extent_competed,
+    null::text as extent_compete_description,
+    null::text as type_of_contract_pricing,
+    null::text as naics,
+    null::text as naics_description,
+    null::text as idv_type,
+    null::text as idv_type_description,
+    null::text as type_set_aside,
+    null::text as type_set_aside_description,
+    pafa.assistance_type as assistance_type,
+    pafa.business_funds_indicator as business_funds_indicator,
+    pafa.business_types as business_types,
+    pafa.cfda_number as cfda_number,
+    pafa.cfda_title as cfda_title,
 
     -- recipient data
-    tf.awardee_or_recipient_uniqu as recipient_unique_id,
-    tf.awardee_or_recipient_legal as recipient_name,
+    pafa.awardee_or_recipient_uniqu as recipient_unique_id,
+    pafa.awardee_or_recipient_legal as recipient_name,
 
     -- executive compensation data
     exec_comp.high_comp_officer1_full_na as officer_1_name,
@@ -591,33 +592,33 @@ from
     exec_comp.high_comp_officer5_amount as officer_5_amount,
 
     -- business categories
-    tf.legal_entity_address_line1 as recipient_location_address_line1,
-    tf.legal_entity_address_line2 as recipient_location_address_line2,
-    tf.legal_entity_address_line3 as recipient_location_address_line3,
+    pafa.legal_entity_address_line1 as recipient_location_address_line1,
+    pafa.legal_entity_address_line2 as recipient_location_address_line2,
+    pafa.legal_entity_address_line3 as recipient_location_address_line3,
 
     -- foreign province
-    tf.legal_entity_foreign_provi as recipient_location_foreign_province,
+    pafa.legal_entity_foreign_provi as recipient_location_foreign_province,
 
     -- country
-    tf.legal_entity_country_code as recipient_location_country_code,
-    tf.legal_entity_country_name as recipient_location_country_name,
+    pafa.legal_entity_country_code as recipient_location_country_code,
+    pafa.legal_entity_country_name as recipient_location_country_name,
 
     -- state
-    tf.legal_entity_state_code as recipient_location_state_code,
-    tf.legal_entity_state_name as recipient_location_state_name,
+    pafa.legal_entity_state_code as recipient_location_state_code,
+    pafa.legal_entity_state_name as recipient_location_state_name,
 
     -- county
-    tf.legal_entity_county_code as recipient_location_county_code,
-    tf.legal_entity_county_name as recipient_location_county_name,
+    pafa.legal_entity_county_code as recipient_location_county_code,
+    pafa.legal_entity_county_name as recipient_location_county_name,
 
     -- city
-    tf.legal_entity_city_name as recipient_location_city_name,
+    pafa.legal_entity_city_name as recipient_location_city_name,
 
     -- zip
-    tf.legal_entity_zip5 as recipient_location_zip5,
+    pafa.legal_entity_zip5 as recipient_location_zip5,
 
     -- congressional disctrict
-    tf.legal_entity_congressional as recipient_location_congressional_code,
+    pafa.legal_entity_congressional as recipient_location_congressional_code,
 
     -- ppop data
 
@@ -625,56 +626,38 @@ from
     null::text as pop_foreign_province,
 
     -- country
-    tf.place_of_perform_country_c as pop_country_code,
-    tf.place_of_perform_country_n as pop_country_name,
+    pafa.place_of_perform_country_c as pop_country_code,
+    pafa.place_of_perform_country_n as pop_country_name,
 
     -- state
     null::text as pop_state_code,
-    tf.place_of_perform_state_nam as pop_state_name,
+    pafa.place_of_perform_state_nam as pop_state_name,
 
     -- county
-    tf.place_of_perform_county_co as pop_county_code,
-    tf.place_of_perform_county_na as pop_county_name,
+    pafa.place_of_perform_county_co as pop_county_code,
+    pafa.place_of_perform_county_na as pop_county_name,
 
     -- city
-    tf.place_of_performance_city as pop_city_name,
+    pafa.place_of_performance_city as pop_city_name,
 
     -- zip
     null::text as pop_zip5,
-    -- tf.place_of_performance_zip4a as pop_zip4,
+    -- pafa.place_of_performance_zip4a as pop_zip4,
 
     -- congressional disctrict
-    tf.place_of_performance_congr as pop_congressional_code
-from
-    published_award_financial_assistance as tf -- aka latest transaction
-    inner join
-    (
-        select
-            distinct on (pafa.fain, pafa.awarding_sub_tier_agency_c)
-            pafa.fain,
-            pafa.awarding_sub_tier_agency_c,
-            pafa.action_date,
-            pafa.award_modification_amendme,
-            pafa.afa_generated_unique,
-            count(pafa.fain) over w as sumfain,
-            max(pafa.action_date) over w as certified_date,
-            min(pafa.action_date) over w as signed_date,
-            min(pafa.period_of_performance_star::date) over w as period_of_performance_start_date,
-            max(pafa.period_of_performance_curr::date) over w as period_of_performance_current_end_date,
-            null as base_and_all_options_value,
-            sum(coalesce(pafa.federal_action_obligation::double precision, 0::double precision)) over w as total_obligation,
-            sum(coalesce(pafa.original_loan_subsidy_cost::double precision, 0::double precision)) over w as total_subsidy_cost
-        from published_award_financial_assistance as pafa
-        where pafa.record_type = ''2'' and is_active=TRUE
-        window w as (partition by pafa.fain, pafa.awarding_sub_tier_agency_c)
-        order by
-            pafa.fain,
-            pafa.awarding_sub_tier_agency_c,
-            pafa.action_date desc,
-            pafa.award_modification_amendme desc
-    ) as uniq_award on uniq_award.afa_generated_unique = tf.afa_generated_unique
+    pafa.place_of_performance_congr as pop_congressional_code
+
+from published_award_financial_assistance as pafa
     left outer join
-    executive_compensation as exec_comp on exec_comp.awardee_or_recipient_uniqu = tf.awardee_or_recipient_uniqu') as fabs_fain_uniq_awards
+    exec_comp_lookup as exec_comp on exec_comp.awardee_or_recipient_uniqu = pafa.awardee_or_recipient_uniqu
+where pafa.record_type = ''2'' and is_active=TRUE
+window w as (partition by pafa.fain, pafa.awarding_sub_tier_agency_c)
+order by
+    pafa.fain,
+    pafa.awarding_sub_tier_agency_c,
+    pafa.action_date desc,
+    pafa.award_modification_amendme desc
+;') as fabs_fain_uniq_awards
     (
         generated_unique_award_id text,
         type text,
@@ -928,69 +911,70 @@ union all
     fy(action_date) as fiscal_year
 from
     dblink ('broker_server', 'select
+    distinct on (pafa.uri, pafa.awarding_sub_tier_agency_c)
     ''asst_aw_'' ||
-        coalesce(tf.awarding_sub_tier_agency_c,''-none-'') || ''_'' ||
+        coalesce(pafa.awarding_sub_tier_agency_c,''-none-'') || ''_'' ||
         ''-none-'' || ''_'' ||
-        coalesce(tf.uri, ''-none-'') as generated_unique_award_id,
-    tf.assistance_type as type,
+        coalesce(pafa.uri, ''-none-'') as generated_unique_award_id,
+    pafa.assistance_type as type,
     case
-        when tf.assistance_type = ''02'' then ''Block Grant''
-        when tf.assistance_type = ''03'' then ''Formula Grant''
-        when tf.assistance_type = ''04'' then ''Project Grant''
-        when tf.assistance_type = ''05'' then ''Cooperative Agreement''
-        when tf.assistance_type = ''06'' then ''Direct Payment for Specified Use''
-        when tf.assistance_type = ''07'' then ''Direct Loan''
-        when tf.assistance_type = ''08'' then ''Guaranteed/Insured Loan''
-        when tf.assistance_type = ''09'' then ''Insurance''
-        when tf.assistance_type = ''10'' then ''Direct Payment with Unrestricted Use''
-        when tf.assistance_type = ''11'' then ''Other Financial Assistance''
+        when pafa.assistance_type = ''02'' then ''Block Grant''
+        when pafa.assistance_type = ''03'' then ''Formula Grant''
+        when pafa.assistance_type = ''04'' then ''Project Grant''
+        when pafa.assistance_type = ''05'' then ''Cooperative Agreement''
+        when pafa.assistance_type = ''06'' then ''Direct Payment for Specified Use''
+        when pafa.assistance_type = ''07'' then ''Direct Loan''
+        when pafa.assistance_type = ''08'' then ''Guaranteed/Insured Loan''
+        when pafa.assistance_type = ''09'' then ''Insurance''
+        when pafa.assistance_type = ''10'' then ''Direct Payment with Unrestricted Use''
+        when pafa.assistance_type = ''11'' then ''Other Financial Assistance''
     end as type_description,
     null::text as agency_id,
     null::text as referenced_idv_agency_iden,
     null::text as piid,
     null::text as parent_award_piid,
     null::text as fain,
-    tf.uri as uri,
-    uniq_award.total_obligation as total_obligation,
-    uniq_award.total_subsidy_cost as total_subsidy_cost,
+    pafa.uri as uri,
+    sum(coalesce(pafa.federal_action_obligation::double precision, 0::double precision)) over w as total_obligation,
+    sum(coalesce(pafa.original_loan_subsidy_cost::double precision, 0::double precision)) over w as total_subsidy_cost,
     null::float as total_outlay,
-    tf.awarding_sub_tier_agency_c as awarding_sub_tier_agency_c,
-    tf.funding_sub_tier_agency_co as funding_sub_tier_agency_co,
+    pafa.awarding_sub_tier_agency_c as awarding_sub_tier_agency_c,
+    pafa.funding_sub_tier_agency_co as funding_sub_tier_agency_co,
     ''DBR''::text as data_source,
-    tf.action_date::date as action_date,
-    uniq_award.signed_date as date_signed,
-    tf.award_description as description,
-    uniq_award.period_of_performance_start_date as period_of_performance_start_date,
-    uniq_award.period_of_performance_current_end_date as period_of_performance_current_end_date,
+    pafa.action_date::date as action_date,
+    min(pafa.action_date) over w as date_signed,
+    pafa.award_description as description,
+    min(pafa.period_of_performance_star::date) over w as period_of_performance_start_date,
+    max(pafa.period_of_performance_curr::date) over w as period_of_performance_current_end_date,
     null::float as potential_total_value_of_award,
     null::float as base_and_all_options_value,
-    tf.modified_at::date as last_modified_date,
-    uniq_award.certified_date as certified_date,
-    tf.record_type as record_type,
-    ''asst_tx_'' || tf.afa_generated_unique as latest_transaction_unique_id,
+    pafa.modified_at::date as last_modified_date,
+    max(pafa.action_date) over w as certified_date,
+    pafa.record_type as record_type,
+    ''asst_tx_'' || pafa.afa_generated_unique as latest_transaction_unique_id,
     0 as total_subaward_amount,
     0 as subaward_count,
     null::text as pulled_from,
-    null::text product_or_service_code as product_or_service_code,
-    null::text product_or_service_co_desc as product_or_service_co_desc,
-    null::text extent_competed as extent_competed,
-    null::text extent_compete_description as extent_compete_description,
-    null::text type_of_contract_pricing as type_of_contract_pricing,
-    null::text naics as naics,
-    null::text naics_description as naics_description,
-    null::text idv_type as idv_type,
-    null::text idv_type_description as idv_type_description,
-    null::text type_set_aside as type_set_aside,
-    null::text type_set_aside_description as type_set_aside_description,
-    tf.assistance_type as assistance_type,
-    tf.business_funds_indicator as business_funds_indicator,
-    tf.business_types as business_types,
-    tf.cfda_number as cfda_number,
-    tf.cfda_title as cfda_title,
+    null::text as product_or_service_code,
+    null::text as product_or_service_co_desc,
+    null::text as extent_competed,
+    null::text as extent_compete_description,
+    null::text as type_of_contract_pricing,
+    null::text as naics,
+    null::text as naics_description,
+    null::text as idv_type,
+    null::text as idv_type_description,
+    null::text as type_set_aside,
+    null::text as type_set_aside_description,
+    pafa.assistance_type as assistance_type,
+    pafa.business_funds_indicator as business_funds_indicator,
+    pafa.business_types as business_types,
+    pafa.cfda_number as cfda_number,
+    pafa.cfda_title as cfda_title,
 
     -- recipient data
-    tf.awardee_or_recipient_uniqu as recipient_unique_id,
-    tf.awardee_or_recipient_legal as recipient_name,
+    pafa.awardee_or_recipient_uniqu as recipient_unique_id,
+    pafa.awardee_or_recipient_legal as recipient_name,
 
     -- executive compensation data
     exec_comp.high_comp_officer1_full_na as officer_1_name,
@@ -1005,33 +989,33 @@ from
     exec_comp.high_comp_officer5_amount as officer_5_amount,
 
     -- business categories
-    tf.legal_entity_address_line1 as recipient_location_address_line1,
-    tf.legal_entity_address_line2 as recipient_location_address_line2,
-    tf.legal_entity_address_line3 as recipient_location_address_line3,
+    pafa.legal_entity_address_line1 as recipient_location_address_line1,
+    pafa.legal_entity_address_line2 as recipient_location_address_line2,
+    pafa.legal_entity_address_line3 as recipient_location_address_line3,
 
     -- foreign province
-    tf.legal_entity_foreign_provi as recipient_location_foreign_province,
+    pafa.legal_entity_foreign_provi as recipient_location_foreign_province,
 
     -- country
-    tf.legal_entity_country_code as recipient_location_country_code,
-    tf.legal_entity_country_name as recipient_location_country_name,
+    pafa.legal_entity_country_code as recipient_location_country_code,
+    pafa.legal_entity_country_name as recipient_location_country_name,
 
     -- state
-    tf.legal_entity_state_code as recipient_location_state_code,
-    tf.legal_entity_state_name as recipient_location_state_name,
+    pafa.legal_entity_state_code as recipient_location_state_code,
+    pafa.legal_entity_state_name as recipient_location_state_name,
 
     -- county
-    tf.legal_entity_county_code as recipient_location_county_code,
-    tf.legal_entity_county_name as recipient_location_county_name,
+    pafa.legal_entity_county_code as recipient_location_county_code,
+    pafa.legal_entity_county_name as recipient_location_county_name,
 
     -- city
-    tf.legal_entity_city_name as recipient_location_city_name,
+    pafa.legal_entity_city_name as recipient_location_city_name,
 
     -- zip
-    tf.legal_entity_zip5 as recipient_location_zip5,
+    pafa.legal_entity_zip5 as recipient_location_zip5,
 
     -- congressional disctrict
-    tf.legal_entity_congressional as recipient_location_congressional_code,
+    pafa.legal_entity_congressional as recipient_location_congressional_code,
 
     -- ppop data
 
@@ -1039,56 +1023,37 @@ from
     null::text as pop_foreign_province,
 
     -- country
-    tf.place_of_perform_country_c as pop_country_code,
-    tf.place_of_perform_country_n as pop_country_name,
+    pafa.place_of_perform_country_c as pop_country_code,
+    pafa.place_of_perform_country_n as pop_country_name,
 
     -- state
     null::text as pop_state_code,
-    tf.place_of_perform_state_nam as pop_state_name,
+    pafa.place_of_perform_state_nam as pop_state_name,
 
     -- county
-    tf.place_of_perform_county_co as pop_county_code,
-    tf.place_of_perform_county_na as pop_county_name,
+    pafa.place_of_perform_county_co as pop_county_code,
+    pafa.place_of_perform_county_na as pop_county_name,
 
     -- city
-    tf.place_of_performance_city as pop_city_name,
+    pafa.place_of_performance_city as pop_city_name,
 
     -- zip
     null::text as pop_zip5,
-    -- tf.place_of_performance_zip4a as pop_zip4,
+    -- pafa.place_of_performance_zip4a as pop_zip4,
 
     -- congressional disctrict
-    tf.place_of_performance_congr as pop_congressional_code
-from
-    published_award_financial_assistance as tf -- aka latest transaction
-    inner join
-    (
-        select
-            distinct on (pafa.uri, pafa.awarding_sub_tier_agency_c)
-            pafa.uri,
-            pafa.awarding_sub_tier_agency_c,
-            pafa.action_date,
-            pafa.award_modification_amendme,
-            pafa.afa_generated_unique,
-            count(pafa.uri) over w as sumfain,
-            max(pafa.action_date) over w as certified_date,
-            min(pafa.action_date) over w as signed_date,
-            min(pafa.period_of_performance_star::date) over w as period_of_performance_start_date,
-            max(pafa.period_of_performance_curr::date) over w as period_of_performance_current_end_date,
-            null as base_and_all_options_value,
-            sum(coalesce(pafa.federal_action_obligation::double precision, 0::double precision)) over w as total_obligation,
-            sum(coalesce(pafa.original_loan_subsidy_cost::double precision, 0::double precision)) over w as total_subsidy_cost
-        from published_award_financial_assistance as pafa
-        where pafa.record_type = ''1'' and is_active=TRUE
-        window w as (partition by pafa.uri, pafa.awarding_sub_tier_agency_c)
-        order by
-            pafa.uri,
-            pafa.awarding_sub_tier_agency_c,
-            pafa.action_date desc,
-            pafa.award_modification_amendme desc
-    ) as uniq_award on uniq_award.afa_generated_unique = tf.afa_generated_unique
+    pafa.place_of_performance_congr as pop_congressional_code
+
+from published_award_financial_assistance as pafa
     left outer join
-    executive_compensation as exec_comp on exec_comp.awardee_or_recipient_uniqu = tf.awardee_or_recipient_uniqu') as fabs_uri_uniq_awards
+    exec_comp_lookup as exec_comp on exec_comp.awardee_or_recipient_uniqu = pafa.awardee_or_recipient_uniqu
+where pafa.record_type = ''1'' and is_active=TRUE
+window w as (partition by pafa.uri, pafa.awarding_sub_tier_agency_c)
+order by
+    pafa.uri,
+    pafa.awarding_sub_tier_agency_c,
+    pafa.action_date desc,
+    pafa.award_modification_amendme desc') as fabs_uri_uniq_awards
     (
         generated_unique_award_id text,
         type text,

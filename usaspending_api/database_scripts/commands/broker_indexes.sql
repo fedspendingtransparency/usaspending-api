@@ -13,6 +13,8 @@ CREATE INDEX dap_awarding_subtier_code_idx ON detached_award_procurement USING b
 CREATE INDEX dap_base_and_all_options_idx ON detached_award_procurement USING btree (((base_and_all_options_value)::double precision));
 CREATE INDEX dap_action_date_desc_idx ON detached_award_procurement USING btree (action_date DESC);
 CREATE INDEX dap_fed_action_obligation_idx ON detached_award_procurement USING btree (((federal_action_obligation)::double precision));
+CREATE INDEX dap_group_1 on detached_award_procurement USING btree (piid, parent_award_id, agency_id, referenced_idv_agency_iden, action_date, award_modification_amendme, transaction_number);
+CREATE INDEX dap_group_2 on detached_award_procurement USING btree (piid, parent_award_id, agency_id, referenced_idv_agency_iden) ;
 
 -- FABS Indexes
 CREATE INDEX pafa_record_type_idx ON published_award_financial_assistance USING btree (record_type);
