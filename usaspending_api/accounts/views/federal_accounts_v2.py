@@ -4,6 +4,8 @@ from collections import OrderedDict
 from django.db.models import F, Q, Sum
 from django.utils.dateparse import parse_date
 from rest_framework.response import Response
+from datetime import datetime
+from usaspending_api.common.helpers import fy
 
 
 from rest_framework.views import APIView
@@ -68,7 +70,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     def get(self, request, pk, format=None):
 
         queryset = AppropriationAccountBalances.final_objects.filter(treasury_account_identifier__federal_account_id=int(
-            pk))#.filter(submission__reporting_fiscal_year=fy(datetime.today()))
+            pk)).filter(submission__reporting_fiscal_year=fy(datetime.today()))
         queryset = queryset.aggregate(
             outlay=Sum('gross_outlay_amount_by_tas_cpe'),
             budget_authority=Sum('budget_authority_available_amount_total_cpe'),
