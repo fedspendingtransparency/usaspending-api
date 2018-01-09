@@ -55,6 +55,7 @@ TEMPLATE = {
     'vacuum': 'VACUUM ANALYZE VERBOSE {};',
     'create_index': 'CREATE {}INDEX {} ON {} USING {}({}){}{};',
     'rename_index': 'ALTER INDEX {}{} RENAME TO {};',
+    'grant_select': 'GRANT SELECT ON {} TO {};',
 }
 HEADER = [
     '--------------------------------------------------------',
@@ -174,6 +175,8 @@ def create_sql_strings(sql_json):
     final_sql_strings.append('')
     final_sql_strings.append(TEMPLATE['rename_matview'].format('', matview_temp_name, matview_name))
     final_sql_strings += rename_new_indexes
+    final_sql_strings.append('')
+    final_sql_strings.append(TEMPLATE['grant_select'].format('readonly', matview_name))
     final_sql_strings.append('')
     return final_sql_strings
 
