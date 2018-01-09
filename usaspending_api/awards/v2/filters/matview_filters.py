@@ -5,12 +5,18 @@ from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
+from usaspending_api.awards.models import FinancialAccountsByAwards
+
 
 logger = logging.getLogger(__name__)
 
 
 def matview_search_filter(filters, model):
     queryset = model.objects.all()
+
+    faba_flag = False
+    faba_queryset = FinancialAccountsByAwards.objects.filter(award__isnull=False)
+
     for key, value in filters.items():
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
@@ -34,7 +40,11 @@ def matview_search_filter(filters, model):
             'psc_codes',
             'contract_pricing_type_codes',
             'set_aside_type_codes',
-            'extent_competed_type_codes'
+            'extent_competed_type_codes',
+            # next 3 keys used by federal account page
+            'federal_account_ids',
+            'object_class_ids',
+            'program_activity_ids'
         ]
 
         if key not in key_list:
@@ -218,5 +228,24 @@ def matview_search_filter(filters, model):
             for v in value:
                 or_queryset |= Q(extent_competed__exact=v)
             queryset = queryset.filter(or_queryset)
+
+        # Federal Account Filter
+        elif key == "federal_account_ids":
+            faba_flag = True
+            faba_queryset &= faba_queryset.filter(treasury_account__federal_account_id__in=value)
+
+        # Federal Account Filter
+        elif key == "object_class_ids":
+            faba_flag = True
+            faba_queryset &= faba_queryset.filter(object_class_id__in=value)
+
+        # Federal Account Filter
+        elif key == "program_activity_ids":
+            faba_flag = True
+            faba_queryset &= faba_queryset.filter(program_activity_id__in=value)
+
+    if faba_flag:
+        award_ids = faba_queryset.values('award_id')
+        queryset.filter(award_id__in=award_ids)
 
     return queryset

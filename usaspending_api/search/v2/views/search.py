@@ -688,7 +688,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
         filters = json_request.get("filters", None)
-
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
