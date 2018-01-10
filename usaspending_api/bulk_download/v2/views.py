@@ -4,14 +4,17 @@ import json
 import logging
 import os
 import pandas as pd
+import datetime
+import re
+import boto
 from collections import OrderedDict
 
-import django
 from django.conf import settings
-from django.db.models import F, Q
+from django.db.models import F, Q, Max
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
+from rest_framework_extensions.cache.decorators import cache_response
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, \
     grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping
@@ -20,6 +23,7 @@ from usaspending_api.references.models import ToptierAgency
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.csv_helpers import sqs_queue
+from usaspending_api.common.helpers import generate_raw_quoted_query, order_nested_object
 from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
@@ -62,6 +66,10 @@ award_type_mappings = {
     'direct_payments': list(direct_payment_type_mapping.keys()),
     'loans': list(loan_type_mapping.keys()),
     'other_financial_assistance': list(other_type_mapping.keys())
+}
+award_mappings = {
+    'contracts': ['contracts'],
+    'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
 }
 value_mappings = {
     # Award Level
@@ -145,6 +153,18 @@ class BaseDownloadViewSet(APIView):
             if required_param not in json_request:
                 raise InvalidParameterException('{} parameter not provided'.format(required_param))
 
+        # TODO: Refactor with the bulk_download method in populate_monthly_files.py
+        # Check if the same request has been called today
+        current_date = datetime.datetime.utcnow()
+        updated_date_timestamp = datetime.datetime.strftime(current_date, '%Y-%m-%d')
+        cached_download = BulkDownloadJob.objects.filter(
+            json_request=json.dumps(order_nested_object(json_request)),
+            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
+        if cached_download:
+            # By returning the cached files, there should be no duplicates on a daily basis
+            cached_filename = cached_download[0]['file_name']
+            return self.get_download_response(file_name=cached_filename)
+
         csv_sources = self.get_csv_sources(json_request)
 
         # get timestamped name to provide unique file name
@@ -153,9 +173,39 @@ class BaseDownloadViewSet(APIView):
 
         # create download job in database to track progress. Starts at 'ready'
         # status by default.
-        download_job = BulkDownloadJob(job_status_id=JOB_STATUS_DICT['ready'],
-                                       file_name=timestamped_file_name)
+        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
+                               'json_request': json.dumps(order_nested_object(json_request)),
+                               'file_name': timestamped_file_name}
+        award_levels = json_request['award_levels']
+        award_types = json_request['filters']['award_types']
+        agency = json_request['filters']['agency']
+        sub_agency = json_request['filters'].get('sub_agency', None)
+        start_date = json_request['filters']['date_range'].get('start_date', None)
+        end_date = json_request['filters']['date_range'].get('end_date', None)
+        date_type = json_request['filters']['date_type']
+
+        for award_level in award_levels:
+            download_job_kwargs[award_level] = True
+        for award_type in award_types:
+            download_job_kwargs[award_type] = True
+        if agency and agency != 'all':
+            download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
+        if sub_agency:
+            download_job_kwargs['sub_agency'] = sub_agency
+        if start_date:
+            download_job_kwargs['start_date'] = start_date
+        if end_date:
+            download_job_kwargs['end_date'] = end_date
+        if date_type:
+            download_job_kwargs['date_type'] = date_type
+        download_job = BulkDownloadJob(**download_job_kwargs)
         download_job.save()
+
+        logger.info('Added Bulk Download Job: {}\n'
+                    'Filename: {}\n'
+                    'Request Params: {}'.format(download_job.bulk_download_job_id,
+                                                download_job.file_name,
+                                                download_job.json_request))
 
         kwargs = {'download_job': download_job,
                   'file_name': timestamped_file_name,
@@ -204,7 +254,7 @@ def verify_requested_columns_available(sources, requested):
 
 
 class BulkDownloadListAgenciesViewSet(APIView):
-    modified_agencies_list = os.path.join(django.conf.settings.BASE_DIR,
+    modified_agencies_list = os.path.join(settings.BASE_DIR,
                                           'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
     sub_agencies_map = {}
 
@@ -251,8 +301,8 @@ class BulkDownloadListAgenciesViewSet(APIView):
             other_agencies = sorted([agency for agency in toptier_agencies
                                      if agency not in cfo_agencies],
                                     key=lambda agency: agency['name'])
-            response_data['agencies'] = {"cfo_agencies": cfo_agencies,
-                                         "other_agencies": other_agencies}
+            response_data['agencies'] = {'cfo_agencies': cfo_agencies,
+                                         'other_agencies': other_agencies}
         else:
             # Get the top tier agency object based on the agency id provided
             top_tier_agency = list(filter(lambda toptier: toptier['toptier_agency_id'] == agency_id,
@@ -263,9 +313,9 @@ class BulkDownloadListAgenciesViewSet(APIView):
             # Get the sub agencies and federal accounts associated with that top tier agency
             response_data['sub_agencies'] = Agency.objects.filter(toptier_agency_id=agency_id)\
                 .values(subtier_agency_name=F('subtier_agency__name'),
-                        subtier_agency_id=F('subtier_agency__subtier_agency_id'),
                         subtier_agency_code=F('subtier_agency__subtier_code'))\
-                .order_by('subtier_agency_name')
+                .order_by('subtier_agency_name')\
+                .distinct('subtier_agency_name')
             # Tried converting this to queryset filtering but ran into issues trying to
             # double check the right used subtier_agency by cross checking the cgac_code
             # see the last 2 lines of the list comprehension below
@@ -273,6 +323,8 @@ class BulkDownloadListAgenciesViewSet(APIView):
                                              if subagency['subtier_agency_code'] in self.sub_agencies_map and
                                              self.sub_agencies_map[subagency['subtier_agency_code']] ==
                                              top_tier_agency['cgac_code']]
+            for subagency in response_data['sub_agencies']:
+                del subagency['subtier_agency_code']
 
             response_data['federal_accounts'] = FederalAccount.objects\
                 .filter(agency_identifier=top_tier_agency['cgac_code'])\
@@ -281,9 +333,86 @@ class BulkDownloadListAgenciesViewSet(APIView):
         return Response(response_data)
 
 
+class ListMonthylDownloadsViewset(APIView):
+
+    s3_handler = S3Handler(name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
+
+    @cache_response()
+    def post(self, request):
+        """Return list of downloads that match the requested params"""
+        response_data = {}
+
+        post_data = request.data
+        agency_id = post_data.get('agency', None)
+        fiscal_year = post_data.get('fiscal_year', None)
+        download_type = post_data.get('type', None)
+
+        required_params = {'agency':agency_id, 'fiscal_year': fiscal_year, 'type': download_type}
+        for required_param, param_value in required_params.items():
+            if param_value is None:
+                raise InvalidParameterException('Required param not provided: {}'.format(required_param))
+
+        # Populate regex
+        fiscal_year_regex = str(fiscal_year) if fiscal_year else '\d{4}'
+        download_type_regex = download_type.capitalize() if download_type else '(Contracts|Assistance)'
+
+        cgac_regex = '.*'
+        if agency_id and agency_id == 'all':
+            cgac_regex = 'all'
+        elif agency_id:
+            cgac_codes = ToptierAgency.objects.filter(toptier_agency_id=agency_id).values('cgac_code')
+            if cgac_codes:
+                cgac_regex = cgac_codes[0]['cgac_code']
+            else:
+                raise InvalidParameterException('{} agency not found'.format(agency_id))
+        monthly_dl_regex = '{}_{}_{}_Full_.*\.zip'.format(fiscal_year_regex, cgac_regex, download_type_regex)
+
+        # Generate regex possible prefix
+        prefixes = []
+        for regex, add_regex in [(fiscal_year_regex, fiscal_year), (cgac_regex, agency_id),
+                                 (download_type_regex, download_type)]:
+            if not add_regex:
+                break
+            prefixes.append(regex)
+        prefix = '_'.join(prefixes)
+
+        # Get and filter the files we need
+        bucket_name = self.s3_handler.bucketRoute
+        region_name = S3Handler.REGION
+        bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
+        monthly_dls_names = list(filter(re.compile(monthly_dl_regex).search,
+                                        [key.name for key in bucket.list(prefix=prefix)]))
+        # Generate response
+        downloads = []
+        for name in monthly_dls_names:
+            name_data = re.findall('(.*)_(.*)_(.*)_Full_(.*)\.zip', name)[0]
+            agency_name = None
+            agency_abbr = None
+            agency_cgac = name_data[1]
+            if agency_cgac != 'all':
+                agency = ToptierAgency.objects.filter(cgac_code=agency_cgac).values('name', 'abbreviation')
+                if agency:
+                    agency_name = agency[0]['name']
+                    agency_abbr = agency[0]['abbreviation']
+            else:
+                agency_name = 'All'
+            # Simply adds dashes for the date, 20180101 -> 2018-01-01, could also use strftime
+            updated_date = '-'.join([name_data[3][:4], name_data[3][4:6], name_data[3][6:]])
+            downloads.append({'fiscal_year': name_data[0],
+                              'agency_name': agency_name,
+                              'agency_acronym': agency_abbr,
+                              'type': name_data[2].lower(),
+                              'updated_date': updated_date,
+                              'file_name': name,
+                              'url': self.s3_handler.get_simple_url(file_name=name)})
+        response_data['monthly_files'] = downloads
+        return Response(response_data)
+
+
 class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
     """Generate bulk download for awards"""
 
+    # TODO: Merge into award and transaction filters
     def process_filters(self, filters, award_level):
         """Filter function for Bulk Download Award Generation"""
 
@@ -340,7 +469,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         if filters['agency'] != 'all':
             agencies_queryset = Q(awarding_agency__toptier_agency_id=filters['agency'])
             if 'sub_agency' in filters and filters['sub_agency']:
-                agencies_queryset &= Q(awarding_agency__subtier_agency_id=filters['sub_agency'])
+                agencies_queryset &= Q(awarding_agency__subtier_agency__name=filters['sub_agency'])
             queryset &= table.objects.filter(agencies_queryset)
 
         return queryset
@@ -354,7 +483,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         # file_format = json_request['file_format']
 
         csv_sources = []
-        self.DOWNLOAD_NAME = "_".join(value_mappings[award_level]['download_name']
+        self.DOWNLOAD_NAME = '_'.join(value_mappings[award_level]['download_name']
                                       for award_level in award_levels)
         try:
             for award_level in award_levels:
