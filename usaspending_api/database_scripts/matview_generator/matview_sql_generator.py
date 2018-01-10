@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import glob
 from uuid import uuid4
 
 '''
@@ -176,7 +177,7 @@ def create_sql_strings(sql_json):
     final_sql_strings.append(TEMPLATE['rename_matview'].format('', matview_temp_name, matview_name))
     final_sql_strings += rename_new_indexes
     final_sql_strings.append('')
-    final_sql_strings.append(TEMPLATE['grant_select'].format('readonly', matview_name))
+    final_sql_strings.append(TEMPLATE['grant_select'].format(matview_name, 'readonly'))
     final_sql_strings.append('')
     return final_sql_strings
 
@@ -212,4 +213,8 @@ if __name__ == '__main__':
         print('Creating matview SQL using {}'.format(sys.argv[1]))
         main(sys.argv[1])
     else:
-        print('I need a json file with sql info')
+        ans = input('Would you like to run on all json files in dir? (y/N): ')
+        if ans.lower() in ['y', 'yes']:
+            all_files = glob.glob('*.json')
+            for f in all_files:
+                main(f)
