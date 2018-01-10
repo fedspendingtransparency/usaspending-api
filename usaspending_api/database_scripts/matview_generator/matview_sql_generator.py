@@ -1,7 +1,7 @@
+import glob
 import json
 import os
 import sys
-import glob
 from uuid import uuid4
 
 '''
@@ -217,4 +217,8 @@ if __name__ == '__main__':
         if ans.lower() in ['y', 'yes']:
             all_files = glob.glob('*.json')
             for f in all_files:
+                RANDOM_CHARS = str(uuid4())[:8]
+                print('\n==== {}'.format(f))
                 main(f)
+        else:
+            print('Quitting....\n')
