@@ -13,7 +13,7 @@ class Command(BaseCommand):
     @staticmethod
     def get_broker_data(fiscal_year, fy_start, fy_end):
         sql_statment = f"""
-        CREATE  TABlE fpds_agencies_to_update_{fiscal_year} AS
+        CREATE TEMPORARY TABlE fpds_agencies_to_update_{fiscal_year} AS
         SELECT * FROM dblink('broker_server',
         '
         SELECT
