@@ -8,8 +8,7 @@ from usaspending_api.awards.models_matviews import SummaryView
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation, can_use_total_obligation_enum
-from usaspending_api.awards.v2.filters.matview_award import award_filter
-from usaspending_api.awards.v2.filters.matview_transaction import transaction_filter
+from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.common.exceptions import InvalidParameterException
 import logging
 
@@ -21,35 +20,30 @@ MATVIEW_SELECTOR = {
         'prevent_values': {},  # Example: 'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}
         'examine_values': {},
         'model': SummaryView,
-        'base_model': 'transaction',
     },
     'SummaryAwardView': {
         'allowed_filters': ['time_period', 'award_type_codes', 'agencies'],
         'prevent_values': {},
         'examine_values': {},
         'model': SummaryAwardView,
-        'base_model': 'award',
     },
     'SummaryPscCodesView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
         'examine_values': {},
         'model': SummaryPscCodesView,
-        'base_model': 'transaction',
     },
     'SummaryCfdaNumbersView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
         'examine_values': {},
         'model': SummaryCfdaNumbersView,
-        'base_model': 'transaction',
     },
     'SummaryNaicsCodesView': {
         'allowed_filters': ['time_period', 'award_type_codes'],
         'prevent_values': {},
         'examine_values': {},
         'model': SummaryNaicsCodesView,
-        'base_model': 'transaction',
     },
     'SummaryTransactionView': {
         'allowed_filters': [
@@ -69,7 +63,6 @@ MATVIEW_SELECTOR = {
         'prevent_values': {},
         'examine_values': {},
         'model': SummaryTransactionView,
-        'base_model': 'transaction',
     },
     'SummaryTransactionMonthView': {
         'allowed_filters': [
@@ -92,7 +85,6 @@ MATVIEW_SELECTOR = {
             'time_period': can_use_month_aggregation,
             'award_amounts': can_use_total_obligation_enum},
         'model': SummaryTransactionMonthView,
-        'base_model': 'transaction',
     },
     'UniversalTransactionView': {
         'allowed_filters': [
@@ -118,7 +110,6 @@ MATVIEW_SELECTOR = {
         'prevent_values': {},
         'examine_values': {},
         'model': UniversalTransactionView,
-        'base_model': 'transaction',
     },
     'UniversalAwardView': {
         'allowed_filters': [
@@ -144,7 +135,6 @@ MATVIEW_SELECTOR = {
         'prevent_values': {},
         'examine_values': {},
         'model': UniversalAwardView,
-        'base_model': 'award',
     }
 }
 
@@ -155,12 +145,7 @@ def get_view_queryset(filters, view_name):
     except Exception:
         raise InvalidParameterException('Invalid view: ' + view_name + ' does not exist.')
 
-    if MATVIEW_SELECTOR[view_name]['base_model'] == 'award':
-        queryset = award_filter(filters, view_model)
-    else:
-        queryset = transaction_filter(filters, view_model)
-
-    return queryset
+    return matview_search_filter(filters, view_model)
 
 
 def can_use_view(filters, view_name):
@@ -203,8 +188,8 @@ def spending_over_time(filters):
     view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
     for view in view_chain:
         if can_use_view(filters, view):
-                queryset = get_view_queryset(filters, view)
-                break
+            queryset = get_view_queryset(filters, view)
+            break
     else:
         raise InvalidParameterException
 
@@ -216,9 +201,9 @@ def spending_by_geography(filters):
     model = None
     for view in view_chain:
         if can_use_view(filters, view):
-                queryset = get_view_queryset(filters, view)
-                model = view
-                break
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
     else:
         raise InvalidParameterException
 
@@ -230,9 +215,37 @@ def spending_by_award_count(filters):
     model = None
     for view in view_chain:
         if can_use_view(filters, view):
-                queryset = get_view_queryset(filters, view)
-                model = view
-                break
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
+    else:
+        raise InvalidParameterException
+
+    return queryset, model
+
+
+def download_transaction_count(filters):
+    view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
+    model = None
+    for view in view_chain:
+        if can_use_view(filters, view):
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
+    else:
+        raise InvalidParameterException
+
+    return queryset, model
+
+
+def transaction_spending_summary(filters):
+    view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
+    model = None
+    for view in view_chain:
+        if can_use_view(filters, view):
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
     else:
         raise InvalidParameterException
 
