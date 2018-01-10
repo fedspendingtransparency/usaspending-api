@@ -188,8 +188,8 @@ def spending_over_time(filters):
     view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
     for view in view_chain:
         if can_use_view(filters, view):
-                queryset = get_view_queryset(filters, view)
-                break
+            queryset = get_view_queryset(filters, view)
+            break
     else:
         raise InvalidParameterException
 
@@ -201,9 +201,9 @@ def spending_by_geography(filters):
     model = None
     for view in view_chain:
         if can_use_view(filters, view):
-                queryset = get_view_queryset(filters, view)
-                model = view
-                break
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
     else:
         raise InvalidParameterException
 
@@ -215,9 +215,9 @@ def spending_by_award_count(filters):
     model = None
     for view in view_chain:
         if can_use_view(filters, view):
-                queryset = get_view_queryset(filters, view)
-                model = view
-                break
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
     else:
         raise InvalidParameterException
 
@@ -229,9 +229,23 @@ def download_transaction_count(filters):
     model = None
     for view in view_chain:
         if can_use_view(filters, view):
-                queryset = get_view_queryset(filters, view)
-                model = view
-                break
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
+    else:
+        raise InvalidParameterException
+
+    return queryset, model
+
+
+def transaction_spending_summary(filters):
+    view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
+    model = None
+    for view in view_chain:
+        if can_use_view(filters, view):
+            queryset = get_view_queryset(filters, view)
+            model = view
+            break
     else:
         raise InvalidParameterException
 
