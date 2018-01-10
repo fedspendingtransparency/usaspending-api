@@ -15,20 +15,15 @@ SELECT
   "awards"."type",
   "transaction_fpds"."pulled_from",
   "awards"."category",
-  -- Duplicated the next lines 12/5/2017 Remove Jan 1, 2018
-  AT.toptier_agency_id AS awarding_agency_id,
-  AT.name AS awarding_agency_name,
-  AT.abbreviation AS awarding_agency_abbr,
-  FT.toptier_agency_id AS funding_agency_id,
-  FT.name AS funding_agency_name,
-  FT.abbreviation AS funding_agency_abbr,
-  -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  AT.toptier_agency_id AS awarding_toptier_agency_id,
-  AT.name AS awarding_toptier_agency_name,
-  AT.abbreviation AS awarding_toptier_agency_abbreviation,
-  FT.toptier_agency_id AS funding_toptier_agency_id,
-  FT.name AS funding_toptier_agency_name,
-  FT.abbreviation AS funding_toptier_agency_abbreviation,
+
+  TAA.name AS awarding_toptier_agency_name,
+  TAA.abbreviation AS awarding_toptier_agency_abbreviation,
+  TFA.name AS funding_toptier_agency_name,
+  TFA.abbreviation AS funding_toptier_agency_abbreviation,
+  SAA.name AS awarding_subtier_agency_name,
+  SAA.abbreviation AS awarding_subtier_agency_abbreviation,
+  SFA.name AS funding_subtier_agency_name,
+  SFA.abbreviation AS funding_subtier_agency_abbreviation,
   SUM("transaction_normalized"."federal_action_obligation") AS "federal_action_obligation",
   COUNT(*) counts
 FROM
@@ -42,9 +37,13 @@ LEFT OUTER JOIN
 LEFT OUTER JOIN
   "agency" AS FA ON ("transaction_normalized"."funding_agency_id" = FA."id")
 LEFT OUTER JOIN
-  "toptier_agency" AS AT ON (AA."toptier_agency_id" = AT."toptier_agency_id")
+  "toptier_agency" AS TAA ON (AA."toptier_agency_id" = TAA."toptier_agency_id")
 LEFT OUTER JOIN
-  "toptier_agency" AS FT ON (FA."toptier_agency_id" = FT."toptier_agency_id")
+  "toptier_agency" AS TFA ON (FA."toptier_agency_id" = TFA."toptier_agency_id")
+LEFT OUTER JOIN
+  "subtier_agency" AS SAA ON (AA."subtier_agency_id" = SAA."subtier_agency_id")
+LEFT OUTER JOIN
+  "subtier_agency" AS SFA ON (FA."subtier_agency_id" = SFA."subtier_agency_id")
 WHERE
   "transaction_normalized".action_date >= '2007-10-01'
 GROUP BY
@@ -53,22 +52,30 @@ GROUP BY
   "awards"."type",
   "transaction_fpds"."pulled_from",
   "awards"."category",
-  AT.toptier_agency_id,
-  AT.name,
-  AT.abbreviation,
-  FT.toptier_agency_id,
-  FT.name,
-  FT.abbreviation;
+  TAA.name,
+  TAA.abbreviation,
+  TFA.name,
+  TFA.abbreviation,
+  SAA.name,
+  SAA.abbreviation,
+  SFA.name,
+  SFA.abbreviation;
 
-CREATE INDEX idx_8d6d41c0__action_date_temp ON summary_award_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_8d6d41c0__type_temp ON summary_award_view_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_a6b04e14__action_date_temp ON summary_award_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_a6b04e14__type_temp ON summary_award_view_temp USING BTREE("type") WITH (fillfactor = 100);
+CREATE INDEX idx_a6b04e14__fy_temp ON summary_award_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_a6b04e14__pulled_from_temp ON summary_award_view_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
 
 VACUUM ANALYZE VERBOSE summary_award_view_temp;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_award_view RENAME TO summary_award_view_old;
-ALTER INDEX IF EXISTS idx_8d6d41c0__action_date RENAME TO idx_8d6d41c0__action_date_old;
-ALTER INDEX IF EXISTS idx_8d6d41c0__type RENAME TO idx_8d6d41c0__type_old;
+ALTER INDEX IF EXISTS idx_a6b04e14__action_date RENAME TO idx_a6b04e14__action_date_old;
+ALTER INDEX IF EXISTS idx_a6b04e14__type RENAME TO idx_a6b04e14__type_old;
+ALTER INDEX IF EXISTS idx_a6b04e14__fy RENAME TO idx_a6b04e14__fy_old;
+ALTER INDEX IF EXISTS idx_a6b04e14__pulled_from RENAME TO idx_a6b04e14__pulled_from_old;
 
 ALTER MATERIALIZED VIEW summary_award_view_temp RENAME TO summary_award_view;
-ALTER INDEX idx_8d6d41c0__action_date_temp RENAME TO idx_8d6d41c0__action_date;
-ALTER INDEX idx_8d6d41c0__type_temp RENAME TO idx_8d6d41c0__type;
+ALTER INDEX idx_a6b04e14__action_date_temp RENAME TO idx_a6b04e14__action_date;
+ALTER INDEX idx_a6b04e14__type_temp RENAME TO idx_a6b04e14__type;
+ALTER INDEX idx_a6b04e14__fy_temp RENAME TO idx_a6b04e14__fy;
+ALTER INDEX idx_a6b04e14__pulled_from_temp RENAME TO idx_a6b04e14__pulled_from;

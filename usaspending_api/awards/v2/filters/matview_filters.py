@@ -1,18 +1,17 @@
 import logging
 from django.db.models import Q
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.references.models import PSC
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.models import PSC
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
 logger = logging.getLogger(__name__)
 
 
 # TODO: Performance when multiple false values are initially provided
-def award_filter(filters, model):
-
-    queryset = model.objects.filter()
+def matview_search_filter(filters, model):
+    queryset = model.objects.all()
     for key, value in filters.items():
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
@@ -45,7 +44,7 @@ def award_filter(filters, model):
         if key == "keyword":
             keyword = value
 
-            compound_or = Q(recipient_name__icontains=keyword) | \
+            compound_or = Q(recipient_name__contains=keyword.upper()) | \
                 Q(piid=keyword) | \
                 Q(fain=keyword) | \
                 Q(recipient_unique_id=keyword) | \
@@ -80,7 +79,6 @@ def award_filter(filters, model):
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
-            or_queryset = None
             funding_toptier = []
             funding_subtier = []
             awarding_toptier = []
@@ -140,7 +138,7 @@ def award_filter(filters, model):
                 raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
             recipient_string = str(value[0])
 
-            filter_obj = Q(recipient_name__icontains=recipient_string)
+            filter_obj = Q(recipient_name__contains=recipient_string.upper())
 
             if len(recipient_string) == 9:
                 filter_obj |= Q(recipient_unique_id__iexact=recipient_string)
