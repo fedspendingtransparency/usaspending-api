@@ -30,6 +30,8 @@ from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_ma
     non_loan_assistance_award_mapping
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
+from usaspending_api.search.v2 import elasticsearch_helper
+
 
 logger = logging.getLogger(__name__)
 
@@ -728,3 +730,68 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         # build response
         return Response({"results": results})
+
+
+class SpendingByTransactionVisualizationViewSet(APIView):
+
+    @total_ordering
+    class MinType(object):
+        def __le__(self, other):
+            return True
+
+        def __eq__(self, other):
+            return self is other
+    Min = MinType()
+
+    @cache_response()
+    def post(self, request):
+        """Return all budget function/subfunction 
+        titles matching the provided search text"""
+        json_request = request.data
+        fields = json_request.get("fields", None)
+        filters = json_request.get("filters", None)
+        order = json_request.get("order", "asc")
+        limit = json_request.get("limit", 10)
+        page = json_request.get("page", 1)
+        
+        lower_limit = (page - 1) * limit
+        upper_limit = page * limit
+        transaction_types = ["Contracts", "Grants", "Direct Payments", "Loans", "Other"]
+        
+        if fields is None:
+            raise InvalidParameterException("Missing one or more required request parameters: fields")
+        elif len(fields) == 0:
+            raise InvalidParameterException("Please provide a field in the fields request parameter.")
+        if filters is None:
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
+        if "transaction_type" not in filters:
+            raise InvalidParameterException(
+                "Missing one or more required request parameters: filters['transaction_type']")
+            if filters['transaction_type'] not in transaction_types:
+                raise InvalidParameterException(""""Incorrect filter type: please one of the following:
+                                                '%s'"""%(transaction_types,))
+        if order not in ["asc", "desc"]:
+            raise InvalidParameterException("Invalid value for order: {}".format(order))
+        sort = json_request.get("sort", fields[0])
+        if sort not in fields:
+            raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
+        queryset, total = elasticsearch_helper.search_transactions(filters, fields, sort, 
+                                            order, lower_limit, limit)
+        if not queryset:
+            # will make error catching more robust
+            raise InvalidParameterException("Elasticsearch error")
+        has_next = total > upper_limit
+        results = []
+        for transaction in queryset:
+            transaction["internal_id"] = transaction["Award ID"]
+            results.append(transaction)
+        # build response
+        response = {
+            'limit': limit,
+            'results': results,
+            'page_metadata': {
+                'page': page,
+                'hasNext': has_next
+            }
+        }
+        return Response(response)

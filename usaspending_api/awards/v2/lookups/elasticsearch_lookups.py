@@ -1,0 +1,15 @@
+'''docstrings'''
+TRANSACTIONS_LOOKUP = {"Recipient Name": "recipient_name",
+                       "Action Date" : "action_date",
+                       "Transaction Amount": "transaction_amount",
+                       "Contract Award Type": "type_description",
+                       "Awarding Agency": "awarding_toptier_agency_name",
+                       "Awarding Sub Agency": "awarding_subtier_agency_name",
+                       "Funding Agency": "funding_toptier_agency_name",
+                       "Funding Sub Agency": "funding_subtier_agency_name",
+                       "Issued Date": "action_date",
+                       "Loan Value": "face_value_loan_guarantee",
+                       "Subsidy Cost": "original_loan_subsidy_cost",
+                       "Mod" : "modification_number",
+                       "Award ID" :"award_id",
+                       "Award Type": "type_description"}
