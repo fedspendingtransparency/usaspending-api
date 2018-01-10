@@ -339,6 +339,12 @@ SPAGHETTI_SAUCE = {
 # semi-terse labels used in the datastore)
 # TERSE_TO_LONG UNUSED.  IF NEEDED, change LONG_TO_TERSE to a bidict or invert the dict.
 
+# Elasticsearch
+ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
+TRANSACTIONS_INDEX_ROOT = 'transactions'
+
+
+
 LONG_TO_TERSE_LABELS = {
     "allocation_transfer_agency_id": "allocation_transfer_agency_id",
     "agency_id": "responsible_agency_id",
@@ -642,6 +648,3 @@ LONG_TO_TERSE_LABELS = {
     "business_funds_indicator": "business_funds_indicator"
 }
 
-#Elasticsearch
-ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
-TRANSACTIONS_INDEX_ROOT = 'transactions'

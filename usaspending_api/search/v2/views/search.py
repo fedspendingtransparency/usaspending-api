@@ -30,7 +30,7 @@ from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_ma
     non_loan_assistance_award_mapping
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
-from usaspending_api.search.v2 import elasticsearch_helper
+from usaspending_api.search.v2.elasticsearch_helper import search_transactions
 
 
 logger = logging.getLogger(__name__)
@@ -775,7 +775,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         sort = json_request.get("sort", fields[0])
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
-        queryset, total = elasticsearch_helper.search_transactions(filters, fields, sort, 
+        queryset, total = search_transactions(filters, fields, sort, 
                                             order, lower_limit, limit)
         if not queryset:
             # will make error catching more robust
