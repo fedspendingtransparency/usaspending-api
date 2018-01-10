@@ -16,14 +16,19 @@ SELECT
   "transaction_fpds"."pulled_from",
   "awards"."category",
 
-  TAA.name AS awarding_toptier_agency_name,
-  TAA.abbreviation AS awarding_toptier_agency_abbreviation,
-  TFA.name AS funding_toptier_agency_name,
-  TFA.abbreviation AS funding_toptier_agency_abbreviation,
-  SAA.name AS awarding_subtier_agency_name,
-  SAA.abbreviation AS awarding_subtier_agency_abbreviation,
-  SFA.name AS funding_subtier_agency_name,
-  SFA.abbreviation AS funding_subtier_agency_abbreviation,
+  TAA."toptier_agency_id" AS awarding_toptier_agency_id,
+  TFA."toptier_agency_id" AS funding_toptier_agency_id,
+  SAA."subtier_agency_id" AS awarding_subtier_agency_id,
+  SFA."subtier_agency_id" AS funding_subtier_agency_id,
+  TAA."name" AS awarding_toptier_agency_name,
+  TFA."name" AS funding_toptier_agency_name,
+  SAA."name" AS awarding_subtier_agency_name,
+  SFA."name" AS funding_subtier_agency_name,
+  TAA."abbreviation" AS awarding_toptier_agency_abbreviation,
+  TFA."abbreviation" AS funding_toptier_agency_abbreviation,
+  SAA."abbreviation" AS awarding_subtier_agency_abbreviation,
+  SFA."abbreviation" AS funding_subtier_agency_abbreviation,
+
   SUM("transaction_normalized"."federal_action_obligation") AS "federal_action_obligation",
   COUNT(*) counts
 FROM
@@ -52,32 +57,36 @@ GROUP BY
   "awards"."type",
   "transaction_fpds"."pulled_from",
   "awards"."category",
-  TAA.name,
-  TAA.abbreviation,
-  TFA.name,
-  TFA.abbreviation,
-  SAA.name,
-  SAA.abbreviation,
-  SFA.name,
-  SFA.abbreviation;
+  TAA."toptier_agency_id",
+  TFA."toptier_agency_id",
+  SAA."subtier_agency_id",
+  SFA."subtier_agency_id",
+  TAA."name",
+  TFA."name",
+  SAA."name",
+  SFA."name",
+  TAA."abbreviation",
+  TFA."abbreviation",
+  SAA."abbreviation",
+  SFA."abbreviation";
 
-CREATE INDEX idx_53f8ada3__action_date_temp ON summary_award_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_53f8ada3__type_temp ON summary_award_view_temp USING BTREE("type") WITH (fillfactor = 100);
-CREATE INDEX idx_53f8ada3__fy_temp ON summary_award_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_53f8ada3__pulled_from_temp ON summary_award_view_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
+CREATE INDEX idx_d2277931__action_date_temp ON summary_award_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_d2277931__type_temp ON summary_award_view_temp USING BTREE("type") WITH (fillfactor = 100);
+CREATE INDEX idx_d2277931__fy_temp ON summary_award_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_d2277931__pulled_from_temp ON summary_award_view_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
 
 ANALYZE VERBOSE summary_award_view_temp;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_award_view RENAME TO summary_award_view_old;
-ALTER INDEX IF EXISTS idx_53f8ada3__action_date RENAME TO idx_53f8ada3__action_date_old;
-ALTER INDEX IF EXISTS idx_53f8ada3__type RENAME TO idx_53f8ada3__type_old;
-ALTER INDEX IF EXISTS idx_53f8ada3__fy RENAME TO idx_53f8ada3__fy_old;
-ALTER INDEX IF EXISTS idx_53f8ada3__pulled_from RENAME TO idx_53f8ada3__pulled_from_old;
+ALTER INDEX IF EXISTS idx_d2277931__action_date RENAME TO idx_d2277931__action_date_old;
+ALTER INDEX IF EXISTS idx_d2277931__type RENAME TO idx_d2277931__type_old;
+ALTER INDEX IF EXISTS idx_d2277931__fy RENAME TO idx_d2277931__fy_old;
+ALTER INDEX IF EXISTS idx_d2277931__pulled_from RENAME TO idx_d2277931__pulled_from_old;
 
 ALTER MATERIALIZED VIEW summary_award_view_temp RENAME TO summary_award_view;
-ALTER INDEX idx_53f8ada3__action_date_temp RENAME TO idx_53f8ada3__action_date;
-ALTER INDEX idx_53f8ada3__type_temp RENAME TO idx_53f8ada3__type;
-ALTER INDEX idx_53f8ada3__fy_temp RENAME TO idx_53f8ada3__fy;
-ALTER INDEX idx_53f8ada3__pulled_from_temp RENAME TO idx_53f8ada3__pulled_from;
+ALTER INDEX idx_d2277931__action_date_temp RENAME TO idx_d2277931__action_date;
+ALTER INDEX idx_d2277931__type_temp RENAME TO idx_d2277931__type;
+ALTER INDEX idx_d2277931__fy_temp RENAME TO idx_d2277931__fy;
+ALTER INDEX idx_d2277931__pulled_from_temp RENAME TO idx_d2277931__pulled_from;
 
 GRANT SELECT ON summary_award_view TO readonly;

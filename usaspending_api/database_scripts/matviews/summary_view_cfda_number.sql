@@ -34,17 +34,17 @@ GROUP BY
   "transaction_fabs"."cfda_number",
   "transaction_fabs"."cfda_title";
 
-CREATE INDEX idx_b7aea4e0__action_date_temp ON summary_view_cfda_number_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_b7aea4e0__type_temp ON summary_view_cfda_number_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_a3e7c4bb__action_date_temp ON summary_view_cfda_number_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_a3e7c4bb__type_temp ON summary_view_cfda_number_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
 
 ANALYZE VERBOSE summary_view_cfda_number_temp;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_cfda_number RENAME TO summary_view_cfda_number_old;
-ALTER INDEX IF EXISTS idx_b7aea4e0__action_date RENAME TO idx_b7aea4e0__action_date_old;
-ALTER INDEX IF EXISTS idx_b7aea4e0__type RENAME TO idx_b7aea4e0__type_old;
+ALTER INDEX IF EXISTS idx_a3e7c4bb__action_date RENAME TO idx_a3e7c4bb__action_date_old;
+ALTER INDEX IF EXISTS idx_a3e7c4bb__type RENAME TO idx_a3e7c4bb__type_old;
 
 ALTER MATERIALIZED VIEW summary_view_cfda_number_temp RENAME TO summary_view_cfda_number;
-ALTER INDEX idx_b7aea4e0__action_date_temp RENAME TO idx_b7aea4e0__action_date;
-ALTER INDEX idx_b7aea4e0__type_temp RENAME TO idx_b7aea4e0__type;
+ALTER INDEX idx_a3e7c4bb__action_date_temp RENAME TO idx_a3e7c4bb__action_date;
+ALTER INDEX idx_a3e7c4bb__type_temp RENAME TO idx_a3e7c4bb__type;
 
 GRANT SELECT ON summary_view_cfda_number TO readonly;

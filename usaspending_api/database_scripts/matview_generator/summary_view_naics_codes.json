@@ -6,7 +6,6 @@
     "  \"transaction_normalized\".\"fiscal_year\",",
     "  \"transaction_normalized\".\"type\",",
     "  \"transaction_fpds\".\"pulled_from\",",
-    "  \"transaction_fpds\".\"naics\",  -- DUPLICATED 12/4. REMOVE BY JAN 1, 2018",
     "  \"transaction_fpds\".\"naics\" AS naics_code,",
     "  \"transaction_fpds\".\"naics_description\",",
     "  SUM(\"transaction_normalized\".\"federal_action_obligation\") AS \"federal_action_obligation\",",
