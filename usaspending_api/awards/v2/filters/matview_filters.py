@@ -3,7 +3,7 @@ from django.db.models import Q
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import PSC
+from usaspending_api.references.models import Agency, PSC
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
 logger = logging.getLogger(__name__)
@@ -99,29 +99,49 @@ def matview_search_filter(filters, model):
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
 
-            if funding_toptier:
-                or_queryset = Q()
-                for name in funding_toptier:
-                    or_queryset |= Q(funding_toptier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
+            # if funding_toptier:
+            #     or_queryset = Q()
+            #     for name in funding_toptier:
+            #         or_queryset |= Q(funding_toptier_agency__icontains=name)
+            #     queryset = queryset.filter(or_queryset)
 
-            if funding_subtier:
-                or_queryset = Q()
-                for name in funding_subtier:
-                    or_queryset |= Q(funding_subtier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
+            # if funding_subtier:
+            #     or_queryset = Q()
+            #     for name in funding_subtier:
+            #         or_queryset |= Q(funding_subtier_agency_name__icontains=name)
+            #     queryset = queryset.filter(or_queryset)
 
-            if awarding_toptier:
-                or_queryset = Q()
-                for name in awarding_toptier:
-                    or_queryset |= Q(awarding_toptier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
+            # if awarding_toptier:
+            #     or_queryset = Q()
+            #     for name in awarding_toptier:
+            #         or_queryset |= Q(awarding_toptier_agency_name__icontains=name)
+            #     queryset = queryset.filter(or_queryset)
 
-            if awarding_subtier:
-                or_queryset = Q()
-                for name in awarding_subtier:
-                    or_queryset |= Q(awarding_subtier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
+            # if awarding_subtier:
+            #     or_queryset = Q()
+            #     for name in awarding_subtier:
+            #         or_queryset |= Q(awarding_subtier_agency_name__icontains=name)
+            #     queryset = queryset.filter(or_queryset)
+
+            funding_queryfilter = Q()
+            awarding_queryfilter = Q()
+            for name in funding_toptier:
+                funding_queryfilter |= Q(toptier_agency_id__name=name)
+            for name in funding_subtier:
+                funding_queryfilter |= Q(subtier_agency_id__name=name)
+            for name in awarding_toptier:
+                awarding_queryfilter |= Q(toptier_agency_id__name=name)
+            for name in awarding_subtier:
+                awarding_queryfilter |= Q(subtier_agency_id__name=name)
+
+            if funding_queryfilter:
+                funding_id_list = Agency.objects.filter(funding_queryfilter).values_list('id', flat=True)
+                if funding_id_list:
+                    queryset = queryset.filter(funding_agency_id__in=funding_id_list)
+            if awarding_queryfilter:
+                awarding_id_list = Agency.objects.filter(awarding_queryfilter).values_list('id', flat=True)
+                if awarding_id_list:
+                    queryset = queryset.filter(awarding_agency_id__in=awarding_id_list)
 
         elif key == "legal_entities":
             in_query = [v for v in value]

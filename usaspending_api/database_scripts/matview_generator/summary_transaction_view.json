@@ -22,10 +22,8 @@
     "  place_of_performance.\"congressional_code\" AS \"pop_congressional_code\",",
     "  place_of_performance.\"zip5\" AS \"pop_zip5\",",
     "",
-    "  TAA.\"toptier_agency_id\" AS awarding_toptier_agency_id,",
-    "  TFA.\"toptier_agency_id\" AS funding_toptier_agency_id,",
-    "  SAA.\"subtier_agency_id\" AS awarding_subtier_agency_id,",
-    "  SFA.\"subtier_agency_id\" AS funding_subtier_agency_id,",
+    "  \"transaction_normalized\".\"awarding_agency_id\",",
+    "  \"transaction_normalized\".\"funding_agency_id\",",
     "  TAA.\"name\" AS awarding_toptier_agency_name,",
     "  TFA.\"name\" AS funding_toptier_agency_name,",
     "  SAA.\"name\" AS awarding_subtier_agency_name,",
@@ -104,10 +102,8 @@
     "  place_of_performance.\"congressional_code\",",
     "  place_of_performance.\"zip5\",",
     "",
-    "  TAA.\"toptier_agency_id\",",
-    "  TFA.\"toptier_agency_id\",",
-    "  SAA.\"subtier_agency_id\",",
-    "  SFA.\"subtier_agency_id\",",
+    "  \"transaction_normalized\".\"awarding_agency_id\",",
+    "  \"transaction_normalized\".\"funding_agency_id\",",
     "  TAA.\"name\",",
     "  TFA.\"name\",",
     "  SAA.\"name\",",
@@ -176,8 +172,11 @@
         "name": "pop_zip",
         "columns": [{"name": "\"pop_zip5\""}]
     }, {
-        "name": "award_agency_name",
-        "columns": [{"name": "\"awarding_toptier_agency_name\""}]
+      "name": "awarding_agency_id",
+      "columns": [{"name": "\"awarding_agency_id\"", "order": "ASC NULLS LAST"}]
+    }, {
+      "name": "funding_agency_id",
+      "columns": [{"name": "\"funding_agency_id\"", "order": "ASC NULLS LAST"}]
     }, {
         "name": "cfda_num",
         "where": "\"cfda_number\" IS NOT NULL",

@@ -56,10 +56,8 @@
     "  \"legal_entity\".\"parent_recipient_unique_id\",",
     "  \"legal_entity\".\"business_categories\",",
     "",
-    "  TAA.\"toptier_agency_id\" AS awarding_toptier_agency_id,",
-    "  TFA.\"toptier_agency_id\" AS funding_toptier_agency_id,",
-    "  SAA.\"subtier_agency_id\" AS awarding_subtier_agency_id,",
-    "  SFA.\"subtier_agency_id\" AS funding_subtier_agency_id,",
+    "  \"transaction_normalized\".\"awarding_agency_id\",",
+    "  \"transaction_normalized\".\"funding_agency_id\",",
     "  TAA.\"name\" AS awarding_toptier_agency_name,",
     "  TFA.\"name\" AS funding_toptier_agency_name,",
     "  SAA.\"name\" AS awarding_subtier_agency_name,",
@@ -192,37 +190,11 @@
       "where": "\"parent_recipient_unique_id\" IS NOT NULL",
       "columns": [{"name": "\"parent_recipient_unique_id\""}]
     }, {
-      "name": "awarding_toptier_agency_name",
-      "where": "awarding_toptier_agency_name IS NOT NULL",
-      "columns": [{"name": "\"awarding_toptier_agency_name\"", "order": "DESC NULLS LAST"}]
+      "name": "awarding_agency_id",
+      "columns": [{"name": "\"awarding_agency_id\"", "order": "ASC NULLS LAST"}]
     }, {
-      "name": "awarding_subtier_agency_name",
-      "where": "awarding_subtier_agency_name IS NOT NULL",
-      "columns": [{"name": "\"awarding_subtier_agency_name\"", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "funding_toptier_agency_name",
-      "where": "funding_toptier_agency_name IS NOT NULL",
-      "columns": [{"name": "\"funding_toptier_agency_name\"", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "funding_subtier_agency_name",
-      "where": "funding_subtier_agency_name IS NOT NULL",
-      "columns": [{"name": "\"funding_subtier_agency_name\"", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "gin_awarding_toptier_agency_name",
-      "method": "GIN",
-      "columns": [{"name": "\"awarding_toptier_agency_name\"", "opclass": "gin_trgm_ops"}]
-    }, {
-      "name": "gin_awarding_subtier_agency_name",
-      "method": "GIN",
-      "columns": [{"name": "\"awarding_subtier_agency_name\"", "opclass": "gin_trgm_ops"}]
-    }, {
-      "name": "gin_funding_toptier_agency_name",
-      "method": "GIN",
-      "columns": [{"name": "\"funding_toptier_agency_name\"", "opclass": "gin_trgm_ops"}]
-    }, {
-      "name": "gin_funding_subtier_agency_name",
-      "method": "GIN",
-      "columns": [{"name": "\"funding_subtier_agency_name\"", "opclass": "gin_trgm_ops"}]
+      "name": "funding_agency_id",
+      "columns": [{"name": "\"funding_agency_id\"", "order": "ASC NULLS LAST"}]
     }, {
       "name": "recipient_location_country_code",
       "where": "\"recipient_location_country_code\" IS NOT NULL",
