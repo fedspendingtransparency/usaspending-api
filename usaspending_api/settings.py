@@ -88,7 +88,7 @@ DEBUG_TOOLBAR_CONFIG = {
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-
+    'usaspending_api.common.logging.LoggingMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -198,79 +198,49 @@ STATICFILES_DIRS = (
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': True,
     'formatters': {
-        'specifics': {
-            '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
-            'format': "%(asctime)s %(filename)s %(funcName)s %(levelname)s %(lineno)s %(module)s %(message)s %(name)s %(pathname)s"
-        },
-        'json': {
-            '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
-        },
         'simpletime': {
-            'format': "%(asctime)s - %(message)s",
+            'format': "%(asctime)s - %(module)s.%(name)s - %(levelname)s - %(message)s",
             'datefmt': "%H:%M:%S"
+        },
+        'user_readable': {
+            'format': "[%(asctime)s] [%(levelname)s] [%(method)s] [%(path)s] [%(status_code)s] [%(request_obj)s] " +
+                      "[%(user)s] [%(message)s] [%(remote_addr)s] [%(host)s] [%(response_ms)d]",
+        'datefmt': "%d/%m/%y %H:%M:%S"
         }
     },
     'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/debug.log'),
-            'maxBytes': 1024*1024*2,  # 2 MB
-            'backupCount': 5
-        },
-        'console_file': {
+        'server': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
+            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/server.log'),
             'maxBytes': 1024*1024*2,  # 2 MB
             'backupCount': 5,
-            'formatter': 'specifics'
+            'formatter': 'user_readable'
         },
-        'events_file': {
+        'server_console':{
             'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/events.log'),
-            'maxBytes': 1024*1024*2,  # 2 MB
-            'backupCount': 5,
-            'formatter': 'json'
-        },
-        'exceptions_file': {
-            'level': 'ERROR',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/exceptions.log'),
-            'maxBytes': 1024*1024*2,  # 2 MB
-            'backupCount': 5,
-            'formatter': 'specifics'
+            'class': 'logging.StreamHandler',
+            'formatter': 'user_readable'
         },
         'console': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'simpletime'
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
+        'server': {
+            'handlers': ['server', 'server_console'],
+            'level': 'INFO',
             'propagate': True,
         },
         'console': {
-            'handlers': ['console', 'console_file'],
-            'level': 'INFO',
+            'handlers': ['console'],
+            'level': 'DEBUG',
             'propagate': True,
-        },
-        'events': {
-            'handlers': ['events_file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'exceptions': {
-            'handlers': ['exceptions_file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
+        }
     },
 }
 
