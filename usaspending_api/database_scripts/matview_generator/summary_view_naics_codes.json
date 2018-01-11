@@ -28,7 +28,7 @@
     {
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
-    },{
+    }, {
       "name": "type",
       "columns": [
         {"name": "\"action_date\"", "order": "DESC NULLS LAST"},

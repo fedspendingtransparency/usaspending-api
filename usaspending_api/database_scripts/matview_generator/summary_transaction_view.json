@@ -149,33 +149,43 @@
         "columns": [{"name": "\"pulled_from\"", "order": "DESC NULLS LAST"}]
     }, {
         "name": "recipient_country_code",
+        "where": "\"recipient_location_country_code\" IS NOT NULL",
         "columns": [{"name": "\"recipient_location_country_code\""}]
     }, {
         "name": "recipient_state_code",
+        "where": "\"recipient_location_state_code\" IS NOT NULL",
         "columns": [{"name": "\"recipient_location_state_code\""}]
     }, {
         "name": "recipient_county_code",
+        "where": "\"recipient_county_code\" IS NOT NULL",
         "columns": [{"name": "\"recipient_location_county_code\""}]
     }, {
         "name": "recipient_zip",
+        "where": "\"recipient_location_zip5\" IS NOT NULL",
         "columns": [{"name": "\"recipient_location_zip5\""}]
     }, {
         "name": "pop_country_code",
+        "where": "\"pop_country_code\" IS NOT NULL",
         "columns": [{"name": "\"pop_country_code\""}]
     }, {
         "name": "pop_state_code",
+        "where": "\"pop_state_code\" IS NOT NULL",
         "columns": [{"name": "\"pop_state_code\""}]
     }, {
         "name": "pop_county_code",
+        "where": "\"pop_county_code\" IS NOT NULL",
         "columns": [{"name": "\"pop_county_code\""}]
     }, {
         "name": "pop_zip",
+        "where": "\"pop_zip5\" IS NOT NULL",
         "columns": [{"name": "\"pop_zip5\""}]
     }, {
       "name": "awarding_agency_id",
+      "where": "\"awarding_agency_id\" IS NOT NULL",
       "columns": [{"name": "\"awarding_agency_id\"", "order": "ASC NULLS LAST"}]
     }, {
       "name": "funding_agency_id",
+      "where": "\"funding_agency_id\" IS NOT NULL",
       "columns": [{"name": "\"funding_agency_id\"", "order": "ASC NULLS LAST"}]
     }, {
         "name": "cfda_num",

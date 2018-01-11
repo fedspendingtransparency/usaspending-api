@@ -74,72 +74,52 @@ def matview_search_filter(filters, model):
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
-            funding_toptier = []
-            funding_subtier = []
-            awarding_toptier = []
-            awarding_subtier = []
+            funding_toptier = Q()
+            funding_subtier = Q()
+            awarding_toptier = Q()
+            awarding_subtier = Q()
             for v in value:
                 type = v["type"]
                 tier = v["tier"]
                 name = v["name"]
                 if type == "funding":
                     if tier == "toptier":
-                        funding_toptier.append(name)
+                        funding_toptier |= Q(toptier_agency_id__name=name)
                     elif tier == "subtier":
-                        funding_subtier.append(name)
+                        funding_subtier |= Q(subtier_agency_id__name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
-                        awarding_toptier.append(name)
+                        awarding_toptier |= Q(toptier_agency_id__name=name)
                     elif tier == "subtier":
-                        awarding_subtier.append(name)
+                        awarding_subtier |= Q(subtier_agency_id__name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
 
-            # if funding_toptier:
-            #     or_queryset = Q()
-            #     for name in funding_toptier:
-            #         or_queryset |= Q(funding_toptier_agency__icontains=name)
-            #     queryset = queryset.filter(or_queryset)
-
-            # if funding_subtier:
-            #     or_queryset = Q()
-            #     for name in funding_subtier:
-            #         or_queryset |= Q(funding_subtier_agency_name__icontains=name)
-            #     queryset = queryset.filter(or_queryset)
-
-            # if awarding_toptier:
-            #     or_queryset = Q()
-            #     for name in awarding_toptier:
-            #         or_queryset |= Q(awarding_toptier_agency_name__icontains=name)
-            #     queryset = queryset.filter(or_queryset)
-
-            # if awarding_subtier:
-            #     or_queryset = Q()
-            #     for name in awarding_subtier:
-            #         or_queryset |= Q(awarding_subtier_agency_name__icontains=name)
-            #     queryset = queryset.filter(or_queryset)
-
             funding_queryfilter = Q()
             awarding_queryfilter = Q()
-            for name in funding_toptier:
-                funding_queryfilter |= Q(toptier_agency_id__name=name)
-            for name in funding_subtier:
-                funding_queryfilter |= Q(subtier_agency_id__name=name)
-            for name in awarding_toptier:
-                awarding_queryfilter |= Q(toptier_agency_id__name=name)
-            for name in awarding_subtier:
-                awarding_queryfilter |= Q(subtier_agency_id__name=name)
+
+            # Since these are Q filters, no DB hits for boolean checks
+            if funding_toptier:
+                funding_queryfilter |= funding_toptier
+            if funding_subtier:
+                funding_queryfilter |= funding_subtier
+            if awarding_toptier:
+                awarding_queryfilter |= awarding_toptier
+            if awarding_subtier:
+                awarding_queryfilter |= awarding_subtier
 
             if funding_queryfilter:
                 funding_id_list = Agency.objects.filter(funding_queryfilter).values_list('id', flat=True)
+                # Expectated this to query the DB, instead it is lazy and waits to evaluate
                 if funding_id_list:
                     queryset = queryset.filter(funding_agency_id__in=funding_id_list)
             if awarding_queryfilter:
                 awarding_id_list = Agency.objects.filter(awarding_queryfilter).values_list('id', flat=True)
+                # Expectated this to query the DB, instead it is lazy and waits to evaluate
                 if awarding_id_list:
                     queryset = queryset.filter(awarding_agency_id__in=awarding_id_list)
 

@@ -73,9 +73,11 @@
       "columns": [{"name": "\"pulled_from\""}]
     }, {
       "name": "awarding_agency_id",
+      "where": "\"awarding_agency_id\" IS NOT NULL",
       "columns": [{"name": "\"awarding_agency_id\"", "order": "ASC NULLS LAST"}]
     }, {
       "name": "funding_agency_id",
+      "where": "\"funding_agency_id\" IS NOT NULL",
       "columns": [{"name": "\"funding_agency_id\"", "order": "ASC NULLS LAST"}]
     }
   ]

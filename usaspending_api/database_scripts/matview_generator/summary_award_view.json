@@ -62,21 +62,23 @@
     {
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
-    },{
+    }, {
       "name": "type",
       "columns": [{"name": "\"type\""}]
-    },{
+    }, {
       "name": "fy",
       "columns": [{"name": "\"fiscal_year\"", "order": "DESC NULLS LAST"}]
-    },{
+    }, {
       "name": "pulled_from",
       "where": "\"pulled_from\" IS NOT NULL",
       "columns": [{"name": "\"pulled_from\""}]
     }, {
       "name": "awarding_agency_id",
+      "where": "\"awarding_agency_id\" IS NOT NULL",
       "columns": [{"name": "\"awarding_agency_id\"", "order": "ASC NULLS LAST"}]
     }, {
       "name": "funding_agency_id",
+      "where": "\"funding_agency_id\" IS NOT NULL",
       "columns": [{"name": "\"funding_agency_id\"", "order": "ASC NULLS LAST"}]
     }
   ]
