@@ -1,11 +1,10 @@
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
-from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin
+from usaspending_api.common.mixins import FilterQuerysetMixin
 from usaspending_api.common.views import DetailViewSet
 
 
-class SubmissionAttributesViewSet(SuperLoggingMixin,
-                                  FilterQuerysetMixin,
+class SubmissionAttributesViewSet(FilterQuerysetMixin,
                                   DetailViewSet):
     """Handles requests for information about data submissions."""
 
