@@ -1,19 +1,17 @@
-create table if not exists award_category
+CREATE TABLE IF NOT EXISTS award_category
     (
-        type_code text not null,
-        type_name text not null
+        type_code text NOT NULL,
+        type_name text NOT NULL
     );
 
-create index if not exists award_category_type_code_idx on award_category using btree (type_code);
+TRUNCATE award_category;
 
-truncate award_category;
-
-insert into award_category
+INSERT INTO award_category
     (
         type_code,
         type_name
     )
-values
+VALUES
     ('A', 'contract'),
     ('B', 'contract'),
     ('C', 'contract'),
@@ -28,3 +26,5 @@ values
     ('08', 'loans'),
     ('09', 'insurance'),
     ('11', 'other');
+
+CREATE INDEX IF NOT EXISTS award_category_type_code_idx ON award_category USING btree (type_code);

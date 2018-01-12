@@ -1,25 +1,25 @@
-drop materialized view if exists agency_lookup;
+DROP MATERIALIZED VIEW if EXISTS agency_lookup;
 
-create materialized view agency_lookup as
+CREATE MATERIALIZED VIEW agency_lookup AS
 (     
-	select
-		agency.id as agency_id,
-		toptier_agency.cgac_code as toptier_cgac,
-		toptier_agency.name as toptier_name,
-		toptier_agency.abbreviation as toptier_abbr,
-		subtier_agency.subtier_code as subtier_code,
-		subtier_agency.name as subtier_name,
-		subtier_agency.abbreviation as subtier_abbr,
-		office_agency.aac_code as office_code,
-		office_agency.name as office_name
-	from
+	SELECT
+		agency.id AS agency_id,
+		toptier_agency.cgac_code AS toptier_cgac,
+		toptier_agency.name AS toptier_name,
+		toptier_agency.abbreviatiON AS toptier_abbr,
+		subtier_agency.subtier_code AS subtier_code,
+		subtier_agency.name AS subtier_name,
+		subtier_agency.abbreviatiON AS subtier_abbr,
+		office_agency.aac_code AS office_code,
+		office_agency.name AS office_name
+	FROM
 		agency
-	inner join
-		toptier_agency on toptier_agency.toptier_agency_id=agency.toptier_agency_id
-	inner join
-		subtier_agency on subtier_agency.subtier_agency_id=agency.subtier_agency_id
-	left outer join
-		office_agency on office_agency.office_agency_id=agency.office_agency_id
+	INNER JOIN
+		toptier_agency ON toptier_agency.toptier_agency_id=agency.toptier_agency_id
+	INNER JOIN
+		subtier_agency ON subtier_agency.subtier_agency_id=agency.subtier_agency_id
+	LEFT OUTER JOIN
+		office_agency ON office_agency.office_agency_id=agency.office_agency_id
 );
 
-create index agency_lookup_subtier_code_idx on agency_lookup using btree (subtier_code);
+CREATE INDEX agency_lookup_subtier_code_idx ON agency_lookup USING btree (subtier_code);

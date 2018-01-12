@@ -1,19 +1,17 @@
-drop materialized view if exists transaction_matview;
-
-create materialized view transaction_matview as
+CREATE MATERIALIZED VIEW transaction_matview_new AS
 (
-select
+SELECT
     *,
-    fy(action_date) as fiscal_year
-from
+    fy(action_date) AS fiscal_year
+FROM
     dblink ('broker_server', '(select
             -- unique ids + cols used for unique id
             detached_award_proc_unique,
-            null as afa_generated_unique,
+            NULL AS afa_generated_unique,
             piid,
             parent_award_id,
-            null as fain,
-            null as uri,
+            NULL AS fain,
+            NULL AS uri,
             agency_id,
             referenced_idv_agency_iden,
             award_modification_amendme,
@@ -27,26 +25,26 @@ from
             legal_entity_address_line1,
             legal_entity_address_line2,
             legal_entity_address_line3,
-            null as legal_entity_foreign_provi,
+            NULL AS legal_entity_foreign_provi,
             legal_entity_country_code,
             legal_entity_country_name,
             legal_entity_state_code,
-            legal_entity_state_descrip as legal_entity_state_name,
-            null as legal_entity_county_code,
-            null as legal_entity_county_name,
+            legal_entity_state_descrip AS legal_entity_state_name,
+            NULL AS legal_entity_county_code,
+            NULL AS legal_entity_county_name,
             legal_entity_city_name,
-            null as legal_entity_zip5,
+            NULL AS legal_entity_zip5,
             legal_entity_congressional,
 
             -- place of performance
-            place_of_perform_country_c as place_of_perform_country_code,
-            place_of_perf_country_desc as place_of_perform_country_name,
-            place_of_performance_state as place_of_perform_state_code,
-            place_of_perfor_state_desc as place_of_perform_state_name,
-            null as place_of_perform_county_code,
-            place_of_perform_county_na as place_of_perform_county_name,
+            place_of_perform_country_c AS place_of_perform_country_code,
+            place_of_perf_country_desc AS place_of_perform_country_name,
+            place_of_performance_state AS place_of_perform_state_code,
+            place_of_perfor_state_desc AS place_of_perform_state_name,
+            NULL AS place_of_perform_county_code,
+            place_of_perform_county_na AS place_of_perform_county_name,
             place_of_perform_city_name,
-            null as place_of_performance_zip5,
+            NULL AS place_of_performance_zip5,
             place_of_performance_congr,
 
             -- other (fpds specific)
@@ -62,7 +60,7 @@ from
             period_of_performance_star,
             period_of_performance_curr,
             base_and_all_options_value,
-            last_modified::date as last_modified_date,
+            last_modified::date AS last_modified_date,
             awarding_office_code,
             awarding_office_name,
             funding_office_code,
@@ -81,29 +79,29 @@ from
             type_set_aside_description,
 
             -- other (fabs specific)
-            null as assistance_type,
-            null as original_loan_subsidy_cost,
-            null as record_type,
-            null as business_funds_indicator,
-            null as business_types,
-            null as cfda_number,
-            null as cfda_title
-        from detached_award_procurement)
+            NULL AS assistance_type,
+            NULL AS original_loan_subsidy_cost,
+            NULL AS record_type,
+            NULL AS business_funds_indicator,
+            NULL AS business_types,
+            NULL AS cfda_number,
+            NULL AS cfda_title
+        FROM detached_award_procurement)
 
         union all
 
         (select
             -- unique ids + cols used for unique id
-            null as detached_award_proc_unique,
+            NULL AS detached_award_proc_unique,
             afa_generated_unique,
-            null as piid,
-            null as parent_award_id,
+            NULL AS piid,
+            NULL AS parent_award_id,
             fain,
             uri,
-            null as agency_id,
-            null as referenced_idv_agency_iden,
+            NULL AS agency_id,
+            NULL AS referenced_idv_agency_iden,
             award_modification_amendme,
-            null as transaction_number,
+            NULL AS transaction_number,
 
             -- duns
             awardee_or_recipient_uniqu,
@@ -121,50 +119,50 @@ from
             legal_entity_county_code,
             legal_entity_county_name,
             legal_entity_city_name,
-            null as legal_entity_zip5,
+            NULL AS legal_entity_zip5,
             legal_entity_congressional,
 
             -- place of performance
-            place_of_perform_country_c as place_of_perform_country_code,
-            place_of_perform_country_n as place_of_perform_country_name,
-            null as place_of_perform_state_code,
-            place_of_perform_state_nam as place_of_perform_state_name,
-            place_of_perform_county_co as place_of_perform_county_code,
-            place_of_perform_county_na as place_of_perform_county_name,
-            place_of_performance_city as place_of_perform_city_name,
-            null as place_of_performance_zip5,
+            place_of_perform_country_c AS place_of_perform_country_code,
+            place_of_perform_country_n AS place_of_perform_country_name,
+            NULL AS place_of_perform_state_code,
+            place_of_perform_state_nam AS place_of_perform_state_name,
+            place_of_perform_county_co AS place_of_perform_county_code,
+            place_of_perform_county_na AS place_of_perform_county_name,
+            place_of_performance_city AS place_of_perform_city_name,
+            NULL AS place_of_performance_zip5,
             place_of_performance_congr,
 
             -- other (fpds specific)
             awarding_sub_tier_agency_c,
             funding_sub_tier_agency_co,
-            null as contract_award_type,
-            null as contract_award_type_desc,
-            null as referenced_idv_type,
-            null as referenced_idv_type_desc,
+            NULL AS contract_award_type,
+            NULL AS contract_award_type_desc,
+            NULL AS referenced_idv_type,
+            NULL AS referenced_idv_type_desc,
             federal_action_obligation,
             action_date,
             award_description,
             period_of_performance_star,
             period_of_performance_curr,
-            null as base_and_all_options_value,
-            modified_at::date as last_modified_date,
+            NULL AS base_and_all_options_value,
+            modified_at::date AS last_modified_date,
             awarding_office_code,
             awarding_office_name,
             funding_office_code,
             funding_office_name,
-            null as pulled_from,
-            null as product_or_service_code,
-            null as product_or_service_co_desc,
-            null as extent_competed,
-            null as extent_compete_description,
-            null as type_of_contract_pricing,
-            null as naics,
-            null as naics_description,
-            null as idv_type,
-            null as idv_type_description,
-            null as type_set_aside,
-            null as type_set_aside_description,
+            NULL AS pulled_from,
+            NULL AS product_or_service_code,
+            NULL AS product_or_service_co_desc,
+            NULL AS extent_competed,
+            NULL AS extent_compete_description,
+            NULL AS type_of_contract_pricing,
+            NULL AS naics,
+            NULL AS naics_description,
+            NULL AS idv_type,
+            NULL AS idv_type_description,
+            NULL AS type_set_aside,
+            NULL AS type_set_aside_description,
 
             -- other (fabs specific)
             assistance_type,
@@ -174,8 +172,8 @@ from
             business_types,
             cfda_number,
             cfda_title
-        from published_award_financial_assistance
-        where is_active=TRUE)') as transaction
+        FROM published_award_financial_assistance
+        WHERE is_active=TRUE)') AS transaction
         (
             -- unique ids + cols used for unique id
             detached_award_proc_unique text,
@@ -260,3 +258,7 @@ from
             cfda_title text
         )
 );
+
+ALTER MATERIALIZED VIEW transaction_matview RENAME TO transaction_matview_old;
+ALTER MATERIALIZED VIEW transaction_matview_new RENAME TO transaction_matview;
+DROP MATERIALIZED VIEW transaction_matview_old;
