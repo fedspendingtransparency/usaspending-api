@@ -1,11 +1,13 @@
------------------------------------------------------------------
--- SUMMARY VIEW PSC CODES (Action Date)                       ---
------------------------------------------------------------------
--- Drop the temporary materialized views if they exist
+--------------------------------------------------------
+-- Created using matview_sql_generator.py             --
+--    The SQL definition is stored in a json file     --
+--    Look in matview_generator for the code.         --
+--                                                    --
+--  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
+--------------------------------------------------------
 DROP MATERIALIZED VIEW IF EXISTS summary_view_psc_codes_temp;
 DROP MATERIALIZED VIEW IF EXISTS summary_view_psc_codes_old;
 
--- Temp matview
 CREATE MATERIALIZED VIEW summary_view_psc_codes_temp AS
 SELECT
   "transaction_normalized"."action_date",
@@ -15,8 +17,10 @@ SELECT
   "transaction_fpds"."product_or_service_code",
   SUM("transaction_normalized"."federal_action_obligation") AS "federal_action_obligation",
   COUNT(*) counts
-FROM "transaction_normalized"
-INNER JOIN "transaction_fpds" ON ("transaction_normalized"."id" = "transaction_fpds"."transaction_id")
+FROM
+  "transaction_normalized"
+INNER JOIN
+  "transaction_fpds" ON ("transaction_normalized"."id" = "transaction_fpds"."transaction_id")
 WHERE
   "transaction_normalized".action_date >= '2007-10-01'
 GROUP BY
@@ -26,17 +30,15 @@ GROUP BY
   "transaction_fpds"."pulled_from",
   "transaction_fpds"."product_or_service_code";
 
+CREATE INDEX idx_a88815a1__action_date_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_a88815a1__type_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
 
--- Temp indexes
-CREATE INDEX summary_view_psc_codes_action_date_idx_temp ON summary_view_psc_codes_temp ("action_date" DESC);
-CREATE INDEX summary_view_psc_codes_type_idx_temp        ON summary_view_psc_codes_temp ("action_date" DESC, "type");
+ANALYZE VERBOSE summary_view_psc_codes_temp;
 
--- Rename old matview/indexes
-ALTER MATERIALIZED VIEW IF EXISTS summary_view_psc_codes                 RENAME TO summary_view_psc_codes_old;
-ALTER INDEX IF EXISTS             summary_view_psc_codes_action_date_idx RENAME TO summary_view_psc_codes_action_date_idx_old;
-ALTER INDEX IF EXISTS             summary_view_psc_codes_type_idx        RENAME TO summary_view_psc_codes_type_idx_old;
+ALTER MATERIALIZED VIEW IF EXISTS summary_view_psc_codes RENAME TO summary_view_psc_codes_old;
+ALTER INDEX IF EXISTS idx_a88815a1__action_date RENAME TO idx_a88815a1__action_date_old;
+ALTER INDEX IF EXISTS idx_a88815a1__type RENAME TO idx_a88815a1__type_old;
 
--- Rename temp matview/indexes
-ALTER MATERIALIZED VIEW summary_view_psc_codes_temp                    RENAME TO summary_view_psc_codes;
-ALTER INDEX             summary_view_psc_codes_action_date_idx_temp    RENAME TO summary_view_psc_codes_action_date_idx;
-ALTER INDEX             summary_view_psc_codes_type_idx_temp           RENAME TO summary_view_psc_codes_type_idx;
+ALTER MATERIALIZED VIEW summary_view_psc_codes_temp RENAME TO summary_view_psc_codes;
+ALTER INDEX idx_a88815a1__action_date_temp RENAME TO idx_a88815a1__action_date;
+ALTER INDEX idx_a88815a1__type_temp RENAME TO idx_a88815a1__type;

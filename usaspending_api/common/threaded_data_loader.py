@@ -11,6 +11,8 @@ import csv
 import queue
 import sys
 import json
+import smart_open
+import os
 
 
 # This class is a threaded data loader
@@ -42,15 +44,16 @@ class ThreadedDataLoader():
     #   pre_row_function - Like post_row_function, but before the model class is updated
     #   post_process_function - A function to call when all rows have been processed, uses the same
     #                           function parameters as post_row_function
-    def __init__(self, model_class, processes=None, field_map={}, value_map={}, collision_field=None, collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None, loghandler='console'):
+    def __init__(self, model_class, processes=None, field_map={}, value_map={}, collision_field=None,
+                 collision_behavior='update', pre_row_function=None, post_row_function=None, post_process_function=None,
+                 loghandler='console'):
         self.logger = logging.getLogger(loghandler)
         self.model_class = model_class
         self.processes = processes
         if self.processes is None:
-            # self.processes is set to 1 because the logger threading doesn't work, resulting in
-            # a bunch of garbage being spat to console whenever this loader is used.
-            # can change to self.processes = multiprocessing.cpu_count() * 2 or something else if we
-            # fix the logger issue
+            # self.processes is set to 1 because the logger threading doesn't work, resulting in a bunch of garbage
+            # being spat to console whenever this loader is used.
+            # can change to self.processes = multiprocessing.cpu_count() * 2 or something else if we fix this issue
             self.processes = 1
             self.logger.info('Setting processes count to ' + str(self.processes))
         self.field_map = field_map
@@ -64,8 +67,10 @@ class ThreadedDataLoader():
 
     # Loads data from a file using parameters set during creation of the loader
     # The filepath parameter should be the string location of the file for use with open()
-    def load_from_file(self, filepath, encoding='utf-8'):
-        self.logger.info('Started processing file ' + filepath)
+    def load_from_file(self, filepath, encoding='utf-8', remote_file=False):
+        if not remote_file:
+            self.logger.info('Started processing file ' + filepath)
+
         # Create the Queue object - this will hold all the rows in the CSV
         row_queue = JoinableQueue(500)
 
@@ -79,25 +84,24 @@ class ThreadedDataLoader():
         }
 
         # Spawn our processes
-        # We have to kill any DB connections before forking processes, as Django
-        # will want to share the single connection with all processes and we
-        # don't want to have any deadlock/effeciency problems due to that
+        # We have to kill any DB connections before forking processes, as Django will want to share the single
+        # connection with all processes and we don't want to have any deadlock/effeciency problems due to that
         db.connections.close_all()
         pool = []
         for i in range(self.processes):
-            pool.append(DataLoaderThread("Process-" + str(len(pool)), self.model_class, row_queue, self.field_map.copy(), self.value_map.copy(), references))
+            pool.append(DataLoaderThread("Process-" + str(len(pool)), self.model_class, row_queue,
+                                         self.field_map.copy(), self.value_map.copy(), references))
 
         for process in pool:
             process.start()
 
-        count = 0
-        with open(filepath, encoding=encoding) as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                count = count + 1
-                row_queue.put(row)
-                if count % 1000 == 0:
-                    self.logger.info("Queued row " + str(count))
+        if remote_file:
+            aws_region = os.environ.get('AWS_REGION')
+            with smart_open.smart_open(filepath, 'r', encoding=encoding, region_name=aws_region) as csv_file:
+                row_queue = self.csv_file_to_queue(csv_file, row_queue)
+        else:
+            with open(filepath, encoding=encoding) as csv_file:
+                row_queue = self.csv_file_to_queue(csv_file, row_queue)
 
         for i in range(self.processes):
             row_queue.put(None)
@@ -111,6 +115,17 @@ class ThreadedDataLoader():
             self.post_process_function()
 
         self.logger.info('Finished processing all rows')
+
+    def csv_file_to_queue(self, csv_file, row_queue):
+        reader = csv.DictReader(csv_file)
+        temp_row_queue = row_queue
+        count = 0
+        for row in reader:
+            count = count + 1
+            temp_row_queue.put(row)
+            if count % 1000 == 0:
+                self.logger.info("Queued row " + str(count))
+        return temp_row_queue
 
 
 class DataLoaderThread(Process):
@@ -177,12 +192,8 @@ class DataLoaderThread(Process):
                 if self.references["pre_row_function"] is not None:
                     self.references["pre_row_function"](row=row, instance=model_instance)
 
-                processed_row = self.load_data_into_model(model_instance,
-                                                          self.references["fields"],
-                                                          self.field_map,
-                                                          self.value_map,
-                                                          row,
-                                                          self.references["logger"])
+                processed_row = self.load_data_into_model(model_instance, self.references["fields"], self.field_map,
+                                                          self.value_map, row, self.references["logger"])
 
                 # If we have a post row function, run it before saving
                 if self.references["post_row_function"] is not None:
