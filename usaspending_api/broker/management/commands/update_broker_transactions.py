@@ -98,7 +98,7 @@ class Command(BaseCommand):
             action='store_true',
             dest='update_location',
             default=False,
-            help='Updates references location table'
+            help='Updates references location table (optional)'
         )
 
     def handle(self, *args, **options):
@@ -122,31 +122,37 @@ class Command(BaseCommand):
         logger.info('Fetching rows to update from broker for FY{} {} data'.format(fiscal_year, file_type.upper()))
 
         ds_cursor.execute(
-            get_data_to_update_from_broker(file_type, database_columns, broker_table, fy_start, fy_end,
-                                           unique_identifier)
+            get_data_to_update_from_broker(file_type, database_columns, broker_table,
+                                           fiscal_year, fy_start, fy_end, unique_identifier)
         )
+
+        # If the user specifies location tag, will additional columns and indexing to the temporary table
+        # Separates which rows need the legal entity updated from place of performance
         if options.get('update_location'):
             ds_cursor.execute(
-                    update_tmp_table_location_changes(file_type, database_columns, unique_identifier))
+                    update_tmp_table_location_changes(file_type, database_columns, unique_identifier, fiscal_year))
 
         # Retrieves temporary table with FABS rows that need to be updated
-        ds_cursor.execute('SELECT count(*) from {}_transactions_to_update;'.format(file_type))
+        ds_cursor.execute('SELECT count(*) from {}_transactions_to_update_{};'.format(file_type, fiscal_year))
         db_rows = ds_cursor.fetchall()[0][0]
 
         logger.info("Completed fetching {} rows to update in {} seconds".format(db_rows, datetime.now()-start))
 
         start = datetime.now()
         if db_rows > 0:
-            ds_cursor.execute(update_transaction_table(file_type, database_columns, unique_identifier))
+            # Updates the transactions_fpds or transaction_fabs with data from broker
+            ds_cursor.execute(update_transaction_table(file_type, database_columns,
+                                                       unique_identifier, fiscal_year))
+
+            # Updates references_location table when the user specifies --location
             if options.get('update_location'):
-                ds_cursor.execute(update_location_table(file_type, 'recipient', database_columns, unique_identifier))
+                ds_cursor.execute(update_location_table(file_type, 'recipient', database_columns,
+                                                        unique_identifier, fiscal_year))
                 ds_cursor.execute(update_location_table(file_type, 'place_of_performance',
-                                                        database_columns, unique_identifier))
+                                                        database_columns, unique_identifier, fiscal_year))
 
         logger.info("Completed updating: {} {} rows in {} seconds".format(file_type.upper(), db_rows,
                                                                           datetime.now() - start))
-
-        ds_cursor.execute('DROP TABLE {}_transactions_to_update;'.format(file_type))
 
 
 def get_data_to_update_from_broker(file_type, database_columns, broker_table, fiscal_year,
@@ -163,19 +169,20 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, fi
                {columns}
                from {broker_table}
                where {is_active} action_date:: date >= ''{fy_start}'':: date and
-               action_date:: date <= ''{fy_end}'':: date;
+               action_date:: date <= ''{fy_end}'':: date and {unique_identifier} = ''-none-_7022_-none-_20170831-40--113'';
                ') AS (
+               {unique_identifier} text,
                {columns_type}
                )
               EXCEPT
               SELECT
               {unique_identifier},
               {columns}
-               from transaction_{file_type}
-               where action_date:: date >= '{fy_start}':: date and
+               FROM transaction_{file_type}
+               WHERE action_date:: date >= '{fy_start}':: date AND
                action_date:: date <= '{fy_end}':: date;
             -- Adding index to table to improve speed
-           CREATE INDEX {file_type}_unique_idx ON {file_type}_transactions_to_update({unique_identifier});
+           CREATE INDEX {file_type}_unique_idx ON {file_type}_transactions_to_update_{fiscal_year}({unique_identifier});
            """.format(file_type=file_type,
                       fiscal_year=fiscal_year,
                       unique_identifier=unique_identifier,
@@ -193,7 +200,7 @@ def update_transaction_table(file_type, database_columns, unique_identifier, fis
                                      for column in database_columns[2:]]
                                     )
     sql_statement = """
-            UPDATE transaction_{file_type} as website
+            UPDATE transaction_{file_type} AS website
             SET
                 {update_website_rows}
             FROM
@@ -207,4 +214,3 @@ def update_transaction_table(file_type, database_columns, unique_identifier, fis
                        )
 
     return sql_statement
-

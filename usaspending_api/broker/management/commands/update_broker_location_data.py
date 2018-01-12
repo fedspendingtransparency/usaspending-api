@@ -71,6 +71,9 @@ location_fields_mappings = {
 
 
 def update_tmp_table_location_changes(file_type, database_columns, unique_identifier, fiscal_year):
+    """
+        Adds columns to temporary table to specify which rows have a legal entity and/or a place of performance change
+    """
     le_loc_columns_distinct = " OR ".join(['website.{column} IS DISTINCT FROM broker.{column}'.format(column=column)
                                            for column in database_columns if column[: 12] == 'legal_entity'])
 
@@ -79,7 +82,7 @@ def update_tmp_table_location_changes(file_type, database_columns, unique_identi
 
     sql_statement = """
          -- Include columns to determine whether we need a place of performance change or recipient location
-       ALTER TABLE {file_type}_transactions_to_update_location
+       ALTER TABLE {file_type}_transactions_to_update_{fiscal_year}
        ADD COLUMN place_of_performance_change boolean, add COLUMN recipient_change boolean;
 
         UPDATE {file_type}_transactions_to_update_{fiscal_year} broker
@@ -99,14 +102,14 @@ def update_tmp_table_location_changes(file_type, database_columns, unique_identi
 
 
         -- Delete rows where there is no transaction in the table
-        DELETE FROM {file_type}_transactions_to_update_location
-        WHERE place_of_performance_change is null
-        AND recipient_change is null;
+        DELETE FROM {file_type}_transactions_to_update_{fiscal_year}
+        WHERE place_of_performance_change IS NULL
+        AND recipient_change IS NULL;
 
         -- Adding index to table to improve speed on update
-        CREATE INDEX {file_type}_le_loc_idx ON {file_type}_transactions_to_update_location(recipient_change);
-        CREATE INDEX {file_type}_pop_idx ON {file_type}_transactions_to_update_location(place_of_performance_change);
-        ANALYZE {file_type}_transactions_to_update_location;
+        CREATE INDEX {file_type}_le_loc_idx ON {file_type}_transactions_to_update_{fiscal_year}(recipient_change);
+        CREATE INDEX {file_type}_pop_idx ON {file_type}_transactions_to_update_{fiscal_year}(place_of_performance_change);
+        ANALYZE {file_type}_transactions_to_update_{fiscal_year};
         """.format(file_type=file_type,
                    unique_identifier=unique_identifier,
                    fiscal_year=fiscal_year,
@@ -117,12 +120,16 @@ def update_tmp_table_location_changes(file_type, database_columns, unique_identi
 
 
 def update_location_table(file_type, loc_scope, database_columns, unique_identifier, fiscal_year):
-
+    """
+    Returns script to update references location for legal entity and place of performance locations from
+    the temporary table with broker data
+    """
     location_update_code = ', '.join([f'{loc_col} = broker.{broker_col}'
                                       for loc_col, broker_col in location_fields_mappings[file_type][loc_scope].items()
                                       if broker_col in database_columns
                                       ])
 
+    # Legal Entity has an additional table and join from transactions_normalized
     legal_entity_table = ', legal_entity' if loc_scope == 'recipient' else ''
     location_join = 'AND legal_entity.legal_entity_id = transaction_normalized.recipient_id' + \
                     ' AND legal_entity.location_id = loc.location_id' if loc_scope == 'recipient' \
@@ -147,6 +154,6 @@ def update_location_table(file_type, loc_scope, database_columns, unique_identif
                legal_entity_table=legal_entity_table,
                unique_identifier=unique_identifier,
                location_join=location_join
-    )
+               )
 
     return sql_statement
