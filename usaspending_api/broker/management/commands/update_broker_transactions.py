@@ -155,7 +155,7 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, fy
         columns = " ,".join(database_columns)
         columns_type = " ,".join(["{} text".format(column) for column in database_columns])
 
-        get_data_broker = f"""
+        sql_statement = """
            CREATE TEMPORARY TABlE {file_type}_transactions_to_update AS
            SELECT * from dblink('broker_server','
            SELECT
@@ -174,19 +174,24 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, fy
                from transaction_{file_type}
                where action_date:: date >= '{fy_start}':: date and
                action_date:: date <= '{fy_end}':: date;
-
             -- Adding index to table to improve speed
            CREATE INDEX {file_type}_unique_idx ON {file_type}_transactions_to_update({unique_identifier});
-
-           """
-        return get_data_broker
+           """.format(file_type=file_type,
+                      unique_identifier=unique_identifier,
+                      columns=columns,
+                      broker_table=broker_table,
+                      is_active=is_active,
+                      fy_start=fy_start,
+                      fy_end=fy_end,
+                      columns_type=columns_type)
+        return sql_statement
 
 
 def update_transaction_table(file_type, database_columns, unique_identifier):
     update_website_rows = " ,".join(['{column} = broker.{column}'.format(column=column)
                                      for column in database_columns[2:]]
                                     )
-    update_transaction_table = f"""
+    sql_statement = """
             UPDATE transaction_{file_type} as website
             SET
                 {update_website_rows}
@@ -194,8 +199,10 @@ def update_transaction_table(file_type, database_columns, unique_identifier):
                 {file_type}_transactions_to_update AS broker
             WHERE
                 broker.{unique_identifier} = website.{unique_identifier};
+            """.format(file_type=file_type,
+                       unique_identifier=unique_identifier,
+                       update_website_rows=update_website_rows
+                       )
 
-            """
-
-    return update_transaction_table
+    return sql_statement
 

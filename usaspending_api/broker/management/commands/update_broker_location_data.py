@@ -77,7 +77,7 @@ def update_tmp_table_location_changes(file_type, database_columns, unique_identi
     pop_loc_columns_distinct = " OR ".join(['website.{column} IS DISTINCT FROM broker.{column}'.format(column=column)
                                             for column in database_columns if column[: 13] == 'place_of_perf'])
 
-    update_loc_changes_tmp_table = f"""
+    sql_statement = """
          -- Include columns to determine whether we need a place of performance change or recipient location
        ALTER TABLE {file_type}_transactions_to_update_location
        ADD COLUMN place_of_performance_change boolean, add COLUMN recipient_change boolean;
@@ -107,8 +107,12 @@ def update_tmp_table_location_changes(file_type, database_columns, unique_identi
         CREATE INDEX {file_type}_le_loc_idx ON {file_type}_transactions_to_update_location(recipient_change);
         CREATE INDEX {file_type}_pop_idx ON {file_type}_transactions_to_update_location(place_of_performance_change);
         ANALYZE {file_type}_transactions_to_update_location;
-        """
-    return update_loc_changes_tmp_table
+        """.format(file_type=file_type,
+                   unique_identifier=unique_identifier,
+                   le_loc_columns_distinct=le_loc_columns_distinct,
+                   pop_loc_columns_distinct=pop_loc_columns_distinct
+                   )
+    return sql_statement
 
 
 def update_location_table(file_type, loc_scope, database_columns, unique_identifier):
@@ -123,7 +127,7 @@ def update_location_table(file_type, loc_scope, database_columns, unique_identif
                     ' AND legal_entity.location_id = loc.location_id' if loc_scope == 'recipient' \
                     else 'AND loc.location_id = transaction_normalized.place_of_performance_id'
 
-    sql_statement = f"""
+    sql_statement = """
     UPDATE references_location AS loc
     SET
         {location_update_code}
@@ -135,6 +139,12 @@ def update_location_table(file_type, loc_scope, database_columns, unique_identif
     AND transaction_{file_type}.transaction_id = transaction_normalized.id
     {location_join}
     AND broker.{loc_scope}_change = TRUE;
-    """
+    """.format(location_update_code=location_update_code,
+               loc_scope=loc_scope,
+               file_type=file_type,
+               legal_entity_table=legal_entity_table,
+               unique_identifier=unique_identifier,
+               location_join=location_join
+    )
 
     return sql_statement
