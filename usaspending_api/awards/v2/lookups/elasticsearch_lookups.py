@@ -26,7 +26,7 @@ award_type_mapping = {
     '09': 'Other',
     '10': 'Direct Payments',
     '11': 'Other',
-    'A': 'Contrats',
+    'A': 'Contracts',
     'B': 'Contracts',
     'C': 'Contracts',
     'D': 'Contracts'
