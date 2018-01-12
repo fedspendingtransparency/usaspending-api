@@ -30,15 +30,15 @@ GROUP BY
   "transaction_fpds"."pulled_from",
   "transaction_fpds"."product_or_service_code";
 
-CREATE INDEX idx_27f1dd7c__action_date_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_27f1dd7c__type_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_a88815a1__action_date_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_a88815a1__type_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
 
-VACUUM ANALYZE VERBOSE summary_view_psc_codes_temp;
+ANALYZE VERBOSE summary_view_psc_codes_temp;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_psc_codes RENAME TO summary_view_psc_codes_old;
-ALTER INDEX IF EXISTS idx_27f1dd7c__action_date RENAME TO idx_27f1dd7c__action_date_old;
-ALTER INDEX IF EXISTS idx_27f1dd7c__type RENAME TO idx_27f1dd7c__type_old;
+ALTER INDEX IF EXISTS idx_a88815a1__action_date RENAME TO idx_a88815a1__action_date_old;
+ALTER INDEX IF EXISTS idx_a88815a1__type RENAME TO idx_a88815a1__type_old;
 
 ALTER MATERIALIZED VIEW summary_view_psc_codes_temp RENAME TO summary_view_psc_codes;
-ALTER INDEX idx_27f1dd7c__action_date_temp RENAME TO idx_27f1dd7c__action_date;
-ALTER INDEX idx_27f1dd7c__type_temp RENAME TO idx_27f1dd7c__type;
+ALTER INDEX idx_a88815a1__action_date_temp RENAME TO idx_a88815a1__action_date;
+ALTER INDEX idx_a88815a1__type_temp RENAME TO idx_a88815a1__type;

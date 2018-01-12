@@ -2,21 +2,22 @@ import sys
 import threading
 
 from django.conf import settings
+from django.db.models import Sum
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound, ParseError
-
 from rest_framework_extensions.cache.decorators import cache_response
+
+from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.awards.v2.filters.award import award_filter
 from usaspending_api.awards.v2.filters.transaction import transaction_filter
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter as matview_transaction_filter
-from usaspending_api.awards.models import Award, TransactionNormalized
-from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.awards.v2.filters.view_selector import download_transaction_count
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.filestreaming import csv_selection
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
-from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
+from usaspending_api.download.models import DownloadJob
 
 
 class BaseDownloadViewSet(APIView):
@@ -171,15 +172,16 @@ class DownloadTransactionCountViewSet(APIView):
         # If no filters in request return empty object to return all transactions
         filters = json_request.get('filters', {})
         is_over_limit = False
+        queryset, model = download_transaction_count(filters)
 
-        queryset = matview_transaction_filter(filters, UniversalTransactionView)
+        if model in ['UniversalTransactionView']:
+            total_count = queryset.count()
+        else:
+            # "summary" materialized views are pre-aggregated and contain a counts col
+            total_count = queryset.aggregate(total_count=Sum('counts'))['total_count']
 
-        try:
-            queryset[settings.MAX_DOWNLOAD_LIMIT]
+        if total_count and total_count > settings.MAX_DOWNLOAD_LIMIT:
             is_over_limit = True
-
-        except IndexError:
-            pass
 
         result = {
             "transaction_rows_gt_limit": is_over_limit
