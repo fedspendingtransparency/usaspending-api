@@ -1,7 +1,7 @@
 from django.conf import settings
 from elasticsearch import Elasticsearch
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups \
-        import TRANSACTIONS_LOOKUP
+        import TRANSACTIONS_LOOKUP, award_type_mapping
 import logging
 logger = logging.getLogger('console')
 ES_HOSTNAME = settings.ES_HOSTNAME
@@ -12,7 +12,6 @@ CLIENT = Elasticsearch(ES_HOSTNAME)
 TRANSACTIONS_LOOKUP.update({v:k for k, v in
                             TRANSACTIONS_LOOKUP.items()}
                           )
-from pprint import pprint
 
 
 def format_for_frontend(response):
@@ -27,13 +26,15 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
     filters: dictionary
     fields: list
     sort: string
+    order: string
     lower_limit: integer
     limit: integer
+
+    if transaction_type_code not found, return results for contracts
     '''
     keyword = filters['keyword']
     query_fields = [TRANSACTIONS_LOOKUP[i] for i in fields]
     query_sort = TRANSACTIONS_LOOKUP[sort]
-
     query = {
         '_source' : query_fields,
         'from' : lower_limit,
@@ -48,10 +49,17 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
                 'order' :order}
             }]
         }
+
+
+    transaction_type = next((award_type_mapping[k] for k in 
+                        filters['award_type_codes']  
+                        if k in award_type_mapping), 'contracts')
+ 
     index_name = '{}-{}'.format(TRANSACTIONS_INDEX_ROOT,
-                                filters['transaction_type'].lower().replace(' ', ''))
-    if index_name[-1] == 's':
-        index_name = index_name[:-1]+'*'
+                                transaction_type.lower().replace(' ', ''))
+
+    
+    index_name = index_name[:-1]+'*'
     try:
         response = CLIENT.search(index=index_name, body=query)
     except:

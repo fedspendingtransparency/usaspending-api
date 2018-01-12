@@ -762,24 +762,24 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
         transaction_types = ["Contracts", "Grants", "Direct Payments", "Loans", "Other"]
-        
         if fields is None:
             raise InvalidParameterException("Missing one or more required request parameters: fields")
         elif len(fields) == 0:
             raise InvalidParameterException("Please provide a field in the fields request parameter.")
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
-        if "transaction_type" not in filters:
+        if "award_type_codes" not in filters:
             raise InvalidParameterException(
-                "Missing one or more required request parameters: filters['transaction_type']")
-            if filters['transaction_type'] not in transaction_types:
-                raise InvalidParameterException(""""Incorrect filter type: please one of the following:
-                                                '%s'"""%(transaction_types,))
+                "Missing one or more required request parameters: filters['award_type_codes']")
+    
         if order not in ["asc", "desc"]:
             raise InvalidParameterException("Invalid value for order: {}".format(order))
         sort = json_request.get("sort", fields[0])
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
+        
+        #fields.append('awarding_agency_id')
+
         queryset, total = search_transactions(filters, fields, sort, 
                                             order, lower_limit, limit)
         if not queryset:

@@ -14,3 +14,26 @@ TRANSACTIONS_LOOKUP = {"Recipient Name": "recipient_name",
                        "Award ID" :"award_id",
                        "Award Type": "type_description",
                        "awarding_agency_id" : "awarding_agency_id"}
+
+award_type_mapping = {
+    '02': 'Grants',
+    '03': 'Grants',
+    '04': 'Grants',
+    '05': 'Grants',
+    '06': 'Direct Payments',
+    '07': 'Loans',
+    '08': 'Loans',
+    '09': 'Other',
+    '10': 'Direct Payments',
+    '11': 'Other',
+    'A': 'Contrats',
+    'B': 'Contracts',
+    'C': 'Contracts',
+    'D': 'Contracts'
+    # 'E': 'Unknown Type', TODO - check for allocation of these types
+    # 'F': 'Cooperative Agreement',
+    # 'G': 'Grant for Research',
+    # 'S': 'Funded Space Act Agreement',
+    # 'T': 'Training Grant'
+}
+
