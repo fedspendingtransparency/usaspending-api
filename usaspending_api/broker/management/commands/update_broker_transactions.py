@@ -14,8 +14,6 @@ class Command(BaseCommand):
     help = "Update specific transactions with data from broker and its related tables"
 
     fabs_columns = [
-        'published_award_financial_assistance_id',
-        'afa_generated_unique',
         'legal_entity_address_line1',
         'legal_entity_address_line2',
         'legal_entity_address_line3',
@@ -49,8 +47,6 @@ class Command(BaseCommand):
     ]
 
     fpds_columns = [
-        'detached_award_procurement_id',
-        'detached_award_proc_unique',
         'legal_entity_address_line1',
         'legal_entity_address_line2',
         'legal_entity_address_line3',
@@ -179,6 +175,7 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, fy
            CREATE TEMPORARY TABlE {file_type}_transactions_to_update AS
            SELECT * from dblink('broker_server','
            SELECT
+               {unique_identifier},
                {columns}
                from {broker_table}
                where {is_active} action_date:: date >= ''{fy_start}'':: date and
@@ -188,6 +185,7 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, fy
                )
               EXCEPT
               SELECT
+              {unique_identifier},
               {columns}
                from transaction_{file_type}
                where action_date:: date >= '{fy_start}':: date and
