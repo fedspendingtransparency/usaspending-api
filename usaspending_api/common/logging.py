@@ -30,6 +30,7 @@ class LoggingMiddleware(MiddlewareMixin):
     start = None
     log = None
     response_msg = None
+    log_response_body = False
 
     def process_request(self, request):
         self.start = now()
@@ -44,21 +45,27 @@ class LoggingMiddleware(MiddlewareMixin):
 
         try:
             # When request body is returned  as <class 'bytes'>
-            self.log["request_obj"]=getattr(request, '_body', request.body).decode('ASCII')
+            self.log["request"]=getattr(request, '_body', request.body).decode('ASCII')
         except UnicodeDecodeError:
-            self.log["request_obj"] = getattr(request, '_body', request.body)
+            self.log["request"] = getattr(request, '_body', request.body)
 
     def process_response(self, request, response):
         status_code = response.status_code
-        response_content = {}
+
         self.log["status_code"] = status_code
         self.log["response_ms"] = self.get_response_ms()
         self.log["user"] = request.user
-        try:
-            # When response is returned  as <class 'bytes'>
-            self.response_msg = getattr(response, 'content').decode('ASCII')
-        except UnicodeDecodeError:
-            self.response_msg = getattr(response, 'content')
+
+        # In case we want to show the response body in logs for debugging purposes
+        # Should not be turned on in production
+        if self.log_response_body:
+            try:
+                # When response is returned  as <class 'bytes'>
+                self.response_msg = getattr(response, 'content').decode('ASCII')
+            except UnicodeDecodeError:
+                self.response_msg = getattr(response, 'content')
+        else:
+            self.response_msg = " "
 
         if 100 <= status_code < 400:
             self.server_logger.info(self.response_msg, extra=self.log)
