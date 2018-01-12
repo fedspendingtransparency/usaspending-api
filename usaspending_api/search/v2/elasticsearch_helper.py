@@ -2,8 +2,8 @@ from django.conf import settings
 from elasticsearch import Elasticsearch
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups \
         import TRANSACTIONS_LOOKUP
-
-
+import logging
+logger = logging.getLogger('console')
 ES_HOSTNAME = settings.ES_HOSTNAME
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 
@@ -12,7 +12,7 @@ CLIENT = Elasticsearch(ES_HOSTNAME)
 TRANSACTIONS_LOOKUP.update({v:k for k, v in
                             TRANSACTIONS_LOOKUP.items()}
                           )
-
+from pprint import pprint
 
 
 def format_for_frontend(response):
@@ -30,7 +30,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
     lower_limit: integer
     limit: integer
     '''
-    search_term = filters['search_term']
+    keyword = filters['keyword']
     query_fields = [TRANSACTIONS_LOOKUP[i] for i in fields]
     query_sort = TRANSACTIONS_LOOKUP[sort]
 
@@ -40,7 +40,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
         'size' : limit,
         'query': {
             'query_string': {
-                'query': search_term
+                'query': keyword
                 }
             },
         'sort' : [{
@@ -50,7 +50,8 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
         }
     index_name = '{}-{}'.format(TRANSACTIONS_INDEX_ROOT,
                                 filters['transaction_type'].lower().replace(' ', ''))
-    
+    if index_name[-1] == 's':
+        index_name = index_name[:-1]+'*'
     try:
         response = CLIENT.search(index=index_name, body=query)
     except:
