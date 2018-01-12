@@ -124,7 +124,7 @@ def update_location_table(file_type, loc_scope, database_columns, unique_identif
     Returns script to update references location for legal entity and place of performance locations from
     the temporary table with broker data
     """
-    location_update_code = ', '.join([f'{loc_col} = broker.{broker_col}'
+    location_update_code = ', '.join(['{loc_col} = broker.{broker_col}'.format(loc_co=loc_col, broker_col=broker_col)
                                       for loc_col, broker_col in location_fields_mappings[file_type][loc_scope].items()
                                       if broker_col in database_columns
                                       ])
