@@ -7,9 +7,10 @@ TRANSACTIONS_LOOKUP = {"Recipient Name": "recipient_name",
                        "Awarding Sub Agency": "awarding_subtier_agency_name",
                        "Funding Agency": "funding_toptier_agency_name",
                        "Funding Sub Agency": "funding_subtier_agency_name",
-                       "Issued Date": "action_date",
+                       "Issued Date": "period_of_performance_start_date",
                        "Loan Value": "face_value_loan_guarantee",
                        "Subsidy Cost": "original_loan_subsidy_cost",
                        "Mod" : "modification_number",
                        "Award ID" :"award_id",
-                       "Award Type": "type_description"}
+                       "Award Type": "type_description",
+                       "awarding_agency_id" : "awarding_agency_id"}
