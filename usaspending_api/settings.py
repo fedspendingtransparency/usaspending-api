@@ -88,7 +88,6 @@ DEBUG_TOOLBAR_CONFIG = {
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'usaspending_api.common.logging.LoggingMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -97,6 +96,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
+    'usaspending_api.common.logging.LoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'usaspending_api.urls'
@@ -198,7 +198,7 @@ STATICFILES_DIRS = (
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': True,
+    'disable_existing_loggers': False,
     'formatters': {
         'simpletime': {
             'format': "%(asctime)s - %(module)s.%(name)s - %(levelname)s - %(message)s",
@@ -219,11 +219,6 @@ LOGGING = {
             'backupCount': 5,
             'formatter': 'user_readable'
         },
-        'server_console':{
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'user_readable'
-        },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -232,7 +227,7 @@ LOGGING = {
     },
     'loggers': {
         'server': {
-            'handlers': ['server', 'server_console'],
+            'handlers': ['server'],
             'level': 'INFO',
             'propagate': True,
         },
