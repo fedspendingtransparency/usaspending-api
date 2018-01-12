@@ -13,6 +13,7 @@ logger = logging.getLogger('console')
 class Command(BaseCommand):
     help = "Update specific transactions with data from broker and its related tables"
 
+    # Lists can be updated to change which columns to update
     fabs_columns = [
         'legal_entity_congressional',
         'legal_entity_country_code',
@@ -157,6 +158,10 @@ class Command(BaseCommand):
 
 def get_data_to_update_from_broker(file_type, database_columns, broker_table, fiscal_year,
                                    fy_start, fy_end, unique_identifier):
+        """
+        Generates SQL script to pull data from broker and compare it with website table
+        Creates Temporary table of the rows that differ between the two databases
+        """
         is_active = 'is_active = TRUE and' if file_type == 'fabs' else ''
         columns = " ,".join(database_columns)
         columns_type = " ,".join(["{} text".format(column) for column in database_columns])
@@ -167,9 +172,9 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, fi
            SELECT
                {unique_identifier},
                {columns}
-               from {broker_table}
-               where {is_active} action_date:: date >= ''{fy_start}'':: date and
-               action_date:: date <= ''{fy_end}'':: date and {unique_identifier} = ''-none-_7022_-none-_20170831-40--113'';
+               FROM {broker_table}
+               WHERE {is_active} action_date:: date >= ''{fy_start}'':: date AND
+               action_date:: date <= ''{fy_end}'':: date;
                ') AS (
                {unique_identifier} text,
                {columns_type}
@@ -196,6 +201,9 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, fi
 
 
 def update_transaction_table(file_type, database_columns, unique_identifier, fiscal_year):
+    """
+    Generates SQL script to update the website table with the  data from broker
+    """
     update_website_rows = " ,".join(['{column} = broker.{column}'.format(column=column)
                                      for column in database_columns[2:]]
                                     )
