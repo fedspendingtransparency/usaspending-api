@@ -149,14 +149,14 @@ class Command(BaseCommand):
         ds_cursor.execute('DROP TABLE {}_transactions_to_update;'.format(file_type))
 
 
-def get_data_to_update_from_broker(file_type, database_columns, broker_table, fy_start, fy_end,
-                                   unique_identifier):
+def get_data_to_update_from_broker(file_type, database_columns, broker_table, fiscal_year,
+                                   fy_start, fy_end, unique_identifier):
         is_active = 'is_active = TRUE and' if file_type == 'fabs' else ''
         columns = " ,".join(database_columns)
         columns_type = " ,".join(["{} text".format(column) for column in database_columns])
 
         sql_statement = """
-           CREATE TEMPORARY TABlE {file_type}_transactions_to_update AS
+           CREATE TEMPORARY TABlE {file_type}_transactions_to_update_{fiscal_year} AS
            SELECT * from dblink('broker_server','
            SELECT
                {unique_identifier},
@@ -177,6 +177,7 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, fy
             -- Adding index to table to improve speed
            CREATE INDEX {file_type}_unique_idx ON {file_type}_transactions_to_update({unique_identifier});
            """.format(file_type=file_type,
+                      fiscal_year=fiscal_year,
                       unique_identifier=unique_identifier,
                       columns=columns,
                       broker_table=broker_table,
@@ -187,7 +188,7 @@ def get_data_to_update_from_broker(file_type, database_columns, broker_table, fy
         return sql_statement
 
 
-def update_transaction_table(file_type, database_columns, unique_identifier):
+def update_transaction_table(file_type, database_columns, unique_identifier, fiscal_year):
     update_website_rows = " ,".join(['{column} = broker.{column}'.format(column=column)
                                      for column in database_columns[2:]]
                                     )
@@ -196,10 +197,11 @@ def update_transaction_table(file_type, database_columns, unique_identifier):
             SET
                 {update_website_rows}
             FROM
-                {file_type}_transactions_to_update AS broker
+                {file_type}_transactions_to_update_{fiscal_year} AS broker
             WHERE
                 broker.{unique_identifier} = website.{unique_identifier};
             """.format(file_type=file_type,
+                       fiscal_year=fiscal_year,
                        unique_identifier=unique_identifier,
                        update_website_rows=update_website_rows
                        )

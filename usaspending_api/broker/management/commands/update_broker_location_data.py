@@ -70,7 +70,7 @@ location_fields_mappings = {
     }
 
 
-def update_tmp_table_location_changes(file_type, database_columns, unique_identifier):
+def update_tmp_table_location_changes(file_type, database_columns, unique_identifier, fiscal_year):
     le_loc_columns_distinct = " OR ".join(['website.{column} IS DISTINCT FROM broker.{column}'.format(column=column)
                                            for column in database_columns if column[: 12] == 'legal_entity'])
 
@@ -82,7 +82,7 @@ def update_tmp_table_location_changes(file_type, database_columns, unique_identi
        ALTER TABLE {file_type}_transactions_to_update_location
        ADD COLUMN place_of_performance_change boolean, add COLUMN recipient_change boolean;
 
-        UPDATE {file_type}_transactions_to_update_location broker
+        UPDATE {file_type}_transactions_to_update_{fiscal_year} broker
         SET
         recipient_change = (
             CASE  WHEN
@@ -109,13 +109,14 @@ def update_tmp_table_location_changes(file_type, database_columns, unique_identi
         ANALYZE {file_type}_transactions_to_update_location;
         """.format(file_type=file_type,
                    unique_identifier=unique_identifier,
+                   fiscal_year=fiscal_year,
                    le_loc_columns_distinct=le_loc_columns_distinct,
                    pop_loc_columns_distinct=pop_loc_columns_distinct
                    )
     return sql_statement
 
 
-def update_location_table(file_type, loc_scope, database_columns, unique_identifier):
+def update_location_table(file_type, loc_scope, database_columns, unique_identifier, fiscal_year):
 
     location_update_code = ', '.join([f'{loc_col} = broker.{broker_col}'
                                       for loc_col, broker_col in location_fields_mappings[file_type][loc_scope].items()
@@ -131,7 +132,7 @@ def update_location_table(file_type, loc_scope, database_columns, unique_identif
     UPDATE references_location AS loc
     SET
         {location_update_code}
-    FROM {file_type}_transactions_to_update_location broker,
+    FROM {file_type}_transactions_to_update_{fiscal_year} broker,
         transaction_{file_type},
         transaction_normalized
         {legal_entity_table}
@@ -142,6 +143,7 @@ def update_location_table(file_type, loc_scope, database_columns, unique_identif
     """.format(location_update_code=location_update_code,
                loc_scope=loc_scope,
                file_type=file_type,
+               fiscal_year=fiscal_year,
                legal_entity_table=legal_entity_table,
                unique_identifier=unique_identifier,
                location_join=location_join
