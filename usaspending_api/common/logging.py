@@ -17,7 +17,7 @@ def get_remote_addr(request):
     ip_address = request.META.get("HTTP_X_FORWARDED_FOR", None)
     if ip_address:
         # X_FORWARDED_FOR returns client1, proxy1, proxy2,...
-        ip_address = [x.strip() for x in ipaddr.split(",")][0]
+        ip_address = [x.strip() for x in ip_address.split(",")][0]
     else:
         ip_address = request.META.get("REMOTE_ADDR", "")
 
@@ -39,9 +39,14 @@ class LoggingMiddleware(MiddlewareMixin):
             "path": request.path,
             "remote_addr": get_remote_addr(request),
             "host": request.get_host(),
-            "method": request.method,
-            "request_obj": getattr(request, '_body', request.body).decode('ASCII')
+            "method": request.method
         }
+
+        try:
+            # When request body is returned  as <class 'bytes'>
+            self.log["request_obj"]=getattr(request, '_body', request.body).decode('ASCII')
+        except UnicodeDecodeError:
+            self.log["request_obj"] = getattr(request, '_body', request.body)
 
     def process_response(self, request, response):
         status_code = response.status_code
@@ -49,21 +54,20 @@ class LoggingMiddleware(MiddlewareMixin):
         self.log["status_code"] = status_code
         self.log["response_ms"] = self.get_response_ms()
         self.log["user"] = request.user
-        self.response_msg = getattr(response, 'content').decode('ASCII')
+        try:
+            # When response is returned  as <class 'bytes'>
+            self.response_msg = getattr(response, 'content').decode('ASCII')
+        except UnicodeDecodeError:
+            self.response_msg = getattr(response, 'content')
 
-        if 200 <= status_code < 300:
-            self.server_logger.info(self.response_msg, extra=self.log)
-        elif 100 <= status_code < 200:
-            self.server_logger.info(self.response_msg, extra=self.log)
-        elif status_code == 304:
-            self.server_logger.info(self.response_msg, extra=self.log)
-        elif 300 <= status_code < 400:
+        if 100 <= status_code < 400:
             self.server_logger.info(self.response_msg, extra=self.log)
         elif status_code == 404:
             self.handle_404(request, Http404)
         elif 400 <= status_code < 500:
             self.server_logger.warning(self.response_msg, extra=self.log)
         else:
+            # 500 or greater messages will be processed by the process_exception function
             pass
 
         return response
@@ -103,11 +107,6 @@ class LoggingMiddleware(MiddlewareMixin):
 
         self.server_logger.warning(self.response_msg, extra=self.log)
 
-        if settings.DEBUG:
-            return debug.technical_404_response(request, exception)
-        else:
-            return self.production_response(exception, 404)
-
     def handle_500(self, request, exception):
         exc_info = sys.exc_info()
 
@@ -118,7 +117,3 @@ class LoggingMiddleware(MiddlewareMixin):
         self.log["user"] = request.user
         self.server_logger.error("%s", traceback_str, extra=self.log)
 
-        if settings.DEBUG:
-            return debug.technical_500_response(request, *exc_info)
-        else:
-            return self.production_response(exception, 500)
