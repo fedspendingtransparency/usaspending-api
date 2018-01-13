@@ -4,14 +4,11 @@ from datetime import datetime
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.common.helpers import fy
-
 
 @pytest.fixture
 def financial_spending_data(db):
-    this_fy = fy(datetime.today())
-    latest_subm = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=this_fy)
-    last_year_subm = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=this_fy-1)
+    latest_subm = mommy.make('submissions.SubmissionAttributes', certified_date='2017-12-01', reporting_fiscal_year=2017)
+    last_year_subm = mommy.make('submissions.SubmissionAttributes', certified_date='2016-12-01', reporting_fiscal_year=2016)
 
     # create Object classes
     mommy.make(
