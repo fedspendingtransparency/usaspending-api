@@ -33,6 +33,3 @@ class SubmissionAttributes(models.Model):
 
         result = cls.objects.filter(certified_date__isnull=False).aggregate(fy=models.Max('reporting_fiscal_year'))
         return result['fy']
-
-
-

@@ -7,8 +7,10 @@ from rest_framework import status
 
 @pytest.fixture
 def financial_spending_data(db):
-    latest_subm = mommy.make('submissions.SubmissionAttributes', certified_date='2017-12-01', reporting_fiscal_year=2017)
-    last_year_subm = mommy.make('submissions.SubmissionAttributes', certified_date='2016-12-01', reporting_fiscal_year=2016)
+    latest_subm = mommy.make(
+        'submissions.SubmissionAttributes', certified_date='2017-12-01', reporting_fiscal_year=2017)
+    last_year_subm = mommy.make(
+        'submissions.SubmissionAttributes', certified_date='2016-12-01', reporting_fiscal_year=2016)
 
     # create Object classes
     mommy.make(
@@ -80,4 +82,3 @@ def test_federal_account_fiscal_year_snapshot_v2_endpoint_no_results(client, fin
     resp = client.get('/api/v2/federal_accounts/999/fiscal_year_snapshot')
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {}
-
