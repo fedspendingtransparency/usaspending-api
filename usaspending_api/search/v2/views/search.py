@@ -755,13 +755,14 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         json_request = request.data
         fields = json_request.get("fields", None)
         filters = json_request.get("filters", None)
-        order = json_request.get("order", "asc")
+        order = json_request.get("order", "desc")
         limit = json_request.get("limit", 10)
         page = json_request.get("page", 1)
-        
+        sort = json_request.get("sort", "Transaction Amount")
+
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
-        transaction_types = ["Contracts", "Grants", "Direct Payments", "Loans", "Other"]
+
         if fields is None:
             raise InvalidParameterException("Missing one or more required request parameters: fields")
         elif len(fields) == 0:
@@ -771,23 +772,20 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         if "award_type_codes" not in filters:
             raise InvalidParameterException(
                 "Missing one or more required request parameters: filters['award_type_codes']")
-    
+  
         if order not in ["asc", "desc"]:
             raise InvalidParameterException("Invalid value for order: {}".format(order))
-        sort = json_request.get("sort", fields[0])
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
         
-        #fields.append('awarding_agency_id')
-
-        queryset, total = search_transactions(filters, fields, sort, 
+        response, total = search_transactions(filters, fields, sort, 
                                             order, lower_limit, limit)
-        if not queryset:
+        if total == -1:
             # will make error catching more robust
             raise InvalidParameterException("Elasticsearch error")
         has_next = total > upper_limit
         results = []
-        for transaction in queryset:
+        for transaction in response:
             transaction["internal_id"] = transaction["Award ID"]
             results.append(transaction)
         # build response
