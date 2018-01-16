@@ -750,7 +750,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction 
+        """Return all budget function/subfunction
         titles matching the provided search text"""
         json_request = request.data
         fields = json_request.get("fields", None)
@@ -772,14 +772,14 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         if "award_type_codes" not in filters:
             raise InvalidParameterException(
                 "Missing one or more required request parameters: filters['award_type_codes']")
-  
+
         if order not in ["asc", "desc"]:
             raise InvalidParameterException("Invalid value for order: {}".format(order))
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
-        
-        response, total = search_transactions(filters, fields, sort, 
-                                            order, lower_limit, limit)
+
+        response, total = search_transactions(filters, fields, sort,
+                                              order, lower_limit, limit)
         if total == -1:
             # will make error catching more robust
             raise InvalidParameterException("Elasticsearch error")
@@ -798,6 +798,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             }
         }
         return Response(response)
+
 
 class TransactionSummaryVisualizationViewSet(APIView):
 

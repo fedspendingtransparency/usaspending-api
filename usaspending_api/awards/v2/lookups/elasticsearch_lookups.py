@@ -1,5 +1,5 @@
 '''
-Look ups for elasticsearch fields 
+Look ups for elasticsearch fields
 to be displayed for the front end
 '''
 TRANSACTIONS_LOOKUP = {"Recipient Name": "recipient_name",

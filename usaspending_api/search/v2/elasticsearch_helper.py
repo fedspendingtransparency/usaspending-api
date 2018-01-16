@@ -14,7 +14,7 @@ TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 CLIENT = Elasticsearch(ES_HOSTNAME)
 TRANSACTIONS_LOOKUP.update({v: k for k, v in
                             TRANSACTIONS_LOOKUP.items()}
-                          )
+                           )
 
 
 def swap_keys(dictionary_):
