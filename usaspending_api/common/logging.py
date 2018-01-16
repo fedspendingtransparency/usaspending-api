@@ -28,8 +28,6 @@ class LoggingMiddleware(MiddlewareMixin):
         """Func called when a request is called on server, function stores request fields for logging"""
         self.start = now()
 
-        self.requested_at = now(),
-
         self.log = {
             "path": request.path,
             "remote_addr": get_remote_addr(request),
@@ -53,6 +51,7 @@ class LoggingMiddleware(MiddlewareMixin):
 
         self.log["status_code"] = status_code
         self.log["response_ms"] = self.get_response_ms()
+        self.log["traceback"] = None
 
         if 100 <= status_code < 400:
             self.log["status"] = 'INFO'
