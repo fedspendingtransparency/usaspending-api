@@ -73,6 +73,7 @@ class LoggingMiddleware(MiddlewareMixin):
             self.handle_404(request, Http404)
         elif 400 <= status_code < 500:
             self.log["status"] = 'WARNING'
+            self.log["timestamp"] = now().strftime('%d/%m/%y %H:%M:%S')
             self.server_logger.warning(get_message_string(self.log), extra=self.log)
         else:
             # 500 or greater messages will be processed by the process_exception function
