@@ -3,7 +3,7 @@ from django.db.models import Q
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import Agency, PSC
+from usaspending_api.references.models import PSC
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 
 logger = logging.getLogger(__name__)
@@ -84,44 +84,34 @@ def matview_search_filter(filters, model):
                 name = v["name"]
                 if type == "funding":
                     if tier == "toptier":
-                        funding_toptier |= Q(toptier_agency_id__name=name)
+                        funding_toptier |= Q(funding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        funding_subtier |= Q(subtier_agency_id__name=name)
+                        funding_subtier |= Q(funding_subtier_agency_name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
-                        awarding_toptier |= Q(toptier_agency_id__name=name)
+                        awarding_toptier |= Q(awarding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        awarding_subtier |= Q(subtier_agency_id__name=name)
+                        awarding_subtier |= Q(awarding_subtier_agency_name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
 
-            funding_queryfilter = Q()
-            awarding_queryfilter = Q()
+            award_queryfilter = Q()
 
             # Since these are Q filters, no DB hits for boolean checks
             if funding_toptier:
-                funding_queryfilter |= funding_toptier
+                award_queryfilter |= funding_toptier
             if funding_subtier:
-                funding_queryfilter |= funding_subtier
+                award_queryfilter |= funding_subtier
             if awarding_toptier:
-                awarding_queryfilter |= awarding_toptier
+                award_queryfilter |= awarding_toptier
             if awarding_subtier:
-                awarding_queryfilter |= awarding_subtier
+                award_queryfilter |= awarding_subtier
 
-            if funding_queryfilter:
-                funding_id_list = Agency.objects.filter(funding_queryfilter).values_list('id', flat=True)
-                # Expectated this to query the DB, instead it is lazy and waits to evaluate
-                if funding_id_list:
-                    queryset = queryset.filter(funding_agency_id__in=funding_id_list)
-            if awarding_queryfilter:
-                awarding_id_list = Agency.objects.filter(awarding_queryfilter).values_list('id', flat=True)
-                # Expectated this to query the DB, instead it is lazy and waits to evaluate
-                if awarding_id_list:
-                    queryset = queryset.filter(awarding_agency_id__in=awarding_id_list)
+            queryset = queryset.filter(award_queryfilter)
 
         elif key == "legal_entities":
             in_query = [v for v in value]
