@@ -1,76 +1,159 @@
-import logging
-from datetime import datetime
-import time
 
-from django.db import connection
-from django.core.management.base import BaseCommand, CommandError
+location_fields_mappings = {
+        'fabs': {
+            'recipient':  {
+                'address_line1': 'legal_entity_address_line1',
+                'address_line2': 'legal_entity_address_line2',
+                'address_line3': 'legal_entity_address_line3',
+                'city_name': 'legal_entity_city_name',
+                'city_code': 'legal_entity_city_code',
+                'congressional_code': 'legal_entity_congressional',
+                'location_country_code': 'legal_entity_country_code',
+                'country_name': 'legal_entity_country_name',
+                'county_code': 'legal_entity_county_code',
+                'county_name': 'legal_entity_county_name',
+                'foreign_city_name': 'legal_entity_foreign_city',
+                'foreign_postal_code': 'legal_entity_foreign_posta',
+                'foreign_province': 'legal_entity_foreign_provi',
+                'state_code': 'legal_entity_state_code',
+                'state_name': 'legal_entity_state_name',
+                'zip5': 'legal_entity_zip5',
+                'zip_last4': 'legal_entity_zip_last4'
+            },
+            'place_of_performance':  {
+                'city_name': 'place_of_performance_city',
+                'performance_code': 'place_of_performance_code',
+                'congressional_code': 'place_of_performance_congr',
+                'location_country_code': 'place_of_perform_country_c',
+                'country_name': 'place_of_perform_country_n',
+                'county_code': 'place_of_perform_county_co',
+                'county_name': 'place_of_perform_county_na',
+                'foreign_location_description': 'place_of_performance_forei',
+                'state_name': 'place_of_perform_state_nam',
+                'state_code': 'place_of_perfor_state_code',
+                'zip5': 'place_of_performance_zip5',
+                'zip_last4': 'place_of_perform_zip_last4',
+                'zip4': 'place_of_performance_zip4a'
+            }
+        },
+        'fpds': {
+            'recipient':  {
+                'address_line1': 'legal_entity_address_line1',
+                'address_line2': 'legal_entity_address_line2',
+                'address_line3': 'legal_entity_address_line3',
+                'city_name': 'legal_entity_city_name',
+                'congressional_code': 'legal_entity_congressional',
+                'location_country_code': 'legal_entity_country_code',
+                'country_name': 'legal_entity_country_name',
+                'county_code': 'legal_entity_county_code',
+                'county_name': 'legal_entity_county_name',
+                'state_code': 'legal_entity_state_code',
+                'state_name': 'legal_entity_state_descrip',
+                'zip5': 'legal_entity_zip5',
+                'zip_last4': 'legal_entity_zip_last4',
+                'zip4': 'broker.legal_entity_zip4'
+            },
+            'place_of_performance':  {
+                'city_name': 'place_of_performance_city_name',
+                'congressional_code': 'place_of_performance_congr',
+                'location_country_code': 'place_of_perform_country_c',
+                'country_name': 'place_of_perf_country_desc',
+                'county_code': 'place_of_perform_county_co',
+                'county_name': 'place_of_perform_county_na',
+                'state_name': 'place_of_perfor_state_desc',
+                'state_code': 'place_of_performance_state',
+                'zip5': 'place_of_performance_zip5',
+                'zip_last4': 'place_of_perform_zip_last4',
+                'zip4': 'place_of_performance_zip4a'
+            },
+        }
+    }
 
-from usaspending_api.etl.management.load_base import run_sql_file
 
-logger = logging.getLogger('console')
+def update_tmp_table_location_changes(file_type, database_columns, unique_identifier, fiscal_year):
+    """
+        Adds columns to temporary table to specify which rows have a legal entity and/or a place of performance change
+    """
+    le_loc_columns_distinct = " OR ".join(['website.{column} IS DISTINCT FROM broker.{column}'.format(column=column)
+                                           for column in database_columns if column[: 12] == 'legal_entity'])
+
+    pop_loc_columns_distinct = " OR ".join(['website.{column} IS DISTINCT FROM broker.{column}'.format(column=column)
+                                            for column in database_columns if column[: 13] == 'place_of_perf'])
+
+    sql_statement = """
+         -- Include columns to determine whether we need a place of performance change or recipient location
+       ALTER TABLE {file_type}_transactions_to_update_{fiscal_year}
+       ADD COLUMN place_of_performance_change boolean, add COLUMN recipient_change boolean;
+
+        UPDATE {file_type}_transactions_to_update_{fiscal_year} broker
+        SET
+        recipient_change = (
+            CASE  WHEN
+            {le_loc_columns_distinct}
+            THEN TRUE ELSE FALSE END
+            ),
+        place_of_performance_change = (
+            CASE  WHEN
+           {pop_loc_columns_distinct}
+           THEN TRUE ELSE FALSE END
+           )
+        FROM transaction_{file_type} website
+        WHERE broker.{unique_identifier} = website.{unique_identifier};
 
 
-class Command(BaseCommand):
-    help = "Update specific FABS transactions and its related tables"
-    pop_location = None
-    legal_entity_location = None
+        -- Delete rows where there is no transaction in the table
+        DELETE FROM {file_type}_transactions_to_update_{fiscal_year}
+        WHERE place_of_performance_change IS NULL
+        AND recipient_change IS NULL;
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            '--fiscal_year',
-            type=int,
-            help='Fiscal year to chose to pull from Broker'
-        )
+        -- Adding index to table to improve speed on update
+        CREATE INDEX {file_type}_le_loc_idx ON {file_type}_transactions_to_update_{fiscal_year}(recipient_change);
+        CREATE INDEX {file_type}_pop_idx ON {file_type}_transactions_to_update_{fiscal_year}(place_of_performance_change);
+        ANALYZE {file_type}_transactions_to_update_{fiscal_year};
+        """.format(file_type=file_type,
+                   unique_identifier=unique_identifier,
+                   fiscal_year=fiscal_year,
+                   le_loc_columns_distinct=le_loc_columns_distinct,
+                   pop_loc_columns_distinct=pop_loc_columns_distinct
+                   )
+    return sql_statement
 
-        parser.add_argument(
-            '--assistance',
-            action='store_true',
-            dest='assistance',
-            default=False,
-            help='Updates FABS location data'
-        )
 
-        parser.add_argument(
-            '--contracts',
-            action='store_true',
-            dest='contracts',
-            default=False,
-            help='Updates FPDS data'
-        )
+def update_location_table(file_type, loc_scope, database_columns, unique_identifier, fiscal_year):
+    """
+    Returns script to update references location for legal entity and place of performance locations from
+    the temporary table with broker data
+    """
+    location_update_code = ', '.join(['{loc_col} = broker.{broker_col}'.format(loc_co=loc_col, broker_col=broker_col)
+                                      for loc_col, broker_col in location_fields_mappings[file_type][loc_scope].items()
+                                      if broker_col in database_columns
+                                      ])
 
-    def handle(self, *args, **options):
-        query_parameters = {}
-        fiscal_year = options.get('fiscal_year')
+    # Legal Entity has an additional table and join from transactions_normalized
+    legal_entity_table = ', legal_entity' if loc_scope == 'recipient' else ''
+    location_join = 'AND legal_entity.legal_entity_id = transaction_normalized.recipient_id' + \
+                    ' AND legal_entity.location_id = loc.location_id' if loc_scope == 'recipient' \
+                    else 'AND loc.location_id = transaction_normalized.place_of_performance_id'
 
-        if options.get('contracts', None):
-            website_source = 'fpds'
-        elif options.get('assistance', None):
-            website_source = 'fabs'
-        else:
-            raise CommandError('Must specify --contracts or --assistance')
+    sql_statement = """
+    UPDATE references_location AS loc
+    SET
+        {location_update_code}
+    FROM {file_type}_transactions_to_update_{fiscal_year} broker,
+        transaction_{file_type},
+        transaction_normalized
+        {legal_entity_table}
+    WHERE broker.{unique_identifier} = transaction_{file_type}.{unique_identifier}
+    AND transaction_{file_type}.transaction_id = transaction_normalized.id
+    {location_join}
+    AND broker.{loc_scope}_change = TRUE;
+    """.format(location_update_code=location_update_code,
+               loc_scope=loc_scope,
+               file_type=file_type,
+               fiscal_year=fiscal_year,
+               legal_entity_table=legal_entity_table,
+               unique_identifier=unique_identifier,
+               location_join=location_join
+               )
 
-        if not fiscal_year:
-            raise CommandError('Must specify --fiscal_year')
-
-        query_parameters['fy_start'] = '10/01/' + str(fiscal_year - 1)
-        query_parameters['fy_end'] = '09/30/' + str(fiscal_year)
-
-        # Fetches rows that need to be updated based on batches pulled from the cursor
-        start = datetime.now()
-        logger.info('Fetching rows to update from broker for FY{} {} data'.format(fiscal_year, website_source.upper()))
-        run_sql_file('usaspending_api/broker/management/sql/get_updated_{}_data.sql'.format(website_source), query_parameters)
-
-        # Retrieves temporary table with FABS rows that need to be updated
-        db_cursor = connection.cursor()
-        db_cursor.execute('SELECT count(*) from {}_transactions_to_update;'.format(website_source))
-        db_rows = db_cursor.fetchall()[0][0]
-
-        logger.info("Completed fetching {} rows to update in {} seconds".format(db_rows, datetime.now()-start))
-
-        start = datetime.now()
-        if db_rows > 0:
-            run_sql_file('usaspending_api/broker/management/sql/update_{}_location_data.sql'.format(website_source), {})
-
-        logger.info("Completed updating: {} {} rows in {} seconds".format(website_source.upper(), db_rows, datetime.now() - start))
-
-        db_cursor.execute('DROP TABLE {}_transactions_to_update;'.format(website_source))
+    return sql_statement
