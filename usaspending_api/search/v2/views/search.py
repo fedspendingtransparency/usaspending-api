@@ -82,7 +82,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
             for trans in fy_set:
                 key = {'fiscal_year': str(trans['fiscal_year'])}
-                # key = str(key)
+                key = str(key)
                 group_results[key] = trans['federal_action_obligation']
 
         elif group == 'm' or group == 'month':
@@ -96,7 +96,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 fiscal_month = generate_fiscal_month(date(year=2017, day=1, month=trans['month']))
 
                 key = {'fiscal_year': str(trans['fiscal_year']), 'month': str(fiscal_month)}
-                # key = str(key)
+                key = str(key)
                 group_results[key] = trans['federal_action_obligation']
             nested_order = 'month'
         else:  # quarterly, take months and add them up
