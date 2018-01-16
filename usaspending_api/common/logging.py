@@ -1,12 +1,8 @@
-from django.http import JsonResponse
 from django.http import Http404
 from django import http
 from django.utils.timezone import now
 from django.utils.deprecation import MiddlewareMixin
 
-from rest_framework import status
-
-import sys
 import logging
 import traceback
 
@@ -20,12 +16,6 @@ def get_remote_addr(request):
         ip_address = request.META.get("REMOTE_ADDR", "")
 
     return ip_address
-
-
-def get_message_string(log_attributes):
-
-    return "[{timestamp}] [{status}] [{method}] [{path}] [{status_code}]" \
-           " [{remote_addr}] [{host}] [{response_ms}]".format(**log_attributes)
 
 
 class LoggingMiddleware(MiddlewareMixin):
@@ -63,23 +53,27 @@ class LoggingMiddleware(MiddlewareMixin):
 
         self.log["status_code"] = status_code
         self.log["response_ms"] = self.get_response_ms()
-        self.log["user"] = request.user
 
         if 100 <= status_code < 400:
             self.log["status"] = 'INFO'
             self.log["timestamp"] = now().strftime('%d/%m/%y %H:%M:%S')
-            self.server_logger.info(get_message_string(self.log), extra=self.log)
+            self.server_logger.info(self.get_message_string(), extra=self.log)
         elif status_code == 404:
             self.handle_404(request, Http404)
         elif 400 <= status_code < 500:
             self.log["status"] = 'WARNING'
             self.log["timestamp"] = now().strftime('%d/%m/%y %H:%M:%S')
-            self.server_logger.warning(get_message_string(self.log), extra=self.log)
+            self.server_logger.warning(self.get_message_string(), extra=self.log)
         else:
             # 500 or greater messages will be processed by the process_exception function
             pass
 
         return response
+
+    def get_message_string(self):
+        """Returns logging info as string for message"""
+        return "[{timestamp}] [{status}] [{method}] [{path} : {status_code}]" \
+               " [{remote_addr}] [{host}] [{response_ms}]".format(**self.log)
 
     def process_exception(self, request, exception):
         """
@@ -101,11 +95,10 @@ class LoggingMiddleware(MiddlewareMixin):
         """Logs 404 status"""
         self.log["status_code"] = 404
         self.log["response_ms"] = self.get_response_ms()
-        self.log["user"] = request.user
         self.log["status"] = 'WARNING'
-
         self.log["timestamp"] = now().strftime('%d/%m/%y %H:%M:%S')
-        self.server_logger.warning(get_message_string(self.log), extra=self.log)
+
+        self.server_logger.warning(self.get_message_string(), extra=self.log)
 
     def handle_500(self, request):
         """Logs 500 error"""
@@ -113,8 +106,8 @@ class LoggingMiddleware(MiddlewareMixin):
 
         self.log["status_code"] = 500
         self.log["response_ms"] = self.get_response_ms()
-        self.log["user"] = request.user
         self.log["status"] = 'ERROR'
         self.log["timestamp"] = now().strftime('%d/%m/%y %H:%M:%S')
+        self.log["traceback"] = traceback_str
 
-        self.server_logger.error("%s", traceback_str, extra=self.log)
+        self.server_logger.error("%s", self.get_message_string(), extra=self.log)
