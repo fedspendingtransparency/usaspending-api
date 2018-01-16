@@ -190,11 +190,27 @@
       "where": "\"funding_agency_id\" IS NOT NULL",
       "columns": [{"name": "\"funding_agency_id\"", "order": "ASC NULLS LAST"}]
     }, {
-      "name": "awarding_toptier_agency_name",
+      "name": "ordered_awarding_toptier_agency_name",
       "columns": [{"name": "\"awarding_toptier_agency_name\"", "order": "DESC NULLS LAST"}]
     }, {
-      "name": "awarding_subtier_agency_name",
+      "name": "ordered_awarding_subtier_agency_name",
       "columns": [{"name": "\"awarding_subtier_agency_name\"", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "awarding_toptier_agency_name",
+      "where": "\"awarding_toptier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"awarding_toptier_agency_name\""}]
+    }, {
+      "name": "awarding_subtier_agency_name",
+      "where": "\"awarding_subtier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"awarding_subtier_agency_name\""}]
+    }, {
+      "name": "funding_toptier_agency_name",
+      "where": "\"funding_toptier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"funding_toptier_agency_name\""}]
+    }, {
+      "name": "funding_subtier_agency_name",
+      "where": "\"funding_subtier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"funding_subtier_agency_name\""}]
     }, {
       "name": "recipient_location_country_code",
       "where": "\"recipient_location_country_code\" IS NOT NULL",
