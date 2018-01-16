@@ -1,9 +1,7 @@
 """
 Django settings for usaspending_api project.
-
 For more information on this file, see
 https://docs.djangoproject.com/en/1.11/topics/settings/
-
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
@@ -305,6 +303,11 @@ SPAGHETTI_SAUCE = {
 # Mapping dictionaries (used for converting terse_labels from broker to
 # semi-terse labels used in the datastore)
 # TERSE_TO_LONG UNUSED.  IF NEEDED, change LONG_TO_TERSE to a bidict or invert the dict.
+
+# Elasticsearch
+ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
+TRANSACTIONS_INDEX_ROOT = 'transactions'
+
 
 LONG_TO_TERSE_LABELS = {
     "allocation_transfer_agency_id": "allocation_transfer_agency_id",
