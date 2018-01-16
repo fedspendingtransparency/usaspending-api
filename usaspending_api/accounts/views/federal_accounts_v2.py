@@ -97,7 +97,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         group = json_request.get('group', None)
         filters = json_request.get('filters', None)
         if filters:
-            filters = federal_account_filter2(filters, "treasury_account_identifier__program_balances__")
+            filters = federal_account_filter(filters, "treasury_account_identifier__program_balances__")
 
         nested_order = ''
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
@@ -287,14 +287,14 @@ def filter_on(prefix, key, values):
     return Q(**{'{}__{}__in'.format(prefix, key): values})
 
 
-def orred_filter_list(prefix, filters):
+def orred_filter_list(prefix, subfilters):
     '''Produces Q-object for a list of dicts
 
     Each dict's (key: value) pairs are ANDed together (rows must satisfy all k:v)
     List items are ORred together (satisfying any one is enough)
     '''
     result = Q()
-    for filter in filters:
+    for filter in subfilters:
         subresult = Q()
         for (key, values) in filter.items():
             subresult &= filter_on(prefix, key, values)
@@ -302,35 +302,35 @@ def orred_filter_list(prefix, filters):
     return result
 
 
-def orred_date_filter_list(filters):
+def orred_date_filter_list(date_ranges):
     '''Produces Q-object for a list of dicts, each of which may include start and/or end date
 
     Each dict's (key: value) pairs are ANDed together (rows must satisfy all k:v)
     List items are ORred together (satisfying any one is enough)
     '''
     result = Q()
-    for filter in filters:
+    for date_range in date_ranges:
         subresult = Q()
-        if 'start_date' in filter:
-            start_date = parse_date(filter['start_date'])
+        if 'start_date' in date_range:
+            start_date = parse_date(date_range['start_date'])
             subresult &= Q(reporting_period_start__gte=start_date)
-        if 'end_date' in filter:
-            end_date = parse_date(filter['end_date'])
+        if 'end_date' in date_range:
+            end_date = parse_date(date_range['end_date'])
             subresult &= Q(reporting_period_end__lte=end_date)
         result |= subresult
     return result
 
 
-def federal_account_filter2(filters, extra=""):
+def federal_account_filter(filters, extra=""):
 
     result = Q()
     for (key, values) in filters.items():
         if key == 'object_class':
-            result &= orred_filter_list(extra + 'object_class', values)
+            result &= orred_filter_list(prefix=extra + 'object_class', subfilters=values)
         elif key == 'program_activity':
             result &= filter_on(extra + 'program_activity', 'program_activity_code', values)
         elif key == 'time_period':
-            result &= orred_date_filter_list(values)
+            result &= orred_date_filter_list(date_ranges=values)
     return result
 
 
@@ -368,7 +368,7 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
         else:
             raise InvalidParameterException("category must be one of: program_activity, object_class, treasury_account")
         if filters:
-            filters = federal_account_filter2(filters)
+            filters = federal_account_filter(filters)
             queryset = queryset.filter(filters)
 
         queryset = queryset.values('id', 'code', 'name').annotate(
