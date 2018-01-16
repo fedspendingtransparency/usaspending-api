@@ -131,14 +131,20 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                 if key not in group_results:
                     group_results[key] = \
                         {"outlay": trans['outlay'] if trans['outlay'] else 0,
-                          "obligations_incurred_filtered": trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else 0,
+                          "obligations_incurred_filtered": trans["obligations_incurred_filtered"]
+                                                           if trans["obligations_incurred_filtered"]
+                                                           else 0,
                           "obligations_incurred_other": 0,
                           "unobliged_balance": 0
                         }
                 else:
                     group_results[key] = \
-                        {"outlay": group_results[key]["outlay"]+trans['outlay'] if trans['outlay'] else group_results[key]["outlay"],
-                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"]+trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else group_results[key]["obligations_incurred_filtered"],
+                        {"outlay": group_results[key]["outlay"]+trans['outlay']
+                                   if trans['outlay'] else group_results[key]["outlay"],
+                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"]
+                                                           + trans["obligations_incurred_filtered"]
+                                                           if trans["obligations_incurred_filtered"]
+                                                           else group_results[key]["obligations_incurred_filtered"],
                           "obligations_incurred_other": group_results[key]["obligations_incurred_other"],
                           "unobliged_balance": group_results[key]["unobliged_balance"]
                         }
@@ -154,15 +160,24 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                     group_results[key] = \
                         {"outlay": 0,
                           "obligations_incurred_filtered": 0,
-                          "obligations_incurred_other": trans['obligations_incurred_other'] if trans['obligations_incurred_other'] else 0,
-                          "unobliged_balance": trans["unobliged_balance"] if trans["unobliged_balance"] else 0
+                          "obligations_incurred_other": trans['obligations_incurred_other']
+                                                        if trans['obligations_incurred_other']
+                                                        else 0,
+                          "unobliged_balance": trans["unobliged_balance"]
+                                               if trans["unobliged_balance"]
+                                               else 0
                         }
                 else:
                     group_results[key] = \
                         {"outlay": group_results[key]["outlay"],
                           "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"],
-                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"]+trans['obligations_incurred_other'] if trans['obligations_incurred_other'] else group_results[key]["obligations_incurred_other"],
-                          "unobliged_balance": group_results[key]["unobliged_balance"]+trans["unobliged_balance"] if trans["unobliged_balance"] else group_results[key]["unobliged_balance"]
+                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"]
+                                                        + trans['obligations_incurred_other']
+                                                        if trans['obligations_incurred_other']
+                                                        else group_results[key]["obligations_incurred_other"],
+                          "unobliged_balance": group_results[key]["unobliged_balance"] + trans["unobliged_balance"]
+                                               if trans["unobliged_balance"]
+                                               else group_results[key]["unobliged_balance"]
                         }
 
         else:  # quarterly, take months and add them up
@@ -190,14 +205,21 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                 if key not in group_results:
                     group_results[key] = \
                         {"outlay": trans['outlay'] if trans['outlay'] else 0,
-                         "obligations_incurred_filtered": trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else 0,
+                         "obligations_incurred_filtered": trans["obligations_incurred_filtered"]
+                                                          if trans["obligations_incurred_filtered"]
+                                                          else 0,
                          "obligations_incurred_other": 0,
                          "unobliged_balance": 0
                          }
                 else:
                     group_results[key] = \
-                        {"outlay": group_results[key]["outlay"] + trans['outlay'] if trans['outlay'] else group_results[key]["outlay"],
-                         "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"] + trans["obligations_incurred_filtered"] if trans["obligations_incurred_filtered"] else group_results[key]["obligations_incurred_filtered"],
+                        {"outlay": group_results[key]["outlay"] + trans['outlay']
+                                   if trans['outlay']
+                                   else group_results[key]["outlay"],
+                         "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"]
+                                                          + trans["obligations_incurred_filtered"]
+                                                          if trans["obligations_incurred_filtered"]
+                                                          else group_results[key]["obligations_incurred_filtered"],
                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"],
                          "unobliged_balance": group_results[key]["unobliged_balance"]
                          }
@@ -212,15 +234,25 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                     group_results[key] = \
                         {"outlay": 0,
                          "obligations_incurred_filtered": 0,
-                         "obligations_incurred_other": trans['obligations_incurred_other'] if trans['obligations_incurred_other'] else 0,
-                         "unobliged_balance": trans["unobliged_balance"] if trans["unobliged_balance"] else 0
+                         "obligations_incurred_other": trans['obligations_incurred_other']
+                                                       if trans['obligations_incurred_other']
+                                                       else 0,
+                         "unobliged_balance": trans["unobliged_balance"]
+                                              if trans["unobliged_balance"]
+                                              else 0
                          }
                 else:
                     group_results[key] = \
                         {"outlay": group_results[key]["outlay"],
                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"],
-                         "obligations_incurred_other": group_results[key]["obligations_incurred_other"] + trans['obligations_incurred_other'] if trans['obligations_incurred_other'] else group_results[key]["obligations_incurred_other"],
-                         "unobliged_balance": group_results[key]["unobliged_balance"] + trans["unobliged_balance"] if trans["unobliged_balance"] else group_results[key]["unobliged_balance"]
+                         "obligations_incurred_other": group_results[key]["obligations_incurred_other"]
+                                                       + trans['obligations_incurred_other']
+                                                       if trans['obligations_incurred_other']
+                                                       else group_results[key]["obligations_incurred_other"],
+                         "unobliged_balance": group_results[key]["unobliged_balance"]
+                                              + trans["unobliged_balance"]
+                                              if trans["unobliged_balance"]
+                                              else group_results[key]["unobliged_balance"]
                          }
             nested_order = 'quarter'
 
