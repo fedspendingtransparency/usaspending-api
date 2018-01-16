@@ -429,7 +429,6 @@ class AwardMatview(models.Model):
     officer_5_name = models.TextField()
     other_than_full_and_o_desc = models.TextField()
     other_than_full_and_open_c = models.TextField()
-    parent_award_id = models.TextField()
     parent_award_piid = models.TextField()
     parent_recipient_unique_id = models.TextField()
     period_of_performance_current_end_date = models.DateTimeField()
