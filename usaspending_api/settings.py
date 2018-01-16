@@ -344,7 +344,6 @@ ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
 TRANSACTIONS_INDEX_ROOT = 'transactions'
 
 
-
 LONG_TO_TERSE_LABELS = {
     "allocation_transfer_agency_id": "allocation_transfer_agency_id",
     "agency_id": "responsible_agency_id",
@@ -647,4 +646,3 @@ LONG_TO_TERSE_LABELS = {
     "original_loan_subsidy_cost": "original_loan_subsidy_cost",
     "business_funds_indicator": "business_funds_indicator"
 }
-
