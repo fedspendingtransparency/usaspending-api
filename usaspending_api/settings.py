@@ -206,9 +206,8 @@ LOGGING = {
         },
         'user_readable': {
             '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
-            'format': "%(asctime)s %(levelname)s %(method)s %(path)s %(status_code)s %(remote_addr)s %(host)s " +
-                      "%(response_ms)d %(message)s %(request)s %(user)s %(hash)s",
-            'datefmt': "%d/%m/%y %H:%M:%S"
+            'format': "%(timestamp)s %(status)s %(method)s %(path)s %(status_code)s %(remote_addr)s %(host)s " +
+                      "%(response_ms)d %(message)s %(request)s %(user)s"
         }
     },
     'handlers': {
