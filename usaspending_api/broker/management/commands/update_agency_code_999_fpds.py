@@ -12,7 +12,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_broker_data(fiscal_year, fy_start, fy_end):
-        sql_statment = f"""
+        sql_statment = """
         CREATE TEMPORARY TABlE fpds_agencies_to_update_{fiscal_year} AS
         SELECT * FROM dblink('broker_server',
         '
@@ -50,7 +50,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def update_website(fiscal_year):
-        sql_statement = f"""
+        sql_statement = """
         -- Updating awarding agency code
         UPDATE transaction_fpds
         SET
