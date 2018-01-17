@@ -36,6 +36,10 @@
         {"name": "\"action_date\"", "order": "DESC NULLS LAST"},
         {"name": "\"type\""}
       ]
-    }
+    }, {
+      "name": "tuned_type_and_idv",
+      "where": "\"award_type\" IS NULL AND \"pulled_from\" IS NOT NULL",
+      "columns": [{"name": "\"award_type\""}, {"name": "\"pulled_from\""}]
+     }
   ]
 }

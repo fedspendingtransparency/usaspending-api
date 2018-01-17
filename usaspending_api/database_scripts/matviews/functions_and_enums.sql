@@ -21,3 +21,20 @@ CREATE OR REPLACE FUNCTION obligation_to_enum(award NUMERIC) RETURNS total_oblig
   RETURN result::total_obligation_bins;
   END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION award_type_to_name(award_type TEXT, pulled_from TEXT) RETURNS TEXT AS $$
+  DECLARE
+    DECLARE result TEXT;
+  BEGIN
+    IF award_type IN ('A', 'B', 'C', 'D') THEN result='contract';
+    ELSIF award_type IS NULL and pulled_from = 'IDV' THEN result='contract';
+    ELSIF award_type IN ('02', '03', '04', '05') THEN result='grant';
+    ELSIF award_type IN ('06', '10') THEN result='direct_payment';
+    ELSIF award_type IN ('07', '08') THEN result='loan';
+    ELSIF award_type IN ('09', '11') THEN result='other';
+    ELSE result=NULL;
+    END IF;
+  RETURN result::TEXT;
+  END;
+$$ LANGUAGE plpgsql;
