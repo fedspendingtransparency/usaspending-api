@@ -8,6 +8,8 @@ CREATE MATERIALIZED VIEW award_matview_new AS (
     referenced_idv_agency_desc,
     multiple_or_single_award_i,
     multiple_or_single_aw_desc,
+    type_of_idc,
+    type_of_idc_description,
     piid,
     parent_award_piid,
     fain,
