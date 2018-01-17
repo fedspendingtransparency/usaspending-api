@@ -16,7 +16,7 @@ def award_filter(filters):
     queryset = Award.objects.filter(latest_transaction_id__isnull=False, category__isnull=False)
 
     faba_flag = False
-    faba_queryset = FinancialAccountsByAwards.filter(award_id__is_null=False)
+    faba_queryset = FinancialAccountsByAwards.objects.filter(award_id__isnull=False)
     for key, value in filters.items():
 
         if value is None:
