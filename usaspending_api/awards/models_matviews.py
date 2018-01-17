@@ -515,6 +515,8 @@ class AwardMatview(models.Model):
     type_description = models.TextField()
     type_of_contract_pric_desc = models.TextField()
     type_of_contract_pricing = models.TextField()
+    type_of_idc = models.TextField()
+    type_of_idc_description = models.TextField()
     type_set_aside = models.TextField()
     type_set_aside_description = models.TextField()
     uri = models.TextField()
