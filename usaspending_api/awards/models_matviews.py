@@ -355,7 +355,7 @@ class SummaryTransactionMonthView(models.Model):
 
 
 class AwardMatview(models.Model):
-    generated_unique_award_id = models.TextField()
+    generated_unique_award_id = models.TextField(primary_key=True)
 
     action_date = models.TextField()
     agency_id = models.TextField()
