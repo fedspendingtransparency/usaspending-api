@@ -15,20 +15,29 @@ from functools import total_ordering
 from datetime import date
 from fiscalyear import FiscalDate
 
-from usaspending_api.awards.models_matviews import UniversalAwardView
-from usaspending_api.awards.models_matviews import UniversalTransactionView
-from usaspending_api.awards.v2.filters.view_selector import get_view_queryset, can_use_view, \
-    spending_by_award_count, spending_over_time, spending_by_geography
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
+
+from usaspending_api.awards.models_matviews import UniversalAwardView
+from usaspending_api.awards.models_matviews import UniversalTransactionView
+
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
+from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
+from usaspending_api.awards.v2.filters.view_selector import can_use_view
+from usaspending_api.awards.v2.filters.view_selector import get_view_queryset
+from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
+from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
+from usaspending_api.awards.v2.filters.view_selector import spending_over_time
+from usaspending_api.awards.v2.filters.view_selector import transaction_spending_summary
+
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, loan_type_mapping, \
     non_loan_assistance_type_mapping
 from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_mapping, loan_award_mapping, \
     non_loan_assistance_award_mapping
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
+from usaspending_api.search.v2.elasticsearch_helper import search_transactions
+
 
 logger = logging.getLogger(__name__)
 
@@ -355,7 +364,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     queryset = get_view_queryset(filters, 'SummaryNaicsCodesView')
                     queryset = queryset \
                         .filter(naics__isnull=False) \
-                        .values(naics_code=F("naics")) \
+                        .values('naics_code') \
                         .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                         .order_by('-aggregated_amount') \
                         .values(
@@ -722,6 +731,110 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             else:
                 result_key = categories[award['category']]
             results[result_key] += award['category_count']
+
+        # build response
+        return Response({"results": results})
+
+
+class SpendingByTransactionVisualizationViewSet(APIView):
+
+    @total_ordering
+    class MinType(object):
+        def __le__(self, other):
+            return True
+
+        def __eq__(self, other):
+            return self is other
+    Min = MinType()
+
+    @cache_response()
+    def post(self, request):
+        """Return all budget function/subfunction
+        titles matching the provided search text"""
+        json_request = request.data
+        fields = json_request.get("fields", None)
+        filters = json_request.get("filters", None)
+        order = json_request.get("order", "desc")
+        limit = json_request.get("limit", 10)
+        page = json_request.get("page", 1)
+        sort = json_request.get("sort", "Transaction Amount")
+
+        lower_limit = (page - 1) * limit
+        upper_limit = page * limit
+
+        if fields is None:
+            raise InvalidParameterException("Missing one or more required request parameters: fields")
+        elif len(fields) == 0:
+            raise InvalidParameterException("Please provide a field in the fields request parameter.")
+        if filters is None:
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
+        if "award_type_codes" not in filters:
+            raise InvalidParameterException(
+                "Missing one or more required request parameters: filters['award_type_codes']")
+
+        if order not in ["asc", "desc"]:
+            raise InvalidParameterException("Invalid value for order: {}".format(order))
+        if sort not in fields:
+            raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
+
+        response, total = search_transactions(filters, fields, sort,
+                                              order, lower_limit, limit)
+        if total == -1:
+            # will make error catching more robust
+            raise InvalidParameterException("Elasticsearch error")
+        has_next = total > upper_limit
+        results = []
+        for transaction in response:
+            transaction["internal_id"] = transaction["Award ID"]
+            results.append(transaction)
+        # build response
+        response = {
+            'limit': limit,
+            'results': results,
+            'page_metadata': {
+                'page': page,
+                'hasNext': has_next
+            }
+        }
+        return Response(response)
+
+
+class TransactionSummaryVisualizationViewSet(APIView):
+
+    @cache_response()
+    def post(self, request):
+        """
+            Returns a summary of transactions which match the award search filter
+                Desired values:
+                    total number of transactions `award_count`
+                    The federal_action_obligation sum of all those transactions `award_spending`
+
+            *Note* Only deals with prime awards, future plans to include sub-awards.
+        """
+        json_request = request.data
+        filters = json_request.get("filters", None)
+
+        if filters is None:
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
+
+        queryset, model = transaction_spending_summary(filters)
+
+        if model in ['UniversalTransactionView']:
+            agg_results = queryset.aggregate(
+                award_count=Count('*'),  # surprisingly, this works to create "SELECT COUNT(*) ..."
+                award_spending=Sum("federal_action_obligation"))
+        else:
+            # "summary" materialized views are pre-aggregated and contain a counts col
+            agg_results = queryset.aggregate(
+                award_count=Sum('counts'),
+                award_spending=Sum("federal_action_obligation"))
+
+        results = {
+            # The Django Aggregate command will return None if no rows are a match.
+            # It is cleaner to return 0 than "None"/null so the values are checked for None
+            'prime_awards_count': agg_results['award_count'] or 0,
+            'prime_awards_obligation_amount': agg_results['award_spending'] or 0.0,
+        }
 
         # build response
         return Response({"results": results})

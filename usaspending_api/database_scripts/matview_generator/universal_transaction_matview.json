@@ -2,8 +2,14 @@
   "final_name": "universal_transaction_matview",
   "matview_sql": [
     "SELECT",
-    "  UPPER(CONCAT(\"legal_entity\".\"recipient_name\", ' ', \"transaction_fpds\".\"naics\", ' ', \"naics\".\"description\", ' ', \"psc\".\"description\")) AS keyword_string,",
+    "  UPPER(CONCAT(",
+    "    \"legal_entity\".\"recipient_name\",",
+    "    ' ', \"transaction_fpds\".\"naics\",",
+    "    ' ', \"naics\".\"description\",",
+    "    ' ', \"psc\".\"description\",",
+    "    ' ', \"awards\".\"description\")) AS keyword_string,",
     "  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,",
+    "  \"transaction_normalized\".\"id\" AS transaction_id,",
     "  \"transaction_normalized\".\"action_date\"::date,",
     "  \"transaction_normalized\".\"fiscal_year\",",
     "  \"transaction_normalized\".\"type\",",
@@ -17,11 +23,13 @@
     "  \"awards\".\"piid\",",
     "  \"transaction_normalized\".\"federal_action_obligation\",",
     "  \"transaction_normalized\".\"description\" AS transaction_description,",
+    "  \"transaction_normalized\".\"modification_number\",",
     "",
     "  place_of_performance.\"location_country_code\" AS pop_country_code,",
     "  place_of_performance.\"country_name\" AS pop_country_name,",
     "  place_of_performance.\"state_code\" AS pop_state_code,",
     "  place_of_performance.\"county_code\" AS pop_county_code,",
+    "  place_of_performance.\"county_name\" AS pop_county_name,",
     "  place_of_performance.\"zip5\" AS pop_zip5,",
     "  place_of_performance.\"congressional_code\" AS pop_congressional_code,",
     "",
@@ -29,6 +37,7 @@
     "  recipient_location.\"country_name\" AS recipient_location_country_name,",
     "  recipient_location.\"state_code\" AS recipient_location_state_code,",
     "  recipient_location.\"county_code\" AS recipient_location_county_code,",
+    "  recipient_location.\"county_name\" AS recipient_location_county_name,",
     "  recipient_location.\"zip5\" AS recipient_location_zip5,",
     "  recipient_location.\"congressional_code\" AS recipient_location_congressional_code,",
     "",
@@ -49,6 +58,8 @@
     "  \"legal_entity\".\"parent_recipient_unique_id\",",
     "  \"legal_entity\".\"business_categories\",",
     "",
+    "  \"transaction_normalized\".\"awarding_agency_id\",",
+    "  \"transaction_normalized\".\"funding_agency_id\",",
     "  TAA.\"name\" AS awarding_toptier_agency_name,",
     "  TFA.\"name\" AS funding_toptier_agency_name,",
     "  SAA.\"name\" AS awarding_subtier_agency_name,",
@@ -97,6 +108,9 @@
   ],
   "indexes": [
     {
+      "name": "transaction_id",
+      "columns": [{"name": "\"transaction_id\"", "order": "ASC NULLS LAST"}]
+    }, {
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {
@@ -178,37 +192,29 @@
       "where": "\"parent_recipient_unique_id\" IS NOT NULL",
       "columns": [{"name": "\"parent_recipient_unique_id\""}]
     }, {
+      "name": "awarding_agency_id",
+      "where": "\"awarding_agency_id\" IS NOT NULL",
+      "columns": [{"name": "\"awarding_agency_id\"", "order": "ASC NULLS LAST"}]
+    }, {
+      "name": "funding_agency_id",
+      "where": "\"funding_agency_id\" IS NOT NULL",
+      "columns": [{"name": "\"funding_agency_id\"", "order": "ASC NULLS LAST"}]
+    }, {
       "name": "awarding_toptier_agency_name",
-      "where": "awarding_toptier_agency_name IS NOT NULL",
-      "columns": [{"name": "\"awarding_toptier_agency_name\"", "order": "DESC NULLS LAST"}]
+      "where": "\"awarding_toptier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"awarding_toptier_agency_name\""}]
     }, {
       "name": "awarding_subtier_agency_name",
-      "where": "awarding_subtier_agency_name IS NOT NULL",
-      "columns": [{"name": "\"awarding_subtier_agency_name\"", "order": "DESC NULLS LAST"}]
+      "where": "\"awarding_subtier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"awarding_subtier_agency_name\""}]
     }, {
       "name": "funding_toptier_agency_name",
-      "where": "funding_toptier_agency_name IS NOT NULL",
-      "columns": [{"name": "\"funding_toptier_agency_name\"", "order": "DESC NULLS LAST"}]
+      "where": "\"funding_toptier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"funding_toptier_agency_name\""}]
     }, {
       "name": "funding_subtier_agency_name",
-      "where": "funding_subtier_agency_name IS NOT NULL",
-      "columns": [{"name": "\"funding_subtier_agency_name\"", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "gin_awarding_toptier_agency_name",
-      "method": "GIN",
-      "columns": [{"name": "\"awarding_toptier_agency_name\"", "opclass": "gin_trgm_ops"}]
-    }, {
-      "name": "gin_awarding_subtier_agency_name",
-      "method": "GIN",
-      "columns": [{"name": "\"awarding_subtier_agency_name\"", "opclass": "gin_trgm_ops"}]
-    }, {
-      "name": "gin_funding_toptier_agency_name",
-      "method": "GIN",
-      "columns": [{"name": "\"funding_toptier_agency_name\"", "opclass": "gin_trgm_ops"}]
-    }, {
-      "name": "gin_funding_subtier_agency_name",
-      "method": "GIN",
-      "columns": [{"name": "\"funding_subtier_agency_name\"", "opclass": "gin_trgm_ops"}]
+      "where": "\"funding_subtier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"funding_subtier_agency_name\""}]
     }, {
       "name": "recipient_location_country_code",
       "where": "\"recipient_location_country_code\" IS NOT NULL",

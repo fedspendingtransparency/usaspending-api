@@ -84,54 +84,44 @@ def matview_search_filter(filters, model):
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
-            funding_toptier = []
-            funding_subtier = []
-            awarding_toptier = []
-            awarding_subtier = []
+            funding_toptier = Q()
+            funding_subtier = Q()
+            awarding_toptier = Q()
+            awarding_subtier = Q()
             for v in value:
                 type = v["type"]
                 tier = v["tier"]
                 name = v["name"]
                 if type == "funding":
                     if tier == "toptier":
-                        funding_toptier.append(name)
+                        funding_toptier |= Q(funding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        funding_subtier.append(name)
+                        funding_subtier |= Q(funding_subtier_agency_name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
-                        awarding_toptier.append(name)
+                        awarding_toptier |= Q(awarding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        awarding_subtier.append(name)
+                        awarding_subtier |= Q(awarding_subtier_agency_name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
 
+            award_queryfilter = Q()
+
+            # Since these are Q filters, no DB hits for boolean checks
             if funding_toptier:
-                or_queryset = Q()
-                for name in funding_toptier:
-                    or_queryset |= Q(funding_toptier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
-
+                award_queryfilter |= funding_toptier
             if funding_subtier:
-                or_queryset = Q()
-                for name in funding_subtier:
-                    or_queryset |= Q(funding_subtier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
-
+                award_queryfilter |= funding_subtier
             if awarding_toptier:
-                or_queryset = Q()
-                for name in awarding_toptier:
-                    or_queryset |= Q(awarding_toptier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
-
+                award_queryfilter |= awarding_toptier
             if awarding_subtier:
-                or_queryset = Q()
-                for name in awarding_subtier:
-                    or_queryset |= Q(awarding_subtier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
+                award_queryfilter |= awarding_subtier
+
+            queryset = queryset.filter(award_queryfilter)
 
         elif key == "legal_entities":
             in_query = [v for v in value]
