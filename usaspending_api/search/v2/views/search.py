@@ -364,7 +364,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     queryset = get_view_queryset(filters, 'SummaryNaicsCodesView')
                     queryset = queryset \
                         .filter(naics__isnull=False) \
-                        .values(naics_code=F("naics")) \
+                        .values('naics_code') \
                         .annotate(aggregated_amount=Sum('federal_action_obligation')) \
                         .order_by('-aggregated_amount') \
                         .values(

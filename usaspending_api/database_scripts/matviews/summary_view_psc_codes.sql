@@ -30,15 +30,20 @@ GROUP BY
   "transaction_fpds"."pulled_from",
   "transaction_fpds"."product_or_service_code";
 
-CREATE INDEX idx_a88815a1__action_date_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_a88815a1__type_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_b1304e46__action_date_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_b1304e46__type_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_b1304e46__tuned_type_and_idv_temp ON summary_view_psc_codes_temp USING BTREE("award_type", "pulled_from") WITH (fillfactor = 100) WHERE "award_type" IS NULL AND "pulled_from" IS NOT NULL;
 
 ANALYZE VERBOSE summary_view_psc_codes_temp;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_psc_codes RENAME TO summary_view_psc_codes_old;
-ALTER INDEX IF EXISTS idx_a88815a1__action_date RENAME TO idx_a88815a1__action_date_old;
-ALTER INDEX IF EXISTS idx_a88815a1__type RENAME TO idx_a88815a1__type_old;
+ALTER INDEX IF EXISTS idx_b1304e46__action_date RENAME TO idx_b1304e46__action_date_old;
+ALTER INDEX IF EXISTS idx_b1304e46__type RENAME TO idx_b1304e46__type_old;
+ALTER INDEX IF EXISTS idx_b1304e46__tuned_type_and_idv RENAME TO idx_b1304e46__tuned_type_and_idv_old;
 
 ALTER MATERIALIZED VIEW summary_view_psc_codes_temp RENAME TO summary_view_psc_codes;
-ALTER INDEX idx_a88815a1__action_date_temp RENAME TO idx_a88815a1__action_date;
-ALTER INDEX idx_a88815a1__type_temp RENAME TO idx_a88815a1__type;
+ALTER INDEX idx_b1304e46__action_date_temp RENAME TO idx_b1304e46__action_date;
+ALTER INDEX idx_b1304e46__type_temp RENAME TO idx_b1304e46__type;
+ALTER INDEX idx_b1304e46__tuned_type_and_idv_temp RENAME TO idx_b1304e46__tuned_type_and_idv;
+
+GRANT SELECT ON summary_view_psc_codes TO readonly;
