@@ -199,7 +199,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'simpletime': {
-            'format': "%(asctime)s - %(module)s.%(name)s - %(levelname)s - %(message)s",
+            'format': "%(asctime)s - %(message)s",
             'datefmt': "%H:%M:%S"
         },
         'user_readable': {
@@ -218,7 +218,7 @@ LOGGING = {
             'formatter': 'user_readable'
         },
         'console': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'simpletime'
         },
@@ -230,8 +230,8 @@ LOGGING = {
             'propagate': True,
         },
         'console': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
+            'handlers': ['console', 'console_file'],
+            'level': 'INFO',
             'propagate': True,
         }
     },
