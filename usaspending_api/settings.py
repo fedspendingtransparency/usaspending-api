@@ -198,6 +198,10 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
+        'specifics': {
+            '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
+            'format': "%(asctime)s %(filename)s %(funcName)s %(levelname)s %(lineno)s %(module)s %(message)s %(name)s %(pathname)s"
+        },
         'simpletime': {
             'format': "%(asctime)s - %(message)s",
             'datefmt': "%H:%M:%S"
@@ -216,6 +220,14 @@ LOGGING = {
             'maxBytes': 1024*1024*20,  # 20 MB
             'backupCount': 5,
             'formatter': 'user_readable'
+        },
+        'console_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
+            'maxBytes': 1024*1024*2,  # 2 MB
+            'backupCount': 5,
+            'formatter': 'specifics'
         },
         'console': {
             'level': 'INFO',
