@@ -223,31 +223,29 @@ def matview_search_filter(filters, model):
         # Federal Account Filter
         elif key == "federal_account_ids":
             faba_flag = True
-            faba_queryset &= faba_queryset.filter(treasury_account__federal_account_id__in=value)
+            or_queryset = Q()
+            for v in value:
+                or_queryset |= Q(treasury_account__federal_account_id=v)
+            faba_queryset = faba_queryset.filter(or_queryset)
 
         # Federal Account Filter
         elif key == "object_class":
             faba_flag = True
-            print("oc_start")
-            print(value)
             result = Q()
             for oc in value:
-                print(oc)
                 subresult = Q()
                 for (key, values) in oc.items():
                     subresult &= filter_on("treasury_account__program_balances__object_class", key, values)
                 result |= subresult
-            faba_queryset &= faba_queryset.filter(result)
-            print("oc_end")
+            faba_queryset = faba_queryset.filter(result)
 
         # Federal Account Filter
         elif key == "program_activity":
             faba_flag = True
-            print("pa_start")
-            print(value)
-            faba_queryset &= faba_queryset.filter(
-                treasury_account__program_balances__program_activity__program_activity_code__in=value)
-            print("pa_end")
+            or_queryset = Q()
+            for v in value:
+                or_queryset |= Q(treasury_account__program_balances__program_activity__program_activity_code=v)
+            faba_queryset = faba_queryset.filter(or_queryset)
 
     if faba_flag:
         award_ids = faba_queryset.values('award_id')
