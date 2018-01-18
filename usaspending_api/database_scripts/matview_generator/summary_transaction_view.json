@@ -158,7 +158,7 @@
         "columns": [{"name": "\"recipient_location_state_code\""}]
     }, {
         "name": "recipient_county_code",
-        "where": "\"recipient_county_code\" IS NOT NULL",
+        "where": "\"recipient_location_county_code\" IS NOT NULL",
         "columns": [{"name": "\"recipient_location_county_code\""}]
     }, {
         "name": "recipient_zip",
@@ -244,6 +244,10 @@
       "name": "business_categories",
       "method": "GIN",
       "columns": [{"name": "\"business_categories\""}]
-    }
+    }, {
+      "name": "tuned_type_and_idv",
+      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
+      "columns": [{"name": "\"type\""}, {"name": "\"pulled_from\""}]
+     }
   ]
 }
