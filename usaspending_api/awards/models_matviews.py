@@ -398,7 +398,7 @@ class SummaryTransactionGeoView(models.Model):
 
 
 class AwardMatview(models.Model):
-    generated_unique_award_id = models.TextField()
+    generated_unique_award_id = models.TextField(primary_key=True)
 
     action_date = models.TextField()
     agency_id = models.TextField()
@@ -558,6 +558,8 @@ class AwardMatview(models.Model):
     type_description = models.TextField()
     type_of_contract_pric_desc = models.TextField()
     type_of_contract_pricing = models.TextField()
+    type_of_idc = models.TextField()
+    type_of_idc_description = models.TextField()
     type_set_aside = models.TextField()
     type_set_aside_description = models.TextField()
     uri = models.TextField()
