@@ -26,3 +26,10 @@ class SubmissionAttributes(models.Model):
     def __str__(self):
         return 'CGAC {} FY {} QTR {}'.format(
             self.cgac_code, self.reporting_fiscal_year, self.reporting_fiscal_quarter)
+
+    @classmethod
+    def last_certified_fy(cls):
+        """FY for reporting purposes is the last FY for which submissions have been certified."""
+
+        result = cls.objects.filter(certified_date__isnull=False).aggregate(fy=models.Max('reporting_fiscal_year'))
+        return result['fy']
