@@ -133,8 +133,8 @@ MATVIEW_SELECTOR = {
             'set_aside_type_codes',
             'extent_competed_type_codes',
             'federal_account_ids',
-            'object_class_ids',
-            'program_activity_ids'
+            'object_class',
+            'program_activity'
             ],
         'prevent_values': {},
         'examine_values': {},

@@ -4,6 +4,7 @@ from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_fi
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
+from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
 
@@ -43,8 +44,8 @@ def matview_search_filter(filters, model):
             'extent_competed_type_codes',
             # next 3 keys used by federal account page
             'federal_account_ids',
-            'object_class_ids',
-            'program_activity_ids'
+            'object_class',
+            'program_activity'
         ]
 
         if key not in key_list:
@@ -225,17 +226,31 @@ def matview_search_filter(filters, model):
             faba_queryset &= faba_queryset.filter(treasury_account__federal_account_id__in=value)
 
         # Federal Account Filter
-        elif key == "object_class_ids":
+        elif key == "object_class":
             faba_flag = True
-            faba_queryset &= faba_queryset.filter(object_class_id__in=value)
+            print("oc_start")
+            print(value)
+            result = Q()
+            for oc in value:
+                print(oc)
+                subresult = Q()
+                for (key, values) in oc.items():
+                    subresult &= filter_on("treasury_account__program_balances__object_class", key, values)
+                result |= subresult
+            faba_queryset &= faba_queryset.filter(result)
+            print("oc_end")
 
         # Federal Account Filter
-        elif key == "program_activity_ids":
+        elif key == "program_activity":
             faba_flag = True
-            faba_queryset &= faba_queryset.filter(program_activity_id__in=value)
+            print("pa_start")
+            print(value)
+            faba_queryset &= faba_queryset.filter(
+                treasury_account__program_balances__program_activity__program_activity_code__in=value)
+            print("pa_end")
 
     if faba_flag:
         award_ids = faba_queryset.values('award_id')
-        queryset.filter(award_id__in=award_ids)
+        queryset = queryset.filter(award_id__in=award_ids)
 
     return queryset
