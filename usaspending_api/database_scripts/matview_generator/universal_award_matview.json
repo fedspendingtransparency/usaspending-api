@@ -280,25 +280,29 @@
       "method": "GIN",
       "columns": [{"name": "(\"product_or_service_description\")", "opclass": "gin_trgm_ops"}]
     }, {
-      "name": "naics_code",
-      "method": "GIN",
-      "columns": [{"name": "\"naics_code\"", "opclass": "gin_trgm_ops"}]
+      "name": "naics",
+      "where": "\"naics_code\" IS NOT NULL",
+      "columns": [{"name": "\"naics_code\""}]
     }, {
-      "name": "naics_description",
+      "name": "gin_naics_description",
       "method": "GIN",
       "columns": [{"name": "UPPER(\"naics_description\")", "opclass": "gin_trgm_ops"}]
     }, {
-      "name": "business_categories",
+      "name": "gin_business_categories",
       "method": "GIN",
       "columns": [{"name": "\"business_categories\""}]
     }, {
-      "name": "keyword_string",
+      "name": "gin_keyword_string",
       "method": "GIN",
       "columns": [{"name": "\"keyword_string\"", "opclass": "gin_trgm_ops"}]
     }, {
-      "name": "award_id_string",
+      "name": "gin_award_id_string",
       "method": "GIN",
       "columns": [{"name": "\"award_id_string\"", "opclass": "gin_trgm_ops"}]
+     }, {
+      "name": "tuned_type_and_idv",
+      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
+      "columns": [{"name": "\"type\""}, {"name": "\"pulled_from\""}]
      }
   ]
 }

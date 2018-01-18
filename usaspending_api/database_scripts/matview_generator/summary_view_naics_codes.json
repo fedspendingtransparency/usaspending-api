@@ -34,6 +34,14 @@
         {"name": "\"action_date\"", "order": "DESC NULLS LAST"},
         {"name": "\"type\""}
       ]
-    }
+    }, {
+      "name": "naics",
+      "where": "\"naics_code\" IS NOT NULL",
+      "columns": [{"name": "\"naics_code\""}]
+    }, {
+      "name": "tuned_type_and_idv",
+      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
+      "columns": [{"name": "\"type\""}, {"name": "\"pulled_from\""}]
+     }
   ]
 }
