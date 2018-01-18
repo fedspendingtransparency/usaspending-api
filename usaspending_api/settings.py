@@ -1,9 +1,7 @@
 """
 Django settings for usaspending_api project.
-
 For more information on this file, see
 https://docs.djangoproject.com/en/1.11/topics/settings/
-
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
@@ -99,7 +97,6 @@ DEBUG_TOOLBAR_CONFIG = {
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -108,6 +105,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
+    'usaspending_api.common.logging.LoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'usaspending_api.urls'
@@ -215,42 +213,29 @@ LOGGING = {
             '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
             'format': "%(asctime)s %(filename)s %(funcName)s %(levelname)s %(lineno)s %(module)s %(message)s %(name)s %(pathname)s"
         },
-        'json': {
-            '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
-        },
         'simpletime': {
             'format': "%(asctime)s - %(message)s",
             'datefmt': "%H:%M:%S"
+        },
+        'user_readable': {
+            '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
+            'format': "%(timestamp)s %(status)s %(method)s %(path)s %(status_code)s %(remote_addr)s %(host)s " +
+                      "%(response_ms)d %(message)s %(request)s %(traceback)s"
         }
     },
     'handlers': {
-        'file': {
-            'level': 'DEBUG',
+        'server': {
+            'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/debug.log'),
-            'maxBytes': 1024*1024*2,  # 2 MB
-            'backupCount': 5
+            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/server.log'),
+            'maxBytes': 1024*1024*20,  # 20 MB
+            'backupCount': 5,
+            'formatter': 'user_readable'
         },
         'console_file': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
-            'maxBytes': 1024*1024*2,  # 2 MB
-            'backupCount': 5,
-            'formatter': 'specifics'
-        },
-        'events_file': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/events.log'),
-            'maxBytes': 1024*1024*2,  # 2 MB
-            'backupCount': 5,
-            'formatter': 'json'
-        },
-        'exceptions_file': {
-            'level': 'ERROR',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/exceptions.log'),
             'maxBytes': 1024*1024*2,  # 2 MB
             'backupCount': 5,
             'formatter': 'specifics'
@@ -262,26 +247,16 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
+        'server': {
+            'handlers': ['server'],
+            'level': 'INFO',
             'propagate': True,
         },
         'console': {
             'handlers': ['console', 'console_file'],
             'level': 'INFO',
             'propagate': True,
-        },
-        'events': {
-            'handlers': ['events_file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'exceptions': {
-            'handlers': ['exceptions_file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
+        }
     },
 }
 
@@ -351,6 +326,11 @@ SPAGHETTI_SAUCE = {
 # Mapping dictionaries (used for converting terse_labels from broker to
 # semi-terse labels used in the datastore)
 # TERSE_TO_LONG UNUSED.  IF NEEDED, change LONG_TO_TERSE to a bidict or invert the dict.
+
+# Elasticsearch
+ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
+TRANSACTIONS_INDEX_ROOT = 'transactions'
+
 
 LONG_TO_TERSE_LABELS = {
     "allocation_transfer_agency_id": "allocation_transfer_agency_id",

@@ -22,6 +22,7 @@ SELECT
   recipient_location."county_name" AS "recipient_location_county_name",
   recipient_location."congressional_code" AS "recipient_location_congressional_code",
   recipient_location."zip5" AS "recipient_location_zip5",
+
   place_of_performance."location_country_code" AS "pop_country_code",
   place_of_performance."country_name" AS "pop_country_name",
   place_of_performance."state_code" AS "pop_state_code",
@@ -30,13 +31,15 @@ SELECT
   place_of_performance."congressional_code" AS "pop_congressional_code",
   place_of_performance."zip5" AS "pop_zip5",
 
-  TAA."name" AS "awarding_toptier_agency_name",
-  TAA."abbreviation" AS "awarding_toptier_agency_abbreviation",
-  TFA."name" AS "funding_toptier_agency_name",
-  TFA."abbreviation" AS "funding_toptier_agency_abbreviation",
+  "transaction_normalized"."awarding_agency_id",
+  "transaction_normalized"."funding_agency_id",
+  TAA."name" AS awarding_toptier_agency_name,
+  TFA."name" AS funding_toptier_agency_name,
   SAA."name" AS awarding_subtier_agency_name,
-  SAA."abbreviation" AS awarding_subtier_agency_abbreviation,
   SFA."name" AS funding_subtier_agency_name,
+  TAA."abbreviation" AS awarding_toptier_agency_abbreviation,
+  TFA."abbreviation" AS funding_toptier_agency_abbreviation,
+  SAA."abbreviation" AS awarding_subtier_agency_abbreviation,
   SFA."abbreviation" AS funding_subtier_agency_abbreviation,
 
   "legal_entity"."business_categories",
@@ -108,13 +111,15 @@ GROUP BY
   place_of_performance."congressional_code",
   place_of_performance."zip5",
 
+  "transaction_normalized"."awarding_agency_id",
+  "transaction_normalized"."funding_agency_id",
   TAA."name",
-  TAA."abbreviation",
   TFA."name",
-  TFA."abbreviation",
   SAA."name",
-  SAA."abbreviation",
   SFA."name",
+  TAA."abbreviation",
+  TFA."abbreviation",
+  SAA."abbreviation",
   SFA."abbreviation",
 
   "legal_entity"."business_categories",
@@ -130,84 +135,101 @@ GROUP BY
   "transaction_fpds"."type_set_aside",
   "transaction_fpds"."extent_competed";
 
-CREATE INDEX idx_d625130a__ordered_action_date_temp ON summary_transaction_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__ordered_fy_temp ON summary_transaction_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__ordered_fy_type_temp ON summary_transaction_view_temp USING BTREE("fiscal_year" DESC NULLS LAST, "type") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__type_temp ON summary_transaction_view_temp USING BTREE("type") WITH (fillfactor = 100) WHERE "type" IS NOT NULL;
-CREATE INDEX idx_d625130a__pulled_from_temp ON summary_transaction_view_temp USING BTREE("pulled_from" DESC NULLS LAST) WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
-CREATE INDEX idx_d625130a__recipient_country_code_temp ON summary_transaction_view_temp USING BTREE("recipient_location_country_code") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__recipient_state_code_temp ON summary_transaction_view_temp USING BTREE("recipient_location_state_code") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__recipient_county_code_temp ON summary_transaction_view_temp USING BTREE("recipient_location_county_code") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__recipient_zip_temp ON summary_transaction_view_temp USING BTREE("recipient_location_zip5") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__pop_country_code_temp ON summary_transaction_view_temp USING BTREE("pop_country_code") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__pop_state_code_temp ON summary_transaction_view_temp USING BTREE("pop_state_code") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__pop_county_code_temp ON summary_transaction_view_temp USING BTREE("pop_county_code") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__pop_zip_temp ON summary_transaction_view_temp USING BTREE("pop_zip5") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__award_agency_name_temp ON summary_transaction_view_temp USING BTREE("awarding_toptier_agency_name") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__cfda_num_temp ON summary_transaction_view_temp USING BTREE("cfda_number") WITH (fillfactor = 100) WHERE "cfda_number" IS NOT NULL;
-CREATE INDEX idx_d625130a__cfda_title_temp ON summary_transaction_view_temp USING BTREE("cfda_title") WITH (fillfactor = 100) WHERE "cfda_title" IS NOT NULL;
-CREATE INDEX idx_d625130a__psc2_temp ON summary_transaction_view_temp USING BTREE("psc_code") WITH (fillfactor = 100) WHERE "psc_code" IS NOT NULL;
-CREATE INDEX idx_d625130a__psc_temp ON summary_transaction_view_temp USING BTREE("product_or_service_code") WITH (fillfactor = 100) WHERE "product_or_service_code" IS NOT NULL;
-CREATE INDEX idx_d625130a__naics_temp ON summary_transaction_view_temp USING BTREE("naics_code") WITH (fillfactor = 100) WHERE "naics_code" IS NOT NULL;
-CREATE INDEX idx_d625130a__total_obl_bin_temp ON summary_transaction_view_temp USING BTREE("total_obl_bin") WITH (fillfactor = 100) WHERE "total_obl_bin" IS NOT NULL;
-CREATE INDEX idx_d625130a__type_of_contract_temp ON summary_transaction_view_temp USING BTREE("type_of_contract_pricing") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__ordered_fy_set_aside_temp ON summary_transaction_view_temp USING BTREE("fiscal_year" DESC NULLS LAST, "type_set_aside") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__extent_competed_temp ON summary_transaction_view_temp USING BTREE("extent_competed") WITH (fillfactor = 100);
-CREATE INDEX idx_d625130a__type_set_aside_temp ON summary_transaction_view_temp USING BTREE("type_set_aside") WITH (fillfactor = 100) WHERE "type_set_aside" IS NOT NULL;
-CREATE INDEX idx_d625130a__business_categories_temp ON summary_transaction_view_temp USING GIN("business_categories");
+CREATE INDEX idx_6d2d2b6b__ordered_action_date_temp ON summary_transaction_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_6d2d2b6b__ordered_fy_temp ON summary_transaction_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_6d2d2b6b__ordered_fy_type_temp ON summary_transaction_view_temp USING BTREE("fiscal_year" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_6d2d2b6b__type_temp ON summary_transaction_view_temp USING BTREE("type") WITH (fillfactor = 100) WHERE "type" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__pulled_from_temp ON summary_transaction_view_temp USING BTREE("pulled_from" DESC NULLS LAST) WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__recipient_country_code_temp ON summary_transaction_view_temp USING BTREE("recipient_location_country_code") WITH (fillfactor = 100) WHERE "recipient_location_country_code" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__recipient_state_code_temp ON summary_transaction_view_temp USING BTREE("recipient_location_state_code") WITH (fillfactor = 100) WHERE "recipient_location_state_code" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__recipient_county_code_temp ON summary_transaction_view_temp USING BTREE("recipient_location_county_code") WITH (fillfactor = 100) WHERE "recipient_location_county_code" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__recipient_zip_temp ON summary_transaction_view_temp USING BTREE("recipient_location_zip5") WITH (fillfactor = 100) WHERE "recipient_location_zip5" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__pop_country_code_temp ON summary_transaction_view_temp USING BTREE("pop_country_code") WITH (fillfactor = 100) WHERE "pop_country_code" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__pop_state_code_temp ON summary_transaction_view_temp USING BTREE("pop_state_code") WITH (fillfactor = 100) WHERE "pop_state_code" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__pop_county_code_temp ON summary_transaction_view_temp USING BTREE("pop_county_code") WITH (fillfactor = 100) WHERE "pop_county_code" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__pop_zip_temp ON summary_transaction_view_temp USING BTREE("pop_zip5") WITH (fillfactor = 100) WHERE "pop_zip5" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__awarding_agency_id_temp ON summary_transaction_view_temp USING BTREE("awarding_agency_id" ASC NULLS LAST) WITH (fillfactor = 100) WHERE "awarding_agency_id" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__funding_agency_id_temp ON summary_transaction_view_temp USING BTREE("funding_agency_id" ASC NULLS LAST) WITH (fillfactor = 100) WHERE "funding_agency_id" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__awarding_toptier_agency_name_temp ON summary_transaction_view_temp USING BTREE("awarding_toptier_agency_name") WITH (fillfactor = 100) WHERE "awarding_toptier_agency_name" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__awarding_subtier_agency_name_temp ON summary_transaction_view_temp USING BTREE("awarding_subtier_agency_name") WITH (fillfactor = 100) WHERE "awarding_subtier_agency_name" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__funding_toptier_agency_name_temp ON summary_transaction_view_temp USING BTREE("funding_toptier_agency_name") WITH (fillfactor = 100) WHERE "funding_toptier_agency_name" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__funding_subtier_agency_name_temp ON summary_transaction_view_temp USING BTREE("funding_subtier_agency_name") WITH (fillfactor = 100) WHERE "funding_subtier_agency_name" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__cfda_num_temp ON summary_transaction_view_temp USING BTREE("cfda_number") WITH (fillfactor = 100) WHERE "cfda_number" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__cfda_title_temp ON summary_transaction_view_temp USING BTREE("cfda_title") WITH (fillfactor = 100) WHERE "cfda_title" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__psc_temp ON summary_transaction_view_temp USING BTREE("product_or_service_code") WITH (fillfactor = 100) WHERE "product_or_service_code" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__naics_temp ON summary_transaction_view_temp USING BTREE("naics_code") WITH (fillfactor = 100) WHERE "naics_code" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__total_obl_bin_temp ON summary_transaction_view_temp USING BTREE("total_obl_bin") WITH (fillfactor = 100) WHERE "total_obl_bin" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__type_of_contract_temp ON summary_transaction_view_temp USING BTREE("type_of_contract_pricing") WITH (fillfactor = 100);
+CREATE INDEX idx_6d2d2b6b__ordered_fy_set_aside_temp ON summary_transaction_view_temp USING BTREE("fiscal_year" DESC NULLS LAST, "type_set_aside") WITH (fillfactor = 100);
+CREATE INDEX idx_6d2d2b6b__extent_competed_temp ON summary_transaction_view_temp USING BTREE("extent_competed") WITH (fillfactor = 100);
+CREATE INDEX idx_6d2d2b6b__type_set_aside_temp ON summary_transaction_view_temp USING BTREE("type_set_aside") WITH (fillfactor = 100) WHERE "type_set_aside" IS NOT NULL;
+CREATE INDEX idx_6d2d2b6b__business_categories_temp ON summary_transaction_view_temp USING GIN("business_categories");
+CREATE INDEX idx_6d2d2b6b__tuned_type_and_idv_temp ON summary_transaction_view_temp USING BTREE("type", "pulled_from") WITH (fillfactor = 100) WHERE "type" IS NULL AND "pulled_from" IS NOT NULL;
 
-VACUUM ANALYZE VERBOSE summary_transaction_view_temp;
+ANALYZE VERBOSE summary_transaction_view_temp;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_transaction_view RENAME TO summary_transaction_view_old;
-ALTER INDEX IF EXISTS idx_d625130a__ordered_action_date RENAME TO idx_d625130a__ordered_action_date_old;
-ALTER INDEX IF EXISTS idx_d625130a__ordered_fy RENAME TO idx_d625130a__ordered_fy_old;
-ALTER INDEX IF EXISTS idx_d625130a__ordered_fy_type RENAME TO idx_d625130a__ordered_fy_type_old;
-ALTER INDEX IF EXISTS idx_d625130a__type RENAME TO idx_d625130a__type_old;
-ALTER INDEX IF EXISTS idx_d625130a__pulled_from RENAME TO idx_d625130a__pulled_from_old;
-ALTER INDEX IF EXISTS idx_d625130a__recipient_country_code RENAME TO idx_d625130a__recipient_country_code_old;
-ALTER INDEX IF EXISTS idx_d625130a__recipient_state_code RENAME TO idx_d625130a__recipient_state_code_old;
-ALTER INDEX IF EXISTS idx_d625130a__recipient_county_code RENAME TO idx_d625130a__recipient_county_code_old;
-ALTER INDEX IF EXISTS idx_d625130a__recipient_zip RENAME TO idx_d625130a__recipient_zip_old;
-ALTER INDEX IF EXISTS idx_d625130a__pop_country_code RENAME TO idx_d625130a__pop_country_code_old;
-ALTER INDEX IF EXISTS idx_d625130a__pop_state_code RENAME TO idx_d625130a__pop_state_code_old;
-ALTER INDEX IF EXISTS idx_d625130a__pop_county_code RENAME TO idx_d625130a__pop_county_code_old;
-ALTER INDEX IF EXISTS idx_d625130a__pop_zip RENAME TO idx_d625130a__pop_zip_old;
-ALTER INDEX IF EXISTS idx_d625130a__award_agency_name RENAME TO idx_d625130a__award_agency_name_old;
-ALTER INDEX IF EXISTS idx_d625130a__cfda_num RENAME TO idx_d625130a__cfda_num_old;
-ALTER INDEX IF EXISTS idx_d625130a__cfda_title RENAME TO idx_d625130a__cfda_title_old;
-ALTER INDEX IF EXISTS idx_d625130a__psc2 RENAME TO idx_d625130a__psc2_old;
-ALTER INDEX IF EXISTS idx_d625130a__psc RENAME TO idx_d625130a__psc_old;
-ALTER INDEX IF EXISTS idx_d625130a__naics RENAME TO idx_d625130a__naics_old;
-ALTER INDEX IF EXISTS idx_d625130a__total_obl_bin RENAME TO idx_d625130a__total_obl_bin_old;
-ALTER INDEX IF EXISTS idx_d625130a__type_of_contract RENAME TO idx_d625130a__type_of_contract_old;
-ALTER INDEX IF EXISTS idx_d625130a__ordered_fy_set_aside RENAME TO idx_d625130a__ordered_fy_set_aside_old;
-ALTER INDEX IF EXISTS idx_d625130a__extent_competed RENAME TO idx_d625130a__extent_competed_old;
-ALTER INDEX IF EXISTS idx_d625130a__type_set_aside RENAME TO idx_d625130a__type_set_aside_old;
-ALTER INDEX IF EXISTS idx_d625130a__business_categories RENAME TO idx_d625130a__business_categories_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__ordered_action_date RENAME TO idx_6d2d2b6b__ordered_action_date_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__ordered_fy RENAME TO idx_6d2d2b6b__ordered_fy_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__ordered_fy_type RENAME TO idx_6d2d2b6b__ordered_fy_type_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__type RENAME TO idx_6d2d2b6b__type_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__pulled_from RENAME TO idx_6d2d2b6b__pulled_from_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__recipient_country_code RENAME TO idx_6d2d2b6b__recipient_country_code_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__recipient_state_code RENAME TO idx_6d2d2b6b__recipient_state_code_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__recipient_county_code RENAME TO idx_6d2d2b6b__recipient_county_code_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__recipient_zip RENAME TO idx_6d2d2b6b__recipient_zip_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__pop_country_code RENAME TO idx_6d2d2b6b__pop_country_code_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__pop_state_code RENAME TO idx_6d2d2b6b__pop_state_code_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__pop_county_code RENAME TO idx_6d2d2b6b__pop_county_code_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__pop_zip RENAME TO idx_6d2d2b6b__pop_zip_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__awarding_agency_id RENAME TO idx_6d2d2b6b__awarding_agency_id_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__funding_agency_id RENAME TO idx_6d2d2b6b__funding_agency_id_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__awarding_toptier_agency_name RENAME TO idx_6d2d2b6b__awarding_toptier_agency_name_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__awarding_subtier_agency_name RENAME TO idx_6d2d2b6b__awarding_subtier_agency_name_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__funding_toptier_agency_name RENAME TO idx_6d2d2b6b__funding_toptier_agency_name_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__funding_subtier_agency_name RENAME TO idx_6d2d2b6b__funding_subtier_agency_name_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__cfda_num RENAME TO idx_6d2d2b6b__cfda_num_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__cfda_title RENAME TO idx_6d2d2b6b__cfda_title_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__psc RENAME TO idx_6d2d2b6b__psc_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__naics RENAME TO idx_6d2d2b6b__naics_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__total_obl_bin RENAME TO idx_6d2d2b6b__total_obl_bin_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__type_of_contract RENAME TO idx_6d2d2b6b__type_of_contract_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__ordered_fy_set_aside RENAME TO idx_6d2d2b6b__ordered_fy_set_aside_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__extent_competed RENAME TO idx_6d2d2b6b__extent_competed_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__type_set_aside RENAME TO idx_6d2d2b6b__type_set_aside_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__business_categories RENAME TO idx_6d2d2b6b__business_categories_old;
+ALTER INDEX IF EXISTS idx_6d2d2b6b__tuned_type_and_idv RENAME TO idx_6d2d2b6b__tuned_type_and_idv_old;
 
 ALTER MATERIALIZED VIEW summary_transaction_view_temp RENAME TO summary_transaction_view;
-ALTER INDEX idx_d625130a__ordered_action_date_temp RENAME TO idx_d625130a__ordered_action_date;
-ALTER INDEX idx_d625130a__ordered_fy_temp RENAME TO idx_d625130a__ordered_fy;
-ALTER INDEX idx_d625130a__ordered_fy_type_temp RENAME TO idx_d625130a__ordered_fy_type;
-ALTER INDEX idx_d625130a__type_temp RENAME TO idx_d625130a__type;
-ALTER INDEX idx_d625130a__pulled_from_temp RENAME TO idx_d625130a__pulled_from;
-ALTER INDEX idx_d625130a__recipient_country_code_temp RENAME TO idx_d625130a__recipient_country_code;
-ALTER INDEX idx_d625130a__recipient_state_code_temp RENAME TO idx_d625130a__recipient_state_code;
-ALTER INDEX idx_d625130a__recipient_county_code_temp RENAME TO idx_d625130a__recipient_county_code;
-ALTER INDEX idx_d625130a__recipient_zip_temp RENAME TO idx_d625130a__recipient_zip;
-ALTER INDEX idx_d625130a__pop_country_code_temp RENAME TO idx_d625130a__pop_country_code;
-ALTER INDEX idx_d625130a__pop_state_code_temp RENAME TO idx_d625130a__pop_state_code;
-ALTER INDEX idx_d625130a__pop_county_code_temp RENAME TO idx_d625130a__pop_county_code;
-ALTER INDEX idx_d625130a__pop_zip_temp RENAME TO idx_d625130a__pop_zip;
-ALTER INDEX idx_d625130a__award_agency_name_temp RENAME TO idx_d625130a__award_agency_name;
-ALTER INDEX idx_d625130a__cfda_num_temp RENAME TO idx_d625130a__cfda_num;
-ALTER INDEX idx_d625130a__cfda_title_temp RENAME TO idx_d625130a__cfda_title;
-ALTER INDEX idx_d625130a__psc2_temp RENAME TO idx_d625130a__psc2;
-ALTER INDEX idx_d625130a__psc_temp RENAME TO idx_d625130a__psc;
-ALTER INDEX idx_d625130a__naics_temp RENAME TO idx_d625130a__naics;
-ALTER INDEX idx_d625130a__total_obl_bin_temp RENAME TO idx_d625130a__total_obl_bin;
-ALTER INDEX idx_d625130a__type_of_contract_temp RENAME TO idx_d625130a__type_of_contract;
-ALTER INDEX idx_d625130a__ordered_fy_set_aside_temp RENAME TO idx_d625130a__ordered_fy_set_aside;
-ALTER INDEX idx_d625130a__extent_competed_temp RENAME TO idx_d625130a__extent_competed;
-ALTER INDEX idx_d625130a__type_set_aside_temp RENAME TO idx_d625130a__type_set_aside;
-ALTER INDEX idx_d625130a__business_categories_temp RENAME TO idx_d625130a__business_categories;
+ALTER INDEX idx_6d2d2b6b__ordered_action_date_temp RENAME TO idx_6d2d2b6b__ordered_action_date;
+ALTER INDEX idx_6d2d2b6b__ordered_fy_temp RENAME TO idx_6d2d2b6b__ordered_fy;
+ALTER INDEX idx_6d2d2b6b__ordered_fy_type_temp RENAME TO idx_6d2d2b6b__ordered_fy_type;
+ALTER INDEX idx_6d2d2b6b__type_temp RENAME TO idx_6d2d2b6b__type;
+ALTER INDEX idx_6d2d2b6b__pulled_from_temp RENAME TO idx_6d2d2b6b__pulled_from;
+ALTER INDEX idx_6d2d2b6b__recipient_country_code_temp RENAME TO idx_6d2d2b6b__recipient_country_code;
+ALTER INDEX idx_6d2d2b6b__recipient_state_code_temp RENAME TO idx_6d2d2b6b__recipient_state_code;
+ALTER INDEX idx_6d2d2b6b__recipient_county_code_temp RENAME TO idx_6d2d2b6b__recipient_county_code;
+ALTER INDEX idx_6d2d2b6b__recipient_zip_temp RENAME TO idx_6d2d2b6b__recipient_zip;
+ALTER INDEX idx_6d2d2b6b__pop_country_code_temp RENAME TO idx_6d2d2b6b__pop_country_code;
+ALTER INDEX idx_6d2d2b6b__pop_state_code_temp RENAME TO idx_6d2d2b6b__pop_state_code;
+ALTER INDEX idx_6d2d2b6b__pop_county_code_temp RENAME TO idx_6d2d2b6b__pop_county_code;
+ALTER INDEX idx_6d2d2b6b__pop_zip_temp RENAME TO idx_6d2d2b6b__pop_zip;
+ALTER INDEX idx_6d2d2b6b__awarding_agency_id_temp RENAME TO idx_6d2d2b6b__awarding_agency_id;
+ALTER INDEX idx_6d2d2b6b__funding_agency_id_temp RENAME TO idx_6d2d2b6b__funding_agency_id;
+ALTER INDEX idx_6d2d2b6b__awarding_toptier_agency_name_temp RENAME TO idx_6d2d2b6b__awarding_toptier_agency_name;
+ALTER INDEX idx_6d2d2b6b__awarding_subtier_agency_name_temp RENAME TO idx_6d2d2b6b__awarding_subtier_agency_name;
+ALTER INDEX idx_6d2d2b6b__funding_toptier_agency_name_temp RENAME TO idx_6d2d2b6b__funding_toptier_agency_name;
+ALTER INDEX idx_6d2d2b6b__funding_subtier_agency_name_temp RENAME TO idx_6d2d2b6b__funding_subtier_agency_name;
+ALTER INDEX idx_6d2d2b6b__cfda_num_temp RENAME TO idx_6d2d2b6b__cfda_num;
+ALTER INDEX idx_6d2d2b6b__cfda_title_temp RENAME TO idx_6d2d2b6b__cfda_title;
+ALTER INDEX idx_6d2d2b6b__psc_temp RENAME TO idx_6d2d2b6b__psc;
+ALTER INDEX idx_6d2d2b6b__naics_temp RENAME TO idx_6d2d2b6b__naics;
+ALTER INDEX idx_6d2d2b6b__total_obl_bin_temp RENAME TO idx_6d2d2b6b__total_obl_bin;
+ALTER INDEX idx_6d2d2b6b__type_of_contract_temp RENAME TO idx_6d2d2b6b__type_of_contract;
+ALTER INDEX idx_6d2d2b6b__ordered_fy_set_aside_temp RENAME TO idx_6d2d2b6b__ordered_fy_set_aside;
+ALTER INDEX idx_6d2d2b6b__extent_competed_temp RENAME TO idx_6d2d2b6b__extent_competed;
+ALTER INDEX idx_6d2d2b6b__type_set_aside_temp RENAME TO idx_6d2d2b6b__type_set_aside;
+ALTER INDEX idx_6d2d2b6b__business_categories_temp RENAME TO idx_6d2d2b6b__business_categories;
+ALTER INDEX idx_6d2d2b6b__tuned_type_and_idv_temp RENAME TO idx_6d2d2b6b__tuned_type_and_idv;
+
+GRANT SELECT ON summary_transaction_view TO readonly;

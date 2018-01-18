@@ -202,8 +202,10 @@ def get_or_create_object_class_rw(row, logger):
         major_object_class_name = 'Acquisition of assets'
     elif major_object_class == '40':
         major_object_class_name = 'Grants and fixed charges'
-    else:
+    elif major_object_class == '90':
         major_object_class_name = 'Other'
+    else:
+        major_object_class_name = 'Unknown'
 
     # we couldn't find a matching object class record, so create one
     # (note: is this really what we want to do? should we map to an 'unknown' instead?)

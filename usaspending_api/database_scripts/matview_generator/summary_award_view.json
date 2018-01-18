@@ -8,14 +8,17 @@
     "  \"transaction_fpds\".\"pulled_from\",",
     "  \"awards\".\"category\",",
     "",
-    "  TAA.name AS awarding_toptier_agency_name,",
-    "  TAA.abbreviation AS awarding_toptier_agency_abbreviation,",
-    "  TFA.name AS funding_toptier_agency_name,",
-    "  TFA.abbreviation AS funding_toptier_agency_abbreviation,",
-    "  SAA.name AS awarding_subtier_agency_name,",
-    "  SAA.abbreviation AS awarding_subtier_agency_abbreviation,",
-    "  SFA.name AS funding_subtier_agency_name,",
-    "  SFA.abbreviation AS funding_subtier_agency_abbreviation,",
+    "  \"transaction_normalized\".\"awarding_agency_id\",",
+    "  \"transaction_normalized\".\"funding_agency_id\",",
+    "  TAA.\"name\" AS awarding_toptier_agency_name,",
+    "  TFA.\"name\" AS funding_toptier_agency_name,",
+    "  SAA.\"name\" AS awarding_subtier_agency_name,",
+    "  SFA.\"name\" AS funding_subtier_agency_name,",
+    "  TAA.\"abbreviation\" AS awarding_toptier_agency_abbreviation,",
+    "  TFA.\"abbreviation\" AS funding_toptier_agency_abbreviation,",
+    "  SAA.\"abbreviation\" AS awarding_subtier_agency_abbreviation,",
+    "  SFA.\"abbreviation\" AS funding_subtier_agency_abbreviation,",
+    "",
     "  SUM(\"transaction_normalized\".\"federal_action_obligation\") AS \"federal_action_obligation\",",
     "  COUNT(*) counts",
     "FROM",
@@ -44,29 +47,59 @@
     "  \"awards\".\"type\",",
     "  \"transaction_fpds\".\"pulled_from\",",
     "  \"awards\".\"category\",",
-    "  TAA.name,",
-    "  TAA.abbreviation,",
-    "  TFA.name,",
-    "  TFA.abbreviation,",
-    "  SAA.name,",
-    "  SAA.abbreviation,",
-    "  SFA.name,",
-    "  SFA.abbreviation"
+    "  \"transaction_normalized\".\"awarding_agency_id\",",
+    "  \"transaction_normalized\".\"funding_agency_id\",",
+    "  TAA.\"name\",",
+    "  TFA.\"name\",",
+    "  SAA.\"name\",",
+    "  SFA.\"name\",",
+    "  TAA.\"abbreviation\",",
+    "  TFA.\"abbreviation\",",
+    "  SAA.\"abbreviation\",",
+    "  SFA.\"abbreviation\""
   ],
   "indexes": [
     {
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
-    },{
+    }, {
       "name": "type",
       "columns": [{"name": "\"type\""}]
-    },{
+    }, {
       "name": "fy",
       "columns": [{"name": "\"fiscal_year\"", "order": "DESC NULLS LAST"}]
-    },{
+    }, {
       "name": "pulled_from",
       "where": "\"pulled_from\" IS NOT NULL",
       "columns": [{"name": "\"pulled_from\""}]
+    }, {
+      "name": "awarding_agency_id",
+      "where": "\"awarding_agency_id\" IS NOT NULL",
+      "columns": [{"name": "\"awarding_agency_id\"", "order": "ASC NULLS LAST"}]
+    }, {
+      "name": "funding_agency_id",
+      "where": "\"funding_agency_id\" IS NOT NULL",
+      "columns": [{"name": "\"funding_agency_id\"", "order": "ASC NULLS LAST"}]
+    }, {
+      "name": "awarding_toptier_agency_name",
+      "where": "\"awarding_toptier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"awarding_toptier_agency_name\""}]
+    }, {
+      "name": "awarding_subtier_agency_name",
+      "where": "\"awarding_subtier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"awarding_subtier_agency_name\""}]
+    }, {
+      "name": "funding_toptier_agency_name",
+      "where": "\"funding_toptier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"funding_toptier_agency_name\""}]
+    }, {
+      "name": "funding_subtier_agency_name",
+      "where": "\"funding_subtier_agency_name\" IS NOT NULL",
+      "columns": [{"name": "\"funding_subtier_agency_name\""}]
+    }, {
+      "name": "tuned_type_and_idv",
+      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
+      "columns": [{"name": "\"type\""}, {"name": "\"pulled_from\""}]
     }
   ]
 }
