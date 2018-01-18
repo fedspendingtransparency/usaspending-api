@@ -204,10 +204,10 @@ FROM
     dblink ('broker_server', 'SELECT
         DISTINCT ON (tf.piid, tf.parent_award_id, tf.agency_id, tf.referenced_idv_agency_iden)
         ''cont_aw_'' ||
-            coalesce(tf.agency_id,''-none-'') || ''_'' ||
-            coalesce(tf.referenced_idv_agency_iden,''-none-'') || ''_'' ||
-            coalesce(tf.piid,''-none-'') || ''_'' ||
-            coalesce(tf.parent_award_id,''-none-'') AS generated_unique_award_id,
+            COALESCE(tf.agency_id,'''') || ''_'' ||
+            COALESCE(tf.referenced_idv_agency_iden,'''') || ''_'' ||
+            COALESCE(tf.piid,'''') || ''_'' ||
+            COALESCE(tf.parent_award_id,'''') AS generated_unique_award_id,
         tf.contract_award_type AS type,
         tf.contract_award_type_desc AS type_description,
         tf.agency_id AS agency_id,
@@ -219,7 +219,7 @@ FROM
         tf.parent_award_id AS parent_award_piid,
         NULL::text AS fain,
         NULL::text AS uri,
-        SUM(coalesce(tf.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,
+        SUM(COALESCE(tf.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,
         NULL::float AS total_subsidy_cost,
         NULL::float AS total_outlay,
         tf.awarding_agency_code AS awarding_agency_code,
@@ -241,7 +241,7 @@ FROM
         MIN(NULLIF(tf.period_of_performance_star, '''')::DATE) over w AS period_of_performance_start_date,
         MAX(NULLIF(tf.period_of_performance_curr, '''')::DATE) over w AS period_of_performance_current_end_date,
         NULL::float AS potential_total_value_of_award,
-        SUM(coalesce(tf.base_and_all_options_value::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS base_and_all_options_value,
+        SUM(COALESCE(tf.base_and_all_options_value::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS base_and_all_options_value,
         tf.last_modified::DATE AS last_modified_date,
         MAX(NULLIF(tf.action_date, '''')::DATE) over w AS certified_date,
         NULL::int AS record_type,
@@ -817,9 +817,8 @@ FROM
     dblink ('broker_server', 'SELECT
     DISTINCT ON (pafa.fain, pafa.awarding_sub_tier_agency_c)
     ''asst_aw_'' ||
-        coalesce(pafa.awarding_sub_tier_agency_c,''-none-'') || ''_'' ||
-        coalesce(pafa.fain, ''-none-'') || ''_'' ||
-        ''-none-'' AS generated_unique_award_id,
+        COALESCE(pafa.awarding_sub_tier_agency_c,'''') || ''_'' ||
+        COALESCE(pafa.fain, '''') AS generated_unique_award_id,
     pafa.assistance_type AS type,
     CASE
         WHEN pafa.assistance_type = ''02'' THEN ''Block Grant''
@@ -842,8 +841,8 @@ FROM
     NULL::text AS parent_award_piid,
     pafa.fain AS fain,
     NULL::text AS uri,
-    SUM(coalesce(pafa.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,
-    SUM(coalesce(pafa.original_loan_subsidy_cost::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_subsidy_cost,
+    SUM(COALESCE(pafa.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,
+    SUM(COALESCE(pafa.original_loan_subsidy_cost::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_subsidy_cost,
     NULL::float AS total_outlay,
     pafa.awarding_agency_code AS awarding_agency_code,
     pafa.awarding_agency_name AS awarding_agency_name,
@@ -1467,9 +1466,8 @@ FROM
     dblink ('broker_server', 'SELECT
     DISTINCT ON (pafa.uri, pafa.awarding_sub_tier_agency_c)
     ''asst_aw_'' ||
-        coalesce(pafa.awarding_sub_tier_agency_c,''-none-'') || ''_'' ||
-        ''-none-'' || ''_'' ||
-        coalesce(pafa.uri, ''-none-'') AS generated_unique_award_id,
+        COALESCE(pafa.awarding_sub_tier_agency_c,'''') || ''_'' ||
+        COALESCE(pafa.uri, '''') AS generated_unique_award_id,
     pafa.assistance_type AS type,
     CASE
         WHEN pafa.assistance_type = ''02'' THEN ''Block Grant''
@@ -1492,8 +1490,8 @@ FROM
     NULL::text AS parent_award_piid,
     NULL::text AS fain,
     pafa.uri AS uri,
-    SUM(coalesce(pafa.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,
-    SUM(coalesce(pafa.original_loan_subsidy_cost::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_subsidy_cost,
+    SUM(COALESCE(pafa.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,
+    SUM(COALESCE(pafa.original_loan_subsidy_cost::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_subsidy_cost,
     NULL::float AS total_outlay,
     pafa.awarding_agency_code AS awarding_agency_code,
     pafa.awarding_agency_name AS awarding_agency_name,

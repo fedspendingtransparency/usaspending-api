@@ -355,7 +355,11 @@ class SummaryTransactionMonthView(models.Model):
 
 
 class AwardMatview(models.Model):
-    generated_unique_award_id = models.TextField()
+    generated_unique_award_id = models.TextField(primary_key=True, db_column='generated_unique_award_id')
+    latest_transaction = models.ForeignKey(to='awards.TransactionMatview',
+                                           to_field='generated_unique_transaction_id',
+                                           db_column='latest_transaction_unique_id',
+                                           related_query_name='latest_transaction')
 
     action_date = models.TextField()
     agency_id = models.TextField()
@@ -369,7 +373,7 @@ class AwardMatview(models.Model):
     awarding_sub_tier_agency_abbr = models.TextField()
     awarding_sub_tier_agency_c = models.TextField()
     awarding_sub_tier_agency_n = models.TextField()
-    base_and_all_options_value = models.DecimalField()
+    base_and_all_options_value = models.DecimalField(max_digits=15, decimal_places=2)
     business_categories = ArrayField(models.TextField())
     business_funds_indicator = models.TextField()
     business_types = models.TextField()
@@ -426,7 +430,6 @@ class AwardMatview(models.Model):
     interagency_contract_desc = models.TextField()
     interagency_contracting_au = models.TextField()
     last_modified_date = models.DateTimeField()
-    latest_transaction_unique_id = models.TextField()
     major_program = models.TextField()
     multi_year_contract = models.TextField()
     multi_year_contract_desc = models.TextField()
@@ -463,7 +466,7 @@ class AwardMatview(models.Model):
     pop_state_code = models.TextField()
     pop_state_name = models.TextField()
     pop_zip5 = models.TextField()
-    potential_total_value_of_award = models.DecimalField()
+    potential_total_value_of_award = models.DecimalField(max_digits=15, decimal_places=2)
     price_evaluation_adjustmen = models.TextField()
     product_or_service_co_desc = models.TextField()
     product_or_service_code = models.TextField()
@@ -506,10 +509,10 @@ class AwardMatview(models.Model):
     subaward_count = models.IntegerField()
     subcontracting_plan = models.TextField()
     subcontracting_plan_desc = models.TextField()
-    total_obligation = models.DecimalField()
-    total_outlay = models.DecimalField()
-    total_subaward_amount = models.DecimalField()
-    total_subsidy_cost = models.DecimalField()
+    total_obligation = models.DecimalField(max_digits=15, decimal_places=2)
+    total_outlay = models.DecimalField(max_digits=15, decimal_places=2)
+    total_subaward_amount = models.DecimalField(max_digits=15, decimal_places=2)
+    total_subsidy_cost = models.DecimalField(max_digits=15, decimal_places=2)
     type = models.TextField()
     type_description = models.TextField()
     type_of_contract_pric_desc = models.TextField()
@@ -534,9 +537,12 @@ class AwardCategory(models.Model):
         db_table = 'award_category'
 
 
-class TransactionMatView(models.Model):
-    generated_unique_transaction_id = models.TextField()
-    generated_unique_award_id = models.TextField()
+class TransactionMatview(models.Model):
+    generated_unique_transaction_id = models.TextField(primary_key=True, db_column='generated_unique_transaction_id')
+    award = models.ForeignKey(to='awards.AwardMatview',
+                              to_field='generated_unique_award_id',
+                              db_column='generated_unique_award_id',
+                              related_query_name='award')
 
     action_date = models.DateTimeField()
     agency_id = models.TextField()
@@ -551,7 +557,7 @@ class TransactionMatView(models.Model):
     awarding_sub_tier_agency_n = models.TextField()
     awarding_office_code = models.TextField()
     awarding_office_name = models.TextField()
-    base_and_all_options_value = models.DecimalField()
+    base_and_all_options_value = models.DecimalField(max_digits=15, decimal_places=2)
     business_funds_indicator = models.TextField()
     business_types = models.TextField()
     business_types_description = models.TextField()
@@ -562,7 +568,7 @@ class TransactionMatView(models.Model):
     extent_compete_description = models.TextField()
     extent_competed = models.TextField()
     fain = models.TextField()
-    federal_action_obligation = models.DecimalField()
+    federal_action_obligation = models.DecimalField(max_digits=15, decimal_places=2)
     funding_agency_code = models.TextField()
     funding_agency_name = models.TextField()
     funding_sub_tier_agency_co = models.TextField()
@@ -574,7 +580,7 @@ class TransactionMatView(models.Model):
     last_modified_date = models.TextField()
     naics = models.TextField()
     naics_description = models.TextField()
-    original_loan_subsidy_cost = models.DecimalField()
+    original_loan_subsidy_cost = models.DecimalField(max_digits=15, decimal_places=2)
     parent_award_piid = models.TextField()
     period_of_performance_curr = models.DateTimeField()
     period_of_performance_star = models.DateTimeField()
