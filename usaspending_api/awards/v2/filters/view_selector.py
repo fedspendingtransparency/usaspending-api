@@ -2,6 +2,7 @@ from usaspending_api.awards.models_matviews import SummaryCfdaNumbersView
 from usaspending_api.awards.models_matviews import SummaryNaicsCodesView
 from usaspending_api.awards.models_matviews import SummaryPscCodesView
 from usaspending_api.awards.models_matviews import SummaryAwardView
+from usaspending_api.awards.models_matviews import SummaryTransactionGeoView
 from usaspending_api.awards.models_matviews import SummaryTransactionMonthView
 from usaspending_api.awards.models_matviews import SummaryTransactionView
 from usaspending_api.awards.models_matviews import SummaryView
@@ -44,6 +45,23 @@ MATVIEW_SELECTOR = {
         'prevent_values': {},
         'examine_values': {},
         'model': SummaryNaicsCodesView,
+    },
+    'SummaryTransactionGeoView':
+    {
+        'allowed_filters': [
+            'time_period',
+            'award_type_codes',
+            'agencies',
+            'recipient_scope',
+            'recipient_locations',
+            'place_of_performance_scope',
+            'place_of_performance_locations',
+        ],
+        'prevent_values': {},
+        'examine_values': {
+            'time_period': can_use_month_aggregation,
+        },
+        'model': SummaryTransactionGeoView,
     },
     'SummaryTransactionView': {
         'allowed_filters': [
@@ -185,7 +203,13 @@ def can_use_view(filters, view_name):
 
 
 def spending_over_time(filters):
-    view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
+    view_chain = [
+        'SummaryView',
+        'SummaryTransactionGeoView',
+        'SummaryTransactionMonthView',
+        'SummaryTransactionView',
+        'UniversalTransactionView'
+    ]
     for view in view_chain:
         if can_use_view(filters, view):
             queryset = get_view_queryset(filters, view)
@@ -197,7 +221,12 @@ def spending_over_time(filters):
 
 
 def spending_by_geography(filters):
-    view_chain = ['SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
+    view_chain = [
+        'SummaryTransactionGeoView',
+        'SummaryTransactionMonthView',
+        'SummaryTransactionView',
+        'UniversalTransactionView'
+    ]
     model = None
     for view in view_chain:
         if can_use_view(filters, view):
@@ -225,7 +254,13 @@ def spending_by_award_count(filters):
 
 
 def download_transaction_count(filters):
-    view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
+    view_chain = [
+        'SummaryView',
+        'SummaryTransactionGeoView',
+        'SummaryTransactionMonthView',
+        'SummaryTransactionView',
+        'UniversalTransactionView'
+    ]
     model = None
     for view in view_chain:
         if can_use_view(filters, view):
@@ -239,7 +274,13 @@ def download_transaction_count(filters):
 
 
 def transaction_spending_summary(filters):
-    view_chain = ['SummaryView', 'SummaryTransactionMonthView', 'SummaryTransactionView', 'UniversalTransactionView']
+    view_chain = [
+        'SummaryView',
+        'SummaryTransactionGeoView',
+        'SummaryTransactionMonthView',
+        'SummaryTransactionView',
+        'UniversalTransactionView'
+    ]
     model = None
     for view in view_chain:
         if can_use_view(filters, view):
