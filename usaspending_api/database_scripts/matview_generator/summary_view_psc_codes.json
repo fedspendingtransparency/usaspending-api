@@ -26,12 +26,16 @@
     {
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
-    },{
+    }, {
       "name": "type",
       "columns": [
         {"name": "\"action_date\"", "order": "DESC NULLS LAST"},
         {"name": "\"type\""}
       ]
-    }
+    }, {
+      "name": "tuned_type_and_idv",
+      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
+      "columns": [{"name": "\"type\""}, {"name": "\"pulled_from\""}]
+     }
   ]
 }
