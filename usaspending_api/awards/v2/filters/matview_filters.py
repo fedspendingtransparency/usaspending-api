@@ -103,13 +103,13 @@ def matview_search_filter(filters, model):
 
             # Since these are Q filters, no DB hits for boolean checks
             if funding_toptier:
-                award_queryfilter |= funding_toptier
+                award_queryfilter &= funding_toptier
             if funding_subtier:
-                award_queryfilter |= funding_subtier
+                award_queryfilter &= funding_subtier
             if awarding_toptier:
-                award_queryfilter |= awarding_toptier
+                award_queryfilter &= awarding_toptier
             if awarding_subtier:
-                award_queryfilter |= awarding_subtier
+                award_queryfilter &= awarding_subtier
 
             queryset = queryset.filter(award_queryfilter)
 
