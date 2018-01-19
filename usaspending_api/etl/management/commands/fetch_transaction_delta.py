@@ -1,9 +1,11 @@
 from time import perf_counter
 from django.core.management.base import BaseCommand
 from django.db import connection
-from django.conf import settings
-from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
-
+import datetime
+import pandas as pd
+import tempfile
+# from django.conf import settings
+import boto3
 
 TEMP_ES_DELTA_VIEW = '''
 SELECT
@@ -76,6 +78,8 @@ action_date_sql = ' AND TM.update_date >= \'{}\''
 
 
 class Command(BaseCommand):
+    args = '<fiscal_year fiscal_year ...>'
+    help = 'Creates a CSV dump of transactions'
 
     @staticmethod
     def run_sql_file(file_path):
@@ -98,11 +102,47 @@ class Command(BaseCommand):
         return TEMP_ES_DELTA_VIEW.format(fy=fy, update_date=update_date_str)
 
     def gather_deleted_ids(self):
-        s3handler = S3Handler(name='fpds-deleted-records', region=settings.BULK_DOWNLOAD_AWS_REGION)
-        file_list = [f for f in s3handler.get_file_list() if f.lower().endswith('.csv')]
-        print([f for f in file_list])
+        s3 = boto3.resource('s3', region_name='us-gov-west-1')
+        bucket = s3.Bucket('fpds-deleted-records')
+        bucket.objects.all()
+        start_date = datetime.datetime(2018, 1, 16, tzinfo=datetime.timezone.utc)
+        print('=======================')
+        print('From {} to now...'.format(start_date))
+
+        csv_list = [
+            x for x in bucket.objects.all()
+            if x.key.endswith('.csv') and x.last_modified >= start_date]
+
+        print()
+        print('Found {} csv files'.format(len(csv_list)))
+        deleted_ids = {}
+
+        for obj in csv_list:
+            # print(obj.key)
+            (file, file_path) = tempfile.mkstemp()
+            bucket.download_file(obj.key, file_path)
+            data = pd.read_csv(file_path)
+            new_ids = list(data['detached_award_proc_unique'].values)
+
+            print('file {} has {} ids'.format(obj.key, len(new_ids)))
+
+            for uid in new_ids:
+                if uid in deleted_ids:
+                    if deleted_ids[uid]['timestamp'] < obj.last_modified:
+                        deleted_ids[uid]['timestamp'] = obj.last_modified
+                else:
+                    deleted_ids[uid] = {'timestamp': obj.last_modified}
+
+                    deleted_ids
+            # print('---')
+
+        for k, v in deleted_ids.items():
+            # print('id: {} last modified: {}'.format(k, str(v['timestamp'])))
+            pass
 
     def handle(self, *args, **options):
+        for a in args:
+            print(a)
         start = perf_counter()
         self.gather_deleted_ids()
 
