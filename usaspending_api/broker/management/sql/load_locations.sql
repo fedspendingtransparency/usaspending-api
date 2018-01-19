@@ -167,5 +167,5 @@ CREATE TABLE references_location_new AS (
             FROM
                 transaction_fabs_new
         )
-    ) AS idc
+    ) AS locations
 );
