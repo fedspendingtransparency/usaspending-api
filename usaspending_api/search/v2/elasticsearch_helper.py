@@ -5,7 +5,7 @@ import logging
 from django.conf import settings
 from elasticsearch import Elasticsearch
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups \
-        import TRANSACTIONS_LOOKUP, award_type_mapping
+        import TRANSACTIONS_LOOKUP, award_type_mapping, award_categories
 
 
 logger = logging.getLogger('console')
@@ -71,3 +71,28 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
     total = response['hits']['total']
     results = format_for_frontend(response['hits']['hits'])
     return results, total
+
+
+def get_total_results(keyword, index_name):
+    index_name = '{}-{}'.format(TRANSACTIONS_INDEX_ROOT,
+                                index_name.replace('_', ''))+'*'
+    query = {
+        'query': {
+            'query_string': {
+                'query': keyword
+                }
+            }
+    }
+    try:
+        response = CLIENT.search(index=index_name, body=query)
+        return response['hits']['total']
+    except Exception as es1:
+        return False, -1
+
+
+def spending_by_transaction_count(filters):
+    keyword = filters['keyword']
+    response = {}
+    for category in award_categories:
+        response[category] = get_total_results(keyword, category)
+    return response
