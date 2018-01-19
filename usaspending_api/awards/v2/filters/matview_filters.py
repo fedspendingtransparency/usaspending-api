@@ -110,19 +110,20 @@ def matview_search_filter(filters, model):
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
 
-            award_queryfilter = Q()
+            awarding_queryfilter = Q()
+            funding_queryfilter = Q()
 
             # Since these are Q filters, no DB hits for boolean checks
             if funding_toptier:
-                award_queryfilter |= funding_toptier
+                funding_queryfilter |= funding_toptier
             if funding_subtier:
-                award_queryfilter |= funding_subtier
+                funding_queryfilter |= funding_subtier
             if awarding_toptier:
-                award_queryfilter |= awarding_toptier
+                awarding_queryfilter |= awarding_toptier
             if awarding_subtier:
-                award_queryfilter |= awarding_subtier
+                awarding_queryfilter |= awarding_subtier
 
-            queryset = queryset.filter(award_queryfilter)
+            queryset = queryset.filter(funding_queryfilter & awarding_queryfilter)
 
         elif key == "legal_entities":
             in_query = [v for v in value]
