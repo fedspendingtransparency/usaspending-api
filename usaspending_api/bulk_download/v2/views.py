@@ -521,6 +521,88 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         return tuple(csv_sources)
 
 
+class BulkDownloadElasticViewSet(BaseDownloadViewSet):
+    """Generate bulk download for elastic search"""
+
+    # TODO: Merge into award and transaction filters
+    def process_filters(self, filters, award_level, award_type):
+        """Filter function for Bulk Download Award Generation"""
+
+        for required_param in ['keyword']:
+            if required_param not in filters:
+                raise InvalidParameterException('{} filter not provided'.format(required_param))
+
+        table = value_mappings[award_level]['table']
+        queryset = table.objects.all()
+
+        keyword = filters['keyword']
+        # insert magic here
+        # transaction_ids = elastic_search_helper(keyword=keyword)
+
+        if award_type == 'd1':
+            transaction_id_join = '{}__{}'.format(value_mappings[award_level]['contract_data'],
+                                                  'detached_award_proc_unique')
+        elif award_type == 'd2':
+            transaction_id_join = '{}__{}'.format(value_mappings[award_level]['assistance_data'],
+                                                  'afa_generated_unique')
+        queryset = queryset.filter(**{'{}__in'.format(transaction_id_join):transaction_ids})
+
+        return queryset
+
+    def get_csv_sources(self, json_request):
+        """
+        Generate the CSV Sources (filtered queryset and metadata) based on the request
+        """
+        # Hardcoding these filters in the meantime
+        # award_levels = json_request['award_levels']
+        award_levels = ['prime_awards']
+        json_request['award_levels']['filters'] = {
+            'award_types': ['contracts', 'grants', 'direct_payments', 'loans', 'other_financial_assistance'],
+            'keyword': json_request['keyword']
+        }
+        # TODO: Send use file_format
+        # file_format = json_request['file_format']
+
+        csv_sources = []
+        self.DOWNLOAD_NAME = '_'.join(value_mappings[award_level]['download_name']
+                                      for award_level in award_levels)
+        try:
+            for award_level in award_levels:
+                if award_level not in value_mappings:
+                    raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
+
+                award_level_table = value_mappings[award_level]['table']
+
+                award_types = set(json_request['filters']['award_types'])
+                d1_award_types = set(['contracts'])
+                d2_award_types = set(['grants', 'direct_payments', 'loans', 'other_financial_assistance'])
+                if award_types & d1_award_types:
+                    # only generate d1 files if the user is asking for contracts
+                    d1_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'],
+                                                        'd1', award_level)
+                    d1_filters = {
+                        '{}__isnull'.format(value_mappings[award_level]['contract_data']): False}
+                    queryset = self.process_filters(json_request['filters'], award_level, 'd1')
+                    d1_source.queryset = queryset & award_level_table.objects.\
+                        filter(**d1_filters)
+                    csv_sources.append(d1_source)
+                if award_types & d2_award_types:
+                    # only generate d2 files if the user is asking for assistance data
+                    d2_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'],
+                                                        'd2', award_level)
+                    d2_filters = {
+                        '{}__isnull'.format(value_mappings[award_level]['assistance_data']): False}
+                    queryset = self.process_filters(json_request['filters'], award_level, 'd2')
+                    d2_source.queryset = queryset & award_level_table.objects.\
+                        filter(**d2_filters)
+                    csv_sources.append(d2_source)
+                verify_requested_columns_available(tuple(csv_sources), json_request.get('columns', None))
+
+        except TypeError:
+            raise InvalidParameterException('award_levels parameter not provided as a list')
+        return tuple(csv_sources)
+
+
 class BulkDownloadStatusViewSet(BaseDownloadViewSet):
     def get(self, request):
         """Obtain status for the download job matching the file name provided"""
