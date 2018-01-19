@@ -145,39 +145,45 @@ def award_filter(filters):
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
-            or_queryset = None
-            funding_toptier = []
-            funding_subtier = []
-            awarding_toptier = []
-            awarding_subtier = []
+            funding_toptier = Q()
+            funding_subtier = Q()
+            awarding_toptier = Q()
+            awarding_subtier = Q()
             for v in value:
                 type = v["type"]
                 tier = v["tier"]
                 name = v["name"]
                 if type == "funding":
                     if tier == "toptier":
-                        funding_toptier.append(name)
+                        funding_toptier |= Q(funding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
-                        funding_subtier.append(name)
+                        funding_subtier |= Q(funding_agency__subtier_agency__name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
-                        awarding_toptier.append(name)
+                        awarding_toptier |= Q(awarding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
-                        awarding_subtier.append(name)
+                        awarding_subtier |= Q(awarding_agency__subtier_agency__name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
-            if len(funding_toptier) != 0:
-                queryset &= Award.objects.filter(funding_agency__toptier_agency__name__in=funding_toptier)
-            if len(funding_subtier) != 0:
-                queryset &= Award.objects.filter(funding_agency__subtier_agency__name__in=funding_subtier)
-            if len(awarding_toptier) != 0:
-                queryset &= Award.objects.filter(awarding_agency__toptier_agency__name__in=awarding_toptier)
-            if len(awarding_subtier) != 0:
-                queryset &= Award.objects.filter(awarding_agency__subtier_agency__name__in=awarding_subtier)
+
+            awarding_queryfilter = Q()
+            funding_queryfilter = Q()
+
+            # Since these are Q filters, no DB hits for boolean checks
+            if funding_toptier:
+                funding_queryfilter |= funding_toptier
+            if funding_subtier:
+                funding_queryfilter |= funding_subtier
+            if awarding_toptier:
+                awarding_queryfilter |= awarding_toptier
+            if awarding_subtier:
+                awarding_queryfilter |= awarding_subtier
+
+            queryset = queryset.filter(funding_queryfilter & awarding_queryfilter)
 
         elif key == "legal_entities":
             or_queryset = []
