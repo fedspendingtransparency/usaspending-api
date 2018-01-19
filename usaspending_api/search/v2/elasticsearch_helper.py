@@ -18,8 +18,9 @@ TRANSACTIONS_LOOKUP.update({v: k for k, v in
 
 
 def swap_keys(dictionary_):
-    return dict((TRANSACTIONS_LOOKUP.get(old_key, old_key), new_key)
-                for (old_key, new_key) in dictionary_.items())
+    dictionary_ = dict((TRANSACTIONS_LOOKUP.get(old_key, old_key), new_key)
+                       for (old_key, new_key) in dictionary_.items())
+    return dictionary_
 
 
 def format_for_frontend(response):
@@ -41,6 +42,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
     '''
     keyword = filters['keyword']
     query_fields = [TRANSACTIONS_LOOKUP[i] for i in fields]
+    query_fields.extend(['piid', 'fain'])
     query_sort = TRANSACTIONS_LOOKUP[sort]
     query = {
         '_source': query_fields,
@@ -70,7 +72,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
         return False, -1
     total = response['hits']['total']
     results = format_for_frontend(response['hits']['hits'])
-    return results, total
+    return results, total, transaction_type
 
 
 def get_total_results(keyword, index_name):
@@ -87,7 +89,7 @@ def get_total_results(keyword, index_name):
         response = CLIENT.search(index=index_name, body=query)
         return response['hits']['total']
     except Exception as es1:
-        return False, -1
+        return -1
 
 
 def spending_by_transaction_count(filters):

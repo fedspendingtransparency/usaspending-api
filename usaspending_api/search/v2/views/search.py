@@ -777,8 +777,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
-        response, total = search_transactions(filters, fields, sort,
-                                              order, lower_limit, limit)
+        response, total, transaction_type = search_transactions(filters, fields, sort,
+                                                                order, lower_limit, limit)
         if total == -1:
             # will make error catching more robust
             raise InvalidParameterException("Elasticsearch error")
@@ -786,6 +786,10 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         results = []
         for transaction in response:
             transaction["internal_id"] = transaction["Award ID"]
+            if transaction_type != 'Contracts':
+                transaction["Award ID"] = transaction['fain']
+            else:
+                transaction["Award ID"] = transaction['piid']
             results.append(transaction)
         # build response
         response = {
