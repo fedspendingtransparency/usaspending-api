@@ -1,4 +1,4 @@
-DROP TABLE transaction_fpds_new;
+DROP TABLE IF EXISTS transaction_fpds_new;
 
 CREATE TABLE transaction_fpds_new AS
 (
