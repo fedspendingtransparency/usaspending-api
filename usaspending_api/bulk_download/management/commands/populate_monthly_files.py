@@ -36,7 +36,7 @@ class Command(BaseCommand):
     #       This and most of Bulk Download will definitely need to be refactored to address this.
     def bulk_download(self, file_name, award_levels, award_types=None, agency=None, sub_agency=None,
                       date_type=None, start_date=None, end_date=None, columns=[], file_format="csv",
-                      monthly_download=False, use_sqs=False):
+                      monthly_download=False, cleanup=False, use_sqs=False):
         date_range = {}
         if start_date:
             date_range['start_date'] = start_date
@@ -91,6 +91,16 @@ class Command(BaseCommand):
             #        settings.
             settings.BULK_DOWNLOAD_S3_BUCKET_NAME = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
             csv_selection.write_csvs(**kwargs)
+            if cleanup:
+                # Get all the files that have the same prefix except for the
+                #  update date
+                file_name_prefix = file_name[:-12] # subtracting the 'YYYYMMDD.zip'
+                for key in self.bucket.list(prefix=file_name_prefix):
+                    if key.name == file_name:
+                        # ignore the one we just uploaded
+                        continue
+                    self.bucket.delete_key(key.name)
+                    logger.info('Deleting {} from bucket'.format(key.name))
         else:
             # Send a SQS message that will be processed by another server
             # which will eventually run csv_selection.write_csvs(**kwargs)
@@ -135,11 +145,11 @@ class Command(BaseCommand):
             help='Generate all the files locally. Note they will still be uploaded to the S3.'
         )
         parser.add_argument(
-            '--exclude_reuploads',
+            '--clobber',
             action='store_true',
-            dest='exclude_reuploads',
+            dest='clobber',
             default=False,
-            help='Only uploads files that are not already uploaded, regardless of update date'
+            help='Uploads files regardless if they have already been uploaded that day.'
         )
         parser.add_argument(
             '--use_modified_list',
@@ -182,6 +192,14 @@ class Command(BaseCommand):
             help='Upload empty files as placeholders.'
         )
         parser.add_argument(
+            '--cleanup',
+            action='store_true',
+            dest='cleanup',
+            default=False,
+            help='Deletes the previous version of the newly generated file after uploading'
+                 ' (only applies if --local is also provided).'
+        )
+        parser.add_argument(
             '--empty-asssistance-file',
             dest='empty_asssistance_file',
             default='',
@@ -216,7 +234,7 @@ class Command(BaseCommand):
         # are properly configured!
 
         local = options['local']
-        exclude_reuploads = options['exclude_reuploads']
+        clobber = options['clobber']
         use_modified_list = options['use_modified_list']
         agencies = options['agencies']
         award_types = options['award_types']
@@ -225,6 +243,7 @@ class Command(BaseCommand):
                 raise Exception('Unacceptable award type: {}'.format(award_type))
         fiscal_years = options['fiscal_years']
         placeholders = options['placeholders']
+        cleanup = options['cleanup']
         empty_asssistance_file = options['empty_asssistance_file']
         empty_contracts_file = options['empty_contracts_file']
         if placeholders and (not empty_asssistance_file or not empty_contracts_file):
@@ -251,11 +270,17 @@ class Command(BaseCommand):
         if not fiscal_years:
             fiscal_years = range(2001, generate_fiscal_year(current_date)+1)
 
-        if exclude_reuploads:
-            bucket_name = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
-            region_name = settings.BULK_DOWNLOAD_AWS_REGION
-            bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
-            reuploads = [re.findall('(.*)_Full_.*\.zip', key.name)[0] for key in bucket.list()]
+        # moving it to self.bucket as it may be used in different cases
+        bucket_name = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
+        region_name = settings.BULK_DOWNLOAD_AWS_REGION
+        self.bucket = boto.s3.connect_to_region(region_name).get_bucket(bucket_name)
+
+        if not clobber:
+            reuploads = []
+            for key in self.bucket.list():
+                re_match = re.findall('(.*)_Full_{}.zip'.format(updated_date_timestamp), key.name)
+                if re_match:
+                    reuploads.append(re_match[0])
 
         logger.info('Generating {} files...'.format(len(toptier_agencies)*len(fiscal_years)*2))
         for agency in toptier_agencies:
@@ -265,7 +290,7 @@ class Command(BaseCommand):
                 for award_type in award_types:
                     file_name = '{}_{}_{}'.format(fiscal_year, agency['cgac_code'], award_type.capitalize())
                     full_file_name = '{}_Full_{}.zip'.format(file_name, updated_date_timestamp)
-                    if exclude_reuploads and file_name in reuploads:
+                    if not clobber and file_name in reuploads:
                         logger.info('Skipping already uploaded: {}'.format(full_file_name))
                         continue
                     if placeholders:
@@ -279,5 +304,6 @@ class Command(BaseCommand):
                                            start_date=start_date,
                                            end_date=end_date,
                                            monthly_download=True,
+                                           cleanup=cleanup,
                                            use_sqs=(not local))
         logger.info('Populate Monthly Files complete')
