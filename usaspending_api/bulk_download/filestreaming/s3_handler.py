@@ -34,6 +34,23 @@ class S3Handler:
         generated = "https://{}/{}/{}".format(s3connection.server_name(), self.bucketRoute, file_name)
         return generated
 
+    def get_file_list(self):
+        print('Region: {}'.format(S3Handler.REGION))
+        print('Bucket: {}'.format(self.bucketRoute))
+        try:
+            s3 = boto.s3.connect_to_region(S3Handler.REGION)
+            # conn = boto.s3.connect_to_region(region).get_bucket(bucket)
+            print(s3.server_name())
+            objs = s3.list_objects(Bucket=self.bucketRoute)
+            print(objs)
+            results = objs['Contents']
+        except Exception as e:
+            print(e)
+            logger.exception(e)
+            results = []
+
+        return results
+
     @staticmethod
     def get_timestamped_filename(filename):
         """
