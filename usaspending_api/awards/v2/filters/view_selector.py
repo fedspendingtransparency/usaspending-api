@@ -149,7 +149,11 @@ MATVIEW_SELECTOR = {
             'psc_codes',
             'contract_pricing_type_codes',
             'set_aside_type_codes',
-            'extent_competed_type_codes'],
+            'extent_competed_type_codes',
+            'federal_account_ids',
+            'object_class',
+            'program_activity'
+            ],
         'prevent_values': {},
         'examine_values': {},
         'model': UniversalAwardView,
@@ -162,7 +166,6 @@ def get_view_queryset(filters, view_name):
         view_model = MATVIEW_SELECTOR[view_name]['model']
     except Exception:
         raise InvalidParameterException('Invalid view: ' + view_name + ' does not exist.')
-
     return matview_search_filter(filters, view_model)
 
 
