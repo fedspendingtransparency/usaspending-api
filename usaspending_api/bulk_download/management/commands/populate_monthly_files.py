@@ -94,7 +94,7 @@ class Command(BaseCommand):
             if cleanup:
                 # Get all the files that have the same prefix except for the
                 #  update date
-                file_name_prefix = file_name[:-12] # subtracting the 'YYYYMMDD.zip'
+                file_name_prefix = file_name[:-12]  # subtracting the 'YYYYMMDD.zip'
                 for key in self.bucket.list(prefix=file_name_prefix):
                     if key.name == file_name:
                         # ignore the one we just uploaded
