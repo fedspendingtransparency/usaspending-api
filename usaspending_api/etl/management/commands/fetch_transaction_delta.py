@@ -4,10 +4,13 @@ from django.db import connection
 import datetime
 import pandas as pd
 import tempfile
-# from django.conf import settings
+from django.conf import settings
 import boto3
+import os
+import pytz
 
 TEMP_ES_DELTA_VIEW = '''
+CREATE TEMPORARY VIEW transaction_delta_view AS
 SELECT
   UTM.awarding_agency_id,
   UTM.transaction_id,
@@ -74,57 +77,63 @@ WHERE
   UTM.fiscal_year={fy}{update_date};
 '''
 
-action_date_sql = ' AND TM.update_date >= \'{}\''
+UPDATE_DATE_SQL = ' AND TM.update_date >= \'{}\''
 
 
 class Command(BaseCommand):
-    args = '<fiscal_year fiscal_year ...>'
     help = 'Creates a CSV dump of transactions'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--fiscal_year', nargs='+', type=int)
+        parser.add_argument('--diff_from', default=None, type=str)
+        parser.add_argument('--verbose', action='store_true')
 
     @staticmethod
     def run_sql_file(file_path):
-        sql = Command.create_view_sql()
+        view_sql = Command.create_view_sql()
+        copy_sql = ''
         with connection.cursor() as cursor:
-            # with open(file_path) as infile:
-            #     for raw_sql in infile.read().split('\n\n\n'):
-            #         if raw_sql.strip():
 
-            # 1. Create temp view
-            # 2. pump rows to CSV
-            # 3. Compare row IDs to see if a "removed" transaction is back
-            cursor.execute(sql)
+            cursor.execute(view_sql)
 
-    @staticmethod
-    def create_view_sql(fy, update_date=None):
+    def create_view_sql(self):
         update_date_str = ''
-        if update_date:
-            update_date_str = ''
-        return TEMP_ES_DELTA_VIEW.format(fy=fy, update_date=update_date_str)
+        if self.diff_from:
+            update_date_str = UPDATE_DATE_SQL.format(self.diff_from)
+        return TEMP_ES_DELTA_VIEW.format(fy=self.fiscal_year, update_date=update_date_str)
 
     def gather_deleted_ids(self):
-        s3 = boto3.resource('s3', region_name='us-gov-west-1')
-        bucket = s3.Bucket('fpds-deleted-records')
+        s3 = boto3.resource('s3', region_name=settings.CSV_AWS_REGION)
+        bucket = s3.Bucket(settings.CSV_2_S3_BUCKET_NAME)
         bucket.objects.all()
-        start_date = datetime.datetime(2018, 1, 16, tzinfo=datetime.timezone.utc)
-        print('=======================')
-        print('From {} to now...'.format(start_date))
+        # start_date = datetime.datetime(2018, 1, 16, tzinfo=datetime.timezone.utc)
+        if self.diff_from:
+            print('=======================')
+            print('From {} to now...'.format(self.diff_from))
 
-        csv_list = [
-            x for x in bucket.objects.all()
-            if x.key.endswith('.csv') and x.last_modified >= start_date]
+            csv_list = [
+                x for x in bucket.objects.all()
+                if x.key.endswith('.csv') and x.last_modified >= self.diff_from]
+        else:
+            csv_list = [
+                x for x in bucket.objects.all()
+                if x.key.endswith('.csv')]
 
-        print()
-        print('Found {} csv files'.format(len(csv_list)))
+        if self.verbose:
+            print('Found {} csv files'.format(len(csv_list)))
         deleted_ids = {}
 
         for obj in csv_list:
-            # print(obj.key)
+            # Use temporary files to facilitate the csv files from S3 into pands
             (file, file_path) = tempfile.mkstemp()
             bucket.download_file(obj.key, file_path)
-            data = pd.read_csv(file_path)
+            data = pd.DataFrame.from_csv(file_path, parse_dates=False)
             new_ids = list(data['detached_award_proc_unique'].values)
-
-            print('file {} has {} ids'.format(obj.key, len(new_ids)))
+            # Next statements are ugly, but properly handle the temp files
+            os.close(file)
+            os.remove(file_path)
+            if self.verbose:
+                print('file {} has {} ids'.format(obj.key, len(new_ids)))
 
             for uid in new_ids:
                 if uid in deleted_ids:
@@ -133,17 +142,28 @@ class Command(BaseCommand):
                 else:
                     deleted_ids[uid] = {'timestamp': obj.last_modified}
 
-                    deleted_ids
-            # print('---')
-
-        for k, v in deleted_ids.items():
-            # print('id: {} last modified: {}'.format(k, str(v['timestamp'])))
-            pass
+        if self.verbose:
+            for k, v in deleted_ids.items():
+                print('id: {} last modified: {}'.format(k, str(v['timestamp'])))
 
     def handle(self, *args, **options):
-        for a in args:
-            print(a)
         start = perf_counter()
+        if 'fiscal_year' in options:
+            self.fiscal_year = options['fiscal_year']
+        else:
+            print('Need to have a fiscal year parameter')
+            raise SystemExit
+        self.diff_from = None
+        if options['diff_from']:
+            # self.diff_from = datetime.date(options['diff_from'].split('-')).isoformat()
+            self.diff_from = datetime.datetime.strptime(options['diff_from'], '%Y-%m-%d')
+            self.diff_from = self.diff_from.replace(tzinfo=pytz.UTC)
+        self.verbose = options['verbose']
+
+        # 1. Gather the list of deleted transactions
+        # 2. Create temp view
+        # 3. pump rows to CSV
+        # 4. Compare row IDs to see if a "deleted" transaction is back
         self.gather_deleted_ids()
 
         print('Finished script in {} seconds'.format(perf_counter() - start))
