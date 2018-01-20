@@ -1,13 +1,15 @@
-from time import perf_counter
+import boto3
+import datetime
+import os
+import pandas as pd
+import pytz
+import tempfile
+
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connection
-import datetime
-import pandas as pd
-import tempfile
-from django.conf import settings
-import boto3
-import os
-import pytz
+from time import perf_counter
+
 
 TEMP_ES_DELTA_VIEW = '''
 CREATE TEMPORARY VIEW transaction_delta_view AS
@@ -78,6 +80,11 @@ WHERE
 '''
 
 UPDATE_DATE_SQL = ' AND TM.update_date >= \'{}\''
+COPY_SQL = '''
+COPY (
+    SELECT *
+    FROM transaction_delta_view
+) to stdout DELIMITER ',' CSV HEADER" > {}_transactions.csv'''
 
 
 class Command(BaseCommand):
@@ -88,13 +95,12 @@ class Command(BaseCommand):
         parser.add_argument('--diff_from', default=None, type=str)
         parser.add_argument('--verbose', action='store_true')
 
-    @staticmethod
-    def run_sql_file(file_path):
-        view_sql = Command.create_view_sql()
-        copy_sql = ''
+    def run_sql_file(self):
+        view_sql = self.create_view_sql()
+        copy_sql = COPY_SQL.format(self.fiscal_year)
         with connection.cursor() as cursor:
-
             cursor.execute(view_sql)
+            cursor.execute(copy_sql)
 
     def create_view_sql(self):
         update_date_str = ''
@@ -106,7 +112,7 @@ class Command(BaseCommand):
         s3 = boto3.resource('s3', region_name=settings.CSV_AWS_REGION)
         bucket = s3.Bucket(settings.CSV_2_S3_BUCKET_NAME)
         bucket.objects.all()
-        # start_date = datetime.datetime(2018, 1, 16, tzinfo=datetime.timezone.utc)
+
         if self.diff_from:
             print('=======================')
             print('From {} to now...'.format(self.diff_from))
@@ -127,6 +133,7 @@ class Command(BaseCommand):
             # Use temporary files to facilitate the csv files from S3 into pands
             (file, file_path) = tempfile.mkstemp()
             bucket.download_file(obj.key, file_path)
+            # Ingests the CSV into a dataframe. pandas thinks some ids are dates, so disable parsing
             data = pd.DataFrame.from_csv(file_path, parse_dates=False)
             new_ids = list(data['detached_award_proc_unique'].values)
             # Next statements are ugly, but properly handle the temp files
@@ -148,22 +155,24 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         start = perf_counter()
-        if 'fiscal_year' in options:
+        try:
             self.fiscal_year = options['fiscal_year']
-        else:
+        except Exception:
             print('Need to have a fiscal year parameter')
             raise SystemExit
+
         self.diff_from = None
         if options['diff_from']:
-            # self.diff_from = datetime.date(options['diff_from'].split('-')).isoformat()
-            self.diff_from = datetime.datetime.strptime(options['diff_from'], '%Y-%m-%d')
-            self.diff_from = self.diff_from.replace(tzinfo=pytz.UTC)
+            self.diff_from = datetime.datetime.strptime(options['diff_from'], '%Y-%m-%d').replace(tzinfo=pytz.UTC)
+
         self.verbose = options['verbose']
 
         # 1. Gather the list of deleted transactions
         # 2. Create temp view
-        # 3. pump rows to CSV
-        # 4. Compare row IDs to see if a "deleted" transaction is back
+        # 3. Copy/dump transaction rows to CSV file
+        # 4. Compare row IDs to see if a "deleted" transaction is back and remove from list
+        # 5. Store deleted ids in separate file
         self.gather_deleted_ids()
+        self.run_sql_file()
 
         print('Finished script in {} seconds'.format(perf_counter() - start))
