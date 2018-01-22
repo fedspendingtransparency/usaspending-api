@@ -4,7 +4,7 @@ CREATE TABLE transaction_fabs_new AS
 (
 
     SELECT
-        NULL as transaction_id,
+        NULL::bigint as transaction_id,
         *
     FROM
         dblink ('broker_server', '(
