@@ -337,7 +337,7 @@ class ListMonthylDownloadsViewset(APIView):
 
     s3_handler = S3Handler(name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
-    @cache_response()
+    # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
     def post(self, request):
         """Return list of downloads that match the requested params"""
         response_data = {}
