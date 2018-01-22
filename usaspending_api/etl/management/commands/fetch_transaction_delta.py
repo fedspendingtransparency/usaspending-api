@@ -15,9 +15,9 @@ from time import perf_counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# SCRIPT OBJECTIVES and ORDER
-# 1. [conditional] Gather the list of deleted transactions
-# 2. Create temp view of transaction records
+# SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
+# 1. [conditional] Gather the list of deleted transactions from S3
+# 2. Create temporary view of transaction records
 # 3. Copy/dump transaction rows to CSV file
 # 4. [conditional] Compare row IDs to see if a "deleted" transaction is back and remove from list
 # 5. [conditional] Store deleted ids in separate file
@@ -64,9 +64,7 @@ class Command(BaseCommand):
 
     # inherited from parent class
     def handle(self, *args, **options):
-        '''
-        Script execution of custom code starts in this method
-        '''
+        ''' Script execution of custom code starts in this method'''
         start = perf_counter()
         self.deleted_ids = {}
         self.formatted_now = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')  # ISO8601
@@ -190,14 +188,19 @@ class Command(BaseCommand):
             print('CSV data from {} to now.'.format(self.starting_date))
 
         to_datetime = datetime.combine(self.starting_date, datetime.min.time(), tzinfo=pytz.UTC)
-        csv_list = [
+        filtered_csv_list = [
             x for x in bucket_objects
-            if x.key.endswith('.csv') and x.last_modified >= to_datetime]
+            if (
+                x.key.endswith('.csv') and
+                not x.key.startswith('staging') and
+                x.last_modified >= to_datetime
+            )
+        ]
 
         if self.verbose:
-            print('Found {} csv files'.format(len(csv_list)))
+            print('Found {} csv files'.format(len(filtered_csv_list)))
 
-        for obj in csv_list:
+        for obj in filtered_csv_list:
             # Use temporary files to facilitate date moving from csv files on S3 into pands
             (file, file_path) = tempfile.mkstemp()
             bucket.download_file(obj.key, file_path)
@@ -244,9 +247,7 @@ class Command(BaseCommand):
         print('Removed {} IDs from list'.format(count))
 
     def write_deleted_ids(self):
-        '''
-        Write the list of deleted (and not recreated) transactions to disk
-        '''
+        ''' Write the list of deleted (and not recreated) transactions to disk'''
         print('---------------------------------------------------------------')
         if not self.provide_deleted:
             print('Skipping deleted transactions output')
@@ -261,9 +262,7 @@ class Command(BaseCommand):
 
 
 def db_rows_to_dict(cursor):
-    '''
-    Return all rows from a cursor as a dict
-    '''
+    ''' Return a dictionary of all row results from a database connection cursor '''
     columns = [col[0] for col in cursor.description]
     return [
         dict(zip(columns, row))
@@ -272,9 +271,7 @@ def db_rows_to_dict(cursor):
 
 
 def execute_sql_statement(cmd, results=False, verbose=False):
-    '''
-    Simple function to execute SQL using the Django DB connection
-    '''
+    ''' Simple function to execute SQL using the Django DB connection'''
     rows = None
     if verbose:
         print(cmd)
