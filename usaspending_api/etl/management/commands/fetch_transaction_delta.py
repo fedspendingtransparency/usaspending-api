@@ -13,7 +13,7 @@ from django.db import connection
 from time import perf_counter
 
 
-HERE = os.path.dirname(os.path.abspath(__file__)) + os.sep
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 # SCRIPT OBJECTIVES and ORDER
 # 1. [conditional] Gather the list of deleted transactions
@@ -118,7 +118,7 @@ class Command(BaseCommand):
             '<id1>': {'timestamp': '1970-01-01'},
             '<id2>': {'timestamp': '1970-01-01'},
         }
-        view_sql, copy_sql, id_sql = self.configure_sql_strings('<filename>')
+        view_sql, copy_sql, id_sql = self.configure_sql_strings(self.directory + '<filename>')
         print('========================================')
         print('--- Postgres View SQL ---')
         print(view_sql)
@@ -176,16 +176,22 @@ class Command(BaseCommand):
             return
         print('Gathering all deleted transactions from S3')
         start = perf_counter()
-        s3 = boto3.resource('s3', region_name=settings.CSV_AWS_REGION)
-        bucket = s3.Bucket(settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME)
-        bucket.objects.all()
+        try:
+            s3 = boto3.resource('s3', region_name=settings.CSV_AWS_REGION)
+            bucket = s3.Bucket(settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME)
+            bucket_objects = list(bucket.objects.all())
+        except Exception as e:
+            print('\n[ERROR]\n')
+            print('Verify settings.CSV_AWS_REGION and settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME are correct')
+            print('\n{}\n'.format(e))
+            raise SystemExit
 
         if self.verbose:
-            print('Gathering data from {} to now.'.format(self.starting_date))
+            print('CSV data from {} to now.'.format(self.starting_date))
 
         to_datetime = datetime.combine(self.starting_date, datetime.min.time(), tzinfo=pytz.UTC)
         csv_list = [
-            x for x in bucket.objects.all()
+            x for x in bucket_objects
             if x.key.endswith('.csv') and x.last_modified >= to_datetime]
 
         if self.verbose:
