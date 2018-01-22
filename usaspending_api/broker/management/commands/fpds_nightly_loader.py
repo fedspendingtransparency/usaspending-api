@@ -53,15 +53,15 @@ class Command(BaseCommand):
         db_cursor = connections['data_broker'].cursor()
 
         # Connect to AWS
-        aws_region = os.environ.get('AWS_REGION')
-        fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
+        # aws_region = os.environ.get('AWS_REGION')
+        # fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
 
-        if not (aws_region or fpds_bucket_name):
-            raise Exception('Missing required environment variables: AWS_REGION, FPDS_BUCKET_NAME')
+        # if not (aws_region or fpds_bucket_name):
+        #     raise Exception('Missing required environment variables: AWS_REGION, FPDS_BUCKET_NAME')
 
-        s3client = boto3.client('s3', region_name=aws_region)
-        s3resource = boto3.resource('s3', region_name=aws_region)
-        s3_bucket = s3resource.Bucket(fpds_bucket_name)
+        # s3client = boto3.client('s3', region_name=aws_region)
+        # s3resource = boto3.resource('s3', region_name=aws_region)
+        # s3_bucket = s3resource.Bucket(fpds_bucket_name)
 
         # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
         # by the Broker's PK since every modification is a new row
@@ -77,7 +77,8 @@ class Command(BaseCommand):
         ids_to_delete = []
 
         # make an array of all the keys in the bucket
-        file_list = [item.key for item in s3_bucket.objects.all()]
+        # file_list = [item.key for item in s3_bucket.objects.all()]
+        file_list = []
         # Only use files that match the date we're currently checking
 
         for item in file_list:
@@ -179,49 +180,19 @@ class Command(BaseCommand):
                 place_of_performance_field_map, row, {"place_of_performance_flag": True}
             )
 
-            # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
-            # use the sub tier code to look it up. This code assumes that all incoming
-            # records will supply an awarding subtier agency code
-            if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
-                awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
-                awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
-                awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
-                row['awarding_agency_code'] = awarding_cgac_code
+            # Find the award that this award transaction belongs to
+            awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
 
-            # If funding toptier agency code (aka CGAC) is empty, try using the sub
-            # tier funding code to look it up. Unlike the awarding agency, we can't
-            # assume that the funding agency subtier code will always be present.
-            if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
-                funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
-                if funding_subtier_agency_id is not None:
-                    funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
-                    funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
-                else:
-                    funding_cgac_code = None
-                row['funding_agency_code'] = funding_cgac_code
-
-            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = (Agency.get_by_toptier_subtier(
-                row['awarding_agency_code'],
-                row["awarding_sub_tier_agency_c"]
-                )) or (
-                Agency.get_by_subtier_only(
-                    row["awarding_sub_tier_agency_c"]))
-
+            # window w AS (partition BY tf.piid, tf.parent_award_id, tf.agency_id, tf.referenced_idv_agency_iden)
             (created, award) = Award.get_or_create_summary_award(
                 awarding_agency=awarding_agency,
                 piid=row.get('piid'),
-                fain=row.get('fain'),
-                uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'))
             award.save()
 
             award_update_id_list.append(award.id)
 
-            funding_agency = (
-                Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                              row["funding_sub_tier_agency_co"]) or
-                Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"]))
+            funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
             parent_txn_value_map = {
                 "award": award,
@@ -240,15 +211,12 @@ class Command(BaseCommand):
                 "description": "award_description"
             }
 
-            transaction_dict = load_data_into_model(
+            transaction_normalized_dict = load_data_into_model(
                 TransactionNormalized(),  # thrown away
                 row,
                 field_map=contract_field_map,
                 value_map=parent_txn_value_map,
                 as_dict=True)
-
-            transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
-            transaction.save()
 
             contract_instance = load_data_into_model(
                 TransactionFPDS(),  # thrown away
@@ -256,16 +224,25 @@ class Command(BaseCommand):
                 as_dict=True)
 
             detached_award_proc_unique = contract_instance['detached_award_proc_unique']
+            unique_fpds = TransactionFPDS.objects.filter(detached_award_proc_unique=detached_award_proc_unique)
 
-            if TransactionFPDS.objects.filter(detached_award_proc_unique=detached_award_proc_unique).exists():
-                TransactionFPDS.objects.filter(detached_award_proc_unique=detached_award_proc_unique).\
-                    update(**contract_instance)
+            if unique_fpds.first():
+                # update TransactionNormalized
+                TransactionNormalized.objects.filter(id=unique_fpds.first().transaction.id).\
+                    update(**transaction_normalized_dict)
+
+                # update TransactionFPDS
+                unique_fpds.update(**contract_instance)
             else:
-                transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)
-                transaction_contract.save()
+                # create TransactionNormalized
+                transaction = TransactionNormalized(**transaction_normalized_dict)
+                transaction.save()
+
+                # create TransactionFPDS
+                transaction_fpds = TransactionFPDS(transaction=transaction, **contract_instance)
+                transaction_fpds.save()
 
     def add_arguments(self, parser):
-
         parser.add_argument(
             '--date',
             dest="date",

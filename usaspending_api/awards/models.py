@@ -232,9 +232,8 @@ class Award(DataSourceTrackedModel):
         return '%s piid: %s fain: %s uri: %s' % (self.type_description, self.piid, self.fain, self.uri)
 
     @staticmethod
-    def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None,
-                                    uri=None, parent_award_id=None, use_cache=False, save=True,
-                                    agency_toptier_map=None):
+    def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None, uri=None, parent_award_id=None,
+                                    use_cache=False, save=True, agency_toptier_map=None, record_type=None):
         """
         Given a set of award identifiers and awarding agency information,
         find a corresponding Award record. If we can't find one, create it.
@@ -244,19 +243,22 @@ class Award(DataSourceTrackedModel):
                 if using cache), used to enable bulk insert
             summary_award: the summary award that the calling process can map to
         """
-        # If an award transaction's ID is a piid, it's contract data
-        # If the ID is fain or a uri, it's financial assistance. If the award transaction
-        # has both a fain and a uri, include both.
+        # If an award transaction's ID is a piid, it's contract data. If it includes a record_type, it's financial
+        # assistance and the ID depends on the record_type: record_type 1 -> uri, record_type 2 -> fain.
         try:
             lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
-            for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-                lookup_kwargs[i[1]] = i[0]
-                if parent_award_id and i[0]:
-                    # parent_award__piid, parent_award__fain, parent_award__uri
-                    lookup_kwargs["parent_award__" + i[1]] = parent_award_id
-                    if "parent_award" in lookup_kwargs:
-                        del lookup_kwargs["parent_award"]
-
+            lookup_value = (piid, "piid")
+            if record_type:
+                if record_type == '2':
+                    lookup_value = (fain, "fain")
+                else:
+                    lookup_value = (uri, "uri")
+            lookup_kwargs[lookup_value[1]] = lookup_value[0]
+            if parent_award_id and lookup_value[0]:
+                # parent_award__piid OR (parent_award__record_type AND (parent_award__fain OR parent_award__uri))
+                lookup_kwargs["parent_award__" + lookup_value[1]] = parent_award_id
+                if "parent_award" in lookup_kwargs:
+                    del lookup_kwargs["parent_award"]
             # Look for an existing award record
             summary_award = Award.objects \
                 .filter(Q(**lookup_kwargs)) \
@@ -265,10 +267,8 @@ class Award(DataSourceTrackedModel):
             if (summary_award is None and
                     awarding_agency is not None and
                     awarding_agency.toptier_agency.name != awarding_agency.subtier_agency.name):
-                # No award match found when searching by award id info +
-                # awarding subtier agency. Relax the awarding agency
-                # critera to just the toptier agency instead of the subtier
-                # agency and try the search again.
+                # No award match found when searching by award id info + awarding subtier agency. Relax the awarding
+                # agency critera to just the toptier agency instead of the subtier agency and try the search again.
                 if agency_toptier_map:
                     awarding_agency_toptier = agency_toptier_map[awarding_agency.toptier_agency.cgac_code]
                 else:
@@ -283,21 +283,19 @@ class Award(DataSourceTrackedModel):
             if summary_award:
                 return [], summary_award
 
-            # We weren't able to match, so create a new award record.
-            if parent_award_id:
-                # If parent award id was supplied, recursively get/create
-                # an award record for it
-                parent_q_kwargs = {'awarding_agency': awarding_agency}
-                for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-                    parent_q_kwargs[i[1]] = parent_award_id if i[0] else None
-                parent_created, parent_award = Award.get_or_create_summary_award(**parent_q_kwargs)
-            else:
-                parent_created, parent_award = [], None
+            # # We weren't able to match, so create a new award record.
+            # if parent_award_id:
+            #     # If parent award id was supplied, recursively get/create an award record for it
+            #     parent_q_kwargs = {'awarding_agency': awarding_agency}
+            #     parent_q_kwargs[lookup_value[1]] = parent_award_id if lookup_value[0] else None
+            #     parent_created, parent_award = Award.get_or_create_summary_award(**parent_q_kwargs)
+            # else:
+            #     parent_created, parent_award = [], None
+            parent_created, parent_award = [], None
 
             # Now create the award record for this award transaction
             create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award}
-            for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-                create_kwargs[i[1]] = i[0]
+            create_kwargs[lookup_value[1]] = lookup_value[0]
             summary_award = Award(**create_kwargs)
             created = [summary_award, ]
             created.extend(parent_created)

@@ -160,46 +160,25 @@ class Command(BaseCommand):
                 place_of_performance_field_map, row, {"place_of_performance_flag": True}
             )
 
-            # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
-            # use the sub tier code to look it up. This code assumes that all incoming
-            # records will supply an awarding subtier agency code
-            if row['awarding_agency_code'] is None or len(row['awarding_agency_code'].strip()) < 1:
-                awarding_subtier_agency_id = subtier_agency_map[row["awarding_sub_tier_agency_c"]]
-                awarding_toptier_agency_id = subtier_to_agency_map[awarding_subtier_agency_id]['toptier_agency_id']
-                awarding_cgac_code = toptier_agency_map[awarding_toptier_agency_id]
-                row['awarding_agency_code'] = awarding_cgac_code
-
-            # If funding toptier agency code (aka CGAC) is empty, try using the sub
-            # tier funding code to look it up. Unlike the awarding agency, we can't
-            # assume that the funding agency subtier code will always be present.
-            if row['funding_agency_code'] is None or len(row['funding_agency_code'].strip()) < 1:
-                funding_subtier_agency_id = subtier_agency_map.get(row["funding_sub_tier_agency_co"])
-                if funding_subtier_agency_id is not None:
-                    funding_toptier_agency_id = subtier_to_agency_map[funding_subtier_agency_id]['toptier_agency_id']
-                    funding_cgac_code = toptier_agency_map[funding_toptier_agency_id]
-                else:
-                    funding_cgac_code = None
-                row['funding_agency_code'] = funding_cgac_code
-
-            # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-            awarding_agency = (Agency.get_by_toptier_subtier(
-                row['awarding_agency_code'],
-                row["awarding_sub_tier_agency_c"]
-            ) or Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"]))
+            # Find the award that this award transaction belongs to
+            awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
 
             (created, award) = Award.get_or_create_summary_award(
                 awarding_agency=awarding_agency,
-                piid=row.get('piid'),
                 fain=row.get('fain'),
                 uri=row.get('uri'),
-                parent_award_id=row.get('parent_award_id'))
+                parent_award_id=row.get('parent_award_id'),
+                record_type=row.get('record_type'))
             award.save()
 
             award_update_id_list.append(award.id)
 
-            funding_agency = (Agency.get_by_toptier_subtier(row['funding_agency_code'],
-                                                            row["funding_sub_tier_agency_co"]) or
-                              Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"]))
+            funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
+
+            try:
+                last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
+            except ValueError:
+                last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S").date()
 
             parent_txn_value_map = {
                 "award": award,
@@ -210,7 +189,7 @@ class Command(BaseCommand):
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
-                "last_modified_date": datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
+                "last_modified_date": last_mod_date
             }
 
             fad_field_map = {
@@ -218,15 +197,12 @@ class Command(BaseCommand):
                 "description": "award_description",
             }
 
-            transaction_dict = load_data_into_model(
+            transaction_normalized_dict = load_data_into_model(
                 TransactionNormalized(),  # thrown away
                 row,
                 field_map=fad_field_map,
                 value_map=parent_txn_value_map,
                 as_dict=True)
-
-            transaction = TransactionNormalized.get_or_create_transaction(**transaction_dict)
-            transaction.save()
 
             financial_assistance_data = load_data_into_model(
                 TransactionFABS(),  # thrown away
@@ -234,16 +210,25 @@ class Command(BaseCommand):
                 as_dict=True)
 
             afa_generated_unique = financial_assistance_data['afa_generated_unique']
+            unique_fabs = TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique)
 
-            if TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique).exists():
-                TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique).\
-                    update(**financial_assistance_data)
+            if unique_fabs.first():
+                # update TransactionNormalized
+                TransactionNormalized.objects.filter(id=unique_fabs.first().transaction.id).\
+                    update(**transaction_normalized_dict)
+
+                # update TransactionFABS
+                unique_fabs.update(**financial_assistance_data)
             else:
-                transaction_assistance = TransactionFABS(transaction=transaction, **financial_assistance_data)
-                transaction_assistance.save()
+                # create TransactionNormalized
+                transaction = TransactionNormalized(**transaction_normalized_dict)
+                transaction.save()
+
+                # create TransactionFABS
+                transaction_fabs = TransactionFABS(transaction=transaction, **financial_assistance_data)
+                transaction_fabs.save()
 
     def add_arguments(self, parser):
-
         parser.add_argument(
             '--date',
             dest="date",
