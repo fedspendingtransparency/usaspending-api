@@ -36,7 +36,7 @@ class Command(BaseCommand):
     To customize a delta of added/modified transactions since a specific date use --since
     '''
 
-    # inherited from parent class
+    # used by parent class
     def add_arguments(self, parser):
         parser.add_argument(
             'fiscal_year',
@@ -61,8 +61,14 @@ class Command(BaseCommand):
             '--sql_only',
             action='store_true',
             help='Prints SQL which would be used with the provided flags')
+        parser.add_argument(
+            '--award_type',
+            choices=['contract', 'grant', 'loans', 'direct payment', 'other'],
+            type=str,
+            default=None,
+            help='If this flag is used the CSV will only have transactions of this award category description')
 
-    # inherited from parent class
+    # used by parent class
     def handle(self, *args, **options):
         ''' Script execution of custom code starts in this method'''
         start = perf_counter()
@@ -72,6 +78,7 @@ class Command(BaseCommand):
         self.fiscal_year = options['fiscal_year']
         self.directory = options['dir'] + os.sep
         self.provide_deleted = options['deleted']
+        self.award_category = options['award_type']
 
         try:
             self.starting_date = date(*[int(x) for x in options['since'].split('-')])
@@ -99,7 +106,14 @@ class Command(BaseCommand):
         Populates the formatted strings defined globally in this file to create the desired SQL
         '''
         update_date_str = UPDATE_DATE_SQL.format(self.starting_date.strftime('%Y-%m-%d'))
-        view_sql = TEMP_ES_DELTA_VIEW.format(fy=self.fiscal_year, update_date=update_date_str)
+        award_type_str = ''
+        if self.award_category:
+            if self.award_category == 'contract':
+                award_type_str = CONTRACTS_IDV_SQL.format(self.award_category)
+            else:
+                award_type_str = CATEGORY_SQL.format(self.award_category)
+
+        view_sql = TEMP_ES_DELTA_VIEW.format(fy=self.fiscal_year, update_date=update_date_str, award_category=award_type_str)
         copy_sql = COPY_SQL.format(filename=filename)
 
         if self.deleted_ids and self.provide_deleted:
@@ -140,15 +154,20 @@ class Command(BaseCommand):
         print('---------------------------------------------------------------')
         print('Executing Postgres statements')
         start = perf_counter()
-        filename = '{dir}{fy}_transactions_{now}.csv'.format(
+        type_str = ''
+        if self.award_category:
+            type_str = '{}_'.format(self.award_category)
+        filename = '{dir}{fy}_transactions_{type}{now}.csv'.format(
             dir=self.directory,
             fy=self.fiscal_year,
+            type=type_str,
             now=self.formatted_now)
         view_sql, copy_sql, id_sql = self.configure_sql_strings(filename)
 
         execute_sql_statement(view_sql, False, self.verbose)
 
-        print('storing FY transactions here:')
+        count = execute_sql_statement(COUNT_SQL, True, self.verbose)
+        print('\nWriting {} transactions to this file:'.format(count[0]['count']))
         print(filename)
         # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
         subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
@@ -360,11 +379,15 @@ LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN universal_award_matview UAM ON (UTM.award_id = UAM.award_id)
 JOIN awards AW ON (UAM.award_id = AW.id)
 WHERE
-  UTM.fiscal_year={fy}{update_date};'''
-
+  UTM.fiscal_year={fy}{update_date}{award_category};'''
 
 UPDATE_DATE_SQL = ' AND TM.update_date >= \'{}\''
 
+CATEGORY_SQL = ' AND UTM.award_category = \'{}\''
+
+CONTRACTS_IDV_SQL = ' AND (UTM.award_category = \'{}\' OR UTM.award_category IS NULL AND UTM.pulled_from = \'IDV\')'
+
+COUNT_SQL = 'SELECT COUNT(*) AS count FROM transaction_delta_view;'
 
 COPY_SQL = '''"COPY (
     SELECT *
@@ -372,9 +395,7 @@ COPY_SQL = '''"COPY (
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 '''
 
-
 DROP_VIEW_SQL = 'DROP VIEW transaction_delta_view;'
-
 
 CHECK_IDS_SQL = '''
 WITH temp_transaction_ids AS (
