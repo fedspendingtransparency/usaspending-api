@@ -57,6 +57,10 @@ class Command(BaseCommand):
             '--deleted',
             action='store_true',
             help='Flag to include deleted transactions into script results')
+        parser.add_argument(
+            '--sql_only',
+            action='store_true',
+            help='Prints SQL which would be used with the provided flags')
 
     # inherited from parent class
     def handle(self, *args, **options):
@@ -81,6 +85,10 @@ class Command(BaseCommand):
             print('Provided directory does not exist')
             raise SystemExit
 
+        if options['sql_only']:
+            self.sql_only_print()
+            return
+
         self.gather_deleted_ids()
         self.db_interactions()
         self.write_deleted_ids()
@@ -103,6 +111,28 @@ class Command(BaseCommand):
             id_sql = None
 
         return view_sql, copy_sql, id_sql
+
+    def sql_only_print(self):
+        self.deleted_ids = {
+            '<id0>': {'timestamp': '1970-01-01'},
+            '<id1>': {'timestamp': '1970-01-01'},
+            '<id2>': {'timestamp': '1970-01-01'},
+        }
+        view_sql, copy_sql, id_sql = self.configure_sql_strings('<filename>')
+        print('========================================')
+        print('--- Postgres View SQL ---')
+        print(view_sql)
+        print('========================================')
+        print('--- SQL to copy rows to CSV ---')
+        print(copy_sql)
+        print('========================================')
+        print('--- SQL to gather all existing transactions in deleted list ---')
+        if not id_sql:
+            id_sql = '*** No ID SQL generated with provided script flags ***'
+        print(id_sql)
+        print('========================================')
+        print('--- Drop SQL ---')
+        print(DROP_VIEW_SQL)
 
     def db_interactions(self):
         '''
@@ -147,7 +177,7 @@ class Command(BaseCommand):
         print('Gathering all deleted transactions from S3')
         start = perf_counter()
         s3 = boto3.resource('s3', region_name=settings.CSV_AWS_REGION)
-        bucket = s3.Bucket(settings.CSV_2_S3_BUCKET_NAME)
+        bucket = s3.Bucket(settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME)
         bucket.objects.all()
 
         if self.verbose:
