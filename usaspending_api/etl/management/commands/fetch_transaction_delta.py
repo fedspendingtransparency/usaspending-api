@@ -58,11 +58,11 @@ class Command(BaseCommand):
             action='store_true',
             help='Flag to include deleted transactions into script results')
         parser.add_argument(
-            '--sql_only',
+            '--sql-only',
             action='store_true',
             help='Prints SQL which would be used with the provided flags')
         parser.add_argument(
-            '--award_type',
+            '--award-type',
             choices=['contract', 'grant', 'loans', 'direct payment', 'other'],
             type=str,
             default=None,
