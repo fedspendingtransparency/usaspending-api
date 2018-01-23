@@ -1,5 +1,5 @@
 {
-  "final_name": "summary_transaction_month_view",
+  "final_name": "summary_transaction_geo_view",
   "matview_sql": [
     "SELECT",
     "  cast(date_trunc('month', \"transaction_normalized\".\"action_date\") as date) as \"action_date\",",
@@ -34,19 +34,6 @@
     "  SAA.\"abbreviation\" AS awarding_subtier_agency_abbreviation,",
     "  SFA.\"abbreviation\" AS funding_subtier_agency_abbreviation,",
     "",
-    "  \"legal_entity\".\"business_categories\",",
-    "  \"transaction_fabs\".\"cfda_number\",",
-    "  \"references_cfda\".\"program_title\" AS \"cfda_title\",",
-    "  \"references_cfda\".\"popular_name\" AS \"cfda_popular_name\",",
-    "  \"transaction_fpds\".\"product_or_service_code\",",
-    "  \"psc\".\"description\" AS product_or_service_description,",
-    "  \"transaction_fpds\".\"naics\" AS \"naics_code\",",
-    "  \"naics\".\"description\" AS \"naics_description\",",
-    "",
-    "  obligation_to_enum(\"awards\".\"total_obligation\") AS \"total_obl_bin\",",
-    "  \"transaction_fpds\".\"type_of_contract_pricing\",",
-    "  \"transaction_fpds\".\"type_set_aside\",",
-    "  \"transaction_fpds\".\"extent_competed\",",
     "  SUM(\"transaction_normalized\".\"federal_action_obligation\") AS \"federal_action_obligation\",",
     "  count(*) AS counts",
     "FROM",
@@ -62,8 +49,6 @@
     "LEFT OUTER JOIN",
     "  \"references_location\" AS recipient_location ON (\"legal_entity\".\"location_id\" = recipient_location.\"location_id\")",
     "LEFT OUTER JOIN",
-    "  \"awards\" ON (\"transaction_normalized\".\"award_id\" = \"awards\".\"id\")",
-    "LEFT OUTER JOIN",
     "  \"references_location\" AS place_of_performance ON (\"transaction_normalized\".\"place_of_performance_id\" = place_of_performance.\"location_id\")",
     "LEFT OUTER JOIN",
     "  \"agency\" AS AA ON (\"transaction_normalized\".\"awarding_agency_id\" = AA.\"id\")",
@@ -77,10 +62,6 @@
     "  \"toptier_agency\" AS TFA ON (FA.\"toptier_agency_id\" = TFA.\"toptier_agency_id\")",
     "LEFT OUTER JOIN",
     "  \"subtier_agency\" AS SFA ON (FA.\"subtier_agency_id\" = SFA.\"subtier_agency_id\")",
-    "LEFT OUTER JOIN",
-    "  \"naics\" ON (\"transaction_fpds\".\"naics\" = \"naics\".\"code\")",
-    "LEFT OUTER JOIN",
-    "  \"psc\" ON (\"transaction_fpds\".\"product_or_service_code\" = \"psc\".\"code\")",
     "WHERE",
     "  \"transaction_normalized\".\"action_date\" >= '2007-10-01' AND",
     "  \"transaction_normalized\".\"federal_action_obligation\" IS NOT NULL",
@@ -115,21 +96,7 @@
     "  TAA.\"abbreviation\",",
     "  TFA.\"abbreviation\",",
     "  SAA.\"abbreviation\",",
-    "  SFA.\"abbreviation\",",
-    "",
-    "  \"legal_entity\".\"business_categories\",",
-    "  \"transaction_fabs\".\"cfda_number\",",
-    "  \"references_cfda\".\"program_title\",",
-    "  \"references_cfda\".\"popular_name\",",
-    "  \"transaction_fpds\".\"product_or_service_code\",",
-    "  \"psc\".\"description\",",
-    "  \"transaction_fpds\".\"naics\",",
-    "  \"naics\".\"description\",",
-    "",
-    "  obligation_to_enum(\"awards\".\"total_obligation\"),",
-    "  \"transaction_fpds\".\"type_of_contract_pricing\",",
-    "  \"transaction_fpds\".\"type_set_aside\",",
-    "  \"transaction_fpds\".\"extent_competed\"",
+    "  SFA.\"abbreviation\"",
     "ORDER BY",
     "  cast(date_trunc('month', \"transaction_normalized\".\"action_date\") as date) DESC"
   ],
@@ -155,37 +122,37 @@
       "where": "\"pulled_from\" IS NOT NULL",
       "columns": [{"name": "\"pulled_from\"", "order": "DESC NULLS LAST"}]
     }, {
-    "name": "recipient_country_code",
-        "where": "\"recipient_location_country_code\" IS NOT NULL",
-        "columns": [{"name": "\"recipient_location_country_code\""}]
+      "name": "recipient_country_code",
+      "where": "\"recipient_location_country_code\" IS NOT NULL",
+      "columns": [{"name": "\"recipient_location_country_code\""}]
     }, {
-        "name": "recipient_state_code",
-        "where": "\"recipient_location_state_code\" IS NOT NULL",
-        "columns": [{"name": "\"recipient_location_state_code\""}]
+      "name": "recipient_state_code",
+      "where": "\"recipient_location_state_code\" IS NOT NULL",
+      "columns": [{"name": "\"recipient_location_state_code\""}]
     }, {
-        "name": "recipient_county_code",
-        "where": "\"recipient_location_county_code\" IS NOT NULL",
-        "columns": [{"name": "\"recipient_location_county_code\""}]
+      "name": "recipient_county_code",
+      "where": "\"recipient_location_county_code\" IS NOT NULL",
+      "columns": [{"name": "\"recipient_location_county_code\""}]
     }, {
-        "name": "recipient_zip",
-        "where": "\"recipient_location_zip5\" IS NOT NULL",
-        "columns": [{"name": "\"recipient_location_zip5\""}]
+      "name": "recipient_zip",
+      "where": "\"recipient_location_zip5\" IS NOT NULL",
+      "columns": [{"name": "\"recipient_location_zip5\""}]
     }, {
-        "name": "pop_country_code",
-        "where": "\"pop_country_code\" IS NOT NULL",
-        "columns": [{"name": "\"pop_country_code\""}]
+      "name": "pop_country_code",
+      "where": "\"pop_country_code\" IS NOT NULL",
+      "columns": [{"name": "\"pop_country_code\""}]
     }, {
-        "name": "pop_state_code",
-        "where": "\"pop_state_code\" IS NOT NULL",
-        "columns": [{"name": "\"pop_state_code\""}]
+      "name": "pop_state_code",
+      "where": "\"pop_state_code\" IS NOT NULL",
+      "columns": [{"name": "\"pop_state_code\""}]
     }, {
-        "name": "pop_county_code",
-        "where": "\"pop_county_code\" IS NOT NULL",
-        "columns": [{"name": "\"pop_county_code\""}]
+      "name": "pop_county_code",
+      "where": "\"pop_county_code\" IS NOT NULL",
+      "columns": [{"name": "\"pop_county_code\""}]
     }, {
-        "name": "pop_zip",
-        "where": "\"pop_zip5\" IS NOT NULL",
-        "columns": [{"name": "\"pop_zip5\""}]
+      "name": "pop_zip",
+      "where": "\"pop_zip5\" IS NOT NULL",
+      "columns": [{"name": "\"pop_zip5\""}]
     }, {
       "name": "awarding_agency_id",
       "where": "\"awarding_agency_id\" IS NOT NULL",
@@ -210,50 +177,6 @@
       "name": "funding_subtier_agency_name",
       "where": "\"funding_subtier_agency_name\" IS NOT NULL",
       "columns": [{"name": "\"funding_subtier_agency_name\""}]
-    }, {
-      "name": "cfda_number",
-      "where": "\"cfda_number\" IS NOT NULL",
-      "columns": [{"name": "\"cfda_number\""}]
-    }, {
-      "name": "cfda_title",
-      "where": "\"cfda_title\" IS NOT NULL",
-      "columns": [{"name": "\"cfda_title\""}]
-    }, {
-      "name": "psc",
-      "where": "\"product_or_service_code\" IS NOT NULL",
-      "columns": [{"name": "\"product_or_service_code\""}]
-    }, {
-      "name": "naics",
-      "where": "\"naics_code\" IS NOT NULL",
-      "columns": [{"name": "\"naics_code\""}]
-    }, {
-      "name": "total_obl_bin",
-      "where": "\"total_obl_bin\" IS NOT NULL",
-      "columns": [{"name": "\"total_obl_bin\""}]
-    }, {
-      "name": "type_of_contract",
-      "columns": [{"name": "\"type_of_contract_pricing\""}]
-    }, {
-      "name": "fy_set_aside",
-      "columns": [
-          {"name": "\"fiscal_year\"", "order": "DESC NULLS LAST"},
-          {"name": "\"type_set_aside\""}
-      ]
-    }, {
-      "name": "extent_competed",
-      "columns": [{"name": "\"extent_competed\""}]
-    }, {
-      "name": "type_set_aside",
-      "where": "\"type_set_aside\" IS NOT NULL",
-      "columns": [{"name": "\"type_set_aside\""}]
-    }, {
-      "name": "business_categories",
-      "method": "GIN",
-      "columns": [{"name": "\"business_categories\""}]
-    }, {
-      "name": "tuned_type_and_idv",
-      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
-      "columns": [{"name": "\"type\""}, {"name": "\"pulled_from\""}]
-     }
+    }
   ]
 }

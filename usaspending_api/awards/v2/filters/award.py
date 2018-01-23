@@ -1,6 +1,6 @@
 from django.db.models import Q
 
-from usaspending_api.awards.models import Award, LegalEntity
+from usaspending_api.awards.models import Award, LegalEntity, FinancialAccountsByAwards
 from usaspending_api.references.models import NAICS, PSC
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 def award_filter(filters):
 
     queryset = Award.objects.filter(latest_transaction_id__isnull=False, category__isnull=False)
+
+    faba_flag = False
+    faba_queryset = FinancialAccountsByAwards.objects.filter(award_id__isnull=False)
     for key, value in filters.items():
 
         if value is None:
@@ -37,7 +40,11 @@ def award_filter(filters):
                     'psc_codes',
                     'contract_pricing_type_codes',
                     'set_aside_type_codes',
-                    'extent_competed_type_codes'
+                    'extent_competed_type_codes',
+                    # next 3 keys used by federal account page
+                    'federal_account_ids',
+                    'object_class_ids',
+                    'program_activity_ids'
                     ]
 
         if key not in key_list:
@@ -138,39 +145,45 @@ def award_filter(filters):
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
-            or_queryset = None
-            funding_toptier = []
-            funding_subtier = []
-            awarding_toptier = []
-            awarding_subtier = []
+            funding_toptier = Q()
+            funding_subtier = Q()
+            awarding_toptier = Q()
+            awarding_subtier = Q()
             for v in value:
                 type = v["type"]
                 tier = v["tier"]
                 name = v["name"]
                 if type == "funding":
                     if tier == "toptier":
-                        funding_toptier.append(name)
+                        funding_toptier |= Q(funding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
-                        funding_subtier.append(name)
+                        funding_subtier |= Q(funding_agency__subtier_agency__name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
-                        awarding_toptier.append(name)
+                        awarding_toptier |= Q(awarding_agency__toptier_agency__name=name)
                     elif tier == "subtier":
-                        awarding_subtier.append(name)
+                        awarding_subtier |= Q(awarding_agency__subtier_agency__name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
-            if len(funding_toptier) != 0:
-                queryset &= Award.objects.filter(funding_agency__toptier_agency__name__in=funding_toptier)
-            if len(funding_subtier) != 0:
-                queryset &= Award.objects.filter(funding_agency__subtier_agency__name__in=funding_subtier)
-            if len(awarding_toptier) != 0:
-                queryset &= Award.objects.filter(awarding_agency__toptier_agency__name__in=awarding_toptier)
-            if len(awarding_subtier) != 0:
-                queryset &= Award.objects.filter(awarding_agency__subtier_agency__name__in=awarding_subtier)
+
+            awarding_queryfilter = Q()
+            funding_queryfilter = Q()
+
+            # Since these are Q filters, no DB hits for boolean checks
+            if funding_toptier:
+                funding_queryfilter |= funding_toptier
+            if funding_subtier:
+                funding_queryfilter |= funding_subtier
+            if awarding_toptier:
+                awarding_queryfilter |= awarding_toptier
+            if awarding_subtier:
+                awarding_queryfilter |= awarding_subtier
+
+            queryset = queryset.filter(funding_queryfilter & awarding_queryfilter)
 
         elif key == "legal_entities":
             or_queryset = []
@@ -306,5 +319,24 @@ def award_filter(filters):
             if len(or_queryset) != 0:
                 queryset &= Award.objects.filter(
                         latest_transaction__contract_data__extent_competed__in=or_queryset)
+
+        # Federal Account Filter
+        elif key == "federal_account_ids":
+            faba_flag = True
+            faba_queryset &= FinancialAccountsByAwards.objects.filter(treasury_account__federal_account_id__in=value)
+
+        # Federal Account Filter
+        elif key == "object_class_ids":
+            faba_flag = True
+            faba_queryset &= FinancialAccountsByAwards.objects.filter(object_class_id__in=value)
+
+        # Federal Account Filter
+        elif key == "program_activity_ids":
+            faba_flag = True
+            faba_queryset &= FinancialAccountsByAwards.objects.filter(program_activity_id__in=value)
+
+    if faba_flag:
+        award_ids = faba_queryset.values('award_id')
+        queryset.filter(id__in=award_ids)
 
     return queryset

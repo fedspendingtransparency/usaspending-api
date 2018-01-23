@@ -3,15 +3,14 @@ from collections import namedtuple
 from usaspending_api.awards.models import Award, Subaward
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.serializers import AwardSerializer, SubawardSerializer, TransactionNormalizedSerializer
-from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin, AggregateQuerysetMixin
+from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
 
 AggregateItem = namedtuple('AggregateItem', ['field', 'func'])
 
 
-class AwardAggregateViewSet(SuperLoggingMixin,
-                            FilterQuerysetMixin,
+class AwardAggregateViewSet(FilterQuerysetMixin,
                             AggregateQuerysetMixin,
                             DetailViewSet):
 
@@ -26,8 +25,7 @@ class AwardAggregateViewSet(SuperLoggingMixin,
         return queryset
 
 
-class AwardViewSet(SuperLoggingMixin,
-                   FilterQuerysetMixin,
+class AwardViewSet(FilterQuerysetMixin,
                    DetailViewSet):
     """
     ## Spending data by Award (i.e. a grant, contract, loan, etc)
@@ -52,8 +50,7 @@ class AwardViewSet(SuperLoggingMixin,
         return ordered_queryset
 
 
-class SubawardAggregateViewSet(SuperLoggingMixin,
-                               FilterQuerysetMixin,
+class SubawardAggregateViewSet(FilterQuerysetMixin,
                                AggregateQuerysetMixin,
                                DetailViewSet):
 
@@ -102,8 +99,7 @@ class SubawardViewSet(FilterQuerysetMixin, DetailViewSet):
         return queryset
 
 
-class TransactionAggregateViewSet(SuperLoggingMixin,
-                                  FilterQuerysetMixin,
+class TransactionAggregateViewSet(FilterQuerysetMixin,
                                   AggregateQuerysetMixin,
                                   DetailViewSet):
 
@@ -118,8 +114,7 @@ class TransactionAggregateViewSet(SuperLoggingMixin,
         return queryset
 
 
-class TransactionViewset(SuperLoggingMixin,
-                         FilterQuerysetMixin,
+class TransactionViewset(FilterQuerysetMixin,
                          DetailViewSet):
     """Handles requests for award transaction data."""
     serializer_class = TransactionNormalizedSerializer
