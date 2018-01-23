@@ -104,8 +104,7 @@ def spending_by_transaction_count(filters):
 
 def search_keyword_id_list_all(keyword):
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
-    print(index_name)
-    
+
     query = {
         "query": {
             "query_string" : {
@@ -126,7 +125,6 @@ def search_keyword_id_list_all(keyword):
         scroll_size = TRANSACTION_ID_SIZE
         
     original_size = scroll_size
-    print(scroll_size)
     transaction_id_list = []
 
     #try scrolling if you want.
