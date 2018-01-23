@@ -81,7 +81,9 @@ CREATE TABLE transaction_fabs_new AS
                 submission_id,
                 place_of_perfor_state_code,
                 place_of_performance_zip5,
-                place_of_perform_zip_last4
+                place_of_perform_zip_last4,
+                created_at,
+                updated_at
             FROM published_award_financial_assistance
             WHERE is_active = True
         )') AS transaction_assistance
@@ -158,6 +160,8 @@ CREATE TABLE transaction_fabs_new AS
         submission_id numeric,
         place_of_perfor_state_code text,
         place_of_performance_zip5 text,
-        place_of_perform_zip_last4 text
+        place_of_perform_zip_last4 text,
+        created_at timestamp without time zone,
+        updated_at timestamp without time zone
     )
 );

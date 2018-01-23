@@ -291,7 +291,9 @@ CREATE TABLE transaction_fpds_new AS
                 referenced_multi_or_single,
                 award_or_idv_flag,
                 place_of_perform_country_n,
-                place_of_perform_state_nam
+                place_of_perform_state_nam,
+                created_at,
+                updated_at
             FROM detached_award_procurement
         )') AS transaction_contracts
     (
@@ -577,6 +579,8 @@ CREATE TABLE transaction_fpds_new AS
         referenced_multi_or_single text,
         award_or_idv_flag text,
         place_of_perform_country_n text,
-        place_of_perform_state_nam text
+        place_of_perform_state_nam text,
+        created_at timestamp without time zone,
+        updated_at timestamp without time zone
     )
 );
