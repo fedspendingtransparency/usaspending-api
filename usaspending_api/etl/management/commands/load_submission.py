@@ -659,8 +659,8 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             'program_activity': row.get('program_activity'),
         }
 
-        # FILE C D linkage
-        if not created:
+        # individual FILE C D linkage
+        if not created and total_rows < 100000:
             kwargs = {}
             kwargs['recipient_id__isnull'] = False
             if row.get('piid') is not None:
@@ -684,6 +684,14 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         afd = load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
 
     awards_cache.clear()
+
+    # bulk file C file D linkage if too many awards
+    if total_rows >= 100000:
+        logger.info('Updating file C - D linkage in bulk')
+
+        call_command('update_file_c_file_d_awards_sql')
+        
+        logger.info('Completed file C - D linkage ')
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
