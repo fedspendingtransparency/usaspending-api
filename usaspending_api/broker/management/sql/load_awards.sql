@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS awards_new;
 
 CREATE TABLE awards_new AS (
     SELECT
-        nextval('public.awards_id_seq') AS id,
+        ROW_NUMBER() OVER (ORDER BY 1) AS id,
         *
     FROM
     (
@@ -97,7 +97,7 @@ CREATE TABLE awards_new AS (
                     WHEN tfn.assistance_type = '11' THEN 'Other Financial Assistance'
                 END AS type_description,
                 NULL::TEXT AS piid,
-                NULL::TEXST AS parent_award_piid,
+                NULL::TEXT AS parent_award_piid,
                 tfn.fain AS fain,
                 NULL::TEXT AS uri,
                 SUM(COALESCE(tfn.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,
@@ -171,7 +171,7 @@ CREATE TABLE awards_new AS (
                     WHEN tfn.assistance_type = '11' THEN 'Other Financial Assistance'
                 END AS type_description,
                 NULL::TEXT AS piid,
-                NULL::TEXST AS parent_award_piid,
+                NULL::TEXT AS parent_award_piid,
                 NULL::TEXT AS fain,
                 tfn.uri AS uri,
                 SUM(COALESCE(tfn.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,

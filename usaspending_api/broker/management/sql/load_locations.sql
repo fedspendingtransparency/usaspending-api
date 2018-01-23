@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS references_location_new;
 
 CREATE TABLE references_location_new AS (
     SELECT
-        nextval('public.references_location_location_id_seq') AS location_id,
+        ROW_NUMBER() OVER (ORDER BY 1) AS location_id,
         *
     FROM
     (

@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS legal_entity_new;
 
 CREATE TABLE legal_entity_new AS (
     SELECT
-        nextval('public.legal_entity_legal_entity_id_seq') AS legal_entity_id,
+        ROW_NUMBER() OVER (ORDER BY 1) AS legal_entity_id,
         *
     FROM
     (

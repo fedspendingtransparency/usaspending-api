@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS transaction_normalized_new;
 
 CREATE TABLE transaction_normalized_new AS (
     SELECT
-        nextval('public.transaction_normalized_id_seq') AS id,
+        ROW_NUMBER() OVER (ORDER BY 1) AS id,
         *
     FROM
     (
@@ -11,6 +11,11 @@ CREATE TABLE transaction_normalized_new AS (
             SELECT
                 TRUE AS is_fpds,
                 transaction_fpds_new.detached_award_proc_unique AS transaction_unique_id,
+                'cont_aw_' ||
+                    COALESCE(transaction_fpds_new.agency_id,'-none-') || '_' ||
+                    COALESCE(referenced_idv_agency_iden,'-none-') || '_' ||
+                    COALESCE(piid,'-none-') || '_' ||
+                    COALESCE(parent_award_id,'-none-') AS generated_unique_award_id,
                 NULL AS usaspending_unique_transaction_id,
                 contract_award_type AS type,
                 contract_award_type_desc AS type_description,
@@ -30,7 +35,7 @@ CREATE TABLE transaction_normalized_new AS (
                 NOW() AS create_date,
                 NOW() AS update_date,
                 EXTRACT(YEAR FROM (CAST(action_date AS DATE) + INTERVAL '3 month')) AS fiscal_year,
-                NULL AS award_id, -- TODO
+                NULL::BIGINT AS award_id, -- TODO
                 awarding_agency.agency_id AS awarding_agency_id,
                 funding_agency.agency_id AS funding_agency_id,
                 pop_location.location_id AS place_of_performance_id,
@@ -54,6 +59,10 @@ CREATE TABLE transaction_normalized_new AS (
             SELECT
                 FALSE as is_fpds,
                 transaction_fabs_new.afa_generated_unique AS transaction_unique_id,
+                CASE
+                    WHEN record_type = '2' THEN 'asst_aw_' || COALESCE(awarding_sub_tier_agency_c,'-none-') || '_' || COALESCE(fain, '-none-') || '_' || '-none-'
+                    WHEN record_type = '1' THEN 'asst_aw_' || COALESCE(awarding_sub_tier_agency_c,'-none-') || '_' || '-none-' || '_' || COALESCE(uri, '-none-')
+                END AS generated_unique_award_id,
                 NULL AS usaspending_unique_transaction_id,
                 assistance_type AS type,
                 NULL AS type_description,
@@ -73,7 +82,7 @@ CREATE TABLE transaction_normalized_new AS (
                 NOW() AS create_date,
                 NOW() AS update_date,
                 EXTRACT(YEAR FROM (CAST(action_date AS DATE) + INTERVAL '3 month')) AS fiscal_year,
-                NULL AS award_id, -- TODO
+                NULL::BIGINT AS award_id, -- TODO
                 awarding_agency.agency_id AS awarding_agency_id,
                 funding_agency.agency_id AS funding_agency_id,
                 pop_location.location_id AS place_of_performance_id,
