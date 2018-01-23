@@ -71,7 +71,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
     index_name = index_name[:-1]+'*'
     try:
         response = CLIENT.search(index=index_name, body=query)
-    except Exception as es1:
+    except Exception:
         return False, -1
     total = response['hits']['total']
     results = format_for_frontend(response['hits']['hits'])
@@ -91,7 +91,7 @@ def get_total_results(keyword, index_name):
     try:
         response = CLIENT.search(index=index_name, body=query)
         return response['hits']['total']
-    except Exception as es1:
+    except Exception:
         return -1
 
 
@@ -102,37 +102,39 @@ def spending_by_transaction_count(filters):
         response[category] = get_total_results(keyword, category)
     return response
 
+
 def search_keyword_id_list_all(keyword):
+    """
+    althought query size has been increased,
+    scrolling may still be time consuming.
+
+    Timeout has been implemented in the
+    client to prevent the connection
+    from timing out.
+    """
+
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
 
     query = {
         "query": {
-            "query_string" : {
-                "query" : keyword
+            "query_string": {
+                "query": keyword
             }
-        },"size": DOWNLOAD_QUERY_SIZE
-    }
-    
+        }, "size": DOWNLOAD_QUERY_SIZE}
     try:
-        response = CLIENT.search(index=index_name, body=query, scroll = '5m', timeout='3m')
-    except Exception as es1:
+        response = CLIENT.search(index=index_name, body=query, scroll='5m', timeout='3m')
+    except Exception:
         return -1
-    
     sid = response['_scroll_id']
     if TRANSACTION_ID_SIZE == 'max':
         scroll_size = response['hits']['total']
     else:
         scroll_size = TRANSACTION_ID_SIZE
-        
     original_size = scroll_size
     transaction_id_list = []
-
-    #try scrolling if you want.
-    #this should really be handled a different way outside the api schema.
-    #you might get a time out error depending on the query size.
-    try: 
+    try:
         while (original_size != len(transaction_id_list)):
-            response = CLIENT.scroll(scroll_id = sid, scroll = '5m')
+            response = CLIENT.scroll(scroll_id=sid, scroll='5m')
             sid = response['_scroll_id']
             scroll_size = len(response['hits']['hits'])
             new_response = response['hits']['hits']
@@ -140,8 +142,5 @@ def search_keyword_id_list_all(keyword):
                 list_item = (new_response[i]['_source']['transaction_id'])
                 transaction_id_list.append(list_item)
             return transaction_id_list
-    
-    #if there's a read error from Elasticsearch it 
-    #will just return the transactions it has thus far.
-    except Exception as excepty:
+    except Exception:
         return transaction_id_list
