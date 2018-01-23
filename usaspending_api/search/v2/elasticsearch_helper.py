@@ -13,6 +13,8 @@ ES_HOSTNAME = settings.ES_HOSTNAME
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
 CLIENT = Elasticsearch(ES_HOSTNAME)
+TRANSACTION_ID_SIZE = settings.TRANSACTION_ID_SIZE
+
 TRANSACTIONS_LOOKUP.update({v: k for k, v in
                             TRANSACTIONS_LOOKUP.items()}
                            )
@@ -113,28 +115,37 @@ def search_keyword_id_list_all(keyword):
     }
     
     try:
-        response = CLIENT.search(index=index_name, body=query, scroll = '2m')
+        response = CLIENT.search(index=index_name, body=query, scroll = '5m')
     except Exception as es1:
         return es1
     
     sid = response['_scroll_id']
-    scroll_size = response['hits']['total']
-    
+    if TRANSACTION_ID_SIZE == 'max':
+        scroll_size = response['hits']['total']
+    else:
+        scroll_size = TRANSACTION_ID_SIZE
+        
+    original_size = scroll_size
+    print(scroll_size)
     transaction_id_list = []
 
-  # Start scrolling
-    while (scroll_size > 0):
-        print("Scrolling...")
-        response = CLIENT.scroll(scroll_id = sid, scroll = '2m')
-        # Update the scroll ID
-        sid = response['_scroll_id']
-        # Get the number of results that we returned in the last scroll
-        scroll_size = len(response['hits']['hits'])
-        print("scroll size: " + str(scroll_size))
-        # Do something with the obtained page   
-        new_response = response['hits']['hits']
-        for i in (range(DOWNLOAD_QUERY_SIZE)):
-            list_item = (new_response[i]['_source']['transaction_id'])
-            transaction_id_list.append(list_item)
+    #try scrolling if you want.
+    #this should really be handled a different way outside the api schema.
+    #you might get a time out error depending on the query size.
+    try: 
+        while (original_size != len(transaction_id_list)):
+            response = CLIENT.scroll(scroll_id = sid, scroll = '5m')
+            sid = response['_scroll_id']
+            scroll_size = len(response['hits']['hits'])
+            new_response = response['hits']['hits']
+            for i in (range(len(new_response))):
+                list_item = (new_response[i]['_source']['transaction_id'])
+                transaction_id_list.append(list_item)
+        return transaction_id_list
+    
+    #if there's a read error from Elasticsearch it 
+    #will just return the transactions it has thus far.
+    except Exception as excepty:
+        return transaction_id_list
     
     return transaction_id_list
