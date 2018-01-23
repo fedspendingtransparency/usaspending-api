@@ -117,7 +117,7 @@ def search_keyword_id_list_all(keyword):
     try:
         response = CLIENT.search(index=index_name, body=query, scroll = '5m', timeout='3m')
     except Exception as es1:
-        return es1
+        return -1
     
     sid = response['_scroll_id']
     if TRANSACTION_ID_SIZE == 'max':
