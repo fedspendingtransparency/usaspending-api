@@ -11,8 +11,8 @@ from django.conf import settings
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.v2 import download_column_historical_lookups
-
-logger = logging.getLogger(__name__)
+import traceback
+logger = logging.getLogger('console')
 
 
 def update_number_of_columns(row, download_job):
@@ -132,6 +132,8 @@ def write_csvs(download_job, file_name, columns, sources):
     except Exception as e:
         download_job.job_status_id = JOB_STATUS_DICT['failed']
         download_job.error_message = 'An exception was raised while attempting to write the CSV'
+        logger.error(traceback.format_exc())
+
         if settings.DEBUG:
             download_job.error_message += '\n' + str(e)
     else:
