@@ -33,7 +33,6 @@ CREATE MATERIALIZED VIEW award_matview_new AS (
     funding_agency.subtier_abbr AS funding_sub_tier_agency_abbr,
     funding_office_code,
     funding_office_name,
-    data_source,
     action_date,
     date_signed,
     description,
@@ -116,9 +115,11 @@ CREATE MATERIALIZED VIEW award_matview_new AS (
     assistance_type,
     business_funds_indicator,
     business_types,
+    business_types_description,
     business_categories,
     cfda_number,
     cfda_title,
+    sai_number,
     NULL::text AS cfda_objectives,
 
     -- recipient data
@@ -166,7 +167,6 @@ CREATE MATERIALIZED VIEW award_matview_new AS (
 
     -- zip
     recipient_location_zip5,
-    recipient_location_zip4,
 
     -- congressional disctrict
     recipient_location_congressional_code,
@@ -194,7 +194,6 @@ CREATE MATERIALIZED VIEW award_matview_new AS (
 
     -- zip
     pop_zip5,
-    pop_zip4,
 
     -- congressional disctrict
     pop_congressional_code,
@@ -224,7 +223,7 @@ FROM
         tf.parent_award_id AS parent_award_piid,
         NULL::text AS fain,
         NULL::text AS uri,
-        sum(coalesce(tf.federal_action_obligation::double precision, 0::double precision)) over w AS total_obligation,
+        SUM(coalesce(tf.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,
         NULL::float AS total_subsidy_cost,
         NULL::float AS total_outlay,
         tf.awarding_agency_code AS awarding_agency_code,
@@ -239,17 +238,16 @@ FROM
         tf.funding_sub_tier_agency_na AS funding_sub_tier_agency_na,
         tf.funding_office_code AS funding_office_code,
         tf.funding_office_name AS funding_office_name,
-        ''DBR''::text AS data_source,
-        tf.action_date::date AS action_date,
-        MIN(tf.action_date) over w AS date_signed,
+        NULLIF(tf.action_date, '''')::DATE AS action_date,
+        MIN(NULLIF(tf.action_date, '''')::DATE) over w AS date_signed,
         tf.award_description AS description,
         -- TODO: Handle when period_of_performance_star/period_of_performance_curr is ''
-        MIN(tf.period_of_performance_star::date) over w AS period_of_performance_start_date,
-        MAX(tf.period_of_performance_curr::date) over w AS period_of_performance_current_end_date,
+        MIN(NULLIF(tf.period_of_performance_star, '''')::DATE) over w AS period_of_performance_start_date,
+        MAX(NULLIF(tf.period_of_performance_curr, '''')::DATE) over w AS period_of_performance_current_end_date,
         NULL::float AS potential_total_value_of_award,
-        sum(coalesce(tf.base_and_all_options_value::double precision, 0::double precision)) over w AS base_and_all_options_value,
-        tf.last_modified::date AS last_modified_date,
-        MAX(tf.action_date) over w AS certified_date,
+        SUM(coalesce(tf.base_and_all_options_value::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS base_and_all_options_value,
+        tf.last_modified::DATE AS last_modified_date,
+        MAX(NULLIF(tf.action_date, '''')::DATE) over w AS certified_date,
         NULL::int AS record_type,
         ''cont_tx_'' || tf.detached_award_proc_unique AS latest_transaction_unique_id,
         0 AS total_subaward_amount,
@@ -323,9 +321,11 @@ FROM
         NULL::text AS assistance_type,
         NULL::text AS business_funds_indicator,
         NULL::text AS business_types,
+        NULL::text AS business_types_description,
         compile_fpds_business_categories(tf.small_business_competitive, tf.for_profit_organization, tf.alaskan_native_owned_corpo, tf.american_indian_owned_busi, tf.asian_pacific_american_own, tf.black_american_owned_busin, tf.hispanic_american_owned_bu, tf.native_american_owned_busi, tf.native_hawaiian_owned_busi, tf.subcontinent_asian_asian_i, tf.tribally_owned_business, tf.other_minority_owned_busin, tf.minority_owned_business, tf.women_owned_small_business, tf.economically_disadvantaged, tf.joint_venture_women_owned, tf.joint_venture_economically, tf.woman_owned_business, tf.service_disabled_veteran_o, tf.veteran_owned_business, tf.c8a_program_participant, tf.the_ability_one_program, tf.dot_certified_disadvantage, tf.emerging_small_business, tf.federally_funded_research, tf.historically_underutilized, tf.labor_surplus_area_firm, tf.sba_certified_8_a_joint_ve, tf.self_certified_small_disad, tf.small_agricultural_coopera, tf.small_disadvantaged_busine, tf.community_developed_corpor, tf.domestic_or_foreign_entity, tf.foreign_owned_and_located, tf.foreign_government, tf.international_organization, tf.foundation, tf.community_development_corp, tf.nonprofit_organization, tf.other_not_for_profit_organ, tf.state_controlled_instituti, tf.c1862_land_grant_college, tf.c1890_land_grant_college, tf.c1994_land_grant_college, tf.private_university_or_coll, tf.minority_institution, tf.historically_black_college, tf.tribal_college, tf.alaskan_native_servicing_i, tf.native_hawaiian_servicing, tf.hispanic_servicing_institu, tf.us_federal_government, tf.federal_agency, tf.us_government_entity, tf.interstate_entity, tf.us_state_government, tf.council_of_governments, tf.city_local_government, tf.county_local_government, tf.inter_municipal_local_gove, tf.municipality_local_governm, tf.township_local_government, tf.us_local_government, tf.local_government_owned, tf.school_district_local_gove, tf.us_tribal_government, tf.indian_tribe_federally_rec, tf.housing_authorities_public, tf.airport_authority, tf.port_authority, tf.transit_authority, tf.planning_commission) AS business_categories,
         NULL::text AS cfda_number,
         NULL::text AS cfda_title,
+        NULL::text AS sai_number,
 
         -- recipient data
         tf.awardee_or_recipient_uniqu AS recipient_unique_id, -- DUNS
@@ -362,17 +362,16 @@ FROM
         tf.legal_entity_state_code AS recipient_location_state_code,
         tf.legal_entity_state_descrip AS recipient_location_state_name,
 
-        -- county (NONE FOR FPDS)
-        NULL::text AS recipient_location_county_code,
-        NULL::text AS recipient_location_county_name,
+        -- county
+        tf.legal_entity_county_code AS recipient_location_county_code,
+        tf.legal_entity_county_name AS recipient_location_county_name,
 
         -- city
         NULL::text AS recipient_location_city_code,
         tf.legal_entity_city_name AS recipient_location_city_name,
 
         -- zip
-        NULL::text AS recipient_location_zip5,
-        tf.legal_entity_zip4 AS recipient_location_zip4,
+        tf.legal_entity_zip5 AS recipient_location_zip5,
 
         -- congressional disctrict
         tf.legal_entity_congressional AS recipient_location_congressional_code,
@@ -392,15 +391,14 @@ FROM
         tf.place_of_perfor_state_desc AS pop_state_name,
 
         -- county
-        NULL::text AS pop_county_code,
+        tf.place_of_perform_county_co AS pop_county_code,
         tf.place_of_perform_county_na AS pop_county_name,
 
         -- city
         tf.place_of_perform_city_name AS pop_city_name,
 
         -- zip
-        SUBSTRING(tf.place_of_performance_zip4a FROM 0 FOR 6) AS pop_zip5,
-        tf.place_of_performance_zip4a AS pop_zip4,
+        tf.place_of_performance_zip5 AS pop_zip5,
 
         -- congressional disctrict
         tf.place_of_performance_congr AS pop_congressional_code
@@ -447,7 +445,6 @@ FROM
         funding_sub_tier_agency_na text,
         funding_office_code text,
         funding_office_name text,
-        data_source text,
         action_date date,
         date_signed date,
         description text,
@@ -530,9 +527,11 @@ FROM
         assistance_type text,
         business_funds_indicator text,
         business_types text,
+        business_types_description text,
         business_categories text[],
         cfda_number text,
         cfda_title text,
+        sai_number text,
 
         -- recipient data
         recipient_unique_id text, -- DUNS
@@ -579,7 +578,6 @@ FROM
 
         -- zip
         recipient_location_zip5 text,
-        recipient_location_zip4 text,
 
         -- congressional disctrict
         recipient_location_congressional_code text,
@@ -607,7 +605,6 @@ FROM
 
         -- zip
         pop_zip5 text,
-        pop_zip4 text,
 
         -- congressional disctrict
         pop_congressional_code text
@@ -655,7 +652,6 @@ UNION ALL
     funding_agency.subtier_abbr AS funding_sub_tier_agency_abbr,
     funding_office_code,
     funding_office_name,
-    fabs_fain_uniq_awards.data_source,
     action_date,
     date_signed,
     description,
@@ -738,9 +734,11 @@ UNION ALL
     assistance_type,
     business_funds_indicator,
     business_types,
+    business_types_description,
     business_categories,
     cfda_number,
     cfda_title,
+    sai_number,
     cfda.objectives AS cfda_objectives,
 
     -- recipient data
@@ -788,7 +786,6 @@ UNION ALL
 
     -- zip
     recipient_location_zip5,
-    recipient_location_zip4,
 
     -- congressional disctrict
     recipient_location_congressional_code,
@@ -816,7 +813,6 @@ UNION ALL
 
     -- zip
     pop_zip5,
-    pop_zip4,
 
     -- congressional disctrict
     pop_congressional_code,
@@ -856,8 +852,8 @@ FROM
     NULL::text AS parent_award_piid,
     pafa.fain AS fain,
     NULL::text AS uri,
-    sum(coalesce(pafa.federal_action_obligation::double precision, 0::double precision)) over w AS total_obligation,
-    sum(coalesce(pafa.original_loan_subsidy_cost::double precision, 0::double precision)) over w AS total_subsidy_cost,
+    SUM(coalesce(pafa.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,
+    SUM(coalesce(pafa.original_loan_subsidy_cost::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_subsidy_cost,
     NULL::float AS total_outlay,
     pafa.awarding_agency_code AS awarding_agency_code,
     pafa.awarding_agency_name AS awarding_agency_name,
@@ -871,17 +867,16 @@ FROM
     pafa.funding_sub_tier_agency_na AS funding_sub_tier_agency_na,
     pafa.funding_office_code AS funding_office_code,
     pafa.funding_office_name AS funding_office_name,
-    ''DBR''::text AS data_source,
-    pafa.action_date::date AS action_date,
-    MIN(pafa.action_date) over w AS date_signed,
+    NULLIF(pafa.action_date, '''')::DATE AS action_date,
+    MIN(NULLIF(pafa.action_date, '''')::DATE) over w AS date_signed,
     pafa.award_description AS description,
     -- TODO: Handle when period_of_performance_star/period_of_performance_curr is ''
-    MIN(pafa.period_of_performance_star::date) over w AS period_of_performance_start_date,
-    MAX(pafa.period_of_performance_curr::date) over w AS period_of_performance_current_end_date,
+    MIN(NULLIF(pafa.period_of_performance_star, '''')::DATE) over w AS period_of_performance_start_date,
+    MAX(NULLIF(pafa.period_of_performance_curr, '''')::DATE) over w AS period_of_performance_current_end_date,
     NULL::float AS potential_total_value_of_award,
     NULL::float AS base_and_all_options_value,
     pafa.modified_at::date AS last_modified_date,
-    MAX(pafa.action_date) over w AS certified_date,
+    MAX(NULLIF(pafa.action_date, '''')::DATE) over w AS certified_date,
     pafa.record_type AS record_type,
     ''asst_tx_'' || pafa.afa_generated_unique AS latest_transaction_unique_id,
     0 AS total_subaward_amount,
@@ -955,9 +950,37 @@ FROM
     pafa.assistance_type AS assistance_type,
     pafa.business_funds_indicator AS business_funds_indicator,
     pafa.business_types AS business_types,
+    CASE
+        WHEN UPPER(pafa.business_types) = ''A'' THEN ''State government''
+        WHEN UPPER(pafa.business_types) = ''B'' THEN ''County Government''
+        WHEN UPPER(pafa.business_types) = ''C'' THEN ''City or Township Government''
+        WHEN UPPER(pafa.business_types) = ''D'' THEN ''Special District Government''
+        WHEN UPPER(pafa.business_types) = ''E'' THEN ''Regional Organization''
+        WHEN UPPER(pafa.business_types) = ''F'' THEN ''U.S. Territory or Possession''
+        WHEN UPPER(pafa.business_types) = ''G'' THEN ''Independent School District''
+        WHEN UPPER(pafa.business_types) = ''H'' THEN ''Public/State Controlled Institution of Higher Education''
+        WHEN UPPER(pafa.business_types) = ''I'' THEN ''Indian/Native American Tribal Government (Federally Recognized)''
+        WHEN UPPER(pafa.business_types) = ''J'' THEN ''Indian/Native American Tribal Government (Other than Federally Recognized)''
+        WHEN UPPER(pafa.business_types) = ''K'' THEN ''Indian/Native American Tribal Designated Organization''
+        WHEN UPPER(pafa.business_types) = ''L'' THEN ''Public/Indian Housing Authority''
+        WHEN UPPER(pafa.business_types) = ''M'' THEN ''Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)''
+        WHEN UPPER(pafa.business_types) = ''N'' THEN ''Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)''
+        WHEN UPPER(pafa.business_types) = ''O'' THEN ''Private Institution of Higher Education''
+        WHEN UPPER(pafa.business_types) = ''P'' THEN ''Individual''
+        WHEN UPPER(pafa.business_types) = ''Q'' THEN ''For-Profit Organization (Other than Small Business)''
+        WHEN UPPER(pafa.business_types) = ''R'' THEN ''Small Business''
+        WHEN UPPER(pafa.business_types) = ''S'' THEN ''Hispanic-serving Institution''
+        WHEN UPPER(pafa.business_types) = ''T'' THEN ''Historically Black Colleges and Universities (HBCUs)''
+        WHEN UPPER(pafa.business_types) = ''U'' THEN ''Tribally Controlled Colleges and Universities (TCCUs)''
+        WHEN UPPER(pafa.business_types) = ''V'' THEN ''Alaska Native and Native Hawaiian Serving Institutions''
+        WHEN UPPER(pafa.business_types) = ''W'' THEN ''Non-domestic (non-US) Entity''
+        WHEN UPPER(pafa.business_types) = ''X'' THEN ''Other''
+        ELSE ''Unknown Types''
+    END AS business_types_description,
     compile_fabs_business_categories(pafa.business_types) AS business_categories,
     pafa.cfda_number AS cfda_number,
     pafa.cfda_title AS cfda_title,
+    pafa.sai_number AS sai_number,
 
     -- recipient data
     pafa.awardee_or_recipient_uniqu AS recipient_unique_id,
@@ -1004,7 +1027,6 @@ FROM
 
     -- zip
     pafa.legal_entity_zip5 AS recipient_location_zip5,
-    pafa.legal_entity_zip5 || coalesce(pafa.legal_entity_zip_last4, '''') AS recipient_location_zip4,
 
     -- congressional disctrict
     pafa.legal_entity_congressional AS recipient_location_congressional_code,
@@ -1020,7 +1042,7 @@ FROM
     pafa.place_of_perform_country_n AS pop_country_name,
 
     -- state
-    NULL::text AS pop_state_code,
+    pafa.place_of_perfor_state_code AS pop_state_code,
     pafa.place_of_perform_state_nam AS pop_state_name,
 
     -- county
@@ -1031,8 +1053,7 @@ FROM
     pafa.place_of_performance_city AS pop_city_name,
 
     -- zip
-    SUBSTRING(pafa.place_of_performance_zip4a FROM 0 FOR 6) AS pop_zip5,
-    pafa.place_of_performance_zip4a AS pop_zip4,
+    pafa.place_of_performance_zip5 AS pop_zip5,
 
     -- congressional disctrict
     pafa.place_of_performance_congr AS pop_congressional_code
@@ -1078,7 +1099,6 @@ ORDER BY
         funding_sub_tier_agency_na text,
         funding_office_code text,
         funding_office_name text,
-        data_source text,
         action_date date,
         date_signed date,
         description text,
@@ -1161,9 +1181,11 @@ ORDER BY
         assistance_type text,
         business_funds_indicator text,
         business_types text,
+        business_types_description text,
         business_categories text[],
         cfda_number text,
         cfda_title text,
+        sai_number text,
 
         -- recipient data
         recipient_unique_id text, -- DUNS
@@ -1210,7 +1232,6 @@ ORDER BY
 
         -- zip
         recipient_location_zip5 text,
-        recipient_location_zip4 text,
 
         -- congressional disctrict
         recipient_location_congressional_code text,
@@ -1238,7 +1259,6 @@ ORDER BY
 
         -- zip
         pop_zip5 text,
-        pop_zip4 text,
 
         -- congressional disctrict
         pop_congressional_code text
@@ -1288,7 +1308,6 @@ UNION ALL
     funding_agency.subtier_abbr AS funding_sub_tier_agency_abbr,
     funding_office_code,
     funding_office_name,
-    fabs_uri_uniq_awards.data_source,
     action_date,
     date_signed,
     description,
@@ -1371,9 +1390,11 @@ UNION ALL
     assistance_type,
     business_funds_indicator,
     business_types,
+    business_types_description,
     business_categories,
     cfda_number,
     cfda_title,
+    sai_number,
     cfda.objectives AS cfda_objectives,
 
     -- recipient data
@@ -1421,7 +1442,6 @@ UNION ALL
 
     -- zip
     recipient_location_zip5,
-    recipient_location_zip4,
 
     -- congressional disctrict
     recipient_location_congressional_code,
@@ -1449,7 +1469,6 @@ UNION ALL
 
     -- zip
     pop_zip5,
-    pop_zip4,
 
     -- congressional disctrict
     pop_congressional_code,
@@ -1489,8 +1508,8 @@ FROM
     NULL::text AS parent_award_piid,
     NULL::text AS fain,
     pafa.uri AS uri,
-    sum(coalesce(pafa.federal_action_obligation::double precision, 0::double precision)) over w AS total_obligation,
-    sum(coalesce(pafa.original_loan_subsidy_cost::double precision, 0::double precision)) over w AS total_subsidy_cost,
+    SUM(coalesce(pafa.federal_action_obligation::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_obligation,
+    SUM(coalesce(pafa.original_loan_subsidy_cost::DOUBLE PRECISION, 0::DOUBLE PRECISION)) over w AS total_subsidy_cost,
     NULL::float AS total_outlay,
     pafa.awarding_agency_code AS awarding_agency_code,
     pafa.awarding_agency_name AS awarding_agency_name,
@@ -1504,13 +1523,12 @@ FROM
     pafa.funding_sub_tier_agency_na AS funding_sub_tier_agency_na,
     pafa.funding_office_code AS funding_office_code,
     pafa.funding_office_name AS funding_office_name,
-    ''DBR''::text AS data_source,
-    pafa.action_date::date AS action_date,
-    MIN(pafa.action_date) over w AS date_signed,
+    NULLIF(pafa.action_date, '''')::DATE AS action_date,
+    MIN(NULLIF(pafa.action_date, '''')::DATE) over w AS date_signed,
     pafa.award_description AS description,
     -- TODO: Handle when period_of_performance_star/period_of_performance_curr is ''
-    MIN(pafa.period_of_performance_star::date) over w AS period_of_performance_start_date,
-    MAX(pafa.period_of_performance_curr::date) over w AS period_of_performance_current_end_date,
+    MIN(NULLIF(pafa.period_of_performance_star, '''')::DATE) over w AS period_of_performance_start_date,
+    MAX(NULLIF(pafa.period_of_performance_curr, '''')::DATE) over w AS period_of_performance_current_end_date,
     NULL::float AS potential_total_value_of_award,
     NULL::float AS base_and_all_options_value,
     pafa.modified_at::date AS last_modified_date,
@@ -1588,9 +1606,37 @@ FROM
     pafa.assistance_type AS assistance_type,
     pafa.business_funds_indicator AS business_funds_indicator,
     pafa.business_types AS business_types,
+    CASE
+        WHEN UPPER(pafa.business_types) = ''A'' THEN ''State government''
+        WHEN UPPER(pafa.business_types) = ''B'' THEN ''County Government''
+        WHEN UPPER(pafa.business_types) = ''C'' THEN ''City or Township Government''
+        WHEN UPPER(pafa.business_types) = ''D'' THEN ''Special District Government''
+        WHEN UPPER(pafa.business_types) = ''E'' THEN ''Regional Organization''
+        WHEN UPPER(pafa.business_types) = ''F'' THEN ''U.S. Territory or Possession''
+        WHEN UPPER(pafa.business_types) = ''G'' THEN ''Independent School District''
+        WHEN UPPER(pafa.business_types) = ''H'' THEN ''Public/State Controlled Institution of Higher Education''
+        WHEN UPPER(pafa.business_types) = ''I'' THEN ''Indian/Native American Tribal Government (Federally Recognized)''
+        WHEN UPPER(pafa.business_types) = ''J'' THEN ''Indian/Native American Tribal Government (Other than Federally Recognized)''
+        WHEN UPPER(pafa.business_types) = ''K'' THEN ''Indian/Native American Tribal Designated Organization''
+        WHEN UPPER(pafa.business_types) = ''L'' THEN ''Public/Indian Housing Authority''
+        WHEN UPPER(pafa.business_types) = ''M'' THEN ''Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)''
+        WHEN UPPER(pafa.business_types) = ''N'' THEN ''Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)''
+        WHEN UPPER(pafa.business_types) = ''O'' THEN ''Private Institution of Higher Education''
+        WHEN UPPER(pafa.business_types) = ''P'' THEN ''Individual''
+        WHEN UPPER(pafa.business_types) = ''Q'' THEN ''For-Profit Organization (Other than Small Business)''
+        WHEN UPPER(pafa.business_types) = ''R'' THEN ''Small Business''
+        WHEN UPPER(pafa.business_types) = ''S'' THEN ''Hispanic-serving Institution''
+        WHEN UPPER(pafa.business_types) = ''T'' THEN ''Historically Black Colleges and Universities (HBCUs)''
+        WHEN UPPER(pafa.business_types) = ''U'' THEN ''Tribally Controlled Colleges and Universities (TCCUs)''
+        WHEN UPPER(pafa.business_types) = ''V'' THEN ''Alaska Native and Native Hawaiian Serving Institutions''
+        WHEN UPPER(pafa.business_types) = ''W'' THEN ''Non-domestic (non-US) Entity''
+        WHEN UPPER(pafa.business_types) = ''X'' THEN ''Other''
+        ELSE ''Unknown Types''
+    END AS business_types_description,
     compile_fabs_business_categories(pafa.business_types) AS business_categories,
     pafa.cfda_number AS cfda_number,
     pafa.cfda_title AS cfda_title,
+    pafa.sai_number AS sai_number,
 
     -- recipient data
     pafa.awardee_or_recipient_uniqu AS recipient_unique_id,
@@ -1637,8 +1683,6 @@ FROM
 
     -- zip
     pafa.legal_entity_zip5 AS recipient_location_zip5,
-    pafa.legal_entity_zip5 ||
-        coalesce(pafa.legal_entity_zip_last4, '''') AS recipient_location_zip4,
 
     -- congressional disctrict
     pafa.legal_entity_congressional AS recipient_location_congressional_code,
@@ -1654,7 +1698,7 @@ FROM
     pafa.place_of_perform_country_n AS pop_country_name,
 
     -- state
-    NULL::text AS pop_state_code,
+    pafa.place_of_perfor_state_code AS pop_state_code,
     pafa.place_of_perform_state_nam AS pop_state_name,
 
     -- county
@@ -1665,8 +1709,7 @@ FROM
     pafa.place_of_performance_city AS pop_city_name,
 
     -- zip
-    SUBSTRING(pafa.place_of_performance_zip4a FROM 0 FOR 6) AS pop_zip5,
-    pafa.place_of_performance_zip4a AS pop_zip4,
+    pafa.place_of_performance_zip5 AS pop_zip5,
 
     -- congressional disctrict
     pafa.place_of_performance_congr AS pop_congressional_code
@@ -1711,7 +1754,6 @@ ORDER BY
         funding_sub_tier_agency_na text,
         funding_office_code text,
         funding_office_name text,
-        data_source text,
         action_date date,
         date_signed date,
         description text,
@@ -1794,9 +1836,11 @@ ORDER BY
         assistance_type text,
         business_funds_indicator text,
         business_types text,
+        business_types_description text,
         business_categories text[],
         cfda_number text,
         cfda_title text,
+        sai_number text,
         
         -- recipient data
         recipient_unique_id text, -- DUNS
@@ -1843,8 +1887,7 @@ ORDER BY
 
         -- zip
         recipient_location_zip5 text,
-        recipient_location_zip4 text,
-        
+
         -- congressional disctrict
         recipient_location_congressional_code text,
         
@@ -1871,8 +1914,7 @@ ORDER BY
         
         -- zip
         pop_zip5 text,
-        pop_zip4 text,
-        
+
         -- congressional disctrict
         pop_congressional_code text
     )
@@ -1886,6 +1928,6 @@ ORDER BY
     agency_lookup AS funding_agency ON funding_agency.subtier_code = funding_sub_tier_agency_co)
 );
 
-ALTER MATERIALIZED VIEW award_matview RENAME TO award_matview_old;
-ALTER MATERIALIZED VIEW award_matview_new RENAME TO award_matview;
-DROP MATERIALIZED VIEW award_matview_old;
+ALTER MATERIALIZED VIEW IF EXISTS award_matview RENAME TO award_matview_old;
+ALTER MATERIALIZED VIEW IF EXISTS award_matview_new RENAME TO award_matview;
+DROP MATERIALIZED VIEW IF EXISTS award_matview_old;
