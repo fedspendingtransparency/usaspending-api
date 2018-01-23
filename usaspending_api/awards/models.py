@@ -208,6 +208,13 @@ class Award(DataSourceTrackedModel):
                                        help_text="The last time this record was updated in the API")
     latest_transaction = models.ForeignKey("awards.TransactionNormalized", related_name="latest_for_award", null=True,
                                            help_text="The latest transaction by action_date associated with this award")
+    parent_award_piid = models.TextField(null=True, verbose_name="Parent Award Piid",
+                                         help_text="The piid of the Award's parent Award")
+    generated_unique_award_id = models.TextField(blank=False, null=False, default="none",
+                                                 verbose_name="Generated Unique Award ID")
+    is_fpds = models.BooleanField(blank=False, null=False, default="none", verbose_name="Is FPDS")
+    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+                                             verbose_name="Transaction Unique ID")
 
     # Subaward aggregates
     total_subaward_amount = models.DecimalField(max_digits=20, decimal_places=2, null=True)
@@ -249,7 +256,7 @@ class Award(DataSourceTrackedModel):
             lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
             lookup_value = (piid, "piid")
             if record_type:
-                if record_type == '2':
+                if str(record_type) == '2':
                     lookup_value = (fain, "fain")
                 else:
                     lookup_value = (uri, "uri")
@@ -283,14 +290,7 @@ class Award(DataSourceTrackedModel):
             if summary_award:
                 return [], summary_award
 
-            # # We weren't able to match, so create a new award record.
-            # if parent_award_id:
-            #     # If parent award id was supplied, recursively get/create an award record for it
-            #     parent_q_kwargs = {'awarding_agency': awarding_agency}
-            #     parent_q_kwargs[lookup_value[1]] = parent_award_id if lookup_value[0] else None
-            #     parent_created, parent_award = Award.get_or_create_summary_award(**parent_q_kwargs)
-            # else:
-            #     parent_created, parent_award = [], None
+            # We no longer create a mostly-empty Award as the parent award
             parent_created, parent_award = [], None
 
             # Now create the award record for this award transaction
@@ -362,6 +362,8 @@ class TransactionNormalized(models.Model):
     update_date = models.DateTimeField(auto_now=True, null=True,
                                        help_text="The last time this transaction was updated in the API")
     fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
+    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+                                             verbose_name="Transaction Unique ID")
 
     def __str__(self):
         return '%s award: %s' % (self.type_description, self.award)
