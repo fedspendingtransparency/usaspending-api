@@ -115,7 +115,7 @@ def search_keyword_id_list_all(keyword):
     }
     
     try:
-        response = CLIENT.search(index=index_name, body=query, scroll = '5m')
+        response = CLIENT.search(index=index_name, body=query, scroll = '5m', timeout='3m')
     except Exception as es1:
         return es1
     
@@ -141,11 +141,9 @@ def search_keyword_id_list_all(keyword):
             for i in (range(len(new_response))):
                 list_item = (new_response[i]['_source']['transaction_id'])
                 transaction_id_list.append(list_item)
-        return transaction_id_list
+            return transaction_id_list
     
     #if there's a read error from Elasticsearch it 
     #will just return the transactions it has thus far.
     except Exception as excepty:
         return transaction_id_list
-    
-    return transaction_id_list
