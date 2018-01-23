@@ -26,6 +26,9 @@ class Command(BaseCommand):
 
     (example: 2018_transactions_20180121T195109Z.csv).
 
+    If the option parameter `--award-type` is provided then the transactions CSV will only have
+    transactions of that award type.
+
     If the optional parameter `-d` is used, a second CSV file will be generated of deleted transactions
     (example: deleted_ids_20180121T200832Z.csv).
 
@@ -111,12 +114,16 @@ class Command(BaseCommand):
             else:
                 award_type_str = CATEGORY_SQL.format(self.config['award_category'])
 
-        view_sql = TEMP_ES_DELTA_VIEW.format(fy=self.config['fiscal_year'], update_date=update_date_str, award_category=award_type_str)
+        view_sql = TEMP_ES_DELTA_VIEW.format(
+            fy=self.config['fiscal_year'],
+            update_date=update_date_str,
+            award_category=award_type_str,
+        )
         copy_sql = COPY_SQL.format(filename=filename)
 
         if self.deleted_ids and self.config['provide_deleted']:
             id_list = ','.join(["('{}')".format(x) for x in self.deleted_ids.keys()])
-            id_sql = CHECK_IDS_SQL.format(id_list)
+            id_sql = CHECK_IDS_SQL.format(id_list=id_list)
         else:
             id_sql = None
 
@@ -420,7 +427,7 @@ DROP_VIEW_SQL = 'DROP VIEW transaction_delta_view;'
 
 CHECK_IDS_SQL = '''
 WITH temp_transaction_ids AS (
-  SELECT * FROM (VALUES {}) AS unique_id_list (detached_award_proc_unique)
+  SELECT * FROM (VALUES {id_list}) AS unique_id_list (detached_award_proc_unique)
 )
 SELECT detached_award_proc_unique, update_date FROM transaction_delta_view
 WHERE EXISTS (
