@@ -255,7 +255,7 @@ def verify_requested_columns_available(sources, requested):
 
 class BulkDownloadListAgenciesViewSet(APIView):
     modified_agencies_list = os.path.join(settings.BASE_DIR,
-                                          'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
+                                          'usaspending_api', 'data', 'agency_list_broker_s3.csv')
     sub_agencies_map = {}
 
     def pull_modified_agencies_cgacs_subtiers(self):
@@ -337,7 +337,7 @@ class ListMonthylDownloadsViewset(APIView):
 
     s3_handler = S3Handler(name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
-    @cache_response()
+    # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
     def post(self, request):
         """Return list of downloads that match the requested params"""
         response_data = {}
