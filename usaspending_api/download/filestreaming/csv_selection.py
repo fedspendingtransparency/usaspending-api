@@ -12,8 +12,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.v2 import download_column_historical_lookups
 
-BUFFER_SIZE = (5 * 1024 ** 2)
-
 logger = logging.getLogger(__name__)
 
 
@@ -123,7 +121,7 @@ def write_csvs(download_job, file_name, columns, sources):
             s3_bucket = boto.s3.connect_to_region(region).get_bucket(bucket)
             conn = s3_bucket.new_key(file_name)
             stream = smart_open.smart_open(
-                conn, 'w', min_part_size=BUFFER_SIZE)
+                conn, 'w')
             for chunk in zstream:
                 stream.write(chunk)
                 # Adding timeout to break the stream if exceeding time limit, closes out thread
