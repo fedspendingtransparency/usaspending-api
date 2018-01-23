@@ -7,13 +7,9 @@ import tempfile
 
 from datetime import date
 from datetime import datetime
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connection
 from time import perf_counter
-
-
-HERE = os.path.dirname(os.path.abspath(__file__))
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. [conditional] Gather the list of deleted transactions from S3
@@ -30,10 +26,10 @@ class Command(BaseCommand):
 
     (example: 2018_transactions_20180121T195109Z.csv).
 
-    If the optional parameter -d is used, a second CSV file will be generated of deleted transactions
+    If the optional parameter `-d` is used, a second CSV file will be generated of deleted transactions
     (example: deleted_ids_20180121T200832Z.csv).
 
-    To customize a delta of added/modified transactions since a specific date use --since
+    To customize a delta of added/modified transactions from a specific date to present datetime use `--since`
     '''
 
     # used by parent class
@@ -49,7 +45,7 @@ class Command(BaseCommand):
             help='Start date for computing the delta of changed transactions [YYYY-MM-DD]')
         parser.add_argument(
             '--dir',
-            default=HERE,
+            default=os.path.dirname(os.path.abspath(__file__)),
             type=str,
             help='Set for a custom location of output files')
         parser.add_argument(
@@ -73,20 +69,22 @@ class Command(BaseCommand):
         ''' Script execution of custom code starts in this method'''
         start = perf_counter()
         self.deleted_ids = {}
-        self.formatted_now = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')  # ISO8601
-        self.verbose = True if options['verbosity'] > 1 else False
-        self.fiscal_year = options['fiscal_year']
-        self.directory = options['dir'] + os.sep
-        self.provide_deleted = options['deleted']
-        self.award_category = options['award_type']
+
+        self.config = set_config()
+        self.config['formatted_now'] = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')  # ISO8601
+        self.config['verbose'] = True if options['verbosity'] > 1 else False
+        self.config['fiscal_year'] = options['fiscal_year']
+        self.config['directory'] = options['dir'] + os.sep
+        self.config['provide_deleted'] = options['deleted']
+        self.config['award_category'] = options['award_type']
 
         try:
-            self.starting_date = date(*[int(x) for x in options['since'].split('-')])
+            self.config['starting_date'] = date(*[int(x) for x in options['since'].split('-')])
         except Exception:
             print('Malformed date string provided. `--since` requires YYYY-MM-DD')
             raise SystemExit
 
-        if not os.path.isdir(self.directory):
+        if not os.path.isdir(self.config['directory']):
             print('Provided directory does not exist')
             raise SystemExit
 
@@ -105,18 +103,18 @@ class Command(BaseCommand):
         '''
         Populates the formatted strings defined globally in this file to create the desired SQL
         '''
-        update_date_str = UPDATE_DATE_SQL.format(self.starting_date.strftime('%Y-%m-%d'))
+        update_date_str = UPDATE_DATE_SQL.format(self.config['starting_date'].strftime('%Y-%m-%d'))
         award_type_str = ''
-        if self.award_category:
-            if self.award_category == 'contract':
-                award_type_str = CONTRACTS_IDV_SQL.format(self.award_category)
+        if self.config['award_category']:
+            if self.config['award_category'] == 'contract':
+                award_type_str = CONTRACTS_IDV_SQL.format(self.config['award_category'])
             else:
-                award_type_str = CATEGORY_SQL.format(self.award_category)
+                award_type_str = CATEGORY_SQL.format(self.config['award_category'])
 
-        view_sql = TEMP_ES_DELTA_VIEW.format(fy=self.fiscal_year, update_date=update_date_str, award_category=award_type_str)
+        view_sql = TEMP_ES_DELTA_VIEW.format(fy=self.config['fiscal_year'], update_date=update_date_str, award_category=award_type_str)
         copy_sql = COPY_SQL.format(filename=filename)
 
-        if self.deleted_ids and self.provide_deleted:
+        if self.deleted_ids and self.config['provide_deleted']:
             id_list = ','.join(["('{}')".format(x) for x in self.deleted_ids.keys()])
             id_sql = CHECK_IDS_SQL.format(id_list)
         else:
@@ -130,7 +128,7 @@ class Command(BaseCommand):
             '<id1>': {'timestamp': '1970-01-01'},
             '<id2>': {'timestamp': '1970-01-01'},
         }
-        view_sql, copy_sql, id_sql = self.configure_sql_strings(self.directory + '<filename>')
+        view_sql, copy_sql, id_sql = self.configure_sql_strings(self.config['directory'] + '<filename>')
         print('========================================')
         print('--- Postgres View SQL ---')
         print(view_sql)
@@ -155,31 +153,31 @@ class Command(BaseCommand):
         print('Executing Postgres statements')
         start = perf_counter()
         type_str = ''
-        if self.award_category:
-            type_str = '{}_'.format(self.award_category)
+        if self.config['award_category']:
+            type_str = '{}_'.format(self.config['award_category'])
         filename = '{dir}{fy}_transactions_{type}{now}.csv'.format(
-            dir=self.directory,
-            fy=self.fiscal_year,
+            dir=self.config['directory'],
+            fy=self.config['fiscal_year'],
             type=type_str,
-            now=self.formatted_now)
+            now=self.config['formatted_now'])
         view_sql, copy_sql, id_sql = self.configure_sql_strings(filename)
 
-        execute_sql_statement(view_sql, False, self.verbose)
+        execute_sql_statement(view_sql, False, self.config['verbose'])
 
-        count = execute_sql_statement(COUNT_SQL, True, self.verbose)
+        count = execute_sql_statement(COUNT_SQL, True, self.config['verbose'])
         print('\nWriting {} transactions to this file:'.format(count[0]['count']))
         print(filename)
         # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
         subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
 
         if id_sql:
-            restored_ids = execute_sql_statement(id_sql, True, self.verbose)
-            if self.verbose:
+            restored_ids = execute_sql_statement(id_sql, True, self.config['verbose'])
+            if self.config['verbose']:
                 print(restored_ids)
             print('{} "deleted" IDs were found in DB'.format(len(restored_ids)))
             self.correct_deleted_ids(restored_ids)
 
-        execute_sql_statement(DROP_VIEW_SQL, False, self.verbose)
+        execute_sql_statement(DROP_VIEW_SQL, False, self.config['verbose'])
         print("Database interactions took {} seconds".format(perf_counter() - start))
 
     def gather_deleted_ids(self):
@@ -188,25 +186,26 @@ class Command(BaseCommand):
         generated by the broker when transactions are removed from the DB.
         '''
         print('---------------------------------------------------------------')
-        if not self.provide_deleted:
+        if not self.config['provide_deleted']:
             print('Skipping the S3 CSV fetch for deleted transactions')
             return
         print('Gathering all deleted transactions from S3')
         start = perf_counter()
         try:
-            s3 = boto3.resource('s3', region_name=settings.CSV_AWS_REGION)
-            bucket = s3.Bucket(settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME)
+            s3 = boto3.resource('s3', region_name=self.config['aws_region'])
+            bucket = s3.Bucket(self.config['s3_bucket'])
             bucket_objects = list(bucket.objects.all())
         except Exception as e:
             print('\n[ERROR]\n')
             print('Verify settings.CSV_AWS_REGION and settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME are correct')
+            print('  or is using env variables: CSV_AWS_REGION and DELETED_TRANSACTIONS_S3_BUCKET_NAME')
             print('\n{}\n'.format(e))
             raise SystemExit
 
-        if self.verbose:
-            print('CSV data from {} to now.'.format(self.starting_date))
+        if self.config['verbose']:
+            print('CSV data from {} to now.'.format(self.config['starting_date']))
 
-        to_datetime = datetime.combine(self.starting_date, datetime.min.time(), tzinfo=pytz.UTC)
+        to_datetime = datetime.combine(self.config['starting_date'], datetime.min.time(), tzinfo=pytz.UTC)
         filtered_csv_list = [
             x for x in bucket_objects
             if (
@@ -216,7 +215,7 @@ class Command(BaseCommand):
             )
         ]
 
-        if self.verbose:
+        if self.config['verbose']:
             print('Found {} csv files'.format(len(filtered_csv_list)))
 
         for obj in filtered_csv_list:
@@ -232,7 +231,7 @@ class Command(BaseCommand):
             os.close(file)
             os.remove(file_path)
 
-            if self.verbose:
+            if self.config['verbose']:
                 print('{:<55} ... {}'.format(obj.key, len(new_ids)))
 
             for uid in new_ids:
@@ -242,7 +241,7 @@ class Command(BaseCommand):
                 else:
                     self.deleted_ids[uid] = {'timestamp': obj.last_modified}
 
-        if self.verbose:
+        if self.config['verbose']:
             for k, v in self.deleted_ids.items():
                 print('id: {} last modified: {}'.format(k, str(v['timestamp'])))
 
@@ -268,12 +267,12 @@ class Command(BaseCommand):
     def write_deleted_ids(self):
         ''' Write the list of deleted (and not recreated) transactions to disk'''
         print('---------------------------------------------------------------')
-        if not self.provide_deleted:
+        if not self.config['provide_deleted']:
             print('Skipping deleted transactions output')
             return
         print('There are {} transaction records to delete'.format(len(self.deleted_ids)))
         print('Writing deleted transactions csv. Filepath:')
-        csv_file = self.directory + 'deleted_ids_{}.csv'.format(self.formatted_now)
+        csv_file = self.config['directory'] + 'deleted_ids_{}.csv'.format(self.config['formatted_now'])
         print(csv_file)
 
         with open(csv_file, 'w') as f:
@@ -299,6 +298,28 @@ def execute_sql_statement(cmd, results=False, verbose=False):
         if results:
             rows = db_rows_to_dict(cursor)
     return rows
+
+
+def set_config():
+
+    if not os.environ.get('CSV_AWS_REGION'):
+        print('Missing environment variable `CSV_AWS_REGION`')
+        raise SystemExit
+
+    if not os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME'):
+        print('Missing environment variable `DELETED_TRANSACTIONS_S3_BUCKET_NAME`')
+        raise SystemExit
+
+    if not os.environ.get('DATABASE_URL'):
+        print('Missing environment variable `DATABASE_URL`')
+        raise SystemExit
+
+    config = {
+        'aws_region': os.environ.get('CSV_AWS_REGION'),
+        's3_bucket': os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME')
+    }
+
+    return config
 
 
 # ==============================================================================
