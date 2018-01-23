@@ -35,7 +35,7 @@ CREATE TABLE transaction_normalized_new AS (
                 NOW() AS create_date,
                 NOW() AS update_date,
                 EXTRACT(YEAR FROM (CAST(action_date AS DATE) + INTERVAL '3 month')) AS fiscal_year,
-                NULL::BIGINT AS award_id, -- TODO
+                NULL::BIGINT AS award_id,
                 awarding_agency.agency_id AS awarding_agency_id,
                 funding_agency.agency_id AS funding_agency_id,
                 pop_location.location_id AS place_of_performance_id,
@@ -82,7 +82,7 @@ CREATE TABLE transaction_normalized_new AS (
                 NOW() AS create_date,
                 NOW() AS update_date,
                 EXTRACT(YEAR FROM (CAST(action_date AS DATE) + INTERVAL '3 month')) AS fiscal_year,
-                NULL::BIGINT AS award_id, -- TODO
+                NULL::BIGINT AS award_id,
                 awarding_agency.agency_id AS awarding_agency_id,
                 funding_agency.agency_id AS funding_agency_id,
                 pop_location.location_id AS place_of_performance_id,
