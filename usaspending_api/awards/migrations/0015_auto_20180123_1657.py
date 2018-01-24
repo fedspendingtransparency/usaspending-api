@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='award',
             name='is_fpds',
-            field=models.BooleanField(default='none', verbose_name='Is FPDS'),
+            field=models.BooleanField(default=False, verbose_name='Is FPDS'),
         ),
         migrations.AddField(
             model_name='award',

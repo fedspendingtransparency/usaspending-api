@@ -212,7 +212,7 @@ class Award(DataSourceTrackedModel):
                                          help_text="The piid of the Award's parent Award")
     generated_unique_award_id = models.TextField(blank=False, null=False, default="none",
                                                  verbose_name="Generated Unique Award ID")
-    is_fpds = models.BooleanField(blank=False, null=False, default="none", verbose_name="Is FPDS")
+    is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
     transaction_unique_id = models.TextField(blank=False, null=False, default="none",
                                              verbose_name="Transaction Unique ID")
 
