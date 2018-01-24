@@ -282,7 +282,11 @@ class Command(BaseCommand):
         csv_file = self.config['directory'] + 'deleted_ids_{}.csv'.format(self.config['formatted_now'])
         print(csv_file)
 
+        # FUTURE: When deleted FABS transactions are listed in the S3 bucket use this list for the CSV:
+        # output_list = ['{key},{afa_generated_unique}'.format(key=k, **v) for k, v in self.deleted_ids.items()]
+
         with open(csv_file, 'w') as f:
+            f.write('detached_award_proc_unique\n')
             f.writelines('\n'.join(self.deleted_ids.keys()))
 
 
@@ -399,11 +403,13 @@ SELECT
   UTM.recipient_location_zip5,
 
   FPDS.detached_award_proc_unique,
+  FABS.afa_generated_unique,
   TM.update_date
 
 FROM universal_transaction_matview UTM
 JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
+LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
 LEFT JOIN universal_award_matview UAM ON (UTM.award_id = UAM.award_id)
 JOIN awards AW ON (UAM.award_id = AW.id)
 WHERE
@@ -429,7 +435,7 @@ CHECK_IDS_SQL = '''
 WITH temp_transaction_ids AS (
   SELECT * FROM (VALUES {id_list}) AS unique_id_list (detached_award_proc_unique)
 )
-SELECT detached_award_proc_unique, update_date FROM transaction_delta_view
+SELECT transaction_id, detached_award_proc_unique, afa_generated_unique, update_date FROM transaction_delta_view
 WHERE EXISTS (
   SELECT *
   FROM temp_transaction_ids
