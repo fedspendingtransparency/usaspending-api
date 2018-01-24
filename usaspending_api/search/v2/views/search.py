@@ -844,13 +844,11 @@ class TransactionSummaryVisualizationViewSet(APIView):
         return Response({"results": results})
 
 
-class SpendingByTransactionCountvisualizaitonViewSet(APIView):
+class SpendingByTransactionCountVisualizaitonViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """
-            TODO
-        """
+        
         json_request = request.data
         filters = json_request.get("filters", None)
 

@@ -91,8 +91,8 @@ def get_total_results(keyword, index_name):
     try:
         response = CLIENT.search(index=index_name, body=query)
         return response['hits']['total']
-    except Exception:
-        return -1
+    except Exception as es1:
+        return es1
 
 
 def spending_by_transaction_count(filters):
@@ -112,7 +112,6 @@ def search_keyword_id_list_all(keyword):
     client to prevent the connection
     from timing out.
     """
-
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
 
     query = {
@@ -122,25 +121,15 @@ def search_keyword_id_list_all(keyword):
             }
         }, "size": DOWNLOAD_QUERY_SIZE}
     try:
-        response = CLIENT.search(index=index_name, body=query, scroll='5m', timeout='3m')
-    except Exception:
-        return -1
-    sid = response['_scroll_id']
-    if TRANSACTION_ID_SIZE == 'max':
-        scroll_size = response['hits']['total']
-    else:
-        scroll_size = TRANSACTION_ID_SIZE
-    original_size = scroll_size
+        responses = CLIENT.search(index=index_name, body=query, timeout='3m')
+    except Exception as es1:
+        return es1
     transaction_id_list = []
     try:
-        while (original_size != len(transaction_id_list)):
-            response = CLIENT.scroll(scroll_id=sid, scroll='5m')
-            sid = response['_scroll_id']
-            scroll_size = len(response['hits']['hits'])
-            new_response = response['hits']['hits']
-            for i in (range(len(new_response))):
-                list_item = (new_response[i]['_source']['transaction_id'])
-                transaction_id_list.append(list_item)
-            return transaction_id_list
-    except Exception:
+        for response in (responses['hits']['hits']):
+            list_item = (response['_source']['transaction_id'])
+            transaction_id_list.append(list_item)
+        print(len(transaction_id_list))
         return transaction_id_list
+    except Exception as es1:
+        return es1
