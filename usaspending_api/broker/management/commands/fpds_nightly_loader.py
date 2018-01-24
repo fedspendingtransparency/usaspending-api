@@ -119,12 +119,15 @@ class Command(BaseCommand):
         logger.info('Starting insertion of new FPDS data')
 
         place_of_performance_field_map = {
-            # "city_name": "place_of_performance_locat", # location id doesn't mean it's a city. Can't use this mapping
+            "city_name": "place_of_perform_city_name",
             "congressional_code": "place_of_performance_congr",
+            "county_name": "place_of_perform_county_na",
+            "county_code": "place_of_perform_county_co",
             "state_code": "place_of_performance_state",
+            "state_name": "place_of_perfor_state_desc",
             "zip4": "place_of_performance_zip4a",
-            "location_country_code": "place_of_perform_country_c"
-
+            "location_country_code": "place_of_perform_country_c",
+            "country_name": "place_of_perf_country_desc"
         }
 
         legal_entity_location_field_map = {
@@ -132,10 +135,16 @@ class Command(BaseCommand):
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
             "location_country_code": "legal_entity_country_code",
+            "country_name": "legal_entity_country_name"
             "city_name": "legal_entity_city_name",
             "congressional_code": "legal_entity_congressional",
             "state_code": "legal_entity_state_code",
+            "state_name": "legal_entity_state_descrip",
             "zip4": "legal_entity_zip4"
+            "county_code": "legal_entity_county_code",
+            "county_name": "legal_entity_county_name",
+            "zip5": "legal_entity_zip5",
+            "zip_last4": "legal_entity_zip_last4",
         }
 
         start_time = datetime.now()
