@@ -53,15 +53,15 @@ class Command(BaseCommand):
         db_cursor = connections['data_broker'].cursor()
 
         # Connect to AWS
-        # aws_region = os.environ.get('AWS_REGION')
-        # fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
+        aws_region = os.environ.get('AWS_REGION')
+        fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
 
-        # if not (aws_region or fpds_bucket_name):
-        #     raise Exception('Missing required environment variables: AWS_REGION, FPDS_BUCKET_NAME')
+        if not (aws_region or fpds_bucket_name):
+            raise Exception('Missing required environment variables: AWS_REGION, FPDS_BUCKET_NAME')
 
-        # s3client = boto3.client('s3', region_name=aws_region)
-        # s3resource = boto3.resource('s3', region_name=aws_region)
-        # s3_bucket = s3resource.Bucket(fpds_bucket_name)
+        s3client = boto3.client('s3', region_name=aws_region)
+        s3resource = boto3.resource('s3', region_name=aws_region)
+        s3_bucket = s3resource.Bucket(fpds_bucket_name)
 
         # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
         # by the Broker's PK since every modification is a new row
@@ -253,7 +253,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        logger.info('Starting historical data load...')
+        logger.info('Starting FPDS nightly data load...')
 
         if options.get('date'):
             date = options.get('date')[0]

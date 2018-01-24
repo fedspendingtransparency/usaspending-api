@@ -3,6 +3,7 @@ import timeit
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
+from django.conf import settings
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
@@ -213,20 +214,45 @@ class Command(BaseCommand):
             unique_fabs = TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique)
 
             if unique_fabs.first():
-                # update TransactionNormalized
+                # Update TransactionNormalized
                 TransactionNormalized.objects.filter(id=unique_fabs.first().transaction.id).\
                     update(**transaction_normalized_dict)
 
-                # update TransactionFABS
+                # Update TransactionFABS
                 unique_fabs.update(**financial_assistance_data)
             else:
-                # create TransactionNormalized
+                # Create TransactionNormalized
                 transaction = TransactionNormalized(**transaction_normalized_dict)
                 transaction.save()
 
-                # create TransactionFABS
+                # Create TransactionFABS
                 transaction_fabs = TransactionFABS(transaction=transaction, **financial_assistance_data)
                 transaction_fabs.save()
+
+    @staticmethod
+    def send_deletes_to_elasticsearch(ids_to_delete):
+        logger.info('Uploading FABS delete data to Elasticsearch bucket')
+
+        # Make timestamp
+        seconds = int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
+        file_name = datetime.utcnow().strftime('%Y-%m-%d') + "_FABSdeletions_" + str(seconds) + ".csv"
+        file_with_headers = ['afa_generated_unique'] + ids_to_delete
+
+        if settings.IS_LOCAL:
+            # Write to local file
+            file_path = settings.CSV_LOCAL_PATH + file_name
+            with open(file_path, 'w') as writer:
+                for row in file_with_headers:
+                    writer.write(row + '\n')
+        else:
+            # Write to file in S3 bucket directly
+            aws_region = os.environ.get('AWS_REGION')
+            elasticsearch_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
+            s3_bucket = boto.s3.connect_to_region(aws_region).get_bucket(elasticsearch_bucket_name)
+            conn = s3_bucket.new_key(file_name)
+            with smart_open.smart_open(conn, 'w', min_part_size=BUFFER_SIZE) as writer:
+                for row in file_with_headers:
+                    writer.write(row + '\n')
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -239,8 +265,9 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        logger.info('Starting historical data load...')
+        logger.info('Starting FABS nightly data load...')
 
+        # Use date provided or pull most recent ExternalDataLoadDate
         if options.get('date'):
             date = options.get('date')[0]
         else:
@@ -253,6 +280,7 @@ class Command(BaseCommand):
 
         logger.info('Processing data for FABS starting from %s' % date)
 
+        # Retrieve FABS data
         logger.info('Retrieving FABS Data...')
         start = timeit.default_timer()
         to_insert, ids_to_delete = self.get_fabs_data(date=date)
@@ -263,6 +291,10 @@ class Command(BaseCommand):
         total_rows_delete = len(ids_to_delete)
 
         if total_rows_delete > 0:
+            # Create a file with the deletion IDs and place in a bucket for ElasticSearch
+            self.send_deletes_to_elasticsearch(ids_to_delete)
+
+            # Delete FABS records by ID
             logger.info('Deleting stale FABS data...')
             start = timeit.default_timer()
             self.delete_stale_fabs(ids_to_delete=ids_to_delete)
@@ -272,18 +304,21 @@ class Command(BaseCommand):
             logger.info('Nothing to delete...')
 
         if total_rows > 0:
+            # Add FABS records
             logger.info('Inserting new FABS data...')
             start = timeit.default_timer()
             self.insert_new_fabs(to_insert=to_insert, total_rows=total_rows)
             end = timeit.default_timer()
             logger.info('Finished inserting new FABS data in ' + str(end - start) + ' seconds')
 
+            # Update Awards based on changed FABS records
             logger.info('Updating awards to reflect their latest associated transaction info...')
             start = timeit.default_timer()
             update_awards(tuple(award_update_id_list))
             end = timeit.default_timer()
             logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
 
+            # Update AwardCategories based on changed FABS records
             logger.info('Updating award category variables...')
             start = timeit.default_timer()
             update_award_categories(tuple(award_update_id_list))
