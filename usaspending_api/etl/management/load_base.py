@@ -570,27 +570,17 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
                 (row[location_map.get('location_country_code')] in territory_country_codes):
             row[location_map["location_country_code"]] = 'USA'
 
-    location_country = RefCountryCode.objects.filter(
-        country_code=row[location_map.get('location_country_code')]).first()
-
     state_code = row.get(location_map.get('state_code'))
     if state_code is not None:
         # Remove . in state names (i.e. D.C.)
         location_value_map.update({'state_code': state_code.replace('.', '')})
 
-    if location_country:
-        location_value_map.update({
-            'location_country_code': location_country,
-            'country_name': location_country.country_name,
-            'state_code': None,  # expired
-            'state_name': None,
-        })
-    else:
-        # no country found for this code
-        location_value_map.update({
-            'location_country_code': None,
-            'country_name': None
-        })
+    location_value_map.update({
+        'location_country_code': location_map.get('location_country_code'),
+        'country_name': location_map.get('location_country_name'),
+        'state_code': None,  # expired
+        'state_name': None,
+    })
 
     location_data = load_data_into_model(
         Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)

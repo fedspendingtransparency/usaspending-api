@@ -340,7 +340,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
 
     def load_city_county_data(self):
         # Here we fill in missing information from the ref city county code data
-        if self.location_country_code_id == "USA":
+        if self.location_country_code == "USA":
 
             # TODO: this should be checked to see if this is even necessary... are these fields always uppercased?
             if self.state_code:

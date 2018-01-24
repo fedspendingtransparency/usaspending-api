@@ -27,18 +27,6 @@ from usaspending_api.etl.award_helpers import update_awards, update_contract_awa
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
-subtier_agency_map = {
-    subtier_agency['subtier_code']: subtier_agency['subtier_agency_id']
-    for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')
-    }
-subtier_to_agency_map = {
-    agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']}
-    for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')
-    }
-toptier_agency_map = {
-    toptier_agency['toptier_agency_id']: toptier_agency['cgac_code']
-    for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')
-    }
 award_update_id_list = []
 
 
