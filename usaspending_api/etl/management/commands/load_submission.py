@@ -679,6 +679,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             if award_count == 1:
                 file_d_award = award_queryset[0]
                 value_map_faba['award_id'] = file_d_award['id']
+                logger.info('individual award id mapped: {}'.format(file_d_award['id']))
 
         # Still using the cpe|fyb regex compiled above for reverse
         afd = load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
@@ -691,7 +692,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
         call_command('update_file_c_file_d_awards_sql')
 
-        logger.info('Completed file C - D linkage ')
+        logger.info('Completed file C - D linkage')
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
