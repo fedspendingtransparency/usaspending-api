@@ -319,7 +319,7 @@ SPAGHETTI_SAUCE = {
 # Elasticsearch
 ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
 TRANSACTIONS_INDEX_ROOT = 'transactions'
-
+DOWNLOAD_QUERY_SIZE = 500000
 
 LONG_TO_TERSE_LABELS = {
     "allocation_transfer_agency_id": "allocation_transfer_agency_id",
