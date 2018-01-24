@@ -36,7 +36,7 @@ from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_ma
     non_loan_assistance_award_mapping
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
-from usaspending_api.search.v2.elasticsearch_helper import search_transactions
+from usaspending_api.search.v2.elasticsearch_helper import search_transactions, spending_by_transaction_count
 
 
 logger = logging.getLogger(__name__)
@@ -777,8 +777,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
-        response, total = search_transactions(filters, fields, sort,
-                                              order, lower_limit, limit)
+        response, total, transaction_type = search_transactions(filters, fields, sort,
+                                                                order, lower_limit, limit)
         if total == -1:
             # will make error catching more robust
             raise InvalidParameterException("Elasticsearch error")
@@ -786,6 +786,10 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         results = []
         for transaction in response:
             transaction["internal_id"] = transaction["Award ID"]
+            if transaction_type != 'Contracts':
+                transaction["Award ID"] = transaction['fain']
+            else:
+                transaction["Award ID"] = transaction['piid']
             results.append(transaction)
         # build response
         response = {
@@ -837,4 +841,19 @@ class TransactionSummaryVisualizationViewSet(APIView):
         }
 
         # build response
+        return Response({"results": results})
+
+
+class SpendingByTransactionCountVisualizaitonViewSet(APIView):
+
+    @cache_response()
+    def post(self, request):
+        
+        json_request = request.data
+        filters = json_request.get("filters", None)
+
+        if filters is None:
+            raise InvalidParameterException("Missing one or more required request parameters: filters")
+
+        results = spending_by_transaction_count(filters)
         return Response({"results": results})
