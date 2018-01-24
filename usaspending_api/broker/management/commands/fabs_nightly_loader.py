@@ -1,5 +1,8 @@
 import logging
 import timeit
+import os
+import boto
+import smart_open
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
@@ -249,7 +252,7 @@ class Command(BaseCommand):
             elasticsearch_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
             s3_bucket = boto.s3.connect_to_region(aws_region).get_bucket(elasticsearch_bucket_name)
             conn = s3_bucket.new_key(file_name)
-            with smart_open.smart_open(conn, 'w', min_part_size=BUFFER_SIZE) as writer:
+            with smart_open.smart_open(conn, 'w', min_part_size=1024) as writer:
                 for row in file_with_headers:
                     writer.write(row + '\n')
 
