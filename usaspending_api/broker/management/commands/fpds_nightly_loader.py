@@ -47,7 +47,6 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_fpds_data(date):
-
         if not hasattr(date, 'month'):
             date = datetime.strptime(date, '%Y-%m-%d').date()
 
@@ -66,7 +65,18 @@ class Command(BaseCommand):
 
         ids_to_delete = []
 
-        if not settings.IS_LOCAL:
+        if settings.IS_LOCAL:
+            for file in os.listdir(settings.CSV_LOCAL_PATH):
+                if re.search('.*_delete_records_(IDV|award).*', file) and \
+                            datetime.strptime(file[:file.find('_')], '%m-%d-%Y').date() >= date:
+                        with open(settings.CSV_LOCAL_PATH + file, 'r') as current_file:
+                            # open file, split string to array, skip the header
+                            reader = csv.reader(current_file.read().splitlines())
+                            next(reader)
+                            unique_key_list = [rows[0] for rows in reader]
+
+                            ids_to_delete += unique_key_list
+        else:
             # Connect to AWS
             aws_region = os.environ.get('AWS_REGION')
             fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
