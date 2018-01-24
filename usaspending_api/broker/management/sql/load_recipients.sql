@@ -116,7 +116,7 @@ CREATE TABLE legal_entity_new AS (
                 division_name,
                 division_number_or_office AS division_number,
                 last_modified::DATE AS last_modified_date,
-                action_date AS certified_date,
+                action_date::DATE AS certified_date,
                 NULL AS reporting_period_start,
                 NULL AS reporting_period_end,
                 CURRENT_TIMESTAMP AS create_date,
@@ -149,31 +149,31 @@ CREATE TABLE legal_entity_new AS (
                 NULL AS vendor_fax_number,
                 business_types,
                 CASE
-                    WHEN UPPER(business_types) = 'A' THEN 'State government'
-                    WHEN UPPER(business_types) = 'B' THEN 'County Government'
-                    WHEN UPPER(business_types) = 'C' THEN 'City or Township Government'
-                    WHEN UPPER(business_types) = 'D' THEN 'Special District Government'
-                    WHEN UPPER(business_types) = 'E' THEN 'Regional Organization'
-                    WHEN UPPER(business_types) = 'F' THEN 'U.S. Territory or Possession'
-                    WHEN UPPER(business_types) = 'G' THEN 'Independent School District'
-                    WHEN UPPER(business_types) = 'H' THEN 'Public/State Controlled Institution of Higher Education'
-                    WHEN UPPER(business_types) = 'I' THEN 'Indian/Native American Tribal Government (Federally Recognized)'
-                    WHEN UPPER(business_types) = 'J' THEN 'Indian/Native American Tribal Government (Other than Federally Recognized)'
-                    WHEN UPPER(business_types) = 'K' THEN 'Indian/Native American Tribal Designated Organization'
-                    WHEN UPPER(business_types) = 'L' THEN 'Public/Indian Housing Authority'
-                    WHEN UPPER(business_types) = 'M' THEN 'Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)'
-                    WHEN UPPER(business_types) = 'N' THEN 'Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)'
-                    WHEN UPPER(business_types) = 'O' THEN 'Private Institution of Higher Education'
-                    WHEN UPPER(business_types) = 'P' THEN 'Individual'
-                    WHEN UPPER(business_types) = 'Q' THEN 'For-Profit Organization (Other than Small Business)'
-                    WHEN UPPER(business_types) = 'R' THEN 'Small Business'
-                    WHEN UPPER(business_types) = 'S' THEN 'Hispanic-serving Institution'
-                    WHEN UPPER(business_types) = 'T' THEN 'Historically Black Colleges and Universities (HBCUs)'
-                    WHEN UPPER(business_types) = 'U' THEN 'Tribally Controlled Colleges and Universities (TCCUs)'
-                    WHEN UPPER(business_types) = 'V' THEN 'Alaska Native and Native Hawaiian Serving Institutions'
-                    WHEN UPPER(business_types) = 'W' THEN 'Non-domestic (non-US) Entity'
-                    WHEN UPPER(business_types) = 'X' THEN 'Other'
-                    ELSE 'Unknown Types'
+                    WHEN UPPER(business_types) = 'A' THEN 'STATE GOVERNMENT'
+                    WHEN UPPER(business_types) = 'B' THEN 'COUNTY GOVERNMENT'
+                    WHEN UPPER(business_types) = 'C' THEN 'CITY OR TOWNSHIP GOVERNMENT'
+                    WHEN UPPER(business_types) = 'D' THEN 'SPECIAL DISTRICT GOVERNMENT'
+                    WHEN UPPER(business_types) = 'E' THEN 'REGIONAL ORGANIZATION'
+                    WHEN UPPER(business_types) = 'F' THEN 'U.S. TERRITORY OR POSSESSION'
+                    WHEN UPPER(business_types) = 'G' THEN 'INDEPENDENT SCHOOL DISTRICT'
+                    WHEN UPPER(business_types) = 'H' THEN 'PUBLIC/STATE CONTROLLED INSTITUTION OF HIGHER EDUCATION'
+                    WHEN UPPER(business_types) = 'I' THEN 'INDIAN/NATIVE AMERICAN TRIBAL GOVERNMENT (FEDERALLY RECOGNIZED)'
+                    WHEN UPPER(business_types) = 'J' THEN 'INDIAN/NATIVE AMERICAN TRIBAL GOVERNMENT (OTHER THAN FEDERALLY RECOGNIZED)'
+                    WHEN UPPER(business_types) = 'K' THEN 'INDIAN/NATIVE AMERICAN TRIBAL DESIGNATED ORGANIZATION'
+                    WHEN UPPER(business_types) = 'L' THEN 'PUBLIC/INDIAN HOUSING AUTHORITY'
+                    WHEN UPPER(business_types) = 'M' THEN 'NONPROFIT WITH 501(C)(3) IRS STATUS (OTHER THAN INSTITUTION OF HIGHER EDUCATION)'
+                    WHEN UPPER(business_types) = 'N' THEN 'NONPROFIT WITHOUT 501(C)(3) IRS STATUS (OTHER THAN INSTITUTION OF HIGHER EDUCATION)'
+                    WHEN UPPER(business_types) = 'O' THEN 'PRIVATE INSTITUTION OF HIGHER EDUCATION'
+                    WHEN UPPER(business_types) = 'P' THEN 'INDIVIDUAL'
+                    WHEN UPPER(business_types) = 'Q' THEN 'FOR-PROFIT ORGANIZATION (OTHER THAN SMALL BUSINESS)'
+                    WHEN UPPER(business_types) = 'R' THEN 'SMALL BUSINESS'
+                    WHEN UPPER(business_types) = 'S' THEN 'HISPANIC-SERVING INSTITUTION'
+                    WHEN UPPER(business_types) = 'T' THEN 'HISTORICALLY BLACK COLLEGES AND UNIVERSITIES (HBCUS)'
+                    WHEN UPPER(business_types) = 'U' THEN 'TRIBALLY CONTROLLED COLLEGES AND UNIVERSITIES (TCCUS)'
+                    WHEN UPPER(business_types) = 'V' THEN 'ALASKA NATIVE AND NATIVE HAWAIIAN SERVING INSTITUTIONS'
+                    WHEN UPPER(business_types) = 'W' THEN 'NON-DOMESTIC (NON-US) ENTITY'
+                    WHEN UPPER(business_types) = 'X' THEN 'OTHER'
+                    ELSE 'UNKNOWN TYPES'
                 END AS business_types_description,
                 compile_fabs_business_categories(business_types) AS business_categories,
                 awardee_or_recipient_uniqu AS recipient_unique_id,
@@ -271,7 +271,7 @@ CREATE TABLE legal_entity_new AS (
                 NULL AS division_name,
                 NULL AS division_number,
                 modified_at::DATE AS last_modified_date,
-                action_date AS certified_date,
+                action_date::DATE AS certified_date,
                 NULL AS reporting_period_start,
                 NULL AS reporting_period_end,
                 CURRENT_TIMESTAMP AS create_date,

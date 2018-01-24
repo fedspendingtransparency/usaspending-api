@@ -10,11 +10,11 @@ CREATE TABLE awards_new AS (
             -- TRANSACTION NORMALIZED: FPDS
             SELECT
                 DISTINCT ON (tfn.piid, tfn.parent_award_id, tfn.agency_id, tfn.referenced_idv_agency_iden)
-                'cont_aw_' ||
-                    coalesce(tfn.agency_id,'-none-') || '_' ||
-                    coalesce(tfn.referenced_idv_agency_iden,'-none-') || '_' ||
-                    coalesce(tfn.piid,'-none-') || '_' ||
-                    coalesce(tfn.parent_award_id,'-none-') AS generated_unique_award_id,
+                'CONT_AW_' ||
+                    coalesce(tfn.agency_id,'-NONE-') || '_' ||
+                    coalesce(tfn.referenced_idv_agency_iden,'-NONE-') || '_' ||
+                    coalesce(tfn.piid,'-NONE-') || '_' ||
+                    coalesce(tfn.parent_award_id,'-NONE-') AS generated_unique_award_id,
                 TRUE AS is_fpds,
                 tfn.detached_award_proc_unique AS transaction_unique_id,
                 'DBR'::TEXT AS data_source,
@@ -76,25 +76,25 @@ CREATE TABLE awards_new AS (
             -- TRANSACTION NORMALIZED: FABS - FAIN
             SELECT
                 DISTINCT ON (tfn.fain, tfn.awarding_sub_tier_agency_c)
-                'asst_aw_' ||
-                    coalesce(tfn.awarding_sub_tier_agency_c,'-none-') || '_' ||
-                    coalesce(tfn.fain, '-none-') || '_' ||
-                    '-none-' AS generated_unique_award_id,
+                'ASST_AW_' ||
+                    coalesce(tfn.awarding_sub_tier_agency_c,'-NONE-') || '_' ||
+                    coalesce(tfn.fain, '-NONE-') || '_' ||
+                    '-NONE-' AS generated_unique_award_id,
                 FALSE as is_fpds,
                 tfn.afa_generated_unique AS transaction_unique_id,
                 'DBR'::TEXT AS data_source,
                 tfn.assistance_type AS type,
                 CASE
-                    WHEN tfn.assistance_type = '02' THEN 'Block Grant'
-                    WHEN tfn.assistance_type = '03' THEN 'Formula Grant'
-                    WHEN tfn.assistance_type = '04' THEN 'Project Grant'
-                    WHEN tfn.assistance_type = '05' THEN 'Cooperative Agreement'
-                    WHEN tfn.assistance_type = '06' THEN 'Direct Payment for Specified Use'
-                    WHEN tfn.assistance_type = '07' THEN 'Direct Loan'
-                    WHEN tfn.assistance_type = '08' THEN 'Guaranteed/Insured Loan'
-                    WHEN tfn.assistance_type = '09' THEN 'Insurance'
-                    WHEN tfn.assistance_type = '10' THEN 'Direct Payment with Unrestricted Use'
-                    WHEN tfn.assistance_type = '11' THEN 'Other Financial Assistance'
+                    WHEN tfn.assistance_type = '02' THEN 'BLOCK GRANT'
+                    WHEN tfn.assistance_type = '03' THEN 'FORMULA GRANT'
+                    WHEN tfn.assistance_type = '04' THEN 'PROJECT GRANT'
+                    WHEN tfn.assistance_type = '05' THEN 'COOPERATIVE AGREEMENT'
+                    WHEN tfn.assistance_type = '06' THEN 'DIRECT PAYMENT FOR SPECIFIED USE'
+                    WHEN tfn.assistance_type = '07' THEN 'DIRECT LOAN'
+                    WHEN tfn.assistance_type = '08' THEN 'GUARANTEED/INSURED LOAN'
+                    WHEN tfn.assistance_type = '09' THEN 'INSURANCE'
+                    WHEN tfn.assistance_type = '10' THEN 'DIRECT PAYMENT WITH UNRESTRICTED USE'
+                    WHEN tfn.assistance_type = '11' THEN 'OTHER FINANCIAL ASSISTANCE'
                 END AS type_description,
                 NULL::TEXT AS piid,
                 NULL::TEXT AS parent_award_piid,
@@ -150,25 +150,25 @@ CREATE TABLE awards_new AS (
             -- TRANSACTION NORMALIZED: FABS - URI
             SELECT
                 DISTINCT ON (tfn.uri, tfn.awarding_sub_tier_agency_c)
-                'asst_aw_' ||
-                    coalesce(tfn.awarding_sub_tier_agency_c,'-none-') || '_' ||
-                    '-none-' || '_' ||
-                    coalesce(tfn.uri, '-none-') AS generated_unique_award_id,
+                'ASST_AW_' ||
+                    coalesce(tfn.awarding_sub_tier_agency_c,'-NONE-') || '_' ||
+                    '-NONE-' || '_' ||
+                    coalesce(tfn.uri, '-NONE-') AS generated_unique_award_id,
                 FALSE as is_fpds,
                 tfn.afa_generated_unique AS transaction_unique_id,
                 'DBR'::TEXT AS data_source,
                 tfn.assistance_type AS type,
                 CASE
-                    WHEN tfn.assistance_type = '02' THEN 'Block Grant'
-                    WHEN tfn.assistance_type = '03' THEN 'Formula Grant'
-                    WHEN tfn.assistance_type = '04' THEN 'Project Grant'
-                    WHEN tfn.assistance_type = '05' THEN 'Cooperative Agreement'
-                    WHEN tfn.assistance_type = '06' THEN 'Direct Payment for Specified Use'
-                    WHEN tfn.assistance_type = '07' THEN 'Direct Loan'
-                    WHEN tfn.assistance_type = '08' THEN 'Guaranteed/Insured Loan'
-                    WHEN tfn.assistance_type = '09' THEN 'Insurance'
-                    WHEN tfn.assistance_type = '10' THEN 'Direct Payment with Unrestricted Use'
-                    WHEN tfn.assistance_type = '11' THEN 'Other Financial Assistance'
+                    WHEN tfn.assistance_type = '02' THEN 'BLOCK GRANT'
+                    WHEN tfn.assistance_type = '03' THEN 'FORMULA GRANT'
+                    WHEN tfn.assistance_type = '04' THEN 'PROJECT GRANT'
+                    WHEN tfn.assistance_type = '05' THEN 'COOPERATIVE AGREEMENT'
+                    WHEN tfn.assistance_type = '06' THEN 'DIRECT PAYMENT FOR SPECIFIED USE'
+                    WHEN tfn.assistance_type = '07' THEN 'DIRECT LOAN'
+                    WHEN tfn.assistance_type = '08' THEN 'GUARANTEED/INSURED LOAN'
+                    WHEN tfn.assistance_type = '09' THEN 'INSURANCE'
+                    WHEN tfn.assistance_type = '10' THEN 'DIRECT PAYMENT WITH UNRESTRICTED USE'
+                    WHEN tfn.assistance_type = '11' THEN 'OTHER FINANCIAL ASSISTANCE'
                 END AS type_description,
                 NULL::TEXT AS piid,
                 NULL::TEXT AS parent_award_piid,
