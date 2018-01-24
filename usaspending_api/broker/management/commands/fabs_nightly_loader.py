@@ -83,7 +83,7 @@ class Command(BaseCommand):
             "county_name": "place_of_perform_county_na",
             "county_code": "place_of_perform_county_co",
             "foreign_location_description": "place_of_performance_forei",
-            "state_code": "place_of_performance_state",
+            "state_code": "place_of_perfor_state_code",
             "state_name": "place_of_perform_state_nam",
             "zip4": "place_of_performance_zip4a",
             "location_country_code": "place_of_perform_country_c",
