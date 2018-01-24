@@ -337,7 +337,7 @@ class ListMonthylDownloadsViewset(APIView):
 
     s3_handler = S3Handler(name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
-    @cache_response()
+    # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
     def post(self, request):
         """Return list of downloads that match the requested params"""
         response_data = {}
@@ -394,6 +394,8 @@ class ListMonthylDownloadsViewset(APIView):
                 if agency:
                     agency_name = agency[0]['name']
                     agency_abbr = agency[0]['abbreviation']
+            else:
+                agency_name = 'All'
             # Simply adds dashes for the date, 20180101 -> 2018-01-01, could also use strftime
             updated_date = '-'.join([name_data[3][:4], name_data[3][4:6], name_data[3][6:]])
             downloads.append({'fiscal_year': name_data[0],

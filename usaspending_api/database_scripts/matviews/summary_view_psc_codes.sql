@@ -30,15 +30,20 @@ GROUP BY
   "transaction_fpds"."pulled_from",
   "transaction_fpds"."product_or_service_code";
 
-CREATE INDEX idx_27f1dd7c__action_date_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_27f1dd7c__type_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_55d3ea0b__action_date_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_55d3ea0b__type_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_55d3ea0b__tuned_type_and_idv_temp ON summary_view_psc_codes_temp USING BTREE("type", "pulled_from") WITH (fillfactor = 100) WHERE "type" IS NULL AND "pulled_from" IS NOT NULL;
 
-VACUUM ANALYZE VERBOSE summary_view_psc_codes_temp;
+ANALYZE VERBOSE summary_view_psc_codes_temp;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_psc_codes RENAME TO summary_view_psc_codes_old;
-ALTER INDEX IF EXISTS idx_27f1dd7c__action_date RENAME TO idx_27f1dd7c__action_date_old;
-ALTER INDEX IF EXISTS idx_27f1dd7c__type RENAME TO idx_27f1dd7c__type_old;
+ALTER INDEX IF EXISTS idx_55d3ea0b__action_date RENAME TO idx_55d3ea0b__action_date_old;
+ALTER INDEX IF EXISTS idx_55d3ea0b__type RENAME TO idx_55d3ea0b__type_old;
+ALTER INDEX IF EXISTS idx_55d3ea0b__tuned_type_and_idv RENAME TO idx_55d3ea0b__tuned_type_and_idv_old;
 
 ALTER MATERIALIZED VIEW summary_view_psc_codes_temp RENAME TO summary_view_psc_codes;
-ALTER INDEX idx_27f1dd7c__action_date_temp RENAME TO idx_27f1dd7c__action_date;
-ALTER INDEX idx_27f1dd7c__type_temp RENAME TO idx_27f1dd7c__type;
+ALTER INDEX idx_55d3ea0b__action_date_temp RENAME TO idx_55d3ea0b__action_date;
+ALTER INDEX idx_55d3ea0b__type_temp RENAME TO idx_55d3ea0b__type;
+ALTER INDEX idx_55d3ea0b__tuned_type_and_idv_temp RENAME TO idx_55d3ea0b__tuned_type_and_idv;
+
+GRANT SELECT ON summary_view_psc_codes TO readonly;

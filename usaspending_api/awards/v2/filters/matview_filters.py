@@ -9,7 +9,6 @@ from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 logger = logging.getLogger(__name__)
 
 
-# TODO: Performance when multiple false values are initially provided
 def matview_search_filter(filters, model):
     queryset = model.objects.all()
     for key, value in filters.items():
@@ -43,22 +42,18 @@ def matview_search_filter(filters, model):
 
         if key == "keyword":
             keyword = value
+            upper_kw = keyword.upper()
 
-            compound_or = Q(recipient_name__contains=keyword.upper()) | \
-                Q(piid=keyword) | \
-                Q(fain=keyword) | \
-                Q(recipient_unique_id=keyword) | \
+            compound_or = Q(keyword_string__contains=upper_kw) | \
+                Q(award_id_string__contains=upper_kw) | \
+                Q(recipient_unique_id=upper_kw) | \
                 Q(parent_recipient_unique_id=keyword)
 
             if keyword.isnumeric():
                 compound_or |= Q(naics_code__contains=keyword)
-            else:
-                compound_or |= Q(naics_description__icontains=keyword)
 
             if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
                 compound_or |= Q(product_or_service_code__iexact=keyword)
-            else:
-                compound_or |= Q(product_or_service_description__icontains=keyword)
 
             queryset = queryset.filter(compound_or)
 
@@ -79,54 +74,45 @@ def matview_search_filter(filters, model):
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
-            funding_toptier = []
-            funding_subtier = []
-            awarding_toptier = []
-            awarding_subtier = []
+            funding_toptier = Q()
+            funding_subtier = Q()
+            awarding_toptier = Q()
+            awarding_subtier = Q()
             for v in value:
                 type = v["type"]
                 tier = v["tier"]
                 name = v["name"]
                 if type == "funding":
                     if tier == "toptier":
-                        funding_toptier.append(name)
+                        funding_toptier |= Q(funding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        funding_subtier.append(name)
+                        funding_subtier |= Q(funding_subtier_agency_name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
-                        awarding_toptier.append(name)
+                        awarding_toptier |= Q(awarding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        awarding_subtier.append(name)
+                        awarding_subtier |= Q(awarding_subtier_agency_name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
 
+            awarding_queryfilter = Q()
+            funding_queryfilter = Q()
+
+            # Since these are Q filters, no DB hits for boolean checks
             if funding_toptier:
-                or_queryset = Q()
-                for name in funding_toptier:
-                    or_queryset |= Q(funding_toptier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
-
+                funding_queryfilter |= funding_toptier
             if funding_subtier:
-                or_queryset = Q()
-                for name in funding_subtier:
-                    or_queryset |= Q(funding_subtier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
-
+                funding_queryfilter |= funding_subtier
             if awarding_toptier:
-                or_queryset = Q()
-                for name in awarding_toptier:
-                    or_queryset |= Q(awarding_toptier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
-
+                awarding_queryfilter |= awarding_toptier
             if awarding_subtier:
-                or_queryset = Q()
-                for name in awarding_subtier:
-                    or_queryset |= Q(awarding_subtier_agency_name__icontains=name)
-                queryset = queryset.filter(or_queryset)
+                awarding_queryfilter |= awarding_subtier
+
+            queryset = queryset.filter(funding_queryfilter & awarding_queryfilter)
 
         elif key == "legal_entities":
             in_query = [v for v in value]
@@ -136,12 +122,12 @@ def matview_search_filter(filters, model):
         elif key == "recipient_search_text":
             if len(value) != 1:
                 raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
-            recipient_string = str(value[0])
+            upper_recipient_string = str(value[0]).upper()
 
-            filter_obj = Q(recipient_name__contains=recipient_string.upper())
+            filter_obj = Q(recipient_name__contains=upper_recipient_string)
 
-            if len(recipient_string) == 9:
-                filter_obj |= Q(recipient_unique_id__iexact=recipient_string)
+            if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
+                filter_obj |= Q(recipient_unique_id=upper_recipient_string)
 
             queryset &= model.objects.filter(filter_obj)
 
@@ -185,7 +171,7 @@ def matview_search_filter(filters, model):
             if len(value) != 0:
                 filter_obj = Q()
                 for val in value:
-                    filter_obj |= Q(piid__icontains=val) | Q(fain__icontains=val) | Q(uri__icontains=val)
+                    filter_obj |= Q(award_id_string__contains=val.upper())
                 queryset &= model.objects.filter(filter_obj)
 
         elif key == "program_numbers":

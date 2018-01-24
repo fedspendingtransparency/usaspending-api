@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 import sys
@@ -51,9 +52,11 @@ TEMPLATE = {
     'drop_matview': 'DROP MATERIALIZED VIEW IF EXISTS {};',
     'rename_matview': 'ALTER MATERIALIZED VIEW {}{} RENAME TO {};',
     'cluster_matview': 'CLUSTER VERBOSE {} USING {};',
+    'analyze': 'ANALYZE VERBOSE {};',
     'vacuum': 'VACUUM ANALYZE VERBOSE {};',
     'create_index': 'CREATE {}INDEX {} ON {} USING {}({}){}{};',
     'rename_index': 'ALTER INDEX {}{} RENAME TO {};',
+    'grant_select': 'GRANT SELECT ON {} TO {};',
 }
 HEADER = [
     '--------------------------------------------------------',
@@ -116,7 +119,7 @@ def create_sql_strings(sql_json):
         2. Create new matview
         3. Create indexes for new matview
         4. (optional) Cluster matview on index
-        5. vacuum analyze verbose <matview>
+        5. analyze verbose <matview>
         6. Rename existing matview, append with _old
         7. Rename all existing matview indexes to avoid name collisions
         8. Rename new matview
@@ -166,13 +169,15 @@ def create_sql_strings(sql_json):
         print('*** This matview will be clustered on {} ***'.format(CLUSTERING_INDEX))
         final_sql_strings.append(TEMPLATE['cluster_matview'].format(matview_temp_name, CLUSTERING_INDEX))
         final_sql_strings.append('')
-    final_sql_strings.append(TEMPLATE['vacuum'].format(matview_temp_name))
+    final_sql_strings.append(TEMPLATE['analyze'].format(matview_temp_name))
     final_sql_strings.append('')
     final_sql_strings.append(TEMPLATE['rename_matview'].format('IF EXISTS ', matview_name, matview_archive_name))
     final_sql_strings += rename_old_indexes
     final_sql_strings.append('')
     final_sql_strings.append(TEMPLATE['rename_matview'].format('', matview_temp_name, matview_name))
     final_sql_strings += rename_new_indexes
+    final_sql_strings.append('')
+    final_sql_strings.append(TEMPLATE['grant_select'].format(matview_name, 'readonly'))
     final_sql_strings.append('')
     return final_sql_strings
 
@@ -208,4 +213,12 @@ if __name__ == '__main__':
         print('Creating matview SQL using {}'.format(sys.argv[1]))
         main(sys.argv[1])
     else:
-        print('I need a json file with sql info')
+        ans = input('Would you like to run on all json files in dir? (y/N): ')
+        if ans.lower() in ['y', 'yes']:
+            all_files = glob.glob('*.json')
+            for f in all_files:
+                RANDOM_CHARS = str(uuid4())[:8]
+                print('\n==== {}'.format(f))
+                main(f)
+        else:
+            print('Quitting....\n')

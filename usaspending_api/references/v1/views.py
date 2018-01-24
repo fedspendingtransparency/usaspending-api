@@ -10,7 +10,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.models import Award
 
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
-from usaspending_api.common.mixins import FilterQuerysetMixin, SuperLoggingMixin
+from usaspending_api.common.mixins import FilterQuerysetMixin
 from usaspending_api.common.views import DetailViewSet, AutocompleteView
 from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition, FilterHash
 from usaspending_api.references.v1.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, \
@@ -66,8 +66,7 @@ class HashEndpoint(APIView):
                 "The FilterHash Object with that has does not exist. DoesNotExist Error Thrown.")
 
 
-class LocationEndpoint(SuperLoggingMixin,
-                       FilterQuerysetMixin,
+class LocationEndpoint(FilterQuerysetMixin,
                        DetailViewSet):
     """Return an agency"""
     serializer_class = LocationSerializer
@@ -111,8 +110,7 @@ class AgencyAutocomplete(FilterQuerysetMixin,
         return ordered_queryset
 
 
-class AgencyEndpoint(SuperLoggingMixin,
-                     FilterQuerysetMixin,
+class AgencyEndpoint(FilterQuerysetMixin,
                      DetailViewSet):
     """Return an agency"""
     serializer_class = AgencySerializer
@@ -126,8 +124,7 @@ class AgencyEndpoint(SuperLoggingMixin,
         return ordered_queryset
 
 
-class CfdaEndpoint(SuperLoggingMixin,
-                   FilterQuerysetMixin,
+class CfdaEndpoint(FilterQuerysetMixin,
                    DetailViewSet):
     """Return information about CFDA Programs"""
     serializer_class = CfdaSerializer
@@ -142,8 +139,7 @@ class CfdaEndpoint(SuperLoggingMixin,
         return ordered_queryset
 
 
-class RecipientViewSet(SuperLoggingMixin,
-                       FilterQuerysetMixin,
+class RecipientViewSet(FilterQuerysetMixin,
                        DetailViewSet):
     """
     Returns information about award recipients and vendors
