@@ -39,3 +39,5 @@ award_type_mapping = {
     # 'S': 'Funded Space Act Agreement',
     # 'T': 'Training Grant'}
 }
+
+award_categories = ['contracts', 'direct_payments', 'loans', 'grants', 'other']
