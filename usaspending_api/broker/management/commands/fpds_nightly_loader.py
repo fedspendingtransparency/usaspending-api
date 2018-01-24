@@ -69,13 +69,13 @@ class Command(BaseCommand):
             for file in os.listdir(settings.CSV_LOCAL_PATH):
                 if re.search('.*_delete_records_(IDV|award).*', file) and \
                             datetime.strptime(file[:file.find('_')], '%m-%d-%Y').date() >= date:
-                        with open(settings.CSV_LOCAL_PATH + file, 'r') as current_file:
-                            # open file, split string to array, skip the header
-                            reader = csv.reader(current_file.read().splitlines())
-                            next(reader)
-                            unique_key_list = [rows[0] for rows in reader]
+                    with open(settings.CSV_LOCAL_PATH + file, 'r') as current_file:
+                        # open file, split string to array, skip the header
+                        reader = csv.reader(current_file.read().splitlines())
+                        next(reader)
+                        unique_key_list = [rows[0] for rows in reader]
 
-                            ids_to_delete += unique_key_list
+                        ids_to_delete += unique_key_list
         else:
             # Connect to AWS
             aws_region = os.environ.get('AWS_REGION')
