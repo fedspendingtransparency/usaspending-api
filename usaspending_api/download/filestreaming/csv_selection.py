@@ -127,7 +127,7 @@ def write_csvs(download_job, file_name, columns, sources):
                 # Adding timeout to break the stream if exceeding time limit, closes out thread
                 if time.time() > timeout:
                     raise Exception('Stream exceeded time of {} minutes.'.format(minutes))
-            download_job.file_size = stream.total_size
+            download_job.file_size = stream.tell()
 
     except Exception as e:
         download_job.job_status_id = JOB_STATUS_DICT['failed']
