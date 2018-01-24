@@ -227,13 +227,7 @@ class FilterHash(models.Model):
 
 class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     location_id = models.AutoField(primary_key=True)
-    location_country_code = models.ForeignKey(
-        'RefCountryCode',
-        models.DO_NOTHING,
-        db_column='location_country_code',
-        blank=True,
-        null=True,
-        verbose_name="Country Code")
+    location_country_code = models.TextField(blank=True, null=True, verbose_name="Location Country Code")
     country_name = models.TextField(blank=True, null=True, verbose_name="Country Name")
     state_code = models.TextField(blank=True, null=True, verbose_name="State Code")
     state_name = models.TextField(blank=True, null=True, verbose_name="State Name")
@@ -274,7 +268,6 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
                                              verbose_name="Transaction Unique ID")
 
     def pre_save(self):
-        self.load_country_data()
         self.load_city_county_data()
         self.fill_missing_state_data()
         self.fill_missing_zip5()
@@ -344,10 +337,6 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
             match = self.zip_code_pattern.match(self.zip4)
             if match:
                 self.zip5 = match.group(1)
-
-    def load_country_data(self):
-        if self.location_country_code:
-            self.country_name = self.location_country_code.country_name
 
     def load_city_county_data(self):
         # Here we fill in missing information from the ref city county code data
