@@ -524,6 +524,25 @@ def load_data_into_model(model_instance, data, **kwargs):
         return model_instance
 
 
+def create_location(location_map, row, location_value_map=None):
+    """
+    Create a location object
+
+    Input parameters:
+        - location_map: a dictionary with key = field name on the location model and value = corresponding field name
+          on the current row of data
+        - row: the row of data currently being loaded
+    """
+    if location_value_map is None:
+        location_value_map = {}
+
+    row = canonicalize_location_dict(row)
+    location_data = load_data_into_model(
+        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True, save=False)
+
+    return Location.objects.create(**location_data)
+
+
 def get_or_create_location(location_map, row, location_value_map=None, empty_location=None, d_file=False, save=True):
     """
     Retrieve or create a location object

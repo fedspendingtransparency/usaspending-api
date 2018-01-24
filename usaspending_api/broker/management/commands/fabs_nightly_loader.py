@@ -12,7 +12,7 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from usaspending_api.etl.management.load_base import load_data_into_model, format_date, get_or_create_location
+from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency, ToptierAgency, SubtierAgency
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
 
@@ -130,9 +130,7 @@ class Command(BaseCommand):
                                                                                        str(total_rows),
                                                                                        datetime.now() - start_time))
 
-            legal_entity_location, created = get_or_create_location(
-                legal_entity_location_field_map, row, {"recipient_flag": True}
-            )
+            legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
 
             recipient_name = row['awardee_or_recipient_legal']
             if recipient_name is None:
@@ -159,9 +157,7 @@ class Command(BaseCommand):
                 legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
-            pop_location, created = get_or_create_location(
-                place_of_performance_field_map, row, {"place_of_performance_flag": True}
-            )
+            pop_location = create_location(place_of_performance_field_map, row, {"place_of_performance_flag": True})
 
             # Find the award that this award transaction belongs to
             awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
