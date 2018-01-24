@@ -46,7 +46,7 @@ CREATE TABLE awards_new AS (
                 pop_location.location_id AS place_of_performance_id,
                 recipient.legal_entity_id AS recipient_id,
                 ac.type_name AS category,
-                EXTRACT(YEAR FROM (CAST(action_date AS DATE) + INTERVAL '3 month')) AS fiscal_year
+                EXTRACT(YEAR FROM (CAST(action_date AS DATE) + INTERVAL '3 month'))::INT AS fiscal_year
             FROM
                 transaction_fpds_new AS tfn
                 LEFT OUTER JOIN
@@ -122,7 +122,7 @@ CREATE TABLE awards_new AS (
                 pop_location.location_id AS place_of_performance_id,
                 recipient.legal_entity_id AS recipient_id,
                 ac.type_name AS category,
-                EXTRACT(YEAR FROM (CAST(action_date AS DATE) + INTERVAL '3 month')) AS fiscal_year
+                EXTRACT(YEAR FROM (CAST(action_date AS DATE) + INTERVAL '3 month'))::INT AS fiscal_year
             FROM
                 transaction_fabs_new AS tfn
                 LEFT OUTER JOIN
@@ -196,7 +196,7 @@ CREATE TABLE awards_new AS (
                 pop_location.location_id AS place_of_performance_id,
                 recipient.legal_entity_id AS recipient_id,
                 ac.type_name AS category,
-                EXTRACT(YEAR FROM (CAST(action_date AS DATE) + INTERVAL '3 month')) AS fiscal_year
+                EXTRACT(YEAR FROM (CAST(action_date AS DATE) + INTERVAL '3 month'))::INT AS fiscal_year
             FROM
                 transaction_fabs_new AS tfn
                 LEFT OUTER JOIN
