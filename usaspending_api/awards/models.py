@@ -364,6 +364,8 @@ class TransactionNormalized(models.Model):
     fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
     transaction_unique_id = models.TextField(blank=False, null=False, default="none",
                                              verbose_name="Transaction Unique ID")
+    generated_unique_award_id = models.TextField(blank=False, null=False, default='none',
+                                                 verbose_name="Generated Unique Award ID")
 
     def __str__(self):
         return '%s award: %s' % (self.type_description, self.award)
