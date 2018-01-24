@@ -80,8 +80,7 @@ class Command(BaseCommand):
             return
 
         # This cascades deletes for TransactionFABS & Awards in addition to deleting TransactionNormalized records
-        TransactionNormalized.objects.\
-            filter(assistance_data__afa_generated_unique__in=ids_to_delete).delete()
+        TransactionNormalized.objects.filter(assistance_data__afa_generated_unique__in=ids_to_delete).delete()
 
     @staticmethod
     def insert_new_fabs(to_insert, total_rows):

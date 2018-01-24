@@ -8,6 +8,7 @@ import urllib.request
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
+from django.conf import settings
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
@@ -52,17 +53,6 @@ class Command(BaseCommand):
 
         db_cursor = connections['data_broker'].cursor()
 
-        # Connect to AWS
-        aws_region = os.environ.get('AWS_REGION')
-        fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
-
-        if not (aws_region or fpds_bucket_name):
-            raise Exception('Missing required environment variables: AWS_REGION, FPDS_BUCKET_NAME')
-
-        s3client = boto3.client('s3', region_name=aws_region)
-        s3resource = boto3.resource('s3', region_name=aws_region)
-        s3_bucket = s3resource.Bucket(fpds_bucket_name)
-
         # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
         # by the Broker's PK since every modification is a new row
         db_query = 'SELECT * ' \
@@ -76,30 +66,41 @@ class Command(BaseCommand):
 
         ids_to_delete = []
 
-        # make an array of all the keys in the bucket
-        # file_list = [item.key for item in s3_bucket.objects.all()]
-        file_list = []
-        # Only use files that match the date we're currently checking
+        if not settings.IS_LOCAL:
+            # Connect to AWS
+            aws_region = os.environ.get('AWS_REGION')
+            fpds_bucket_name = os.environ.get('FPDS_BUCKET_NAME')
 
-        for item in file_list:
-            # if the date on the file is the same day as we're checking
-            if re.search('.*_delete_records_(IDV|award).*', item) and '/' not in item and \
-                            datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= date:
-                # make the url params to pass
-                url_params = {
-                    'Bucket': fpds_bucket_name,
-                    'Key': item
-                }
-                # get the url for the current file
-                file_path = s3client.generate_presigned_url('get_object', Params=url_params)
-                current_file = urllib.request.urlopen(file_path)
-                reader = csv.reader(current_file.read().decode("utf-8").splitlines())
-                # skip the header, the reader doesn't ignore it for some reason
-                next(reader)
-                # make an array of all the detached_award_procurement_ids
-                unique_key_list = [rows[0] for rows in reader]
+            if not (aws_region or fpds_bucket_name):
+                raise Exception('Missing required environment variables: AWS_REGION, FPDS_BUCKET_NAME')
 
-                ids_to_delete += unique_key_list
+            s3client = boto3.client('s3', region_name=aws_region)
+            s3resource = boto3.resource('s3', region_name=aws_region)
+            s3_bucket = s3resource.Bucket(fpds_bucket_name)
+
+            # make an array of all the keys in the bucket
+            file_list = [item.key for item in s3_bucket.objects.all()]
+
+            # Only use files that match the date we're currently checking
+            for item in file_list:
+                # if the date on the file is the same day as we're checking
+                if re.search('.*_delete_records_(IDV|award).*', item) and '/' not in item and \
+                                datetime.strptime(item[:item.find('_')], '%m-%d-%Y').date() >= date:
+                    # make the url params to pass
+                    url_params = {
+                        'Bucket': fpds_bucket_name,
+                        'Key': item
+                    }
+                    # get the url for the current file
+                    file_path = s3client.generate_presigned_url('get_object', Params=url_params)
+                    current_file = urllib.request.urlopen(file_path)
+                    reader = csv.reader(current_file.read().decode("utf-8").splitlines())
+                    # skip the header, the reader doesn't ignore it for some reason
+                    next(reader)
+                    # make an array of all the detached_award_procurement_ids
+                    unique_key_list = [rows[0] for rows in reader]
+
+                    ids_to_delete += unique_key_list
 
         logger.info('Number of records to insert/update: %s' % str(len(db_rows)))
         logger.info('Number of records to delete: %s' % str(len(ids_to_delete)))
