@@ -71,6 +71,18 @@ award_mappings = {
     'contracts': ['contracts'],
     'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
 }
+transaction_table_mappings = {
+    'd1': {
+        'table_name': 'transaction_fpds',
+        'table_id': 'detached_award_proc_unique',
+        'rel_name': 'contract_data'
+    },
+    'd2': {
+        'table_name': 'transaction_fabs',
+        'table_id': 'afa_generated_unique',
+        'rel_name': 'assistance_data'
+    }
+}
 value_mappings = {
     # Award Level
     # 'prime_awards': {
@@ -440,13 +452,16 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
             # insert magic here
             # transaction_ids = elastic_search_helper(keyword=keyword)
             transaction_ids = keyword
-            if award_type == 'd1':
-                transaction_id_join = '{}__{}'.format(value_mappings[award_level]['contract_data'],
-                                                      'detached_award_proc_unique')
-            elif award_type == 'd2':
-                transaction_id_join = '{}__{}'.format(value_mappings[award_level]['assistance_data'],
-                                                      'afa_generated_unique')
-            queryset = queryset.filter(**{'{}__in'.format(transaction_id_join):transaction_ids})
+            table_name = transaction_table_mappings[award_type]['table_name']
+            table_id = transaction_table_mappings[award_type]['table_id']
+            rel_name = transaction_table_mappings[award_type]['rel_name']
+            transaction_id_join = '{}__{}'.format(value_mappings[award_level][rel_name], table_id)
+            transaction_id_sql = '\"{}\".{}'.format(table_name, table_id)
+
+            queryset = queryset.filter(**{'{}__isnull'.format(transaction_id_join):False})
+            queryset &= queryset.extra(
+                where=['{} = ANY(\'{{{}}}\'::text[])'.format(transaction_id_sql, ','.join(transaction_ids))]
+            )
 
         # Adding award type filter
         award_types = []
