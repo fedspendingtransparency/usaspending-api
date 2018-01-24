@@ -23,6 +23,7 @@ from usaspending_api.common.helpers import generate_raw_quoted_query
 
 BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
+TEMP_SQL_FILE_PATH = os.path.join('/', 'tmp', 'bd_sql.sql')
 
 logger = logging.getLogger('console')
 
@@ -231,14 +232,15 @@ def write_csvs(download_job, file_name, columns, sources):
                 split_csv_query_raw = generate_raw_quoted_query(split_csv_query)
                 split_csv_query_raw = apply_annotations_to_sql(split_csv_query_raw, source.human_names)
                 logger.debug('PSQL Query: {}'.format(split_csv_query_raw))
+                split_csv_query_raw = '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)
+                with open(TEMP_SQL_FILE_PATH, 'w') as sql_file:
+                    sql_file.write(split_csv_query_raw)
                 # Generate the csv with \copy
-                psql_command = subprocess.Popen(
-                    ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
-                    stdout=subprocess.PIPE
-                )
-                subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
+                cat_command = subprocess.Popen(['cat', TEMP_SQL_FILE_PATH], stdout=subprocess.PIPE)
+                subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=cat_command.stdout)
                 # save it to the zip
                 zipped_csvs.write(split_csv_path, split_csv_name)
+                os.remove(TEMP_SQL_FILE_PATH)
                 logger.info('wrote {} took {} seconds'.format(split_csv_name, time.time() - start_split_writing))
 
                 last_count = len(open(split_csv_path).readlines())
