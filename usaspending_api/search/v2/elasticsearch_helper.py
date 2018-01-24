@@ -13,7 +13,6 @@ ES_HOSTNAME = settings.ES_HOSTNAME
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
 CLIENT = Elasticsearch(ES_HOSTNAME)
-TRANSACTION_ID_SIZE = settings.TRANSACTION_ID_SIZE
 
 TRANSACTIONS_LOOKUP.update({v: k for k, v in
                             TRANSACTIONS_LOOKUP.items()}
@@ -72,7 +71,8 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
     try:
         response = CLIENT.search(index=index_name, body=query)
     except Exception:
-        return False, -1
+        logging.exception("There was an error connecting to the ElasticSearch instance.")
+        return None
     total = response['hits']['total']
     results = format_for_frontend(response['hits']['hits'])
     return results, total, transaction_type
@@ -91,8 +91,9 @@ def get_total_results(keyword, index_name):
     try:
         response = CLIENT.search(index=index_name, body=query)
         return response['hits']['total']
-    except Exception as es1:
-        return es1
+    except Exception:
+        logging.exception("There was an error connecting to the ElasticSearch instance.")
+        return None
 
 
 def spending_by_transaction_count(filters):
@@ -122,14 +123,15 @@ def search_keyword_id_list_all(keyword):
         }, "size": DOWNLOAD_QUERY_SIZE}
     try:
         responses = CLIENT.search(index=index_name, body=query, timeout='3m')
-    except Exception as es1:
-        return es1
+    except Exception:
+        logging.exception("There was an error connecting to the ElasticSearch instance.")
+        return None
     transaction_id_list = []
     try:
         for response in (responses['hits']['hits']):
             list_item = (response['_source']['transaction_id'])
             transaction_id_list.append(list_item)
-        print(len(transaction_id_list))
         return transaction_id_list
-    except Exception as es1:
-        return es1
+    except Exception:
+        logging.exception("There was an error parsing the transaction ID's")
+        return None
