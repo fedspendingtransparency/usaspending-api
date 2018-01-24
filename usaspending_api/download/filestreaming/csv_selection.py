@@ -121,7 +121,7 @@ def write_csvs(download_job, file_name, columns, sources):
             s3_bucket = boto.s3.connect_to_region(region).get_bucket(bucket)
             conn = s3_bucket.new_key(file_name)
             stream = smart_open.smart_open(
-                's3://{}/{}'.format(bucket,file_name), 'wb', region_name=region)
+                's3://{}/{}'.format(bucket, file_name), 'wb', region_name=region)
             for chunk in zstream:
                 stream.write(chunk)
                 # Adding timeout to break the stream if exceeding time limit, closes out thread
