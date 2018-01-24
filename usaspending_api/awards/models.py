@@ -284,15 +284,15 @@ class Award(DataSourceTrackedModel):
                 return [], summary_award
 
             # We weren't able to match, so create a new award record.
-            if parent_award_id:
-                # If parent award id was supplied, recursively get/create
-                # an award record for it
-                parent_q_kwargs = {'awarding_agency': awarding_agency}
-                for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-                    parent_q_kwargs[i[1]] = parent_award_id if i[0] else None
-                parent_created, parent_award = Award.get_or_create_summary_award(**parent_q_kwargs)
-            else:
-                parent_created, parent_award = [], None
+            # if parent_award_id:
+            #     # If parent award id was supplied, recursively get/create
+            #     # an award record for it
+            #     parent_q_kwargs = {'awarding_agency': awarding_agency}
+            #     for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+            #         parent_q_kwargs[i[1]] = parent_award_id if i[0] else None
+            #     parent_created, parent_award = Award.get_or_create_summary_award(**parent_q_kwargs)
+            # else:
+            parent_created, parent_award = [], None
 
             # Now create the award record for this award transaction
             create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award}
