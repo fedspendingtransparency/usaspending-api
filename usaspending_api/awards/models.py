@@ -279,8 +279,7 @@ class Award(DataSourceTrackedModel):
                 if agency_toptier_map:
                     awarding_agency_toptier = agency_toptier_map[awarding_agency.toptier_agency.cgac_code]
                 else:
-                    awarding_agency_toptier = Agency.get_by_toptier(
-                        awarding_agency.toptier_agency.cgac_code)
+                    awarding_agency_toptier = Agency.get_by_toptier(awarding_agency.toptier_agency.cgac_code)
 
                 summary_award = Award.objects \
                     .filter(Q(**lookup_kwargs)) \
@@ -294,7 +293,8 @@ class Award(DataSourceTrackedModel):
             parent_created, parent_award = [], None
 
             # Now create the award record for this award transaction
-            create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award}
+            create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award,
+                "parent_award_piid": parent_award_id}
             create_kwargs[lookup_value[1]] = lookup_value[0]
             summary_award = Award(**create_kwargs)
             created = [summary_award, ]

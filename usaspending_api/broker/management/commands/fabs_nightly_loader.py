@@ -172,6 +172,7 @@ class Command(BaseCommand):
                 uri=row.get('uri'),
                 parent_award_id=row.get('parent_award_id'),
                 record_type=row.get('record_type'))
+            award.parent_award_piid = row.get('parent_award_id')
             award.save()
 
             award_update_id_list.append(award.id)

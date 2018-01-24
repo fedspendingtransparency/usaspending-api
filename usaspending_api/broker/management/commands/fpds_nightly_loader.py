@@ -199,6 +199,7 @@ class Command(BaseCommand):
                 awarding_agency=awarding_agency,
                 piid=row.get('piid'),
                 parent_award_id=row.get('parent_award_id'))
+            award.parent_award_piid = row.get('parent_award_id')
             award.save()
 
             award_update_id_list.append(award.id)
