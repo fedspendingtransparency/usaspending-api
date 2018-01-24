@@ -690,7 +690,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         logger.info('Updating file C - D linkage in bulk')
 
         call_command('update_file_c_file_d_awards_sql')
-        
+
         logger.info('Completed file C - D linkage ')
 
     for key in skipped_tas:
