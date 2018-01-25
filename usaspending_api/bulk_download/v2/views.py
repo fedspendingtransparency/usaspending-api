@@ -28,6 +28,7 @@ from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
+from usaspending_api.search.v2 import elasticsearch_helper
 
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference
 # TODO: Find a solution that marks the CFO agencies in the database AND have the correct order
@@ -181,7 +182,6 @@ class BaseDownloadViewSet(APIView):
         json_request['filters']['date_range'] =  json_request['filters'].get('date_range', {})
         json_request['filters']['date_range']['start_date'] = json_request['filters']['date_range'].get('start_date', None)
         json_request['filters']['date_range']['end_date'] = json_request['filters']['date_range'].get('end_date', None)
-
 
         # TODO: Refactor with the bulk_download method in populate_monthly_files.py
         # Check if the same request has been called today
@@ -449,9 +449,9 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
 
         keyword = filters['keyword']
         if keyword:
-            # insert magic here
-            # transaction_ids = elastic_search_helper(keyword=keyword)
-            transaction_ids = keyword
+            transaction_ids = list(elasticsearch_helper.get_transaction_ids(keyword=keyword))
+            if transaction_ids is None:
+                transaction_ids = ['']
             table_name = transaction_table_mappings[award_type]['table_name']
             table_id = transaction_table_mappings[award_type]['table_id']
             rel_name = transaction_table_mappings[award_type]['rel_name']
@@ -462,6 +462,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
             queryset &= queryset.extra(
                 where=['{} = ANY(\'{{{}}}\'::text[])'.format(transaction_id_sql, ','.join(transaction_ids))]
             )
+            return queryset
 
         # Adding award type filter
         award_types = []

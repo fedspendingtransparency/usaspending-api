@@ -157,8 +157,8 @@ def scroll(scroll_id, fieldname):
     return results, scroll_id
 
 
-def get_transaction_ids(keyword, size=25000):
-    '''returns a generator that 
+def get_transaction_ids(keyword, size=500):
+    '''returns a generator that
     yields list of transaction ids in chunksize SIZE'''
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
     query = {
@@ -169,7 +169,7 @@ def get_transaction_ids(keyword, size=25000):
         }, "size": size}
 
     response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
-    n_iter = DOWNLOAD_QUERY_SIZE/size
+    n_iter = int(DOWNLOAD_QUERY_SIZE/size)
     scroll_id =  response['_scroll_id']
     for i in range(n_iter):
         results, scroll_id = scroll(scroll_id, 'transaction_id')
