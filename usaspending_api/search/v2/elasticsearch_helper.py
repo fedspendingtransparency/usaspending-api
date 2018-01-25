@@ -135,3 +135,42 @@ def search_keyword_id_list_all(keyword):
     except Exception:
         logging.exception("There was an error parsing the transaction ID's")
         return None
+
+
+def extract_field_data(response, fieldname):
+    '''
+    takes in a response body and 
+    returns list of given
+    '''
+    hits = response['hits']['hits']
+    g = lambda document: document['_source'][fieldname]
+    return [g(i) for i in hits]
+
+
+def scroll(scroll_id, fieldname):
+    '''returns scroll_id and field 
+    data for a given
+     fieldname'''
+    response = CLIENT.scroll(scroll_id, scroll='2m')
+    results = extract_field_data(response, fieldname)
+    scroll_id = response['_scroll_id']
+    return results, scroll_id
+
+
+def get_transaction_ids(keyword, size=25000):
+    '''returns a generator that 
+    yields list of transaction ids in chunksize SIZE'''
+    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
+    query = {
+        "query": {
+            "query_string": {
+                "query": keyword
+            }
+        }, "size": size}
+
+    response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
+    n_iter = DOWNLOAD_QUERY_SIZE/size
+    scroll_id =  response['_scroll_id']
+    for i in range(n_iter):
+        results, scroll_id = scroll(scroll_id, 'transaction_id')
+        yield results
