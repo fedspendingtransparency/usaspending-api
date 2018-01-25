@@ -73,11 +73,8 @@ location_cache = caches['locations']
 def get_or_create_location(row, mapper):
     location_dict = mapper(row)
 
-    country_code = fetch_country_code(location_dict["location_country_code"])
-    location_dict["location_country_code"] = country_code
-
     # Country-specific adjustments
-    if country_code and country_code.country_code == "USA":
+    if location_dict["location_country_code"] == "USA":
 
         # Apparently zip codes are optional...
         if location_dict["location_zip"]:
