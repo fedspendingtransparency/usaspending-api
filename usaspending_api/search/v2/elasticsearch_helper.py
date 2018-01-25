@@ -135,3 +135,23 @@ def search_keyword_id_list_all(keyword):
     except Exception:
         logging.exception("There was an error parsing the transaction ID's")
         return None
+
+
+def get_sum_aggregation_results(keyword):
+    """
+    Size has to be zero here because you only want the aggregations
+    """
+    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
+    query = {"query": {"query_string": {"query": keyword}},
+             "aggs": {"transaction_sum": {"sum": {"field": "transaction_amount"}}}}
+    try:
+        response = CLIENT.search(index=index_name, body=query)
+        return response['aggregations']
+    except Exception:
+        logging.exception("There was an error connecting to the ElasticSearch instance.")
+        return None
+
+
+def spending_by_transaction_sum(filters):
+    keyword = filters['keyword']
+    return get_sum_aggregation_results(keyword)
