@@ -251,19 +251,21 @@ class Award(DataSourceTrackedModel):
             summary_award: the summary award that the calling process can map to
         """
         try:
+            # Contract data uses piid as transaction ID. Financial assistance data depends on the record_type and
+            # uses either uri (record_type=1) or fain (record_type=2).
+            lookup_value = (piid, "piid")
+            if record_type:
+                if str(record_type) == '2':
+                    lookup_value = (fain, "fain")
+                else:
+                    lookup_value = (uri, "uri")
+
             if generated_unique_award_id:
                 # Use the generated unique ID if available
                 lookup_kwargs = {"generated_unique_award_id": generated_unique_award_id}
             else:
-                # Contract data uses piid as transaction ID. Financial assistance data depends on the record_type and
-                # uses either uri (record_type=1) or fain (record_type=2).
+                # Use the lookup_value is generated unique ID is not available
                 lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
-                lookup_value = (piid, "piid")
-                if record_type:
-                    if str(record_type) == '2':
-                        lookup_value = (fain, "fain")
-                    else:
-                        lookup_value = (uri, "uri")
                 lookup_kwargs[lookup_value[1]] = lookup_value[0]
 
                 # Only contracts have parent awards
