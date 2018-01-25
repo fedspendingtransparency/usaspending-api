@@ -449,7 +449,8 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
 
         keyword = filters['keyword']
         if keyword:
-            transaction_ids = list(elasticsearch_helper.get_transaction_ids(keyword=keyword))
+            keyword = keyword[0]
+            transaction_ids = list(elasticsearch_helper.search_keyword_id_list_all(keyword=keyword))
             if transaction_ids is None:
                 transaction_ids = ['']
             table_name = transaction_table_mappings[award_type]['table_name']
