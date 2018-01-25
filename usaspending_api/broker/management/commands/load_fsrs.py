@@ -131,7 +131,7 @@ class Command(BaseCommand):
 
             recipient_location = create_location(location_map=location_map, row=row,
                                                  location_value_map={"recipient_flag": True})
-
+            recipient_location.save()
             recipient_value_map = {
                 "location": recipient_location,
             }
@@ -141,6 +141,7 @@ class Command(BaseCommand):
             # Create POP location
             place_of_performance = create_location(location_map=pop_mapper, row=row,
                                                    location_value_map={"place_of_performance_flag": True})
+            place_of_performance.save()
 
             # set shared data content
             shared_data[row['internal_id']] = {'award': award,
