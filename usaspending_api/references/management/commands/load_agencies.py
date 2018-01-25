@@ -49,7 +49,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
 
-        '''
+        """
             The toptier table is expected to contain unique CGACs or FRECs, based on the
             name specified in the CSV. The names must match for this to consider it a toptier agency.
 
@@ -65,18 +65,12 @@ class Command(BaseCommand):
 
                 "U.S. Congress" (000) and "Other (Listed Under Department of State)" (067) are also skipped.
 
-        '''
+        """
+        self.logger.info('Beginning to load agencies')
+        with open(os.path.join(settings.BASE_DIR,
+                  'usaspending_api', 'data', 'agency_codes_list.csv'), encoding="Latin-1") \
+                as agency_list:
 
-        if settings.IS_LOCAL:
-            with open(os.path.join(settings.BASE_DIR,
-                      'usaspending_api', 'data', 'agency_codes_list.csv'), encoding="Latin-1") \
-                    as agency_list:
-
-                broker_agency_df = pd.read_csv(agency_list, dtype=str)
-        else:
-            s3connection = boto.s3.connect_to_region(settings.BULK_DOWNLOAD_AWS_REGION)
-            s3bucket = s3connection.lookup(settings.BROKER_AGENCY_BUCKET_NAME)
-            agency_list = s3bucket.get_key("agency_codes_list.csv").generate_url(expires_in=600)
             broker_agency_df = pd.read_csv(agency_list, dtype=str)
 
         # Cleaning CSV data
@@ -99,7 +93,7 @@ class Command(BaseCommand):
             mission = row.get('MISSION', '')
             website = row.get('WEBSITE', '')
             icon_filename = row.get('ICON FILENAME', '')
-            is_frec = row.get('IS_FREC', 'FALSE')
+            is_frec = row.get('IS FREC', 'FALSE')
 
             # Skip these agencies altogether
             if 'unknown' in subtier_code.lower() or cgac_code in ['000', '067']:
@@ -107,7 +101,7 @@ class Command(BaseCommand):
 
             # This toptier_flag comparison determines what we consider a toptier
             # toptier_code is used to create subtier agency and logging purposes
-            if is_frec == 'True':
+            if is_frec.upper() == 'TRUE':
                 toptier_flag = (subtier_name == frec_entity_description)
                 toptier_code = frec_code
             else:
@@ -125,8 +119,6 @@ class Command(BaseCommand):
                 toptier_agency.icon_filename = icon_filename
 
                 toptier_agency.save()
-
-                self.check_for_agency_dupes('ToptierAgency', {'name': subtier_name})
 
                 self.check_unsaved_subtiers(toptier_code)
 
@@ -154,6 +146,8 @@ class Command(BaseCommand):
 
         with connection.cursor() as cursor:
             cursor.execute(MATVIEW_SQL)
+
+        self.logger.info('Loading Agencies Completed')
 
     def create_subtier(self, subtier_name, subtier_code, subtier_abbr, toptier_code):
         """
@@ -187,10 +181,6 @@ class Command(BaseCommand):
         subtier_agency.abbreviation = subtier_abbr
         subtier_agency.save()
 
-        subtier_agency = self.check_for_agency_dupes('SubtierAgency',
-                                                     {'name': subtier_name,
-                                                      'agency__toptier_agency__cgac_code': toptier_code})
-
         return toptier_agency, subtier_agency
 
     def check_unsaved_subtiers(self, toptier_code):
@@ -207,23 +197,3 @@ class Command(BaseCommand):
                 )
 
                 del self.unsaved_subtiers[toptier_code]
-
-    def check_for_agency_dupes(self, model_name, kwargs):
-        model = apps.get_model('references', model_name)
-        try:
-            agency = model.objects.get(**kwargs)
-
-        except MultipleObjectsReturned:
-            # Multiple toptiers throws an error will merge two toptier agencies
-            self.logger.error('Multiple {} objects returned filter on {}'.format(model_name, ','.join('{}: {}'.format(key, value) for key, value in kwargs.items())))
-            self.logger.info('Beginning to consolidate fields')
-
-            qs = model.objects.filter(**kwargs).order_by('create_date')
-
-            merge_objects(qs.first(), qs.last())
-
-            self.logger.info('Finsihed consolidating {} on {}'.format(model_name, ','.join('{}: {}'.format(key, value) for key, value in kwargs.items())))
-
-            agency = model.objects.get(**kwargs)
-
-        return agency
