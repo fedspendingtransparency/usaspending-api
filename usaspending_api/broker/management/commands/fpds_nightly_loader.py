@@ -119,32 +119,34 @@ class Command(BaseCommand):
         logger.info('Starting insertion of new FPDS data')
 
         place_of_performance_field_map = {
-            "city_name": "place_of_perform_city_name",
-            "congressional_code": "place_of_performance_congr",
-            "county_name": "place_of_perform_county_na",
-            "county_code": "place_of_perform_county_co",
+            "location_country_code": "place_of_perform_country_c",
+            "country_name": "place_of_perf_country_desc",
             "state_code": "place_of_performance_state",
             "state_name": "place_of_perfor_state_desc",
-            "zip4": "place_of_performance_zip4a",
-            "location_country_code": "place_of_perform_country_c",
-            "country_name": "place_of_perf_country_desc"
+            "city_name": "place_of_perform_city_name",
+            "county_name": "place_of_perform_county_na",
+            "county_code": "place_of_perform_county_co",
+            "zip_4a": "place_of_performance_zip4a",
+            "congressional_code": "place_of_performance_congr",
+            "zip_last4": "place_of_perform_zip_last4",
+            "zip5": "place_of_performance_zip5"
         }
 
         legal_entity_location_field_map = {
+            "location_country_code": "legal_entity_country_code",
+            "country_name": "legal_entity_country_name",
+            "state_code": "legal_entity_state_code",
+            "state_name": "legal_entity_state_descrip",
+            "city_name": "legal_entity_city_name",
+            "county_name": "legal_entity_county_name",
+            "county_code": "legal_entity_county_code",
             "address_line1": "legal_entity_address_line1",
             "address_line2": "legal_entity_address_line2",
             "address_line3": "legal_entity_address_line3",
-            "location_country_code": "legal_entity_country_code",
-            "country_name": "legal_entity_country_name",
-            "city_name": "legal_entity_city_name",
-            "congressional_code": "legal_entity_congressional",
-            "state_code": "legal_entity_state_code",
-            "state_name": "legal_entity_state_descrip",
             "zip4": "legal_entity_zip4",
-            "county_code": "legal_entity_county_code",
-            "county_name": "legal_entity_county_name",
-            "zip5": "legal_entity_zip5",
-            "zip_last4": "legal_entity_zip_last4"
+            "congressional_code": "legal_entity_congressional",
+            "zip_last4": "legal_entity_zip_last4",
+            "zip5": "legal_entity_zip5"
         }
 
         start_time = datetime.now()
