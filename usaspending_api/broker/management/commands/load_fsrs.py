@@ -8,7 +8,6 @@ from django.core.exceptions import MultipleObjectsReturned
 from usaspending_api.awards.models import Award, Subaward
 from usaspending_api.references.models import LegalEntity, Agency, Cfda
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.etl.helpers import get_or_create_location
 from usaspending_api.etl.award_helpers import update_award_subawards
 from usaspending_api.etl.management.load_base import load_data_into_model, create_location
 

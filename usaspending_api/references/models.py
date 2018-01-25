@@ -614,8 +614,6 @@ class LegalEntity(DataSourceTrackedModel):
         LegalEntity.update_business_type_categories(self)
         super(LegalEntity, self).save(*args, **kwargs)
 
-        LegalEntityOfficers.objects.get_or_create(legal_entity=self)
-
     @staticmethod
     def update_business_type_categories(le):
         # Create a new list of categories
