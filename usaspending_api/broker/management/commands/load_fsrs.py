@@ -132,7 +132,7 @@ class Command(BaseCommand):
             recipient.location = create_location(location_map=location_map, row=row,
                                                  location_value_map={"recipient_flag": True})
 
-            load_data_into_model(recipient, row, value_map={}, save=True)
+            load_data_into_model(recipient, row, save=True)
 
             # Create POP location
             place_of_performance = create_location(location_map=pop_mapper, row=row,
