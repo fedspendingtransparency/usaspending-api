@@ -129,10 +129,14 @@ class Command(BaseCommand):
             else:
                 location_map = location_d2_recipient_mapper(row)
 
-            recipient.location = create_location(location_map=location_map, row=row,
+            recipient_location = create_location(location_map=location_map, row=row,
                                                  location_value_map={"recipient_flag": True})
 
-            load_data_into_model(recipient, row, save=True)
+            recipient_value_map = {
+                "location": recipient_location,
+            }
+
+            load_data_into_model(recipient, row, value_map=recipient_value_map, save=True)
 
             # Create POP location
             place_of_performance = create_location(location_map=pop_mapper, row=row,
