@@ -195,6 +195,7 @@ def test_get_or_create_summary_award():
     a2 = mommy.make(Agency, id=2, toptier_agency=tta1)
     a3 = mommy.make(Agency, id=3, toptier_agency=tta1, subtier_agency=sta2)
     a4 = mommy.make(Agency, id=4, toptier_agency=tta2, subtier_agency=sta3)
+    a5 = mommy.make(Agency, id=5, toptier_agency=tta2, subtier_agency=sta3)
 
     # match on awarding agency and piid
     m1 = mommy.make('awards.award', piid='DUT123', awarding_agency=a1)
@@ -272,6 +273,17 @@ def test_get_or_create_summary_award():
     m14 = mommy.make('awards.Award', piid='imjustapiidchild', awarding_agency=a3)
     t14 = Award.get_or_create_summary_award(piid='imjustapiidchild', parent_award_id='imjustapiidparent', awarding_agency=a4)[1]
     assert t14 != m14
+
+    # matching piid and parent award but mismatched subtier and toptier agency
+    m15 = mommy.make('awards.Award', generated_unique_award_id='this_is_generated_and_unique')
+    t15 = Award.get_or_create_summary_award(generated_unique_award_id='this_is_generated_and_unique')
+    assert m15 == t15[1]
+
+    # matching piid and parent award but mismatched subtier and toptier agency
+    m16 = mommy.make('awards.Award', generated_unique_award_id='this_is_generated_and_unique')
+    t16 = Award.get_or_create_summary_award(generated_unique_award_id='this_is_generated_unique_and_different')
+    assert len(t16[0]) == 1
+    assert m16 != t16[1]
 
 
 @pytest.mark.django_db

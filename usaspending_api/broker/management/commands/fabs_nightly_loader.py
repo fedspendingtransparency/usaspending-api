@@ -122,9 +122,10 @@ class Command(BaseCommand):
 
             # Create new LegalEntityLocation and LegalEntity from the row data
             legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
+            recipient_name = row['awardee_or_recipient_legal']
             legal_entity = LegalEntity.objects.create(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                recipient_name=recipient_name
+                recipient_name=recipient_name if recipient_name is not None else ""
             )
             legal_entity_value_map = {
                 "location": legal_entity_location,
@@ -139,12 +140,8 @@ class Command(BaseCommand):
             funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
             # Create the summary Award
-            (created, award) = Award.get_or_create_summary_award(
-                awarding_agency=awarding_agency,
-                fain=row.get('fain'),
-                uri=row.get('uri'),
-                parent_award_id=row.get('parent_award_id'),
-                record_type=row.get('record_type'))
+            generated_unique_id = self.generate_unique_id(row)
+            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)
             award.parent_award_piid = row.get('parent_award_id')
             award.save()
 
@@ -227,6 +224,14 @@ class Command(BaseCommand):
             with smart_open.smart_open(conn, 'w') as writer:
                 for row in file_with_headers:
                     writer.write(row + '\n')
+
+    @staticmethod
+    def generate_unique_id(row):
+        unique_award_id = 'ASST_AW_'
+        unique_award_id += row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-'
+        unique_award_id += row['fain'] if row['fain'] else '-NONE-'
+        unique_award_id += row['uri'] if row['uri'] else '-NONE-'
+        return unique_award_id
 
     def add_arguments(self, parser):
         parser.add_argument(

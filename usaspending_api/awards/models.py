@@ -240,65 +240,64 @@ class Award(DataSourceTrackedModel):
 
     @staticmethod
     def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None, uri=None, parent_award_id=None,
-                                    use_cache=False, save=True, agency_toptier_map=None, record_type=None):
+                                    use_cache=False, save=True, agency_toptier_map=None, record_type=None,
+                                    generated_unique_award_id=None):
         """
         Given a set of award identifiers and awarding agency information,
         find a corresponding Award record. If we can't find one, create it.
 
         Returns:
-            created: a list of new awards created (or that need to be created
-                if using cache), used to enable bulk insert
+            created: a list of new awards created (or that need to be created if using cache) used to enable bulk insert
             summary_award: the summary award that the calling process can map to
         """
-        # If an award transaction's ID is a piid, it's contract data. If it includes a record_type, it's financial
-        # assistance and the ID depends on the record_type: record_type 1 -> uri, record_type 2 -> fain.
         try:
-            lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
-            lookup_value = (piid, "piid")
-            if record_type:
-                if str(record_type) == '2':
-                    lookup_value = (fain, "fain")
-                else:
-                    lookup_value = (uri, "uri")
-            lookup_kwargs[lookup_value[1]] = lookup_value[0]
+            if generated_unique_award_id:
+                # Use the generated unique ID if available
+                lookup_kwargs = {"generated_unique_award_id": generated_unique_award_id}
+            else:
+                # Contract data uses piid as transaction ID. Financial assistance data depends on the record_type and
+                # uses either uri (record_type=1) or fain (record_type=2).
+                lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
+                lookup_value = (piid, "piid")
+                if record_type:
+                    if str(record_type) == '2':
+                        lookup_value = (fain, "fain")
+                    else:
+                        lookup_value = (uri, "uri")
+                lookup_kwargs[lookup_value[1]] = lookup_value[0]
 
-            # Only contracts have parent awards
-            if lookup_value[1] == 'piid' and parent_award_id and lookup_value[0]:
-                lookup_kwargs["parent_award__piid"] = parent_award_id
-                if "parent_award" in lookup_kwargs:
-                    del lookup_kwargs["parent_award"]
+                # Only contracts have parent awards
+                if lookup_value[1] == 'piid' and parent_award_id and lookup_value[0]:
+                    lookup_kwargs["parent_award__piid"] = parent_award_id
+                    if "parent_award" in lookup_kwargs:
+                        del lookup_kwargs["parent_award"]
 
             # Look for an existing award record
-            summary_award = Award.objects \
-                .filter(Q(**lookup_kwargs)) \
-                .filter(awarding_agency=awarding_agency) \
-                .first()
+            summary_award = Award.objects.filter(Q(**lookup_kwargs)).first()
 
             if summary_award:
                 return [], summary_award
 
-            # We no longer create a mostly-empty Award as the parent award
-            parent_created, parent_award = [], None
-
             # Now create the award record for this award transaction
-            create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award,
+            create_kwargs = {"awarding_agency": awarding_agency, "parent_award": None,
                              "parent_award_piid": parent_award_id}
-            create_kwargs[lookup_value[1]] = lookup_value[0]
+            if generated_unique_award_id:
+                create_kwargs["generated_unique_award_id"] = generated_unique_award_id
+            else:
+                create_kwargs[lookup_value[1]] = lookup_value[0]
             summary_award = Award(**create_kwargs)
-            created = [summary_award, ]
-            created.extend(parent_created)
 
             if save:
                 summary_award.save()
 
-            return created, summary_award
+            return [summary_award, ], summary_award
 
         # Do not use bare except
         except ValueError:
             raise ValueError(
-                'Unable to find or create an award with the provided information: '
-                'piid={}, fain={}, uri={}, parent_id={}, awarding_agency={}'.format(
-                    piid, fain, uri, parent_award_id, awarding_agency))
+                'Unable to find or create an award with the provided information: piid={}, fain={}, uri={}, '
+                'parent_id={}, awarding_agency={}, generated_unique_award_id={}'
+                .format(piid, fain, uri, parent_award_id, awarding_agency, generated_unique_award_id))
 
     class Meta:
         db_table = 'awards'
