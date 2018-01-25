@@ -18,7 +18,6 @@ from usaspending_api.submissions.models import SubmissionAttributes
 def test_fetch_country_code():
     """Grab the location with this reference country code"""
     # dummy data
-    mommy.make('references.RefCountryCode', _quantity=3, _fill_optional=True)
     code_match = mommy.make(
         'references.RefCountryCode', country_code='USA', _fill_optional=True)
     name_match = mommy.make(
@@ -40,11 +39,9 @@ def test_fetch_country_code():
 @pytest.mark.django_db
 def test_get_or_create_location_non_usa():
     """We should query different fields if it's a non-US row"""
-    ref = mommy.make(
-        'references.RefCountryCode', country_code='UAE', _fill_optional=True)
     expected = mommy.make(
         'references.Location',
-        location_country_code=ref,
+        location_country_code='UAE',
         zip5='12345',
         zip_last4='6789',
         # @todo: can't use _fill_optional on this model because data
@@ -73,8 +70,6 @@ def test_get_or_create_location_non_usa():
 @pytest.mark.django_db
 def test_get_or_create_location_creates_new_locations():
     """If no location is found, we create a new one"""
-    ref = mommy.make(
-        'references.RefCountryCode', country_code='USA', _fill_optional=True)
     row = dict(
         vendorcountrycode='USA',
         zipcode='12345-6789',
@@ -95,7 +90,7 @@ def test_get_or_create_location_creates_new_locations():
     assert Location.objects.count() == 1
 
     loc = Location.objects.all().first()
-    assert loc.location_country_code == ref
+    assert loc.location_country_code == 'USA'
     assert loc.zip5 == '12345'
     assert loc.zip_last4 == '6789'
     assert loc.address_line1 == 'ADDY1'
@@ -111,8 +106,6 @@ def test_get_or_create_fa_place_of_performance_location_creates_new_locations(
     """If no location is found, we create a new one
 
     For financial assistance place of performance locations."""
-    ref = mommy.make(
-        'references.RefCountryCode', country_code='USA', _fill_optional=True)
     row = dict(
         principal_place_country_code='USA',
         principal_place_zip='12345-6789',
@@ -128,7 +121,7 @@ def test_get_or_create_fa_place_of_performance_location_creates_new_locations(
     assert Location.objects.count() == 1
 
     loc = Location.objects.all().first()
-    assert loc.location_country_code == ref
+    assert loc.location_country_code == 'USA'
     assert loc.zip5 == '12345'
     assert loc.zip_last4 == '6789'
     assert loc.state_code == 'OH'
@@ -140,8 +133,6 @@ def test_get_or_create_fa_recipient_location_creates_new_locations():
     """If no location is found, we create a new one
 
     For financial assistance recipient locations."""
-    ref = mommy.make(
-        'references.RefCountryCode', country_code='USA', _fill_optional=True)
     row = dict(
         recipient_country_code='USA',
         recipient_zip='12345-6789',
@@ -157,7 +148,7 @@ def test_get_or_create_fa_recipient_location_creates_new_locations():
     assert Location.objects.count() == 1
 
     loc = Location.objects.all().first()
-    assert loc.location_country_code == ref
+    assert loc.location_country_code == 'USA'
     assert loc.zip5 == '12345'
     assert loc.zip_last4 == '6789'
     assert loc.state_code == 'OH'
