@@ -294,7 +294,7 @@ class Award(DataSourceTrackedModel):
 
             # Now create the award record for this award transaction
             create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award,
-                "parent_award_piid": parent_award_id}
+                             "parent_award_piid": parent_award_id}
             create_kwargs[lookup_value[1]] = lookup_value[0]
             summary_award = Award(**create_kwargs)
             created = [summary_award, ]
