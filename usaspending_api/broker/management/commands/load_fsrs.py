@@ -125,9 +125,9 @@ class Command(BaseCommand):
 
             recipient.parent_recipient_unique_id = row['parent_duns']
             if award_type == 'procurement':
-                location_map = location_d1_recipient_mapper
+                location_map = location_d1_recipient_mapper(row)
             else:
-                location_map = location_d2_recipient_mapper
+                location_map = location_d2_recipient_mapper(row)
 
             recipient.location = create_location(location_map=location_map, row=row,
                                                  location_value_map={"recipient_flag": True})
