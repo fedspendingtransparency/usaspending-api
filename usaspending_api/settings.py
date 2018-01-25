@@ -35,12 +35,11 @@ IS_LOCAL = True
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = os.path.join(BASE_DIR, 'csv_downloads', '')
-CSV_S3_ROLE = ""
 CSV_S3_BUCKET_NAME = ""
 CSV_SQS_QUEUE_NAME = ""
 CSV_AWS_REGION = ""
+
 BULK_DOWNLOAD_LOCAL_PATH = os.path.join(BASE_DIR, 'bulk_downloads', '')
-BULK_DOWNLOAD_S3_ROLE = ""
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
 BULK_DOWNLOAD_AWS_REGION = ""
@@ -320,7 +319,7 @@ SPAGHETTI_SAUCE = {
 # Elasticsearch
 ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
 TRANSACTIONS_INDEX_ROOT = 'transactions'
-
+DOWNLOAD_QUERY_SIZE = 500000
 
 LONG_TO_TERSE_LABELS = {
     "allocation_transfer_agency_id": "allocation_transfer_agency_id",
