@@ -7,15 +7,13 @@ from usaspending_api.references.models import Location, RefCityCountyCode
 
 @pytest.mark.django_db
 def test_location_reference_fill():
-    country_code = mommy.make('references.RefCountryCode', country_code="USA", country_name="United States", _fill_optional=True)
     city_county_code = mommy.make(
         'references.RefCityCountyCode', city_code="A", county_code="B", _fill_optional=True)
     location = mommy.make(
-        'references.Location', location_country_code=country_code, city_code="A", county_code="B")
+        'references.Location', location_country_code="USA", city_code="A", county_code="B")
     assert location.city_name == city_county_code.city_name
     assert location.county_name == city_county_code.county_name
     assert location.state_code == city_county_code.state_code
-    assert location.country_name == country_code.country_name
 
 
 @pytest.mark.django_db
@@ -55,13 +53,10 @@ def test_location_state_fill():
 
 @pytest.mark.django_db
 def test_geocomplete_scope():
-    usa_code = mommy.make('references.RefCountryCode', country_code="USA", country_name="United States", _fill_optional=True)
-    can_code = mommy.make('references.RefCountryCode', country_code="CAN", country_name="Canada", _fill_optional=True)
-
     usa_location = mommy.make(
-        'references.Location', location_country_code=usa_code)
+        'references.Location', location_country_code="USA", country_name="United States")
     can_location = mommy.make(
-        'references.Location', location_country_code=can_code)
+        'references.Location', location_country_code="CAN", country_name="Canada")
 
     no_scope_response = GeoCompleteHandler({"value": "a"}).build_response()
     domestic_response = GeoCompleteHandler({"value": "a", "scope": "domestic"}).build_response()
@@ -75,8 +70,7 @@ def test_geocomplete_scope():
 
 @pytest.mark.django_db
 def test_geocomplete_limit():
-    usa_code = mommy.make('references.RefCountryCode', country_code="USA", country_name="United States", _fill_optional=True)
-    locations = mommy.make('references.Location', location_country_code=usa_code, state_name='Pennsylvania', state_code='PA', city_name='Altoona', county_name='Lakawana', _quantity=50)
+    locations = mommy.make('references.Location', location_country_code="USA", country_name="United States", state_name='Pennsylvania', state_code='PA', city_name='Altoona', county_name='Lakawana', _quantity=50)
 
     response_2 = GeoCompleteHandler({"value": "a", "limit": 2}).build_response()
     response_4 = GeoCompleteHandler({"value": "a", "limit": 4}).build_response()
@@ -89,11 +83,10 @@ def test_geocomplete_limit():
 
 @pytest.mark.django_db
 def test_geocomplete_congressional_codes():
-    usa_code = mommy.make('references.RefCountryCode', country_code="USA", country_name="United States", _fill_optional=True)
-    locations = mommy.make('references.Location', location_country_code=usa_code, congressional_code="00", state_code="VA")
-    locations = mommy.make('references.Location', location_country_code=usa_code, congressional_code="01", state_code="VA")
-    locations = mommy.make('references.Location', location_country_code=usa_code, congressional_code="02", state_code="VA")
-    locations = mommy.make('references.Location', location_country_code=usa_code, congressional_code="00", state_code="UT")
+    locations = mommy.make('references.Location', location_country_code="USA", congressional_code="00", state_code="VA")
+    locations = mommy.make('references.Location', location_country_code="USA", congressional_code="01", state_code="VA")
+    locations = mommy.make('references.Location', location_country_code="USA", congressional_code="02", state_code="VA")
+    locations = mommy.make('references.Location', location_country_code="USA", congressional_code="00", state_code="UT")
 
     response_va = GeoCompleteHandler({"value": "VA-"}).build_response()
     response_ut = GeoCompleteHandler({"value": "UT-"}).build_response()
@@ -106,12 +99,11 @@ def test_geocomplete_congressional_codes():
 
 @pytest.mark.django_db
 def test_geocomplete_usage_flag():
-    usa_code = mommy.make('references.RefCountryCode', country_code="USA", country_name="United States", _fill_optional=True)
-    loc_va = mommy.make('references.Location', location_country_code=usa_code, place_of_performance_flag=True, recipient_flag=False, state_code="VA")
-    loc_az = mommy.make('references.Location', location_country_code=usa_code, place_of_performance_flag=True, recipient_flag=False, state_code="AZ")
-    loc2_va = mommy.make('references.Location', location_country_code=usa_code, place_of_performance_flag=False, recipient_flag=True, state_code="VA")
-    loc2_az = mommy.make('references.Location', location_country_code=usa_code, place_of_performance_flag=False, recipient_flag=True, state_code="AZ")
-    loc2_la = mommy.make('references.Location', location_country_code=usa_code, place_of_performance_flag=False, recipient_flag=True, state_code="LA")
+    loc_va = mommy.make('references.Location', location_country_code="USA", country_name="United States", place_of_performance_flag=True, recipient_flag=False, state_code="VA")
+    loc_az = mommy.make('references.Location', location_country_code="USA", country_name="United States", place_of_performance_flag=True, recipient_flag=False, state_code="AZ")
+    loc2_va = mommy.make('references.Location', location_country_code="USA", country_name="United States", place_of_performance_flag=False, recipient_flag=True, state_code="VA")
+    loc2_az = mommy.make('references.Location', location_country_code="USA", country_name="United States", place_of_performance_flag=False, recipient_flag=True, state_code="AZ")
+    loc2_la = mommy.make('references.Location', location_country_code="USA", country_name="United States", place_of_performance_flag=False, recipient_flag=True, state_code="LA")
 
     response_pop = GeoCompleteHandler({"value": "a", "usage": "place_of_performance"}).build_response()
     response_recipient = GeoCompleteHandler({"value": "a", "usage": "recipient"}).build_response()

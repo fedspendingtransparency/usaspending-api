@@ -418,17 +418,17 @@ class GeoCompleteHandler:
     def __init__(self, request_body):
         self.request_body = request_body
         self.search_fields = OrderedDict()
-        self.search_fields["location_country_code__country_name"] = {
+        self.search_fields["country_name"] = {
             "type": "COUNTRY",
             "parent": "location_country_code"
         }
         self.search_fields["state_code"] = {
             "type": "STATE",
-            "parent": "location_country_code__country_name"
+            "parent": "country_name"
         }
         self.search_fields["state_name"] = {
             "type": "STATE",
-            "parent": "location_country_code__country_name"
+            "parent": "country_name"
         }
         self.search_fields["city_name"] = {
             "type": "CITY",
@@ -444,15 +444,15 @@ class GeoCompleteHandler:
         }
         self.search_fields["foreign_postal_code"] = {
             "type": "POSTAL CODE",
-            "parent": "location_country_code__country_name"
+            "parent": "country_name"
         }
         self.search_fields["foreign_province"] = {
             "type": "PROVINCE",
-            "parent": "location_country_code__country_name"
+            "parent": "country_name"
         }
         self.search_fields["foreign_city_name"] = {
             "type": "CITY",
-            "parent": "location_country_code__country_name"
+            "parent": "country_name"
         }
 
     def build_response(self):
