@@ -10,6 +10,7 @@ from usaspending_api.references.models import LegalEntity, Agency, Cfda
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.helpers import get_or_create_location
 from usaspending_api.etl.award_helpers import update_award_subawards
+from usaspending_api.etl.management.load_base import load_data_into_model, create_location
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
@@ -117,27 +118,26 @@ class Command(BaseCommand):
                 skip_count += 1
                 continue
 
-            # Get or create unique DUNS-recipient pair
-            try:
-                recipient, created = LegalEntity.objects.get_or_create(
-                    recipient_unique_id=row['duns'],
-                    recipient_name=recipient_name
-                )
-            except MultipleObjectsReturned:
-                created = False
-                print('Legal Entity with DUNS: {} and name: {} returned two rows. '
-                      'Skipping...'.format(row['duns'], recipient_name))
+            # Create Recipient/Location entries specific to this subaward row
+            recipient, created = LegalEntity.objects.create(
+                recipient_unique_id=row['duns'],
+                recipient_name=recipient_name
+            )
 
-            if created:
-                recipient.parent_recipient_unique_id = row['parent_duns']
-                if award_type == 'procurement':
-                    recipient.location = get_or_create_location(row, location_d1_recipient_mapper)
-                else:
-                    recipient.location = get_or_create_location(row, location_d2_recipient_mapper)
-                recipient.save()
+            recipient.parent_recipient_unique_id = row['parent_duns']
+            if award_type == 'procurement':
+                location_map = location_d1_recipient_mapper
+            else:
+                location_map = location_d2_recipient_mapper
 
-            # Get or create POP
-            place_of_performance = get_or_create_location(row, pop_mapper)
+            recipient.location = create_location(location_map=location_map, row=row,
+                                                 location_value_map={"recipient_flag": True})
+
+            load_data_into_model(recipient, row, value_map={}, save=True)
+
+            # Create POP location
+            place_of_performance = create_location(location_map=pop_mapper, row=row,
+                                                   location_value_map={"place_of_performance_flag": True})
 
             # set shared data content
             shared_data[row['internal_id']] = {'award': award,
