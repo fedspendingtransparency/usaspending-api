@@ -24,8 +24,7 @@ from usaspending_api.etl.award_helpers import (
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor, setup_broker_fdw
 from usaspending_api.etl.helpers import update_model_description_fields
 from usaspending_api.references.helpers import canonicalize_location_dict
-from usaspending_api.references.models import (
-    Agency, LegalEntity, Cfda, Location, RefCountryCode, )
+from usaspending_api.references.models import (Agency, LegalEntity, Cfda, Location, )
 from usaspending_api.references.abbreviations import territory_country_codes
 
 # Lists to store for update_awards and update_contract_awards
