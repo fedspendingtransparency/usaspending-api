@@ -118,7 +118,7 @@ class Command(BaseCommand):
                 continue
 
             # Create Recipient/Location entries specific to this subaward row
-            recipient, created = LegalEntity.objects.create(
+            recipient = LegalEntity.objects.create(
                 recipient_unique_id=row['duns'],
                 recipient_name=recipient_name
             )
