@@ -135,8 +135,9 @@ class Command(BaseCommand):
             recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
 
             # Create POP location
-            pop_mapper['place_of_performance_flag'] = True
-            place_of_performance = create_location(location_map={}, row=row, location_value_map=pop_mapper)
+            pop_value_map = pop_mapper(row)
+            pop_value_map['place_of_performance_flag'] = True
+            place_of_performance = create_location(location_map={}, row=row, location_value_map=pop_value_map)
 
             # set shared data content
             shared_data[row['internal_id']] = {'award': award,
