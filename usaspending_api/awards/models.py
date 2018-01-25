@@ -347,7 +347,7 @@ class TransactionNormalized(models.Model):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True,
                                        help_text="The date this transaction was created in the API")
     update_date = models.DateTimeField(auto_now=True, null=True,
-                                       help_text="The last time this transaction was updated in the API")
+                                       help_text="The last time this transaction was updated in the API", db_index=True)
     fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
     transaction_unique_id = models.TextField(blank=False, null=False, default="none",
                                              verbose_name="Transaction Unique ID")
