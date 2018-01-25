@@ -4,11 +4,11 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.apps import apps
 from usaspending_api.references.models import ToptierAgency, SubtierAgency, OfficeAgency, Agency
-from usaspending_api.etl.helpers import pad_function, merge_objects
+from usaspending_api.etl.helpers import pad_function
 import os
 import logging
-import boto
 import pandas as pd
+import numpy as np
 
 
 # TODO: Is this still needed?
@@ -74,6 +74,8 @@ class Command(BaseCommand):
             broker_agency_df = pd.read_csv(agency_list, dtype=str)
 
         # Cleaning CSV data
+        # Triming Data
+        broker_agency_df = broker_agency_df.applymap(lambda x: self.trim_item(x) if len(str(x).strip()) else None)
         # Arguments for pad_function are (padding length, keep null)
         broker_agency_df['CGAC AGENCY CODE'] = broker_agency_df['CGAC AGENCY CODE'].apply(pad_function, args=(3, False))
         broker_agency_df['SUBTIER CODE'] = broker_agency_df['SUBTIER CODE'].apply(pad_function, args=(4, False))
@@ -102,10 +104,10 @@ class Command(BaseCommand):
             # This toptier_flag comparison determines what we consider a toptier
             # toptier_code is used to create subtier agency and logging purposes
             if is_frec.upper() == 'TRUE':
-                toptier_flag = (subtier_name == frec_entity_description)
+                toptier_flag = (subtier_name.upper() == frec_entity_description.upper())
                 toptier_code = frec_code
             else:
-                toptier_flag = (subtier_name == department_name)
+                toptier_flag = (subtier_name.upper() == department_name.upper())
                 toptier_code = cgac_code
 
             if toptier_flag:  # create or update the toptier agency
@@ -197,3 +199,8 @@ class Command(BaseCommand):
                 )
 
                 del self.unsaved_subtiers[toptier_code]
+
+    def trim_item(self,item):
+        if type(item) == np.str:
+            return item.strip()
+        return item
