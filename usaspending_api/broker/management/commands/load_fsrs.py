@@ -125,23 +125,18 @@ class Command(BaseCommand):
 
             recipient.parent_recipient_unique_id = row['parent_duns']
             if award_type == 'procurement':
-                location_map = location_d1_recipient_mapper(row)
+                location_value_map = location_d1_recipient_mapper(row)
             else:
-                location_map = location_d2_recipient_mapper(row)
+                location_value_map = location_d2_recipient_mapper(row)
 
-            recipient_location = create_location(location_map=location_map, row=row,
-                                                 location_value_map={"recipient_flag": True})
-            recipient_location.save()
-            recipient_value_map = {
-                "location": recipient_location,
-            }
+            location_value_map['recipient_flag'] = True
+            recipient.location = create_location(location_map={}, row=row, location_value_map=location_value_map)
 
-            load_data_into_model(recipient, row, value_map=recipient_value_map, save=True)
+            load_data_into_model(recipient, row, save=True)
 
             # Create POP location
-            place_of_performance = create_location(location_map=pop_mapper, row=row,
-                                                   location_value_map={"place_of_performance_flag": True})
-            place_of_performance.save()
+            pop_mapper['place_of_performance_flag'] = True
+            place_of_performance = create_location(location_map={}, row=row, location_value_map=pop_mapper)
 
             # set shared data content
             shared_data[row['internal_id']] = {'award': award,
