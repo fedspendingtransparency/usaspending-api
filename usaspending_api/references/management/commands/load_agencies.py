@@ -1,4 +1,4 @@
-from django.db import connection
+from django.db import connection, transaction
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
@@ -46,6 +46,7 @@ class Command(BaseCommand):
     # Holds subtiers with missing toptier links that we were unable to save
     unsaved_subtiers = {}
 
+    @transaction.atomic
     def handle(self, *args, **options):
 
         '''
@@ -115,10 +116,8 @@ class Command(BaseCommand):
 
             if toptier_flag:  # create or update the toptier agency
 
-                toptier_name = subtier_name  # based on matching above
-                toptier_agency, created = ToptierAgency.objects.get_or_create(code=toptier_name)
-
-                toptier_agency.cgac_code = toptier_code
+                toptier_agency, created = ToptierAgency.objects.get_or_create(cgac_code=toptier_code)
+                toptier_agency.name = subtier_name  # based on matching above
                 toptier_agency.abbreviation = subtier_abbr if is_frec == 'True' else department_abbr
                 toptier_agency.fpds_code = fpds_code
                 toptier_agency.mission = mission
@@ -127,7 +126,7 @@ class Command(BaseCommand):
 
                 toptier_agency.save()
 
-                self.check_for_agency_dupes('ToptierAgency', subtier_name)
+                self.check_for_agency_dupes('ToptierAgency', {'name': subtier_name})
 
                 self.check_unsaved_subtiers(toptier_code)
 
@@ -163,7 +162,6 @@ class Command(BaseCommand):
         # Still need to grab the toptier for mapping
         try:
             toptier_agency = ToptierAgency.objects.get(cgac_code=toptier_code)
-
         except ObjectDoesNotExist:
             # Cannot get Toptier agency because it does not exist
             self.logger.warning('Could not find toptier agency for {} TOPTIER code, {} SUBTIER {}'.format(
@@ -189,7 +187,9 @@ class Command(BaseCommand):
         subtier_agency.abbreviation = subtier_abbr
         subtier_agency.save()
 
-        subtier_agency = self.check_for_agency_dupes('SubtierAgency', subtier_name)
+        subtier_agency = self.check_for_agency_dupes('SubtierAgency',
+                                                     {'name': subtier_name,
+                                                      'agency__toptier_agency__cgac_code': toptier_code})
 
         return toptier_agency, subtier_agency
 
@@ -208,21 +208,22 @@ class Command(BaseCommand):
 
                 del self.unsaved_subtiers[toptier_code]
 
-    def check_for_agency_dupes(self, model_name, agency_name):
+    def check_for_agency_dupes(self, model_name, kwargs):
         model = apps.get_model('references', model_name)
         try:
-            agency = model.objects.get(name=agency_name)
+            agency = model.objects.get(**kwargs)
 
         except MultipleObjectsReturned:
             # Multiple toptiers throws an error will merge two toptier agencies
-            self.logger.error('Multiple {} objects returned filter on name {}'.format(model_name, agency_name))
-            self.logger.info('Beginning to consolidate {}'.format(agency_name))
+            self.logger.error('Multiple {} objects returned filter on {}'.format(model_name, ','.join('{}: {}'.format(key, value) for key, value in kwargs.items())))
+            self.logger.info('Beginning to consolidate fields')
 
-            qs = ToptierAgency.objects.filter(name=agency_name).order_by('create_date')
+            qs = model.objects.filter(**kwargs).order_by('create_date')
+
             merge_objects(qs.first(), qs.last())
 
-            self.logger.info('Finsihed consolidating {} code {}'.format(model_name, agency_name))
+            self.logger.info('Finsihed consolidating {} on {}'.format(model_name, ','.join('{}: {}'.format(key, value) for key, value in kwargs.items())))
 
-            agency = model.objects.get(name=agency_name)
+            agency = model.objects.get(**kwargs)
 
         return agency
