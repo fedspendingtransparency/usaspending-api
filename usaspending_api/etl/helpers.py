@@ -336,7 +336,7 @@ def create_case(code_map, source_field):
     return Case(*when_list, default=default)
 
 
-def pad_function(field, pad_to, keep_null):
+def pad_function(field, pad_to, keep_null=False):
     """
     Pads fields with 0 or keeps field null if specified. Used to clean up csv data with alpha numeric codes.
     Function reused from broker cleaning
@@ -345,5 +345,46 @@ def pad_function(field, pad_to, keep_null):
         if keep_null:
             return None
         else:
-            field = ''
+            return ''
     return str(field).strip().zfill(pad_to)
+
+
+def merge_objects(primary_object, objects_to_merge=[], keep_old=False):
+    """
+    Preliminary merge function to combine objects into one field.
+
+    Originally used to to fix duplicate agencies in the agency loader
+    Can be further developed to merge relational data: relational data and foreign key relations
+
+    Usage:
+    agency_1 = Toptier.objects.get(name='Agency 1')
+    agency_2 = Toptier.objects.get(namee='Agency 1 dupe')
+    merge_objects(agency_1, agency_2)
+
+    """
+
+    primary_class = primary_object.__class__
+
+    if not isinstance(objects_to_merge, list):
+        objects_to_merge = [objects_to_merge]
+
+    for merge_object in objects_to_merge:
+        if not isinstance(merge_object, primary_class):
+            raise TypeError('Only models of the same time can be merged')
+
+    fields_to_merge = []
+
+    for field in primary_object._meta.fields:
+        if not field.primary_key and field.name not in ['create_date', 'update_date']:
+            fields_to_merge.append(field.name)
+
+    # Try to fill all missing values in primary object by values of duplicates
+    for field_name in fields_to_merge:
+        val = getattr(merge_object, field_name)
+        setattr(primary_object, field_name, val)
+
+    if not keep_old:
+        merge_object.delete()
+
+    primary_object.save()
+    return primary_object

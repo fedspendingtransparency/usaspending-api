@@ -2,6 +2,7 @@ import contextlib
 import csv
 import os
 import tempfile
+import datetime
 
 import pytest
 from model_mommy import mommy
@@ -12,6 +13,7 @@ from usaspending_api.etl.management.commands import (load_usaspending_assistance
 from usaspending_api.references.models import Location
 from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.references.models import ToptierAgency, SubtierAgency, Agency
 
 
 @pytest.mark.django_db
@@ -225,3 +227,71 @@ def test_get_previous_submission():
 
     # Previous submission lookup should only match a quarterly submission
     assert helpers.get_previous_submission('020', 2016, 9) is None
+
+
+@pytest.mark.django_db
+def test_pad_function():
+    """
+    Test the process for padding a function
+    """
+    assert helpers.pad_function('2', 4) == '0002'
+    assert helpers.pad_function(None, 4, True) is None
+    assert helpers.pad_function(None, 4, False) is ''
+
+
+@pytest.mark.django_db
+def test_merge_object_toptier():
+    agency = mommy.make(
+        ToptierAgency,
+        toptier_agency_id=1000,
+        cgac_code='444',
+        fpds_code='0000',
+        abbreviation='ABCD',
+        name='Agency 1',
+        mission='',
+        website='',
+        icon_filename=''
+    )
+
+    agency_to_merge = mommy.make(
+        ToptierAgency,
+        toptier_agency_id=1001,
+        cgac_code='444',
+        fpds_code='0000',
+        abbreviation='ABCD',
+        name='Agency 2',
+        mission='Example Mission',
+        website='www.example.com',
+        icon_filename='example.png'
+    )
+
+    helpers.merge_objects(agency, agency_to_merge)
+    merged_agency = ToptierAgency.objects.get(cgac_code='444')
+    assert merged_agency.name == 'Agency 2'
+    assert merged_agency.mission == 'Example Mission'
+    assert merged_agency.website == 'www.example.com'
+    assert merged_agency.icon_filename == 'example.png'
+
+
+@pytest.mark.django_db
+def test_merge_object_subtier():
+
+    subtier = mommy.make(
+        SubtierAgency,
+        subtier_agency_id=1002,
+        subtier_code='100',
+        abbreviation='ABC',
+        name='name 1'
+    )
+
+    subtier_to_merge = mommy.make(
+        SubtierAgency,
+        subtier_agency_id=1002,
+        subtier_code='100',
+        abbreviation='DEF',
+        name='name 2'
+    )
+
+    helpers.merge_objects(subtier, subtier_to_merge)
+    merged_agency = SubtierAgency.objects.get(subtier_code='100')
+    assert merged_agency.name == 'name 2'

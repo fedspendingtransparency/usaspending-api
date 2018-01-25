@@ -1,8 +1,10 @@
 from django.db import connection
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.apps import apps
 from usaspending_api.references.models import ToptierAgency, SubtierAgency, OfficeAgency, Agency
-from usaspending_api.etl.helpers import pad_function
+from usaspending_api.etl.helpers import pad_function, merge_objects
 import os
 import logging
 import boto
@@ -78,9 +80,9 @@ class Command(BaseCommand):
 
         # Cleaning CSV data
         # Arguments for pad_function are (padding length, keep null)
-        broker_agency_df['CGAC AGENCY CODE'] = broker_agency_df['CGAC AGENCY CODE'].apply(pad_function, args=(3, None))
-        broker_agency_df['SUBTIER CODE'] = broker_agency_df['SUBTIER CODE'].apply(pad_function, args=(4, None))
-        broker_agency_df['FREC'] = broker_agency_df['FREC'].apply(pad_function, args=(4, None))
+        broker_agency_df['CGAC AGENCY CODE'] = broker_agency_df['CGAC AGENCY CODE'].apply(pad_function, args=(3, False))
+        broker_agency_df['SUBTIER CODE'] = broker_agency_df['SUBTIER CODE'].apply(pad_function, args=(4, False))
+        broker_agency_df['FREC'] = broker_agency_df['FREC'].apply(pad_function, args=(4, False))
         broker_agency_df = broker_agency_df.fillna('')
 
         for _, row in broker_agency_df.iterrows():
@@ -114,7 +116,7 @@ class Command(BaseCommand):
             if toptier_flag:  # create or update the toptier agency
 
                 toptier_name = subtier_name  # based on matching above
-                toptier_agency, created = ToptierAgency.objects.get_or_create(name=toptier_name)
+                toptier_agency, created = ToptierAgency.objects.get_or_create(code=toptier_name)
 
                 toptier_agency.cgac_code = toptier_code
                 toptier_agency.abbreviation = subtier_abbr if is_frec == 'True' else department_abbr
@@ -124,6 +126,8 @@ class Command(BaseCommand):
                 toptier_agency.icon_filename = icon_filename
 
                 toptier_agency.save()
+
+                self.check_for_agency_dupes('ToptierAgency', subtier_name)
 
                 self.check_unsaved_subtiers(toptier_code)
 
@@ -141,12 +145,18 @@ class Command(BaseCommand):
 
                 continue
 
-            self.create_subtier(subtier_name, subtier_code, subtier_abbr, toptier_code, toptier_flag)
+            toptier_agency, subtier_agency = self.create_subtier(subtier_name, subtier_code, subtier_abbr, toptier_code)
+
+            if toptier_agency and subtier_agency:
+                agency, created = Agency.objects.get_or_create(toptier_agency=toptier_agency,
+                                                               subtier_agency=subtier_agency,
+                                                               toptier_flag=toptier_flag)
+                agency.save()
 
         with connection.cursor() as cursor:
             cursor.execute(MATVIEW_SQL)
 
-    def create_subtier(self, subtier_name, subtier_code, subtier_abbr, toptier_code, toptier_flag):
+    def create_subtier(self, subtier_name, subtier_code, subtier_abbr, toptier_code):
         """
         Creates a subtier entry that is linked to a toptier. If unable to find a toptier, the function will return none
         """
@@ -154,7 +164,7 @@ class Command(BaseCommand):
         try:
             toptier_agency = ToptierAgency.objects.get(cgac_code=toptier_code)
 
-        except:
+        except ObjectDoesNotExist:
             # Cannot get Toptier agency because it does not exist
             self.logger.warning('Could not find toptier agency for {} TOPTIER code, {} SUBTIER {}'.format(
                 toptier_code,
@@ -172,17 +182,16 @@ class Command(BaseCommand):
             except KeyError:
                 self.unsaved_subtiers[toptier_code] = [subtier_dict]
 
-            return
+            return None, None
 
         subtier_agency, created = SubtierAgency.objects.get_or_create(subtier_code=subtier_code)
         subtier_agency.name = subtier_name
         subtier_agency.abbreviation = subtier_abbr
         subtier_agency.save()
 
-        agency, created = Agency.objects.get_or_create(toptier_agency=toptier_agency,
-                                                       subtier_agency=subtier_agency,
-                                                       toptier_flag=toptier_flag)
-        agency.save()
+        subtier_agency = self.check_for_agency_dupes('SubtierAgency', subtier_name)
+
+        return toptier_agency, subtier_agency
 
     def check_unsaved_subtiers(self, toptier_code):
         # Check that toptier is not missing a subtier
@@ -191,10 +200,29 @@ class Command(BaseCommand):
             for subtier in self.unsaved_subtiers[toptier_code]:
                 # Create subtier and save
                 self.create_subtier(subtier['subtier_name'], subtier['subtier_code'],
-                                    subtier['subtier_abbr'], toptier_code, False)
+                                    subtier['subtier_abbr'], toptier_code)
 
                 self.logger.info('Saving unmatched subtier code {} toptier code {}'.format(
                     subtier['subtier_code'], toptier_code)
                 )
 
                 del self.unsaved_subtiers[toptier_code]
+
+    def check_for_agency_dupes(self, model_name, agency_name):
+        model = apps.get_model('references', model_name)
+        try:
+            agency = model.objects.get(name=agency_name)
+
+        except MultipleObjectsReturned:
+            # Multiple toptiers throws an error will merge two toptier agencies
+            self.logger.error('Multiple {} objects returned filter on name {}'.format(model_name, agency_name))
+            self.logger.info('Beginning to consolidate {}'.format(agency_name))
+
+            qs = ToptierAgency.objects.filter(name=agency_name).order_by('create_date')
+            merge_objects(qs.first(), qs.last())
+
+            self.logger.info('Finsihed consolidating {} code {}'.format(model_name, agency_name))
+
+            agency = model.objects.get(name=agency_name)
+
+        return agency
