@@ -153,43 +153,28 @@ class Command(BaseCommand):
 
         for index, row in enumerate(to_insert, 1):
             if not (index % 1000):
-                logger.info('Inserting Stale FPDS: Inserting row {} of {} ({})'.format(str(index),
-                                                                                       str(total_rows),
+                logger.info('Inserting Stale FPDS: Inserting row {} of {} ({})'.format(str(index), str(total_rows),
                                                                                        datetime.now() - start_time))
 
+            # Create new LegalEntityLocation and LegalEntity from the row data
             legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
-
-            recipient_name = row['awardee_or_recipient_legal']
-            if recipient_name is None:
-                recipient_name = ""
-
-            # Handling the case of duplicates, just grab the first match
-            legal_entity = LegalEntity.objects.filter(
+            legal_entity = LegalEntity.objects.create(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
                 recipient_name=recipient_name
-            ).order_by('-update_date').first()
-            created = False
-
-            if not legal_entity:
-                legal_entity = LegalEntity.objects.create(
-                    recipient_unique_id=row['awardee_or_recipient_uniqu'],
-                    recipient_name=recipient_name
-                )
-                created = True
-
-            if created:
-                legal_entity_value_map = {
-                    "location": legal_entity_location,
-                }
-                legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
+            )
+            legal_entity_value_map = {
+                "location": legal_entity_location,
+            }
+            legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
             pop_location = create_location(place_of_performance_field_map, row, {"place_of_performance_flag": True})
 
-            # Find the award that this award transaction belongs to
+            # Find the toptier awards from the subtier awards
             awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
+            funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
-            # window w AS (partition BY tf.piid, tf.parent_award_id, tf.agency_id, tf.referenced_idv_agency_iden)
+            # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(
                 awarding_agency=awarding_agency,
                 piid=row.get('piid'),
@@ -197,10 +182,13 @@ class Command(BaseCommand):
             award.parent_award_piid = row.get('parent_award_id')
             award.save()
 
+            # Append row to list of Awards updated
             award_update_id_list.append(award.id)
 
-            funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
-
+            try:
+                last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
+            except ValueError:
+                last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S").date()
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": awarding_agency,
@@ -210,7 +198,7 @@ class Command(BaseCommand):
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
-                "last_modified_date": datetime.strptime(str(row['last_modified']), "%Y-%m-%d %H:%M:%S").date()
+                "last_modified_date": last_mod_date
             }
 
             contract_field_map = {

@@ -261,30 +261,18 @@ class Award(DataSourceTrackedModel):
                 else:
                     lookup_value = (uri, "uri")
             lookup_kwargs[lookup_value[1]] = lookup_value[0]
-            if parent_award_id and lookup_value[0]:
-                # parent_award__piid OR (parent_award__record_type AND (parent_award__fain OR parent_award__uri))
-                lookup_kwargs["parent_award__" + lookup_value[1]] = parent_award_id
+
+            # Only contracts have parent awards
+            if lookup_value[1] == 'piid' and parent_award_id and lookup_value[0]:
+                lookup_kwargs["parent_award__piid"] = parent_award_id
                 if "parent_award" in lookup_kwargs:
                     del lookup_kwargs["parent_award"]
+
             # Look for an existing award record
             summary_award = Award.objects \
                 .filter(Q(**lookup_kwargs)) \
                 .filter(awarding_agency=awarding_agency) \
                 .first()
-            if (summary_award is None and
-                    awarding_agency is not None and
-                    awarding_agency.toptier_agency.name != awarding_agency.subtier_agency.name):
-                # No award match found when searching by award id info + awarding subtier agency. Relax the awarding
-                # agency critera to just the toptier agency instead of the subtier agency and try the search again.
-                if agency_toptier_map:
-                    awarding_agency_toptier = agency_toptier_map[awarding_agency.toptier_agency.cgac_code]
-                else:
-                    awarding_agency_toptier = Agency.get_by_toptier(awarding_agency.toptier_agency.cgac_code)
-
-                summary_award = Award.objects \
-                    .filter(Q(**lookup_kwargs)) \
-                    .filter(awarding_agency=awarding_agency_toptier) \
-                    .first()
 
             if summary_award:
                 return [], summary_award
