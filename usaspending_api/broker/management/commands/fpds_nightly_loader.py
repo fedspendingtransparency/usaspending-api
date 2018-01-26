@@ -175,8 +175,14 @@ class Command(BaseCommand):
             awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
             funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
+            # Generate the unique Award ID
+            agency_id = row['agency_id'] if row['agency_id'] else '-NONE-'
+            ref_idv_agency_id = row['referenced_idv_agency_iden'] if row['referenced_idv_agency_iden'] else '-NONE-'
+            piid = row['piid'] if row['piid'] else '-NONE-'
+            parent_award_id = row['parent_award_id'] if row['parent_award_id'] else '-NONE-'
+            generated_unique_id = 'CONT_AW_' + agency_id + ref_idv_agency_id + piid + parent_award_id
+
             # Create the summary Award
-            generated_unique_id = self.generate_unique_id(row)
             (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)
             award.parent_award_piid = row.get('parent_award_id')
             award.save()
@@ -235,15 +241,6 @@ class Command(BaseCommand):
                 # create TransactionFPDS
                 transaction_fpds = TransactionFPDS(transaction=transaction, **contract_instance)
                 transaction_fpds.save()
-        
-    @staticmethod
-    def generate_unique_id(row):
-        unique_award_id = 'CONT_AW_'
-        unique_award_id += row['agency_id'] if row['agency_id'] else '-NONE-'
-        unique_award_id += row['referenced_idv_agency_iden'] if row['referenced_idv_agency_iden'] else '-NONE-'
-        unique_award_id += row['piid'] if row['piid'] else '-NONE-'
-        unique_award_id += row['parent_award_id'] if row['parent_award_id'] else '-NONE-'
-        return unique_award_id
 
     def add_arguments(self, parser):
         parser.add_argument(
