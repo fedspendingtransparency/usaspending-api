@@ -130,12 +130,25 @@ class Command(BaseCommand):
                 location_value_map = location_d2_recipient_mapper(row)
 
             location_value_map['recipient_flag'] = True
+            location_value_map.update(
+                zip4=location_value_map["location_zip"],
+                zip5=location_value_map["location_zip"][:5],
+                zip_last4=location_value_map["location_zip"][5:])
+
+            location_value_map.pop("location_zip")
+
             recipient.location = Location.objects.create(**location_value_map)
             recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
 
             # Create POP location
             pop_value_map = pop_mapper(row)
             pop_value_map['place_of_performance_flag'] = True
+            pop_value_map.update(
+                zip4=pop_value_map["location_zip"],
+                zip5=pop_value_map["location_zip"][:5],
+                zip_last4=pop_value_map["location_zip"][5:])
+
+            pop_value_map.pop("location_zip")
             place_of_performance = Location.objects.create(**pop_value_map)
 
             # set shared data content
