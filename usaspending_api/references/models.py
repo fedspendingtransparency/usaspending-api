@@ -227,13 +227,7 @@ class FilterHash(models.Model):
 
 class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     location_id = models.AutoField(primary_key=True)
-    location_country_code = models.ForeignKey(
-        'RefCountryCode',
-        models.DO_NOTHING,
-        db_column='location_country_code',
-        blank=True,
-        null=True,
-        verbose_name="Country Code")
+    location_country_code = models.TextField(blank=True, null=True, verbose_name="Location Country Code")
     country_name = models.TextField(blank=True, null=True, verbose_name="Country Name")
     state_code = models.TextField(blank=True, null=True, verbose_name="State Code")
     state_name = models.TextField(blank=True, null=True, verbose_name="State Name")
@@ -269,9 +263,11 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     # location, or both
     place_of_performance_flag = models.BooleanField(default=False, verbose_name="Location used as place of performance")
     recipient_flag = models.BooleanField(default=False, verbose_name="Location used as recipient location")
+    is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
+    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+                                             verbose_name="Transaction Unique ID")
 
     def pre_save(self):
-        self.load_country_data()
         self.load_city_county_data()
         self.fill_missing_state_data()
         self.fill_missing_zip5()
@@ -342,13 +338,9 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
             if match:
                 self.zip5 = match.group(1)
 
-    def load_country_data(self):
-        if self.location_country_code:
-            self.country_name = self.location_country_code.country_name
-
     def load_city_county_data(self):
         # Here we fill in missing information from the ref city county code data
-        if self.location_country_code_id == "USA":
+        if self.location_country_code == "USA":
 
             # TODO: this should be checked to see if this is even necessary... are these fields always uppercased?
             if self.state_code:
@@ -614,6 +606,9 @@ class LegalEntity(DataSourceTrackedModel):
     small_business = models.TextField(blank=True, null=True)
     small_business_description = models.TextField(blank=True, null=True)
     individual = models.TextField(blank=True, null=True)
+    is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
+    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+                                             verbose_name="Transaction Unique ID")
 
     def save(self, *args, **kwargs):
         LegalEntity.update_business_type_categories(self)

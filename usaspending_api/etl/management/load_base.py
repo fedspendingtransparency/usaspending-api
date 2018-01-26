@@ -24,8 +24,7 @@ from usaspending_api.etl.award_helpers import (
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor, setup_broker_fdw
 from usaspending_api.etl.helpers import update_model_description_fields
 from usaspending_api.references.helpers import canonicalize_location_dict
-from usaspending_api.references.models import (
-    Agency, LegalEntity, Cfda, Location, RefCountryCode, )
+from usaspending_api.references.models import (Agency, LegalEntity, Cfda, Location, )
 from usaspending_api.references.abbreviations import territory_country_codes
 
 # Lists to store for update_awards and update_contract_awards
@@ -524,6 +523,25 @@ def load_data_into_model(model_instance, data, **kwargs):
         return model_instance
 
 
+def create_location(location_map, row, location_value_map=None):
+    """
+    Create a location object
+
+    Input parameters:
+        - location_map: a dictionary with key = field name on the location model and value = corresponding field name
+          on the current row of data
+        - row: the row of data currently being loaded
+    """
+    if location_value_map is None:
+        location_value_map = {}
+
+    row = canonicalize_location_dict(row)
+    location_data = load_data_into_model(
+        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True, save=False)
+
+    return Location.objects.create(**location_data)
+
+
 def get_or_create_location(location_map, row, location_value_map=None, empty_location=None, d_file=False, save=True):
     """
     Retrieve or create a location object
@@ -551,27 +569,17 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
                 (row[location_map.get('location_country_code')] in territory_country_codes):
             row[location_map["location_country_code"]] = 'USA'
 
-    location_country = RefCountryCode.objects.filter(
-        country_code=row[location_map.get('location_country_code')]).first()
-
     state_code = row.get(location_map.get('state_code'))
     if state_code is not None:
         # Remove . in state names (i.e. D.C.)
         location_value_map.update({'state_code': state_code.replace('.', '')})
 
-    if location_country:
-        location_value_map.update({
-            'location_country_code': location_country,
-            'country_name': location_country.country_name,
-            'state_code': None,  # expired
-            'state_name': None,
-        })
-    else:
-        # no country found for this code
-        location_value_map.update({
-            'location_country_code': None,
-            'country_name': None
-        })
+    location_value_map.update({
+        'location_country_code': location_map.get('location_country_code'),
+        'country_name': location_map.get('location_country_name'),
+        'state_code': None,  # expired
+        'state_name': None,
+    })
 
     location_data = load_data_into_model(
         Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True)
