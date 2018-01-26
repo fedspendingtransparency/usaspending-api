@@ -139,8 +139,9 @@ class Command(BaseCommand):
 
             location_value_map.pop("location_zip")
 
-            recipient.location = Location(**location_value_map).save()
-            recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
+            recipient.location = create_location(location_map={}, row=row, location_value_map=location_value_map)
+            recipient.save()
+            # recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
 
             # Create POP location
             pop_value_map = pop_mapper(row)
@@ -154,7 +155,7 @@ class Command(BaseCommand):
 
             pop_value_map.pop("location_zip")
 
-            place_of_performance = Location(**pop_value_map).save()
+            place_of_performance = create_location(location_map={}, row=row, location_value_map=pop_value_map)
 
             # set shared data content
             shared_data[row['internal_id']] = {'award': award,
