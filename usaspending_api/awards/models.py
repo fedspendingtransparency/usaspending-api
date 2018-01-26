@@ -208,6 +208,13 @@ class Award(DataSourceTrackedModel):
                                        help_text="The last time this record was updated in the API")
     latest_transaction = models.ForeignKey("awards.TransactionNormalized", related_name="latest_for_award", null=True,
                                            help_text="The latest transaction by action_date associated with this award")
+    parent_award_piid = models.TextField(null=True, verbose_name="Parent Award Piid",
+                                         help_text="The piid of the Award's parent Award")
+    generated_unique_award_id = models.TextField(blank=False, null=False, default="none",
+                                                 verbose_name="Generated Unique Award ID")
+    is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
+    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+                                             verbose_name="Transaction Unique ID")
 
     # Subaward aggregates
     total_subaward_amount = models.DecimalField(max_digits=20, decimal_places=2, null=True)
@@ -232,87 +239,66 @@ class Award(DataSourceTrackedModel):
         return '%s piid: %s fain: %s uri: %s' % (self.type_description, self.piid, self.fain, self.uri)
 
     @staticmethod
-    def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None,
-                                    uri=None, parent_award_id=None, use_cache=False, save=True,
-                                    agency_toptier_map=None):
+    def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None, uri=None, parent_award_id=None,
+                                    use_cache=False, save=True, agency_toptier_map=None, record_type=None,
+                                    generated_unique_award_id=None):
         """
         Given a set of award identifiers and awarding agency information,
         find a corresponding Award record. If we can't find one, create it.
 
         Returns:
-            created: a list of new awards created (or that need to be created
-                if using cache), used to enable bulk insert
+            created: a list of new awards created (or that need to be created if using cache) used to enable bulk insert
             summary_award: the summary award that the calling process can map to
         """
-        # If an award transaction's ID is a piid, it's contract data
-        # If the ID is fain or a uri, it's financial assistance. If the award transaction
-        # has both a fain and a uri, include both.
         try:
-            lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
-            for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-                lookup_kwargs[i[1]] = i[0]
-                if parent_award_id and i[0]:
-                    # parent_award__piid, parent_award__fain, parent_award__uri
-                    lookup_kwargs["parent_award__" + i[1]] = parent_award_id
+            # Contract data uses piid as transaction ID. Financial assistance data depends on the record_type and
+            # uses either uri (record_type=1) or fain (record_type=2).
+            lookup_value = (piid, "piid")
+            if record_type:
+                if str(record_type) == '2':
+                    lookup_value = (fain, "fain")
+                else:
+                    lookup_value = (uri, "uri")
+
+            if generated_unique_award_id:
+                # Use the generated unique ID if available
+                lookup_kwargs = {"generated_unique_award_id": generated_unique_award_id}
+            else:
+                # Use the lookup_value is generated unique ID is not available
+                lookup_kwargs = {"awarding_agency": awarding_agency, "parent_award": None}
+                lookup_kwargs[lookup_value[1]] = lookup_value[0]
+
+                # Only contracts have parent awards
+                if lookup_value[1] == 'piid' and parent_award_id and lookup_value[0]:
+                    lookup_kwargs["parent_award__piid"] = parent_award_id
                     if "parent_award" in lookup_kwargs:
                         del lookup_kwargs["parent_award"]
 
             # Look for an existing award record
-            summary_award = Award.objects \
-                .filter(Q(**lookup_kwargs)) \
-                .filter(awarding_agency=awarding_agency) \
-                .first()
-            if (summary_award is None and
-                    awarding_agency is not None and
-                    awarding_agency.toptier_agency.name != awarding_agency.subtier_agency.name):
-                # No award match found when searching by award id info +
-                # awarding subtier agency. Relax the awarding agency
-                # critera to just the toptier agency instead of the subtier
-                # agency and try the search again.
-                if agency_toptier_map:
-                    awarding_agency_toptier = agency_toptier_map[awarding_agency.toptier_agency.cgac_code]
-                else:
-                    awarding_agency_toptier = Agency.get_by_toptier(
-                        awarding_agency.toptier_agency.cgac_code)
-
-                summary_award = Award.objects \
-                    .filter(Q(**lookup_kwargs)) \
-                    .filter(awarding_agency=awarding_agency_toptier) \
-                    .first()
+            summary_award = Award.objects.filter(Q(**lookup_kwargs)).first()
 
             if summary_award:
                 return [], summary_award
 
-            # We weren't able to match, so create a new award record.
-            if parent_award_id:
-                # If parent award id was supplied, recursively get/create
-                # an award record for it
-                parent_q_kwargs = {'awarding_agency': awarding_agency}
-                for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-                    parent_q_kwargs[i[1]] = parent_award_id if i[0] else None
-                parent_created, parent_award = Award.get_or_create_summary_award(**parent_q_kwargs)
-            else:
-                parent_created, parent_award = [], None
-
             # Now create the award record for this award transaction
-            create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award}
-            for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
-                create_kwargs[i[1]] = i[0]
+            create_kwargs = {"awarding_agency": awarding_agency, "parent_award": None,
+                             "parent_award_piid": parent_award_id}
+            create_kwargs[lookup_value[1]] = lookup_value[0]
+            if generated_unique_award_id:
+                create_kwargs["generated_unique_award_id"] = generated_unique_award_id
             summary_award = Award(**create_kwargs)
-            created = [summary_award, ]
-            created.extend(parent_created)
 
             if save:
                 summary_award.save()
 
-            return created, summary_award
+            return [summary_award, ], summary_award
 
         # Do not use bare except
         except ValueError:
             raise ValueError(
-                'Unable to find or create an award with the provided information: '
-                'piid={}, fain={}, uri={}, parent_id={}, awarding_agency={}'.format(
-                    piid, fain, uri, parent_award_id, awarding_agency))
+                'Unable to find or create an award with the provided information: piid={}, fain={}, uri={}, '
+                'parent_id={}, awarding_agency={}, generated_unique_award_id={}'
+                .format(piid, fain, uri, parent_award_id, awarding_agency, generated_unique_award_id))
 
     class Meta:
         db_table = 'awards'
@@ -362,8 +348,12 @@ class TransactionNormalized(models.Model):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True,
                                        help_text="The date this transaction was created in the API")
     update_date = models.DateTimeField(auto_now=True, null=True,
-                                       help_text="The last time this transaction was updated in the API")
+                                       help_text="The last time this transaction was updated in the API", db_index=True)
     fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
+    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+                                             verbose_name="Transaction Unique ID")
+    generated_unique_award_id = models.TextField(blank=False, null=False, default='none',
+                                                 verbose_name="Generated Unique Award ID")
 
     def __str__(self):
         return '%s award: %s' % (self.type_description, self.award)
