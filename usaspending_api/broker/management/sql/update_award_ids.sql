@@ -1,4 +1,2 @@
 UPDATE transaction_normalized_new
-SET transaction_normalized_new.award_id = awards_new.id
-FROM awards_new
-WHERE awards_new.generated_unique_award_id = transaction_normalized_new.generated_unique_award_id;
+SET award_id = (SELECT id FROM awards_new WHERE transaction_normalized_new.generated_unique_award_id = awards_new.generated_unique_award_id);

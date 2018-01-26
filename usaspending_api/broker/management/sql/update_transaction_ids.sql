@@ -1,17 +1,8 @@
---create index fabs_unique_id on transaction_fabs_new (afa_generated_unique);
---create index fpds_unique_id on transaction_fpds_new (detached_award_proc_unique);
---create index tx_unique_id on transaction_normalized_new (transaction_unique_id);
---
---UPDATE transaction_fabs_new
---SET transaction_id = tn_new.id
---FROM transaction_normalized_new AS tn_new
---WHERE tn_new.transaction_unique_id = transaction_fabs_new.afa_generated_unique;
---
---UPDATE transaction_fpds_new
---SET transaction_id = tn_new.id
---FROM transaction_normalized_new AS tn_new
---WHERE tn_new.transaction_unique_id = transaction_fpds_new.detached_award_proc_unique;
---
+DROP TABLE IF EXISTS transaction_fabs_new_old;
+DROP TABLE IF EXISTS transaction_fpds_new_old;
+DROP TABLE IF EXISTS transaction_fabs_new_2;
+DROP TABLE IF EXISTS transaction_fpds_new_2;
+
 CREATE TABLE transaction_fabs_new_2 AS (
     SELECT
         transaction_normalized_new.id as transaction_id,
@@ -390,15 +381,10 @@ CREATE TABLE transaction_fpds_new_2 AS (
         transaction_normalized_new ON transaction_normalized_new.transaction_unique_id = transaction_fpds_new.detached_award_proc_unique
 );
 
-TRUNCATE transaction_fabs_new, transaction_fpds_new;
-DROP TABLE transaction_fabs_new;
-DROP TABLE transaction_fpds_new;
-
+ALTER TABLE transaction_fabs_new RENAME TO transaction_fabs_new_old;
+ALTER TABLE transaction_fpds_new RENAME TO transaction_fpds_new_old;
 ALTER TABLE transaction_fabs_new_2 RENAME TO transaction_fabs_new;
 ALTER TABLE transaction_fpds_new_2 RENAME TO transaction_fpds_new;
---
---UPDATE transaction_fabs_new
---SET transaction_id = (SELECT id FROM transaction_normalized_new WHERE transaction_normalized_new.transaction_unique_id = transaction_fabs_new.afa_generated_unique);
---
---UPDATE transaction_fpds_new
---SET transaction_id = (SELECT id FROM transaction_normalized_new WHERE transaction_normalized_new.transaction_unique_id = transaction_fpds_new.detached_award_proc_unique);
+TRUNCATE transaction_fabs_new_old, transaction_fpds_new_old;
+DROP TABLE transaction_fabs_new_old;
+DROP TABLE transaction_fpds_new_old;

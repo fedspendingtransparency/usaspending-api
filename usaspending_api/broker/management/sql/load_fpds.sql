@@ -4,7 +4,6 @@ CREATE TABLE transaction_fpds_new AS
 (
 
     SELECT
-        NULL::bigint as transaction_id,
         *
     FROM
         dblink ('broker_server', '(
