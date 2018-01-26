@@ -114,24 +114,20 @@ def search_keyword_id_list_all(keyword):
     from timing out.
     """
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
-
-    query = {
-        "query": {
-            "query_string": {
-                "query": keyword
-            }
-        }, "size": DOWNLOAD_QUERY_SIZE}
+    query = {"query": {"query_string": {"query": keyword}},
+             "aggs": {
+                    "results": {
+                     "terms": {"field": "transaction_amount", "size": DOWNLOAD_QUERY_SIZE}
+                    }
+                }, "size": 0}
     try:
         responses = CLIENT.search(index=index_name, body=query, timeout='3m')
     except Exception:
         logging.exception("There was an error connecting to the ElasticSearch instance.")
         return None
-    transaction_id_list = []
     try:
-        for response in (responses['hits']['hits']):
-            list_item = (response['_source']['transaction_id'])
-            transaction_id_list.append(list_item)
-        return transaction_id_list
+        responses = responses["aggregations"]['results']
+        return [response['key'] for response in responses['buckets']]
     except Exception:
         logging.exception("There was an error parsing the transaction ID's")
         return None
