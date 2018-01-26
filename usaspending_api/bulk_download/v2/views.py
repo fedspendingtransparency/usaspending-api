@@ -453,9 +453,10 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                 except (TransportError, ConnectionError) as e:
                     logger.error(e)
                     transaction_ids = []
-                    size = size / 10
+                    size = size // 10
                     logger.error('Error retrieving ids. Retrying with a smaller size: {}'.format(size))
             logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
+            transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
             queryset = queryset.filter(**{'{}__isnull'.format(value_mappings[award_level]['transaction_id']):False})
             queryset &= queryset.extra(
                 where=['\"transaction_normalized\".\"id\" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))]

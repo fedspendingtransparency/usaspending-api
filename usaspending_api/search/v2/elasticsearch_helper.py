@@ -6,7 +6,7 @@ from django.conf import settings
 from elasticsearch import Elasticsearch
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups \
         import TRANSACTIONS_LOOKUP, award_type_mapping, award_categories
-import floor from math
+from math import floor
 
 logger = logging.getLogger('console')
 ES_HOSTNAME = settings.ES_HOSTNAME
@@ -153,40 +153,26 @@ def spending_by_transaction_sum(filters):
     return get_sum_aggregation_results(keyword)
 
 
-def extract_field_data(response, fieldname):
-    '''
-    takes in a response body and 
-    returns list of given
-    '''
-    hits = response['hits']['hits']
-    g = lambda document: document['_source'][fieldname]
-    return [g(i) for i in hits]
-
-
-def scroll(scroll_id, fieldname):
-    '''returns scroll_id and field 
-    data for a given
-     fieldname'''
-    response = CLIENT.scroll(scroll_id, scroll='2m')
-    results = extract_field_data(response, fieldname)
-    scroll_id = response['_scroll_id']
-    return results, scroll_id
-
-
 def get_transaction_ids(keyword, size=500):
     '''returns a generator that
     yields list of transaction ids in chunksize SIZE'''
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
-    query = {
-        "query": {
-            "query_string": {
-                "query": keyword
-            }
-        }, "size": size}
-
-    response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
     n_iter = int(DOWNLOAD_QUERY_SIZE/size)
-    scroll_id =  response['_scroll_id']
     for i in range(n_iter):
-        results, scroll_id = scroll(scroll_id, 'transaction_id')
+        query = {"query": {"query_string": {"query": keyword}},
+                 "aggs": {
+                        "results": {
+                         "terms": {
+                             "field": "transaction_id",
+                             "include": {
+                                 "partition": i,
+                                 "num_partitions": n_iter
+                             },
+                             "size": size}
+                        }
+                    }, "size": 0}
+        response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
+        results = []
+        for result in response['aggregations']['results']['buckets']:
+            results.append(result['key'])
         yield results
