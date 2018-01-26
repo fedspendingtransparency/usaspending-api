@@ -127,7 +127,7 @@ def search_keyword_id_list_all(keyword):
         return None
     try:
         responses = responses["aggregations"]['results']
-        return [floor(response['key']) for response in responses['buckets']]
+        return [response['key'] for response in responses['buckets']]
     except Exception:
         logging.exception("There was an error parsing the transaction ID's")
         return None
