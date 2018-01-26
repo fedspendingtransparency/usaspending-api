@@ -11,13 +11,21 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 from time import perf_counter
 
+# import csv
+# import json
+# import logging
+
+# from collections import defaultdict
+# from elasticsearch import Elasticsearch, helpers
+
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. [conditional] Gather the list of deleted transactions from S3
 # 2. Create temporary view of transaction records
 # 3. Copy/dump transaction rows to CSV file
 # 4. [conditional] Compare row IDs to see if a "deleted" transaction is back and remove from list
 # 5. [conditional] Store deleted ids in separate file
-# 6. (possible future step) Transfer output csv files to S3
+# 6. [conditional] Upload to ES cluster
+#    (possible future step) Transfer output csv files to S3
 
 
 class Command(BaseCommand):
@@ -232,7 +240,13 @@ class Command(BaseCommand):
 
             # Ingests the CSV into a dataframe. pandas thinks some ids are dates, so disable parsing
             data = pd.DataFrame.from_csv(file_path, parse_dates=False)
-            new_ids = list(data['detached_award_proc_unique'].values)
+
+            if 'detached_award_proc_unique' in data:
+                new_ids = ['cont_tx_' + x for x in data['detached_award_proc_unique'].values]
+            elif 'afa_generated_unique' in data:
+                new_ids = ['asst_tx_' + x for x in data['afa_generated_unique'].values]
+            else:
+                print('  [Missing valid col] in {}'.format(obj.key))
 
             # Next statements are ugly, but properly handle the temp files
             os.close(file)
@@ -263,7 +277,7 @@ class Command(BaseCommand):
         print('Verifying deleted transactions')
         count = 0
         for record in existing_ids:
-            uid = record['detached_award_proc_unique']
+            uid = record['generated_unique_transaction_id']
             if uid in self.deleted_ids:
                 if record['update_date'] > self.deleted_ids[uid]['timestamp']:
                     # Remove recreated transaction from the final list
@@ -282,11 +296,8 @@ class Command(BaseCommand):
         csv_file = self.config['directory'] + 'deleted_ids_{}.csv'.format(self.config['formatted_now'])
         print(csv_file)
 
-        # FUTURE: When deleted FABS transactions are listed in the S3 bucket use this list for the CSV:
-        # output_list = ['{key},{afa_generated_unique}'.format(key=k, **v) for k, v in self.deleted_ids.items()]
-
         with open(csv_file, 'w') as f:
-            f.write('detached_award_proc_unique\n')
+            f.write('generated_unique_transaction_id\n')
             f.writelines('\n'.join(self.deleted_ids.keys()))
 
 
@@ -402,8 +413,11 @@ SELECT
   UTM.recipient_location_county_code,
   UTM.recipient_location_zip5,
 
-  FPDS.detached_award_proc_unique,
-  FABS.afa_generated_unique,
+  CASE
+    WHEN FPDS.detached_award_proc_unique IS NOT NULL THEN 'cont_tx_' || FPDS.detached_award_proc_unique
+    WHEN FABS.afa_generated_unique IS NOT NULL THEN 'asst_tx_' || FABS.afa_generated_unique
+    ELSE NULL  -- IF THIS HAPPENS: Activate Bat signal
+  END AS generated_unique_transaction_id,
   TM.update_date
 
 FROM universal_transaction_matview UTM
@@ -433,12 +447,12 @@ DROP_VIEW_SQL = 'DROP VIEW transaction_delta_view;'
 
 CHECK_IDS_SQL = '''
 WITH temp_transaction_ids AS (
-  SELECT * FROM (VALUES {id_list}) AS unique_id_list (detached_award_proc_unique)
+  SELECT * FROM (VALUES {id_list}) AS unique_id_list (generated_unique_transaction_id)
 )
-SELECT transaction_id, detached_award_proc_unique, afa_generated_unique, update_date FROM transaction_delta_view
+SELECT transaction_id, generated_unique_transaction_id, update_date FROM transaction_delta_view
 WHERE EXISTS (
   SELECT *
   FROM temp_transaction_ids
-  WHERE transaction_delta_view.detached_award_proc_unique = temp_transaction_ids.detached_award_proc_unique
+  WHERE transaction_delta_view.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id
 );
 '''
