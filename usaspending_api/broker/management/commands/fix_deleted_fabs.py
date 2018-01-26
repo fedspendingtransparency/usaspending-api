@@ -6,13 +6,13 @@ usaspending_api/database_scripts/broker_matviews/broker_server.sql
 through psql, after editing to add conneciton specifics
 """
 import logging
-import timeit
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.db.utils import ProgrammingError
 
 from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.common.helpers import timer
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
@@ -61,30 +61,23 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info('Starting row deletion...')
 
-        logger.info('Executing query...')
-        start = timeit.default_timer()
         if options['batches']:
             limit = options['batches'] * options['batchsize']
         else:
             limit = None
-        cursor = self.fabs_cursor(limit)
-        end = timeit.default_timer()
-        logger.info('Executed in {} seconds'.format(end - start))
+        with timer('executing query', logger.info):
+            cursor = self.fabs_cursor(limit)
         batch_no = 1
         while ((not options['batches']) or (batch_no <= options['batches'])):
-            logger.info('Batch {} of {} rows'.format(batch_no, options['batchsize']))
-            start = timeit.default_timer()
-            rows = cursor.fetchmany(options['batchsize'])
-            end = timeit.default_timer()
-            logger.info('Rows fetched in {} seconds'.format(end - start))
+            message = 'Batch {} of {} rows'.format(batch_no, options['batchsize'])
+            with timer(message, logging.info):
+                rows = cursor.fetchmany(options['batchsize'])
             if not rows:
                 logger.info('No further rows; finished')
                 return
             ids = [r[0] for r in rows]
-            start = timeit.default_timer()
-            TransactionNormalized.objects.\
-                filter(assistance_data__afa_generated_unique__in=ids).delete()
-            end = timeit.default_timer()
-            logger.info('Rows deleted in {} seconds'.format(end - start))
+            with timer('deleting rows', logger.info):
+                TransactionNormalized.objects.\
+                    filter(assistance_data__afa_generated_unique__in=ids).delete()
             batch_no += 1
         logger.info('{} batches finished, complete'.format(batch_no - 1))
