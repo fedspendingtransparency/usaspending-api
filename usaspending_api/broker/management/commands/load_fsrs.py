@@ -137,7 +137,7 @@ class Command(BaseCommand):
                     zip5=location_value_map["location_zip"][:5],
                     zip_last4=location_value_map["location_zip"][5:])
 
-                location_value_map.pop("location_zip")
+            location_value_map.pop("location_zip")
 
             recipient.location = Location(**location_value_map).save()
             recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
@@ -152,7 +152,7 @@ class Command(BaseCommand):
                     zip5=pop_value_map["location_zip"][:5],
                     zip_last4=pop_value_map["location_zip"][5:])
 
-                pop_value_map.pop("location_zip")
+            pop_value_map.pop("location_zip")
 
             place_of_performance = Location(**pop_value_map).save()
 
