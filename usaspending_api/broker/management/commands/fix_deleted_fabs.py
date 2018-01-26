@@ -15,7 +15,6 @@ from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.helpers import timer
 
 logger = logging.getLogger('console')
-exception_logger = logging.getLogger("exceptions")
 
 
 class Command(BaseCommand):
