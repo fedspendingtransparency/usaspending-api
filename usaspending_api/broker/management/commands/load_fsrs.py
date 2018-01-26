@@ -131,8 +131,6 @@ class Command(BaseCommand):
 
             location_value_map['recipient_flag'] = True
             recipient.location = create_location(location_map={}, row=row, location_value_map=location_value_map)
-            recipient.location.save()
-
             recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
 
             # Create POP location
