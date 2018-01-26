@@ -537,10 +537,9 @@ def create_location(location_map, row, location_value_map=None):
 
     row = canonicalize_location_dict(row)
     location_data = load_data_into_model(
-        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False, save=True)
+        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True, save=False)
 
-    # return Location.objects.create(**location_data)
-    return location_data
+    return Location.objects.create(**location_data)
 
 
 def get_or_create_location(location_map, row, location_value_map=None, empty_location=None, d_file=False, save=True):
