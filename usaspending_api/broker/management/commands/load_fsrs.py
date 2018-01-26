@@ -6,7 +6,7 @@ from django.db.models import Max
 from django.core.exceptions import MultipleObjectsReturned
 
 from usaspending_api.awards.models import Award, Subaward
-from usaspending_api.references.models import LegalEntity, Agency, Cfda
+from usaspending_api.references.models import LegalEntity, Agency, Cfda, Location
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.award_helpers import update_award_subawards
 from usaspending_api.etl.management.load_base import load_data_into_model, create_location
@@ -130,13 +130,13 @@ class Command(BaseCommand):
                 location_value_map = location_d2_recipient_mapper(row)
 
             location_value_map['recipient_flag'] = True
-            recipient.location = create_location(location_map={}, row=row, location_value_map=location_value_map)
+            recipient.location = Location.objects.create(**location_value_map)
             recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
 
             # Create POP location
             pop_value_map = pop_mapper(row)
             pop_value_map['place_of_performance_flag'] = True
-            place_of_performance = create_location(location_map={}, row=row, location_value_map=pop_value_map)
+            place_of_performance = Location.objects.create(**pop_value_map)
 
             # set shared data content
             shared_data[row['internal_id']] = {'award': award,
