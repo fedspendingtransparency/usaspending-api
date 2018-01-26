@@ -7,93 +7,84 @@ through psql, after editing to add conneciton specifics
 """
 import logging
 import timeit
-from datetime import datetime, timedelta
+
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
+from django.db.utils import ProgrammingError
 
-from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
-from usaspending_api.broker import lookups
-from usaspending_api.etl.management.load_base import load_data_into_model, format_date, get_or_create_location
-from usaspending_api.references.models import LegalEntity, Agency, ToptierAgency, SubtierAgency
-from usaspending_api.etl.award_helpers import update_awards, update_award_categories
-
-# start = timeit.default_timer()
-# function_call
-# end = timeit.default_timer()
-# time elapsed = str(end - start)
-
+from usaspending_api.awards.models import TransactionNormalized
 
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
-
-subtier_agency_map = {
-    subtier_agency['subtier_code']: subtier_agency['subtier_agency_id']
-    for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')
-    }
-subtier_to_agency_map = {
-    agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']}
-    for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')
-    }
-toptier_agency_map = {
-    toptier_agency['toptier_agency_id']: toptier_agency['cgac_code']
-    for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')
-    }
-
-award_update_id_list = []
 
 
 class Command(BaseCommand):
     help = "Deletes FABS rows that have been deactivated in the broker"
 
-    @staticmethod
-    def get_fabs_data():
-        import pdb; pdb.set_trace()
-        db_cursor = connections['default'].cursor()
+    def add_arguments(self, parser):
+        parser.add_argument('-b', '--batchsize', type=int, default=1000, help='Fetch rows for deletion in batches of N')
+        parser.add_argument('--batches', type=int, default=0, help='Stop after N batches (deletes all by default)')
 
-        # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
-        # by the Broker's PK since every modification is a new row
+    @staticmethod
+    def fabs_cursor(limit=None):
+        db_cursor = connections['default'].cursor()
         db_query = """
+            WITH deletable AS (
+                SELECT  afa_generated_unique,
+                        bool_or(is_active) AS is_active,
+                        bool_or(correction_late_delete_ind in ('d', 'D'))
+                            AS deleted
+                FROM    broker.published_award_financial_assistance
+                GROUP BY 1
+                HAVING  bool_or(is_active) = false
+                AND     bool_or(correction_late_delete_ind in ('d', 'D'))
+                )
             SELECT tf.afa_generated_unique
             FROM   transaction_fabs tf
-            JOIN   broker.published_award_financial_assistance pafa
-              ON (pafa.afa_generated_unique = tf.afa_generated_unique)
-            WHERE  NOT pafa.is_active
-            -- ORDER BY tf.published_award_financial_assistance_id ASC
-            LIMIT 10"""
+            JOIN   deletable d USING (afa_generated_unique)
+            """
 
-        db_cursor.execute(db_query)
-        # ids_to_delete = set(r[0] for r in db_cursor.fetchall())
-
-        # logger.info('Number of records to delete: %d' % len(ids_to_delete))
+        if limit:
+            db_query += ' LIMIT {}'.format(limit)
+        try:
+            db_cursor.execute(db_query)
+        except ProgrammingError as e:
+            if 'broker.published_award_financial_assistance' in str(e):
+                msg = str(e) + '\nRun database_scripts/broker_matviews/broker_server.sql\n\n'
+                raise ProgrammingError(str(e) + msg)
+            else:
+                raise
 
         return db_cursor
-
-    @staticmethod
-    def delete_stale_fabs(ids_to_delete=None):
-        logger.info('Starting deletion of stale FABS data')
-
-        if ids_to_delete:
-            TransactionNormalized.objects.\
-                filter(assistance_data__afa_generated_unique__in=ids_to_delete).delete()
-
 
     @transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting row deletion...')
 
-        logger.info('Finding rows to delete...')
+        logger.info('Executing query...')
         start = timeit.default_timer()
-        ids_to_delete = self.get_fabs_data()
-        end = timeit.default_timer()
-        logger.info('Finished finding rows to delete in ' + str(end - start) + ' seconds')
-
-        total_rows_delete = len(ids_to_delete)
-
-        if total_rows_delete > 0:
-            logger.info('Deleting stale FABS data...')
-            start = timeit.default_timer()
-            self.delete_stale_fabs(ids_to_delete=ids_to_delete)
-            end = timeit.default_timer()
-            logger.info('Finished deleting stale FABS data in ' + str(end - start) + ' seconds')
+        if options['batches']:
+            limit = options['batches'] * options['batchsize']
         else:
-            logger.info('Nothing to delete...')
+            limit = None
+        cursor = self.fabs_cursor(limit)
+        end = timeit.default_timer()
+        logger.info('Executed in {} seconds'.format(end - start))
+        batch_no = 1
+        while ((not options['batches']) or (batch_no <= options['batches'])):
+            logger.info('Batch {} of {} rows'.format(batch_no, options['batchsize']))
+            start = timeit.default_timer()
+            rows = cursor.fetchmany(options['batchsize'])
+            end = timeit.default_timer()
+            logger.info('Rows fetched in {} seconds'.format(end - start))
+            if not rows:
+                logger.info('No further rows; finished')
+                return
+            ids = [r[0] for r in rows]
+            start = timeit.default_timer()
+            TransactionNormalized.objects.\
+                filter(assistance_data__afa_generated_unique__in=ids).delete()
+            end = timeit.default_timer()
+            logger.info('Rows deleted in {} seconds'.format(end - start))
+            batch_no += 1
+        logger.info('{} batches finished, complete'.format(batch_no - 1))

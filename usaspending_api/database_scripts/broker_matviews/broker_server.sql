@@ -5,6 +5,8 @@ CREATE SERVER <server name>
         FOREIGN DATA WRAPPER postgres_fdw
         OPTIONS (host '<host>', port '<port>', dbname '<database name>');
 
+-- Use `select inet_server_addr();` on broker database to get private IP
+
 CREATE USER MAPPING FOR root
         SERVER <server name>
         OPTIONS (user '<username>', password '<password>');
