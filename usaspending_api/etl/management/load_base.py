@@ -516,7 +516,7 @@ def load_data_into_model(model_instance, data, **kwargs):
             store_value(mod, field, data[field], reverse)
 
     if save:
-        logger.info("model % is being save" % model_instance)
+        logger.info("model %s is being save" % str(model_instance))
         model_instance.save()
     if as_dict:
         return mod
