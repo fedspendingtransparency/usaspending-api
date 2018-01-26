@@ -28,6 +28,7 @@ from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
+from elasticsearch.exceptions import TransportError, ConnectionError
 from usaspending_api.search.v2 import elasticsearch_helper
 
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference
@@ -72,18 +73,6 @@ award_mappings = {
     'contracts': ['contracts'],
     'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
 }
-transaction_table_mappings = {
-    'd1': {
-        'table_name': 'transaction_fpds',
-        'table_id': 'detached_award_proc_unique',
-        'rel_name': 'contract_data'
-    },
-    'd2': {
-        'table_name': 'transaction_fabs',
-        'table_id': 'afa_generated_unique',
-        'rel_name': 'assistance_data'
-    }
-}
 value_mappings = {
     # Award Level
     # 'prime_awards': {
@@ -109,7 +98,8 @@ value_mappings = {
         'awarding_agency_id': 'awarding_agency_id',
         'funding_agency_id': 'funding_agency_id',
         'contract_data': 'contract_data',
-        'assistance_data': 'assistance_data'
+        'assistance_data': 'assistance_data',
+        'transaction_id': 'id'
     },
     'sub_awards': {
         'table': Subaward,
@@ -121,7 +111,8 @@ value_mappings = {
         'awarding_agency_id': 'awarding_agency_id',
         'funding_agency_id': 'funding_agency_id',
         'contract_data': 'award__latest_transaction__contract_data',
-        'assistance_data': 'award__latest_transaction__assistance_data'
+        'assistance_data': 'award__latest_transaction__assistance_data',
+        'transaction_id': 'award__latest_transaction__id'
     }
 }
 
@@ -441,7 +432,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
     """Generate bulk download for awards"""
 
     # TODO: Merge into award and transaction filters
-    def process_filters(self, filters, award_level, award_type):
+    def process_filters(self, filters, award_level):
         """Filter function for Bulk Download Award Generation"""
 
         table = value_mappings[award_level]['table']
@@ -450,18 +441,24 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         keyword = filters['keyword']
         if keyword:
             keyword = keyword[0]
-            transaction_ids = list(elasticsearch_helper.search_keyword_id_list_all(keyword=keyword))
-            if transaction_ids is None:
-                transaction_ids = ['']
-            table_name = transaction_table_mappings[award_type]['table_name']
-            table_id = transaction_table_mappings[award_type]['table_id']
-            rel_name = transaction_table_mappings[award_type]['rel_name']
-            transaction_id_join = '{}__{}'.format(value_mappings[award_level][rel_name], table_id)
-            transaction_id_sql = '\"{}\".{}'.format(table_name, table_id)
-
-            queryset = queryset.filter(**{'{}__isnull'.format(transaction_id_join):False})
+            logger.info('Getting ids based on keyword: {}'.format(keyword))
+            elastic_search_complete = False
+            size = 500000
+            while not elastic_search_complete:
+                try:
+                    transaction_ids = elasticsearch_helper.get_transaction_ids(keyword=keyword, size=size)
+                    # flatten ids
+                    transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
+                    elastic_search_complete = True
+                except (TransportError, ConnectionError) as e:
+                    logger.error(e)
+                    transaction_ids = []
+                    size = size / 10
+                    logger.error('Error retrieving ids. Retrying with a smaller size: {}'.format(size))
+            logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
+            queryset = queryset.filter(**{'{}__isnull'.format(value_mappings[award_level]['transaction_id']):False})
             queryset &= queryset.extra(
-                where=['{} = ANY(\'{{{}}}\'::text[])'.format(transaction_id_sql, ','.join(transaction_ids))]
+                where=['\"transaction_normalized\".\"id\" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))]
             )
             return queryset
 
@@ -531,6 +528,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
             for award_level in award_levels:
                 if award_level not in value_mappings:
                     raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
+                queryset = self.process_filters(json_request['filters'], award_level)
                 award_level_table = value_mappings[award_level]['table']
                 award_types = set(json_request['filters']['award_types'])
                 d1_award_types = set(['contracts'])
@@ -541,7 +539,6 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                                                         'd1', award_level)
                     d1_filters = {
                         '{}__isnull'.format(value_mappings[award_level]['contract_data']): False}
-                    queryset = self.process_filters(json_request['filters'], award_level, 'd1')
                     d1_source.queryset = queryset & award_level_table.objects.\
                         filter(**d1_filters)
                     csv_sources.append(d1_source)
@@ -551,7 +548,6 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                                                         'd2', award_level)
                     d2_filters = {
                         '{}__isnull'.format(value_mappings[award_level]['assistance_data']): False}
-                    queryset = self.process_filters(json_request['filters'], award_level, 'd2')
                     d2_source.queryset = queryset & award_level_table.objects.\
                         filter(**d2_filters)
                     csv_sources.append(d2_source)
