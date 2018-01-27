@@ -9,7 +9,6 @@ from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 from time import perf_counter
-from queue import Queue
 from usaspending_api import settings
 from usaspending_api.etl.management.commands.fetch_transactions import configure_sql_strings
 from usaspending_api.etl.management.commands.fetch_transactions import execute_sql_statement
@@ -31,9 +30,7 @@ from usaspending_api.etl.management.commands.fetch_transactions import TEMP_ES_D
 # DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
 ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 
-DOWNLOAD_QUEUE = Queue()
-
-awardcategory_to_index = {
+AWARD_DESC_CATEGORIES = {
     # '': 'contracts',
     'loans': 'loans',
     'grant': 'grants',
@@ -104,12 +101,6 @@ class Command(BaseCommand):
             self.config['mapping'] = json.dumps(data)
 
         self.controller()
-        # for k, v in awardcategory_to_index.items():
-        #     filename = '{}_{}'.format(v, self.fiscal_year)
-        #     index = '{}_{}_{}'.format(settings.TRANSACTIONS_INDEX_ROOT, v, self.fiscal_year)
-        #     self.db_interactions(award_desc=k, filename=filename)
-        #     self.load_es(index=index, filename=filename)
-
         print('---------------------------------------------------------------')
         print("Script completed in {} seconds".format(perf_counter() - start))
 
@@ -122,11 +113,14 @@ class Command(BaseCommand):
         self.prepare_db()
 
         # Loop through award type categories
-        for awd_cat_idx in awardcategory_to_index.keys():
+        for awd_cat_idx in AWARD_DESC_CATEGORIES.keys():
             loop_msg = 'Handeling {} transactions for FY{}'.format(awd_cat_idx, self.config['fiscal_year'])
             print('{1}\n{0}'.format(loop_msg, '=' * len(loop_msg)))
+            if awd_cat_idx != 'other':
+                print('Skipping')
+                continue
             # Download CSV to file
-            award_category = awardcategory_to_index[awd_cat_idx]
+            award_category = AWARD_DESC_CATEGORIES[awd_cat_idx]
             filename, count = self.download_db_records(
                 award_category,
                 self.config['fiscal_year'],
@@ -134,7 +128,7 @@ class Command(BaseCommand):
 
             index = '{}_{}_{}'.format(
                 settings.TRANSACTIONS_INDEX_ROOT,
-                awardcategory_to_index[award_category],
+                award_category,
                 self.config['fiscal_year'])
             job = {'file': filename, 'index': index, 'count': count, 'wipe': self.config['wipe_indicies']}
 
@@ -240,7 +234,7 @@ def streaming_post_to_es(chunk, index_name):
             else:
                 failed += 1
     except Exception as e:
-        print('MASSIVE FAIL!!!\n\n{}\n\n{}\n\n{}'.format(e, chunk, '=' * 80))
+        print('MASSIVE FAIL!!!\n\n{}\n\n{}\n\n{}'.format(chunk[:500], e, '=' * 80))
         raise SystemExit
 
     print('Success: {} | Fails: {} '.format(success, failed))
