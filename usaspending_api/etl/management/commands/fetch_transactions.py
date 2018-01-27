@@ -11,20 +11,12 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 from time import perf_counter
 
-# import csv
-# import json
-# import logging
-
-# from collections import defaultdict
-# from elasticsearch import Elasticsearch, helpers
-
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. [conditional] Gather the list of deleted transactions from S3
 # 2. Create temporary view of transaction records
 # 3. Copy/dump transaction rows to CSV file
 # 4. [conditional] Compare row IDs to see if a "deleted" transaction is back and remove from list
 # 5. [conditional] Store deleted ids in separate file
-# 6. [conditional] Upload to ES cluster
 #    (possible future step) Transfer output csv files to S3
 
 
@@ -110,47 +102,15 @@ class Command(BaseCommand):
         print('---------------------------------------------------------------')
         print("Script completed in {} seconds".format(perf_counter() - start))
 
-    def configure_sql_strings(self, filename):
-        '''
-        Populates the formatted strings defined globally in this file to create the desired SQL
-        '''
-        update_date_str = UPDATE_DATE_SQL.format(self.config['starting_date'].strftime('%Y-%m-%d'))
-        award_type_str = ''
-        if self.config['award_category']:
-            if self.config['award_category'] == 'contract':
-                award_type_str = CONTRACTS_IDV_SQL.format(self.config['award_category'])
-            else:
-                award_type_str = CATEGORY_SQL.format(self.config['award_category'])
-
-        view_sql = TEMP_ES_DELTA_VIEW
-
-        copy_sql = COPY_SQL.format(
-            fy=self.config['fiscal_year'],
-            update_date=update_date_str,
-            award_category=award_type_str,
-            filename=filename)
-
-        count_sql = COUNT_SQL.format(
-            fy=self.config['fiscal_year'],
-            update_date=update_date_str,
-            award_category=award_type_str,
-        )
-
-        if self.deleted_ids and self.config['provide_deleted']:
-            id_list = ','.join(["('{}')".format(x) for x in self.deleted_ids.keys()])
-            id_sql = CHECK_IDS_SQL.format(id_list=id_list)
-        else:
-            id_sql = None
-
-        return view_sql, copy_sql, id_sql, count_sql
-
     def sql_only_print(self):
         self.deleted_ids = {
             '<id0>': {'timestamp': '1970-01-01'},
             '<id1>': {'timestamp': '1970-01-01'},
             '<id2>': {'timestamp': '1970-01-01'},
         }
-        view_sql, copy_sql, id_sql, count_sql = self.configure_sql_strings(self.config['directory'] + '<filename>')
+        filename = self.config['directory'] + '<filename>'
+
+        view_sql, copy_sql, id_sql, count_sql, drop_view = configure_sql_strings(self.config, filename, self.deleted_ids)
         print('========================================')
         print('--- Postgres View SQL ---')
         print(view_sql)
@@ -164,7 +124,7 @@ class Command(BaseCommand):
         print(id_sql)
         print('========================================')
         print('--- Drop SQL ---')
-        print(DROP_VIEW_SQL)
+        print(drop_view)
 
     def db_interactions(self):
         '''
@@ -182,7 +142,7 @@ class Command(BaseCommand):
             fy=self.config['fiscal_year'],
             type=type_str,
             now=self.config['formatted_now'])
-        view_sql, copy_sql, id_sql, count_sql = self.configure_sql_strings(filename)
+        view_sql, copy_sql, id_sql, count_sql, drop_view = configure_sql_strings(self.config, filename, self.deleted_ids)
 
         execute_sql_statement(view_sql, False, self.config['verbose'])
 
@@ -199,7 +159,7 @@ class Command(BaseCommand):
             print('{} "deleted" IDs were found in DB'.format(len(restored_ids)))
             self.correct_deleted_ids(restored_ids)
 
-        execute_sql_statement(DROP_VIEW_SQL, False, self.config['verbose'])
+        execute_sql_statement(drop_view, False, self.config['verbose'])
         print("Database interactions took {} seconds".format(perf_counter() - start))
 
     def gather_deleted_ids(self):
@@ -327,6 +287,43 @@ def execute_sql_statement(cmd, results=False, verbose=False):
         if results:
             rows = db_rows_to_dict(cursor)
     return rows
+
+
+def configure_sql_strings(config, filename, deleted_ids):
+    '''
+    Populates the formatted strings defined globally in this file to create the desired SQL
+    '''
+    update_date_str = UPDATE_DATE_SQL.format(config['starting_date'].strftime('%Y-%m-%d'))
+    award_type_str = ''
+    if config['award_category']:
+        if config['award_category'] == 'contract':
+            award_type_str = CONTRACTS_IDV_SQL.format(config['award_category'])
+        else:
+            award_type_str = CATEGORY_SQL.format(config['award_category'])
+
+    view_sql = TEMP_ES_DELTA_VIEW
+
+    copy_sql = COPY_SQL.format(
+        fy=config['fiscal_year'],
+        update_date=update_date_str,
+        award_category=award_type_str,
+        filename=filename)
+
+    count_sql = COUNT_SQL.format(
+        fy=config['fiscal_year'],
+        update_date=update_date_str,
+        award_category=award_type_str,
+    )
+
+    if deleted_ids and config['provide_deleted']:
+        id_list = ','.join(["('{}')".format(x) for x in deleted_ids.keys()])
+        id_sql = CHECK_IDS_SQL.format(id_list=id_list)
+    else:
+        id_sql = None
+
+    drop_view = DROP_VIEW_SQL
+
+    return view_sql, copy_sql, id_sql, count_sql, drop_view
 
 
 def set_config():
