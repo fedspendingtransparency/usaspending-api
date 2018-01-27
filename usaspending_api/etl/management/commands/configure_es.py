@@ -8,6 +8,12 @@ from usaspending_api import settings
 
 
 class Command(BaseCommand):
+    help = '''
+    This script applies configuration changes to an ElasticSearch cluster.
+    Default mapper file location is in `usaspending_api/etl/es_settings.json`
+    Requires env var ES_HOSTNAME to be set
+    '''
+
     # used by parent class
     def add_arguments(self, parser):
         parser.add_argument(
@@ -15,13 +21,15 @@ class Command(BaseCommand):
             '-p',
             default=None,
             type=str,
-            help='Point to custom location of elasticsearch configuration file')
+            help='Point to custom location of elasticsearch json configuration file')
 
     # used by parent class
     def handle(self, *args, **options):
         ''' Script execution of custom code starts in this method'''
         start = perf_counter()
-        self.deleted_ids = {}
+        if not settings.ES_HOSTNAME:
+            print('$ES_HOSTNAME is not set! Abort Script')
+            raise SystemExit
 
         # assumes script is run from repo project root
         settings_file = os.path.curdir + '/usaspending_api/etl/es_settings.json'
@@ -32,8 +40,11 @@ class Command(BaseCommand):
         if not os.path.isfile(settings_file):
             print('File {} does not exist!!!!'.format(settings_file))
             raise SystemExit
-        print('using {}'.format(settings_file))
+
+        print('Attemping to use {}'.format(settings_file))
+
         with open(settings_file, 'r') as f:
+            # Read and parse file as lite JSON validation before sending it to ES
             es_config = json.load(f)
 
         cmd = 'curl -XPUT "{es_host}/_settings" -H "Content-Type: application/json" -d \'{data}\''

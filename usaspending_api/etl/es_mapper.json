@@ -1,0 +1,114 @@
+{
+  "settings": {
+    "index.mapping.ignore_malformed": true
+  },
+  "sort": {
+    "fields": [
+      "transaction_amount",
+      "action_date"
+    ],
+    "order": [
+      "desc",
+      "desc"
+    ]
+  },
+  "mappings": {
+    "custom_mapping": {
+      "properties": {
+        "awarding_subtier_agency_name": {
+          "fielddata": true,
+          "type": "text"
+        },
+        "awarding_toptier_agency_name": {
+          "type": "text",
+          "fielddata": true
+        },
+        "action_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "period_of_performance_start_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "period_of_performance_current_end_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "award_id": {
+          "type": "integer"
+        },
+        "transaction_id": {
+          "type": "integer"
+        },
+        "total_obligation": {
+          "type": "float"
+        },
+        "session_id": {
+          "type": "text",
+          "index": false
+        },
+        "transaction_amount": {
+          "type": "float"
+        },
+        "type_description": {
+          "type": "text",
+          "fielddata": true
+        },
+        "funding_toptier_agency_name": {
+          "type": "text",
+          "fielddata": true
+        },
+        "funding_subtier_agency_name": {
+          "type": "text",
+          "fielddata": true
+        },
+        "recipient_name": {
+          "type": "text",
+          "fielddata": true
+        },
+        "recipient_location_county_code": {
+          "index": false,
+          "type": "text"
+        },
+        "awarding_subtier_agency_abbreviation": {
+          "index": false,
+          "type": "text"
+        },
+        "pop_county_name": {
+          "index": false,
+          "type": "text"
+        },
+        "cfda_title": {
+          "index": false,
+          "type": "text"
+        },
+        "modification_number": {
+          "type": "integer"
+        },
+        "pop_county_code": {
+          "index": false,
+          "type": "text"
+        },
+        "fain": {
+          "index": false,
+          "type": "text"
+        },
+        "recipient_location_congressional_code": {
+          "index": false,
+          "type": "text"
+        },
+        "original_loan_subsidy_cost": {
+          "type": "float"
+        },
+        "face_value_loan_guarantee": {
+          "type": "float"
+        },
+        "piid": {
+          "index": false,
+          "type": "text"
+        }
+      }
+    }
+  }
+}

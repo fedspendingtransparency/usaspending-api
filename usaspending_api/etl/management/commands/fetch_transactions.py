@@ -122,12 +122,19 @@ class Command(BaseCommand):
             else:
                 award_type_str = CATEGORY_SQL.format(self.config['award_category'])
 
-        view_sql = TEMP_ES_DELTA_VIEW.format(
+        view_sql = TEMP_ES_DELTA_VIEW
+
+        copy_sql = COPY_SQL.format(
+            fy=self.config['fiscal_year'],
+            update_date=update_date_str,
+            award_category=award_type_str,
+            filename=filename)
+
+        count_sql = COUNT_SQL.format(
             fy=self.config['fiscal_year'],
             update_date=update_date_str,
             award_category=award_type_str,
         )
-        copy_sql = COPY_SQL.format(filename=filename)
 
         if self.deleted_ids and self.config['provide_deleted']:
             id_list = ','.join(["('{}')".format(x) for x in self.deleted_ids.keys()])
@@ -135,7 +142,7 @@ class Command(BaseCommand):
         else:
             id_sql = None
 
-        return view_sql, copy_sql, id_sql
+        return view_sql, copy_sql, id_sql, count_sql
 
     def sql_only_print(self):
         self.deleted_ids = {
@@ -143,7 +150,7 @@ class Command(BaseCommand):
             '<id1>': {'timestamp': '1970-01-01'},
             '<id2>': {'timestamp': '1970-01-01'},
         }
-        view_sql, copy_sql, id_sql = self.configure_sql_strings(self.config['directory'] + '<filename>')
+        view_sql, copy_sql, id_sql, count_sql = self.configure_sql_strings(self.config['directory'] + '<filename>')
         print('========================================')
         print('--- Postgres View SQL ---')
         print(view_sql)
@@ -175,11 +182,11 @@ class Command(BaseCommand):
             fy=self.config['fiscal_year'],
             type=type_str,
             now=self.config['formatted_now'])
-        view_sql, copy_sql, id_sql = self.configure_sql_strings(filename)
+        view_sql, copy_sql, id_sql, count_sql = self.configure_sql_strings(filename)
 
         execute_sql_statement(view_sql, False, self.config['verbose'])
 
-        count = execute_sql_statement(COUNT_SQL, True, self.config['verbose'])
+        count = execute_sql_statement(count_sql, True, self.config['verbose'])
         print('\nWriting {} transactions to this file:'.format(count[0]['count']))
         print(filename)
         # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
@@ -413,10 +420,13 @@ SELECT
   UTM.recipient_location_county_code,
   UTM.recipient_location_zip5,
 
+  FPDS.detached_award_proc_unique,
+  FABS.afa_generated_unique,
+
   CASE
     WHEN FPDS.detached_award_proc_unique IS NOT NULL THEN 'cont_tx_' || FPDS.detached_award_proc_unique
     WHEN FABS.afa_generated_unique IS NOT NULL THEN 'asst_tx_' || FABS.afa_generated_unique
-    ELSE NULL  -- IF THIS HAPPENS: Activate Bat signal
+    ELSE NULL  -- if this happens: Activate Batsignal
   END AS generated_unique_transaction_id,
   TM.update_date
 
@@ -425,9 +435,7 @@ JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
 LEFT JOIN universal_award_matview UAM ON (UTM.award_id = UAM.award_id)
-JOIN awards AW ON (UAM.award_id = AW.id)
-WHERE
-  UTM.fiscal_year={fy}{update_date}{award_category};'''
+JOIN awards AW ON (UAM.award_id = AW.id);'''
 
 UPDATE_DATE_SQL = ' AND TM.update_date >= \'{}\''
 
@@ -435,11 +443,12 @@ CATEGORY_SQL = ' AND UTM.award_category = \'{}\''
 
 CONTRACTS_IDV_SQL = ' AND (UTM.award_category = \'{}\' OR UTM.award_category IS NULL AND UTM.pulled_from = \'IDV\')'
 
-COUNT_SQL = 'SELECT COUNT(*) AS count FROM transaction_delta_view;'
+COUNT_SQL = 'SELECT COUNT(*) AS count FROM transaction_delta_view WHERE UTM.fiscal_year={fy}{update_date}{award_category};'
 
 COPY_SQL = '''"COPY (
     SELECT *
     FROM transaction_delta_view
+    WHERE UTM.fiscal_year={fy}{update_date}{award_category}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 '''
 
