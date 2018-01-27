@@ -29,6 +29,24 @@ from usaspending_api.etl.management.commands.fetch_transactions import execute_s
 #   d. Lather. Rinse. Repeat. until all fiscal years are complete
 
 
+DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
+ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
+awardcategory_to_index = {
+    # '': 'contracts',
+    'loans': 'loans',
+    'grant': 'grants',
+    'insurance': 'other',
+    'other': 'other',
+    'contract': 'contracts',
+    'direct payment': 'directpayments'
+}
+
+MAPPING_FILE = 'usaspending_api/etl/es_mapping.json'
+with open(MAPPING_FILE) as f:
+    data = json.load(f)
+    ES_MAPPING = json.dumps(data)
+
+
 class Command(BaseCommand):
     help = '''
     '''
@@ -85,8 +103,12 @@ class Command(BaseCommand):
             raise SystemExit
 
         self.gather_deleted_ids()
-        self.db_interactions()
         self.delete_transactions_from_es()
+        for k, v in awardcategory_to_index.items():
+            filename = '{}_{}'.format(v, self.fiscal_year)
+            index = '{}_{}_{}'.format(settings.TRANSACTIONS_INDEX_ROOT, v, self.fiscal_year)
+            self.db_interactions(award_desc=k, filename=filename)
+            self.load_es(index=index, filename=filename)
 
         print('---------------------------------------------------------------')
         print("Script completed in {} seconds".format(perf_counter() - start))
@@ -227,3 +249,70 @@ def set_config():
     }
 
     return config
+
+
+def csv_chunk_gen(filename, chunksize):
+    with open(filename, 'r') as f:
+        reader = csv.reader(f)
+        fields = next(reader)
+        chunk = []
+
+        for i, line in enumerate(reader):
+            line.append(' '.join([i for i in set(line)]))
+            if (i % chunksize == 0 and i > 0):
+                print('yielding on {}'.format(i))
+                yield chunk
+                del chunk[:]
+            chunk.append(dict(zip(fields, line)))
+        print('final yield')
+        yield chunk
+
+
+def streaming_post_to_es(chunk, index_name):
+    print(index_name)
+    success, failed = 0, 0
+
+    try:
+        for ok, item in helpers.streaming_bulk(ES_CLIENT, chunk, index=index_name, doc_type='custom_mapping'):
+            # go through request-reponse pairs and detect failures
+            if not ok:
+                failed += 1
+            else:
+                success += 1
+    except Exception as e:
+        print(e)
+        print(chunk)
+        raise SystemExit
+
+    print('Success: {} | Fails: {} '.format(success, failed))
+    return
+
+
+def post_to_elasticsearch(args, filename):
+    index_year = os.path.basename(args.dir)
+    absolute = os.path.join(args.dir, filename)
+    print(absolute)
+    print(os.path.getsize(absolute))
+    num_lines = sum(1 for line in open(absolute))
+    print('has {} lines'.format(num_lines))
+    index_name = '{}-{}-{}'.format(
+        args.base_indexname,
+        filename.replace('.csv', ''),
+        index_year)
+
+    csv_generator = csv_chunk_gen(absolute, args.chunksize)
+
+    print('Index : {}'.format(index_name))
+    does_index_exist = ES_CLIENT.indices.exists(index_name)
+    if does_index_exist and args.overwrite:
+        print('{} exists... deleting first'.format(index_name))
+        ES_CLIENT.indices.delete(str(index_name))
+    elif not does_index_exist:
+        print('Creating {} index'.format(index_name))
+        ES_CLIENT.indices.create(index=str(index_name), body=ES_MAPPING)
+
+    for count, chunk in enumerate(csv_generator):
+        print('Running chunk # {}'.format(count))
+        iteration = perf_counter()
+        streaming_post_to_es(chunk, index_name)
+        print('Iteration took {}s'.format(perf_counter() - iteration))
