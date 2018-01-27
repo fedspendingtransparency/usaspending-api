@@ -1,11 +1,7 @@
-import boto3
 import csv
 import json
 import os
-import pandas as pd
-import pytz
 import subprocess
-import tempfile
 
 from datetime import date
 from datetime import datetime
@@ -13,24 +9,30 @@ from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 from time import perf_counter
+from queue import Queue
 from usaspending_api import settings
 from usaspending_api.etl.management.commands.fetch_transactions import configure_sql_strings
 from usaspending_api.etl.management.commands.fetch_transactions import execute_sql_statement
+from usaspending_api.etl.management.commands.fetch_transactions import gather_deleted_ids
+from usaspending_api.etl.management.commands.fetch_transactions import TEMP_ES_DELTA_VIEW, DROP_VIEW_SQL
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. [conditional] Remove deleted transactions from ES
 #   a. Gather the list of deleted transactions from S3
 #   b. Delete transactions from ES
 # 2. Create temporary view of transaction records
-# 3. Iterate over every fiscal year and award type description
+# 3. Iterate over fiscal year and award type description
 #   a. Download 1 CSV file
-#   b. Either delete all transactions from ES or delete target index
+#   b. Either delete target index or delete transactions by their ids
 #   c. Load CSV contents into ES
 #   d. Lather. Rinse. Repeat. until all fiscal years are complete
 
 
-DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
+# DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
 ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
+
+DOWNLOAD_QUEUE = Queue()
+
 awardcategory_to_index = {
     # '': 'contracts',
     'loans': 'loans',
@@ -41,11 +43,6 @@ awardcategory_to_index = {
     'direct payment': 'directpayments'
 }
 
-MAPPING_FILE = 'usaspending_api/etl/es_mapping.json'
-with open(MAPPING_FILE) as f:
-    data = json.load(f)
-    ES_MAPPING = json.dumps(data)
-
 
 class Command(BaseCommand):
     help = '''
@@ -54,7 +51,7 @@ class Command(BaseCommand):
     # used by parent class
     def add_arguments(self, parser):
         parser.add_argument(
-            '--fiscal_year',
+            'fiscal_year',
             type=int,
             help='If only one fiscal year is desired')
         parser.add_argument(
@@ -82,7 +79,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         ''' Script execution of custom code starts in this method'''
         start = perf_counter()
-        self.deleted_ids = {}
 
         self.config = set_config()
         self.config['formatted_now'] = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')  # ISO8601
@@ -102,135 +98,100 @@ class Command(BaseCommand):
             print('Provided directory does not exist')
             raise SystemExit
 
-        self.gather_deleted_ids()
-        self.delete_transactions_from_es()
-        for k, v in awardcategory_to_index.items():
-            filename = '{}_{}'.format(v, self.fiscal_year)
-            index = '{}_{}_{}'.format(settings.TRANSACTIONS_INDEX_ROOT, v, self.fiscal_year)
-            self.db_interactions(award_desc=k, filename=filename)
-            self.load_es(index=index, filename=filename)
+        es_mapping_file = 'usaspending_api/etl/es_mapper.json'
+        with open(es_mapping_file) as f:
+            data = json.load(f)
+            self.config['mapping'] = json.dumps(data)
+
+        self.controller()
+        # for k, v in awardcategory_to_index.items():
+        #     filename = '{}_{}'.format(v, self.fiscal_year)
+        #     index = '{}_{}_{}'.format(settings.TRANSACTIONS_INDEX_ROOT, v, self.fiscal_year)
+        #     self.db_interactions(award_desc=k, filename=filename)
+        #     self.load_es(index=index, filename=filename)
 
         print('---------------------------------------------------------------')
         print("Script completed in {} seconds".format(perf_counter() - start))
 
-    def db_interactions(self):
-        '''
-        All DB statements/commands/transactions are controlled by this method.
-        Some are using the django DB client, others using psql
-        '''
-        print('---------------------------------------------------------------')
-        print('Executing Postgres statements')
+    def controller(self):
+        # Fetch the list of deleted records from S3 and delete them from ES
+        self.deleted_ids = gather_deleted_ids(self.config) or {}
+        delete_list = [{'id': x, 'col': 'generated_unique_transaction_id'} for x in self.deleted_ids.keys()]
+        delete_transactions_from_es(delete_list)
+
+        self.prepare_db()
+
+        # Loop through award type categories
+        for awd_cat_idx in awardcategory_to_index.keys():
+            loop_msg = 'Handeling {} transactions for FY{}'.format(awd_cat_idx, self.config['fiscal_year'])
+            print('{1}\n{0}'.format(loop_msg, '=' * len(loop_msg)))
+            # Download CSV to file
+            award_category = awardcategory_to_index[awd_cat_idx]
+            filename, count = self.download_db_records(
+                award_category,
+                self.config['fiscal_year'],
+                self.config['directory'])
+
+            index = '{}_{}_{}'.format(
+                settings.TRANSACTIONS_INDEX_ROOT,
+                awardcategory_to_index[award_category],
+                self.config['fiscal_year'])
+            job = {'file': filename, 'index': index, 'count': count, 'wipe': self.config['wipe_indicies']}
+
+            # Upload CSV to ES
+            post_to_elasticsearch(job, self.config['mapping'])
+            # Delete File
+            os.unlink(filename)
+
+            # repeat
+
+        print('Completed all categories for FY{}'.format(self.config['fiscal_year']))
+        self.cleanup_db()
+
+    def prepare_db(self):
+        print('Creating View in Postgres...')
+        execute_sql_statement(TEMP_ES_DELTA_VIEW, False, self.config['verbose'])
+        print('View Successfully created')
+
+    def cleanup_db(self):
+        print('Removing View from Postgres...')
+        execute_sql_statement(DROP_VIEW_SQL, False, self.config['verbose'])
+        print('View Successfully removed')
+
+    def download_csv(self, count_sql, copy_sql, filename):
         start = perf_counter()
-        type_str = ''
-        if self.config['award_category']:
-            type_str = '{}_'.format(self.config['award_category'])
-        filename = '{dir}{fy}_transactions_{type}{now}.csv'.format(
-            dir=self.config['directory'],
-            fy=self.config['fiscal_year'],
-            type=type_str,
-            now=self.config['formatted_now'])
-        view_sql, copy_sql, id_sql, count_sql, drop_view = configure_sql_strings(self.config, filename, self.deleted_ids)
-
-        execute_sql_statement(view_sql, False, self.config['verbose'])
-
         count = execute_sql_statement(count_sql, True, self.config['verbose'])
         print('\nWriting {} transactions to this file:'.format(count[0]['count']))
         print(filename)
         # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
         subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
-
-        if id_sql:
-            restored_ids = execute_sql_statement(id_sql, True, self.config['verbose'])
-            if self.config['verbose']:
-                print(restored_ids)
-            print('{} "deleted" IDs were found in DB'.format(len(restored_ids)))
-            self.correct_deleted_ids(restored_ids)
-
-        execute_sql_statement(drop_view, False, self.config['verbose'])
+        ####################################
+        # Perhaps provide validation that the CSV file data rows match the count previously obtained
+        ####################################
         print("Database interactions took {} seconds".format(perf_counter() - start))
+        return count[0]['count']
 
-    def gather_deleted_ids(self):
-        '''
-        Connect to S3 and gather all of the transaction ids stored in CSV files
-        generated by the broker when transactions are removed from the DB.
-        '''
+    def download_db_records(self, award_category, fiscal_year, dir):
         print('---------------------------------------------------------------')
-        if not self.config['provide_deleted']:
-            print('Skipping the S3 CSV fetch for deleted transactions')
-            return
-        print('Gathering all deleted transactions from S3')
-        start = perf_counter()
-        try:
-            s3 = boto3.resource('s3', region_name=self.config['aws_region'])
-            bucket = s3.Bucket(self.config['s3_bucket'])
-            bucket_objects = list(bucket.objects.all())
-        except Exception as e:
-            print('\n[ERROR]\n')
-            print('Verify settings.CSV_AWS_REGION and settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME are correct')
-            print('  or is using env variables: CSV_AWS_REGION and DELETED_TRANSACTIONS_S3_BUCKET_NAME')
-            print('\n{}\n'.format(e))
-            raise SystemExit
+        print('Preparing to Download a CSV')
 
-        if self.config['verbose']:
-            print('CSV data from {} to now.'.format(self.config['starting_date']))
+        filename = '{dir}{fy}_transactions_{type}.csv'.format(
+            dir=dir,
+            fy=fiscal_year,
+            type=award_category)
+        config = {
+            'starting_date': self.config['starting_date'],
+            'fiscal_year': fiscal_year,
+            'award_category': award_category,
+            'provide_deleted': self.config['provide_deleted']
+        }
+        _, copy_sql, _, count_sql, _ = configure_sql_strings(config, filename, [])
 
-        to_datetime = datetime.combine(self.config['starting_date'], datetime.min.time(), tzinfo=pytz.UTC)
-        filtered_csv_list = [
-            x for x in bucket_objects
-            if (
-                x.key.endswith('.csv') and
-                not x.key.startswith('staging') and
-                x.last_modified >= to_datetime
-            )
-        ]
-
-        if self.config['verbose']:
-            print('Found {} csv files'.format(len(filtered_csv_list)))
-
-        for obj in filtered_csv_list:
-            # Use temporary files to facilitate date moving from csv files on S3 into pands
-            (file, file_path) = tempfile.mkstemp()
-            bucket.download_file(obj.key, file_path)
-
-            # Ingests the CSV into a dataframe. pandas thinks some ids are dates, so disable parsing
-            data = pd.DataFrame.from_csv(file_path, parse_dates=False)
-
-            if 'detached_award_proc_unique' in data:
-                new_ids = ['cont_tx_' + x for x in data['detached_award_proc_unique'].values]
-            elif 'afa_generated_unique' in data:
-                new_ids = ['asst_tx_' + x for x in data['afa_generated_unique'].values]
-            else:
-                print('  [Missing valid col] in {}'.format(obj.key))
-
-            # Next statements are ugly, but properly handle the temp files
-            os.close(file)
-            os.remove(file_path)
-
-            if self.config['verbose']:
-                print('{:<55} ... {}'.format(obj.key, len(new_ids)))
-
-            for uid in new_ids:
-                if uid in self.deleted_ids:
-                    if self.deleted_ids[uid]['timestamp'] < obj.last_modified:
-                        self.deleted_ids[uid]['timestamp'] = obj.last_modified
-                else:
-                    self.deleted_ids[uid] = {'timestamp': obj.last_modified}
-
-        if self.config['verbose']:
-            for k, v in self.deleted_ids.items():
-                print('id: {} last modified: {}'.format(k, str(v['timestamp'])))
-
-        print('Found {} IDs'.format(len(self.deleted_ids)))
-        print("Gathering deleted transactions took {} seconds".format(perf_counter() - start))
-
-    def delete_transactions_from_es(self):
-        ''' Run POST <index>/_delete_by_query command here with list of ids in query'''
-        # self.deleted_ids.keys()))
-        pass
+        count = self.download_csv(count_sql, copy_sql, filename)
+        return filename, count
 
 
 def set_config():
-
     if not os.environ.get('CSV_AWS_REGION'):
         print('Missing environment variable `CSV_AWS_REGION`')
         raise SystemExit
@@ -271,48 +232,51 @@ def csv_chunk_gen(filename, chunksize):
 def streaming_post_to_es(chunk, index_name):
     print(index_name)
     success, failed = 0, 0
-
     try:
         for ok, item in helpers.streaming_bulk(ES_CLIENT, chunk, index=index_name, doc_type='custom_mapping'):
             # go through request-reponse pairs and detect failures
-            if not ok:
-                failed += 1
-            else:
+            if ok:
                 success += 1
+            else:
+                failed += 1
     except Exception as e:
-        print(e)
-        print(chunk)
+        print('MASSIVE FAIL!!!\n\n{}\n\n{}\n\n{}'.format(e, chunk, '=' * 80))
         raise SystemExit
 
     print('Success: {} | Fails: {} '.format(success, failed))
-    return
+    #
+    return success, failed
 
 
-def post_to_elasticsearch(args, filename):
-    index_year = os.path.basename(args.dir)
-    absolute = os.path.join(args.dir, filename)
-    print(absolute)
-    print(os.path.getsize(absolute))
-    num_lines = sum(1 for line in open(absolute))
-    print('has {} lines'.format(num_lines))
-    index_name = '{}-{}-{}'.format(
-        args.base_indexname,
-        filename.replace('.csv', ''),
-        index_year)
+def post_to_elasticsearch(job, mapping, chunksize=250000):
+    print('Index : {}'.format(job['index']))
 
-    csv_generator = csv_chunk_gen(absolute, args.chunksize)
+    does_index_exist = ES_CLIENT.indices.exists(job['index'])
+    if not does_index_exist:
+        print('Creating {} index'.format(job['index']))
+        ES_CLIENT.indices.create(index=job['index'], body=mapping)
+    elif does_index_exist and job['wipe']:
+        print('{} exists... deleting first'.format(job['index']))
+        ES_CLIENT.indices.delete(job['index'])
 
-    print('Index : {}'.format(index_name))
-    does_index_exist = ES_CLIENT.indices.exists(index_name)
-    if does_index_exist and args.overwrite:
-        print('{} exists... deleting first'.format(index_name))
-        ES_CLIENT.indices.delete(str(index_name))
-    elif not does_index_exist:
-        print('Creating {} index'.format(index_name))
-        ES_CLIENT.indices.create(index=str(index_name), body=ES_MAPPING)
-
+    csv_generator = csv_chunk_gen(job['file'], chunksize)
     for count, chunk in enumerate(csv_generator):
         print('Running chunk # {}'.format(count))
         iteration = perf_counter()
-        streaming_post_to_es(chunk, index_name)
+        ########################################################################
+        # TODO - IF job['wipe'] is False, NEED TO DELETE THE IDS OF NEW TRANSACTIONS FIRST!!!!
+        ########################################################################
+        streaming_post_to_es(chunk, job['index'])
         print('Iteration took {}s'.format(perf_counter() - iteration))
+
+
+def delete_transactions_from_es(id_list):
+    ############################################################################
+    # TODO - Run POST <index>/_delete_by_query command here with list of ids in query
+    ############################################################################
+
+    # id_list = [{key:'key1',col:'tranaction_id'}, {key:'key2',col:'generated_unique_transaction_id'}, ...]
+    # might need to batch the IDs into several smaller groups for faster deletes
+
+    print('Would have tried to delete {} transactions'.format(len(id_list)))
+    pass
