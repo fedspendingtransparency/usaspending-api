@@ -377,8 +377,8 @@ SELECT
   UTM.recipient_name,
 
   UTM.action_date::date,
-  UAM.period_of_performance_start_date::date,
-  UAM.period_of_performance_current_end_date::date,
+  UAM.period_of_performance_start_date,
+  UAM.period_of_performance_current_end_date,
   UTM.fiscal_year AS transaction_fiscal_year,
   UAM.fiscal_year AS award_fiscal_year,
   UAM.total_obligation,
@@ -435,6 +435,28 @@ LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
 LEFT JOIN universal_award_matview UAM ON (UTM.award_id = UAM.award_id)
 JOIN awards AW ON (UAM.award_id = AW.id);'''
+
+VIEW_COLUMNS = [
+    'transaction_id', 'modification_number', 'award_id', 'piid', 'fain', 'uri',
+    'award_description', 'product_or_service_code', 'product_or_service_description',
+    'naics_code', 'naics_description', 'type_description', 'award_category',
+    'recipient_unique_id', 'parent_recipient_unique_id', 'recipient_name',
+    'action_date', 'period_of_performance_start_date', 'period_of_performance_current_end_date',
+    'transaction_fiscal_year', 'award_fiscal_year', 'total_obligation',
+    'federal_action_obligation', 'face_value_loan_guarantee', 'original_loan_subsidy_cost',
+    'awarding_agency_id', 'funding_agency_id', 'awarding_toptier_agency_name',
+    'funding_toptier_agency_name', 'awarding_subtier_agency_name',
+    'funding_subtier_agency_name', 'awarding_toptier_agency_abbreviation',
+    'funding_toptier_agency_abbreviation', 'awarding_subtier_agency_abbreviation',
+    'funding_subtier_agency_abbreviation', 'cfda_title', 'cfda_popular_name',
+    'type_of_contract_pricing', 'type_set_aside', 'extent_competed', 'pulled_from',
+    'type', 'pop_country_code', 'pop_country_name', 'pop_state_code', 'pop_county_code',
+    'pop_county_name', 'pop_zip5', 'pop_congressional_code',
+    'recipient_location_country_code', 'recipient_location_country_name',
+    'recipient_location_state_code', 'recipient_location_county_code',
+    'recipient_location_zip5', 'detached_award_proc_unique', 'afa_generated_unique',
+    'generated_unique_transaction_id', 'update_date',
+]
 
 UPDATE_DATE_SQL = ' AND update_date >= \'{}\''
 

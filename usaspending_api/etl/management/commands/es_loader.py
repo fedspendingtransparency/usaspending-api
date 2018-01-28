@@ -1,6 +1,6 @@
-import csv
 import json
 import os
+import pandas as pd
 import subprocess
 
 from datetime import date
@@ -11,9 +11,11 @@ from elasticsearch import helpers
 from time import perf_counter
 from usaspending_api import settings
 from usaspending_api.etl.management.commands.fetch_transactions import configure_sql_strings
+from usaspending_api.etl.management.commands.fetch_transactions import DROP_VIEW_SQL
 from usaspending_api.etl.management.commands.fetch_transactions import execute_sql_statement
 from usaspending_api.etl.management.commands.fetch_transactions import gather_deleted_ids
-from usaspending_api.etl.management.commands.fetch_transactions import TEMP_ES_DELTA_VIEW, DROP_VIEW_SQL
+from usaspending_api.etl.management.commands.fetch_transactions import TEMP_ES_DELTA_VIEW
+from usaspending_api.etl.management.commands.fetch_transactions import VIEW_COLUMNS
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. [conditional] Remove deleted transactions from ES
@@ -26,12 +28,9 @@ from usaspending_api.etl.management.commands.fetch_transactions import TEMP_ES_D
 #   c. Load CSV contents into ES
 #   d. Lather. Rinse. Repeat. until all fiscal years are complete
 
-
-# DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
 ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 
 AWARD_DESC_CATEGORIES = {
-    # '': 'contracts',
     'loans': 'loans',
     'grant': 'grants',
     'insurance': 'other',
@@ -115,16 +114,16 @@ class Command(BaseCommand):
         # Loop through award type categories
         for awd_cat_idx in AWARD_DESC_CATEGORIES.keys():
             loop_msg = 'Handeling {} transactions for FY{}'.format(awd_cat_idx, self.config['fiscal_year'])
-            print('{1}\n{0}'.format(loop_msg, '=' * len(loop_msg)))
-            if awd_cat_idx != 'other':
-                print('Skipping')
-                continue
+            print('{1}\n{0}'.format(loop_msg, '+' * len(loop_msg)))
+
             # Download CSV to file
             award_category = AWARD_DESC_CATEGORIES[awd_cat_idx]
-            filename, count = self.download_db_records(
-                award_category,
-                self.config['fiscal_year'],
-                self.config['directory'])
+            filename = '{dir}{fy}_transactions_{type}.csv'.format(
+                dir=self.config['directory'],
+                fy=self.config['fiscal_year'],
+                type=award_category)
+
+            count = self.download_db_records(awd_cat_idx, self.config['fiscal_year'], filename)
 
             index = '{}_{}_{}'.format(
                 settings.TRANSACTIONS_INDEX_ROOT,
@@ -135,8 +134,7 @@ class Command(BaseCommand):
             # Upload CSV to ES
             post_to_elasticsearch(job, self.config['mapping'])
             # Delete File
-            os.unlink(filename)
-
+            os.remove(filename)
             # repeat
 
         print('Completed all categories for FY{}'.format(self.config['fiscal_year']))
@@ -160,19 +158,15 @@ class Command(BaseCommand):
         # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
         subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
         ####################################
-        # Perhaps provide validation that the CSV file data rows match the count previously obtained
+        # Potentially smart to perform basic validation that the number of CSV data rows match count
         ####################################
-        print("Database interactions took {} seconds".format(perf_counter() - start))
+        print("Database download took {} seconds".format(perf_counter() - start))
         return count[0]['count']
 
-    def download_db_records(self, award_category, fiscal_year, dir):
+    def download_db_records(self, award_category, fiscal_year, filename):
         print('---------------------------------------------------------------')
         print('Preparing to Download a CSV')
 
-        filename = '{dir}{fy}_transactions_{type}.csv'.format(
-            dir=dir,
-            fy=fiscal_year,
-            type=award_category)
         config = {
             'starting_date': self.config['starting_date'],
             'fiscal_year': fiscal_year,
@@ -181,8 +175,11 @@ class Command(BaseCommand):
         }
         _, copy_sql, _, count_sql, _ = configure_sql_strings(config, filename, [])
 
+        if os.path.isfile(filename):
+            os.remove(filename)
+
         count = self.download_csv(count_sql, copy_sql, filename)
-        return filename, count
+        return count
 
 
 def set_config():
@@ -198,6 +195,10 @@ def set_config():
         print('Missing environment variable `DATABASE_URL`')
         raise SystemExit
 
+    if not os.environ.get('ES_HOSTNAME'):
+        print('Missing environment variable `ES_HOSTNAME`')
+        raise SystemExit
+
     config = {
         'aws_region': os.environ.get('CSV_AWS_REGION'),
         's3_bucket': os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME')
@@ -207,34 +208,42 @@ def set_config():
 
 
 def csv_chunk_gen(filename, chunksize):
-    with open(filename, 'r') as f:
-        reader = csv.reader(f)
-        fields = next(reader)
-        chunk = []
+    print('Opening {} to batch read by {} lines'.format(filename, chunksize))
+    ##########################################################
+    # "ORIGINAL" Code. Pandas seems easier. Might also be better
+    # Remove before PR
+    ##########################################################
+    # with open(filename, 'r') as f:
+    #     reader = csv.reader(f)
+    #     fields = next(reader)
+    #     chunk = []
+    #     for i, line in enumerate(reader):
+    #         line.append(' '.join([i for i in set(line)]))
+    #         if (i % chunksize == 0 and i > 0):
+    #             print('yielding on {}'.format(i))
+    #             yield chunk
+    #             del chunk[:]
+    #         chunk.append(dict(zip(fields, line)))
+    # print('final yield')
+    # yield chunk
 
-        for i, line in enumerate(reader):
-            line.append(' '.join([i for i in set(line)]))
-            if (i % chunksize == 0 and i > 0):
-                print('yielding on {}'.format(i))
-                yield chunk
-                del chunk[:]
-            chunk.append(dict(zip(fields, line)))
-        print('final yield')
-        yield chunk
+    # Panda's data type guessing causes issues for Elasticsearch. Set all cols to str
+    dtype = {x: str for x in VIEW_COLUMNS}
+
+    for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize):
+        file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
+        yield file_df.to_dict(orient='records')
 
 
 def streaming_post_to_es(chunk, index_name):
-    print(index_name)
     success, failed = 0, 0
     try:
         for ok, item in helpers.streaming_bulk(ES_CLIENT, chunk, index=index_name, doc_type='custom_mapping'):
-            # go through request-reponse pairs and detect failures
-            if ok:
-                success += 1
-            else:
-                failed += 1
+            success = [success, success + 1][ok]
+            failed = [failed + 1, failed][ok]
+
     except Exception as e:
-        print('MASSIVE FAIL!!!\n\n{}\n\n{}\n\n{}'.format(chunk[:500], e, '=' * 80))
+        print('MASSIVE FAIL!!!\n\n{}\n\n{}'.format(e, '*' * 80))
         raise SystemExit
 
     print('Success: {} | Fails: {} '.format(success, failed))
@@ -243,7 +252,8 @@ def streaming_post_to_es(chunk, index_name):
 
 
 def post_to_elasticsearch(job, mapping, chunksize=250000):
-    print('Index : {}'.format(job['index']))
+    print('---------------------------------------------------------------')
+    print('Populating ES Index : {}'.format(job['index']))
 
     does_index_exist = ES_CLIENT.indices.exists(job['index'])
     if not does_index_exist:
@@ -258,19 +268,20 @@ def post_to_elasticsearch(job, mapping, chunksize=250000):
         print('Running chunk # {}'.format(count))
         iteration = perf_counter()
         ########################################################################
-        # TODO - IF job['wipe'] is False, NEED TO DELETE THE IDS OF NEW TRANSACTIONS FIRST!!!!
+        # MIA TODO - IF job['wipe'] is False, NEED TO DELETE THE IDS OF NEW TRANSACTIONS FIRST!!!!
         ########################################################################
         streaming_post_to_es(chunk, job['index'])
         print('Iteration took {}s'.format(perf_counter() - iteration))
 
 
 def delete_transactions_from_es(id_list):
+    start = perf_counter()
+    print('---------------------------------------------------------------')
     ############################################################################
-    # TODO - Run POST <index>/_delete_by_query command here with list of ids in query
+    # MIA TODO - Run POST <index>/_delete_by_query command here with list of ids in query
     ############################################################################
-
     # id_list = [{key:'key1',col:'tranaction_id'}, {key:'key2',col:'generated_unique_transaction_id'}, ...]
     # might need to batch the IDs into several smaller groups for faster deletes
-
-    print('Would have tried to delete {} transactions'.format(len(id_list)))
+    print('Would have tried to delete {} transaction(s)'.format(len(id_list)))
+    print('ES Deletes took {}s'.format(perf_counter() - start))
     pass
