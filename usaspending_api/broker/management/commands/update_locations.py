@@ -1,11 +1,11 @@
 import logging
-import timeit
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.common.helpers import timer
 from usaspending_api.references.models import RefCountryCode
 from usaspending_api.references.abbreviations import territory_country_codes
 
@@ -262,19 +262,13 @@ class Command(BaseCommand):
         limit = limit[0] if limit else 500000
 
         if not options['assistance']:
-            logger.info('Starting D1 historical data location insert...')
-            start = timeit.default_timer()
-            self.update_location_transaction_contract(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page,
-                                                      limit=limit, save=save)
-            end = timeit.default_timer()
-            logger.info('Finished D1 historical data location insert in ' + str(end - start) + ' seconds')
+            with timer('D1 historical data location insert', logger.info):
+                self.update_location_transaction_contract(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page,
+                                                        limit=limit, save=save)
 
         if not options['contracts']:
-            logger.info('Starting D2 historical data location insert...')
-            start = timeit.default_timer()
-            self.update_location_transaction_assistance(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page,
-                                                        limit=limit, save=save)
-            end = timeit.default_timer()
-            logger.info('Finished D2 historical data location insert in ' + str(end - start) + ' seconds')
+            with timer('D2 historical data location insert', logger.info):
+                self.update_location_transaction_assistance(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page,
+                                                            limit=limit, save=save)
 
         logger.info('FINISHED')

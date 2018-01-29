@@ -1,5 +1,4 @@
 import logging
-import timeit
 import os
 import boto
 import smart_open
@@ -12,14 +11,10 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
+from usaspending_api.common.helpers import timer
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
-
-# start = timeit.default_timer()
-# function_call
-# end = timeit.default_timer()
-# time elapsed = str(end - start)
 
 
 logger = logging.getLogger('console')
@@ -259,11 +254,8 @@ class Command(BaseCommand):
         logger.info('Processing data for FABS starting from %s' % date)
 
         # Retrieve FABS data
-        logger.info('Retrieving FABS Data...')
-        start = timeit.default_timer()
-        to_insert, ids_to_delete = self.get_fabs_data(date=date)
-        end = timeit.default_timer()
-        logger.info('Finished diff-ing FABS data in ' + str(end - start) + ' seconds')
+        with timer('retrieving/diff-ing FABS Data', info.logger):
+            to_insert, ids_to_delete = self.get_fabs_data(date=date)
 
         total_rows = len(to_insert)
         total_rows_delete = len(ids_to_delete)
@@ -273,35 +265,23 @@ class Command(BaseCommand):
             self.send_deletes_to_elasticsearch(ids_to_delete)
 
             # Delete FABS records by ID
-            logger.info('Deleting stale FABS data...')
-            start = timeit.default_timer()
-            self.delete_stale_fabs(ids_to_delete=ids_to_delete)
-            end = timeit.default_timer()
-            logger.info('Finished deleting stale FABS data in ' + str(end - start) + ' seconds')
+            with timer('deleting stale FABS data', logger.info):
+                self.delete_stale_fabs(ids_to_delete=ids_to_delete)
         else:
             logger.info('Nothing to delete...')
 
         if total_rows > 0:
             # Add FABS records
-            logger.info('Inserting new FABS data...')
-            start = timeit.default_timer()
-            self.insert_new_fabs(to_insert=to_insert, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished inserting new FABS data in ' + str(end - start) + ' seconds')
+            with timer('inserting new FABS data', logger.info):
+                self.insert_new_fabs(to_insert=to_insert, total_rows=total_rows)
 
             # Update Awards based on changed FABS records
-            logger.info('Updating awards to reflect their latest associated transaction info...')
-            start = timeit.default_timer()
-            update_awards(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+            with timer('updating awards to reflect their latest associated transaction info', logger.info):
+                update_awards(tuple(award_update_id_list))
 
             # Update AwardCategories based on changed FABS records
-            logger.info('Updating award category variables...')
-            start = timeit.default_timer()
-            update_award_categories(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+            with timer('updating award category variables', logger.info):
+                update_award_categories(tuple(award_update_id_list))
         else:
             logger.info('Nothing to insert...')
 

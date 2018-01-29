@@ -1,5 +1,4 @@
 import logging
-import timeit
 from datetime import datetime
 from usaspending_api.common.helpers import fy
 from django.core.management.base import BaseCommand
@@ -8,14 +7,10 @@ from django.db import connections, transaction as db_transaction, IntegrityError
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
+from usaspending_api.common.helpers import timer
 from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency, Location
 from usaspending_api.etl.management.load_base import copy, get_or_create_location, format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
-
-# start = timeit.default_timer()
-# function_call
-# end = timeit.default_timer()
-# time elapsed = str(end - start)
 
 
 logger = logging.getLogger('console')
@@ -546,36 +541,21 @@ class Command(BaseCommand):
         limit = limit[0] if limit else 500000
 
         if not options['assistance']:
-            logger.info('Starting D1 historical data load...')
-            start = timeit.default_timer()
-            self.update_transaction_contract(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
-            end = timeit.default_timer()
-            logger.info('Finished D1 historical data load in ' + str(end - start) + ' seconds')
+            with timer('D1 historical data load', logger.info):
+                self.update_transaction_contract(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
 
         if not options['contracts']:
-            logger.info('Starting D2 historical data load...')
-            start = timeit.default_timer()
-            self.update_transaction_assistance(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
-            end = timeit.default_timer()
-            logger.info('Finished D2 historical data load in ' + str(end - start) + ' seconds')
+            with timer('D2 historical data load', logger.info):
+                self.update_transaction_assistance(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
 
-        logger.info('Updating awards to reflect their latest associated transaction info...')
-        start = timeit.default_timer()
-        update_awards(tuple(award_update_id_list))
-        end = timeit.default_timer()
-        logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+        with timer('updating awards to reflect their latest associated transaction info', logger.info):
+            update_awards(tuple(award_update_id_list))
 
-        logger.info('Updating contract-specific awards to reflect their latest transaction info...')
-        start = timeit.default_timer()
-        update_contract_awards(tuple(award_contract_update_id_list))
-        end = timeit.default_timer()
-        logger.info('Finished updating contract specific awards in ' + str(end - start) + ' seconds')
+        with timer('updating contract-specific awards to reflect their latest transaction info', logger.info):
+            update_contract_awards(tuple(award_contract_update_id_list))
 
-        logger.info('Updating award category variables...')
-        start = timeit.default_timer()
-        update_award_categories(tuple(award_update_id_list))
-        end = timeit.default_timer()
-        logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+        with timer('updating award category variables', logger.info):
+            update_award_categories(tuple(award_update_id_list))
 
         # Done!
         logger.info('FINISHED')
