@@ -263,7 +263,7 @@ def post_to_elasticsearch(job, mapping, chunksize=250000):
         print('Iteration took {}s'.format(perf_counter() - iteration))
 
 
-def delete_transactions_from_es(id_list, index=''):
+def delete_transactions_from_es(id_list, index=None):
     '''
     id_list = [{key:'key1',col:'tranaction_id'},
                {key:'key2',col:'generated_unique_transaction_id'}],
@@ -272,7 +272,9 @@ def delete_transactions_from_es(id_list, index=''):
     start = perf_counter()
     print('---------------------------------------------------------------')
 
-    index_name = '{}-{}*'.format(settings.TRANSACTIONS_INDEX_ROOT, index)
+    
+    if index is None:
+        index = '{}-*'.format(settings.TRANSACTIONS_INDEX_ROOT)
     col_to_items_dict = defaultdict(list)
     for id_ in id_list:
         col_to_items_dict[id_['col']].append(id_['key'])
@@ -287,6 +289,6 @@ def delete_transactions_from_es(id_list, index=''):
                     }
                 }
             }
-        ES_CLIENT.delete_by_query(index=index_name, body=body)
+        ES_CLIENT.delete_by_query(index=index, body=body)
     print('Would have tried to delete {} transaction(s)'.format(len(id_list)))
     print('ES Deletes took {}s'.format(perf_counter() - start))
