@@ -210,24 +210,6 @@ def set_config():
 
 def csv_chunk_gen(filename, chunksize):
     print('Opening {} to batch read by {} lines'.format(filename, chunksize))
-    ##########################################################
-    # "ORIGINAL" Code. Pandas seems easier. Might also be better
-    # Remove before PR
-    ##########################################################
-    # with open(filename, 'r') as f:
-    #     reader = csv.reader(f)
-    #     fields = next(reader)
-    #     chunk = []
-    #     for i, line in enumerate(reader):
-    #         line.append(' '.join([i for i in set(line)]))
-    #         if (i % chunksize == 0 and i > 0):
-    #             print('yielding on {}'.format(i))
-    #             yield chunk
-    #             del chunk[:]
-    #         chunk.append(dict(zip(fields, line)))
-    # print('final yield')
-    # yield chunk
-
     # Panda's data type guessing causes issues for Elasticsearch. Set all cols to str
     dtype = {x: str for x in VIEW_COLUMNS}
 
@@ -255,7 +237,6 @@ def streaming_post_to_es(chunk, index_name):
 def post_to_elasticsearch(job, mapping, chunksize=250000):
     print('---------------------------------------------------------------')
     print('Populating ES Index : {}'.format(job['index']))
-
     does_index_exist = ES_CLIENT.indices.exists(job['index'])
     if not does_index_exist:
         print('Creating {} index'.format(job['index']))
@@ -263,40 +244,47 @@ def post_to_elasticsearch(job, mapping, chunksize=250000):
     elif does_index_exist and job['wipe']:
         print('{} exists... deleting first'.format(job['index']))
         ES_CLIENT.indices.delete(job['index'])
-
     csv_generator = csv_chunk_gen(job['file'], chunksize)
     for count, chunk in enumerate(csv_generator):
         print('Running chunk # {}'.format(count))
         iteration = perf_counter()
-        ########################################################################
-        # MIA TODO - IF job['wipe'] is False, NEED TO DELETE THE IDS OF NEW TRANSACTIONS FIRST!!!!
-        ########################################################################
-        streaming_post_to_es(chunk, job['index'])
+
+        if job['wipe'] is False:
+            id_list = []
+            unique_columns = ['tranaction_id', 'generated_unique_transaction_id']
+            g = lambda x: {key: x.get(key) for key in unique_columns}
+            filtered_data = [g(i) for i in chunk]
+            for key, value in filtered_data.items():
+                if value:
+                    id_list.append({'col': key, 'key': value})
+            delete_transactions_from_es(id_list, job['index'])
+        else:
+            streaming_post_to_es(chunk, job['index'])
         print('Iteration took {}s'.format(perf_counter() - iteration))
 
 
-def delete_transactions_from_es(id_list):
+def delete_transactions_from_es(id_list, index=''):
+    '''
+    id_list = [{key:'key1',col:'tranaction_id'},
+               {key:'key2',col:'generated_unique_transaction_id'}],
+               ...]
+    '''
     start = perf_counter()
     print('---------------------------------------------------------------')
-    ############################################################################
-    # MIA TODO - Run POST <index>/_delete_by_query command here with list of ids in query
-    ############################################################################
-    # id_list = [{key:'key1',col:'tranaction_id'}, {key:'key2',col:'generated_unique_transaction_id'}, ...]
-    # might need to batch the IDs into several smaller groups for faster deletes
-    index_name = settings.TRANSACTIONS_INDEX_ROOT+'*'
 
+    index_name = '{}-{}*'.format(settings.TRANSACTIONS_INDEX_ROOT, index)
     col_to_items_dict = defaultdict(list)
-
-    for ids_ in id_list:
-        col_to_items_dict[ids_['col']].append(ids_['key'])
+    for id_ in id_list:
+        col_to_items_dict[id_['col']].append(id_['key'])
 
     for column, values in col_to_items_dict.items():
         body = {
                 "query": {
                     "bool": {
-                    "filter": { 
-                        "terms": {column: values}
-                    }}
+                        "filter": {
+                            "terms": {column: values}
+                        }
+                    }
                 }
             }
         ES_CLIENT.delete_by_query(index=index_name, body=body)
