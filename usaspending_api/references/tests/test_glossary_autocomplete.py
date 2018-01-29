@@ -3,7 +3,6 @@ import json
 import pytest
 from model_mommy import mommy
 from rest_framework import status
-from django.core.management import call_command
 
 
 from usaspending_api.references.models import Definition

@@ -1,10 +1,7 @@
 from rest_framework_tracking.models import APIRequestLog
-from model_mommy import mommy
 from rest_framework import status
 
-import os
 import pytest
-import json
 
 
 @pytest.mark.skip(reason="Table logging is now disabled")
