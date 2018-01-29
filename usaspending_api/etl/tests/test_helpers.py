@@ -2,6 +2,7 @@ import contextlib
 import csv
 import os
 import tempfile
+import datetime
 
 import pytest
 from model_mommy import mommy
@@ -12,6 +13,7 @@ from usaspending_api.etl.management.commands import (load_usaspending_assistance
 from usaspending_api.references.models import Location
 from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.references.models import ToptierAgency, SubtierAgency, Agency
 
 
 @pytest.mark.django_db
@@ -216,3 +218,13 @@ def test_get_previous_submission():
 
     # Previous submission lookup should only match a quarterly submission
     assert helpers.get_previous_submission('020', 2016, 9) is None
+
+
+@pytest.mark.django_db
+def test_pad_function():
+    """
+    Test the process for padding a function
+    """
+    assert helpers.pad_function('2', 4) == '0002'
+    assert helpers.pad_function(None, 4, True) is None
+    assert helpers.pad_function(None, 4, False) is ''

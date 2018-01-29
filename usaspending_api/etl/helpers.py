@@ -1,6 +1,7 @@
 from datetime import datetime
 import warnings
 import logging
+import pandas as pd
 
 from django.db.models import Q, F, Case, Value, When
 from django.core.cache import caches, CacheKeyWarning
@@ -330,3 +331,17 @@ def create_case(code_map, source_field):
         when_list.append(When(**when_args))
 
     return Case(*when_list, default=default)
+
+
+def pad_function(field, pad_to, keep_null=False):
+    """
+    Pads fields with 0 or keeps field null if specified. Used to clean up csv data with alpha numeric codes.
+    Function reused from broker cleaning
+    """
+    if pd.isnull(field) or not str(field).strip():
+        if keep_null:
+            return None
+        else:
+            return ''
+    return str(field).strip().zfill(pad_to)
+

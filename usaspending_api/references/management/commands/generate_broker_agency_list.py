@@ -19,7 +19,7 @@ class Command(BaseCommand):
 
         s3connection = boto.s3.connect_to_region(settings.BULK_DOWNLOAD_AWS_REGION)
         s3bucket = s3connection.lookup(settings.BROKER_AGENCY_BUCKET_NAME)
-        agency_list = s3bucket.get_key("agency_list.csv").generate_url(expires_in=600)
+        agency_list = s3bucket.get_key("agency_codes_list.csv").generate_url(expires_in=600)
         broker_agency_list = pd.read_csv(agency_list, dtype=str)
 
         self.logger.info('Agency file sucessfully retrieved from S3')
@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
         broker_agency_list.to_csv(os.path.join(settings.BASE_DIR,
                                                'usaspending_api', 'data',
-                                               'agency_list_broker_s3.csv'),
+                                               'agency_codes_list.csv'),
                                   mode='w', index=False)
 
         self.logger.info('Complete writing broker agency list')
