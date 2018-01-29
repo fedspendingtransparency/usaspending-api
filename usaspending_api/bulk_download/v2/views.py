@@ -263,7 +263,7 @@ class BulkDownloadListAgenciesViewSet(APIView):
             mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
         mod_gencies_list_df = mod_gencies_list_df[['CGAC AGENCY CODE', 'SUBTIER CODE', 'FREC', 'IS_FREC']]
         mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'].apply(lambda x: x.zfill(3))
-        mod_gencies_list_df['FREC'] = mod_gencies_list_df.apply(lambda x: x.zfill(4))
+        mod_gencies_list_df['FREC'] = mod_gencies_list_df['FREC'].apply(lambda x: x.zfill(4))
         for _, row in mod_gencies_list_df.iterrows():
             # cgac_code in the database can be either agency cgac or frec code (if a frec agency)
             self.sub_agencies_map[row['SUBTIER CODE']] = row['FREC'] \
