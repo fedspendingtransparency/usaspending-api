@@ -453,7 +453,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                 except (TransportError, ConnectionError) as e:
                     logger.error(e)
                     transaction_ids = []
-                    size = size // 10
+                    size = size//10
                     logger.error('Error retrieving ids. Retrying with a smaller size: {}'.format(size))
             logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
@@ -529,8 +529,10 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
             for award_level in award_levels:
                 if award_level not in value_mappings:
                     raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
+
                 queryset = self.process_filters(json_request['filters'], award_level)
                 award_level_table = value_mappings[award_level]['table']
+
                 award_types = set(json_request['filters']['award_types'])
                 d1_award_types = set(['contracts'])
                 d2_award_types = set(['grants', 'direct_payments', 'loans', 'other_financial_assistance'])

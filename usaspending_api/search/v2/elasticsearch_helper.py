@@ -157,7 +157,7 @@ def get_transaction_ids(keyword, size=500):
     '''returns a generator that
     yields list of transaction ids in chunksize SIZE'''
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
-    n_iter = int(DOWNLOAD_QUERY_SIZE/size)
+    n_iter = DOWNLOAD_QUERY_SIZE//size
     for i in range(n_iter):
         query = {"query": {"query_string": {"query": keyword}},
                  "aggs": {
