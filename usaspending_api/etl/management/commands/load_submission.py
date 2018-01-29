@@ -618,7 +618,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             continue
 
         # Find a matching transaction record, so we can use its subtier agency information to match to (or create) an
-        # Award record
+        # Award record.
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         created, award = Award.get_or_create_summary_award(
