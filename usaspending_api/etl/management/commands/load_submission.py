@@ -667,7 +667,6 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         # Still using the cpe|fyb regex compiled above for reverse
         load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
 
-
     awards_cache.clear()
 
     # bulk file C file D linkage if too many awards
