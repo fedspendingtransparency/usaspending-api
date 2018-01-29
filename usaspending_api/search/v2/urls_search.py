@@ -16,6 +16,5 @@ urlpatterns = [
     url(r'^spending_by_award', SpendingByAwardVisualizationViewSet.as_view()),
     url(r'^spending_by_transaction_count', SpendingByTransactionCountVisualizaitonViewSet.as_view()),
     url(r'^spending_by_transaction', SpendingByTransactionVisualizationViewSet.as_view()),
-    url(r'^transaction_spending_summary', TransactionSummaryVisualizationViewSet.as_view()),
-    url(r'^transaction_sum', SpendingByTransactionSumVisualizaitonViewSet.as_view())
+    url(r'^transaction_spending_summary', TransactionSummaryVisualizationViewSet.as_view())
 ]
