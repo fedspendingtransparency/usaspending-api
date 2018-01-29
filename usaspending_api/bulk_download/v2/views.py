@@ -349,7 +349,7 @@ class ListMonthylDownloadsViewset(APIView):
         fiscal_year = post_data.get('fiscal_year', None)
         download_type = post_data.get('type', None)
 
-        required_params = {'agency':agency_id, 'fiscal_year': fiscal_year, 'type': download_type}
+        required_params = {'agency': agency_id, 'fiscal_year': fiscal_year, 'type': download_type}
         for required_param, param_value in required_params.items():
             if param_value is None:
                 raise InvalidParameterException('Required param not provided: {}'.format(required_param))
