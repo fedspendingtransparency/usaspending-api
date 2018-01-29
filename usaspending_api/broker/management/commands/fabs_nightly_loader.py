@@ -13,7 +13,7 @@ from usaspending_api.awards.models import TransactionFABS, TransactionNormalized
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
-from usaspending_api.references.models import LegalEntity, Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
 
 # start = timeit.default_timer()
@@ -72,8 +72,7 @@ class Command(BaseCommand):
         # This cascades deletes for TransactionFABS & Awards in addition to deleting TransactionNormalized records
         TransactionNormalized.objects.filter(assistance_data__afa_generated_unique__in=ids_to_delete).delete()
 
-    @staticmethod
-    def insert_new_fabs(to_insert, total_rows):
+    def insert_new_fabs(self, to_insert, total_rows):
         logger.info('Starting insertion of new FABS data')
 
         place_of_performance_field_map = {

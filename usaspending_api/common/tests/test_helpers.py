@@ -47,7 +47,8 @@ def test_pagination():
     populated_page_metadata = {"previous": 1, "hasPrevious": True, "count": 5, "page": 2}
     assert get_pagination(results, 5, 2) == ([], {**empty_page_metadata, **populated_page_metadata})
     populated_page_metadata = {"page": 1, "count": 5}
-    assert get_pagination(results, 1000, 1) == (["A", "B", "C", "D", "E"], {**empty_page_metadata, **populated_page_metadata})
+    assert get_pagination(results, 1000, 1) == (["A", "B", "C", "D", "E"],
+                                                {**empty_page_metadata, **populated_page_metadata})
     populated_page_metadata = {"previous": 1, "hasPrevious": True, "page": 2, "count": 5}
     assert get_pagination(results, 1000, 2) == ([], {**empty_page_metadata, **populated_page_metadata})
     populated_page_metadata = {"page": 1, "count": 5}

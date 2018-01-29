@@ -3,13 +3,12 @@ import json
 import pytest
 from rest_framework import status
 
-from usaspending_api.search.tests.test_mock_data_search \
-    import budget_function_data, all_filters
+from usaspending_api.search.tests.test_mock_data_search import all_filters
 
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_spending_by_award_type_success(client, budget_function_data):
+def test_spending_by_award_type_success(client):
 
     # test for filters
     resp = client.post(

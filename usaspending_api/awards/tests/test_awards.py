@@ -157,7 +157,7 @@ def test_award_hash_ineq_fain():
 def test_transaction_changes_logged():
     # LEGACY CODE: History is not required for TransactionNormalized, TransactionFPDS, TransactionFABS
 
-    "test that changes to a transaction are logged in the history file"
+    """test that changes to a transaction are logged in the history file"""
     # t1 = mommy.make('awards.transactionnormalized', description='bought some stuff', _fill_optional=True,)
     # assert t1.history.count() == 1
     # t1.description = 'Procured mission-critical resources'
@@ -195,7 +195,6 @@ def test_get_or_create_summary_award():
     a2 = mommy.make(Agency, id=2, toptier_agency=tta1)
     a3 = mommy.make(Agency, id=3, toptier_agency=tta1, subtier_agency=sta2)
     a4 = mommy.make(Agency, id=4, toptier_agency=tta2, subtier_agency=sta3)
-    a5 = mommy.make(Agency, id=5, toptier_agency=tta2, subtier_agency=sta3)
 
     # match on awarding agency and piid
     m1 = mommy.make('awards.award', piid='DUT123', awarding_agency=a1)
@@ -260,7 +259,8 @@ def test_get_or_create_summary_award():
     # matching piid and parent award id but mismatched subtier agency, same top tier agency
     pa12 = mommy.make('awards.award', piid='imalittlepiid', awarding_agency=a1)
     m12 = mommy.make('awards.award', piid='shortandstout', parent_award=pa12, awarding_agency=a1)
-    t12 = Award.get_or_create_summary_award(piid='shortandstout', parent_award_id='imalittlepiid', awarding_agency=a3)[1]
+    t12 = Award.get_or_create_summary_award(piid='shortandstout', parent_award_id='imalittlepiid',
+                                            awarding_agency=a3)[1]
     assert t12 != m12
 
     # matching fain but mismatched subtier agency, same top tier agency
@@ -269,9 +269,10 @@ def test_get_or_create_summary_award():
     assert t13 != m13
 
     # matching piid and parent award but mismatched subtier and toptier agency
-    pa14 = mommy.make('awards.Award', piid='imjustapiidparent', awarding_agency=a3)
+    mommy.make('awards.Award', piid='imjustapiidparent', awarding_agency=a3)
     m14 = mommy.make('awards.Award', piid='imjustapiidchild', awarding_agency=a3)
-    t14 = Award.get_or_create_summary_award(piid='imjustapiidchild', parent_award_id='imjustapiidparent', awarding_agency=a4)[1]
+    t14 = Award.get_or_create_summary_award(piid='imjustapiidchild', parent_award_id='imjustapiidparent',
+                                            awarding_agency=a4)[1]
     assert t14 != m14
 
     # matching piid and parent award but mismatched subtier and toptier agency
@@ -290,7 +291,7 @@ def test_get_or_create_summary_award():
 def test_cfda_objectives():
     """Verify that cfda_objectives property works."""
 
-    cfda = mommy.make('references.Cfda', program_number='1.001', objectives='a brighter tomorrow')
+    mommy.make('references.Cfda', program_number='1.001', objectives='a brighter tomorrow')
     tfabs = mommy.make('awards.TransactionFABS', cfda_number='1.001')
     assert tfabs.cfda_objectives == 'a brighter tomorrow'
     tfabs2 = mommy.make('awards.TransactionFABS', cfda_number='1.001xxx')

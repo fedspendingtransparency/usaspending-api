@@ -1,10 +1,7 @@
-# This file defines a series of constants that represent the values used in the
-# API's "helper" tables. Rather than define the values in the db setup scripts
-# and then make db calls to lookup the surrogate keys, we'll define everything
-# here, in a file that can be used by the db setup scripts *and* the application
-# code.
+# This file defines a series of constants that represent the values used in the API's "helper" tables. Rather than
+# define the values in the db setup scripts and then make db calls to lookup the surrogate keys, we'll define everything
+# here, in a file that can be used by the db setup scripts *and* the application code.
 
-from bidict import bidict
 from collections import namedtuple
 
 LookupType = namedtuple('LookupType', ['id', 'name', 'desc'])

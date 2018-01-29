@@ -1,6 +1,4 @@
 import pytest
-import json
-from datetime import date
 
 from model_mommy import mommy
 from rest_framework import status
@@ -25,20 +23,35 @@ def documentation_test_data():
 
 @pytest.mark.parametrize("url, req", [
     ("/api/v1/awards/", {"filters": []}),
-    ("/api/v1/awards/", {"filters":  [{"field": "date_signed", "operation": "greater_than_or_equal", "value": "2016-06-01"}]}),
-    ("/api/v1/awards/", {"filters": [{"field": "date_signed", "operation": "greater_than_or_equal", "value": "2016-06-01"}, {"field": "date_signed", "operation": "less_than", "value": "2017-06-01"}]}),
-    ("/api/v1/awards/", {"filters": [{"combine_method": "OR", "filters": [{"field": "type", "operation": "equals", "value": "A"}, {"field": "type", "operation": "equals", "value": "B"}]}]}),
-    ("/api/v1/awards/", {"filters": [{"field": "date_signed", "operation": "greater_than_or_equal", "value": "2016-06-01"}, {"combine_method": "OR", "filters": [{"field": "type", "operation": "equals", "value": "A"}, {"combine_method": "AND", "filters": [{"field": "type", "operation": "equals", "value": "B"}, {"field": "date_signed", "operation": "less_than", "value": "2017-06-01"}]}]}]}),
-    ("/api/v1/awards/", {"filters": [{"field": "recipient__recipient_name", "operation": "equals", "value": "GENERAL ELECTRIC COMPANY"}]}),
+    ("/api/v1/awards/", {"filters":  [{"field": "date_signed", "operation": "greater_than_or_equal",
+                                       "value": "2016-06-01"}]}),
+    ("/api/v1/awards/", {"filters": [{"field": "date_signed", "operation": "greater_than_or_equal",
+                                      "value": "2016-06-01"}, {"field": "date_signed", "operation": "less_than",
+                                                               "value": "2017-06-01"}]}),
+    ("/api/v1/awards/", {"filters": [{"combine_method": "OR",
+                                      "filters": [{"field": "type", "operation": "equals", "value": "A"},
+                                                  {"field": "type", "operation": "equals", "value": "B"}]}]}),
+    ("/api/v1/awards/", {"filters": [{"field": "date_signed", "operation": "greater_than_or_equal",
+                                      "value": "2016-06-01"},
+                                     {"combine_method": "OR",
+                                      "filters": [{"field": "type", "operation": "equals", "value": "A"},
+                                                  {"combine_method": "AND",
+                                                   "filters": [{"field": "type", "operation": "equals", "value": "B"},
+                                                               {"field": "date_signed", "operation": "less_than",
+                                                                "value": "2017-06-01"}]}]}]}),
+    ("/api/v1/awards/", {"filters": [{"field": "recipient__recipient_name", "operation": "equals",
+                                      "value": "GENERAL ELECTRIC COMPANY"}]}),
     ("/api/v1/awards/", {"fields": ["description", "recipient"]}),
     ("/api/v1/awards/", {"exclude": ["type"]}),
     ("/api/v1/awards/", {"verbose": True}),
-    ("/api/v1/awards/", {"fields": ["type"], "filters": [{"field": "date_signed", "operation": "greater_than", "value": "2016-06-01"}]}),
+    ("/api/v1/awards/", {"fields": ["type"], "filters": [{"field": "date_signed", "operation": "greater_than",
+                                                          "value": "2016-06-01"}]}),
     ("/api/v1/awards/", {"order": ["recipient__recipient_name"]}),
     ("/api/v1/awards/", {"order": ["-recipient__recipient_name"]}),
     ("/api/v1/awards/", {"page": 5, "limit": 10}),
     ("/api/v1/awards/total/", {"field": "total_obligation", "group": "date_signed__fy"}),
-    ("/api/v1/awards/total/", {"field": "total_obligation", "group": "date_signed", "aggregate": "count", "date_part": "month"}),
+    ("/api/v1/awards/total/", {"field": "total_obligation", "group": "date_signed", "aggregate": "count",
+                               "date_part": "month"}),
 ])
 @pytest.mark.django_db
 def test_intro_tutorial_post_requests(client, url, req, documentation_test_data):
@@ -62,10 +75,13 @@ def test_intro_tutorial_get_requests(client, url, documentation_test_data):
 
 
 @pytest.mark.parametrize("url, req", [
-    ("/api/v1/awards/", {"filters": [{"field": "awarding_agency__toptier_agency__cgac_code", "operation": "equals", "value": "097"}]}),
+    ("/api/v1/awards/", {"filters": [{"field": "awarding_agency__toptier_agency__cgac_code", "operation": "equals",
+                                      "value": "097"}]}),
     ("/api/v1/awards/", {"filters": [{"field": "type", "operation": "in", "value": ["A", "B", "C", "D"]}]}),
-    ("/api/v1/awards/", {"filters": [{"field": "latest_transaction__contract_data", "operation": "is_null", "value": False}]}),
-    ("/api/v1/awards/", {"filters": [{"field": "place_of_performance__state_code", "operation": "not_equals", "value": "NJ"}]})
+    ("/api/v1/awards/", {"filters": [{"field": "latest_transaction__contract_data", "operation": "is_null",
+                                      "value": False}]}),
+    ("/api/v1/awards/", {"filters": [{"field": "place_of_performance__state_code", "operation": "not_equals",
+                                      "value": "NJ"}]})
 
 ])
 @pytest.mark.django_db
