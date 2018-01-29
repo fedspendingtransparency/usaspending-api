@@ -9,7 +9,6 @@ from usaspending_api.common.views import DetailViewSet
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
-
 class ObjectClassFinancialSpendingViewSet(DetailViewSet):
     """Returns financial spending data by object class for the latest quarter based on the given fiscal year."""
 

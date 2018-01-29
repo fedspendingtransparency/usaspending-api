@@ -1,57 +1,12 @@
 import json
 
 import pytest
-from model_mommy import mommy
 from rest_framework import status
-
-from usaspending_api.awards.models import Award, TransactionNormalized
-from usaspending_api.references.models \
-    import Location, Agency, ToptierAgency, SubtierAgency
-
-
-@pytest.fixture
-def budget_function_data(db):
-
-    loc1 = mommy.make(
-        Location,
-        location_id=1)
-
-    ttagency1 = mommy.make(
-        ToptierAgency,
-        toptier_agency_id=1)
-    stagency1 = mommy.make(
-        SubtierAgency,
-        subtier_agency_id=1,)
-
-    agency1 = mommy.make(
-        Agency,
-        id=1,
-        toptier_agency=ttagency1,
-        subtier_agency=stagency1)
-
-    award1 = mommy.make(
-        Award,
-        id=1,
-        description="test",
-        type="011",
-        category="business",
-        period_of_performance_start_date="1111-11-11",
-        place_of_performance=loc1,
-        awarding_agency=agency1,
-        funding_agency=agency1,
-        total_obligation=1000000.10)
-
-    trans1 = mommy.make(
-        TransactionNormalized,
-        action_date="2222-2-22",
-        id=1,
-        award=award1,
-        federal_action_obligation=50)
 
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_spending_by_category_success(client, budget_function_data):
+def test_spending_by_category_success(client):
 
     # test for required functions
     resp = client.post(
@@ -73,7 +28,6 @@ def test_spending_by_category_success(client, budget_function_data):
                 "end_date": "2017-09-30"
             }
         ],
-        'award_type_codes': ['011', '020'],
         "agencies": [
             {
                 "type": "funding",
@@ -124,6 +78,7 @@ def test_spending_by_category_success(client, budget_function_data):
             "group": "quarter",
             "filters": all_filters
         }))
+    assert resp.status_code == status.HTTP_200_OK
     # test for similar matches (with no duplicates)
 
 

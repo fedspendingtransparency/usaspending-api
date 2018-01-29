@@ -1,5 +1,4 @@
 import pytest
-import json
 
 from django.core.management import call_command
 
@@ -21,7 +20,7 @@ def test_subaward_etl_fixture():
     test_awarding_subtier = "6920"
     test_awarding_toptier = "069"
 
-    submission = mommy.make(SubmissionAttributes, broker_submission_id=test_submission_id)
+    mommy.make(SubmissionAttributes, broker_submission_id=test_submission_id)
     tt_agency = mommy.make('references.ToptierAgency', cgac_code=test_awarding_toptier)
     st_agency = mommy.make('references.SubtierAgency', subtier_code=test_awarding_subtier)
     agency = mommy.make('references.Agency', toptier_agency=tt_agency, subtier_agency=st_agency)
@@ -41,7 +40,7 @@ def test_subaward_etl_fixture():
 
     # Give our agency-less award a transaction that should map to a subaward, to test that agency restricts
     txn4 = mommy.make(TransactionNormalized, award=prime_award_3)
-    mommy.make(TransactionFPDS, transaction=txn1, piid=test_piid, parent_award_id=test_parent_award_id)
+    mommy.make(TransactionFPDS, transaction=txn4, piid=test_piid, parent_award_id=test_parent_award_id)
 
 
 # @pytest.mark.skip(reason="subaward loading is on hold until broker resolves data anomalies")

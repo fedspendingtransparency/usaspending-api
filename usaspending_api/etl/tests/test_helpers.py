@@ -189,7 +189,7 @@ def test_get_previous_submission():
         reporting_fiscal_period=9,
         quarter_format_flag=True
     )
-    sub2 = mommy.make(
+    mommy.make(
         SubmissionAttributes,
         cgac_code='073',
         reporting_fiscal_year=2017,
@@ -206,7 +206,7 @@ def test_get_previous_submission():
     # Previous submission lookup should not match against a different agency (CGAC)
     assert helpers.get_previous_submission('ABC', 2017, 12) is None
 
-    sub3 = mommy.make(
+    mommy.make(
         SubmissionAttributes,
         cgac_code='020',
         reporting_fiscal_year=2016,

@@ -1,19 +1,6 @@
 # LEGACY CODE - NOT USED ANYMORE
 
-import logging
-from datetime import datetime
-
-from django.core.management.base import BaseCommand
-
-from usaspending_api.awards.models import Award
-from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
-from usaspending_api.etl.helpers import update_model_description_fields
-from usaspending_api.etl.csv_data_reader import CsvDataReader
 import usaspending_api.etl.helpers as h
-from usaspending_api.references.models import Agency, LegalEntity
-from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.common.helpers import fy
 #
 #
 # class Command(BaseCommand):
@@ -192,11 +179,13 @@ from usaspending_api.common.helpers import fy
 #             "township_local_government": self.parse_first_character(row['istownshiplocalgovernment']),
 #             "federal_agency": self.parse_first_character(row['isfederalgovernmentagency']),
 #             "us_federal_government": self.parse_first_character(row['federalgovernmentflag']),
-#             "federally_funded_research_and_development_corp": self.parse_first_character(row['isfederallyfundedresearchanddevelopmentcorp']),
+#             "federally_funded_research_and_development_corp":
+#               self.parse_first_character(row['isfederallyfundedresearchanddevelopmentcorp']),
 #             "us_tribal_government": self.parse_first_character(row['istriballyownedfirm']),
 #             "c8a_program_participant": self.parse_first_character(row['firm8aflag']),
 #             "foreign_government": self.parse_first_character(row['isforeigngovernment']),
-#             "community_developed_corporation_owned_firm": self.parse_first_character(row['iscommunitydevelopedcorporationownedfirm']),
+#             "community_developed_corporation_owned_firm":
+#                 self.parse_first_character(row['iscommunitydevelopedcorporationownedfirm']),
 #             "labor_surplus_area_firm": self.parse_first_character(row['islaborsurplusareafirm']),
 #             "small_agricultural_cooperative": self.parse_first_character(row['issmallagriculturalcooperative']),
 #             "international_organization": self.parse_first_character(row['isinternationalorganization']),
@@ -206,13 +195,17 @@ from usaspending_api.common.helpers import fy
 #             "minority_institution": self.parse_first_character(row['minorityinstitutionflag']),
 #             "private_university_or_college": self.parse_first_character(row['isprivateuniversityorcollege']),
 #             "school_of_forestry": self.parse_first_character(row['isschoolofforestry']),
-#             "state_controlled_institution_of_higher_learning": self.parse_first_character(row['isstatecontrolledinstitutionofhigherlearning']),
+#             "state_controlled_institution_of_higher_learning":
+#                   self.parse_first_character(row['isstatecontrolledinstitutionofhigherlearning']),
 #             "tribal_college": self.parse_first_character(row['istribalcollege']),
 #             "veterinary_college": self.parse_first_character(row['isveterinarycollege']),
 #             "educational_institution": self.parse_first_character(row['educationalinstitutionflag']),
-#             "alaskan_native_servicing_institution": self.parse_first_character(row['isalaskannativeownedcorporationorfirm']),
-#             "community_development_corporation": self.parse_first_character(row['iscommunitydevelopmentcorporation']),
-#             "native_hawaiian_servicing_institution": self.parse_first_character(row['isnativehawaiianownedorganizationorfirm']),
+#             "alaskan_native_servicing_institution":
+#                   self.parse_first_character(row['isalaskannativeownedcorporationorfirm']),
+#             "community_development_corporation":
+#                   self.parse_first_character(row['iscommunitydevelopmentcorporation']),
+#             "native_hawaiian_servicing_institution":
+#                   self.parse_first_character(row['isnativehawaiianownedorganizationorfirm']),
 #             "domestic_shelter": self.parse_first_character(row['isdomesticshelter']),
 #             "manufacturer_of_goods": self.parse_first_character(row['ismanufacturerofgoods']),
 #             "hospital_flag": self.parse_first_character(row['hospitalflag']),
@@ -221,20 +214,25 @@ from usaspending_api.common.helpers import fy
 #             "woman_owned_business": self.parse_first_character(row['womenownedflag']),
 #             "minority_owned_business": self.parse_first_character(row['minorityownedbusinessflag']),
 #             "women_owned_small_business": self.parse_first_character(row['iswomenownedsmallbusiness']),
-#             "economically_disadvantaged_women_owned_small_business": self.parse_first_character(row['isecondisadvwomenownedsmallbusiness']),
-#             "joint_venture_economic_disadvantaged_women_owned_small_bus": self.parse_first_character(row['isjointventureecondisadvwomenownedsmallbusiness']),
+#             "economically_disadvantaged_women_owned_small_business":
+#                   self.parse_first_character(row['isecondisadvwomenownedsmallbusiness']),
+#             "joint_venture_economic_disadvantaged_women_owned_small_bus":
+#                   self.parse_first_character(row['isjointventureecondisadvwomenownedsmallbusiness']),
 #             "veteran_owned_business": self.parse_first_character(row['veteranownedflag']),
 #             "airport_authority": self.parse_first_character(row['isairportauthority']),
-#             "housing_authorities_public_tribal": self.parse_first_character(row['ishousingauthoritiespublicortribal']),
+#             "housing_authorities_public_tribal":
+#                   self.parse_first_character(row['ishousingauthoritiespublicortribal']),
 #             "interstate_entity": self.parse_first_character(row['isinterstateentity']),
 #             "planning_commission": self.parse_first_character(row['isplanningcommission']),
 #             "port_authority": self.parse_first_character(row['isportauthority']),
 #             "transit_authority": self.parse_first_character(row['istransitauthority']),
 #             "foreign_owned_and_located": self.parse_first_character(row['isforeignownedandlocated']),
 #             "american_indian_owned_business": self.parse_first_character(row['aiobflag']),
-#             "alaskan_native_owned_corporation_or_firm": self.parse_first_character(row['isalaskannativeownedcorporationorfirm']),
+#             "alaskan_native_owned_corporation_or_firm":
+#                   self.parse_first_character(row['isalaskannativeownedcorporationorfirm']),
 #             "indian_tribe_federally_recognized": self.parse_first_character(row['isindiantribe']),
-#             "native_hawaiian_owned_business": self.parse_first_character(row['isnativehawaiianownedorganizationorfirm']),
+#             "native_hawaiian_owned_business":
+#                   self.parse_first_character(row['isnativehawaiianownedorganizationorfirm']),
 #             "tribally_owned_business": self.parse_first_character(row['istriballyownedfirm']),
 #             "asian_pacific_american_owned_business": self.parse_first_character(row['apaobflag']),
 #             "black_american_owned_business": self.parse_first_character(row['baobflag']),
@@ -249,14 +247,17 @@ from usaspending_api.common.helpers import fy
 #             "corporate_entity_tax_exempt": self.parse_first_character(row['iscorporateentitytaxexempt']),
 #             "corporate_entity_not_tax_exempt": self.parse_first_character(row['iscorporateentitynottaxexempt']),
 #             "council_of_governments": self.parse_first_character(row['iscouncilofgovernments']),
-#             "dot_certified_disadvantage": self.parse_first_character(row['isdotcertifieddisadvantagedbusinessenterprise']),
+#             "dot_certified_disadvantage":
+#                   self.parse_first_character(row['isdotcertifieddisadvantagedbusinessenterprise']),
 #             "for_profit_organization": self.parse_first_character(row['isforprofitorganization']),
 #             "foundation": self.parse_first_character(row['isfoundation']),
-#             "joint_venture_women_owned_small_business": self.parse_first_character(row['isjointventurewomenownedsmallbusiness']),
+#             "joint_venture_women_owned_small_business":
+#                   self.parse_first_character(row['isjointventurewomenownedsmallbusiness']),
 #             "limited_liability_corporation": self.parse_first_character(row['islimitedliabilitycorporation']),
 #             "other_not_for_profit_organization": self.parse_first_character(row['isothernotforprofitorganization']),
 #             "other_minority_owned_business": self.parse_first_character(row['isotherminorityowned']),
-#             "partnership_or_limited_liability_partnership": self.parse_first_character(row['ispartnershiporlimitedliabilitypartnership']),
+#             "partnership_or_limited_liability_partnership":
+#                   self.parse_first_character(row['ispartnershiporlimitedliabilitypartnership']),
 #             "sole_proprietorship": self.parse_first_character(row['issoleproprietorship']),
 #             "subchapter_scorporation": self.parse_first_character(row['issubchapterscorporation']),
 #             "nonprofit_organization": self.parse_first_character(row['nonprofitorganizationflag']),

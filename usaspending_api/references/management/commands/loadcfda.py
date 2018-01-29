@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from usaspending_api.references.models import Cfda
 from datetime import datetime
 import os
@@ -87,9 +87,11 @@ def load_cfda(abs_path):
                 cfda_program.records = row['Records (113)']
                 cfda_program.account_identification = row['Account Identification (121)']
                 cfda_program.obligations = row['Obligations (122)']
-                cfda_program.range_and_average_of_financial_assistance = row['Range and Average of Financial Assistance (123)']
+                cfda_program.range_and_average_of_financial_assistance = row['Range and Average of '
+                                                                             'Financial Assistance (123)']
                 cfda_program.program_accomplishments = row['Program Accomplishments (130)']
-                cfda_program.regulations_guidelines_and_literature = row['Regulations, Guidelines, and Literature (140)']
+                cfda_program.regulations_guidelines_and_literature = row['Regulations, Guidelines, '
+                                                                         'and Literature (140)']
                 cfda_program.regional_or_local_office = row['Regional or Local Office (151) ']
                 cfda_program.headquarters_office = row['Headquarters Office (152)']
                 cfda_program.website_address = row['Website Address (153)']

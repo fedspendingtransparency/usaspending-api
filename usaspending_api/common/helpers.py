@@ -1,11 +1,10 @@
 import contextlib
-import datetime
 import logging
 import time
 import timeit
 from calendar import monthrange
 
-from fiscalyear import *
+from fiscalyear import FiscalDateTime, FiscalYear, FiscalQuarter, datetime
 from collections import OrderedDict
 
 from django.db import DEFAULT_DB_ALIAS
@@ -101,7 +100,7 @@ def generate_raw_quoted_query(queryset):
 
 
 def order_nested_object(nested_object):
-    ''' Simply recursively order the item. To be used for standardizing objects for JSON dumps'''
+    """ Simply recursively order the item. To be used for standardizing objects for JSON dumps"""
     if isinstance(nested_object, list):
         return sorted([order_nested_object(subitem) for subitem in nested_object])
     elif isinstance(nested_object, dict):
@@ -209,7 +208,7 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
 
 
 def fy(raw_date):
-    'Federal fiscal year corresponding to date'
+    """Federal fiscal year corresponding to date"""
 
     if raw_date is None:
         return None
