@@ -1,11 +1,8 @@
-from datetime import date
 import json
 
 from model_mommy import mommy
 import pytest
 from rest_framework import status
-
-from django.conf import settings
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.download.lookups import JOB_STATUS
@@ -23,10 +20,10 @@ def award_data(db):
             description=js.desc)
 
     # Create Locations
-    loc1 = mommy.make('references.Location')
+    mommy.make('references.Location')
 
     # Create LE
-    le1 = mommy.make('references.LegalEntity')
+    mommy.make('references.LegalEntity')
 
     # Create Awarding Top Agency
     ata1 = mommy.make(
@@ -67,10 +64,10 @@ def award_data(db):
     fsa1 = mommy.make('references.SubtierAgency', name='Bureau of Things')
 
     # Create Funding Agency
-    fa1 = mommy.make('references.Agency', toptier_agency=fta, subtier_agency=fsa1, toptier_flag=False)
+    mommy.make('references.Agency', toptier_agency=fta, subtier_agency=fsa1, toptier_flag=False)
 
     # Create Federal Account
-    fta = mommy.make(
+    mommy.make(
         'accounts.FederalAccount',
         account_title='Compensation to Accounts',
         agency_identifier='102',
@@ -99,11 +96,11 @@ def award_data(db):
         awarding_agency=aa2)
 
     # Create TransactionContract
-    tfpds1 = mommy.make(TransactionFPDS, transaction=trann1, piid='tc1piid')
-    tfpds2 = mommy.make(TransactionFPDS, transaction=trann2, piid='tc2piid')
+    mommy.make(TransactionFPDS, transaction=trann1, piid='tc1piid')
+    mommy.make(TransactionFPDS, transaction=trann2, piid='tc2piid')
 
     # Create TransactionAssistance
-    tfabs1 = mommy.make(TransactionFABS, transaction=trann3, fain='ta1fain')
+    mommy.make(TransactionFABS, transaction=trann3, fain='ta1fain')
 
     # Set latest_award for each award
     update_awards()
