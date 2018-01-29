@@ -1,6 +1,8 @@
+import contextlib
 import datetime
 import logging
 import time
+import timeit
 from calendar import monthrange
 
 from fiscalyear import *
@@ -223,6 +225,24 @@ def fy(raw_date):
         raise TypeError('{} needs year and month attributes'.format(raw_date))
 
     return result
+
+
+@contextlib.contextmanager
+def timer(msg='', logging_func=print):
+    """
+    Use as a context manager or decorator to report on elapsed time.
+
+    with timer('stuff', logger.info):
+        (active code)
+
+    """
+    start = timeit.default_timer()
+    logging_func('Beginning {}...'.format(msg))
+    try:
+        yield {}
+    finally:
+        elapsed = timeit.default_timer() - start
+        logging_func('... finished {} in {} sec'.format(msg, elapsed))
 
 
 # Raw SQL run during a migration
