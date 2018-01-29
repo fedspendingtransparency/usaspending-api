@@ -107,8 +107,9 @@ class Command(BaseCommand):
     def controller(self):
         # Fetch the list of deleted records from S3 and delete them from ES
         self.deleted_ids = gather_deleted_ids(self.config) or {}
-        delete_list = [{'id': x, 'col': 'generated_unique_transaction_id'} for x in self.deleted_ids.keys()]
-        delete_transactions_from_es(delete_list)
+        # Future TODO: use this once ES has generated_unique_id columns
+        # delete_list = [{'id': x, 'col': 'generated_unique_transaction_id'} for x in self.deleted_ids.keys()]
+        # delete_transactions_from_es(delete_list)
 
         self.prepare_db()
 
@@ -126,7 +127,7 @@ class Command(BaseCommand):
 
             count = self.download_db_records(awd_cat_idx, self.config['fiscal_year'], filename)
 
-            index = '{}_{}_{}'.format(
+            index = '{}-{}-{}'.format(
                 settings.TRANSACTIONS_INDEX_ROOT,
                 award_category,
                 self.config['fiscal_year'])
@@ -160,7 +161,6 @@ class Command(BaseCommand):
         subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
         ####################################
         # Potentially smart to perform basic validation that the number of CSV data rows match count
-        ####################################
         print("Database download took {} seconds".format(perf_counter() - start))
         return count[0]['count']
 
@@ -237,6 +237,7 @@ def streaming_post_to_es(chunk, index_name):
 def post_to_elasticsearch(job, mapping, chunksize=250000):
     print('---------------------------------------------------------------')
     print('Populating ES Index : {}'.format(job['index']))
+
     does_index_exist = ES_CLIENT.indices.exists(job['index'])
     if not does_index_exist:
         print('Creating {} index'.format(job['index']))
@@ -244,22 +245,18 @@ def post_to_elasticsearch(job, mapping, chunksize=250000):
     elif does_index_exist and job['wipe']:
         print('{} exists... deleting first'.format(job['index']))
         ES_CLIENT.indices.delete(job['index'])
+
     csv_generator = csv_chunk_gen(job['file'], chunksize)
     for count, chunk in enumerate(csv_generator):
         print('Running chunk # {}'.format(count))
         iteration = perf_counter()
 
         if job['wipe'] is False:
-            id_list = []
-            unique_columns = ['tranaction_id', 'generated_unique_transaction_id']
-            g = lambda x: {key: x.get(key) for key in unique_columns}
-            filtered_data = [g(i) for i in chunk]
-            for key, value in filtered_data.items():
-                if value:
-                    id_list.append({'col': key, 'key': value})
+            # Future TODO: switch to generated_transaction_unique_id
+            id_list = [{'key': c['transaction_id'], 'col':'transaction_id'} for c in chunk]
             delete_transactions_from_es(id_list, job['index'])
-        else:
-            streaming_post_to_es(chunk, job['index'])
+
+        streaming_post_to_es(chunk, job['index'])
         print('Iteration took {}s'.format(perf_counter() - iteration))
 
 
@@ -271,8 +268,8 @@ def delete_transactions_from_es(id_list, index=None):
     '''
     start = perf_counter()
     print('---------------------------------------------------------------')
+    print('Deleting up to {} transaction(s)'.format(len(id_list)))
 
-    
     if index is None:
         index = '{}-*'.format(settings.TRANSACTIONS_INDEX_ROOT)
     col_to_items_dict = defaultdict(list)
@@ -281,14 +278,13 @@ def delete_transactions_from_es(id_list, index=None):
 
     for column, values in col_to_items_dict.items():
         body = {
-                "query": {
-                    "bool": {
-                        "filter": {
-                            "terms": {column: values}
-                        }
+            "query": {
+                "bool": {
+                    "filter": {
+                        "terms": {column: values}
                     }
                 }
             }
+        }
         ES_CLIENT.delete_by_query(index=index, body=body)
-    print('Would have tried to delete {} transaction(s)'.format(len(id_list)))
     print('ES Deletes took {}s'.format(perf_counter() - start))
