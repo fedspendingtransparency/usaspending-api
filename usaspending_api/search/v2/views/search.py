@@ -848,7 +848,7 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        
+
         json_request = request.data
         filters = json_request.get("filters", None)
 

@@ -1,5 +1,4 @@
 from django.db import connection
-import logging
 from usaspending_api.awards.models import Award, Agency
 from usaspending_api.awards.models import TransactionNormalized
 from django.db.models import Case, Value, When, TextField
@@ -7,22 +6,16 @@ from django.db.models import Case, Value, When, TextField
 
 def update_awards(award_tuple=None):
     """
-    Awards can have one or more transactions. We maintain some information
-    on the award model that needs to be updated as its child transactions
-    change. For example, an award's total obligated amount represents the
-    summary of its transaction's obligated amounts. Another example is a
-    series of fields (award type, awarding agency, etc.) that will always
-    be set to the value of the Award's most recent transaction.
+    Awards can have one or more transactions. We maintain some information on the award model that needs to be updated
+    as its child transactions change. For example, an award's total obligated amount represents the summary of its
+    transaction's obligated amounts. Another example is a series of fields (award type, awarding agency, etc.) that
+    will always be set to the value of the Award's most recent transaction.
 
-    This function keeps those awards fields synced with child transactions.
-    Obviously the raw SQL is not ideal. That said, the complex update
-    of award fields based on the earliest, latest, and aggregate values
-    of the child transactions was problematic to do in a set-based way
-    via the ORM. These updates do need to be set-based, as looping through
-    and updating individual award records would be an ETL bottleneck.
+    This function keeps those awards fields synced with child transactions. Obviously the raw SQL is not ideal.
+    That said, the complex update of award fields based on the earliest, latest, and aggregate values of the child
+    transactions was problematic to do in a set-based way via the ORM. These updates do need to be set-based, as
+    looping through and updating individual award records would be an ETL bottleneck.
     """
-
-    logger = logging.getLogger('console')
 
     # common table expression for each award's latest transaction
     sql_txn_latest = (
@@ -42,9 +35,8 @@ def update_awards(award_tuple=None):
         sql_txn_earliest += 'WHERE award_id IN %s '
     sql_txn_earliest += 'ORDER BY award_id, action_date) '
 
-    # common table expression for each award's summarized data
-    # (currently the only we summarize is federal_actio_obligation,
-    # but we can add more as necessar)
+    # common table expression for each award's summarized data (currently the only we summarize is
+    # federal_actio_obligation, but we can add more as necessary)
     sql_txn_totals = (
         'txn_totals AS ('
         'SELECT award_id, SUM(federal_action_obligation) AS total_obligation '
@@ -53,10 +45,9 @@ def update_awards(award_tuple=None):
         sql_txn_totals += 'WHERE award_id IN %s '
     sql_txn_totals += 'GROUP BY award_id) '
 
-    # construct a sql query that uses the common table expressions
-    # defined above and joins each of them to their corresopnding
-    # award. the joined data from earliest, latest, and summarized
-    # transactions are used to update awards fields as appropriate
+    # construct a sql query that uses the common table expressions defined above and joins each of them to their
+    # corresopnding award. the joined data from earliest, latest, and summarized transactions are used to update awards
+    # fields as appropriate
     sql_update = 'WITH {}, {}, {}'.format(sql_txn_latest, sql_txn_earliest, sql_txn_totals)
     sql_update += (
         'UPDATE awards a '
@@ -82,8 +73,8 @@ def update_awards(award_tuple=None):
         'WHERE t.award_id = a.id'
     )
     with connection.cursor() as cursor:
-        # If another expression is added and includes %s, you must add the tuple
-        # for that string interpolation to this list (even if it uses the same one!)
+        # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
+        # list (even if it uses the same one!)
         cursor.execute(sql_update, [award_tuple, award_tuple, award_tuple])
         rows = cursor.rowcount
 
@@ -103,11 +94,9 @@ def update_contract_awards(award_tuple=None):
         sql_txn_totals += 'WHERE tx.award_id IN %s '
     sql_txn_totals += 'GROUP BY tx.award_id) '
 
-    # construct a sql query that uses the latest txn contract common table
-    # expression above and joins it to the corresopnding
-    # award. that joined data is used to update awards fields as appropriate
-    # (currently, there's only one trasnaction_contract field that trickles
-    # up and updates an award record: base_and_all_options_value)
+    # construct a sql query that uses the latest txn contract common table expression above and joins it to the
+    # corresponding award. that joined data is used to update awards fields as appropriate (currently, there's only one
+    # trasnaction_contract field that trickles up and updates an award record: base_and_all_options_value)
     sql_update = 'WITH {}'.format(sql_txn_totals)
     sql_update += (
         'UPDATE awards a '
@@ -117,8 +106,8 @@ def update_contract_awards(award_tuple=None):
     )
 
     with connection.cursor() as cursor:
-        # If another expression is added and includes %s, you must add the tuple
-        # for that string interpolation to this list (even if it uses the same one!)
+        # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
+        # list (even if it uses the same one!)
         cursor.execute(sql_update, [award_tuple])
         rows = cursor.rowcount
 
@@ -164,8 +153,8 @@ def update_award_subawards(award_tuple=None):
     )
 
     with connection.cursor() as cursor:
-        # If another expression is added and includes %s, you must add the tuple
-        # for that string interpolation to this list (even if it uses the same one!)
+        # If another expression is added and includes %s, you must add the tuple for that string interpolation to this
+        # list (even if it uses the same one!)
         cursor.execute(sql_update, [award_tuple])
         rows = cursor.rowcount
 
@@ -195,19 +184,15 @@ def update_award_categories(award_tuple=None):
 
 def get_award_financial_transaction(row):
     """
-    For specified award financial (aka "File C") data, try to find a matching
-    transaction (aka "File D"). We sometimes need to do this  because File C
-    doesn't always have the level of award/transaction specificity that we
-    want, so we try to find a matching File D record to grab the additional
-    information.
+    For specified award financial (aka "File C") data, try to find a matching transaction (aka "File D"). We sometimes
+    need to do this  because File C doesn't always have the level of award/transaction specificity that we want, so we
+    try to find a matching File D record to grab the additional information.
 
-    For example, when trying to match award financial information to an
-    award record, we need the awarding subtier agency, which isn't supplied
-    on File C. Thus, we'll use this function to find a File D record and
-    use the subtier agency information supplied there.
+    For example, when trying to match award financial information to an award record, we need the awarding subtier
+    agency, which isn't supplied on File C. Thus, we'll use this function to find a File D record and use the subtier
+    agency information supplied there.
 
-    If we find more than one match, return the record with this most
-    recent action date.
+    If we find more than one match, return the record with this most recent action date.
 
     Args:
         row: an object containing these attributes:
@@ -259,11 +244,9 @@ def get_award_financial_transaction(row):
 
 def get_awarding_agency(row):
     if row.txn:
-        # We found a matching transaction, so grab its awarding agency
-        # info and pass it get_or_create_summary_award
+        # We found a matching transaction, so grab its awarding agency info and pass it get_or_create_summary_award
         return Agency.objects.get(id=int(row.txn))
     else:
-        # No matching transaction found, so find/create Award by using
-        # topiter agency only, since CGAC code is the only piece of
-        # awarding agency info that we have.
+        # No matching transaction found, so find/create Award by using toptier agency only, since CGAC code is the only
+        # piece of awarding agency info that we have.
         return Agency.get_by_toptier(row.agency_identifier)

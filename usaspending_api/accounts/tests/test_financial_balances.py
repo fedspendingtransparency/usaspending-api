@@ -8,14 +8,14 @@ from rest_framework import status
 def financial_balances_models():
     sub = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016)
     agency1_toptier = mommy.make('references.TopTierAgency', toptier_agency_id=123)
-    agency1 = mommy.make('references.Agency', id=456, toptier_agency_id=123)
+    mommy.make('references.Agency', id=456, toptier_agency_id=123)
     tas1 = mommy.make(
         'accounts.TreasuryAppropriationAccount',
         funding_toptier_agency=agency1_toptier)
     tas2 = mommy.make(
         'accounts.TreasuryAppropriationAccount',
         funding_toptier_agency=agency1_toptier)
-    tas_bal1 = mommy.make(
+    mommy.make(
         'accounts.AppropriationAccountBalances',
         final_of_fy=True,
         treasury_account_identifier=tas1,
@@ -24,7 +24,7 @@ def financial_balances_models():
         gross_outlay_amount_by_tas_cpe=3000,
         submission=sub
     )
-    tas_bal2 = mommy.make(
+    mommy.make(
         'accounts.AppropriationAccountBalances',
         final_of_fy=True,
         treasury_account_identifier=tas2,

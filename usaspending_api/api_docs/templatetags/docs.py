@@ -28,10 +28,11 @@ def get_contents_from_markdown(markdown_file=None, split_string="[//]: # (Begin 
     contents = ""
     if markdown_file:
         try:
-            full_text = open(os.path.join(settings.BASE_DIR, 'usaspending_api', 'api_docs', 'markdown', markdown_file)).read()
+            full_text = open(os.path.join(settings.BASE_DIR, 'usaspending_api', 'api_docs', 'markdown',
+                                          markdown_file)).read()
             split = full_text.split(split_string)
             if index < len(split):
                 contents = split[index]
-        except:
+        except Exception:
             pass
     return contents
