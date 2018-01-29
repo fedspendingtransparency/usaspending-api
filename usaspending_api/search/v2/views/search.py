@@ -36,7 +36,7 @@ from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_ma
     non_loan_assistance_award_mapping
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
-from usaspending_api.search.v2.elasticsearch_helper import search_transactions, spending_by_transaction_count, spending_by_transaction_sum
+from usaspending_api.search.v2.elasticsearch_helper import search_transactions, spending_by_transaction_count
 
 
 logger = logging.getLogger(__name__)
@@ -856,19 +856,4 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         results = spending_by_transaction_count(filters)
-        return Response({"results": results})
-
-
-class SpendingByTransactionSumVisualizaitonViewSet(APIView):
-
-    @cache_response()
-    def post(self, request):
-
-        json_request = request.data
-        filters = json_request.get("filters", None)
-
-        if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
-
-        results = spending_by_transaction_sum(filters)
         return Response({"results": results})

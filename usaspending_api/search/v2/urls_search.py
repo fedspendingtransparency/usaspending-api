@@ -7,7 +7,7 @@ from usaspending_api.search.v2.views.search import SpendingOverTimeVisualization
 from usaspending_api.search.v2.views.search import TransactionSummaryVisualizationViewSet
 from usaspending_api.search.v2.views.search import SpendingByTransactionVisualizationViewSet
 from usaspending_api.search.v2.views.search import SpendingByTransactionCountVisualizaitonViewSet
-from usaspending_api.search.v2.views.search import SpendingByTransactionSumVisualizaitonViewSet
+
 urlpatterns = [
     url(r'^spending_over_time', SpendingOverTimeVisualizationViewSet.as_view()),
     url(r'^spending_by_category', SpendingByCategoryVisualizationViewSet.as_view()),
