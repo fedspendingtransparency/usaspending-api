@@ -252,7 +252,8 @@ def verify_requested_columns_available(sources, requested):
 
 
 class BulkDownloadListAgenciesViewSet(APIView):
-    modified_agencies_list = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data', 'agency_list_broker_s3.csv')
+    modified_agencies_list = os.path.join(settings.BASE_DIR,
+                                          'usaspending_api', 'data', 'modified_authoritative_agency_list.csv')
     sub_agencies_map = {}
 
     def pull_modified_agencies_cgacs_subtiers(self):
@@ -260,10 +261,13 @@ class BulkDownloadListAgenciesViewSet(APIView):
         # modified_agencies_list
         with open(self.modified_agencies_list, encoding='Latin-1') as modified_agencies_list_csv:
             mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
-        mod_gencies_list_df = mod_gencies_list_df[['CGAC AGENCY CODE', 'SUBTIER CODE']]
+        mod_gencies_list_df = mod_gencies_list_df[['CGAC AGENCY CODE', 'SUBTIER CODE', 'FREC', 'IS_FREC']]
         mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'].apply(lambda x: x.zfill(3))
+        mod_gencies_list_df['FREC'] = mod_gencies_list_df.apply(lambda x: x.zfill(4))
         for _, row in mod_gencies_list_df.iterrows():
-            self.sub_agencies_map[row['SUBTIER CODE']] = row['CGAC AGENCY CODE']
+            # cgac_code in the database can be either agency cgac or frec code (if a frec agency)
+            self.sub_agencies_map[row['SUBTIER CODE']] = row['FREC'] \
+                if row['IS_FREC'].upper() == 'TRUE' else row['CGAC AGENCY CODE']
 
     def post(self, request):
         """Return list of agencies if no POST data is provided.
@@ -275,8 +279,6 @@ class BulkDownloadListAgenciesViewSet(APIView):
             # populate the sub_agencies dictionary
             self.pull_modified_agencies_cgacs_subtiers()
         used_cgacs = set(self.sub_agencies_map.values())
-        # Adding 1601 as Department of Labor uses the FREC instead of the CGAC '0016'
-        used_cgacs.add('1601')
 
         agency_id = None
         post_data = request.data
