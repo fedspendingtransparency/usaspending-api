@@ -6,7 +6,6 @@ from django.conf import settings
 from elasticsearch import Elasticsearch
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups \
         import TRANSACTIONS_LOOKUP, award_type_mapping, award_categories
-import floor from math
 
 logger = logging.getLogger('console')
 ES_HOSTNAME = settings.ES_HOSTNAME
