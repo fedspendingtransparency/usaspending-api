@@ -7,6 +7,7 @@ import pandas as pd
 import datetime
 import re
 import boto
+from threading import Thread
 from collections import OrderedDict
 
 from django.conf import settings
@@ -149,6 +150,81 @@ class BaseDownloadViewSet(APIView):
 
         return Response(response)
 
+    def process_request(self, json_request, download_job, file_name):
+        csv_sources = self.get_csv_sources(json_request)
+
+        kwargs = {'download_job': download_job,
+                  'file_name': file_name,
+                  'columns': json_request.get('columns', None),
+                  'sources': csv_sources}
+
+        if 'pytest' in sys.modules:
+            # We are testing, and cannot use threads - the testing db connection
+            # is not shared with the thread
+            csv_selection.write_csvs(**kwargs)
+        else:
+            # Send a SQS message that will be processed by another server
+            # which will eventually run csv_selection.write_csvs(**kwargs)
+            # (see generate_bulk_zip.py)
+            message_attributes = {
+                'download_job_id': {
+                    'StringValue': str(kwargs['download_job'].bulk_download_job_id),
+                    'DataType': 'String'
+                },
+                'file_name': {
+                    'StringValue': kwargs['file_name'],
+                    'DataType': 'String'
+                },
+                'columns': {
+                    'StringValue': json.dumps(kwargs['columns']),
+                    'DataType': 'String'
+                },
+                'sources': {
+                    'StringValue': json.dumps(tuple([source.toJsonDict() for source in kwargs['sources']])),
+                    'DataType': 'String'
+                }
+            }
+            queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
+                              QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue.send_message(MessageBody='Test', MessageAttributes=message_attributes)
+
+    def create_bulk_download_job(self, json_request, file_name):
+        # create download job in database to track progress. Starts at 'ready'
+        # status by default.
+        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
+                               'json_request': json.dumps(order_nested_object(json_request)),
+                               'file_name': file_name}
+
+        for award_level in json_request['award_levels']:
+            download_job_kwargs[award_level] = True
+        for award_type in json_request['filters']['award_types']:
+            download_job_kwargs[award_type] = True
+        agency = json_request['filters']['agency']
+        if agency and agency != 'all':
+            download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
+        sub_agency = json_request['filters']['sub_agency']
+        if sub_agency:
+            download_job_kwargs['sub_agency'] = sub_agency
+        start_date = json_request['filters']['date_range']['start_date']
+        if start_date:
+            download_job_kwargs['start_date'] = start_date
+        end_date = json_request['filters']['date_range']['end_date']
+        if end_date:
+            download_job_kwargs['end_date'] = end_date
+        date_type = json_request['filters']['date_type']
+        if date_type:
+            download_job_kwargs['date_type'] = date_type
+        download_job = BulkDownloadJob(**download_job_kwargs)
+        download_job.save()
+
+        logger.info('Added Bulk Download Job: {}\n'
+                    'Filename: {}\n'
+                    'Request Params: {}'.format(download_job.bulk_download_job_id,
+                                                download_job.file_name,
+                                                download_job.json_request))
+        return download_job
+
+
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
@@ -186,80 +262,15 @@ class BaseDownloadViewSet(APIView):
             cached_filename = cached_download[0]['file_name']
             return self.get_download_response(file_name=cached_filename)
 
-        csv_sources = self.get_csv_sources(json_request)
-
+        download_name = '_'.join(value_mappings[award_level]['download_name']
+                                      for award_level in json_request['award_levels'])
         # get timestamped name to provide unique file name
-        timestamped_file_name = self.s3_handler.get_timestamped_filename(
-            self.DOWNLOAD_NAME + '.zip')
+        timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
 
-        # create download job in database to track progress. Starts at 'ready'
-        # status by default.
-        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
-                               'json_request': json.dumps(order_nested_object(json_request)),
-                               'file_name': timestamped_file_name}
+        download_job = self.create_bulk_download_job(json_request, timestamped_file_name)
 
-        for award_level in json_request['award_levels']:
-            download_job_kwargs[award_level] = True
-        for award_type in json_request['filters']['award_types']:
-            download_job_kwargs[award_type] = True
-        agency = json_request['filters']['agency']
-        if agency and agency != 'all':
-            download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
-        sub_agency = json_request['filters']['sub_agency']
-        if sub_agency:
-            download_job_kwargs['sub_agency'] = sub_agency
-        start_date = json_request['filters']['date_range']['start_date']
-        if start_date:
-            download_job_kwargs['start_date'] = start_date
-        end_date = json_request['filters']['date_range']['end_date']
-        if end_date:
-            download_job_kwargs['end_date'] = end_date
-        date_type = json_request['filters']['date_type']
-        if date_type:
-            download_job_kwargs['date_type'] = date_type
-        download_job = BulkDownloadJob(**download_job_kwargs)
-        download_job.save()
-
-        logger.info('Added Bulk Download Job: {}\n'
-                    'Filename: {}\n'
-                    'Request Params: {}'.format(download_job.bulk_download_job_id,
-                                                download_job.file_name,
-                                                download_job.json_request))
-
-        kwargs = {'download_job': download_job,
-                  'file_name': timestamped_file_name,
-                  'columns': json_request.get('columns', None),
-                  'sources': csv_sources}
-
-        if 'pytest' in sys.modules:
-            # We are testing, and cannot use threads - the testing db connection
-            # is not shared with the thread
-            csv_selection.write_csvs(**kwargs)
-        else:
-            # Send a SQS message that will be processed by another server
-            # which will eventually run csv_selection.write_csvs(**kwargs)
-            # (see generate_bulk_zip.py)
-            message_attributes = {
-                'download_job_id': {
-                    'StringValue': str(kwargs['download_job'].bulk_download_job_id),
-                    'DataType': 'String'
-                },
-                'file_name': {
-                    'StringValue': kwargs['file_name'],
-                    'DataType': 'String'
-                },
-                'columns': {
-                    'StringValue': json.dumps(kwargs['columns']),
-                    'DataType': 'String'
-                },
-                'sources': {
-                    'StringValue': json.dumps(tuple([source.toJsonDict() for source in kwargs['sources']])),
-                    'DataType': 'String'
-                }
-            }
-            queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
-                              QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
-            queue.send_message(MessageBody='Test', MessageAttributes=message_attributes)
+        process_thread = Thread(target=self.process_request, args=(json_request, download_job, timestamped_file_name))
+        process_thread.start()
 
         return self.get_download_response(file_name=timestamped_file_name)
 
@@ -522,8 +533,6 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         # file_format = json_request['file_format']
 
         csv_sources = []
-        self.DOWNLOAD_NAME = '_'.join(value_mappings[award_level]['download_name']
-                                      for award_level in award_levels)
         try:
             for award_level in award_levels:
                 if award_level not in value_mappings:
