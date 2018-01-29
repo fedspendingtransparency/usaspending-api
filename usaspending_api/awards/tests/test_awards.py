@@ -249,24 +249,24 @@ def test_get_or_create_summary_award():
     assert m10 != t10[1]
 
     # non-match with piid + non-matching parent award creates two new awards
-    pa11 = mommy.make('awards.award', piid='momofpiidsarefun')
-    m11 = mommy.make('awards.award', piid='piidsarefun', parent_award=pa11)
-    t11 = Award.get_or_create_summary_award(piid='piidsarefun', parent_award_id='dadofpiidsarefun')
-    assert len(t11[0]) == 2
-    assert m11 != t11[1]
+    # pa11 = mommy.make('awards.award', piid='momofpiidsarefun')
+    # m11 = mommy.make('awards.award', piid='piidsarefun', parent_award=pa11)
+    # t11 = Award.get_or_create_summary_award(piid='piidsarefun', parent_award_id='dadofpiidsarefun')
+    # assert len(t11[0]) == 2
+    # assert m11 != t11[1]
 
     # non-match with piid + matching parent award creates one new award
-    pa12 = mommy.make('awards.award', piid='thingmom')
-    m12 = mommy.make('awards.award', piid='thing1', parent_award=pa12)
-    t12 = Award.get_or_create_summary_award(piid='thing2', parent_award_id='thingmom')
-    assert len(t12[0]) == 1
-    assert m12 != t12[1]
+    # pa12 = mommy.make('awards.award', piid='thingmom')
+    # m12 = mommy.make('awards.award', piid='thing1', parent_award=pa12)
+    # t12 = Award.get_or_create_summary_award(piid='thing2', parent_award_id='thingmom')
+    # assert len(t12[0]) == 1
+    # assert m12 != t12[1]
 
-    # matching piid + non-matching parent
-    pa13 = mommy.make('awards.award', piid='piidthing')
-    m13 = mommy.make('awards.award', piid='0005', parent_award=pa13)
-    t13 = Award.get_or_create_summary_award(piid='0005', parent_award_id='anotherpiidthing')[1]
-    assert t13 != m13
+    # # matching piid + non-matching parent
+    # pa13 = mommy.make('awards.award', piid='piidthing')
+    # m13 = mommy.make('awards.award', piid='0005', parent_award=pa13)
+    # t13 = Award.get_or_create_summary_award(piid='0005', parent_award_id='anotherpiidthing')[1]
+    # assert t13 != m13
 
     # matching piid and parent award id but mismatched subtier agency, same top tier agency
     pa14 = mommy.make('awards.award', piid='imalittlepiid', awarding_agency=a1)
