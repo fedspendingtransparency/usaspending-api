@@ -1,6 +1,6 @@
 from django.db import connection
-from django.core.management.base import BaseCommand, CommandError
-from usaspending_api.references.models import ToptierAgency, SubtierAgency, OfficeAgency, Agency
+from django.core.management.base import BaseCommand
+from usaspending_api.references.models import ToptierAgency, SubtierAgency, Agency
 import os
 import csv
 import logging
@@ -97,8 +97,8 @@ class Command(BaseCommand):
                     else:
                         toptier_flag = (subtier_name == department_name)
 
-                    if toptier_flag: # create or update the toptier agency
-                        toptier_name = subtier_name # based on matching above
+                    if toptier_flag:  # create or update the toptier agency
+                        toptier_name = subtier_name  # based on matching above
                         toptier_agency, created = ToptierAgency.objects.get_or_create(name=toptier_name)
 
                         if is_frec == 'TRUE':

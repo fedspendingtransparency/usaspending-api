@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.apps import apps
 import logging
 
@@ -39,7 +39,8 @@ class Command(BaseCommand):
             friendly_type = self.friendly_names.get(internal_type, internal_type)
             field_name = field.name
             if hasattr(field, 'parent_link'):
-                description = "Reverse look-up for relation from " + field.related_model.__name__ + "::" + field.field.name
+                description = "Reverse look-up for relation from " + field.related_model.__name__ + "::" +\
+                              field.field.name
             elif field.primary_key and field.help_text == '':
                 description = "Internal primary key. Guaranteed to be unique."
             else:

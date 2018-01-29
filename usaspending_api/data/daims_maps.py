@@ -5,34 +5,30 @@ Each should be named following this pattern:
     - For a field that is unique among all models, <field>_map
     - For a field that is not unique among models, <model_name>.<field>_map
 
-Example 1: For the "action_type_description" field to be automatically updated,
-we create a map called "action_type_map" because that field is unique among all
-models.
+Example 1: For the "action_type_description" field to be automatically updated, we create a map called
+"action_type_map" because that field is unique among all models.
 
-Example 2: For the "type_description" field to be automatically updated, we need
-to uniquely identify the maps on a per-model basis as this field exists on multiple
-models, but cannot share enumeration maps. Thus, we will make two maps:
+Example 2: For the "type_description" field to be automatically updated, we need to uniquely identify the maps on a
+per-model basis as this field exists on multiple models, but cannot share enumeration maps. Thus, we will make two maps:
 "Award.type_map" and "TransactionNormalized.type_map".
 
-Each map has a key of enumerable values, paired with the description field for
-that value.
+Each map has a key of enumerable values, paired with the description field for that value.
 
 There are a few special keys:
     _DEFAULT - A default value to use, if the incoming value is NoneType
     _BLANK - A value to use if the incoming value is blank
 
 CASES:
-If you have a need to specify a different mapping based upon other fields on the
-same model, you can do so by specify cases. These must be numbered from 1, and
-store conditions in the "case_<INT>" and the mappings in "case_<INT>_map".
+If you have a need to specify a different mapping based upon other fields on the same model, you can do so by specify
+cases. These must be numbered from 1, and store conditions in the "case_<INT>" and the mappings in "case_<INT>_map".
 For an example, see TransactionNormalized.action_type_map
 """
 
 daims_maps = {
     # D1, D2 DAIMS MAPS - These are found in awards.models unless noted
 
-    # This map is an example of how to have TWO different maps for the same field,
-    # on the same object, separated by a case.
+    # This map is an example of how to have TWO different maps for the same field, on the same object, separated by a
+    # case.
     "TransactionNormalized.action_type_map": {
         # When we are financial assistance
         "case_1": {
@@ -144,10 +140,15 @@ daims_maps = {
     },
 
     "correction_late_delete_indicator_map": {
-        "C": "Current transaction record is a request to replace a previously submitted record that contained data submission errors. Record should contain replacement (not delta) values for all data fields that contain submission errors.",
-        "D": "Current transaction record is a request to delete a previously submitted record that contained data submission errors.",
+        "C": "Current transaction record is a request to replace a previously submitted record that contained "
+             "data submission errors. Record should contain replacement (not delta) values for all data fields "
+             "that contain submission errors.",
+        "D": "Current transaction record is a request to delete a previously submitted record that contained data "
+             "submission errors.",
         "_BLANK": "Request to add the current transaction record.",
-        "L": "Agencies can continue to send transaction records with this code based on previous FAADS guidance, however it will be ignored for USAspending.gov. Instead, the ‘Obligation/Action Date’ field will be used to determine the fiscal year in which the transaction will be reported. ",
+        "L": "Agencies can continue to send transaction records with this code based on previous FAADS guidance, "
+             "however it will be ignored for USAspending.gov. Instead, the ‘Obligation/Action Date’ field will be used "
+             "to determine the fiscal year in which the transaction will be reported. ",
     },
 
     "cost_accounting_standards_map": {
@@ -282,7 +283,8 @@ daims_maps = {
     },
 
     "place_of_manufacture_map": {
-        "A": "Performed or Manufactured in US, but services performed by a foreign concern or more than 50% foreign content ",
+        "A": "Performed or Manufactured in US, but services performed by a foreign concern or more than 50% foreign "
+             "content ",
         "B": "Performed or Manufactored outside US",
         "C": "Not a manufactured end product",
         "D": "Manufactured in U.S.",
@@ -347,8 +349,11 @@ daims_maps = {
     },
 
     "recovered_materials_sustainability_map": {
-        "A": "FAR 52.223-4 Included - The solicitation included the provision at FAR 52.223-4, Recovered Material Certification.",
-        "B": "FAR 52.223-4 and FAR 52.223-9 Included - The solicitation included the provision at FAR 52.223-4, Recovered Material Certification and the contract includes the clause at FAR 52.223-9, Estimate of Percentage of Recovered Material Content for EPA-Designated Products.",
+        "A": "FAR 52.223-4 Included - The solicitation included the provision at FAR 52.223-4, Recovered Material "
+             "Certification.",
+        "B": "FAR 52.223-4 and FAR 52.223-9 Included - The solicitation included the provision at FAR 52.223-4, "
+             "Recovered Material Certification and the contract includes the clause at FAR 52.223-9, Estimate of "
+             "Percentage of Recovered Material Content for EPA-Designated Products.",
         "C": "No Clauses Included and No Sustainability Included",
         "D": "Energy efficient",
         "E": "Bio-based",

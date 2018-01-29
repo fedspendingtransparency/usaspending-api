@@ -1,5 +1,3 @@
-from django.http import Http404
-from django import http
 from django.utils.timezone import now
 from django.utils.deprecation import MiddlewareMixin
 
@@ -38,9 +36,10 @@ class LoggingMiddleware(MiddlewareMixin):
       "remote_addr": "127.0.0.1", (IP address where request came from)
       "host": "localhost:8000", (Host name or IP address)
       "response_ms": "848", (Time it took to return a response or exception)
-      "message": "[11/01/18 22:52:03] [INFO] [POST] [/api/v2/download/count/ : 200] [127.0.0.1] [localhost:8000] [848]",
-      (message is [timestamp] [status] [method] [ path : status_code] [remote_addr] [host] [response_ms] this format is used
-      to search through Kibana interface)
+      "message": "[11/01/18 22:52:03] [INFO] [POST] [/api/v2/download/count/ : 200]
+                    [127.0.0.1] [localhost:8000] [848]",
+      (message is [timestamp] [status] [method] [ path : status_code] [remote_addr] [host] [response_ms]
+            this format is used to search through Kibana interface)
       "request": {"filters":{...}} (request body sent by user)
       "traceback": null (traceback of call if error, used for debugging server error)
     }

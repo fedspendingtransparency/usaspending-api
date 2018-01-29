@@ -5,7 +5,8 @@ from django.core.management import call_command
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
-from usaspending_api.etl.management.commands.load_submission import get_submission_attributes, get_or_create_program_activity
+from usaspending_api.etl.management.commands.load_submission import (get_submission_attributes,
+                                                                     get_or_create_program_activity)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import LegalEntity, Location, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -110,8 +111,10 @@ def test_load_submission_command(endpoint_data, partially_flushed):
 
     # Verify that sign has been reversed during load where appropriate
     assert AppropriationAccountBalances.objects.filter(gross_outlay_amount_by_tas_cpe__lt=0).count() == 1
-    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_cpe__lt=0).count() == 9
-    assert FinancialAccountsByProgramActivityObjectClass.objects.filter(obligations_delivered_orders_unpaid_total_fyb__lt=0).count() == 9
+    assert FinancialAccountsByProgramActivityObjectClass.\
+        objects.filter(obligations_delivered_orders_unpaid_total_cpe__lt=0).count() == 9
+    assert FinancialAccountsByProgramActivityObjectClass.\
+        objects.filter(obligations_delivered_orders_unpaid_total_fyb__lt=0).count() == 9
     assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_cpe__lt=0).count() == 11
     assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_fyb__lt=0).count() == 11
     assert FinancialAccountsByAwards.objects.filter(gross_outlay_amount_by_award_fyb__lt=0).count() == 11

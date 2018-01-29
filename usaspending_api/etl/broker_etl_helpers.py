@@ -1,6 +1,5 @@
 import json
 import os
-import dj_database_url
 from django.db import connection, connections
 from collections import OrderedDict
 import logging
@@ -23,9 +22,7 @@ class PhonyCursor:
 
     def __init__(self):
         with open(
-                os.path.join(
-                    os.path.dirname(__file__),
-                    'tests/etl_test_data.json')) as json_data:
+                os.path.join(os.path.dirname(__file__), 'tests/etl_test_data.json')) as json_data:
             self.db_responses = json.load(json_data)
 
         self.results = None
@@ -33,8 +30,7 @@ class PhonyCursor:
     def execute(self, statement, parameters):
         self.results = None
         for key in self.db_responses.keys():
-            if "".join(key.split()) == "".join(statement.split(
-            )):  # Ignore whitespace in the query
+            if "".join(key.split()) == "".join(statement.split()):  # Ignore whitespace in the query
                 self.results = self.db_responses[key]
 
 
