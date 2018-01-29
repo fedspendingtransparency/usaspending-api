@@ -1,5 +1,4 @@
 from django.db.models import F, Sum
-from rest_framework.exceptions import ParseError
 
 from usaspending_api.accounts.serializers import AgenciesFinancialBalancesSerializer
 from usaspending_api.accounts.models import AppropriationAccountBalances
@@ -24,7 +23,8 @@ class AgenciesFinancialBalancesViewSet(DetailViewSet):
 
         # required query parameters were not provided
         if not (fiscal_year and funding_agency_id):
-            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, funding_agency_id')
+            raise InvalidParameterException('Missing one or more required query parameters: fiscal_year, '
+                                            'funding_agency_id')
 
         toptier_agency = Agency.objects.filter(id=funding_agency_id).first()
         if toptier_agency is None:
