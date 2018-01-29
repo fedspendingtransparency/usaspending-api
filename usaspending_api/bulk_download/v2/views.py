@@ -10,20 +10,20 @@ import boto
 from collections import OrderedDict
 
 from django.conf import settings
-from django.db.models import F, Q, Max
+from django.db.models import F, Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
-from rest_framework_extensions.cache.decorators import cache_response
 
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, \
-    grant_type_mapping, direct_payment_type_mapping, loan_type_mapping, other_type_mapping
-from usaspending_api.awards.models import Award, Subaward, Agency, TransactionNormalized
+from usaspending_api.awards.v2.lookups.lookups import (contract_type_mapping, grant_type_mapping,
+                                                       direct_payment_type_mapping, loan_type_mapping,
+                                                       other_type_mapping)
+from usaspending_api.awards.models import Subaward, Agency, TransactionNormalized
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.csv_helpers import sqs_queue
-from usaspending_api.common.helpers import generate_raw_quoted_query, order_nested_object
+from usaspending_api.common.helpers import order_nested_object
 from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
@@ -213,13 +213,11 @@ class BaseDownloadViewSet(APIView):
                   'sources': csv_sources}
 
         if 'pytest' in sys.modules:
-            # We are testing, and cannot use threads - the testing db connection
-            # is not shared with the thread
+            # We are testing, and cannot use threads - the testing db connection is not shared with the thread
             csv_selection.write_csvs(**kwargs)
         else:
-            # Send a SQS message that will be processed by another server
-            # which will eventually run csv_selection.write_csvs(**kwargs)
-            # (see generate_bulk_zip.py)
+            # Send a SQS message that will be processed by another server which will eventually run
+            # csv_selection.write_csvs(**kwargs) (see generate_bulk_zip.py)
             message_attributes = {
                 'download_job_id': {
                     'StringValue': str(kwargs['download_job'].bulk_download_job_id),
@@ -254,8 +252,7 @@ def verify_requested_columns_available(sources, requested):
 
 
 class BulkDownloadListAgenciesViewSet(APIView):
-    modified_agencies_list = os.path.join(settings.BASE_DIR,
-                                          'usaspending_api', 'data', 'agency_list_broker_s3.csv')
+    modified_agencies_list = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data', 'agency_list_broker_s3.csv')
     sub_agencies_map = {}
 
     def pull_modified_agencies_cgacs_subtiers(self):
@@ -264,8 +261,7 @@ class BulkDownloadListAgenciesViewSet(APIView):
         with open(self.modified_agencies_list, encoding='Latin-1') as modified_agencies_list_csv:
             mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
         mod_gencies_list_df = mod_gencies_list_df[['CGAC AGENCY CODE', 'SUBTIER CODE']]
-        mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'] \
-            .apply(lambda x: x.zfill(3))
+        mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'].apply(lambda x: x.zfill(3))
         for _, row in mod_gencies_list_df.iterrows():
             self.sub_agencies_map[row['SUBTIER CODE']] = row['CGAC AGENCY CODE']
 
@@ -295,18 +291,15 @@ class BulkDownloadListAgenciesViewSet(APIView):
 
         if not agency_id:
             # Return all the agencies if no agency id provided
-            cfo_agencies = sorted(list(filter(lambda agency: agency['cgac_code'] in CFO_CGACS,
-                                              toptier_agencies)),
+            cfo_agencies = sorted(list(filter(lambda agency: agency['cgac_code'] in CFO_CGACS, toptier_agencies)),
                                   key=lambda agency: CFO_CGACS.index(agency['cgac_code']))
-            other_agencies = sorted([agency for agency in toptier_agencies
-                                     if agency not in cfo_agencies],
+            other_agencies = sorted([agency for agency in toptier_agencies if agency not in cfo_agencies],
                                     key=lambda agency: agency['name'])
             response_data['agencies'] = {'cfo_agencies': cfo_agencies,
                                          'other_agencies': other_agencies}
         else:
             # Get the top tier agency object based on the agency id provided
-            top_tier_agency = list(filter(lambda toptier: toptier['toptier_agency_id'] == agency_id,
-                                          toptier_agencies))
+            top_tier_agency = list(filter(lambda toptier: toptier['toptier_agency_id'] == agency_id, toptier_agencies))
             if not top_tier_agency:
                 raise InvalidParameterException('Agency ID not found')
             top_tier_agency = top_tier_agency[0]
@@ -347,7 +340,7 @@ class ListMonthylDownloadsViewset(APIView):
         fiscal_year = post_data.get('fiscal_year', None)
         download_type = post_data.get('type', None)
 
-        required_params = {'agency':agency_id, 'fiscal_year': fiscal_year, 'type': download_type}
+        required_params = {'agency': agency_id, 'fiscal_year': fiscal_year, 'type': download_type}
         for required_param, param_value in required_params.items():
             if param_value is None:
                 raise InvalidParameterException('Required param not provided: {}'.format(required_param))
@@ -498,21 +491,15 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                 d2_award_types = set(['grants', 'direct_payments', 'loans', 'other_financial_assistance'])
                 if award_types & d1_award_types:
                     # only generate d1 files if the user is asking for contracts
-                    d1_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'],
-                                                        'd1', award_level)
-                    d1_filters = {
-                        '{}__isnull'.format(value_mappings[award_level]['contract_data']): False}
-                    d1_source.queryset = queryset & award_level_table.objects.\
-                        filter(**d1_filters)
+                    d1_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd1', award_level)
+                    d1_filters = {'{}__isnull'.format(value_mappings[award_level]['contract_data']): False}
+                    d1_source.queryset = queryset & award_level_table.objects.filter(**d1_filters)
                     csv_sources.append(d1_source)
                 if award_types & d2_award_types:
                     # only generate d2 files if the user is asking for assistance data
-                    d2_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'],
-                                                        'd2', award_level)
-                    d2_filters = {
-                        '{}__isnull'.format(value_mappings[award_level]['assistance_data']): False}
-                    d2_source.queryset = queryset & award_level_table.objects.\
-                        filter(**d2_filters)
+                    d2_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd2', award_level)
+                    d2_filters = {'{}__isnull'.format(value_mappings[award_level]['assistance_data']): False}
+                    d2_source.queryset = queryset & award_level_table.objects.filter(**d2_filters)
                     csv_sources.append(d2_source)
                 verify_requested_columns_available(tuple(csv_sources), json_request.get('columns', None))
 

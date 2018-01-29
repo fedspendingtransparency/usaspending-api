@@ -1,7 +1,6 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from django.conf import settings
 from django.db import connections
 
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
@@ -93,7 +92,8 @@ class Command(BaseCommand):
             # except Exception as e:
             #     exception_logger.exception(e)
             #     failed_submissions.append(failed_submissions)
-            #     logger.error("Loading subawards for submission {} failed. Exception has been logged.".format(submission.broker_submission_id))
+            #     logger.error("Loading subawards for submission {} failed. Exception has been
+            #                   logged.".format(submission.broker_submission_id))
 
         logger.info("Successfully loaded: {}".format(success_submissions))
         logger.info("Failed to load: {}".format(failed_submissions))

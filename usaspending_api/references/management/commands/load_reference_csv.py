@@ -3,12 +3,12 @@ from usaspending_api.references.models import RefCityCountyCode, RefCountryCode,
 from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
 import logging
 
+logger = logging.getLogger('console')
+
 
 class Command(BaseCommand):
     help = "Loads a csv file into a reference table. Does not support mapping, so \
             the CSV must have the same column names as the reference model"
-
-    logger = logging.getLogger('console')
 
     def add_arguments(self, parser):
         parser.add_argument('model', nargs=1, help='the model of the reference to load', type=str)

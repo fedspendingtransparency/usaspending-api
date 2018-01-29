@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''
+"""
     Docker Django Management v0.1
 
     This script/module makes it easier to allow developers to run
@@ -47,7 +47,7 @@
     in your docker-compose.yml.
 
     If you are on MacOS, you'll have to add this folder to your list of
-        mountable folders. You can configure shared paths from 
+        mountable folders. You can configure shared paths from
         Docker -> Preferences... -> File Sharing.
 
     Once everything is set up, developers can start the USAspending API
@@ -60,7 +60,7 @@
     To initialize your postgres container. Now you can load in submissions with:
        docker-compose run app python manage.py load_submission <submission_id>
 
-'''
+"""
 
 import os
 import sys

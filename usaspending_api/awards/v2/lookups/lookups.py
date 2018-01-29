@@ -55,7 +55,8 @@ transaction_d1_columns = {
     "Primary Place of Performance State Code": "transaction__place_of_performance__state_code",  # DONE
     "Primary Place of Performance State Name": "transaction__place_of_performance__state_name",  # DONE
     "Primary Place of Performance Zip+4": "transaction__place_of_performance__zip4",  # DONE
-    "Primary Place of Performance Congressional District": "transaction__place_of_performance__congressional_code",  # TODO probably right
+    "Primary Place of Performance Congressional District":
+        "transaction__place_of_performance__congressional_code",  # TODO probably right
     "Primary Place of Performance Country Code": "transaction__place_of_performance__location_country_code",  # DONE
     "Primary Place of Performance Country Name": "transaction__place_of_performance__country_name",  # DONE
     "Primary Place of Performance Location Code": "transaction__place_of_performance__location_code",  # TODO
@@ -89,8 +90,10 @@ transaction_d1_columns = {
     "Domestic or Foreign Entity": "domestic_or_foreign_entity",  # TODO
     "DoD Acquisition Program Code": "program_system_or_equipment_code",  # DONE
     "DoD Acquisition Program Description": "dod_acquisition_program_description",  # TODO
-    "Information Technology Commercial Item Category Code": "information_technology_commercial_item_category",  # DONE
-    "Information Technology Commercial Item Category": "information_technology_commercial_item_category_description",  # DONE
+    "Information Technology Commercial Item Category Code":
+        "information_technology_commercial_item_category",  # DONE
+    "Information Technology Commercial Item Category":
+        "information_technology_commercial_item_category_description",  # DONE
     "EPA-Designated Product Code": "epa_designated_product",  # DONE
     "EPA-Designated Product": "epa_designated_product_description",  # DONE
     "Country of Product or Service Origin Code": "country_of_product_or_service_origin",  # TODO not quite right
@@ -116,7 +119,8 @@ transaction_d1_columns = {
     "Number of Offers Received": "number_of_offers_received",  # DONE
     "Commercial Item Acquisition Procedures Code": "commercial_item_acquisition_procedures",  # DONE
     "Commercial Item Acquisition Procedures": "commercial_item_acquisition_procedures_description",  # DONE
-    "Small Business Competitiveness Demonstration Program": "small_business_competitiveness_demonstration_program",  # DONE
+    "Small Business Competitiveness Demonstration Program":
+        "small_business_competitiveness_demonstration_program",  # DONE
     "Commercial Item Test Program Code": "commercial_item_test_program",  # TODO
     "Commercial Item Test Program": "commercial_item_test_program_description",  # TODO
     "A-76 FAIR Act Action Code": "a76_fair_act_action_code",  # TODO
@@ -125,7 +129,8 @@ transaction_d1_columns = {
     "FedBizOpps": "fed_biz_opps_description",  # DONE
     "Local Area Set Aside Code": "local_area_set_aside_code",  # TODO
     "Local Area Set Aside": "local_area_set_aside_description",  # TODO
-    "Price Evaluation Adjustment Preference Percent Difference": "price_evaluation_adjustment_preference_percent_difference",  # DONE
+    "Price Evaluation Adjustment Preference Percent Difference":
+        "price_evaluation_adjustment_preference_percent_difference",  # DONE
     "Clinger-Cohen Act Planning Compliance Code": "clinger_cohen_act_planning_code",  # TODO
     "Clinger-Cohen Act Planning Compliance": "clinger_cohen_act_planning_description",  # TODO
     "Walsh Healey Act Code": "walsh_healey_act_code",  # TODO
@@ -165,34 +170,50 @@ transaction_d1_columns = {
     "Contract Financing": "contract_financing_description",  # DONE
     "Purchase Card as Payment Method Code": "purchase_card_as_payment_method_code",  # TODO: Code or description?
     "Purchase Card as Payment Method": "purchase_card_as_payment_method_description",  # TODO: Code or description?
-    "Contingency Humanitarian or Peacekeeping Operation Code": "contingency_humanitarian_or_peacekeeping_operation",  # DONE
-    "Contingency Humanitarian or Peacekeeping Operation": "contingency_humanitarian_or_peacekeeping_operation_description",  # DONE
-    "Alaskan Native Owned Corporation or Firm": "alaskan_native_owned_corporation_or_firm",  # TODO: Special Legal Entity business type
-    "American Indian Owned Business": "american_indian_owned_business",  # TODO: Special Legal Entity business type
-    "Indian Tribe Federally Recognized": "indian_tribe_federally_recognized",  # TODO: Special Legal Entity business type
+    "Contingency Humanitarian or Peacekeeping Operation Code":
+        "contingency_humanitarian_or_peacekeeping_operation",  # DONE
+    "Contingency Humanitarian or Peacekeeping Operation":
+        "contingency_humanitarian_or_peacekeeping_operation_description",  # DONE
+    "Alaskan Native Owned Corporation or Firm":
+        "alaskan_native_owned_corporation_or_firm",  # TODO: Special Legal Entity business type
+    "American Indian Owned Business":
+        "american_indian_owned_business",  # TODO: Special Legal Entity business type
+    "Indian Tribe Federally Recognized":
+        "indian_tribe_federally_recognized",  # TODO: Special Legal Entity business type
     "Native Hawaiian Owned Business": "native_hawaiian_owned_business",  # TODO: Special Legal Entity business type
     "Tribally Owned Business": "tribally_owned_business",  # TODO: Special Legal Entity business type
-    "Veteran Owned Business": "veteran_owned_business",  # TODO: Special Legal Entity business type, MAYBE service_disabled_veteran_owned_business
-    "Service Disabled Veteran Owned Business": "service_disabled_veteran_owned_business",  # TODO: Special Legal Entity business type
+    "Veteran Owned Business":
+        "veteran_owned_business",  # TODO: Special Legal Entity business type,
+                                    # MAYBE service_disabled_veteran_owned_business
+    "Service Disabled Veteran Owned Business":
+        "service_disabled_veteran_owned_business",  # TODO: Special Legal Entity business type
     "Woman Owned Business": "woman_owned_business",  # TODO: Special Legal Entity business type
     "Women Owned Small Business": "women_owned_small_business",  # TODO: Special Legal Entity business type
-    "Economically Disadvantaged Women Owned Small Business": "economically_disadvantaged_women_owned_small_business",  # TODO: Special Legal Entity business type
-    "Joint Venture Women Owned Small Business": "joint_venture_women_owned_small_business",  # TODO: Special Legal Entity business type
-    "Joint Venture Economically Disadvantaged Women Owned Small Business": "joint_venture_economic_disadvantaged_women_owned_small_bus",  # TODO: Special Legal Entity business type
+    "Economically Disadvantaged Women Owned Small Business":
+        "economically_disadvantaged_women_owned_small_business",  # TODO: Special Legal Entity business type
+    "Joint Venture Women Owned Small Business":
+        "joint_venture_women_owned_small_business",  # TODO: Special Legal Entity business type
+    "Joint Venture Economically Disadvantaged Women Owned Small Business":
+        "joint_venture_economic_disadvantaged_women_owned_small_bus",  # TODO: Special Legal Entity business type
     "Minority Owned Business": "minority_owned_business",  # TODO: Special Legal Entity business type
-    "Subcontinent Asian Asian - Indian American Owned Business": "subcontinent_asian_asian_indian_american_owned_business",  # TODO: Special Legal Entity business type
-    "Asian Pacific American Owned Business": "asian_pacific_american_owned_business",  # TODO: Special Legal Entity business type
+    "Subcontinent Asian Asian - Indian American Owned Business":
+        "subcontinent_asian_asian_indian_american_owned_business",  # TODO: Special Legal Entity business type
+    "Asian Pacific American Owned Business":
+        "asian_pacific_american_owned_business",  # TODO: Special Legal Entity business type
     "Black American Owned Business": "black_american_owned_business",  # TODO: Special Legal Entity business type
     "Hispanic American Owned Business": "hispanic_american_owned_business",  # TODO: Special Legal Entity business type
     "Native American Owned Business": "native_american_owned_business",  # TODO: Special Legal Entity business type
     "Other Minority Owned Business": "other_minority_owned_business",  # TODO: Special Legal Entity business type
     "Contracting Officer's Determination of Business Size": "contracting_officers_determination_of_business_size",
-    "Contracting Officer's Determination of Business Size Code": "contracting_officers_determination_of_business_size_code",
+    "Contracting Officer's Determination of Business Size Code":
+        "contracting_officers_determination_of_business_size_code",
     "Emerging Small Business": "emerging_small_business",  # TODO: Special Legal Entity business type
-    "Community Developed Corporation Owned Firm": "community_developed_corporation_owned_firm",  # TODO: Special Legal Entity business type
+    "Community Developed Corporation Owned Firm":
+        "community_developed_corporation_owned_firm",  # TODO: Special Legal Entity business type
     "Labor Surplus Area Firm": "labor_surplus_area_firm",  # TODO: Special Legal Entity business type
     "U.S. Federal Government": "transaction__recipient__us_federal_government",  # DONE
-    "Federally Funded Research and Development Corp": "transaction__recipient__federally_funded_research_and_development_corp",
+    "Federally Funded Research and Development Corp":
+        "transaction__recipient__federally_funded_research_and_development_corp",
     "Federal Agency": "transaction__recipient__federal_agency",  # DONE
     "U.S. State Government": "transaction__recipient__us_state_government",  # DONE
     "U.S. Local Government": "transaction__recipient__us_local_government",  # DONE
@@ -207,7 +228,8 @@ transaction_d1_columns = {
     "Foreign Government": "transaction__recipient__foreign_government",  # DONE
     "Corporate Entity Not Tax Exempt": "transaction__recipient__corporate_entity_not_tax_exempt",  # DONE
     "Corporate Entity Tax Exempt": "transaction__recipient__corporate_entity_tax_exempt",  # DONE
-    "Partnership or Limited Liability Partnership": "transaction__recipient__partnership_or_limited_liability_partnership",  # DONE
+    "Partnership or Limited Liability Partnership":
+        "transaction__recipient__partnership_or_limited_liability_partnership",  # DONE
     "Sole Proprietorship": "transaction__recipient__sole_proprietorship",  # DONE
     "Small Agricultural Cooperative": "transaction__recipient__small_agricultural_cooperative",  # DONE
     "International Organization": "transaction__recipient__international_organization",  # DONE
@@ -238,7 +260,8 @@ transaction_d1_columns = {
     "Other Not For Profit Organization": "transaction__recipient__other_not_for_profit_organization",  # DONE
     "The AbilityOne Program": "transaction__recipient__the_ability_one_program",  # DONE
     "Private University or College ": "transaction__recipient__private_university_or_college",  # DONE
-    "State Controlled Institution of Higher Learning": "transaction__recipient__state_controlled_institution_of_higher_learning",  # DONE
+    "State Controlled Institution of Higher Learning":
+        "transaction__recipient__state_controlled_institution_of_higher_learning",  # DONE
     "1862 Land Grant College": "transaction__recipient__c1862_land_grant_college",  # DONE
     "1890 Land Grant College": "transaction__recipient__c1890_land_grant_college",  # DONE
     "1994 Land Grant College": "transaction__recipient__c1994_land_grant_college",  # DONE
@@ -250,10 +273,12 @@ transaction_d1_columns = {
     "School of Forestry": "transaction__recipient__school_of_forestry",  # DONE
     "Veterinary College": "transaction__recipient__veterinary_college",  # DONE
     "DoT Certified Disadvantaged Business Enterprise": "transaction__recipient__dot_certified_disadvantage",  # DONE
-    "Self-Certified Small Disadvantaged Business": "transaction__recipient__self_certified_small_disadvantaged_business",  # DONE
+    "Self-Certified Small Disadvantaged Business":
+        "transaction__recipient__self_certified_small_disadvantaged_business",  # DONE
     "Small Disadvantaged Business": "transaction__recipient__small_disadvantaged_business",  # DONE
     "8a Program Participant": "transaction__recipient__c8a_program_participant",  # DONE
-    "Historically Underutilized Business Zone HUBZone Firm": "transaction__recipient__historically_underutilized_business_zone _hubzone_firm",  # TODO
+    "Historically Underutilized Business Zone HUBZone Firm":
+        "transaction__recipient__historically_underutilized_business_zone _hubzone_firm",  # TODO
     "SBA Certified 8a Joint Venture": "transaction__recipient__sba_certified_8a_joint_venture",  # DONE
     "Last Modified Date": "last_modified_date"  # DONE
 }
@@ -285,8 +310,6 @@ transaction_d2_columns = {
     "Funding Office Name": "funding_office_name",
     "Recipient DUNS": "recipient_duns",
     "Recipient Name": "recipient_name",
-    "Recipient Country Code": "recipient_country_code",
-    "Recipient Country Name": "recipient_country_name",
     "Recipient Address Line 1": "recipient_address_line_1",
     "Recipient Address Line 2": "recipient_address_line_2",
     "Recipient Address Line 3": "recipient_address_line_3",
@@ -988,7 +1011,8 @@ award_contracts_mapping = {
     'Commercial Item Test Program': 'latest_transaction__contract_data__commercial_item_test_progr',
     'Evaluated Preference': 'latest_transaction__contract_data__evaluated_preference_desc',
     'FedBizOpps': 'latest_transaction__contract_data__fed_biz_opps_description',
-    'Small Business Competitiveness Demonstration Program': 'latest_transaction__contract_data__small_business_competitive',
+    'Small Business Competitiveness Demonstration Program':
+        'latest_transaction__contract_data__small_business_competitive',
     'PSC Code': 'latest_transaction__contract_data__product_or_service_code',
     'NAICS Code': 'latest_transaction__contract_data__naics',
     'NAICS Description': 'latest_transaction__contract_data__naics_description',
@@ -1007,7 +1031,8 @@ award_contracts_mapping = {
     'Interagency Contracting Authority': 'latest_transaction__contract_data__interagency_contract_desc',
     'Major program': 'latest_transaction__contract_data__major_program',
     'Multi Year Contract': 'latest_transaction__contract_data__multi_year_contract',
-    'Price Evaluation Adjustment Preference Percent Difference': 'latest_transaction__contract_data__price_evaluation_adjustmen',
+    'Price Evaluation Adjustment Preference Percent Difference':
+        'latest_transaction__contract_data__price_evaluation_adjustmen',
     'Program Acronym': 'latest_transaction__contract_data__program_acronym',
     'Purchase Card as Payment Method': 'latest_transaction__contract_data__purchase_card_as_payment_m',
     'Subcontracting Plan': 'latest_transaction__contract_data__subcontracting_plan_desc'
@@ -1120,5 +1145,6 @@ other_type_mapping = {
     '11': 'Other Financial Assistance'
 }
 
-assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, **loan_type_mapping, **other_type_mapping}
+assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, **loan_type_mapping,
+                           **other_type_mapping}
 non_loan_assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, **other_type_mapping}

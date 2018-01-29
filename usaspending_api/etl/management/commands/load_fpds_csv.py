@@ -1,20 +1,18 @@
 from datetime import datetime
 import logging
-import re
 import signal
-import sys
 import os
 from collections import OrderedDict
 
-from django.db import connections, transaction
+from django.db import transaction
 from django.core.cache import caches
 import pandas as pd
 
 from usaspending_api.awards.models import TransactionFPDS
 from django.core.management.base import BaseCommand
 
-# This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
-# keep hitting the databroker DB for account data
+# This dictionary will hold a map of tas_id -> treasury_account to ensure we don't keep hitting the databroker DB for
+# account data
 TAS_ID_TO_ACCOUNT = {}
 
 # Lists to store for update_awards and update_contract_awards
@@ -26,9 +24,8 @@ logger = logging.getLogger('console')
 
 class Command(BaseCommand):
     """
-    This command will load a single submission from the DATA Act broker. If
-    we've already loaded the specified broker submisison, this command
-    will remove the existing records before loading them again.
+    This command will load a single submission from the DATA Act broker. If we've already loaded the specified broker
+    submisison, this command will remove the existing records before loading them again.
     """
     help = "Updates the TransactionFPDS with the correct data from the fpds csv"
 
@@ -81,7 +78,8 @@ class Command(BaseCommand):
 
         logger.info('Getting FPDS data from CSV...')
 
-        fpds_data = pd.read_csv(fpds_csv, usecols=column_header_mapping_ordered.values(), names=column_header_mapping_ordered.keys(), header=None)
+        fpds_data = pd.read_csv(fpds_csv, usecols=column_header_mapping_ordered.values(),
+                                names=column_header_mapping_ordered.keys(), header=None)
 
         logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
         models = {transaction_fpds.detached_award_proc_unique: transaction_fpds for transaction_fpds in
@@ -93,9 +91,9 @@ class Command(BaseCommand):
         start_time = datetime.now()
         for index, row in fpds_data.iterrows():
             if not (index % 100):
-                logger.info('Processing FPDS CSV Data: Processing row {} of {} ({}))'.format(str(index),
-                                                                                             str(total_rows),
-                                                                                             datetime.now() - start_time))
+                logger.info('Processing FPDS CSV Data: '
+                            'Processing row {} of {} ({}))'.format(str(index), str(total_rows),
+                                                                   datetime.now() - start_time))
 
             detached_award_proc_unique = row['detached_award_proc_unique']
             if detached_award_proc_unique not in models:

@@ -157,9 +157,8 @@ def test_aggregate(monkeypatch, aggregate_models, model, request_data, result):
 
     agg_list = [a for a in agg]
     if 'order' not in request_data:
-        # this isn't an 'order by' request, (i.e., we're not testing
-        # the result order), so sort the actual and expected results
-        # to ensure a good comparison
+        # this isn't an 'order by' request, (i.e., we're not testing the result order), so sort the actual and expected
+        # results to ensure a good comparison
         agg_list.sort(key=itemgetter('item'))
         result.sort(key=itemgetter('item'))
 
@@ -186,8 +185,7 @@ _expected_fy_aggregated = [{
     'field': 'total_obligation',
     'group': 'period_of_performance_start_date__fy'
 }, _expected_fy_aggregated)])
-def test_aggregate_fy(monkeypatch, aggregate_models, model, request_data,
-                      expected):
+def test_aggregate_fy(monkeypatch, aggregate_models, model, request_data, expected):
     request = Mock()
     request.query_params = {}
     request.data = request_data
@@ -196,9 +194,8 @@ def test_aggregate_fy(monkeypatch, aggregate_models, model, request_data,
 
     agg_list = [a for a in agg]
     if 'order' not in request_data:
-        # this isn't an 'order by' request, (i.e., we're not testing
-        # the result order), so sort the actual and expected results
-        # to ensure a good comparison
+        # this isn't an 'order by' request, (i.e., we're not testing the result order), so sort the actual and expected
+        # results to ensure a good comparison
         agg_list.sort(key=itemgetter('item'))
         expected.sort(key=itemgetter('item'))
 
@@ -256,8 +253,7 @@ _expected_type_pop_day_aggregated = [{
         'group': ['uri', 'type'],
         'show_nulls': True
     }, _expected_type_pop_day_aggregated)])
-def test_aggregate_fy_and_type(monkeypatch, aggregate_models, model, request_data,
-                               expected):
+def test_aggregate_fy_and_type(monkeypatch, aggregate_models, model, request_data, expected):
     request = Mock()
     request.query_params = {}
     request.data = request_data
@@ -266,9 +262,8 @@ def test_aggregate_fy_and_type(monkeypatch, aggregate_models, model, request_dat
 
     agg_list = [a for a in agg]
     if 'order' not in request_data:
-        # this isn't an 'order by' request, (i.e., we're not testing
-        # the result order), so sort the actual and expected results
-        # to ensure a good comparison
+        # this isn't an 'order by' request, (i.e., we're not testing the result order), so sort the actual and expected
+        # results to ensure a good comparison
         agg_list.sort(key=itemgetter('type', 'item'))
         expected.sort(key=itemgetter('type', 'item'))
 
@@ -300,8 +295,7 @@ _expected_parent_fy_aggregated = [{
     'group': 'parent_award__period_of_performance_start_date__fy',
     'show_nulls': True
 }, _expected_parent_fy_aggregated)])
-def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model,
-                                     request_data, expected):
+def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model, request_data, expected):
     request = Mock()
     request.query_params = {}
     request.data = request_data
@@ -315,9 +309,8 @@ def test_aggregate_fy_with_traversal(monkeypatch, aggregate_models, model,
 
     agg_list = [a for a in agg]
     if 'order' not in request_data:
-        # this isn't an 'order by' request, (i.e., we're not testing
-        # the result order), so sort the actual and expected results
-        # to ensure a good comparison
+        # this isn't an 'order by' request, (i.e., we're not testing the result order), so sort the actual and expected
+        # results to ensure a good comparison
         agg_list.sort(key=itemsorter)
         expected.sort(key=itemsorter)
         # agg_list.sort(key=itemgetter('item'))
@@ -346,7 +339,8 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     assert len(agg_list) == 1
     assert agg_list[0]["aggregate"] == 10.0
 
-    request.data = {"field": "federal_action_obligation", "group": ["assistance_data__cfda_number", "contract_data__naics"]}
+    request.data = {"field": "federal_action_obligation", "group": ["assistance_data__cfda_number",
+                                                                    "contract_data__naics"]}
     agg = a.aggregate(request=request, queryset=TransactionNormalized.objects.all())
     agg_list = [a for a in agg]
     agg_list.sort(key=itemsorter)
@@ -356,7 +350,8 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     assert agg_list[1]["aggregate"] == 30.0
 
     # Allow null aggregate fileds
-    request.data = {"field": "federal_action_obligation", "group": ["assistance_data__cfda_number", "contract_data__naics"], "show_null_aggregates": True}
+    request.data = {"field": "federal_action_obligation",
+                    "group": ["assistance_data__cfda_number", "contract_data__naics"], "show_null_aggregates": True}
     agg = a.aggregate(request=request, queryset=TransactionNormalized.objects.all())
     agg_list = [a for a in agg]
     agg_list.sort(key=itemsorter)
@@ -367,7 +362,8 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     assert agg_list[2]["aggregate"] == 30.0
 
     # Allow null groups fields
-    request.data = {"field": "federal_action_obligation", "group": "assistance_data__cfda_number", "show_null_groups": True}
+    request.data = {"field": "federal_action_obligation", "group": "assistance_data__cfda_number",
+                    "show_null_groups": True}
     agg = a.aggregate(request=request, queryset=TransactionNormalized.objects.all())
     agg_list = [a for a in agg]
     agg_list.sort(key=itemsorter)
@@ -377,7 +373,8 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     assert agg_list[1]["aggregate"] == 30.0
 
     # Allow null aggregate fields and null groups
-    request.data = {"field": "federal_action_obligation", "group": "contract_data__naics", "show_null_aggregates": True, "show_null_groups": True}
+    request.data = {"field": "federal_action_obligation", "group": "contract_data__naics", "show_null_aggregates": True,
+                    "show_null_groups": True}
     agg = a.aggregate(request=request, queryset=TransactionNormalized.objects.all())
     agg_list = [a for a in agg]
     agg_list.sort(key=itemsorter)

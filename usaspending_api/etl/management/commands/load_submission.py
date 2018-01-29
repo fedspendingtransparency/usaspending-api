@@ -2,7 +2,6 @@ from datetime import datetime
 import logging
 import re
 import signal
-import sys
 
 from django.core.management.base import CommandError
 from django.core.management import call_command
@@ -13,26 +12,22 @@ import pandas as pd
 import numpy as np
 
 from usaspending_api.accounts.models import (
-    AppropriationAccountBalances, AppropriationAccountBalancesQuarterly,
-    TreasuryAppropriationAccount)
+    AppropriationAccountBalances, AppropriationAccountBalancesQuarterly, TreasuryAppropriationAccount)
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
-from usaspending_api.references.models import (
-    Agency, LegalEntity, ObjectClass, Cfda, RefProgramActivity, Location)
+from usaspending_api.references.models import ObjectClass, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.etl.award_helpers import (
-    get_award_financial_transaction, get_awarding_agency)
+from usaspending_api.etl.award_helpers import get_award_financial_transaction, get_awarding_agency
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
 from usaspending_api.etl.subaward_etl import load_subawards
 
 from usaspending_api.etl.management import load_base
-from usaspending_api.etl.management.load_base import format_date, load_data_into_model
+from usaspending_api.etl.management.load_base import load_data_into_model
 
-# This dictionary will hold a map of tas_id -> treasury_account to ensure we don't
-# keep hitting the databroker DB for account data
+# This dictionary will hold a map of tas_id -> treasury_account to ensure we don't keep hitting the databroker DB for
+# account data
 TAS_ID_TO_ACCOUNT = {}
 
 # Lists to store for update_awards and update_contract_awards
@@ -44,9 +39,8 @@ logger = logging.getLogger('console')
 
 class Command(load_base.Command):
     """
-    This command will load a single submission from the DATA Act broker. If
-    we've already loaded the specified broker submisison, this command
-    will remove the existing records before loading them again.
+    This command will load a single submission from the DATA Act broker. If we've already loaded the specified broker
+    submisison, this command will remove the existing records before loading them again.
     """
     help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable \
                 must set so we can pull submission data from their db."
@@ -132,7 +126,7 @@ class Command(load_base.Command):
                 logger.info('Loading subaward data...')
                 load_subawards(submission_attributes, awards_touched, db_cursor)
                 logger.info('Finshed loading subaward data, took {}'.format(datetime.now() - start_time))
-            except:
+            except Exception:
                 logger.warning("Error loading subawards for this submission")
         else:
             logger.info('Skipping subawards due to flags...')
@@ -147,7 +141,7 @@ def get_or_create_object_class(row_object_class, row_direct_reimbursable, logger
 
         Args:
             row_object_class: object class from the broker
-            row_by_direct_reimbursable_fun: direct/reimbursable flag from the broker
+            row_direct_reimbursable: direct/reimbursable flag from the broker
                 (used only when the object_class is 3 digits instead of 4)
     """
 
@@ -178,8 +172,7 @@ def get_or_create_object_class_rw(row, logger):
         direct_reimbursable = row.object_class[:1]
         object_class = row.object_class[1:]
     else:
-        # the object class field is the 3 digit version, so grab direct/reimbursable
-        # information from a separate field
+        # the object class field is the 3 digit version, so grab direct/reimbursable information from a separate field
         if row.by_direct_reimbursable_fun is None:
             direct_reimbursable = None
         elif row.by_direct_reimbursable_fun.lower() == 'd':
@@ -190,9 +183,8 @@ def get_or_create_object_class_rw(row, logger):
             direct_reimbursable = None
         object_class = row.object_class
 
-    # set major object class; note that we shouldn't have to do this
-    # once we have a complete list of object classes loaded to ObjectClass
-    # (we only fill it in now should it be needed by the subsequent get_or_create)
+    # set major object class; note that we shouldn't have to do this once we have a complete list of object classes
+    # loaded to ObjectClass (we only fill it in now should it be needed by the subsequent get_or_create)
     major_object_class = '{}0'.format(object_class[:1])
     if major_object_class == '10':
         major_object_class_name = 'Personnel compensation and benefits'
@@ -222,8 +214,7 @@ def get_or_create_object_class_rw(row, logger):
 
 
 def get_or_create_program_activity(row, submission_attributes):
-    # We do it this way rather than .get_or_create because we do not want to
-    # duplicate existing pk's with null values
+    # We do it this way rather than .get_or_create because we do not want to duplicate existing pk's with null values
     filters = {'program_activity_code': row['program_activity_code'],
                'budget_year': submission_attributes.reporting_fiscal_year,
                'responsible_agency_id': row['agency_identifier'],
@@ -268,23 +259,22 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
 
 def get_submission_attributes(broker_submission_id, submission_data):
     """
-    For a specified broker submission, return the existing corresponding usaspending
-    submission record or create and return a new one.
+    For a specified broker submission, return the existing corresponding usaspending submission record or create and
+    return a new one.
     """
     # check if we already have an entry for this broker submission id; if not, create one
-    submission_attributes, created = SubmissionAttributes.objects.get_or_create(
-        broker_submission_id=broker_submission_id)
+    submission_attributes, created = SubmissionAttributes.\
+        objects.get_or_create(broker_submission_id=broker_submission_id)
 
     if created:
         # this is the first time we're loading this broker submission
         logger.info('Creating broker submission id {}'.format(broker_submission_id))
 
     else:
-        # we've already loaded this broker submission, so delete it before reloading
-        # if there's another submission that references this one as a "previous submission"
-        # do not proceed.
-        # TODO: now that we're chaining submisisons together, get clarification on
-        # what should happen when a submission in the middle of the chain is deleted
+        # we've already loaded this broker submission, so delete it before reloading if there's another submission that
+        # references this one as a "previous submission" do not proceed.
+        # TODO: now that we're chaining submisisons together, get clarification on what should happen when a submission
+        # in the middle of the chain is deleted
 
         TasProgramActivityObjectClassQuarterly.refresh_downstream_quarterly_numbers(submission_attributes.submission_id)
 
@@ -292,7 +282,8 @@ def get_submission_attributes(broker_submission_id, submission_data):
         call_command('rm_submission', broker_submission_id)
 
     logger.info("Merging CGAC and FREC columns")
-    submission_data["cgac_code"] = submission_data["cgac_code"] if submission_data["cgac_code"] else submission_data["frec_code"]
+    submission_data["cgac_code"] = submission_data["cgac_code"]\
+        if submission_data["cgac_code"] else submission_data["frec_code"]
 
     # Find the previous submission for this CGAC and fiscal year (if there is one)
     previous_submission = get_previous_submission(
@@ -310,8 +301,7 @@ def get_submission_attributes(broker_submission_id, submission_data):
     # Create our value map - specific data to load
     value_map = {
         'broker_submission_id': broker_submission_id,
-        'reporting_fiscal_quarter': get_fiscal_quarter(
-            submission_data['reporting_fiscal_period']),
+        'reporting_fiscal_quarter': get_fiscal_quarter(submission_data['reporting_fiscal_period']),
         'previous_submission': None if previous_submission is None else previous_submission,
         # pull in broker's last update date to use as certified date
         'certified_date': submission_data['updated_at'].date() if type(
@@ -325,8 +315,7 @@ def get_submission_attributes(broker_submission_id, submission_data):
 
 def load_file_a(submission_attributes, appropriation_data, db_cursor):
     """
-    Process and load file A broker data (aka TAS balances,
-    aka appropriation account balances).
+    Process and load file A broker data (aka TAS balances, aka appropriation account balances).
     """
     reverse = re.compile('gross_outlay_amount_by_tas_cpe')
 
@@ -355,9 +344,8 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
 
         # Now that we have the account, we can load the appropriation balances
         # TODO: Figure out how we want to determine what row is overriden by what row
-        # If we want to correlate, the following attributes are available in the
-        # data broker data that might be useful: appropriation_id, row_number
-        # appropriation_balances = somethingsomething get appropriation balances...
+        # If we want to correlate, the following attributes are available in the data broker data that might be useful:
+        # appropriation_id, row_number appropriation_balances = somethingsomething get appropriation balances...
         appropriation_balances = AppropriationAccountBalances()
 
         value_map = {
@@ -375,8 +363,7 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
     AppropriationAccountBalances.populate_final_of_fy()
 
     # Insert File A quarterly numbers for this submission
-    AppropriationAccountBalancesQuarterly.insert_quarterly_numbers(
-        submission_attributes.submission_id)
+    AppropriationAccountBalancesQuarterly.insert_quarterly_numbers(submission_attributes.submission_id)
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
@@ -391,22 +378,19 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
 def get_file_b(submission_attributes, db_cursor):
     """
     Get broker File B data for a specific submission.
-    This function was added as a workaround for the fact that a few agencies
-    (two, as of April, 2017: DOI and ACHP) submit multiple File B records
-    for the same object class. These "dupes", come in as the same 4 digit object
+    This function was added as a workaround for the fact that a few agencies (two, as of April, 2017: DOI and ACHP)
+    submit multiple File B records for the same object class. These "dupes", come in as the same 4 digit object
     class code but with one of the direct reimbursable flags set to NULL.
 
-    From our perspective, this is a duplicate, because we get our D/R info from
-    the 1st digit of the object class when it's four digits.
+    From our perspective, this is a duplicate, because we get our D/R info from the 1st digit of the object class when
+    it's four digits.
 
-    Thus, this function examines the File B data for a given submission. If
-    it has the issue of "duplicate" object classes, it will squash the
-    offending records together so that all financial totals are reporting
-    as a single object class/program activity/TAS record as expected.
+    Thus, this function examines the File B data for a given submission. If it has the issue of "duplicate" object
+    classes, it will squash the offending records together so that all financial totals are reporting as a single object
+    class/program activity/TAS record as expected.
 
-    If the broker validations change to prohibit this pattern in the data,
-    this intervening function will no longer be necessary, we can go back to
-    selecting * from the broker's File B data.
+    If the broker validations change to prohibit this pattern in the data, this intervening function will no longer be
+    necessary, we can go back to selecting * from the broker's File B data.
 
     Args:
         submission_attributes: submission object currently being loaded
@@ -430,8 +414,8 @@ def get_file_b(submission_attributes, db_cursor):
         # there are no object class duplicates, so proceed as usual
         db_cursor.execute('SELECT * FROM object_class_program_activity WHERE submission_id = %s', [submission_id])
     else:
-        # file b contains at least one case of duplicate 4 digit object classes
-        # for the same program activity/tas, so combine the records in question
+        # file b contains at least one case of duplicate 4 digit object classes for the same program activity/tas,
+        # so combine the records in question
         combine_dupe_oc = (
             'SELECT  '
             'submission_id, '
@@ -443,7 +427,9 @@ def get_file_b(submission_attributes, db_cursor):
             'ending_period_of_availabil, '
             'main_account_code, '
             'RIGHT(object_class, 3) AS object_class, '
-            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, '
+            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' '
+            'WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' '
+            'ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, '
             'tas, '
             'tas_id, '
             'program_activity_code, '
@@ -493,7 +479,9 @@ def get_file_b(submission_attributes, db_cursor):
             'ending_period_of_availabil, '
             'main_account_code, '
             'RIGHT(object_class, 3), '
-            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' ELSE by_direct_reimbursable_fun END, '
+            'CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'1\' THEN \'d\' '
+            'WHEN length(object_class) = 4 AND LEFT(object_class, 1) = \'2\' THEN \'r\' '
+            'ELSE by_direct_reimbursable_fun END, '
             'program_activity_code, '
             'program_activity_name, '
             'sub_account_code, '
@@ -503,8 +491,7 @@ def get_file_b(submission_attributes, db_cursor):
         logger.info(
             'Found {} duplicated File B 4 digit object codes in submission {}. '
             'Aggregating financial values.'.format(dupe_oc_count, submission_id))
-        # we have at least one instance of duplicated 4 digit object classes so
-        # aggregate the financial values togther
+        # we have at least one instance of duplicated 4 digit object classes so aggregate the financial values together
         db_cursor.execute(combine_dupe_oc, [submission_id])
 
     data = dictfetchall(db_cursor)
@@ -513,8 +500,7 @@ def get_file_b(submission_attributes, db_cursor):
 
 def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     """
-    Process and load file B broker data (aka TAS balances by program
-    activity and object class).
+    Process and load file B broker data (aka TAS balances by program activity and object class).
     """
     reverse = re.compile(r'(_(cpe|fyb)$)|^transaction_obligated_amount$')
 
@@ -540,7 +526,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
                     skipped_tas[row['tas']]['count'] += 1
                     skipped_tas[row['tas']]['rows'] += [row['row_number']]
                 continue
-        except:    # TODO: What is this trying to catch, actually?
+        except Exception:    # TODO: What is this trying to catch, actually?
             continue
 
         # get the corresponding account balances row (aka "File A" record)
@@ -564,8 +550,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
         load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True, reverse=reverse)
 
     # Insert File B quarterly numbers for this submission
-    TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(
-        submission_attributes.submission_id)
+    TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(submission_attributes.submission_id)
 
     FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 
@@ -582,13 +567,11 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
 def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     """
     Process and load file C broker data.
-    Note: this should run AFTER the D1 and D2 files are loaded because we try
-    to join to those records to retrieve some additional information
-    about the awarding sub-tier agency.
+    Note: this should run AFTER the D1 and D2 files are loaded because we try to join to those records to retrieve some
+    additional information about the awarding sub-tier agency.
     """
-    # this matches the file b reverse directive, but am repeating it here
-    # to ensure that we don't overwrite it as we change up the order of
-    # file loading
+    # this matches the file b reverse directive, but am repeating it here to ensure that we don't overwrite it as we
+    # change up the order of file loading
 
     if not award_financial_frame.size:
         logger.warning('No File C (award financial) data found, skipping...')
@@ -634,8 +617,8 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
                 skipped_tas[row['tas']]['rows'] += [row['row_number']]
             continue
 
-        # Find a matching transaction record, so we can use its
-        # subtier agency information to match to (or create) an Award record
+        # Find a matching transaction record, so we can use its subtier agency information to match to (or create) an
+        # Award record
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         created, award = Award.get_or_create_summary_award(
@@ -682,7 +665,8 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
                 logger.info('individual award id mapped: {}'.format(file_d_award['id']))
 
         # Still using the cpe|fyb regex compiled above for reverse
-        afd = load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
+        load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
+
 
     awards_cache.clear()
 
