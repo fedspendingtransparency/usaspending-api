@@ -1,9 +1,10 @@
 import logging
-import timeit
 
 from django.core.management.base import BaseCommand
 from django.db import connection, connections
 from django.conf import settings
+
+from usaspending.common.helpers import timer
 
 logger = logging.getLogger('console')
 
@@ -188,60 +189,43 @@ class Command(BaseCommand):
         website_update_text_c = self.get_cols_to_update(financial_accounts_awards)
         website_cols_joins_c = self.get_file_table_joins(financial_accounts_awards)
 
-        logger.info('Getting submission ids to update')
-        start = timeit.default_timer()
-        submissions_to_update = self.get_list_of_submissions()
-        logger.info('Finished retrieving submission in {} seconds'.format(str(timeit.default_timer()-start)))
+        with timer('getting submission ids to update', logger.info):
+            submissions_to_update = self.get_list_of_submissions()
 
         for submission in submissions_to_update:
             submission_id = submission[0]
 
             # File B Updates
-            logger.info('Loading rows data to update File B submission {}'.format(submission_id))
+            logger.info('loading rows data to update File B submission {}'.format(submission_id))
 
-            start = timeit.default_timer()
-            logger.info('Retrieving rows to update for File B submission {}'.format(submission_id))
-            get_rows_to_update_query = self.get_rows_to_update('B', submission_id,
-                                                               broker_cols_b, broker_cols_type_b,
-                                                               website_cols_b)
-            ds_cursor.execute(get_rows_to_update_query)
-            logger.info('Finished retrieving rows to update for File B submission {} in {} seconds'.format(
-                submission_id, str(timeit.default_timer()-start)
+            with timer('retrieving rows to update for File B submission {}'.format(submission_id), logger.info):
+                get_rows_to_update_query = self.get_rows_to_update('B', submission_id,
+                                                                broker_cols_b, broker_cols_type_b,
+                                                                website_cols_b)
+                ds_cursor.execute(get_rows_to_update_query)
             ))
 
-            start = timeit.default_timer()
-            logger.info('Retrieving rows to update for File B submission {}'.format(submission_id))
-            update_rows = self.update_website_rows(
-                'financial_accounts_by_program_activity_object_class',
-                'file_b_rows_to_update',  website_update_text_b, website_cols_joins_b
-            )
+            with timer('updating rows for File B submission {}'.format(submission_id), logger.info):
+                update_rows = self.update_website_rows(
+                    'financial_accounts_by_program_activity_object_class',
+                    'file_b_rows_to_update',  website_update_text_b, website_cols_joins_b
+                )
 
-            ds_cursor.execute(update_rows)
-            logger.info('Finished updating Rows for File B table submission {} in {} seconds'.format(
-                submission_id, str(timeit.default_timer()-start)
-            ))
+                ds_cursor.execute(update_rows)
 
             # File C updates
-            start = timeit.default_timer()
-            logger.info('Retrieving rows to update for File C submission {}'.format(submission_id))
-            get_rows_to_update_query = self.get_rows_to_update('C', submission_id,
-                                                               broker_cols_c, broker_cols_type_c,
-                                                               website_cols_c
-                                                               )
-            ds_cursor.execute(get_rows_to_update_query)
-            logger.info('Finished retrieving rows to update for File C submission {} in {} seconds'.format(
-                submission_id, str(timeit.default_timer()-start)
-            ))
+            timer('retrieving rows to update for File C submission {}'.format(submission_id), logger.info):
+                get_rows_to_update_query = self.get_rows_to_update('C', submission_id,
+                                                                broker_cols_c, broker_cols_type_c,
+                                                                website_cols_c
+                                                                )
+                ds_cursor.execute(get_rows_to_update_query)
 
-            start = timeit.default_timer()
-            logger.info('Retrieving rows to update for File C submission {}'.format(submission_id))
-            update_rows = self.update_website_rows(
-                'financial_accounts_by_awards', 'file_c_rows_to_update', website_update_text_c, website_cols_joins_c
-            )
-            ds_cursor.execute(update_rows)
-            logger.info('Finished updating Rows for File C table submission {} in {} seconds'.format(
-                submission_id, str(timeit.default_timer()-start)
-            ))
+            with timer('updating rows for File C submission {}'.format(submission_id), logger.info):
+                update_rows = self.update_website_rows(
+                    'financial_accounts_by_awards', 'file_c_rows_to_update', website_update_text_c, website_cols_joins_c
+                )
+                ds_cursor.execute(update_rows)
 
             ds_cursor.execute("DROP TABLE file_b_rows_to_update")
             ds_cursor.execute("DROP TABLE file_c_rows_to_update")
