@@ -1,6 +1,4 @@
-from django.conf import settings
-from django.conf.urls import url, include
-from usaspending_api import views as views
+from django.conf.urls import url
 from usaspending_api.common.views import MarkdownView
 from django_spaghetti.views import Plate
 

@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from usaspending_api.references.models import NAICS
 import os
 import csv
@@ -28,6 +28,7 @@ class Command(BaseCommand):
 
         load_naics(fullpath)
         self.logger.log(20, "Loading NAICS complete.")
+
 
 def load_naics(fullpath):
     """

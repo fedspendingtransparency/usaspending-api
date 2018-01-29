@@ -102,9 +102,9 @@ class RecipientAwardSpendingViewSet(DetailViewSet):
                 queryset = queryset.filter(award_category=award_category)
             else:
                 queryset = queryset.filter(Q(award_category='insurance') | Q(award_category='other')).\
-                    annotate(award_category=Case(
-                    When(award_category='insurance', then=Value('other')), output_field=CharField())
-                )
+                    annotate(award_category=Case(When(award_category='insurance', then=Value('other')),
+                                                 output_field=CharField())
+                             )
 
         # Sum Obligations for each Recipient
         queryset = queryset.values(

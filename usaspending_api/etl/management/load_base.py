@@ -11,16 +11,12 @@ import dateutil
 from copy import copy
 from django import db
 from django.conf import settings
-from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
 from django.db import connections
 from django.core.cache import caches
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
-from usaspending_api.etl.award_helpers import (
-    update_awards, update_contract_awards,
-    update_award_categories, )
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor, setup_broker_fdw
 from usaspending_api.etl.helpers import update_model_description_fields
 from usaspending_api.references.helpers import canonicalize_location_dict
@@ -563,9 +559,17 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
         # OR the place of performance location country code is empty and there isn't a performance code
         # OR the country code is a US territory
         # THEN we can assume that the location country code is 'USA'
-        if ('recipient_flag' in location_value_map and location_value_map['recipient_flag'] and (row[location_map.get('location_country_code')] is None or row[location_map.get('location_country_code')] == 'UNITED STATES')) or \
-                ('place_of_performance_flag' in location_value_map and location_value_map['place_of_performance_flag'] and row[location_map.get('location_country_code')] is None and "performance_code" in location_map and row[location_map["performance_code"]] != '00FORGN') or \
-                ('place_of_performance_flag' in location_value_map and location_value_map['place_of_performance_flag'] and row[location_map.get('location_country_code')] is None and "performance_code" not in location_map) or \
+        if ('recipient_flag' in location_value_map and location_value_map['recipient_flag'] and
+                (row[location_map.get('location_country_code')] is None or
+                    row[location_map.get('location_country_code')] == 'UNITED STATES')) or \
+                ('place_of_performance_flag' in location_value_map and
+                    location_value_map['place_of_performance_flag'] and
+                    row[location_map.get('location_country_code')] is None and
+                    "performance_code" in location_map and row[location_map["performance_code"]] != '00FORGN') or \
+                ('place_of_performance_flag' in location_value_map and
+                    location_value_map['place_of_performance_flag'] and
+                    row[location_map.get('location_country_code')] is None and
+                    "performance_code" not in location_map) or \
                 (row[location_map.get('location_country_code')] in territory_country_codes):
             row[location_map["location_country_code"]] = 'USA'
 
@@ -587,14 +591,17 @@ def get_or_create_location(location_map, row, location_value_map=None, empty_loc
     del location_data['data_source']  # hacky way to ensure we don't create a series of empty location records
     if len(location_data):
 
-        if len(location_data) == 1 and "place_of_performance_flag" in location_data and location_data["place_of_performance_flag"]:
+        if len(location_data) == 1 and "place_of_performance_flag" in location_data and\
+                location_data["place_of_performance_flag"]:
             location_object = None
             created = False
         elif save:
-            location_object = load_data_into_model(Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False, save=True)
+            location_object = load_data_into_model(Location(), row, value_map=location_value_map,
+                                                   field_map=location_map, as_dict=False, save=True)
             created = False
         else:
-            location_object = load_data_into_model(Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False)
+            location_object = load_data_into_model(Location(), row, value_map=location_value_map,
+                                                   field_map=location_map, as_dict=False)
             # location_object = Location.objects.create(**location_data)
             created = True
 

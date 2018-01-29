@@ -6,8 +6,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.awards.models import Award
 
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin
