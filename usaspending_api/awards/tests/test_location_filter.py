@@ -8,14 +8,9 @@ from usaspending_api.awards.v2.filters.award import award_filter
 
 @pytest.fixture()
 def transaction_data():
-    country_1 = mommy.make(
-        'references.RefCountryCode',
-        country_code='ABC'
-    )
-
     location_1 = mommy.make(
         'references.Location',
-        location_country_code=country_1,
+        location_country_code='ABC',
         state_code="AA", county_code='001',
         congressional_code='01',
         zip5='12345',
@@ -23,7 +18,7 @@ def transaction_data():
 
     location_2 = mommy.make(
         'references.Location',
-        location_country_code=country_1,
+        location_country_code='ABC',
         state_code="AB",
         county_code='002',
         congressional_code='02',
