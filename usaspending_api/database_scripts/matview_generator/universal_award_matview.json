@@ -284,6 +284,10 @@
       "where": "\"naics_code\" IS NOT NULL",
       "columns": [{"name": "\"naics_code\""}]
     }, {
+      "name": "gin_naics_code",
+      "method": "GIN",
+      "columns": [{"name": "\"naics_code\"", "opclass": "gin_trgm_ops"}]
+    }, {
       "name": "gin_naics_description",
       "method": "GIN",
       "columns": [{"name": "UPPER(\"naics_description\")", "opclass": "gin_trgm_ops"}]
