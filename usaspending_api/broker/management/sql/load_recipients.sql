@@ -172,7 +172,7 @@ CREATE TABLE legal_entity_new AS (
                     WHEN UPPER(business_types) = 'U' THEN 'TRIBALLY CONTROLLED COLLEGES AND UNIVERSITIES (TCCUS)'
                     WHEN UPPER(business_types) = 'V' THEN 'ALASKA NATIVE AND NATIVE HAWAIIAN SERVING INSTITUTIONS'
                     WHEN UPPER(business_types) = 'W' THEN 'NON-DOMESTIC (NON-US) ENTITY'
-                    WHEN UPPER(business_types) IN ('X', '24') THEN 'OTHER'
+                    WHEN UPPER(business_types) IN ('X', '25') THEN 'OTHER'
                     ELSE 'UNKNOWN TYPES'
                 END AS business_types_description,
                 compile_fabs_business_categories(business_types) AS business_categories,
