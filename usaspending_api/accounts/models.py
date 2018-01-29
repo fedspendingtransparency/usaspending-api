@@ -428,7 +428,7 @@ class AppropriationAccountBalancesQuarterly(DataSourceTrackedModel):
 
         AppropriationAccountBalancesQuarterly.objects.bulk_create(qtr_list)
 
-# This is a very long line for testing flake8 integration into the travis build because we want it to just work from now on there it's long enough now
+
 class BudgetAuthority(models.Model):
 
     agency_identifier = models.TextField(db_index=True)  # aka CGAC
