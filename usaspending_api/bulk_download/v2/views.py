@@ -440,7 +440,6 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
 
         keyword = filters['keyword']
         if keyword:
-            keyword = keyword[0]
             logger.info('Getting ids based on keyword: {}'.format(keyword))
             elastic_search_complete = False
             size = 500000
