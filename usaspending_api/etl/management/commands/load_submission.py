@@ -595,6 +595,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     total_rows = award_financial_frame.shape[0]
     start_time = datetime.now()
     awards_touched = []
+    awards = Award.objects  # this stops the property lookup each iteration, saving 3+ seconds every 100 rows!
 
     # for row in award_financial_data:
     for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
@@ -617,7 +618,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             continue
 
         # Find a matching transaction record, so we can use its subtier agency information to match to (or create) an
-        # Award record
+        # Award record.
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
         created, award = Award.get_or_create_summary_award(
@@ -632,8 +633,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
         award_financial_data = FinancialAccountsByAwards()
 
-        value_map = {
-            'award': award,
+        value_map_faba = {
             'submission': submission_attributes,
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
@@ -642,10 +642,40 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             'program_activity': row.get('program_activity'),
         }
 
+        # individual FILE C D linkage
+        if not created and total_rows < 100000:
+            kwargs = {}
+            kwargs['recipient_id__isnull'] = False
+            if row.get('piid') is not None:
+                kwargs['piid'] = row.get('piid')
+            if row.get('parent_award_id') is not None:
+                kwargs['parent_award__piid'] = row.get('parent_award_id'),
+            if row.get('fain') is not None:
+                kwargs['fain'] = row.get('fain')
+            if row.get('uri') is not None:
+                kwargs['uri'] = row.get('uri')
+
+            award_queryset = awards.filter(**kwargs).values("id")[:2]
+
+            award_count = len(award_queryset)
+
+            if award_count == 1:
+                file_d_award = award_queryset[0]
+                value_map_faba['award_id'] = file_d_award['id']
+                logger.info('individual award id mapped: {}'.format(file_d_award['id']))
+
         # Still using the cpe|fyb regex compiled above for reverse
-        load_data_into_model(award_financial_data, row, value_map=value_map, save=True, reverse=reverse)
+        load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
 
     awards_cache.clear()
+
+    # bulk file C file D linkage if too many awards
+    if total_rows >= 100000:
+        logger.info('Updating file C - D linkage in bulk')
+
+        call_command('update_file_c_file_d_awards_sql')
+
+        logger.info('Completed file C - D linkage')
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
