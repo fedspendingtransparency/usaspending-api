@@ -6,7 +6,6 @@ from django.conf import settings
 from elasticsearch import Elasticsearch
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups \
         import TRANSACTIONS_LOOKUP, award_type_mapping, award_categories
-from math import floor
 
 logger = logging.getLogger('console')
 ES_HOSTNAME = settings.ES_HOSTNAME
@@ -127,7 +126,7 @@ def search_keyword_id_list_all(keyword):
         return None
     try:
         responses = responses["aggregations"]['results']
-        return [floor(response['key']) for response in responses['buckets']]
+        return [response['key'] for response in responses['buckets']]
     except Exception:
         logging.exception("There was an error parsing the transaction ID's")
         return None
