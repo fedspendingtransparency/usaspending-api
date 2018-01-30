@@ -301,7 +301,7 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def delete_transactions_from_es(id_list, index=None, size=500000):
+def delete_transactions_from_es(id_list, index=None, size=50000):
     '''
     id_list = [{key:'key1',col:'tranaction_id'},
                {key:'key2',col:'generated_unique_transaction_id'}],
@@ -321,17 +321,11 @@ def delete_transactions_from_es(id_list, index=None, size=500000):
 
     for column, values in col_to_items_dict.items():
         values_generator = chunks(values, 1000)
-        while values_generator:
-            try:
-                values_ = next(values_generator)
-                body = filter_query(column, values_)
-                response = ES_CLIENT.search(index=index, body=body, size=size)
-                delete_body = delete_query(response)
-                ES_CLIENT.delete_by_query(index=index, body=delete_body, size=size)
-            except:
-                # generator compelete
-                pass
-
+        for values_ in values_generator:
+            body = filter_query(column, values_)
+            response = ES_CLIENT.search(index=index, body=body, size=size)
+            delete_body = delete_query(response)
+            ES_CLIENT.delete_by_query(index=index, body=delete_body, size=size)
     end_ = ES_CLIENT.search(index=index)['hits']['total']
     print('ES Deletes took {}s'.format(perf_counter() - start))
     print('ES Deleted {} records'.format(str(start_ - end_)))

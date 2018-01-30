@@ -108,7 +108,13 @@
         "piid": {
           "index": false,
           "type": "text"
-        }
+        },
+        "federal_action_obligation" : {
+          "type": "float"
+        },
+        "update_date" : {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"        }
       }
     }
   }
