@@ -221,7 +221,6 @@ class BaseDownloadViewSet(APIView):
                                                 download_job.json_request))
         return download_job
 
-
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
         json_request = request.data
@@ -243,8 +242,9 @@ class BaseDownloadViewSet(APIView):
         }
         for field in fields_defaults:
             json_request['filters'][field] = json_request['filters'].get(field, fields_defaults[field])
-        json_request['filters']['date_range'] =  json_request['filters'].get('date_range', {})
-        json_request['filters']['date_range']['start_date'] = json_request['filters']['date_range'].get('start_date', None)
+        json_request['filters']['date_range'] = json_request['filters'].get('date_range', {})
+        json_request['filters']['date_range']['start_date'] = (json_request['filters']['date_range']
+                                                               .get('start_date', None))
         json_request['filters']['date_range']['end_date'] = json_request['filters']['date_range'].get('end_date', None)
 
         # TODO: Refactor with the bulk_download method in populate_monthly_files.py
@@ -260,7 +260,7 @@ class BaseDownloadViewSet(APIView):
             return self.get_download_response(file_name=cached_filename)
 
         download_name = '_'.join(value_mappings[award_level]['download_name']
-                                      for award_level in json_request['award_levels'])
+                                 for award_level in json_request['award_levels'])
         # get timestamped name to provide unique file name
         timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
 
@@ -461,7 +461,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                     logger.error('Error retrieving ids. Retrying with a smaller size: {}'.format(size))
             logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
-            queryset = queryset.filter(**{'{}__isnull'.format(value_mappings[award_level]['transaction_id']):False})
+            queryset = queryset.filter(**{'{}__isnull'.format(value_mappings[award_level]['transaction_id']): False})
             queryset &= queryset.extra(
                 where=['\"transaction_normalized\".\"id\" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))]
             )

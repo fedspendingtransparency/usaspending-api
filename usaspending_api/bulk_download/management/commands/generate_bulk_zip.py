@@ -1,7 +1,6 @@
 import logging
 import csv
 import json
-import jsonpickle
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -73,7 +72,6 @@ class Command(BaseCommand):
                     logger.info('Message Received: {}'.format(message))
                     if message.message_attributes is not None:
                         self.current_job_id = message.message_attributes['download_job_id']['StringValue']
-                        sources = []
 
                         # Recreate the sources
                         json_request = json.loads(message.message_attributes['request']['StringValue'])
