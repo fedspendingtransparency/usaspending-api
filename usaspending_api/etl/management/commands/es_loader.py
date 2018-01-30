@@ -111,7 +111,7 @@ class Command(BaseCommand):
         # delete_list = [{'id': x, 'col': 'generated_unique_transaction_id'} for x in self.deleted_ids.keys()]
         # delete_transactions_from_es(delete_list)
 
-        self.prepare_db()
+        # self.prepare_db()
 
         # Loop through award type categories
         for awd_cat_idx in AWARD_DESC_CATEGORIES.keys():
@@ -140,7 +140,7 @@ class Command(BaseCommand):
             # repeat
 
         print('Completed all categories for FY{}'.format(self.config['fiscal_year']))
-        self.cleanup_db()
+        # self.cleanup_db()
 
     def prepare_db(self):
         print('Creating View in Postgres...')
@@ -221,7 +221,7 @@ def csv_chunk_gen(filename, chunksize):
 def streaming_post_to_es(chunk, index_name):
     success, failed = 0, 0
     try:
-        for ok, item in helpers.streaming_bulk(ES_CLIENT, chunk, index=index_name, doc_type='custom_mapping'):
+        for ok, item in helpers.streaming_bulk(ES_CLIENT, chunk, index=index_name, doc_type='transaction_mapping'):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -260,7 +260,43 @@ def post_to_elasticsearch(job, mapping, chunksize=250000):
         print('Iteration took {}s'.format(perf_counter() - iteration))
 
 
-def delete_transactions_from_es(id_list, index=None):
+def filter_query(column, values, query_type="match_phrase"):
+    values = [str(i) for i in values]
+    format_ = lambda x: {query_type: {column: x}}
+    queries = [format_(i) for i in values]
+    body = {
+            "query": {
+                "bool": {
+                    "should": [
+                        queries
+                    ]
+                }
+            }
+        }
+
+    return json.dumps(body)
+
+
+def delete_query(response):
+    es_id_list = [i['_id'] for i in response['hits']['hits']]
+    body = {
+        "query": {
+            "ids": {
+                "type": "transaction_mapping",
+                "values": es_id_list
+            }
+        }
+    }
+    return json.dumps(body)
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+
+def delete_transactions_from_es(id_list, index=None, size=500000):
     '''
     id_list = [{key:'key1',col:'tranaction_id'},
                {key:'key2',col:'generated_unique_transaction_id'}],
@@ -272,19 +308,25 @@ def delete_transactions_from_es(id_list, index=None):
 
     if index is None:
         index = '{}-*'.format(settings.TRANSACTIONS_INDEX_ROOT)
+    start_ = ES_CLIENT.search(index=index)['hits']['total']
+    print('Starting amount of indices ----- {}'.format(start_))
     col_to_items_dict = defaultdict(list)
     for id_ in id_list:
         col_to_items_dict[id_['col']].append(id_['key'])
 
     for column, values in col_to_items_dict.items():
-        body = {
-            "query": {
-                "bool": {
-                    "filter": {
-                        "terms": {column: values}
-                    }
-                }
-            }
-        }
-        ES_CLIENT.delete_by_query(index=index, body=body)
+        values_generator = chunks(values, 1000)
+        while values_generator:
+            try:
+                values_ = next(values_generator)
+                body = filter_query(column, values_)
+                response = ES_CLIENT.search(index=index, body=body, size=size)
+                delete_body = delete_query(response)
+                ES_CLIENT.delete_by_query(index=index, body=delete_body, size=size)
+            except:
+                # generator compelete
+                pass
+
+    end_ = ES_CLIENT.search(index=index)['hits']['total']
     print('ES Deletes took {}s'.format(perf_counter() - start))
+    print('ES Deleted {} records'.format(str(start_ - end_)))

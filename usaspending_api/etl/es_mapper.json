@@ -1,6 +1,7 @@
 {
   "settings": {
-    "index.mapping.ignore_malformed": true
+    "index.mapping.ignore_malformed": true,
+    "index.max_result_window" : 500000
   },
   "sort": {
     "fields": [
@@ -13,7 +14,7 @@
     ]
   },
   "mappings": {
-    "custom_mapping": {
+    "transaction_mapping": {
       "properties": {
         "awarding_subtier_agency_name": {
           "fielddata": true,
