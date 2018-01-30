@@ -144,12 +144,13 @@ class Command(BaseCommand):
 
     def prepare_db(self):
         print('Creating View in Postgres...')
-        execute_sql_statement(TEMP_ES_DELTA_VIEW, False, self.config['verbose'])
+        # REMOVED for READONLY account
+        # execute_sql_statement(TEMP_ES_DELTA_VIEW, False, self.config['verbose'])
         print('View Successfully created')
 
     def cleanup_db(self):
         print('Removing View from Postgres...')
-        execute_sql_statement(DROP_VIEW_SQL, False, self.config['verbose'])
+        # execute_sql_statement(DROP_VIEW_SQL, False, self.config['verbose'])
         print('View Successfully removed')
 
     def download_csv(self, count_sql, copy_sql, filename):
