@@ -118,12 +118,6 @@ class Command(BaseCommand):
                 continue
 
             # Create Recipient/Location entries specific to this subaward row
-            recipient = LegalEntity.objects.create(
-                recipient_unique_id=row['duns'],
-                recipient_name=recipient_name
-            )
-
-            recipient.parent_recipient_unique_id = row['parent_duns']
             if award_type == 'procurement':
                 location_value_map = location_d1_recipient_mapper(row)
             else:
@@ -139,8 +133,14 @@ class Command(BaseCommand):
 
             location_value_map.pop("location_zip")
 
-            recipient.location = Location(**location_value_map).save()
-            recipient.save()
+            recipient_location = Location(**location_value_map).save()
+            recipient = LegalEntity.objects.create(
+                recipient_unique_id=row['duns'],
+                recipient_name=recipient_name,
+                parent_recipient_unique_id=row['parent_duns'],
+                location=recipient_location
+            )
+            # recipient.save()
             # recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
 
             # Create POP location
@@ -215,6 +215,7 @@ class Command(BaseCommand):
                 only_num = row['cfda_numbers'].split(' ')
                 cfda = Cfda.objects.filter(program_number=only_num[0]).first()
 
+            shared_mappings['recipient'].save()
             subaward_dict = {
                 'award': shared_mappings['award'],
                 'recipient': shared_mappings['recipient'],
