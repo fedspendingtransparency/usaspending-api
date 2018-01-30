@@ -271,48 +271,10 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
         self.load_city_county_data()
         self.fill_missing_state_data()
         self.fill_missing_zip5()
-        # self.populate_location_unique()
 
     def save(self, *args, **kwargs):
         self.pre_save()
         super(Location, self).save(*args, **kwargs)
-
-    def populate_location_unique(self):
-        unique_columns = \
-            ["location_country_code",
-             "country_name",
-             "state_code",
-             "state_name",
-             "state_description",
-             "city_name",
-             "city_code",
-             "county_name",
-             "county_code",
-             "address_line1",
-             "address_line2",
-             "address_line3",
-             "foreign_location_description",
-             "zip4",
-             "congressional_code",
-             "performance_code",
-             "zip_last4",
-             "zip5",
-             "foreign_postal_code",
-             "foreign_province",
-             "foreign_city_name",
-             "reporting_period_start",
-             "reporting_period_end"
-             ]
-
-        ret_vals = []
-        for col in unique_columns:
-            col_val = getattr(self, col)
-            if col_val is None:
-                ret_val = "none"
-            else:
-                ret_val = str(col_val)
-            ret_vals += [ret_val]
-        self.location_unique = "_".join(ret_vals)
 
     def fill_missing_state_data(self):
         """Fills in blank US state names or codes from its counterpart"""
@@ -387,15 +349,6 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
             else:
                 logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" +
                                                 str(q_kwargs) + "; got " + str(matched_reference.count()))
-
-    class Meta:
-        unique_together = [
-            'location_country_code', 'country_name', 'state_code', 'state_name', 'state_description', 'city_name',
-            'city_code', 'county_name', 'county_code', 'address_line1', 'address_line2', 'address_line3',
-            'foreign_location_description', 'zip4', 'congressional_code', 'performance_code', 'zip_last4', 'zip5',
-            'foreign_postal_code', 'foreign_province', 'foreign_city_name', 'reporting_period_start',
-            'reporting_period_end'
-        ]
 
 
 class LegalEntity(DataSourceTrackedModel):
@@ -969,7 +922,6 @@ class LegalEntity(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'legal_entity'
-        unique_together = ['recipient_unique_id', 'recipient_name', 'location']
 
 
 class LegalEntityOfficers(models.Model):
