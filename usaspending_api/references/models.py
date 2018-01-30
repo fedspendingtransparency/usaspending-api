@@ -78,7 +78,7 @@ class Agency(models.Model):
 
     toptier_agency = models.ForeignKey('ToptierAgency', models.DO_NOTHING, null=True, db_index=True)
     subtier_agency = models.ForeignKey('SubtierAgency', models.DO_NOTHING, null=True, db_index=True)
-    office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True, db_index=True)
+    office_agency = models.ForeignKey('OfficeAgency', models.DO_NOTHING, null=True)
 
     # 1182 This flag is true if toptier agency name and subtier agency name are equal.
     # This means the award is at the department level.
@@ -234,8 +234,8 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     state_description = models.TextField(blank=True, null=True, verbose_name="State Description")
     city_name = models.TextField(blank=True, null=True, verbose_name="City Name")
     city_code = models.TextField(blank=True, null=True)
-    county_name = models.TextField(blank=True, null=True, db_index=True)
-    county_code = models.TextField(blank=True, null=True, db_index=True)
+    county_name = models.TextField(blank=True, null=True)
+    county_code = models.TextField(blank=True, null=True)
     address_line1 = models.TextField(blank=True, null=True, verbose_name="Address Line 1")
     address_line2 = models.TextField(blank=True, null=True, verbose_name="Address Line 2")
     address_line3 = models.TextField(blank=True, null=True, verbose_name="Address Line 3")
@@ -257,7 +257,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
-    # location_unique = models.TextField(blank=True, null=True, db_index=True)
+    # location_unique = models.TextField(blank=True, null=True)
 
     # Tags whether this location is used as a place of performance or a recipient
     # location, or both
@@ -271,48 +271,10 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
         self.load_city_county_data()
         self.fill_missing_state_data()
         self.fill_missing_zip5()
-        # self.populate_location_unique()
 
     def save(self, *args, **kwargs):
         self.pre_save()
         super(Location, self).save(*args, **kwargs)
-
-    def populate_location_unique(self):
-        unique_columns = \
-            ["location_country_code",
-             "country_name",
-             "state_code",
-             "state_name",
-             "state_description",
-             "city_name",
-             "city_code",
-             "county_name",
-             "county_code",
-             "address_line1",
-             "address_line2",
-             "address_line3",
-             "foreign_location_description",
-             "zip4",
-             "congressional_code",
-             "performance_code",
-             "zip_last4",
-             "zip5",
-             "foreign_postal_code",
-             "foreign_province",
-             "foreign_city_name",
-             "reporting_period_start",
-             "reporting_period_end"
-             ]
-
-        ret_vals = []
-        for col in unique_columns:
-            col_val = getattr(self, col)
-            if col_val is None:
-                ret_val = "none"
-            else:
-                ret_val = str(col_val)
-            ret_vals += [ret_val]
-        self.location_unique = "_".join(ret_vals)
 
     def fill_missing_state_data(self):
         """Fills in blank US state names or codes from its counterpart"""
@@ -388,25 +350,16 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
                 logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" +
                                                 str(q_kwargs) + "; got " + str(matched_reference.count()))
 
-    class Meta:
-        unique_together = [
-            'location_country_code', 'country_name', 'state_code', 'state_name', 'state_description', 'city_name',
-            'city_code', 'county_name', 'county_code', 'address_line1', 'address_line2', 'address_line3',
-            'foreign_location_description', 'zip4', 'congressional_code', 'performance_code', 'zip_last4', 'zip5',
-            'foreign_postal_code', 'foreign_province', 'foreign_city_name', 'reporting_period_start',
-            'reporting_period_end'
-        ]
-
 
 class LegalEntity(DataSourceTrackedModel):
-    legal_entity_id = models.AutoField(primary_key=True, db_index=True)
-    location = models.ForeignKey('Location', models.DO_NOTHING, null=True)
+    legal_entity_id = models.AutoField(primary_key=True)
+    location = models.ForeignKey('Location', models.DO_NOTHING, null=True, db_index=True)
     parent_recipient_unique_id = models.TextField(blank=True, null=True, verbose_name="Parent DUNS Number")
     recipient_name = models.TextField(blank=True, verbose_name="Recipient Name")
     vendor_doing_as_business_name = models.TextField(blank=True, null=True)
     vendor_phone_number = models.TextField(blank=True, null=True)
     vendor_fax_number = models.TextField(blank=True, null=True)
-    business_types = models.TextField(blank=True, null=True, db_index=True)
+    business_types = models.TextField(blank=True, null=True)
     business_types_description = models.TextField(blank=True, null=True)
     '''
     Business Type Categories
@@ -479,7 +432,7 @@ class LegalEntity(DataSourceTrackedModel):
     '''
     business_categories = ArrayField(models.TextField(), default=list)
 
-    recipient_unique_id = models.TextField(blank=True, default='', null=True, verbose_name="DUNS Number", db_index=True)
+    recipient_unique_id = models.TextField(blank=True, default='', null=True, verbose_name="DUNS Number")
     limited_liability_corporation = models.TextField(blank=True, null=True)
     sole_proprietorship = models.TextField(blank=True, null=True)
     partnership_or_limited_liability_partnership = models.TextField(blank=True, null=True)
@@ -589,7 +542,7 @@ class LegalEntity(DataSourceTrackedModel):
     other_minority_owned_business = models.TextField(blank=True, null=True)
     us_local_government = models.TextField(blank=True, null=True)
     undefinitized_action = models.TextField(blank=True, null=True)
-    domestic_or_foreign_entity = models.TextField(blank=True, null=True, db_index=True)
+    domestic_or_foreign_entity = models.TextField(blank=True, null=True)
     domestic_or_foreign_entity_description = models.TextField(null=True, blank=True)
     division_name = models.TextField(blank=True, null=True)
     division_number = models.TextField(blank=True, null=True)
@@ -974,7 +927,6 @@ class LegalEntity(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'legal_entity'
-        unique_together = ['recipient_unique_id', 'recipient_name', 'location']
 
 
 class LegalEntityOfficers(models.Model):
