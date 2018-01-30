@@ -1,8 +1,10 @@
 DROP TABLE IF EXISTS references_location_new;
+DROP SEQUENCE IF EXISTS references_location_id_seq;
 
+CREATE SEQUENCE references_location_id_seq;
 CREATE TABLE references_location_new AS (
     SELECT
-        ROW_NUMBER() OVER (ORDER BY 1) AS location_id,
+        NEXTVAL('references_location_id_seq') AS location_id,
         *
     FROM
     (

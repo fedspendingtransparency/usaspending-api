@@ -13,11 +13,14 @@ ALTER TABLE transaction_fpds ADD CONSTRAINT tx_fpds_tx_norm_fk FOREIGN KEY (tran
 ALTER TABLE transaction_fabs ADD CONSTRAINT tx_fabs_tx_norm_fk FOREIGN KEY (transaction_id) REFERENCES transaction_normalized (id);
 
 -- Location table
+ALTER TABLE references_location ALTER location_id SET DEFAULT NEXTVAL('references_location_id_seq');
 
 -- Legal Entity table
+ALTER TABLE legal_entity ALTER legal_entity_id SET DEFAULT NEXTVAL('legal_entity_id_seq');
 ALTER TABLE legal_entity ADD CONSTRAINT le_location_fk FOREIGN KEY (location_id) REFERENCES references_location (location_id);
 
 -- Transaction Normalized table
+ALTER TABLE transaction_normalized ALTER id SET DEFAULT NEXTVAL('tx_norm_id_seq');
 ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_ppop_location_fk FOREIGN KEY (place_of_performance_id) REFERENCES references_location (location_id);
 ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_legal_entity_fk FOREIGN KEY (recipient_id) REFERENCES legal_entity (legal_entity_id);
 ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_awarding_agency_fk FOREIGN KEY (awarding_agency_id) REFERENCES agency (id);
@@ -25,6 +28,7 @@ ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_funding_agency_fk FORE
 ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_award_fk FOREIGN KEY (award_id) REFERENCES awards (id);
 
 -- Awards table
+ALTER TABLE awards ALTER id SET DEFAULT NEXTVAL('award_id_seq');
 ALTER TABLE awards ADD CONSTRAINT award_latest_tx_fk FOREIGN KEY (latest_transaction_id) REFERENCES transaction_normalized (id);
 ALTER TABLE awards ADD CONSTRAINT award_ppop_location_fk FOREIGN KEY (place_of_performance_id) REFERENCES references_location (location_id);
 ALTER TABLE awards ADD CONSTRAINT award_legal_entity_fk FOREIGN KEY (recipient_id) REFERENCES legal_entity (legal_entity_id);

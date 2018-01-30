@@ -1,8 +1,10 @@
 DROP TABLE IF EXISTS transaction_normalized_new;
+DROP SEQUENCE IF EXISTS tx_norm_id_seq;
 
+CREATE SEQUENCE tx_norm_id_seq;
 CREATE TABLE transaction_normalized_new AS (
     SELECT
-        ROW_NUMBER() OVER (ORDER BY 1) AS id,
+        NEXTVAL('tx_norm_id_seq') AS id,
         *
     FROM
     (

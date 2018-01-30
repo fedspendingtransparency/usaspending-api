@@ -1,8 +1,10 @@
 DROP TABLE IF EXISTS legal_entity_new;
+DROP SEQUENCE IF EXISTS legal_entity_id_seq;
 
+CREATE SEQUENCE legal_entity_id_seq;
 CREATE TABLE legal_entity_new AS (
     SELECT
-        ROW_NUMBER() OVER (ORDER BY 1) AS legal_entity_id,
+        NEXTVAL('legal_entity_id_seq') AS legal_entity_id,
         *
     FROM
     (

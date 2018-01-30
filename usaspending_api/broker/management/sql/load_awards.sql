@@ -1,8 +1,10 @@
 DROP TABLE IF EXISTS awards_new;
+DROP SEQUENCE IF EXISTS award_id_seq;
 
+CREATE SEQUENCE award_id_seq;
 CREATE TABLE awards_new AS (
     SELECT
-        ROW_NUMBER() OVER (ORDER BY 1) AS id,
+        NEXTVAL('award_id_seq') AS id,
         *
     FROM
     (
