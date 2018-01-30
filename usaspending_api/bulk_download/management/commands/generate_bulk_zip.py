@@ -9,7 +9,7 @@ from usaspending_api.bulk_download.models import BulkDownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.bulk_download.filestreaming import csv_selection
-from usaspending_api.bulk_download.v2.views import value_mappings
+from usaspending_api.bulk_download.v2.views import BulkDownloadAwardsViewSet
 
 # Logging
 # logging.basicConfig(filename='bulk-download-worker.log',
@@ -77,7 +77,7 @@ class Command(BaseCommand):
 
                         # Recreate the sources
                         json_request = json.loads(message.message_attributes['request']['StringValue'])
-                        csv_sources = self.get_csv_sources(json_request)
+                        csv_sources = BulkDownloadAwardsViewSet().get_csv_sources(json_request)
                         kwargs = {
                             'download_job': self.get_current_job(),
                             'file_name': message.message_attributes['file_name']['StringValue'],
