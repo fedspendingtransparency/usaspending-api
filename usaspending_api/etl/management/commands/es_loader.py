@@ -322,6 +322,7 @@ def delete_transactions_from_es(id_list, index=None, size=50000):
         col_to_items_dict[id_['col']].append(id_['key'])
 
     for column, values in col_to_items_dict.items():
+        print('Deleting from col {}'.format(column))
         values_generator = chunks(values, 1000)
         for values_ in values_generator:
             body = filter_query(column, values_)
