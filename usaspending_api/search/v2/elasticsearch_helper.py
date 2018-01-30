@@ -158,8 +158,7 @@ def extract_field_data(response, fieldname):
     returns list of given
     '''
     hits = response['hits']['hits']
-    g = lambda document: document['_source'][fieldname]
-    return [g(i) for i in hits]
+    return [hit['_source'][fieldname] for hit in hits]
 
 
 def scroll(scroll_id, fieldname):
@@ -184,7 +183,7 @@ def get_transaction_ids(keyword, size=100):
         }, "size": size}
     response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
     n_iter = DOWNLOAD_QUERY_SIZE//size
-    scroll_id =  response['_scroll_id']
+    scroll_id = response['_scroll_id']
     for i in range(n_iter):
         results, scroll_id = scroll(scroll_id, 'transaction_id')
         yield results
