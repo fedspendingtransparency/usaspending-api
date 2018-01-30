@@ -151,14 +151,13 @@ class BaseDownloadViewSet(APIView):
         return Response(response)
 
     def process_request(self, json_request, download_job, file_name):
-        csv_sources = self.get_csv_sources(json_request)
-
         kwargs = {'download_job': download_job,
                   'file_name': file_name,
-                  'columns': json_request.get('columns', None),
-                  'sources': csv_sources}
+                  'columns': json_request.get('columns', None)}
 
         if 'pytest' in sys.modules:
+            csv_sources = self.get_csv_sources(json_request)
+            kwargs['sources'] = csv_sources
             # We are testing, and cannot use threads - the testing db connection is not shared with the thread
             csv_selection.write_csvs(**kwargs)
         else:
@@ -177,8 +176,8 @@ class BaseDownloadViewSet(APIView):
                     'StringValue': json.dumps(kwargs['columns']),
                     'DataType': 'String'
                 },
-                'sources': {
-                    'StringValue': json.dumps(tuple([source.toJsonDict() for source in kwargs['sources']])),
+                'request': {
+                    'StringValue': json.dumps(json_request),
                     'DataType': 'String'
                 }
             }

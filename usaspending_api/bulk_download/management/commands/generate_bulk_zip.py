@@ -76,22 +76,13 @@ class Command(BaseCommand):
                         sources = []
 
                         # Recreate the sources
-                        for source in json.loads(message.message_attributes['sources']['StringValue']):
-                            csv_source = csv_selection.CsvSource(source['model_type'], source['file_type'],
-                                                                 source['source_type'])
-                            try:
-                                table = value_mappings[csv_source.source_type]['table']
-                            except KeyError:
-                                raise Exception('Invalid source type for CSV source: {}'
-                                                .format(csv_source.source_type))
-                            csv_source.queryset = table.objects.all()
-                            csv_source.queryset.query = jsonpickle.loads(source['query'])
-                            sources.append(csv_source)
+                        json_request = json.loads(message.message_attributes['request']['StringValue'])
+                        csv_sources = self.get_csv_sources(json_request)
                         kwargs = {
                             'download_job': self.get_current_job(),
                             'file_name': message.message_attributes['file_name']['StringValue'],
                             'columns': json.loads(message.message_attributes['columns']['StringValue']),
-                            'sources': tuple(sources)
+                            'sources': csv_sources
                         }
                         csv_selection.write_csvs(**kwargs)
 
