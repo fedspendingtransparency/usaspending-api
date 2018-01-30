@@ -109,18 +109,18 @@ class Command(BaseCommand):
         }
         filename = self.config['directory'] + '<filename>'
 
-        view_sql, copy_sql, id_sql, count_sql, drop_view = configure_sql_strings(self.config, filename, self.deleted_ids)
+        view, copy_sql, ids, count_sql, drop_view = configure_sql_strings(self.config, filename, self.deleted_ids)
         print('========================================')
         print('--- Postgres View SQL ---')
-        print(view_sql)
+        print(view)
         print('========================================')
         print('--- SQL to copy rows to CSV ---')
         print(copy_sql)
         print('========================================')
         print('--- SQL to gather all existing transactions in deleted list ---')
-        if not id_sql:
-            id_sql = '*** No ID SQL generated with provided script flags ***'
-        print(id_sql)
+        if not ids:
+            ids = '*** No ID SQL generated with provided script flags ***'
+        print(ids)
         print('========================================')
         print('--- Drop SQL ---')
         print(drop_view)
@@ -141,7 +141,7 @@ class Command(BaseCommand):
             fy=self.config['fiscal_year'],
             type=type_str,
             now=self.config['formatted_now'])
-        view_sql, copy_sql, id_sql, count_sql, drop_view = configure_sql_strings(self.config, filename, self.deleted_ids)
+        view_sql, copy_sql, ids, count_sql, drop_view = configure_sql_strings(self.config, filename, self.deleted_ids)
 
         execute_sql_statement(view_sql, False, self.config['verbose'])
 
@@ -151,8 +151,8 @@ class Command(BaseCommand):
         # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
         subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
 
-        if id_sql:
-            restored_ids = execute_sql_statement(id_sql, True, self.config['verbose'])
+        if ids:
+            restored_ids = execute_sql_statement(ids, True, self.config['verbose'])
             if self.config['verbose']:
                 print(restored_ids)
             print('{} "deleted" IDs were found in DB'.format(len(restored_ids)))
@@ -464,7 +464,9 @@ CATEGORY_SQL = ' AND award_category = \'{}\''
 
 CONTRACTS_IDV_SQL = ' AND (award_category = \'{}\' OR award_category IS NULL AND pulled_from = \'IDV\')'
 
-COUNT_SQL = 'SELECT COUNT(*) AS count FROM transaction_delta_view WHERE transaction_fiscal_year={fy}{update_date}{award_category};'
+COUNT_SQL = '''SELECT COUNT(*) AS count
+FROM transaction_delta_view
+WHERE transaction_fiscal_year={fy}{update_date}{award_category};'''
 
 COPY_SQL = '''"COPY (
     SELECT *
