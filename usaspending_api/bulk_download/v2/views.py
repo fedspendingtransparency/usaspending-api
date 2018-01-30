@@ -7,7 +7,6 @@ import pandas as pd
 import datetime
 import re
 import boto
-from threading import Thread
 from collections import OrderedDict
 
 from django.conf import settings
@@ -266,8 +265,7 @@ class BaseDownloadViewSet(APIView):
 
         download_job = self.create_bulk_download_job(json_request, timestamped_file_name)
 
-        process_thread = Thread(target=self.process_request, args=(json_request, download_job, timestamped_file_name))
-        process_thread.start()
+        self.process_request(json_request, download_job, timestamped_file_name)
 
         return self.get_download_response(file_name=timestamped_file_name)
 
