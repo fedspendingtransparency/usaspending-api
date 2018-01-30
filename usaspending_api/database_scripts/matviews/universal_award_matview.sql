@@ -170,6 +170,7 @@ CREATE INDEX idx_e8c86c66__type_set_aside_temp ON universal_award_matview_temp U
 CREATE INDEX idx_e8c86c66__product_or_service_code_temp ON universal_award_matview_temp USING BTREE("product_or_service_code") WITH (fillfactor = 100) WHERE "product_or_service_code" IS NOT NULL;
 CREATE INDEX idx_e8c86c66__gin_product_or_service_description_temp ON universal_award_matview_temp USING GIN(("product_or_service_description") gin_trgm_ops);
 CREATE INDEX idx_e8c86c66__naics_temp ON universal_award_matview_temp USING BTREE("naics_code") WITH (fillfactor = 100) WHERE "naics_code" IS NOT NULL;
+CREATE INDEX idx_e8c86c66__gin_naics_code_temp ON universal_award_matview_temp USING GIN("naics_code" gin_trgm_ops);
 CREATE INDEX idx_e8c86c66__gin_naics_description_temp ON universal_award_matview_temp USING GIN(UPPER("naics_description") gin_trgm_ops);
 CREATE INDEX idx_e8c86c66__gin_business_categories_temp ON universal_award_matview_temp USING GIN("business_categories");
 CREATE INDEX idx_e8c86c66__gin_keyword_string_temp ON universal_award_matview_temp USING GIN("keyword_string" gin_trgm_ops);
@@ -223,6 +224,7 @@ ALTER INDEX IF EXISTS idx_e8c86c66__type_set_aside RENAME TO idx_e8c86c66__type_
 ALTER INDEX IF EXISTS idx_e8c86c66__product_or_service_code RENAME TO idx_e8c86c66__product_or_service_code_old;
 ALTER INDEX IF EXISTS idx_e8c86c66__gin_product_or_service_description RENAME TO idx_e8c86c66__gin_product_or_service_description_old;
 ALTER INDEX IF EXISTS idx_e8c86c66__naics RENAME TO idx_e8c86c66__naics_old;
+ALTER INDEX IF EXISTS idx_e8c86c66__gin_naics_code RENAME TO idx_e8c86c66__gin_naics_code_old;
 ALTER INDEX IF EXISTS idx_e8c86c66__gin_naics_description RENAME TO idx_e8c86c66__gin_naics_description_old;
 ALTER INDEX IF EXISTS idx_e8c86c66__gin_business_categories RENAME TO idx_e8c86c66__gin_business_categories_old;
 ALTER INDEX IF EXISTS idx_e8c86c66__gin_keyword_string RENAME TO idx_e8c86c66__gin_keyword_string_old;
@@ -274,6 +276,7 @@ ALTER INDEX idx_e8c86c66__type_set_aside_temp RENAME TO idx_e8c86c66__type_set_a
 ALTER INDEX idx_e8c86c66__product_or_service_code_temp RENAME TO idx_e8c86c66__product_or_service_code;
 ALTER INDEX idx_e8c86c66__gin_product_or_service_description_temp RENAME TO idx_e8c86c66__gin_product_or_service_description;
 ALTER INDEX idx_e8c86c66__naics_temp RENAME TO idx_e8c86c66__naics;
+ALTER INDEX idx_e8c86c66__gin_naics_code_temp RENAME TO idx_e8c86c66__gin_naics_code;
 ALTER INDEX idx_e8c86c66__gin_naics_description_temp RENAME TO idx_e8c86c66__gin_naics_description;
 ALTER INDEX idx_e8c86c66__gin_business_categories_temp RENAME TO idx_e8c86c66__gin_business_categories;
 ALTER INDEX idx_e8c86c66__gin_keyword_string_temp RENAME TO idx_e8c86c66__gin_keyword_string;
