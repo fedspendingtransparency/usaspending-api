@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS legal_entity_new;
-DROP SEQUENCE IF EXISTS legal_entity_id_seq;
+DROP SEQUENCE IF EXISTS legal_entity_id_seq CASCADE;
 
 CREATE SEQUENCE legal_entity_id_seq;
 CREATE TABLE legal_entity_new AS (
@@ -159,12 +159,13 @@ CREATE TABLE legal_entity_new AS (
                     WHEN UPPER(business_types) = 'F' THEN 'U.S. TERRITORY OR POSSESSION'
                     WHEN UPPER(business_types) IN ('G', '05') THEN 'INDEPENDENT SCHOOL DISTRICT'
                     WHEN UPPER(business_types) IN ('H', '06') THEN 'PUBLIC/STATE CONTROLLED INSTITUTION OF HIGHER EDUCATION'
-                    WHEN UPPER(business_types) IN ('I', '11') THEN 'INDIAN/NATIVE AMERICAN TRIBAL GOVERNMENT (FEDERALLY RECOGNIZED)'
+                    WHEN UPPER(business_types) = 'I' THEN 'INDIAN/NATIVE AMERICAN TRIBAL GOVERNMENT (FEDERALLY RECOGNIZED)'
                     WHEN UPPER(business_types) = 'J' THEN 'INDIAN/NATIVE AMERICAN TRIBAL GOVERNMENT (OTHER THAN FEDERALLY RECOGNIZED)'
-                    WHEN UPPER(business_types) = 'K' THEN 'INDIAN/NATIVE AMERICAN TRIBAL DESIGNATED ORGANIZATION'
+                    WHEN UPPER(business_types) IN ('K', '11') THEN 'INDIAN/NATIVE AMERICAN TRIBAL DESIGNATED ORGANIZATION'
+                    WHEN UPPER(business_types) = '12' THEN 'OTHER NON-PROFIT'
                     WHEN UPPER(business_types) = 'L' THEN 'PUBLIC/INDIAN HOUSING AUTHORITY'
-                    WHEN UPPER(business_types) = 'M' THEN 'NONPROFIT WITH 501(C)(3) IRS STATUS (OTHER THAN INSTITUTION OF HIGHER EDUCATION)'
-                    WHEN UPPER(business_types) = 'N' THEN 'NONPROFIT WITHOUT 501(C)(3) IRS STATUS (OTHER THAN INSTITUTION OF HIGHER EDUCATION)'
+                    WHEN UPPER(business_types) = 'M' THEN 'NONPROFIT WITH 501C3 IRS STATUS (OTHER THAN INSTITUTION OF HIGHER EDUCATION)'
+                    WHEN UPPER(business_types) = 'N' THEN 'NONPROFIT WITHOUT 501C3 IRS STATUS (OTHER THAN INSTITUTION OF HIGHER EDUCATION)'
                     WHEN UPPER(business_types) IN ('O', '20') THEN 'PRIVATE INSTITUTION OF HIGHER EDUCATION'
                     WHEN UPPER(business_types) IN ('P', '21') THEN 'INDIVIDUAL'
                     WHEN UPPER(business_types) IN ('Q', '22') THEN 'FOR-PROFIT ORGANIZATION (OTHER THAN SMALL BUSINESS)'

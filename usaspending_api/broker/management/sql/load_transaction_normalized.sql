@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS transaction_normalized_new;
-DROP SEQUENCE IF EXISTS tx_norm_id_seq;
+DROP SEQUENCE IF EXISTS tx_norm_id_seq CASCADE;
 
 CREATE SEQUENCE tx_norm_id_seq;
 CREATE TABLE transaction_normalized_new AS (

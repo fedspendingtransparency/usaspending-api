@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS awards_new;
-DROP SEQUENCE IF EXISTS award_id_seq;
+DROP SEQUENCE IF EXISTS award_id_seq CASCADE;
 
 CREATE SEQUENCE award_id_seq;
 CREATE TABLE awards_new AS (

@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS references_location_new;
-DROP SEQUENCE IF EXISTS references_location_id_seq;
+DROP SEQUENCE IF EXISTS references_location_id_seq CASCADE;
 
 CREATE SEQUENCE references_location_id_seq;
 CREATE TABLE references_location_new AS (
