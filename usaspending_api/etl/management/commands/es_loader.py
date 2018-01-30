@@ -267,7 +267,8 @@ def post_to_elasticsearch(job, mapping, chunksize=250000):
 
 def filter_query(column, values, query_type="match_phrase"):
     values = [str(i) for i in values]
-    format_ = lambda x: {query_type: {column: x}}
+    def format_(x):
+        return {query_type: {column: x}}
     queries = [format_(i) for i in values]
     body = {
             "query": {
