@@ -149,9 +149,9 @@ class Award(DataSourceTrackedModel):
                                       "and direct payments.")
     type_description = models.TextField(verbose_name="Award Type Description", blank=True, null=True,
                                         help_text="The plain text description of the type of the award")
-    category = models.TextField(db_index=True, verbose_name="Category", null=True,
+    category = models.TextField(verbose_name="Category", null=True,
                                 help_text="A field that generalizes the award's type.")
-    piid = models.TextField(db_index=True, blank=True, null=True,
+    piid = models.TextField(blank=True, null=True,
                             help_text="Procurement Instrument Identifier - A unique identifier assigned to a federal "
                                       "contract, purchase order, basic ordering agreement, basic agreement, and "
                                       "blanket purchase agreement. It is used to track the contract, and any "
@@ -159,44 +159,40 @@ class Award(DataSourceTrackedModel):
                                       "between 13 and 17 digits, both letters and numbers.")
     parent_award = models.ForeignKey('awards.Award', related_name='child_award', null=True,
                                      help_text="The parent award, if applicable")
-    fain = models.TextField(db_index=True, blank=True, null=True,
+    fain = models.TextField(blank=True, null=True,
                             help_text="An identification code assigned to each financial assistance award tracking "
                                       "purposes. The FAIN is tied to that award (and all future modifications to that "
                                       "award) throughout the award's life. Each FAIN is assigned by an agency. Within "
                                       "an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN "
                                       "stands for Federal Award Identification Number, though the digits are letters, "
                                       "not numbers.")
-    uri = models.TextField(db_index=True, blank=True, null=True, help_text="The uri of the award")
-    total_obligation = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True,
-                                           verbose_name="Total Obligated",
+    uri = models.TextField(blank=True, null=True, help_text="The uri of the award")
+    total_obligation = models.DecimalField(max_digits=15, decimal_places=2, null=True, verbose_name="Total Obligated",
                                            help_text="The amount of money the government is obligated to pay for the "
                                                      "award")
-    total_outlay = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True,
+    total_outlay = models.DecimalField(max_digits=15, decimal_places=2, null=True,
                                        help_text="The total amount of money paid out for this award")
     awarding_agency = models.ForeignKey(Agency, related_name='+', null=True,
-                                        help_text="The awarding agency for the award", db_index=True)
+                                        help_text="The awarding agency for the award")
     funding_agency = models.ForeignKey(Agency, related_name='+', null=True,
-                                       help_text="The funding agency for the award", db_index=True)
-    date_signed = models.DateField(null=True, db_index=True, verbose_name="Award Date",
-                                   help_text="The date the award was signed")
-    recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient of the award", db_index=True)
-    description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award",
-                                   db_index=True)
-    period_of_performance_start_date = models.DateField(null=True, db_index=True, verbose_name="Start Date",
+                                       help_text="The funding agency for the award")
+    date_signed = models.DateField(null=True, verbose_name="Award Date", help_text="The date the award was signed")
+    recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient of the award")
+    description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award")
+    period_of_performance_start_date = models.DateField(null=True, verbose_name="Start Date",
                                                         help_text="The start date for the period of performance")
-    period_of_performance_current_end_date = models.DateField(null=True, db_index=True, verbose_name="End Date",
+    period_of_performance_current_end_date = models.DateField(null=True, verbose_name="End Date",
                                                               help_text="The current, not original, period of "
                                                                         "performance end date")
     place_of_performance = models.ForeignKey(Location, null=True,
                                              help_text="The principal place of business, where the majority of the "
                                                        "work is performed. For example, in a manufacturing contract, "
-                                                       "this would be the main plant where items are produced.",
-                                             db_index=True)
-    potential_total_value_of_award = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True,
+                                                       "this would be the main plant where items are produced.")
+    potential_total_value_of_award = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
                                                          null=True, verbose_name="Potential Total Value of Award",
                                                          help_text="The sum of the potential_value_of_award from "
                                                                    "associated transactions")
-    base_and_all_options_value = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True,
+    base_and_all_options_value = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
                                                      null=True, verbose_name="Base and All Options Value",
                                                      help_text="The sum of the base_and_all_options_value from "
                                                                "associated transactions")
@@ -305,12 +301,13 @@ class Award(DataSourceTrackedModel):
 
 
 class TransactionNormalized(models.Model):
-    award = models.ForeignKey(Award, models.CASCADE, help_text="The award which this transaction is contained in")
+    award = models.ForeignKey(Award, models.CASCADE, db_index=True,
+                              help_text="The award which this transaction is contained in")
     usaspending_unique_transaction_id = models.TextField(blank=True, null=True,
                                                          help_text="If this record is legacy USASpending data, this is "
                                                                    "the unique transaction identifier from that system")
     type = models.TextField(verbose_name="Action Type", null=True,
-                            help_text="The type for this transaction. For example, A, B, C, D", db_index=True)
+                            help_text="The type for this transaction. For example, A, B, C, D")
     type_description = models.TextField(blank=True, verbose_name="Action Type Description", null=True,
                                         help_text="The plain text description of the transaction type")
     period_of_performance_start_date = models.DateField(verbose_name="Period of Performance Start Date", null=True,
@@ -323,32 +320,32 @@ class TransactionNormalized(models.Model):
                                    db_index=True)
     action_type = models.TextField(blank=True, null=True, help_text="The type of transaction. For example, A, B, C, D")
     action_type_description = models.TextField(blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=20, db_index=True, decimal_places=2, blank=True,
-                                                    null=True,
+    federal_action_obligation = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True,
+                                                    db_index=True,
                                                     help_text="The obligation of the federal government for this "
                                                               "transaction")
     modification_number = models.TextField(blank=True, null=True, verbose_name="Modification Number",
                                            help_text="The modification number for this transaction")
     awarding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_awarding_agency', null=True,
-                                        help_text="The agency which awarded this transaction")
+                                        db_index=True, help_text="The agency which awarded this transaction")
     funding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_funding_agency', null=True,
-                                       help_text="The agency which is funding this transaction")
-    recipient = models.ForeignKey(LegalEntity, null=True, help_text="The recipient for this transaction")
+                                       db_index=True, help_text="The agency which is funding this transaction")
+    recipient = models.ForeignKey(LegalEntity, null=True, db_index=True, help_text="The recipient for this transaction")
     description = models.TextField(null=True, help_text="The description of this transaction")
-    place_of_performance = models.ForeignKey(Location, null=True,
+    place_of_performance = models.ForeignKey(Location, null=True, db_index=True,
                                              help_text="The location where the work on this transaction was performed")
     drv_award_transaction_usaspend = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
                                                                           null=True)
     drv_potential_total_award_value_amount_adjustment = models.DecimalField(max_digits=20, decimal_places=2, blank=True,
                                                                             null=True)
-    last_modified_date = models.DateField(blank=True, null=True,
+    last_modified_date = models.DateField(blank=True, null=True, db_index=True,
                                           help_text="The date this transaction was last modified")
     certified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was certified")
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True,
                                        help_text="The date this transaction was created in the API")
     update_date = models.DateTimeField(auto_now=True, null=True,
-                                       help_text="The last time this transaction was updated in the API", db_index=True)
+                                       help_text="The last time this transaction was updated in the API")
     fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
     transaction_unique_id = models.TextField(blank=False, null=False, default="none",
                                              verbose_name="Transaction Unique ID")
@@ -406,17 +403,17 @@ class TransactionFPDS(models.Model):
         TransactionNormalized, on_delete=models.CASCADE,
         primary_key=True, related_name='contract_data',
         help_text="Non-specific transaction data, fields shared among both assistance and contract transactions")
-    detached_award_procurement_id = models.TextField(blank=True, null=True, db_index=True)
+    detached_award_procurement_id = models.TextField(blank=True, null=True)
     detached_award_proc_unique = models.TextField(unique=True, null=False)
-    piid = models.TextField(blank=True, null=True, db_index=True)
+    piid = models.TextField(blank=True, null=True)
     agency_id = models.TextField(blank=True, null=True)
     awarding_sub_tier_agency_c = models.TextField(blank=True, null=True)
     awarding_sub_tier_agency_n = models.TextField(blank=True, null=True)
     awarding_agency_code = models.TextField(blank=True, null=True)
     awarding_agency_name = models.TextField(blank=True, null=True)
-    parent_award_id = models.TextField(blank=True, null=True, db_index=True)
+    parent_award_id = models.TextField(blank=True, null=True)
     award_modification_amendme = models.TextField(blank=True, null=True)
-    type_of_contract_pricing = models.TextField(blank=True, null=True, db_index=True)
+    type_of_contract_pricing = models.TextField(blank=True, null=True)
     type_of_contract_pric_desc = models.TextField(blank=True, null=True)
     contract_award_type = models.TextField(blank=True, null=True)
     contract_award_type_desc = models.TextField(blank=True, null=True)
@@ -571,7 +568,7 @@ class TransactionFPDS(models.Model):
     subcontracting_plan_desc = models.TextField(blank=True, null=True)
     program_system_or_equipmen = models.TextField(blank=True, null=True)
     program_system_or_equ_desc = models.TextField(blank=True, null=True)
-    type_set_aside = models.TextField(blank=True, null=True, db_index=True)
+    type_set_aside = models.TextField(blank=True, null=True)
     type_set_aside_description = models.TextField(blank=True, null=True)
     epa_designated_product = models.TextField(blank=True, null=True)
     epa_designated_produc_desc = models.TextField(blank=True, null=True)
@@ -681,7 +678,7 @@ class TransactionFPDS(models.Model):
     vendor_legal_org_name = models.TextField(blank=True, null=True)
     vendor_location_disabled_f = models.TextField(blank=True, null=True)
     vendor_site_code = models.TextField(blank=True, null=True)
-    pulled_from = models.TextField(blank=True, null=True)
+    pulled_from = models.TextField(blank=True, null=True, db_index=True)
     last_modified = models.TextField(blank=True, null=True)
     initial_report_date = models.TextField(blank=True, null=True)
 
@@ -707,7 +704,7 @@ class TransactionFABS(models.Model):
     transaction = models.OneToOneField(
         TransactionNormalized, on_delete=models.CASCADE,
         primary_key=True, related_name='assistance_data')
-    published_award_financial_assistance_id = models.TextField(blank=True, null=True, db_index=True)
+    published_award_financial_assistance_id = models.TextField(blank=True, null=True)
     afa_generated_unique = models.TextField(blank=True, null=False)
     action_date = models.TextField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)
@@ -728,7 +725,7 @@ class TransactionFABS(models.Model):
     cfda_title = models.TextField(blank=True, null=True)
     correction_late_delete_ind = models.TextField(blank=True, null=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    fain = models.TextField(blank=True, null=True, db_index=True)
+    fain = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     fiscal_year_and_quarter_co = models.TextField(blank=True, null=True)
     funding_agency_code = models.TextField(blank=True, null=True)
@@ -777,7 +774,7 @@ class TransactionFABS(models.Model):
     record_type = models.IntegerField(blank=True, null=True)
     sai_number = models.TextField(blank=True, null=True)
     total_funding_amount = models.TextField(blank=True, null=True)
-    uri = models.TextField(blank=True, null=True, db_index=True)
+    uri = models.TextField(blank=True, null=True)
 
     # Timestamp field auto generated by broker
     created_at = models.DateTimeField(blank=True, null=True)
