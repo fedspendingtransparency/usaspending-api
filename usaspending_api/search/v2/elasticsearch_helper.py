@@ -6,6 +6,7 @@ from django.conf import settings
 from elasticsearch import Elasticsearch
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups \
         import TRANSACTIONS_LOOKUP, award_type_mapping, award_categories
+from elasticsearch.exceptions import TransportError, ConnectionError
 
 logger = logging.getLogger('console')
 ES_HOSTNAME = settings.ES_HOSTNAME
@@ -189,11 +190,15 @@ def get_transaction_ids(keyword, size=100):
         yield results
 
 
-def get_transaction_ids_agg(keyword, size=500):
+def get_transaction_ids_agg(keyword, size=10000):
     '''returns a generator that
     yields list of transaction ids in chunksize SIZE'''
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
     n_iter = DOWNLOAD_QUERY_SIZE//size
+    total = None
+    while not total:
+        total = get_total_results(keyword, '*')
+    n_iter = min(max(1, total//size), n_iter)
     for i in range(n_iter):
         query = {"query": {"query_string": {"query": keyword}},
                  "aggs": {
@@ -207,7 +212,14 @@ def get_transaction_ids_agg(keyword, size=500):
                              "size": size}
                         }
                     }, "size": 0}
-        response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
+        found_result = False
+        while not found_result:
+            try:
+                response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
+                found_result = True
+            except (TransportError, ConnectionError) as e:
+                logger.error(e)
+                logger.error('Error retrieving ids. Retrying connection.')
         results = []
         for result in response['aggregations']['results']['buckets']:
             results.append(result['key'])
