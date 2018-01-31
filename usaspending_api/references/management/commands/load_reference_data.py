@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
+from django.conf import settings
 import logging
 from usaspending_api.references.models import RefCityCountyCode
 
@@ -22,7 +23,10 @@ class Command(BaseCommand):
 
         # TAS's should only be loaded after agencies to ensure they can properly link to agencies
         self.logger.info("Loading tas_list.csv")
-        call_command('loadtas', 'gtas-sf133')
+        if settings.IS_LOCAL:
+            call_command('loadtas', 'usaspending_api/data/tas_list.csv')
+        else:
+            call_command('loadtas', 'gtas-sf133')
 
         self.logger.info("Loading program_activity.csv")
         call_command('loadprogramactivity', 'usaspending_api/data/program_activity.csv')
