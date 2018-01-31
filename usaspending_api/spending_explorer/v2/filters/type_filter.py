@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.db.models import Sum
 
 from usaspending_api.awards.models import FinancialAccountsByAwards

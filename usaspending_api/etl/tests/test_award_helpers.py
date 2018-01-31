@@ -3,9 +3,7 @@ import datetime
 from model_mommy import mommy
 import pytest
 
-from usaspending_api.etl.award_helpers import (
-    get_award_financial_transaction, update_awards, update_contract_awards)
-from usaspending_api.references.models import Agency
+from usaspending_api.etl.award_helpers import (get_award_financial_transaction, update_awards, update_contract_awards)
 
 
 @pytest.mark.django_db
@@ -40,9 +38,8 @@ def test_award_update_from_latest_transaction():
     assert award.description == 'original award'
     assert award.latest_transaction == transaction
 
-    # adding an older transaction with different info updates award's total
-    # obligation amt and the description (which is sourced from the
-    # earliest txn), but other info remains unchanged
+    # adding an older transaction with different info updates award's total obligation amt and the description
+    # (which is sourced from the earliest txn), but other info remains unchanged
     mommy.make(
         'awards.TransactionNormalized',
         award=award,
@@ -58,8 +55,8 @@ def test_award_update_from_latest_transaction():
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
     assert award.description == 'older description'
 
-    # adding an newer transaction with different info updates award's total
-    # obligation amt and also overrides other values
+    # adding an newer transaction with different info updates award's total obligation amt and also overrides
+    # other values
     mommy.make(
         'awards.TransactionNormalized',
         id=999,
@@ -187,9 +184,8 @@ def test_award_update_with_list():
 def test_award_update_from_contract_transaction():
     """Test award updates specific to contract transactions."""
 
-    # for contract type transactions,
-    # the base_and_all_options_value field
-    # should updte the corresponding field on the award table
+    # for contract type transactions, the base_and_all_options_value field should update the corresponding field on
+    # the award table
     award = mommy.make('awards.Award')
     txn = mommy.make('awards.TransactionNormalized', award=award)
     txn2 = mommy.make('awards.TransactionNormalized', award=award)
@@ -253,9 +249,8 @@ def test_award_update_contract_txn_with_list():
 @pytest.mark.django_db
 def test_deleted_transactions():
     """Test that award values are updated correctly when a txn is deleted."""
-    # writing these tests revealed that we're not updating awards fields
-    # when transactions are deleted. since the TransactionNormalized model's delete()
-    # method may not fire during a bulk deletion, we may want to use a signal
+    # writing these tests revealed that we're not updating awards fields when transactions are deleted. since the
+    # TransactionNormalized model's delete() method may not fire during a bulk deletion, we may want to use a signal
     # rather than override delete()
 
 
@@ -279,8 +274,7 @@ def test_get_award_financial_transaction():
     agency = mommy.make('references.Agency', toptier_agency=toptier)
 
     txn1 = mommy.make('awards.TransactionNormalized', awarding_agency=agency, id=1)
-    mommy.make(
-        'awards.TransactionFPDS', transaction=txn1, piid='abc')
+    mommy.make('awards.TransactionFPDS', transaction=txn1, piid='abc')
 
     txn2 = mommy.make(
         'awards.TransactionNormalized',
@@ -295,16 +289,13 @@ def test_get_award_financial_transaction():
     )
 
     txn3 = mommy.make('awards.TransactionNormalized', awarding_agency=agency, id=3)
-    mommy.make(
-        'awards.TransactionFABS', transaction=txn3, fain='123')
+    mommy.make('awards.TransactionFABS', transaction=txn3, fain='123')
 
     txn4 = mommy.make('awards.TransactionNormalized', awarding_agency=agency, id=4)
-    mommy.make(
-        'awards.TransactionFABS', transaction=txn4, uri='456')
+    mommy.make('awards.TransactionFABS', transaction=txn4, uri='456')
 
     txn5 = mommy.make('awards.TransactionNormalized', awarding_agency=agency, id=5)
-    mommy.make(
-        'awards.TransactionFABS', transaction=txn5, fain='789', uri='nah')
+    mommy.make('awards.TransactionFABS', transaction=txn5, fain='789', uri='nah')
 
     # match on piid
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, piid='abc'))
@@ -326,8 +317,7 @@ def test_get_award_financial_transaction():
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, uri='456'))
     assert txn == str(agency.id)
 
-    # if there's an unmatched fain, we should not find a txn match,
-    # even if there's a match on the URI
+    # if there's an unmatched fain, we should not find a txn match, even if there's a match on the URI
     txn = get_award_financial_transaction(FakeRow(agency_identifier=cgac, fain='fakefain', uri='456'))
     assert txn is None
 
@@ -339,8 +329,7 @@ def test_get_award_financial_transaction():
     txn = get_award_financial_transaction(FakeRow(agency_identifier='999', piid='abc'))
     assert txn is None
 
-    # if there is more than one txn match, we should get the one with
-    # the most recent action date
+    # if there is more than one txn match, we should get the one with the most recent action date
     txn6 = mommy.make(
         'awards.TransactionNormalized',
         awarding_agency=agency,

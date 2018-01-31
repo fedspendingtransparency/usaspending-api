@@ -3,7 +3,7 @@ import os
 import boto
 import pandas as pd
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.conf import settings
 
 
@@ -29,8 +29,7 @@ class Command(BaseCommand):
 
         self.logger.info('Writing broker agency list to local data directory')
 
-        broker_agency_list.to_csv(os.path.join(settings.BASE_DIR,
-                                               'usaspending_api', 'data',
+        broker_agency_list.to_csv(os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                                                'agency_list_broker_s3.csv'),
                                   mode='w', index=False)
 

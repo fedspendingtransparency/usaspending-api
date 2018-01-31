@@ -1,5 +1,4 @@
-from django.core.management.base import BaseCommand, CommandError
-import os
+from django.core.management.base import BaseCommand
 from django.core.serializers.json import json, DjangoJSONEncoder
 from rest_framework_tracking.models import APIRequestLog
 import datetime
@@ -15,8 +14,10 @@ class Command(BaseCommand):
     logger = logging.getLogger('console')
 
     def add_arguments(self, parser):
-        parser.add_argument('start_date', nargs="?", default=str(datetime.date.today()), help='The start date, in YYYY-MM-DD')
-        parser.add_argument('end_date', nargs="?", default=str(datetime.date.today()), help='The end date, in YYYY-MM-DD')
+        parser.add_argument('start_date', nargs="?", default=str(datetime.date.today()),
+                            help='The start date, in YYYY-MM-DD')
+        parser.add_argument('end_date', nargs="?", default=str(datetime.date.today()),
+                            help='The end date, in YYYY-MM-DD')
 
     def handle(self, *args, **options):
         start_date = datetime.datetime.strptime(options['start_date'], "%Y-%m-%d")

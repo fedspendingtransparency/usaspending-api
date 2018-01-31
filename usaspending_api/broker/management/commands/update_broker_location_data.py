@@ -108,7 +108,8 @@ def update_tmp_table_location_changes(file_type, database_columns, unique_identi
 
         -- Adding index to table to improve speed on update
         CREATE INDEX {file_type}_le_loc_idx ON {file_type}_transactions_to_update_{fiscal_year}(recipient_change);
-        CREATE INDEX {file_type}_pop_idx ON {file_type}_transactions_to_update_{fiscal_year}(place_of_performance_change);
+        CREATE INDEX {file_type}_pop_idx ON
+            {file_type}_transactions_to_update_{fiscal_year}(place_of_performance_change);
         ANALYZE {file_type}_transactions_to_update_{fiscal_year};
         """.format(file_type=file_type,
                    unique_identifier=unique_identifier,

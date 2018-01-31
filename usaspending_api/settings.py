@@ -200,7 +200,8 @@ LOGGING = {
     'formatters': {
         'specifics': {
             '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
-            'format': "%(asctime)s %(filename)s %(funcName)s %(levelname)s %(lineno)s %(module)s %(message)s %(name)s %(pathname)s"
+            'format': "%(asctime)s %(filename)s %(funcName)s %(levelname)s %(lineno)s %(module)s " +
+                      "%(message)s %(name)s %(pathname)s"
         },
         'simpletime': {
             'format': "%(asctime)s - %(message)s",

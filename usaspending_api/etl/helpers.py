@@ -2,7 +2,7 @@ from datetime import datetime
 import warnings
 import logging
 
-from django.db.models import Q, F, Case, Value, When
+from django.db.models import Q, Case, Value, When
 from django.core.cache import caches, CacheKeyWarning
 import django.apps
 
@@ -36,15 +36,13 @@ def convert_date(date):
 
 def get_subtier_agency_dict():
     """Returns a dictionary with key = subtier agency code and value = agency id."""
-    # there's no unique constraint on subtier_code, so the order by below ensures
-    # that in the case of duplicate subtier codes, the dictionary we return will
-    # reflect the most recently updated one
+    # there's no unique constraint on subtier_code, so the order by below ensures that in the case of duplicate subtier
+    # codes, the dictionary we return will reflect the most recently updated one
     agencies = Agency.objects.all().values(
         'id',
         'subtier_agency__subtier_code').order_by('subtier_agency__update_date')
     subtier_agency_dict = {
-        a['subtier_agency__subtier_code']: a['id']
-        for a in agencies
+        a['subtier_agency__subtier_code']: a['id'] for a in agencies
     }
     return subtier_agency_dict
 
@@ -54,8 +52,7 @@ def fetch_country_code(vendor_country_code):
     if code_str == "":
         return None
 
-    country_code = RefCountryCode.objects.filter(
-        Q(country_code=code_str) | Q(country_name__iexact=code_str)).first()
+    country_code = RefCountryCode.objects.filter(Q(country_code=code_str) | Q(country_name__iexact=code_str)).first()
     if not country_code:
         # We don't have an exact match on the name or the code, so we need to
         # chain filter on the name
@@ -116,15 +113,15 @@ def up2colon(input_string):
 def parse_numeric_value(string):
     try:
         return float(string)
-    except:
+    except Exception:
         return None
 
 
 def get_fiscal_quarter(fiscal_reporting_period):
     """
     Return the fiscal quarter.
-    Note: the reporting period being passed should already be in
-    "federal fiscal format", where period 1 = Oct. and period 12 = Sept.
+    Note: the reporting period being passed should already be in "federal fiscal format",
+    where period 1 = Oct. and period 12 = Sept.
     """
     if fiscal_reporting_period in [1, 2, 3]:
         return 1
@@ -138,9 +135,8 @@ def get_fiscal_quarter(fiscal_reporting_period):
 
 def get_previous_submission(cgac_code, fiscal_year, fiscal_period):
     """
-    For the specified CGAC (e.g., department/top-tier agency) and specified
-    fiscal year and quarter, return the previous submission within the same fiscal
-    year.
+    For the specified CGAC (e.g., department/top-tier agency) and specified fiscal year and quarter, return the
+    previous submission within the same fiscal year.
     """
     previous_submission = SubmissionAttributes.objects \
         .filter(
@@ -183,9 +179,8 @@ def update_model_description_fields():
 
     # This iterates over every model that Django has registered
     for model in django.apps.apps.get_models():
-        # This checks the app_label of the model, and thus we can skip it if it
-        # is not in one of our updatable_apps. Thus, we'll skip any django admin
-        # apps, like auth, corsheaders, etc.
+        # This checks the app_label of the model, and thus we can skip it if it is not in one of our updatable_apps.
+        # Thus, we'll skip any django admin apps, like auth, corsheaders, etc.
         if model._meta.app_label not in updatable_apps:
             continue
 
@@ -195,18 +190,17 @@ def update_model_description_fields():
         model_fields = [f.name for f in model._meta.get_fields()]
 
         # This supports multi-case DAIMS
-        # We must filter on the model level rather than add them to the
-        # when clauses, because if there is a FK in the when clause Django is
-        # not guaranteed to join on that table properly.
+        # We must filter on the model level rather than add them to the when clauses, because if there is a FK in the
+        # when clause Django is not guaranteed to join on that table properly.
         #
         # This is an array of tuples of the following format
         # (Q object of filter, field_names -> case objects map for this filter)
         #
-        # It is initialized with a blank filter and empty list, which is where
-        # default updates are stored
+        # It is initialized with a blank filter and empty list, which is where default updates are stored
         model_filtered_update_case_map = [(Q(), {})]
 
-        desc_fields = [field for field in model_fields if field.split('_')[-1] == "description"[:len(field.split('_')[-1])]]
+        desc_fields = [field for field in model_fields if field.split('_')[-1] ==
+                       "description"[:len(field.split('_')[-1])]]
         non_desc_fields = [field for field in model_fields if field not in desc_fields]
         desc_fields_mapping = {}
         for desc_field in desc_fields:
@@ -219,8 +213,7 @@ def update_model_description_fields():
                     actual_field = field
             desc_fields_mapping[desc_field] = actual_field
 
-        # Loop through each of the models fields to construct a case for each
-        # applicable field
+        # Loop through each of the models fields to construct a case for each applicable field
         for field in model_fields:
             # We're looking for field names ending in _description
             split_name = field.split("_")
@@ -231,8 +224,7 @@ def update_model_description_fields():
 
             source_field = "_".join(split_name[:-1])
             destination_field = field
-            # This is the map name, prefixed by model name for when there are
-            # non-unique description fields
+            # This is the map name, prefixed by model name for when there are non-unique description fields
             source_field = desc_fields_mapping[field] if field in desc_fields_mapping else source_field
             model_map_name = "{}.{}_map".format(model.__name__, source_field)
             map_name = "{}_map".format(source_field)
@@ -242,7 +234,8 @@ def update_model_description_fields():
 
             # Validate we have the source field
             if source_field not in model_fields:
-                logger.debug("Tried to update '{}' on model '{}', but source field '{}' does not exist.".format(destination_field, model.__name__, source_field))
+                logger.debug("Tried to update '{}' on model '{}', but source field '{}' does not exist.".
+                             format(destination_field, model.__name__, source_field))
                 continue
 
             # Validate we have a map
@@ -252,12 +245,9 @@ def update_model_description_fields():
             elif map_name in daims_maps.keys():
                 code_map = daims_maps[map_name]
             else:
-                logger.warn("Tried to update '{}' on model '{}', but neither map '{}' nor '{}' exists.".format(destination_field, model.__name__, model_map_name, map_name))
+                logger.warn("Tried to update '{}' on model '{}', but neither map '{}' nor '{}' exists.".
+                            format(destination_field, model.__name__, model_map_name, map_name))
                 continue
-
-            # Construct the set of whens for this field
-            when_list = []
-            default = None
 
             # Cases start from 1
             case_number = 1
@@ -284,8 +274,7 @@ def update_model_description_fields():
                 case_name = "case_{}".format(case_number)
                 case_map = "case_{}_map".format(case_number)
 
-            # If our case number is still 1, then we didn't have any cases.
-            # Therefore, we perform the default
+            # If our case number is still 1, then we didn't have any cases. Therefore, we perform the default
             if case_number == 1:
                 case_object = create_case(code_map, source_field)
 
@@ -298,13 +287,13 @@ def update_model_description_fields():
         for filter_tuple in model_filtered_update_case_map:
             # For each filter tuple, check if the dictionary has any entries
             if len(filter_tuple[1].keys()) > 0:
-                print("Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".format(model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())))
+                print("Updating model {}\n  FILTERS:\n    {}\n  FIELDS:\n    {}".
+                      format(model.__name__, str(filter_tuple[0]), "\n    ".join(filter_tuple[1].keys())))
                 try:
                     model.objects.filter(filter_tuple[0]).update(**filter_tuple[1])
                 except django.db.utils.ProgrammingError as e:
                     logger.warn(str(e))
-                    logger.warn("(OK if invoked from a migration,\n"
-                                "when the table may not yet have been created)")
+                    logger.warn("(OK if invoked from a migration, when the table may not yet have been created)")
 
 
 # Utility method for update_model_description_fields, creates the Case object

@@ -1,16 +1,17 @@
 import pytest
 
 from model_mommy import mommy
-import json
 
 
 @pytest.fixture
 def federal_account_models():
     fed_1 = mommy.make('accounts.FederalAccount', account_title="Community Spending", _fill_optional=True)
     fed_2 = mommy.make('accounts.FederalAccount', account_title="Military Spending", _fill_optional=True)
-    fed_3 = mommy.make('accounts.FederalAccount', account_title="Foreign Spending", _fill_optional=True)
-    tas_1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_1, tas_rendering_label="ABC", _fill_optional=True)
-    tas_2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_2, tas_rendering_label="XYZ", _fill_optional=True)
+    mommy.make('accounts.FederalAccount', account_title="Foreign Spending", _fill_optional=True)
+    mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_1, tas_rendering_label="ABC",
+               _fill_optional=True)
+    mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_2, tas_rendering_label="XYZ",
+               _fill_optional=True)
 
 
 @pytest.mark.django_db

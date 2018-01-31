@@ -1,16 +1,14 @@
 """
-Sets up mappings from column names used in downloads to the
-query paths used to get the data from django.
+Sets up mappings from column names used in downloads to the query paths used to get the data from django.
 
-Not in use while we pull CSV data from the non-historical tables.
-Until we switch to pulling CSV downloads from the historical
-tables TransactionFPDS and TransactionFABS, import download_column_lookups.py
-instad.
+Not in use while we pull CSV data from the non-historical tables. Until we switch to pulling CSV downloads from the
+historical tables TransactionFPDS and TransactionFABS, import download_column_lookups.py instead.
 """
 """
 Code to generate these from spreadsheets:
 
-tail -n +3 'usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D2-Award (Financial Assistance)-Table 1.csv' > d2_columns.csv
+tail -n +3 'usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D2-Award (Financial Assistance)-Table 1.csv' >
+d2_columns.csv
 
 
 def find_column(col_name, model_classes):
@@ -22,9 +20,11 @@ def find_column(col_name, model_classes):
 query_paths = {'transaction': {'d1': {}, 'd2': {}}, 'award': {'d1': {}, 'd2': {}}}
 human_names = {'transaction': {'d1': [], 'd2': []}, 'award': {'d1': [], 'd2': []}}
 
-models_award_d1 = ((Award, ''), (TransactionNormalized, 'latest_transaction__'), (TransactionFPDS, 'latest_transaction__contract_data__'))
+models_award_d1 = ((Award, ''), (TransactionNormalized, 'latest_transaction__'),
+                    (TransactionFPDS, 'latest_transaction__contract_data__'))
 models_transaction_d1 = ((TransactionNormalized, ''), (TransactionFPDS, 'contract_data__'), (Award, 'award__'))
-models_award_d2 = ((Award, ''), (TransactionNormalized, 'latest_transaction__'), (TransactionFABS, 'latest_transaction__assistance_data__'))
+models_award_d2 = ((Award, ''), (TransactionNormalized, 'latest_transaction__'),
+                    (TransactionFABS, 'latest_transaction__assistance_data__'))
 models_transaction_d2 = ((TransactionNormalized, ''), (TransactionFABS, 'assistance_data__'), (Award, 'award__'))
 
 def set_if_found(dl_name, path, model, file):
@@ -105,21 +105,27 @@ query_paths = {
             'clinger_cohen_act_planning': 'latest_transaction__contract_data__clinger_cohen_act_pla_desc',
             'clinger_cohen_act_planning_code': 'latest_transaction__contract_data__clinger_cohen_act_planning',
             'commercial_item_acquisition_procedures': 'latest_transaction__contract_data__commercial_item_acqui_desc',
-            'commercial_item_acquisition_procedures_code': 'latest_transaction__contract_data__commercial_item_acquisitio',
+            'commercial_item_acquisition_procedures_code':
+                'latest_transaction__contract_data__commercial_item_acquisitio',
             'commercial_item_test_program': 'latest_transaction__contract_data__commercial_item_test_desc',
             'commercial_item_test_program_code': 'latest_transaction__contract_data__commercial_item_test_progr',
-            'community_developed_corporation_owned_firm': 'latest_transaction__contract_data__community_developed_corpor',
+            'community_developed_corporation_owned_firm':
+                'latest_transaction__contract_data__community_developed_corpor',
             'community_development_corporation': 'latest_transaction__contract_data__community_development_corp',
             'consolidated_contract': 'latest_transaction__contract_data__consolidated_contract_desc',
             'consolidated_contract_code': 'latest_transaction__contract_data__consolidated_contract',
-            'contingency_humanitarian_or_peacekeeping_operation': 'latest_transaction__contract_data__contingency_humanitar_desc',
-            'contingency_humanitarian_or_peacekeeping_operation_code': 'latest_transaction__contract_data__contingency_humanitarian_o',
+            'contingency_humanitarian_or_peacekeeping_operation':
+                'latest_transaction__contract_data__contingency_humanitar_desc',
+            'contingency_humanitarian_or_peacekeeping_operation_code':
+                'latest_transaction__contract_data__contingency_humanitarian_o',
             'contract_bundling': 'latest_transaction__contract_data__contract_bundling_descrip',
             'contract_bundling_code': 'latest_transaction__contract_data__contract_bundling',
             'contract_financing': 'latest_transaction__contract_data__contract_financing_descrip',
             'contract_financing_code': 'latest_transaction__contract_data__contract_financing',
-            'contracting_officers_determination_of_business_size': 'latest_transaction__contract_data__contracting_officers_desc',
-            'contracting_officers_determination_of_business_size_code': 'latest_transaction__contract_data__contracting_officers_deter',
+            'contracting_officers_determination_of_business_size':
+                'latest_transaction__contract_data__contracting_officers_desc',
+            'contracting_officers_determination_of_business_size_code':
+                'latest_transaction__contract_data__contracting_officers_deter',
             'corporate_entity_not_tax_exempt': 'latest_transaction__contract_data__corporate_entity_not_tax_e',
             'corporate_entity_tax_exempt': 'latest_transaction__contract_data__corporate_entity_tax_exemp',
             'cost_accounting_standards_clause': 'latest_transaction__contract_data__cost_accounting_stand_desc',
@@ -128,7 +134,8 @@ query_paths = {
             'cost_or_pricing_data_code': 'latest_transaction__contract_data__cost_or_pricing_data',
             'council_of_governments': 'latest_transaction__contract_data__council_of_governments',
             'country_of_product_or_service_origin': 'latest_transaction__contract_data__country_of_product_or_desc',
-            'country_of_product_or_service_origin_code': 'latest_transaction__contract_data__country_of_product_or_serv',
+            'country_of_product_or_service_origin_code':
+                'latest_transaction__contract_data__country_of_product_or_serv',
             'county_local_government': 'latest_transaction__contract_data__county_local_government',
             'davis_bacon_act': 'latest_transaction__contract_data__davis_bacon_act_descrip',
             'davis_bacon_act_code': 'latest_transaction__contract_data__davis_bacon_act',
@@ -140,7 +147,8 @@ query_paths = {
             'domestic_or_foreign_entity_code': 'latest_transaction__contract_data__domestic_or_foreign_entity',
             'domestic_shelter': 'latest_transaction__contract_data__domestic_shelter',
             'dot_certified_disadvantage': 'latest_transaction__contract_data__dot_certified_disadvantage',
-            'economically_disadvantaged_women_owned_small_business': 'latest_transaction__contract_data__economically_disadvantaged',
+            'economically_disadvantaged_women_owned_small_business':
+                'latest_transaction__contract_data__economically_disadvantaged',
             'educational_institution': 'latest_transaction__contract_data__educational_institution',
             'emerging_small_business': 'latest_transaction__contract_data__emerging_small_business',
             'epa_designated_product': 'latest_transaction__contract_data__epa_designated_produc_desc',
@@ -154,7 +162,8 @@ query_paths = {
             'fed_biz_opps': 'latest_transaction__contract_data__fed_biz_opps_description',
             'fed_biz_opps_code': 'latest_transaction__contract_data__fed_biz_opps',
             'federal_agency': 'latest_transaction__contract_data__federal_agency',
-            'federally_funded_research_and_development_corp': 'latest_transaction__contract_data__federally_funded_research',
+            'federally_funded_research_and_development_corp':
+                'latest_transaction__contract_data__federally_funded_research',
             'for_profit_organization': 'latest_transaction__contract_data__for_profit_organization',
             'foreign_funding': 'latest_transaction__contract_data__foreign_funding',
             'foreign_government': 'latest_transaction__contract_data__foreign_government',
@@ -171,20 +180,24 @@ query_paths = {
             'hispanic_american_owned_business': 'latest_transaction__contract_data__hispanic_american_owned_bu',
             'hispanic_servicing_institution': 'latest_transaction__contract_data__hispanic_servicing_institu',
             'historically_black_college': 'latest_transaction__contract_data__historically_black_college',
-            'historically_underutilized_business_zone _hubzone_firm': 'latest_transaction__contract_data__historically_underutilized',
+            'historically_underutilized_business_zone _hubzone_firm':
+                'latest_transaction__contract_data__historically_underutilized',
             'hospital_flag': 'latest_transaction__contract_data__hospital_flag',
             'housing_authorities_public_tribal': 'latest_transaction__contract_data__housing_authorities_public',
             'idv_type': 'latest_transaction__contract_data__idv_type_description',
             'idv_type_code': 'latest_transaction__contract_data__idv_type',
             'indian_tribe_federally_recognized': 'latest_transaction__contract_data__indian_tribe_federally_rec',
-            'information_technology_commercial_item_category': 'latest_transaction__contract_data__information_technolog_desc',
-            'information_technology_commercial_item_category_code': 'latest_transaction__contract_data__information_technology_com',
+            'information_technology_commercial_item_category':
+                'latest_transaction__contract_data__information_technolog_desc',
+            'information_technology_commercial_item_category_code':
+                'latest_transaction__contract_data__information_technology_com',
             'inter_municipal_local_government': 'latest_transaction__contract_data__inter_municipal_local_gove',
             'interagency_contracting_authority': 'latest_transaction__contract_data__interagency_contract_desc',
             'interagency_contracting_authority_code': 'latest_transaction__contract_data__interagency_contracting_au',
             'international_organization': 'latest_transaction__contract_data__international_organization',
             'interstate_entity': 'latest_transaction__contract_data__interstate_entity',
-            'joint_venture_economic_disadvantaged_women_owned_small_bus': 'latest_transaction__contract_data__joint_venture_economically',
+            'joint_venture_economic_disadvantaged_women_owned_small_bus':
+                'latest_transaction__contract_data__joint_venture_economically',
             'joint_venture_women_owned_small_business': 'latest_transaction__contract_data__joint_venture_women_owned',
             'labor_surplus_area_firm': 'latest_transaction__contract_data__labor_surplus_area_firm',
             'last_modified_date': 'latest_transaction__contract_data__last_modified',
@@ -217,7 +230,8 @@ query_paths = {
             'other_not_for_profit_organization': 'latest_transaction__contract_data__other_not_for_profit_organ',
             'other_statutory_authority': 'latest_transaction__contract_data__other_statutory_authority',
             'other_than_full_and_open_competition': 'latest_transaction__contract_data__other_than_full_and_o_desc',
-            'other_than_full_and_open_competition_code': 'latest_transaction__contract_data__other_than_full_and_open_c',
+            'other_than_full_and_open_competition_code':
+                'latest_transaction__contract_data__other_than_full_and_open_c',
             'parent_award_agency_id': 'latest_transaction__contract_data__referenced_idv_agency_iden',
             'parent_award_agency_name': 'latest_transaction__contract_data__referenced_idv_agency_desc',
             'parent_award_id': 'parent_award_id',
@@ -225,9 +239,11 @@ query_paths = {
             'parent_award_single_or_multiple_code': 'latest_transaction__contract_data__referenced_mult_or_single',
             'parent_award_type': 'latest_transaction__contract_data__referenced_idv_type_desc',
             'parent_award_type_code': 'latest_transaction__contract_data__referenced_idv_type',
-            'partnership_or_limited_liability_partnership': 'latest_transaction__contract_data__partnership_or_limited_lia',
+            'partnership_or_limited_liability_partnership':
+                'latest_transaction__contract_data__partnership_or_limited_lia',
             'performance_based_service_acquisition': 'latest_transaction__contract_data__performance_based_se_desc',
-            'performance_based_service_acquisition_code': 'latest_transaction__contract_data__performance_based_service',
+            'performance_based_service_acquisition_code':
+                'latest_transaction__contract_data__performance_based_service',
             'period_of_performance_current_end_date': 'latest_transaction__contract_data__period_of_performance_curr',
             'period_of_performance_potential_end_date': 'latest_transaction__contract_data__period_of_perf_potential_e',
             'period_of_performance_start_date': 'latest_transaction__contract_data__period_of_performance_star',
@@ -236,11 +252,15 @@ query_paths = {
             'planning_commission': 'latest_transaction__contract_data__planning_commission',
             'port_authority': 'latest_transaction__contract_data__port_authority',
             'primary_place_of_performance_city_name': 'latest_transaction__contract_data__place_of_perform_city_name',
-            'primary_place_of_performance_congressional_district': 'latest_transaction__contract_data__place_of_performance_congr',
-            'primary_place_of_performance_country_code': 'latest_transaction__contract_data__place_of_perform_country_c',
-            'primary_place_of_performance_country_name': 'latest_transaction__contract_data__place_of_perf_country_desc',
+            'primary_place_of_performance_congressional_district':
+                'latest_transaction__contract_data__place_of_performance_congr',
+            'primary_place_of_performance_country_code':
+                'latest_transaction__contract_data__place_of_perform_country_c',
+            'primary_place_of_performance_country_name':
+                'latest_transaction__contract_data__place_of_perf_country_desc',
             'primary_place_of_performance_county_name': 'latest_transaction__contract_data__place_of_perform_county_na',
-            'primary_place_of_performance_location_code': 'latest_transaction__contract_data__place_of_performance_locat',
+            'primary_place_of_performance_location_code':
+                'latest_transaction__contract_data__place_of_performance_locat',
             'primary_place_of_performance_state_code': 'latest_transaction__contract_data__place_of_performance_state',
             'primary_place_of_performance_state_name': 'latest_transaction__contract_data__place_of_perfor_state_desc',
             'primary_place_of_performance_zip_4': 'latest_transaction__contract_data__place_of_performance_zip4a',
@@ -280,20 +300,24 @@ query_paths = {
             'school_of_forestry': 'latest_transaction__contract_data__school_of_forestry',
             'sea_transportation': 'latest_transaction__contract_data__sea_transportation_desc',
             'sea_transportation_code': 'latest_transaction__contract_data__sea_transportation',
-            'self_certified_small_disadvantaged_business': 'latest_transaction__contract_data__self_certified_small_disad',
+            'self_certified_small_disadvantaged_business':
+                'latest_transaction__contract_data__self_certified_small_disad',
             'service_contract_act': 'latest_transaction__contract_data__service_contract_act_desc',
             'service_contract_act_code': 'latest_transaction__contract_data__service_contract_act',
             'service_disabled_veteran_owned_business': 'latest_transaction__contract_data__service_disabled_veteran_o',
             'small_agricultural_cooperative': 'latest_transaction__contract_data__small_agricultural_coopera',
-            'small_business_competitiveness_demonstration _program': 'latest_transaction__contract_data__small_business_competitive',
+            'small_business_competitiveness_demonstration _program':
+                'latest_transaction__contract_data__small_business_competitive',
             'small_disadvantaged_business': 'latest_transaction__contract_data__small_disadvantaged_busine',
             'sole_proprietorship': 'latest_transaction__contract_data__sole_proprietorship',
             'solicitation_identifier': 'latest_transaction__contract_data__solicitation_identifier',
             'solicitation_procedures': 'latest_transaction__contract_data__solicitation_procedur_desc',
             'solicitation_procedures_code': 'latest_transaction__contract_data__solicitation_procedures',
-            'state_controlled_institution_of_higher_learning': 'latest_transaction__contract_data__state_controlled_instituti',
+            'state_controlled_institution_of_higher_learning':
+                'latest_transaction__contract_data__state_controlled_instituti',
             'subchapter_scorporation': 'latest_transaction__contract_data__subchapter_s_corporation',
-            'subcontinent_asian_asian_indian_american_owned_business': 'latest_transaction__contract_data__subcontinent_asian_asian_i',
+            'subcontinent_asian_asian_indian_american_owned_business':
+                'latest_transaction__contract_data__subcontinent_asian_asian_i',
             'subcontracting_plan': 'latest_transaction__contract_data__subcontracting_plan_desc',
             'subcontracting_plan_code': 'latest_transaction__contract_data__subcontracting_plan',
             'the_ability_one_program': 'latest_transaction__contract_data__the_ability_one_program',
@@ -350,13 +374,20 @@ query_paths = {
             'period_of_performance_start_date': 'period_of_performance_start_date',
             'primary_place_of_performance_city_name': 'latest_transaction__assistance_data__place_of_performance_city',
             'primary_place_of_performance_code': 'latest_transaction__assistance_data__place_of_performance_code',
-            'primary_place_of_performance_congressional_district': 'latest_transaction__assistance_data__place_of_performance_congr',
-            'primary_place_of_performance_country_code': 'latest_transaction__assistance_data__place_of_perform_country_c',
-            'primary_place_of_performance_country_name': 'latest_transaction__assistance_data__place_of_perform_country_n',
-            'primary_place_of_performance_county_code': 'latest_transaction__assistance_data__place_of_perform_county_co',
-            'primary_place_of_performance_county_name': 'latest_transaction__assistance_data__place_of_perform_county_na',
-            'primary_place_of_performance_foreign_location': 'latest_transaction__assistance_data__place_of_performance_forei',
-            'primary_place_of_performance_state_name': 'latest_transaction__assistance_data__place_of_perform_state_nam',
+            'primary_place_of_performance_congressional_district':
+                'latest_transaction__assistance_data__place_of_performance_congr',
+            'primary_place_of_performance_country_code':
+                'latest_transaction__assistance_data__place_of_perform_country_c',
+            'primary_place_of_performance_country_name':
+                'latest_transaction__assistance_data__place_of_perform_country_n',
+            'primary_place_of_performance_county_code':
+                'latest_transaction__assistance_data__place_of_perform_county_co',
+            'primary_place_of_performance_county_name':
+                'latest_transaction__assistance_data__place_of_perform_county_na',
+            'primary_place_of_performance_foreign_location':
+                'latest_transaction__assistance_data__place_of_performance_forei',
+            'primary_place_of_performance_state_name':
+                'latest_transaction__assistance_data__place_of_perform_state_nam',
             'primary_place_of_performance_zip_4': 'latest_transaction__assistance_data__place_of_performance_zip4a',
             'recipient_address_line_1': 'latest_transaction__assistance_data__legal_entity_address_line1',
             'recipient_address_line_2': 'latest_transaction__assistance_data__legal_entity_address_line2',

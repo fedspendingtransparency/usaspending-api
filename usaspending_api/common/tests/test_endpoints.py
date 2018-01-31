@@ -80,7 +80,6 @@ def test_endpoints(endpoint_data, client):
 
 
 def evaluateEquivalence(item1, item2):
-    logger = logging.getLogger('console')
     equality = True
     if isinstance(item1, list):
         if len(item1) is not len(item2):

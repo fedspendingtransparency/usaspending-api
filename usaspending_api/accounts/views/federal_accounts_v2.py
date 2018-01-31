@@ -8,10 +8,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from usaspending_api.accounts.models import (AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount)
+from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.financial_activities.models import \
-    FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -45,17 +44,13 @@ class ObjectClassFederalAccountsViewSet(APIView):
         major_classes = {(obj.object_class.major_object_class, obj.object_class.major_object_class_name)
                          for obj in financial_account_queryset}
         result = [{
-            'id':
-            maj[0],
-            'name':
-            maj[1],
+            'id': maj[0],
+            'name': maj[1],
             'minor_object_class': [{
                 'id': obj[0],
                 'name': obj[1]
-            }
-                                   for obj in {(oc.object_class.object_class, oc.object_class.object_class_name)
-                                               for oc in financial_account_queryset
-                                               if oc.object_class.major_object_class == maj[0]}]
+            } for obj in {(oc.object_class.object_class, oc.object_class.object_class_name)
+                          for oc in financial_account_queryset if oc.object_class.major_object_class == maj[0]}]
         } for maj in major_classes]
         return Response({'results': result})
 
@@ -130,21 +125,20 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                 if key not in group_results:
                     group_results[key] = \
                         {"outlay": trans['outlay'] if trans['outlay'] else 0,
-                          "obligations_incurred_filtered": trans["obligations_incurred_filtered"]
-                                                           if trans["obligations_incurred_filtered"]
-                                                           else 0,
-                          "obligations_incurred_other": 0,
-                          "unobliged_balance": 0}
+                         "obligations_incurred_filtered": trans["obligations_incurred_filtered"]
+                            if trans["obligations_incurred_filtered"] else 0,
+                         "obligations_incurred_other": 0,
+                         "unobliged_balance": 0}
                 else:
                     group_results[key] = \
                         {"outlay": group_results[key]["outlay"]+trans['outlay']
-                                   if trans['outlay'] else group_results[key]["outlay"],
-                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"] +
-                                                           trans["obligations_incurred_filtered"]
-                                                           if trans["obligations_incurred_filtered"]
-                                                           else group_results[key]["obligations_incurred_filtered"],
-                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"],
-                          "unobliged_balance": group_results[key]["unobliged_balance"]}
+                            if trans['outlay'] else group_results[key]["outlay"],
+                         "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"] +
+                            trans["obligations_incurred_filtered"]
+                            if trans["obligations_incurred_filtered"]
+                            else group_results[key]["obligations_incurred_filtered"],
+                         "obligations_incurred_other": group_results[key]["obligations_incurred_other"],
+                         "unobliged_balance": group_results[key]["unobliged_balance"]}
 
             for trans in unfiltered_fa:
                 if trans['submission__reporting_fiscal_year'] is None:
@@ -156,24 +150,21 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                 if key not in group_results:
                     group_results[key] = \
                         {"outlay": 0,
-                          "obligations_incurred_filtered": 0,
-                          "obligations_incurred_other": trans['obligations_incurred_other']
-                                                        if trans['obligations_incurred_other']
-                                                        else 0,
-                          "unobliged_balance": trans["unobliged_balance"]
-                                               if trans["unobliged_balance"]
-                                               else 0}
+                         "obligations_incurred_filtered": 0,
+                         "obligations_incurred_other": trans['obligations_incurred_other']
+                            if trans['obligations_incurred_other'] else 0,
+                         "unobliged_balance": trans["unobliged_balance"]
+                            if trans["unobliged_balance"] else 0}
                 else:
                     group_results[key] = \
                         {"outlay": group_results[key]["outlay"],
-                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"],
-                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"] +
-                                                        trans['obligations_incurred_other']
-                                                        if trans['obligations_incurred_other']
-                                                        else group_results[key]["obligations_incurred_other"],
-                          "unobliged_balance": group_results[key]["unobliged_balance"] + trans["unobliged_balance"]
-                                               if trans["unobliged_balance"]
-                                               else group_results[key]["unobliged_balance"]}
+                         "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"],
+                         "obligations_incurred_other": group_results[key]["obligations_incurred_other"] +
+                            trans['obligations_incurred_other']
+                            if trans['obligations_incurred_other']
+                            else group_results[key]["obligations_incurred_other"],
+                         "unobliged_balance": group_results[key]["unobliged_balance"] + trans["unobliged_balance"]
+                            if trans["unobliged_balance"] else group_results[key]["unobliged_balance"]}
 
         else:  # quarterly, take months and add them up
             filtered_fa = financial_account_queryset
@@ -201,20 +192,18 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                     group_results[key] = \
                         {"outlay": trans['outlay'] if trans['outlay'] else 0,
                          "obligations_incurred_filtered": trans["obligations_incurred_filtered"]
-                                                          if trans["obligations_incurred_filtered"]
-                                                          else 0,
+                            if trans["obligations_incurred_filtered"] else 0,
                          "obligations_incurred_other": 0,
                          "unobliged_balance": 0
                          }
                 else:
                     group_results[key] = \
                         {"outlay": group_results[key]["outlay"] + trans['outlay']
-                                   if trans['outlay']
-                                   else group_results[key]["outlay"],
+                            if trans['outlay'] else group_results[key]["outlay"],
                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"] +
-                                                          trans["obligations_incurred_filtered"]
-                                                          if trans["obligations_incurred_filtered"]
-                                                          else group_results[key]["obligations_incurred_filtered"],
+                            trans["obligations_incurred_filtered"]
+                            if trans["obligations_incurred_filtered"]
+                            else group_results[key]["obligations_incurred_filtered"],
                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"],
                          "unobliged_balance": group_results[key]["unobliged_balance"]
                          }
@@ -230,24 +219,21 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                         {"outlay": 0,
                          "obligations_incurred_filtered": 0,
                          "obligations_incurred_other": trans['obligations_incurred_other']
-                                                       if trans['obligations_incurred_other']
-                                                       else 0,
+                            if trans['obligations_incurred_other'] else 0,
                          "unobliged_balance": trans["unobliged_balance"]
-                                              if trans["unobliged_balance"]
-                                              else 0
+                            if trans["unobliged_balance"] else 0
                          }
                 else:
                     group_results[key] = \
                         {"outlay": group_results[key]["outlay"],
                          "obligations_incurred_filtered": group_results[key]["obligations_incurred_filtered"],
                          "obligations_incurred_other": group_results[key]["obligations_incurred_other"] +
-                                                       trans['obligations_incurred_other']
-                                                       if trans['obligations_incurred_other']
-                                                       else group_results[key]["obligations_incurred_other"],
+                            trans['obligations_incurred_other']
+                            if trans['obligations_incurred_other']
+                            else group_results[key]["obligations_incurred_other"],
                          "unobliged_balance": group_results[key]["unobliged_balance"] +
-                                              trans["unobliged_balance"]
-                                              if trans["unobliged_balance"]
-                                              else group_results[key]["unobliged_balance"]
+                            trans["unobliged_balance"]
+                            if trans["unobliged_balance"] else group_results[key]["unobliged_balance"]
                          }
             nested_order = 'quarter'
 
@@ -276,18 +262,16 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
 
 def filter_on(prefix, key, values):
     if not isinstance(values, (list, tuple)):
-        values = [
-            values,
-        ]
+        values = [values, ]
     return Q(**{'{}__{}__in'.format(prefix, key): values})
 
 
 def orred_filter_list(prefix, subfilters):
-    '''Produces Q-object for a list of dicts
+    """Produces Q-object for a list of dicts
 
     Each dict's (key: value) pairs are ANDed together (rows must satisfy all k:v)
     List items are ORred together (satisfying any one is enough)
-    '''
+    """
     result = Q()
     for filter in subfilters:
         subresult = Q()
@@ -298,11 +282,11 @@ def orred_filter_list(prefix, subfilters):
 
 
 def orred_date_filter_list(date_ranges):
-    '''Produces Q-object for a list of dicts, each of which may include start and/or end date
+    """Produces Q-object for a list of dicts, each of which may include start and/or end date
 
     Each dict's (key: value) pairs are ANDed together (rows must satisfy all k:v)
     List items are ORred together (satisfying any one is enough)
-    '''
+    """
     result = Q()
     for date_range in date_ranges:
         subresult = Q()
@@ -366,9 +350,9 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
             filters = federal_account_filter(filters)
             queryset = queryset.filter(filters)
 
-        queryset = queryset.values('id', 'code', 'name').annotate(
-            Sum('obligations_incurred_by_program_object_class_cpe')).order_by(
-                '-obligations_incurred_by_program_object_class_cpe__sum')
+        queryset = queryset.values('id', 'code', 'name').\
+            annotate(Sum('obligations_incurred_by_program_object_class_cpe')).\
+            order_by('-obligations_incurred_by_program_object_class_cpe__sum')
 
         result = {"results": {q['name']: q['obligations_incurred_by_program_object_class_cpe__sum'] for q in queryset}}
 
