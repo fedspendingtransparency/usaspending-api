@@ -445,7 +445,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         if keyword:
             logger.info('Getting ids based on keyword: {}'.format(keyword))
             elastic_search_complete = False
-            size = 500000
+            size = 10000
             while not elastic_search_complete:
                 try:
                     transaction_ids = elasticsearch_helper.get_transaction_ids(keyword=keyword, size=size)
