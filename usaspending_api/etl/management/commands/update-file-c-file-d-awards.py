@@ -1,7 +1,6 @@
 from datetime import datetime
 import logging
-import pandas as pd
-from django.db import connections, transaction, connection
+from django.db import transaction
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.references.models import Agency
 from django.core.management.base import BaseCommand
@@ -17,8 +16,6 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        args = None
-        options = None
         remapped_awards = []
         bad_faba = []
         logger.info('starting File C awards remapping')

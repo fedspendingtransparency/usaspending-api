@@ -2,9 +2,8 @@ from collections import OrderedDict
 
 from rest_framework.response import Response
 from rest_framework.pagination import BasePagination
-from rest_framework.settings import api_settings
 from django.template import loader
-from rest_framework.utils.urls import remove_query_param, replace_query_param
+from rest_framework.utils.urls import replace_query_param
 from rest_framework.compat import template_render
 
 
@@ -49,11 +48,11 @@ class UsaspendingPagination(BasePagination):
 
         if 'limit' in request_parameters:
             # We need to check if this is a list due to the fact we support both POST and GET
-            l = request_parameters['limit']
-            if isinstance(l, list):
-                l = l[0]
+            lim = request_parameters['limit']
+            if isinstance(lim, list):
+                lim = lim[0]
             # This will ensure our limit is bounded by [1, max_page_size]
-            return max(min(int(l), self.max_page_size), 1)
+            return max(min(int(lim), self.max_page_size), 1)
         else:
             return self.page_size
 

@@ -1,6 +1,4 @@
 import logging
-import urllib
-from urllib.error import HTTPError
 
 from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency

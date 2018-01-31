@@ -43,7 +43,7 @@ def transaction_data():
         recipient=recipient_1,
     )
 
-    award_1 = mommy.make(
+    mommy.make(
         'awards.Award',
         place_of_performance=location_1,
         recipient=recipient_1,
@@ -51,7 +51,7 @@ def transaction_data():
         category="A"
     )
 
-    award_2 = mommy.make(
+    mommy.make(
         'awards.Award',
         place_of_performance=location_2,
         recipient=recipient_1,
@@ -100,7 +100,7 @@ def test_transaction_filter_pop_multi(transaction_data):
 @pytest.mark.django_db
 def test_award_filter_recipient_error(transaction_data):
     # Testing for missing fields
-    with pytest.raises(InvalidParameterException) as error_msg:
+    with pytest.raises(InvalidParameterException):
         filter_error = {'recipient_locations': [
             {'country': 'ABC', 'district': '01'},
             {'country': 'DEF'},

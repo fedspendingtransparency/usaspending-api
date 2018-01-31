@@ -7,7 +7,6 @@ from elasticsearch import Elasticsearch
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups \
         import TRANSACTIONS_LOOKUP, award_type_mapping, award_categories
 
-
 logger = logging.getLogger('console')
 ES_HOSTNAME = settings.ES_HOSTNAME
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
@@ -114,24 +113,102 @@ def search_keyword_id_list_all(keyword):
     from timing out.
     """
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
-
-    query = {
-        "query": {
-            "query_string": {
-                "query": keyword
-            }
-        }, "size": DOWNLOAD_QUERY_SIZE}
+    query = {"query": {"query_string": {"query": keyword}},
+             "aggs": {
+                    "results": {
+                     "terms": {"field": "transaction_id", "size": DOWNLOAD_QUERY_SIZE}
+                    }
+                }, "size": 0}
     try:
         responses = CLIENT.search(index=index_name, body=query, timeout='3m')
     except Exception:
         logging.exception("There was an error connecting to the ElasticSearch instance.")
         return None
-    transaction_id_list = []
     try:
-        for response in (responses['hits']['hits']):
-            list_item = (response['_source']['transaction_id'])
-            transaction_id_list.append(list_item)
-        return transaction_id_list
+        responses = responses["aggregations"]['results']
+        return [response['key'] for response in responses['buckets']]
     except Exception:
         logging.exception("There was an error parsing the transaction ID's")
         return None
+
+
+def get_sum_aggregation_results(keyword):
+    """
+    Size has to be zero here because you only want the aggregations
+    """
+    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
+    query = {"query": {"query_string": {"query": keyword}},
+             "aggs": {"transaction_sum": {"sum": {"field": "transaction_amount"}}}}
+    try:
+        response = CLIENT.search(index=index_name, body=query)
+        return response['aggregations']
+    except Exception:
+        logging.exception("There was an error connecting to the ElasticSearch instance.")
+        return None
+
+
+def spending_by_transaction_sum(filters):
+    keyword = filters['keyword']
+    return get_sum_aggregation_results(keyword)
+
+
+def extract_field_data(response, fieldname):
+    '''
+    takes in a response body and
+    returns list of given
+    '''
+    hits = response['hits']['hits']
+    return [hit['_source'][fieldname] for hit in hits]
+
+
+def scroll(scroll_id, fieldname):
+    '''returns scroll_id and field
+    data for a given
+     fieldname'''
+    response = CLIENT.scroll(scroll_id, scroll='2m')
+    results = extract_field_data(response, fieldname)
+    scroll_id = response['_scroll_id']
+    return results, scroll_id
+
+
+def get_transaction_ids(keyword, size=100):
+    '''returns a generator that
+    yields list of transaction ids in chunksize SIZE'''
+    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
+    query = {
+        "query": {
+            "query_string": {
+                "query": keyword
+            }
+        }, "size": size}
+    response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
+    n_iter = DOWNLOAD_QUERY_SIZE//size
+    scroll_id = response['_scroll_id']
+    for i in range(n_iter):
+        results, scroll_id = scroll(scroll_id, 'transaction_id')
+        yield results
+
+
+def get_transaction_ids_agg(keyword, size=500):
+    '''returns a generator that
+    yields list of transaction ids in chunksize SIZE'''
+    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
+    n_iter = DOWNLOAD_QUERY_SIZE//size
+    for i in range(n_iter):
+        query = {"query": {"query_string": {"query": keyword}},
+                 "aggs": {
+                        "results": {
+                         "terms": {
+                             "field": "transaction_id",
+                             "include": {
+                                 "partition": i,
+                                 "num_partitions": n_iter
+                             },
+                             "size": size}
+                        }
+                    }, "size": 0}
+        response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
+        results = []
+        for result in response['aggregations']['results']['buckets']:
+            results.append(result['key'])
+        yield results

@@ -3,6 +3,7 @@ import logging
 
 from django.utils.dateparse import parse_date
 from django.db import transaction
+from django.core.management.base import CommandError
 
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -29,15 +30,18 @@ class Command(load_base.Command):
     """
     This command will load detached submissions from the DATA Act broker.
     """
-    help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable must set so we can pull submission data from their db."
+    help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable " \
+           "must set so we can pull submission data from their db."
 
     def add_arguments(self, parser):
 
         super(Command, self).add_arguments(parser)
         parser.add_argument('--contracts', action='store_true', help='Load contracts')
         parser.add_argument('--financial_assistance', action='store_true', help='Load financial assistance')
-        parser.add_argument('--action_date_begin', type=parse_date, default=None, help='First action_date to get - YYYY-MM-DD')
-        parser.add_argument('--action_date_end', type=parse_date, default=None, help='Last action_date to get - YYYY-MM-DD')
+        parser.add_argument('--action_date_begin', type=parse_date, default=None,
+                            help='First action_date to get - YYYY-MM-DD')
+        parser.add_argument('--action_date_end', type=parse_date, default=None,
+                            help='Last action_date to get - YYYY-MM-DD')
         parser.add_argument('--cgac', default=None)
 
     @transaction.atomic
@@ -56,7 +60,8 @@ class Command(load_base.Command):
 
         if options['financial_assistance']:
             assistance_data = self.broker_data(db_cursor, 'published_award_financial_assistance', options)
-            load_base.load_file_d2(submission_attributes, assistance_data, db_cursor, row_preprocessor=preprocess_historical_d2_row)
+            load_base.load_file_d2(submission_attributes, assistance_data, db_cursor,
+                                   row_preprocessor=preprocess_historical_d2_row)
 
     def broker_data(self, db_cursor, table_name, options):
         """Applies user-selected filters and gets rows from appropriate broker-side table"""

@@ -231,14 +231,22 @@ def write_csvs(download_job, file_name, columns, sources):
                 split_csv_query_raw = generate_raw_quoted_query(split_csv_query)
                 split_csv_query_raw = apply_annotations_to_sql(split_csv_query_raw, source.human_names)
                 logger.debug('PSQL Query: {}'.format(split_csv_query_raw))
+                split_csv_query_raw = '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)
+
+                # Create a unique temporary file to hold the raw query
+                temp_sql_file_path = os.path.join('/', 'tmp', 'bd_sql.sql')
+                unique_id = 0
+                while os.path.exists(temp_sql_file_path):
+                    temp_sql_file_path = os.path.join('/', 'tmp', 'bd_sql_{}.sql'.format(unique_id))
+                    unique_id = unique_id + 1
+                with open(temp_sql_file_path, 'w') as temp_sql_file:
+                    temp_sql_file.write(split_csv_query_raw)
                 # Generate the csv with \copy
-                psql_command = subprocess.Popen(
-                    ['echo', '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)],
-                    stdout=subprocess.PIPE
-                )
-                subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=psql_command.stdout)
+                cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
+                subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=cat_command.stdout)
                 # save it to the zip
                 zipped_csvs.write(split_csv_path, split_csv_name)
+                os.remove(temp_sql_file_path)
                 logger.info('wrote {} took {} seconds'.format(split_csv_name, time.time() - start_split_writing))
 
                 last_count = len(open(split_csv_path).readlines())
