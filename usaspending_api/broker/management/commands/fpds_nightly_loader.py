@@ -175,11 +175,11 @@ class Command(BaseCommand):
             funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
             # Generate the unique Award ID
-            agency_id = row['agency_id'] if row['agency_id'] else '-NONE-'
-            ref_idv_agency_id = row['referenced_idv_agency_iden'] if row['referenced_idv_agency_iden'] else '-NONE-'
-            piid = row['piid'] if row['piid'] else '-NONE-'
-            parent_award_id = row['parent_award_id'] if row['parent_award_id'] else '-NONE-'
-            generated_unique_id = 'CONT_AW_' + agency_id + ref_idv_agency_id + piid + parent_award_id
+            # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
+            generated_unique_id = 'CONT_AW_' + (row['agency_id'] if row['agency_id'] else '-NONE-') +\
+                (row['referenced_idv_agency_iden'] if row['referenced_idv_agency_iden'] else '-NONE-') +\
+                (row['piid'] if row['piid'] else '-NONE-')+\
+                (row['parent_award_id'] if row['parent_award_id'] else '-NONE-')
 
             # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)

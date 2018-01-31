@@ -62,32 +62,37 @@ class Command(BaseCommand):
                 #     format(row['internal_id'], row['contracting_office_aid']))
                 return None, None
 
-            # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
-            # a transaction with a matching agency, parent award id, and piid
-            award = Award.objects.filter(
-                awarding_agency=agency,
-                latest_transaction__contract_data__piid=row['contract_number'],
-                latest_transaction__contract_data__parent_award_id=row['idv_reference_number']).distinct().order_by(
-                "-date_signed").first()
+            # Find the award to attach this sub-contract to, using the generated unique ID:
+            # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
+            generated_unique_id = 'CONT_AW_' + (row['agency_id'] if row['agency_id'] else '-NONE-') +\
+                (row['referenced_idv_agency_iden'] if row['referenced_idv_agency_iden'] else '-NONE-') +\
+                (row['piid'] if row['piid'] else '-NONE-')+\
+                (row['parent_award_id'] if row['parent_award_id'] else '-NONE-')
+            award = Award.objects.filter(generated_unique_award_id=generated_unique_id).\
+                distinct().order_by("-date_signed").first()
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                # logger.warning(
-                #    "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
-                #    format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
+                logger.warning(
+                   "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
+                   format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
                 return None, None
 
             recipient_name = row['company_name']
         else:
             # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
             # a transaction with a matching fain
-            award = Award.objects.filter(latest_transaction__assistance_data__fain=row['fain']).distinct(). \
-                order_by("-date_signed").first()
+            all_awards = Award.objects.filter(fain=row['fain']).distinct().order_by("-date_signed")
+            award = all_awards.first()
+
+            if all_awards.count() > 1:
+                logger.warning("Multiple awards found with fain {}".format(row['fain']))
+
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                # logger.warning(
-                #     "Internal ID {} cannot find award with fain {}; skipping...".
-                #     format(row['internal_id'], row['fain']))
+                logger.warning(
+                    "Internal ID {} cannot find award with fain {}; skipping...".
+                    format(row['internal_id'], row['fain']))
                 return None, None
 
             recipient_name = row['awardee_name']
