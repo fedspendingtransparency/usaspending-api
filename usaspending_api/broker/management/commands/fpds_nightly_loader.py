@@ -178,7 +178,7 @@ class Command(BaseCommand):
             # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
             generated_unique_id = 'CONT_AW_' + (row['agency_id'] if row['agency_id'] else '-NONE-') +\
                 (row['referenced_idv_agency_iden'] if row['referenced_idv_agency_iden'] else '-NONE-') +\
-                (row['piid'] if row['piid'] else '-NONE-')+\
+                (row['piid'] if row['piid'] else '-NONE-') +\
                 (row['parent_award_id'] if row['parent_award_id'] else '-NONE-')
 
             # Create the summary Award
