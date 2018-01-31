@@ -59,7 +59,6 @@ CREATE INDEX transaction_fabs_cfda_number_0222a383_like ON transaction_fabs USIN
 CREATE INDEX transaction_fabs_fain_c98ae4fd ON transaction_fabs USING btree (fain);
 CREATE INDEX transaction_fabs_fain_c98ae4fd_like ON transaction_fabs USING btree (fain text_pattern_ops);
 CREATE INDEX transaction_fabs_published_award_financial__7a0c4b63 ON transaction_fabs USING btree (published_award_financial_assistance_id);
-CREATE INDEX transaction_fabs_published_award_financia_7a0c4b63_like ON transaction_fabs USING btree (published_award_financial_assistance_id text_pattern_ops);
 CREATE INDEX transaction_fabs_uri_b36dd710 ON transaction_fabs USING btree (uri);
 CREATE INDEX transaction_fabs_uri_b36dd710_like ON transaction_fabs USING btree (uri text_pattern_ops);
 
@@ -77,7 +76,6 @@ CREATE INDEX transaction_fpds_type_of_contract_pricing_d0d08c92_like ON transact
 CREATE INDEX transaction_fpds_type_set_aside_23fece56 ON transaction_fpds USING btree (type_set_aside);
 CREATE INDEX transaction_fpds_type_set_aside_23fece56_like ON transaction_fpds USING btree (type_set_aside text_pattern_ops);
 CREATE INDEX transaction_fpds_detached_award_procurement_id_eeddae57 ON transaction_fpds USING btree (detached_award_procurement_id);
-CREATE INDEX transaction_fpds_detached_award_procurement_id_eeddae57_like ON transaction_fpds USING btree (detached_award_procurement_id text_pattern_ops);
 CREATE INDEX transaction_fpds_piid_77c637c0 ON transaction_fpds USING btree (piid);
 CREATE INDEX transaction_fpds_piid_77c637c0_like ON transaction_fpds USING btree (piid text_pattern_ops);
 CREATE INDEX transaction_fpds_parent_award_id_fa12cf5a ON transaction_fpds USING btree (parent_award_id);
