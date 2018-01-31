@@ -1,14 +1,12 @@
 from collections import OrderedDict
 from datetime import date, time, datetime
 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from django.utils import timezone
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Location
-from usaspending_api.awards.models import Award
 
 
 class FiscalYear():
@@ -137,10 +135,11 @@ class FilterGenerator():
             ]
         }
 
-        If the 'combine_method' is present in a filter, you MUST specify another
-        'filters' set in that object of filters to combine
+        If the 'combine_method' is present in a filter, you MUST specify another 'filters' set in that object of filters
+        to combine
         The combination method for filters at the root level is 'AND'
-        Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal, greather_than_or_equal, range, fy
+        Available operations are equals, less_than, greater_than, contains, in, less_than_or_equal,
+        greather_than_or_equal, range, fy
         Note that contains is always case insensitive
         """
         try:
@@ -251,28 +250,42 @@ class FilterGenerator():
                         raise
                 else:
                     if 'field' in filt and 'operation' in filt and 'value' in filt:
-                        if filt['operation'] not in FilterGenerator.operators and filt['operation'][:4] is not 'not_' and filt['operation'][4:] not in FilterGenerator.operators:
+                        if filt['operation'] not in FilterGenerator.operators and\
+                                filt['operation'][:4] is not 'not_' and\
+                                filt['operation'][4:] not in FilterGenerator.operators:
                             raise InvalidParameterException("Invalid operation: " + filt['operation'])
                         if filt['operation'] == 'in':
                             if not isinstance(filt['value'], list):
                                 raise InvalidParameterException("Invalid value, operation 'in' requires an array value")
                         if filt['operation'] == 'range':
                             if not isinstance(filt['value'], list) or len(filt['value']) != 2:
-                                raise InvalidParameterException("Invalid value, operation 'range' requires an array value of length 2")
+                                raise InvalidParameterException("Invalid value, operation 'range' "
+                                                                "requires an array value of length 2")
                         if filt['operation'] == 'range_intersect':
                             if not isinstance(filt['field'], list) or len(filt['field']) != 2:
-                                raise InvalidParameterException("Invalid field, operation 'range_intersect' requires an array of length 2 for field")
-                            if (not isinstance(filt['value'], list) or len(filt['value']) != 2) and 'value_format' not in filt:
-                                raise InvalidParameterException("Invalid value, operation 'range_intersect' requires an array value of length 2, or a single value with value_format set to a ranged format (such as fy)")
+                                raise InvalidParameterException("Invalid field, operation 'range_intersect' "
+                                                                "requires an array of length 2 for field")
+                            if (not isinstance(filt['value'], list) or len(filt['value']) != 2) and\
+                                    'value_format' not in filt:
+                                raise InvalidParameterException("Invalid value, operation 'range_intersect' requires "
+                                                                "an array value of length 2, or a single value with "
+                                                                "value_format set to a ranged format (such as fy)")
                         if filt['operation'] in ["overlap", "contained_by"] and not isinstance(filt['value'], list):
-                            raise InvalidParameterException("Invalid value. When using operation {}, value must be an array of strings.".format(filt["operation"]))
+                            raise InvalidParameterException("Invalid value. When using operation {}, value must be an "
+                                                            "array of strings.".format(filt["operation"]))
                         if filt['operation'] == 'search':
                             if not isinstance(filt['field'], list) and not self.is_string_field(filt['field']):
-                                raise InvalidParameterException("Invalid field: '" + filt['field'] + "', operation 'search' requires a text-field for searching")
+                                raise InvalidParameterException("Invalid field: '" +
+                                                                filt['field'] +
+                                                                "', operation 'search' requires a text-field for "
+                                                                "searching")
                             elif isinstance(filt['field'], list):
                                 for search_field in filt['field']:
                                     if not self.is_string_field(search_field):
-                                        raise InvalidParameterException("Invalid field: '" + search_field + "', operation 'search' requires a text-field for searching")
+                                        raise InvalidParameterException("Invalid field: '" +
+                                                                        search_field +
+                                                                        "', operation 'search' requires a text-field "
+                                                                        "for searching")
                     else:
                         raise InvalidParameterException("Malformed filter - missing field, operation, or value")
 
@@ -335,7 +348,8 @@ class AutoCompleteHandler():
 
         for field in filter_matched_ids.keys():
             q_args = {pk_name + "__in": filter_matched_ids[field]}
-            value_dict[field] = list(set(data_set.all().filter(Q(**q_args)).values_list(field, flat=True)))  # Why this weirdness? To ensure we eliminate duplicates
+            # Why this weirdness? To ensure we eliminate duplicates
+            value_dict[field] = list(set(data_set.all().filter(Q(**q_args)).values_list(field, flat=True)))
             count_dict[field] = len(value_dict[field])
 
         return value_dict, count_dict
@@ -375,7 +389,7 @@ class AutoCompleteHandler():
     def handle(data_set, body, serializer=None):
         try:
             AutoCompleteHandler.validate(body)
-        except:
+        except Exception:
             raise
 
         # If the serializer supports eager loading, set it up
@@ -385,14 +399,17 @@ class AutoCompleteHandler():
 
         return_object = {}
 
-        filter_matched_ids, pk_name = AutoCompleteHandler.get_filter_matched_ids(data_set.all(), body["fields"], body["value"], body.get("mode", "contains"), body.get("limit", 10))
+        filter_matched_ids, pk_name = AutoCompleteHandler.\
+            get_filter_matched_ids(data_set.all(), body["fields"], body["value"], body.get("mode", "contains"),
+                                   body.get("limit", 10))
 
         # Get matching string values, and their counts
         value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set.all(), filter_matched_ids, pk_name)
 
         # Get the matching objects, if requested
         if body.get("matched_objects", False) and serializer:
-            return_object["matched_objects"] = AutoCompleteHandler.get_objects(data_set.all(), filter_matched_ids, pk_name, serializer)
+            return_object["matched_objects"] = AutoCompleteHandler.get_objects(data_set.all(), filter_matched_ids,
+                                                                               pk_name, serializer)
 
         return {
             **return_object,
@@ -406,10 +423,12 @@ class AutoCompleteHandler():
             if not isinstance(body["fields"], list):
                 raise InvalidParameterException("Invalid field, autocomplete fields value must be a list")
         else:
-            raise InvalidParameterException("Invalid request, autocomplete requests need parameters 'fields' and 'value'")
+            raise InvalidParameterException("Invalid request, autocomplete requests need parameters 'fields' and "
+                                            "'value'")
         if "mode" in body:
             if body["mode"] not in ["contains", "startswith"]:
-                raise InvalidParameterException("Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"])
+                raise InvalidParameterException("Invalid mode, autocomplete modes are 'contains', "
+                                                "'startswith', but got " + body["mode"])
 
 
 class GeoCompleteHandler:
@@ -499,13 +518,18 @@ class GeoCompleteHandler:
                 q_kwargs["congressional_code__istartswith"] = temp_val[1]
 
             search_q = Q(**q_kwargs)
-            results = Location.objects.filter(search_q & scope_q & usage_q).order_by("state_code", "congressional_code").values_list("congressional_code", "state_code", "state_name").distinct()[:limit]
+            results = Location.objects.filter(search_q & scope_q & usage_q).\
+                order_by("state_code", "congressional_code").\
+                values_list("congressional_code", "state_code", "state_name").distinct()[:limit]
             for row in results:
                 response_row = {
                     "place": row[1] + "-" + str(row[0]),
                     "place_type": "CONGRESSIONAL DISTRICT",
                     "parent": row[2],
-                    "matched_ids": Location.objects.filter(Q(**{"congressional_code": row[0], "state_code": row[1], "state_name": row[2]})).values_list("location_id", flat=True)
+                    "matched_ids":
+                        Location.objects.
+                        filter(Q(**{"congressional_code": row[0], "state_code": row[1], "state_name": row[2]})).
+                        values_list("location_id", flat=True)
                 }
                 response_object.append(response_row)
                 if len(response_object) >= limit:
@@ -514,13 +538,17 @@ class GeoCompleteHandler:
         if value:
             for searchable_field in search_fields.keys():
                 search_q = Q(**{searchable_field + mode: value})
-                results = Location.objects.filter(search_q & scope_q & usage_q).order_by(searchable_field).values_list(searchable_field, search_fields[searchable_field]["parent"]).distinct()[:limit]
+                results = Location.objects.filter(search_q & scope_q & usage_q).order_by(searchable_field).\
+                    values_list(searchable_field, search_fields[searchable_field]["parent"]).distinct()[:limit]
                 for row in results:
                     response_row = {
                         "place": row[0],
                         "place_type": search_fields[searchable_field]["type"],
                         "parent": row[1],
-                        "matched_ids": Location.objects.filter(Q(**{searchable_field: row[0], search_fields[searchable_field]["parent"]: row[1]})).values_list("location_id", flat=True)
+                        "matched_ids":
+                            Location.objects.
+                            filter(Q(**{searchable_field: row[0], search_fields[searchable_field]["parent"]: row[1]})).
+                            values_list("location_id", flat=True)
                     }
                     response_object.append(response_row)
                     if len(response_object) >= limit:

@@ -1,6 +1,6 @@
 from rest_framework.renderers import BrowsableAPIRenderer
 from django.core.paginator import Page
-from rest_framework.request import is_form_media_type, override_method
+from rest_framework.request import override_method
 from django import forms
 
 
@@ -34,9 +34,6 @@ class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
             if not self.show_form_for_method(view, method, request, instance):
                 return
 
-            # If possible, serialize the initial content for the generic form
-            default_parser = view.parser_classes[0]
-            renderer_class = getattr(default_parser, 'renderer_class', None)
             content = None
 
             # Generate a generic form that includes a content type field,

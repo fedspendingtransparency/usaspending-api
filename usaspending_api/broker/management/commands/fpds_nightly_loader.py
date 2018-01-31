@@ -114,8 +114,7 @@ class Command(BaseCommand):
 
         TransactionNormalized.objects.filter(contract_data__detached_award_procurement_id__in=ids_to_delete).delete()
 
-    @staticmethod
-    def insert_new_fpds(to_insert, total_rows):
+    def insert_new_fpds(self, to_insert, total_rows):
         logger.info('Starting insertion of new FPDS data')
 
         place_of_performance_field_map = {

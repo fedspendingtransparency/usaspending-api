@@ -843,9 +843,12 @@ class LegalEntity(DataSourceTrackedModel):
         ):
             categories.append("community_development_corporations")
         if (
-            le.business_types == "M" or  # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
-            le.business_types == "N" or  # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
-            le.business_types == "12" or  # FAADS+ equivalent for M/N
+            # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
+            le.business_types == "M" or
+            # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
+            le.business_types == "N" or
+            # FAADS+ equivalent for M/N
+            le.business_types == "12" or
 
             le.nonprofit_organization == "1" or
             le.other_not_for_profit_organization == "1" or

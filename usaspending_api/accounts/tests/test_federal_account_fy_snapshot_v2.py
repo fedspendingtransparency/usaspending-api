@@ -1,5 +1,4 @@
 import pytest
-from datetime import datetime
 
 from model_mommy import mommy
 from rest_framework import status

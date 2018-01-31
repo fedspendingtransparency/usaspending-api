@@ -20,7 +20,9 @@ install:
 before_script:
 - psql -c "CREATE DATABASE usaspending_api;" -U postgres
 
-script: pytest --cov=usaspending_api
+script:
+- flake8
+- pytest --cov=usaspending_api
 
 after_success:
 - codeclimate-test-reporter

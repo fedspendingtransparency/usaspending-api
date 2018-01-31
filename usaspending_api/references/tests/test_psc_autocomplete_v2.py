@@ -6,6 +6,7 @@ from rest_framework import status
 
 from usaspending_api.references.models import PSC
 
+
 @pytest.fixture
 def psc_data(db):
     mommy.make(

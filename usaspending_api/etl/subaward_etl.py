@@ -1,12 +1,10 @@
 import logging
 
-from django.db.models import Count, Sum, F
-
 from usaspending_api.awards.models import Award, Subaward
-from usaspending_api.references.models import LegalEntity, Location, Cfda, Agency
+from usaspending_api.references.models import LegalEntity, Cfda, Agency
 from usaspending_api.etl.helpers import get_or_create_location
 from usaspending_api.etl.award_helpers import update_award_subawards
-from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 logger = logging.getLogger("console")
 
@@ -75,8 +73,8 @@ def load_subawards(submission_attributes, awards_touched, db_cursor):
             continue
 
         # Find the award to attach this sub-contract to
-        # We perform this lookup by finding the Award containing a transaction with
-        # a matching parent award id, piid, and submission attributes
+        # We perform this lookup by finding the Award containing a transaction with a matching parent award id, piid,
+        # and submission attributes
         award = Award.objects.filter(
             awarding_agency=agency,
             latest_transaction__contract_data__piid=row['piid'],
@@ -153,15 +151,18 @@ def load_subawards(submission_attributes, awards_touched, db_cursor):
         agency = get_valid_awarding_agency(row)
 
         if not agency:
-            logger.warn("Subaward number {} cannot find matching agency with toptier code {} and subtier code {}".format(row['subaward_num'], row['awarding_agency_code'], row['awarding_sub_tier_agency_c']))
+            logger.warn("Subaward number {} cannot find matching agency with toptier code {} and subtier "
+                        "code {}".format(row['subaward_num'], row['awarding_agency_code'],
+                                         row['awarding_sub_tier_agency_c']))
             continue
 
         # Find the award to attach this sub-award to
-        # We perform this lookup by finding the Award containing a transaction with
-        # a matching fain and submission. If this fails, try submission and uri
+        # We perform this lookup by finding the Award containing a transaction with a matching fain and submission.
+        # If this fails, try submission and uri
         if row['fain'] and len(row['fain']) > 0:
             award = Award.objects.filter(awarding_agency=agency,
-                                         latest_transaction__assistance_data__fain=row['fain']).distinct().order_by("-date_signed").first()
+                                         latest_transaction__assistance_data__fain=row['fain']).\
+                distinct().order_by("-date_signed").first()
 
         # Couldn't find a match on FAIN, try URI if it exists
         if not award and row['uri'] and len(row['uri']) > 0:
@@ -172,11 +173,13 @@ def load_subawards(submission_attributes, awards_touched, db_cursor):
         if not award and row['fain'] and len(row['fain']) > 0 and row['uri'] and len(row['uri']) > 0:
             award = Award.objects.filter(awarding_agency=agency,
                                          latest_transaction__assistance_data__fain=row['fain'],
-                                         latest_transaction__assistance_data__uri=row['uri']).distinct().order_by("-date_signed").first()
+                                         latest_transaction__assistance_data__uri=row['uri']).\
+                distinct().order_by("-date_signed").first()
 
         # We don't have a matching award for this subcontract, log a warning and continue to the next row
         if not award:
-            logger.warn("Subaward number {} cannot find matching award with fain {}, uri {}; skipping...".format(row['subaward_num'], row['fain'], row['uri']))
+            logger.warn("Subaward number {} cannot find matching award with fain {}, uri {}; "
+                        "skipping...".format(row['subaward_num'], row['fain'], row['uri']))
             continue
 
         award_ids_to_update.add(award.id)
@@ -253,8 +256,6 @@ def load_subawards(submission_attributes, awards_touched, db_cursor):
 
 
 def get_valid_awarding_agency(row):
-    agency = None
-
     agency_subtier_code = row['awarding_sub_tier_agency_c']
     agency_toptier_code = row['awarding_agency_code']
     valid_subtier_code = (agency_subtier_code and len(agency_subtier_code) > 0)
@@ -266,8 +267,7 @@ def get_valid_awarding_agency(row):
     agency = None
     # Get the awarding agency
     if valid_subtier_code and valid_toptier_code:
-        agency = Agency.get_by_toptier_subtier(row['awarding_agency_code'],
-                                               row['awarding_sub_tier_agency_c'])
+        agency = Agency.get_by_toptier_subtier(row['awarding_agency_code'], row['awarding_sub_tier_agency_c'])
 
     if not agency and valid_subtier_code:
         agency = Agency.get_by_subtier(row['awarding_sub_tier_agency_c'])

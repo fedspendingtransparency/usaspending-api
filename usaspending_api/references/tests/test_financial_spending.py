@@ -1,12 +1,7 @@
 import pytest
-import json
-from datetime import date
 
 from model_mommy import mommy
 from rest_framework import status
-
-from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
@@ -57,18 +52,21 @@ def test_award_type_endpoint(client, financial_spending_data):
     assert len(resp.data['results']) == 2
 
     # make sure resp.data['results'] contains a 3000 value
-    assert (resp.data['results'][1]['obligated_amount'] == "3000.00" or resp.data['results'][0]['obligated_amount'] == "3000.00")
+    assert (resp.data['results'][1]['obligated_amount'] == "3000.00" or
+            resp.data['results'][0]['obligated_amount'] == "3000.00")
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/financial_spending/object_class/')
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
-    resp = client.get('/api/v2/financial_spending/object_class/?fiscal_year=2017&funding_agency_id=1&major_object_class_code=10')
+    resp = client.get('/api/v2/financial_spending/object_class/'
+                      '?fiscal_year=2017&funding_agency_id=1&major_object_class_code=10')
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data['results']) == 2
 
     # make sure resp.data['results'] contains a 3000 value
-    assert (resp.data['results'][1]['obligated_amount'] == "3000.00" or resp.data['results'][0]['obligated_amount'] == "3000.00")
+    assert (resp.data['results'][1]['obligated_amount'] == "3000.00" or
+            resp.data['results'][0]['obligated_amount'] == "3000.00")
 
     # check for bad request due to missing params
     resp = client.get('/api/v2/financial_spending/object_class/')

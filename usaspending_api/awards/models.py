@@ -162,7 +162,7 @@ class Award(DataSourceTrackedModel):
     fain = models.TextField(db_index=True, blank=True, null=True,
                             help_text="An identification code assigned to each financial assistance award tracking "
                                       "purposes. The FAIN is tied to that award (and all future modifications to that "
-                                      "award) throughout the award’s life. Each FAIN is assigned by an agency. Within "
+                                      "award) throughout the award's life. Each FAIN is assigned by an agency. Within "
                                       "an agency, FAIN are unique: each new award must be issued a new FAIN. FAIN "
                                       "stands for Federal Award Identification Number, though the digits are letters, "
                                       "not numbers.")

@@ -37,4 +37,5 @@ class USAspendingKeyConstructor(DefaultKeyConstructor):
     request_params = GetPostQueryParamsKeyBit()
     unique_view_id = bits.UniqueMethodIdKeyBit()
 
+
 usaspending_key_func = USAspendingKeyConstructor()

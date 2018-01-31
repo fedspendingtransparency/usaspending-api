@@ -1,7 +1,6 @@
 import logging
 import time
 import boto
-from boto import sts
 
 from django.conf import settings
 
