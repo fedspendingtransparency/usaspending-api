@@ -28,6 +28,8 @@ from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
+from elasticsearch.exceptions import TransportError, ConnectionError
+from usaspending_api.search.v2 import elasticsearch_helper
 
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference
 # TODO: Find a solution that marks the CFO agencies in the database AND have the correct order
@@ -96,7 +98,8 @@ value_mappings = {
         'awarding_agency_id': 'awarding_agency_id',
         'funding_agency_id': 'funding_agency_id',
         'contract_data': 'contract_data',
-        'assistance_data': 'assistance_data'
+        'assistance_data': 'assistance_data',
+        'transaction_id': 'id'
     },
     'sub_awards': {
         'table': Subaward,
@@ -108,7 +111,8 @@ value_mappings = {
         'awarding_agency_id': 'awarding_agency_id',
         'funding_agency_id': 'funding_agency_id',
         'contract_data': 'award__latest_transaction__contract_data',
-        'assistance_data': 'award__latest_transaction__assistance_data'
+        'assistance_data': 'award__latest_transaction__assistance_data',
+        'transaction_id': 'award__latest_transaction__id'
     }
 }
 
@@ -145,74 +149,14 @@ class BaseDownloadViewSet(APIView):
 
         return Response(response)
 
-    def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-        json_request = request.data
-
-        for required_param in ['file_format', 'award_levels', 'filters']:
-            if required_param not in json_request:
-                raise InvalidParameterException('{} parameter not provided'.format(required_param))
-
-        # TODO: Refactor with the bulk_download method in populate_monthly_files.py
-        # Check if the same request has been called today
-        current_date = datetime.datetime.utcnow()
-        updated_date_timestamp = datetime.datetime.strftime(current_date, '%Y-%m-%d')
-        cached_download = BulkDownloadJob.objects.filter(
-            json_request=json.dumps(order_nested_object(json_request)),
-            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
-        if cached_download:
-            # By returning the cached files, there should be no duplicates on a daily basis
-            cached_filename = cached_download[0]['file_name']
-            return self.get_download_response(file_name=cached_filename)
-
-        csv_sources = self.get_csv_sources(json_request)
-
-        # get timestamped name to provide unique file name
-        timestamped_file_name = self.s3_handler.get_timestamped_filename(
-            self.DOWNLOAD_NAME + '.zip')
-
-        # create download job in database to track progress. Starts at 'ready'
-        # status by default.
-        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
-                               'json_request': json.dumps(order_nested_object(json_request)),
-                               'file_name': timestamped_file_name}
-        award_levels = json_request['award_levels']
-        award_types = json_request['filters']['award_types']
-        agency = json_request['filters']['agency']
-        sub_agency = json_request['filters'].get('sub_agency', None)
-        start_date = json_request['filters']['date_range'].get('start_date', None)
-        end_date = json_request['filters']['date_range'].get('end_date', None)
-        date_type = json_request['filters']['date_type']
-
-        for award_level in award_levels:
-            download_job_kwargs[award_level] = True
-        for award_type in award_types:
-            download_job_kwargs[award_type] = True
-        if agency and agency != 'all':
-            download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
-        if sub_agency:
-            download_job_kwargs['sub_agency'] = sub_agency
-        if start_date:
-            download_job_kwargs['start_date'] = start_date
-        if end_date:
-            download_job_kwargs['end_date'] = end_date
-        if date_type:
-            download_job_kwargs['date_type'] = date_type
-        download_job = BulkDownloadJob(**download_job_kwargs)
-        download_job.save()
-
-        logger.info('Added Bulk Download Job: {}\n'
-                    'Filename: {}\n'
-                    'Request Params: {}'.format(download_job.bulk_download_job_id,
-                                                download_job.file_name,
-                                                download_job.json_request))
-
+    def process_request(self, json_request, download_job, file_name):
         kwargs = {'download_job': download_job,
-                  'file_name': timestamped_file_name,
-                  'columns': json_request.get('columns', None),
-                  'sources': csv_sources}
+                  'file_name': file_name,
+                  'columns': json_request.get('columns', None)}
 
         if 'pytest' in sys.modules:
+            csv_sources = self.get_csv_sources(json_request)
+            kwargs['sources'] = csv_sources
             # We are testing, and cannot use threads - the testing db connection is not shared with the thread
             csv_selection.write_csvs(**kwargs)
         else:
@@ -231,14 +175,97 @@ class BaseDownloadViewSet(APIView):
                     'StringValue': json.dumps(kwargs['columns']),
                     'DataType': 'String'
                 },
-                'sources': {
-                    'StringValue': json.dumps(tuple([source.toJsonDict() for source in kwargs['sources']])),
+                'request': {
+                    'StringValue': json.dumps(json_request),
                     'DataType': 'String'
                 }
             }
             queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
                               QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody='Test', MessageAttributes=message_attributes)
+
+    def create_bulk_download_job(self, json_request, file_name):
+        # create download job in database to track progress. Starts at 'ready'
+        # status by default.
+        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
+                               'json_request': json.dumps(order_nested_object(json_request)),
+                               'file_name': file_name}
+
+        for award_level in json_request['award_levels']:
+            download_job_kwargs[award_level] = True
+        for award_type in json_request['filters']['award_types']:
+            download_job_kwargs[award_type] = True
+        agency = json_request['filters']['agency']
+        if agency and agency != 'all':
+            download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
+        sub_agency = json_request['filters']['sub_agency']
+        if sub_agency:
+            download_job_kwargs['sub_agency'] = sub_agency
+        start_date = json_request['filters']['date_range']['start_date']
+        if start_date:
+            download_job_kwargs['start_date'] = start_date
+        end_date = json_request['filters']['date_range']['end_date']
+        if end_date:
+            download_job_kwargs['end_date'] = end_date
+        date_type = json_request['filters']['date_type']
+        if date_type:
+            download_job_kwargs['date_type'] = date_type
+        download_job = BulkDownloadJob(**download_job_kwargs)
+        download_job.save()
+
+        logger.info('Added Bulk Download Job: {}\n'
+                    'Filename: {}\n'
+                    'Request Params: {}'.format(download_job.bulk_download_job_id,
+                                                download_job.file_name,
+                                                download_job.json_request))
+        return download_job
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        json_request = request.data
+
+        for required_param in ['award_levels', 'filters']:
+            if required_param not in json_request:
+                raise InvalidParameterException('{} parameter not provided'.format(required_param))
+        if json_request['filters'] == {}:
+            raise InvalidParameterException('At least one filter is required.')
+        json_request['columns'] = json_request.get('columns', [])
+        json_request['file_format'] = json_request.get('file_format', 'csv')
+
+        fields_defaults = {
+            'award_types': list(award_type_mappings.keys()),
+            'agency': None,
+            'sub_agency': None,
+            'date_type': 'action_date',
+            'keyword': None
+        }
+        for field in fields_defaults:
+            json_request['filters'][field] = json_request['filters'].get(field, fields_defaults[field])
+        json_request['filters']['date_range'] = json_request['filters'].get('date_range', {})
+        json_request['filters']['date_range']['start_date'] = (json_request['filters']['date_range']
+                                                               .get('start_date', None))
+        json_request['filters']['date_range']['end_date'] = json_request['filters']['date_range'].get('end_date', None)
+
+        # TODO: Refactor with the bulk_download method in populate_monthly_files.py
+        # Check if the same request has been called today
+        current_date = datetime.datetime.utcnow()
+        updated_date_timestamp = datetime.datetime.strftime(current_date, '%Y-%m-%d')
+        cached_download = BulkDownloadJob.objects.filter(
+            json_request=json.dumps(order_nested_object(json_request)),
+            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
+        if cached_download:
+            # By returning the cached files, there should be no duplicates on a daily basis
+            cached_filename = cached_download[0]['file_name']
+            return self.get_download_response(file_name=cached_filename)
+
+        download_name = '_'.join(value_mappings[award_level]['download_name']
+                                 for award_level in json_request['award_levels'])
+        # get timestamped name to provide unique file name
+        timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
+
+        download_job = self.create_bulk_download_job(json_request, timestamped_file_name)
+
+        self.process_request(json_request, download_job, timestamped_file_name)
 
         return self.get_download_response(file_name=timestamped_file_name)
 
@@ -411,12 +438,32 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
     def process_filters(self, filters, award_level):
         """Filter function for Bulk Download Award Generation"""
 
-        for required_param in ['award_types', 'agency', 'date_type', 'date_range']:
-            if required_param not in filters:
-                raise InvalidParameterException('{} filter not provided'.format(required_param))
-
         table = value_mappings[award_level]['table']
         queryset = table.objects.all()
+
+        keyword = filters['keyword']
+        if keyword:
+            logger.info('Getting ids based on keyword: {}'.format(keyword))
+            elastic_search_complete = False
+            size = 500000
+            while not elastic_search_complete:
+                try:
+                    transaction_ids = elasticsearch_helper.get_transaction_ids(keyword=keyword, size=size)
+                    # flatten ids
+                    transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
+                    elastic_search_complete = True
+                except (TransportError, ConnectionError) as e:
+                    logger.error(e)
+                    transaction_ids = []
+                    size = size//10
+                    logger.error('Error retrieving ids. Retrying with a smaller size: {}'.format(size))
+            logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
+            transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
+            queryset = queryset.filter(**{'{}__isnull'.format(value_mappings[award_level]['transaction_id']): False})
+            queryset &= queryset.extra(
+                where=['\"transaction_normalized\".\"id\" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))]
+            )
+            return queryset
 
         # Adding award type filter
         award_types = []
@@ -451,9 +498,9 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         # Get the date ranges
         try:
             date_range_filters = {}
-            if 'start_date' in filters['date_range'] and filters['date_range']['start_date']:
+            if filters['date_range']['start_date']:
                 date_range_filters['{}__gte'.format(date_attribute)] = filters['date_range']['start_date']
-            if 'end_date' in filters['date_range'] and filters['date_range']['end_date']:
+            if filters['date_range']['end_date']:
                 date_range_filters['{}__lte'.format(date_attribute)] = filters['date_range']['end_date']
             queryset &= table.objects.filter(**date_range_filters)
         except TypeError:
@@ -461,9 +508,9 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
 
         # Agencies are to be OR'd together and then AND'd to the major query
         agencies_queryset = None
-        if filters['agency'] != 'all':
+        if filters['agency'] and filters['agency'] != 'all':
             agencies_queryset = Q(awarding_agency__toptier_agency_id=filters['agency'])
-            if 'sub_agency' in filters and filters['sub_agency']:
+            if filters['sub_agency']:
                 agencies_queryset &= Q(awarding_agency__subtier_agency__name=filters['sub_agency'])
             queryset &= table.objects.filter(agencies_queryset)
 
@@ -478,8 +525,6 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         # file_format = json_request['file_format']
 
         csv_sources = []
-        self.DOWNLOAD_NAME = '_'.join(value_mappings[award_level]['download_name']
-                                      for award_level in award_levels)
         try:
             for award_level in award_levels:
                 if award_level not in value_mappings:
@@ -503,8 +548,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
                     d2_filters = {'{}__isnull'.format(value_mappings[award_level]['assistance_data']): False}
                     d2_source.queryset = queryset & award_level_table.objects.filter(**d2_filters)
                     csv_sources.append(d2_source)
-                verify_requested_columns_available(tuple(csv_sources), json_request.get('columns', None))
-
+                verify_requested_columns_available(tuple(csv_sources), json_request['columns'])
         except TypeError:
             raise InvalidParameterException('award_levels parameter not provided as a list')
         return tuple(csv_sources)
