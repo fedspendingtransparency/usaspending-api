@@ -28,7 +28,6 @@ from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-from elasticsearch.exceptions import TransportError, ConnectionError
 from usaspending_api.search.v2 import elasticsearch_helper
 
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference
@@ -444,19 +443,9 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         keyword = filters['keyword']
         if keyword:
             logger.info('Getting ids based on keyword: {}'.format(keyword))
-            elastic_search_complete = False
-            size = 10000
-            while not elastic_search_complete:
-                try:
-                    transaction_ids = elasticsearch_helper.get_transaction_ids(keyword=keyword, size=size)
-                    # flatten ids
-                    transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
-                    elastic_search_complete = True
-                except (TransportError, ConnectionError) as e:
-                    logger.error(e)
-                    transaction_ids = []
-                    size = size//10
-                    logger.error('Error retrieving ids. Retrying with a smaller size: {}'.format(size))
+            transaction_ids = elasticsearch_helper.get_transaction_ids_agg(keyword=keyword)
+            # flatten ids
+            transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
             logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
             queryset = queryset.filter(**{'{}__isnull'.format(value_mappings[award_level]['transaction_id']): False})
