@@ -225,11 +225,11 @@ class BaseDownloadViewSet(APIView):
             if required_param not in json_request:
                 raise InvalidParameterException('{} parameter not provided'.format(required_param))
         if not isinstance(json_request['award_levels'], list):
-            raise InvalidParameterException('Award levels parameter not provided as a list'.format(required_param))
+            raise InvalidParameterException('Award levels parameter not provided as a list')
         elif len(json_request['award_levels']) == 0:
             raise InvalidParameterException('At least one award level is required.')
         if not isinstance(json_request['filters'], dict):
-            raise InvalidParameterException('Filters parameter not provided as a dict'.format(required_param))
+            raise InvalidParameterException('Filters parameter not provided as a dict')
         elif len(json_request['filters']) == 0:
             raise InvalidParameterException('At least one filter is required.')
         filters = json_request['filters']
