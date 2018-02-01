@@ -83,6 +83,12 @@ def generate_all_fiscal_years_in_range(start, end):
     return fiscal_years
 
 
+def days_between(d1, d2):
+    d1 = datetime.datetime.strptime(d1, "%Y-%m-%d")
+    d2 = datetime.datetime.strptime(d2, "%Y-%m-%d")
+    return abs((d2 - d1).days)
+
+
 def generate_raw_quoted_query(queryset):
     """
     Generates the raw sql from a queryset with quotable types quoted.
