@@ -36,7 +36,8 @@ class Command(BaseCommand):
         if award_type == 'procurement':
             query_columns.extend(['contract_number', 'idv_reference_number', 'contracting_office_aid', 'company_name',
                                   'company_address_country', 'company_address_city', 'company_address_zip',
-                                  'company_address_state', 'company_address_street', 'company_address_district'])
+                                  'company_address_state', 'company_address_street', 'company_address_district',
+                                  'contract_agency_code', 'contract_idv_agency_code'])
         else:
             # TODO contracting_office_aid equivalent? Do we even need it?
             query_columns.extend(['fain', 'awardee_name', 'awardee_address_country', 'awardee_address_city',
@@ -57,25 +58,28 @@ class Command(BaseCommand):
             agency = get_valid_awarding_agency(row)
 
             if not agency:
-                # logger.warning(
-                #     "Internal ID {} cannot find matching agency with subtier code {}".
-                #     format(row['internal_id'], row['contracting_office_aid']))
+                logger.warning(
+                    "Internal ID {} cannot find matching agency with subtier code {}".
+                    format(row['internal_id'], row['contracting_office_aid']))
                 return None, None
 
             # Find the award to attach this sub-contract to, using the generated unique ID:
             # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
-            generated_unique_id = 'CONT_AW_' + (row['agency_id'] if row['agency_id'] else '-NONE-') +\
-                (row['referenced_idv_agency_iden'] if row['referenced_idv_agency_iden'] else '-NONE-') +\
-                (row['piid'] if row['piid'] else '-NONE-') +\
-                (row['parent_award_id'] if row['parent_award_id'] else '-NONE-')
+            # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
+            generated_unique_id = 'CONT_AW_' + row.get('contract_agency_code', '-NONE-') + \
+                row.get('contract_idv_agency_code', '-NONE-') + \
+                row.get('contract_number', '-NONE-') + \
+                row.get('idv_reference_number', '-NONE-')
             award = Award.objects.filter(generated_unique_award_id=generated_unique_id).\
                 distinct().order_by("-date_signed").first()
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
                 logger.warning(
-                   "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
-                   format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
+                   "Internal ID {} cannot find award with agency_id {}, referenced_idv_agency_iden {}, piid {}, "
+                   "parent_award_id {}; skipping...".format(row['internal_id'], row['contract_agency_code'],
+                                                            row['contract_idv_agency_code'], row['contract_number'],
+                                                            row['idv_reference_number']))
                 return None, None
 
             recipient_name = row['company_name']
