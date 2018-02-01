@@ -67,10 +67,10 @@ class Command(BaseCommand):
             action='store_true',
             help='Flag to include deleted transactions from S3')
         parser.add_argument(
-            '-w',
-            '--wipe',
+            '-r',
+            '--recreate',
             action='store_true',
-            help='Flag to purge ES indicies and recreate')
+            help='Flag to delete each ES index and recreate with new data')
 
     # used by parent class
     def handle(self, *args, **options):
@@ -83,12 +83,16 @@ class Command(BaseCommand):
         self.config['fiscal_year'] = options['fiscal_year']
         self.config['directory'] = options['dir'] + os.sep
         self.config['provide_deleted'] = options['deleted']
-        self.config['wipe_indicies'] = options['wipe']
+        self.config['wipe_indicies'] = options['recreate']
 
         try:
             self.config['starting_date'] = date(*[int(x) for x in options['since'].split('-')])
         except Exception:
             print('Malformed date string provided. `--since` requires YYYY-MM-DD')
+            raise SystemExit
+
+        if self.config['wipe_indicies'] and self.config['starting_date'] != date(2001, 1, 1):
+            print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
             raise SystemExit
 
         if not os.path.isdir(self.config['directory']):
@@ -266,20 +270,16 @@ def post_to_elasticsearch(job, mapping, chunksize=250000):
 
 
 def filter_query(column, values, query_type="match_phrase"):
-    values = [str(i) for i in values]
-
-    def format_(x):
-        return {query_type: {column: x}}
-    queries = [format_(i) for i in values]
+    queries = [{query_type: {column: str(i)}} for i in values]
     body = {
-            "query": {
-                "bool": {
-                    "should": [
-                        queries
-                    ]
-                }
+        "query": {
+            "bool": {
+                "should": [
+                    queries
+                ]
             }
         }
+    }
 
     return json.dumps(body)
 
@@ -330,5 +330,5 @@ def delete_transactions_from_es(id_list, index=None, size=50000):
             delete_body = delete_query(response)
             ES_CLIENT.delete_by_query(index=index, body=delete_body, size=size)
     end_ = ES_CLIENT.search(index=index)['hits']['total']
+    print('Deleted {} records'.format(str(start_ - end_)))
     print('ES Deletes took {}s'.format(perf_counter() - start))
-    print('ES Deleted {} records'.format(str(start_ - end_)))
