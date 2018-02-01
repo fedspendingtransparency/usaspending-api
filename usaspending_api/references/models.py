@@ -515,7 +515,8 @@ class LegalEntity(DataSourceTrackedModel):
     women_owned_small_business = models.BooleanField(blank=False, null=False, default=False)
     economically_disadvantaged_women_owned_small_business = models.BooleanField(blank=False, null=False, default=False)
     joint_venture_women_owned_small_business = models.BooleanField(blank=False, null=False, default=False)
-    joint_venture_economic_disadvantaged_women_owned_small_bus = models.BooleanField(blank=False, null=False, default=False)
+    joint_venture_economic_disadvantaged_women_owned_small_bus = models.BooleanField(blank=False, null=False,
+                                                                                     default=False)
     veteran_owned_business = models.BooleanField(blank=False, null=False, default=False)
     service_disabled_veteran_owned_business = models.BooleanField(blank=False, null=False, default=False)
     contracts = models.BooleanField(blank=False, null=False, default=False)
@@ -541,7 +542,8 @@ class LegalEntity(DataSourceTrackedModel):
     black_american_owned_business = models.BooleanField(blank=False, null=False, default=False)
     hispanic_american_owned_business = models.BooleanField(blank=False, null=False, default=False)
     native_american_owned_business = models.BooleanField(blank=False, null=False, default=False)
-    subcontinent_asian_asian_indian_american_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    subcontinent_asian_asian_indian_american_owned_business = models.BooleanField(blank=False, null=False,
+                                                                                  default=False)
     other_minority_owned_business = models.BooleanField(blank=False, null=False, default=False)
     us_local_government = models.BooleanField(blank=False, null=False, default=False)
     undefinitized_action = models.TextField(blank=True, null=True)
