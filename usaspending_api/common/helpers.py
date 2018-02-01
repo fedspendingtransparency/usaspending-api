@@ -2,7 +2,7 @@ import contextlib
 import logging
 import time
 import timeit
-from calendar import monthrange
+from calendar import monthrange, isleap
 
 from fiscalyear import FiscalDateTime, FiscalYear, FiscalQuarter, datetime
 from collections import OrderedDict
@@ -83,10 +83,17 @@ def generate_all_fiscal_years_in_range(start, end):
     return fiscal_years
 
 
-def days_between(d1, d2):
-    d1 = datetime.datetime.strptime(d1, "%Y-%m-%d")
-    d2 = datetime.datetime.strptime(d2, "%Y-%m-%d")
-    return abs((d2 - d1).days)
+def within_one_year(d1, d2):
+    """ includes leap years """
+    year_range = list(range(d1.year, d2.year+1))
+    if len(year_range) > 2:
+        return False
+    days_diff = abs((d2 - d1).days)
+    for leap_year in [year for year in year_range if isleap(year)]:
+        leap_date = datetime.datetime(leap_year, 2, 29)
+        if leap_date >= d1 and leap_date <= d2:
+            days_diff = days_diff - 1
+    return days_diff <= 365
 
 
 def generate_raw_quoted_query(queryset):

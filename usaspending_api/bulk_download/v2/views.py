@@ -23,7 +23,7 @@ from usaspending_api.references.models import ToptierAgency
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.csv_helpers import sqs_queue
-from usaspending_api.common.helpers import order_nested_object, days_between
+from usaspending_api.common.helpers import order_nested_object, within_one_year
 from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
@@ -267,8 +267,13 @@ class BaseDownloadViewSet(APIView):
             latest_date = datetime.datetime.strftime(current_date, '%Y-%m-%d')
             start = filters['date_range']['start_date'] if filters['date_range']['start_date'] else earliest_date
             end = filters['date_range']['end_date'] if filters['date_range']['end_date'] else latest_date
-            if days_between(start, end) > 365:
-                raise InvalidParameterException('Date Range must be within a year.')
+            try:
+                d1 = datetime.datetime.strptime(start, "%Y-%m-%d")
+                d2 = datetime.datetime.strptime(end, "%Y-%m-%d")
+                if not within_one_year(d1, d2):
+                    raise InvalidParameterException('Date Range must be within a year.')
+            except ValueError:
+                raise InvalidParameterException('Date Ranges must be in the format YYYY-MM-DD.')
             # date type
             if filters['date_type'] not in ['action_date', 'last_modified_date']:
                 raise InvalidParameterException('Invalid parameter for date_type: {}'.format(filters['date_type']))
