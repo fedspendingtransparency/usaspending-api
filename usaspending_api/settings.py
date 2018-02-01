@@ -26,7 +26,7 @@ DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 SECRET_KEY = get_random_string()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
