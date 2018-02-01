@@ -2,8 +2,6 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import connection
 import logging
-from os import listdir
-from os.path import isfile, join
 
 logger = logging.getLogger('console')
 
@@ -29,7 +27,7 @@ class Command(BaseCommand):
         file_names = [bulk_load_file_path + name for name in file_names]
 
         # matview_file_path = 'usaspending_api/database_scripts/matviews/'
-        # file_names += [matview_file_path + f for f in listdir(matview_file_path) if isfile(join(matview_file_path, f))]
+        # file_names += [matview_file_path + f for f in listdir(matview_file_path) if isfile(join(matview_file_path,f))]
 
         total_start = datetime.now()
         for file_name in file_names:
