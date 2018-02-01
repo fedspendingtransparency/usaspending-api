@@ -3,12 +3,10 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
 from django.db.models import Max
-from django.core.exceptions import MultipleObjectsReturned
 
 from usaspending_api.awards.models import Award, Subaward
-from usaspending_api.references.models import LegalEntity, Agency, Cfda
+from usaspending_api.references.models import LegalEntity, Agency, Cfda, Location
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.etl.helpers import get_or_create_location
 from usaspending_api.etl.award_helpers import update_award_subawards
 
 logger = logging.getLogger('console')
@@ -127,27 +125,45 @@ class Command(BaseCommand):
                 skip_count += 1
                 continue
 
-            # Get or create unique DUNS-recipient pair
-            try:
-                recipient, created = LegalEntity.objects.get_or_create(
-                    recipient_unique_id=row['duns'],
-                    recipient_name=recipient_name
-                )
-            except MultipleObjectsReturned:
-                created = False
-                print('Legal Entity with DUNS: {} and name: {} returned two rows. '
-                      'Skipping...'.format(row['duns'], recipient_name))
+            # Create Recipient/Location entries specific to this subaward row
+            if award_type == 'procurement':
+                location_value_map = location_d1_recipient_mapper(row)
+            else:
+                location_value_map = location_d2_recipient_mapper(row)
 
-            if created:
-                recipient.parent_recipient_unique_id = row['parent_duns']
-                if award_type == 'procurement':
-                    recipient.location = get_or_create_location(row, location_d1_recipient_mapper)
-                else:
-                    recipient.location = get_or_create_location(row, location_d2_recipient_mapper)
-                recipient.save()
+            location_value_map['recipient_flag'] = True
 
-            # Get or create POP
-            place_of_performance = get_or_create_location(row, pop_mapper)
+            if location_value_map["location_zip"]:
+                location_value_map.update(
+                    zip4=location_value_map["location_zip"],
+                    zip5=location_value_map["location_zip"][:5],
+                    zip_last4=location_value_map["location_zip"][5:])
+
+            location_value_map.pop("location_zip")
+
+            recipient_location = Location(**location_value_map).save()
+            recipient = LegalEntity.objects.create(
+                recipient_unique_id=row['duns'],
+                recipient_name=recipient_name,
+                parent_recipient_unique_id=row['parent_duns'],
+                location=recipient_location
+            )
+            # recipient.save()
+            # recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
+
+            # Create POP location
+            pop_value_map = pop_mapper(row)
+            pop_value_map['place_of_performance_flag'] = True
+
+            if pop_value_map["location_zip"]:
+                pop_value_map.update(
+                    zip4=pop_value_map["location_zip"],
+                    zip5=pop_value_map["location_zip"][:5],
+                    zip_last4=pop_value_map["location_zip"][5:])
+
+            pop_value_map.pop("location_zip")
+
+            place_of_performance = Location(**pop_value_map).save()
 
             # set shared data content
             shared_data[row['internal_id']] = {'award': award,
@@ -209,6 +225,7 @@ class Command(BaseCommand):
                 only_num = row['cfda_numbers'].split(' ')
                 cfda = Cfda.objects.filter(program_number=only_num[0]).first()
 
+            shared_mappings['recipient'].save()
             subaward_dict = {
                 'award': shared_mappings['award'],
                 'recipient': shared_mappings['recipient'],
