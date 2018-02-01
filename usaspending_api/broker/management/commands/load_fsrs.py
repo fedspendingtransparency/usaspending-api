@@ -66,10 +66,11 @@ class Command(BaseCommand):
             # Find the award to attach this sub-contract to, using the generated unique ID:
             # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
             # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
-            generated_unique_id = 'CONT_AW_' + row.get('contract_agency_code', '-NONE-') + \
-                row.get('contract_idv_agency_code', '-NONE-') + \
-                row.get('contract_number', '-NONE-') + \
-                row.get('idv_reference_number', '-NONE-')
+            generated_unique_id = 'CONT_AW_' + \
+                (row['contract_agency_code'] if row['contract_agency_code'] else '-NONE-') +\
+                (row['contract_idv_agency_code'] if row['contract_idv_agency_code'] else '-NONE-') +\
+                (row['contract_number'] if row['contract_number'] else '-NONE-') +\
+                (row['idv_reference_number'] if row['idv_reference_number'] else '-NONE-')
             award = Award.objects.filter(generated_unique_award_id=generated_unique_id).\
                 distinct().order_by("-date_signed").first()
 
