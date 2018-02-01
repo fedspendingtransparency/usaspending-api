@@ -224,7 +224,13 @@ class BaseDownloadViewSet(APIView):
         for required_param in ['award_levels', 'filters']:
             if required_param not in json_request:
                 raise InvalidParameterException('{} parameter not provided'.format(required_param))
-        if json_request['filters'] == {}:
+        if not isinstance(json_request['award_levels'], list):
+            raise InvalidParameterException('Award levels parameter not provided as a list'.format(required_param))
+        elif len(json_request['award_levels']) == 0:
+            raise InvalidParameterException('At least one award level is required.')
+        if not isinstance(json_request['filters'], dict):
+            raise InvalidParameterException('Filters parameter not provided as a dict'.format(required_param))
+        elif len(json_request['filters']) == 0:
             raise InvalidParameterException('At least one filter is required.')
         filters = json_request['filters']
         json_request['columns'] = json_request.get('columns', [])
@@ -240,7 +246,7 @@ class BaseDownloadViewSet(APIView):
         }
         for field in fields_defaults:
             filters[field] = filters.get(field, fields_defaults[field])
-            if isinstance(filters[field], type(fields_defaults[field])):
+            if not isinstance(filters[field], type(fields_defaults[field])):
                 type_name = type(fields_defaults[field]).__name__
                 raise InvalidParameterException('{} parameter not provided as a {}'.format(field, type_name))
         filters['date_range']['start_date'] = filters['date_range'].get('start_date', '')
@@ -270,9 +276,7 @@ class BaseDownloadViewSet(APIView):
 
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
-        json_request = request.data
-
-        json_request = self.validate_request(json_request)
+        json_request = self.validate_request(request.data)
 
         # TODO: Refactor with the bulk_download method in populate_monthly_files.py
         # Check if the same request has been called today
@@ -531,32 +535,29 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         # file_format = json_request['file_format']
 
         csv_sources = []
-        try:
-            for award_level in award_levels:
-                if award_level not in value_mappings:
-                    raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
+        for award_level in award_levels:
+            if award_level not in value_mappings:
+                raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
 
-                queryset = self.process_filters(json_request['filters'], award_level)
-                award_level_table = value_mappings[award_level]['table']
+            queryset = self.process_filters(json_request['filters'], award_level)
+            award_level_table = value_mappings[award_level]['table']
 
-                award_types = set(json_request['filters']['award_types'])
-                d1_award_types = set(['contracts'])
-                d2_award_types = set(['grants', 'direct_payments', 'loans', 'other_financial_assistance'])
-                if award_types & d1_award_types:
-                    # only generate d1 files if the user is asking for contracts
-                    d1_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd1', award_level)
-                    d1_filters = {'{}__isnull'.format(value_mappings[award_level]['contract_data']): False}
-                    d1_source.queryset = queryset & award_level_table.objects.filter(**d1_filters)
-                    csv_sources.append(d1_source)
-                if award_types & d2_award_types:
-                    # only generate d2 files if the user is asking for assistance data
-                    d2_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd2', award_level)
-                    d2_filters = {'{}__isnull'.format(value_mappings[award_level]['assistance_data']): False}
-                    d2_source.queryset = queryset & award_level_table.objects.filter(**d2_filters)
-                    csv_sources.append(d2_source)
-                verify_requested_columns_available(tuple(csv_sources), json_request['columns'])
-        except TypeError:
-            raise InvalidParameterException('award_levels parameter not provided as a list')
+            award_types = set(json_request['filters']['award_types'])
+            d1_award_types = set(['contracts'])
+            d2_award_types = set(['grants', 'direct_payments', 'loans', 'other_financial_assistance'])
+            if award_types & d1_award_types:
+                # only generate d1 files if the user is asking for contracts
+                d1_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd1', award_level)
+                d1_filters = {'{}__isnull'.format(value_mappings[award_level]['contract_data']): False}
+                d1_source.queryset = queryset & award_level_table.objects.filter(**d1_filters)
+                csv_sources.append(d1_source)
+            if award_types & d2_award_types:
+                # only generate d2 files if the user is asking for assistance data
+                d2_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd2', award_level)
+                d2_filters = {'{}__isnull'.format(value_mappings[award_level]['assistance_data']): False}
+                d2_source.queryset = queryset & award_level_table.objects.filter(**d2_filters)
+                csv_sources.append(d2_source)
+            verify_requested_columns_available(tuple(csv_sources), json_request['columns'])
         return tuple(csv_sources)
 
 
