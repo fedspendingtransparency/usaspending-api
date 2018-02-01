@@ -1,1 +1,6 @@
-{"index.max_result_window" : 500000}
+{
+	"transient" : {},
+	"persistent": {
+		"action.destructive_requires_name": true
+	}
+}

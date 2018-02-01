@@ -10,7 +10,7 @@ from usaspending_api import settings
 class Command(BaseCommand):
     help = '''
     This script applies configuration changes to an ElasticSearch cluster.
-    Default mapper file location is in `usaspending_api/etl/es_settings.json`
+    Default json file location is in `usaspending_api/etl/es_settings.json`
     Requires env var ES_HOSTNAME to be set
     '''
 
@@ -44,12 +44,14 @@ class Command(BaseCommand):
         print('Attemping to use {}'.format(settings_file))
 
         with open(settings_file, 'r') as f:
-            # Read and parse file as lite JSON validation before sending it to ES
+            # Read and parse file as JSON validation before sending it to ES
             es_config = json.load(f)
 
-        cmd = 'curl -XPUT "{es_host}/_settings" -H "Content-Type: application/json" -d \'{data}\''
+        template = 'curl -XPUT "{es_host}/_cluster/settings" -H "Content-Type: application/json" -d \'{data}\''
+        cmd = template.format(es_host=settings.ES_HOSTNAME, data=json.dumps(es_config))
+        print('Running: {}\n\n'.format(cmd))
 
-        subprocess.Popen(cmd.format(es_host=settings.ES_HOSTNAME, data=json.dumps(es_config)), shell=True).wait()
+        subprocess.Popen(cmd, shell=True).wait()
 
-        print('---------------------------------------------------------------')
+        print('\n\n---------------------------------------------------------------')
         print("Script completed in {} seconds".format(perf_counter() - start))
