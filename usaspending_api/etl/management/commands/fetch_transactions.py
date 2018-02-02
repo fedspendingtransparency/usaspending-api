@@ -109,21 +109,16 @@ class Command(BaseCommand):
         }
         filename = self.config['directory'] + '<filename>'
 
-        view, copy_sql, ids, count_sql, drop_view = configure_sql_strings(self.config, filename, self.deleted_ids)
-        print('========================================')
-        print('--- Postgres View SQL ---')
-        print(view)
+        copy_sql, id_sql, count_sql = configure_sql_strings(self.config, filename, self.deleted_ids)
         print('========================================')
         print('--- SQL to copy rows to CSV ---')
         print(copy_sql)
         print('========================================')
         print('--- SQL to gather all existing transactions in deleted list ---')
-        if not ids:
-            ids = '*** No ID SQL generated with provided script flags ***'
-        print(ids)
+        if not id_sql:
+            id_sql = '*** No ID SQL generated with provided script flags ***'
+        print(id_sql)
         print('========================================')
-        print('--- Drop SQL ---')
-        print(drop_view)
 
     def db_interactions(self):
         '''
@@ -141,9 +136,7 @@ class Command(BaseCommand):
             fy=self.config['fiscal_year'],
             type=type_str,
             now=self.config['formatted_now'])
-        view_sql, copy_sql, ids, count_sql, drop_view = configure_sql_strings(self.config, filename, self.deleted_ids)
-
-        execute_sql_statement(view_sql, False, self.config['verbose'])
+        copy_sql, id_sql, count_sql = configure_sql_strings(self.config, filename, self.deleted_ids)
 
         count = execute_sql_statement(count_sql, True, self.config['verbose'])
         print('\nWriting {} transactions to this file:'.format(count[0]['count']))
@@ -151,14 +144,13 @@ class Command(BaseCommand):
         # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
         subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
 
-        if ids:
-            restored_ids = execute_sql_statement(ids, True, self.config['verbose'])
+        if id_sql:
+            restored_ids = execute_sql_statement(id_sql, True, self.config['verbose'])
             if self.config['verbose']:
                 print(restored_ids)
             print('{} "deleted" IDs were found in DB'.format(len(restored_ids)))
             self.correct_deleted_ids(restored_ids)
 
-        execute_sql_statement(drop_view, False, self.config['verbose'])
         print("Database interactions took {} seconds".format(perf_counter() - start))
 
     def correct_deleted_ids(self, existing_ids):
@@ -226,8 +218,6 @@ def configure_sql_strings(config, filename, deleted_ids):
         else:
             award_type_str = CATEGORY_SQL.format(config['award_category'])
 
-    view_sql = TEMP_ES_DELTA_VIEW
-
     copy_sql = COPY_SQL.format(
         fy=config['fiscal_year'],
         update_date=update_date_str,
@@ -246,9 +236,7 @@ def configure_sql_strings(config, filename, deleted_ids):
     else:
         id_sql = None
 
-    drop_view = DROP_VIEW_SQL
-
-    return view_sql, copy_sql, id_sql, count_sql, drop_view
+    return copy_sql, id_sql, count_sql
 
 
 def set_config():
@@ -350,91 +338,6 @@ def gather_deleted_ids(config):
     print("Gathering deleted transactions took {} seconds".format(perf_counter() - start))
     return deleted_ids
 
-# ==============================================================================
-# SQL Template Strings for Postgres Statements
-# ==============================================================================
-
-
-TEMP_ES_DELTA_VIEW = '''
-CREATE OR REPLACE VIEW transaction_delta_view AS
-SELECT
-  UTM.transaction_id,
-  TM.modification_number,
-  UAM.award_id,
-  UTM.piid,
-  UTM.fain,
-  UTM.uri,
-  AW.description AS award_description,
-
-  UTM.product_or_service_code,
-  UTM.product_or_service_description,
-  UTM.naics_code,
-  UTM.naics_description,
-  UAM.type_description,
-  UTM.award_category,
-  UTM.recipient_unique_id,
-  UTM.parent_recipient_unique_id,
-  UTM.recipient_name,
-
-  UTM.action_date::date,
-  UAM.period_of_performance_start_date,
-  UAM.period_of_performance_current_end_date,
-  UTM.fiscal_year AS transaction_fiscal_year,
-  UAM.fiscal_year AS award_fiscal_year,
-  UAM.total_obligation AS award_amount,
-  UTM.federal_action_obligation AS transaction_amount,
-  UAM.face_value_loan_guarantee,
-  UAM.original_loan_subsidy_cost,
-
-  UTM.awarding_agency_id,
-  UTM.funding_agency_id,
-  UAM.awarding_toptier_agency_name,
-  UTM.funding_toptier_agency_name,
-  UTM.awarding_subtier_agency_name,
-  UTM.funding_subtier_agency_name,
-  UTM.awarding_toptier_agency_abbreviation,
-  UTM.funding_toptier_agency_abbreviation,
-  UTM.awarding_subtier_agency_abbreviation,
-  UTM.funding_subtier_agency_abbreviation,
-
-  UTM.cfda_title,
-  UTM.cfda_popular_name,
-  UTM.type_of_contract_pricing,
-  UTM.type_set_aside,
-  UTM.extent_competed,
-  UTM.pulled_from,
-  UTM.type,
-
-  UTM.pop_country_code,
-  UTM.pop_country_name,
-  UTM.pop_state_code,
-  UTM.pop_county_code,
-  UTM.pop_county_name,
-  UTM.pop_zip5,
-  UTM.pop_congressional_code,
-
-  UTM.recipient_location_country_code,
-  UTM.recipient_location_country_name,
-  UTM.recipient_location_state_code,
-  UTM.recipient_location_county_code,
-  UTM.recipient_location_zip5,
-
-  FPDS.detached_award_proc_unique,
-  FABS.afa_generated_unique,
-
-  CASE
-    WHEN FPDS.detached_award_proc_unique IS NOT NULL THEN 'cont_tx_' || FPDS.detached_award_proc_unique
-    WHEN FABS.afa_generated_unique IS NOT NULL THEN 'asst_tx_' || FABS.afa_generated_unique
-    ELSE NULL  -- if this happens: Activate Batsignal
-  END AS generated_unique_transaction_id,
-  TM.update_date
-
-FROM universal_transaction_matview UTM
-JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
-LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
-LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
-LEFT JOIN universal_award_matview UAM ON (UTM.award_id = UAM.award_id)
-JOIN awards AW ON (UAM.award_id = AW.id);'''
 
 VIEW_COLUMNS = [
     'transaction_id', 'modification_number', 'award_id', 'piid', 'fain', 'uri',
@@ -458,6 +361,12 @@ VIEW_COLUMNS = [
     'generated_unique_transaction_id', 'update_date',
 ]
 
+
+# ==============================================================================
+# SQL Template Strings for Postgres Statements
+# ==============================================================================
+
+
 UPDATE_DATE_SQL = ' AND update_date >= \'{}\''
 
 CATEGORY_SQL = ' AND award_category = \'{}\''
@@ -474,8 +383,6 @@ COPY_SQL = '''"COPY (
     WHERE transaction_fiscal_year={fy}{update_date}{award_category}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 '''
-
-DROP_VIEW_SQL = 'DROP VIEW transaction_delta_view;'
 
 CHECK_IDS_SQL = '''
 WITH temp_transaction_ids AS (

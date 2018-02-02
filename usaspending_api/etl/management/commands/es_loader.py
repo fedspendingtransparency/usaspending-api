@@ -12,22 +12,19 @@ from elasticsearch import helpers
 from time import perf_counter
 from usaspending_api import settings
 from usaspending_api.etl.management.commands.fetch_transactions import configure_sql_strings
-from usaspending_api.etl.management.commands.fetch_transactions import DROP_VIEW_SQL
 from usaspending_api.etl.management.commands.fetch_transactions import execute_sql_statement
 from usaspending_api.etl.management.commands.fetch_transactions import gather_deleted_ids
-from usaspending_api.etl.management.commands.fetch_transactions import TEMP_ES_DELTA_VIEW
 from usaspending_api.etl.management.commands.fetch_transactions import VIEW_COLUMNS
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
-# 1. [conditional] Remove deleted transactions from ES
+# 1. [conditional] Remove recently deleted transactions from Elasticsearch
 #   a. Gather the list of deleted transactions from S3
 #   b. Delete transactions from ES
-# 2. Create temporary view of transaction records
-# 3. Iterate over fiscal year and award type description
+# 2. Iterate by fiscal year over award type description
 #   a. Download 1 CSV file
 #   b. Either delete target index or delete transactions by their ids
 #   c. Load CSV contents into ES
-#   d. Lather. Rinse. Repeat. until all fiscal years are complete
+#   d. Lather. Rinse. Repeat.
 
 ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 
@@ -115,10 +112,6 @@ class Command(BaseCommand):
         # delete_list = [{'id': x, 'col': 'generated_unique_transaction_id'} for x in self.deleted_ids.keys()]
         # delete_transactions_from_es(delete_list)
 
-        ########################################################################
-        # self.prepare_db()  # REMOVED for READONLY account
-        ########################################################################
-
         # Loop through award type categories
         for awd_cat_idx in AWARD_DESC_CATEGORIES.keys():
             loop_msg = 'Handeling {} transactions for FY{}'.format(awd_cat_idx, self.config['fiscal_year'])
@@ -146,20 +139,6 @@ class Command(BaseCommand):
             # repeat
 
         print('Completed all categories for FY{}'.format(self.config['fiscal_year']))
-        ########################################################################
-        # self.cleanup_db()  # REMOVED for READONLY account
-        ########################################################################
-
-    def prepare_db(self):
-        print('Creating View in Postgres...')
-        # REMOVED for READONLY account
-        execute_sql_statement(TEMP_ES_DELTA_VIEW, False, self.config['verbose'])
-        print('View Successfully created')
-
-    def cleanup_db(self):
-        print('Removing View from Postgres...')
-        execute_sql_statement(DROP_VIEW_SQL, False, self.config['verbose'])
-        print('View Successfully removed')
 
     def download_csv(self, count_sql, copy_sql, filename):
         start = perf_counter()
@@ -183,7 +162,7 @@ class Command(BaseCommand):
             'award_category': award_category,
             'provide_deleted': self.config['provide_deleted']
         }
-        _, copy_sql, _, count_sql, _ = configure_sql_strings(config, filename, [])
+        copy_sql, _, count_sql = configure_sql_strings(config, filename, [])
 
         if os.path.isfile(filename):
             os.remove(filename)
