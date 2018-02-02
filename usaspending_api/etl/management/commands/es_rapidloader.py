@@ -29,12 +29,12 @@ ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 
 
 class DataJob:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args):
         self._name = args[0]
-        self.index = args[1] or kwargs['index']
-        self.fy = args[2] or kwargs['fy']
-        self.category = args[3] or kwargs['category']
-        self.csv = args[4] or kwargs['csv']
+        self.index = args[1]
+        self.fy = args[2]
+        self.category = args[3]
+        self.csv = args[4]
         self.count = None
 
 
@@ -109,7 +109,7 @@ class Command(BaseCommand):
         new_queue = Queue()  # Queue for jobs whch need a csv downloaded
         ingest_queue = Queue()  # Queue for jobs which have a csv and are ready for ES ingest
 
-        job_id = 0
+        job_id = 1
         for fy in self.config['fiscal_years']:
             for awd_cat_idx in AWARD_DESC_CATEGORIES.keys():
                 award_category = AWARD_DESC_CATEGORIES[awd_cat_idx]
@@ -132,6 +132,8 @@ class Command(BaseCommand):
                         new_job.count = count
                     ingest_queue.put(new_job)
 
+        print('There are {} jobs to process'.format(job_id))
+
         download_proccess = Process(target=download_db_records, args=(new_queue, ingest_queue, self.config))
         es_index_process = Process(target=es_data_loader, args=(new_queue, ingest_queue, self.config))
 
@@ -144,25 +146,20 @@ class Command(BaseCommand):
 
 def es_data_loader(fetch_jobs, done_jobs, config):
     loop_again = True
-    check_1 = True
     while loop_again:
         if not done_jobs.empty():
-            print('[ES Ingest] Starting new job')
-            check_1 = True
             job = done_jobs.get_nowait()
+            if job._name is None:
+                loop_again = False
+                break
+
+            print('[ES Ingest] Starting new job')
             post_to_elasticsearch(job, config)
             if os.path.exists(job.csv):
                 os.remove(job.csv)
-        elif fetch_jobs.empty() and done_jobs.empty():
-            if check_1:
-                print('[ES Ingest] Both Queues are empty. Check in 90s')
-                check_1 = False
-                sleep(90)
-            else:
-                loop_again = False
+        # elif fetch_jobs.empty() and done_jobs.empty():
         else:
-            print('[ES Ingest] No Job..... :-(')
-            print('[ES Ingest] Sleeping 15s')
+            print('[ES Ingest] No Job :-( Sleeping 15s')
             sleep(15)
 
     print('[ES Ingest] Completed Elasticsearch data load')
@@ -202,6 +199,9 @@ def download_db_records(fetch_jobs, done_jobs, config):
         done_jobs.put(job)
         print("[Download {1}] Data fetch job took {0} seconds.".format(perf_counter() - start, job._name))
         sleep(1)
+
+    dummy_job = DataJob(None, None, None, None, None)
+    done_jobs.put(dummy_job)
 
     print('[Download] All downloads from Postgres completed')
     return
@@ -254,7 +254,7 @@ def post_to_elasticsearch(job, config, chunksize=250000):
         print(e)
         raise SystemExit
     if not does_index_exist:
-        print('[ES Ingest {1}] Creating {0} index'.format(job.index))
+        print('[ES Ingest {1}] Creating {0} index'.format(job.index, job._name))
         ES_CLIENT.indices.create(index=job.index, body=config['mapping'])
     elif does_index_exist and config['recreate']:
         print('[ES Ingest {1}] {0} exists... deleting first'.format(job.index, job._name))
