@@ -3,12 +3,10 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
 from django.db.models import Max
-from django.core.exceptions import MultipleObjectsReturned
 
 from usaspending_api.awards.models import Award, Subaward
-from usaspending_api.references.models import LegalEntity, Agency, Cfda
+from usaspending_api.references.models import LegalEntity, Agency, Cfda, Location
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.etl.helpers import get_or_create_location
 from usaspending_api.etl.award_helpers import update_award_subawards
 
 logger = logging.getLogger('console')
@@ -28,20 +26,15 @@ class Command(BaseCommand):
         """ Gets data for all new awards from broker with ID greater than the ones already stored for the given
             award type
         """
-        query_columns = ['internal_id', 'duns', 'parent_duns', 'principle_place_country', 'principle_place_city',
-                         'principle_place_zip', 'principle_place_state', 'principle_place_street',
-                         'principle_place_district']
+        query_columns = ['internal_id']
 
         # we need different columns depending on if it's a procurement or a grant
         if award_type == 'procurement':
-            query_columns.extend(['contract_number', 'idv_reference_number', 'contracting_office_aid', 'company_name',
-                                  'company_address_country', 'company_address_city', 'company_address_zip',
-                                  'company_address_state', 'company_address_street', 'company_address_district'])
+            query_columns.extend(['contract_number', 'idv_reference_number', 'contracting_office_aid',
+                                  'contract_agency_code', 'contract_idv_agency_code'])
         else:
             # TODO contracting_office_aid equivalent? Do we even need it?
-            query_columns.extend(['fain', 'awardee_name', 'awardee_address_country', 'awardee_address_city',
-                                  'awardee_address_zip', 'awardee_address_state', 'awardee_address_street',
-                                  'awardee_address_district'])
+            query_columns.extend(['fain'])
         query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type +\
                 " WHERE id > " + str(max_id) + " ORDER BY id"
 
@@ -57,41 +50,91 @@ class Command(BaseCommand):
             agency = get_valid_awarding_agency(row)
 
             if not agency:
-                # logger.warning(
-                #     "Internal ID {} cannot find matching agency with subtier code {}".
-                #     format(row['internal_id'], row['contracting_office_aid']))
-                return None, None
+                logger.warning(
+                    "Internal ID {} cannot find matching agency with subtier code {}".
+                    format(row['internal_id'], row['contracting_office_aid']))
+                return None
 
-            # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
-            # a transaction with a matching agency, parent award id, and piid
-            award = Award.objects.filter(
-                awarding_agency=agency,
-                latest_transaction__contract_data__piid=row['contract_number'],
-                latest_transaction__contract_data__parent_award_id=row['idv_reference_number']).distinct().order_by(
-                "-date_signed").first()
+            # Find the award to attach this sub-contract to, using the generated unique ID:
+            # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
+            # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
+            generated_unique_id = 'CONT_AW_' + \
+                (row['contract_agency_code'] if row['contract_agency_code'] else '-NONE-') +\
+                (row['contract_idv_agency_code'] if row['contract_idv_agency_code'] else '-NONE-') +\
+                (row['contract_number'] if row['contract_number'] else '-NONE-') +\
+                (row['idv_reference_number'] if row['idv_reference_number'] else '-NONE-')
+            award = Award.objects.filter(generated_unique_award_id=generated_unique_id).\
+                distinct().order_by("-date_signed").first()
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                # logger.warning(
-                #    "Internal ID {} cannot find award with piid {}, parent_award_id {}; skipping...".
-                #    format(row['internal_id'], row['contract_number'], row['idv_reference_number']))
-                return None, None
-
-            recipient_name = row['company_name']
+                logger.warning(
+                   "Internal ID {} cannot find award with agency_id {}, referenced_idv_agency_iden {}, piid {}, "
+                   "parent_award_id {}; skipping...".format(row['internal_id'], row['contract_agency_code'],
+                                                            row['contract_idv_agency_code'], row['contract_number'],
+                                                            row['idv_reference_number']))
+                return None
         else:
             # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
             # a transaction with a matching fain
-            award = Award.objects.filter(latest_transaction__assistance_data__fain=row['fain']).distinct(). \
-                order_by("-date_signed").first()
+            all_awards = Award.objects.filter(fain=row['fain']).distinct().order_by("-date_signed")
+            award = all_awards.first()
+
+            if all_awards.count() > 1:
+                logger.warning("Multiple awards found with fain {}".format(row['fain']))
+
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                # logger.warning(
-                #     "Internal ID {} cannot find award with fain {}; skipping...".
-                #     format(row['internal_id'], row['fain']))
-                return None, None
+                logger.warning(
+                    "Internal ID {} cannot find award with fain {}; skipping...".
+                    format(row['internal_id'], row['fain']))
+                return None
+        return award
 
+    def get_subaward_references(self, row, award_type):
+        # Create Recipient/Location entries specific to this subaward row
+        if award_type == 'procurement':
+            location_value_map = location_d1_recipient_mapper(row)
+            recipient_name = row['company_name']
+        else:
+            location_value_map = location_d2_recipient_mapper(row)
             recipient_name = row['awardee_name']
-        return award, recipient_name
+
+        location_value_map['recipient_flag'] = True
+
+        if location_value_map["location_zip"]:
+            location_value_map.update(
+                zip4=location_value_map["location_zip"],
+                zip5=location_value_map["location_zip"][:5],
+                zip_last4=location_value_map["location_zip"][5:])
+
+        location_value_map.pop("location_zip")
+
+        recipient_location = Location(**location_value_map).save()
+        recipient = LegalEntity.objects.create(
+            recipient_unique_id=row['duns'],
+            recipient_name=recipient_name,
+            parent_recipient_unique_id=row['parent_duns'],
+            location=recipient_location
+        )
+        # recipient.save()
+        # recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
+
+        # Create POP location
+        pop_value_map = pop_mapper(row)
+        pop_value_map['place_of_performance_flag'] = True
+
+        if pop_value_map["location_zip"]:
+            pop_value_map.update(
+                zip4=pop_value_map["location_zip"],
+                zip5=pop_value_map["location_zip"][:5],
+                zip_last4=pop_value_map["location_zip"][5:])
+
+        pop_value_map.pop("location_zip")
+
+        place_of_performance = Location(**pop_value_map).save()
+
+        return recipient, place_of_performance
 
     def gather_shared_award_data(self, data, award_type):
         """ Creates a dictionary with internal IDs as keys that stores data for each award that's shared between all
@@ -111,38 +154,14 @@ class Command(BaseCommand):
                 )
                 skip_count = 0
 
-            award, recipient_name = self.get_award(row, award_type)
+            award = self.get_award(row, award_type)
 
             if not award:
                 skip_count += 1
                 continue
 
-            # Get or create unique DUNS-recipient pair
-            try:
-                recipient, created = LegalEntity.objects.get_or_create(
-                    recipient_unique_id=row['duns'],
-                    recipient_name=recipient_name
-                )
-            except MultipleObjectsReturned:
-                created = False
-                print('Legal Entity with DUNS: {} and name: {} returned two rows. '
-                      'Skipping...'.format(row['duns'], recipient_name))
-
-            if created:
-                recipient.parent_recipient_unique_id = row['parent_duns']
-                if award_type == 'procurement':
-                    recipient.location = get_or_create_location(row, location_d1_recipient_mapper)
-                else:
-                    recipient.location = get_or_create_location(row, location_d2_recipient_mapper)
-                recipient.save()
-
-            # Get or create POP
-            place_of_performance = get_or_create_location(row, pop_mapper)
-
             # set shared data content
-            shared_data[row['internal_id']] = {'award': award,
-                                               'recipient': recipient,
-                                               'place_of_performance': place_of_performance}
+            shared_data[row['internal_id']] = {'award': award}
         logger.info("Completed shared data gathering")
 
         return shared_data
@@ -151,7 +170,14 @@ class Command(BaseCommand):
     def gather_next_subawards(db_cursor, award_type, subaward_type, max_id, offset):
         """ Get next batch of subawards of the relevant type starting at a given offset """
         query_columns = ['award.internal_id', 'award.id',
-                         'award.report_period_mon', 'award.report_period_year']
+                         'award.report_period_mon', 'award.report_period_year',
+                         'sub_award.duns AS duns', 'sub_award.parent_duns AS parent_duns',
+                         'sub_award.principle_place_country AS principle_place_country',
+                         'sub_award.principle_place_city AS principle_place_city',
+                         'sub_award.principle_place_zip AS principle_place_zip',
+                         'sub_award.principle_place_state AS principle_place_state',
+                         'sub_award.principle_place_street AS principle_place_street',
+                         'sub_award.principle_place_district AS principle_place_district']
 
         # We need different columns depending on if it's a procurement or a grant. Setting some columns to have labels
         # so we can easily access them without making two different dictionaries.
@@ -160,7 +186,15 @@ class Command(BaseCommand):
                                   'sub_award.subcontract_amount AS subaward_amount',
                                   'sub_award.overall_description', 'sub_award.recovery_model_q1 AS q1_flag',
                                   'sub_award.recovery_model_q2 AS q2_flag',
-                                  'sub_award.subcontract_date AS subaward_date'])
+                                  'sub_award.subcontract_date AS subaward_date',
+                                  'sub_award.company_name AS company_name',
+                                  'sub_award.company_address_country AS company_address_country',
+                                  'sub_award.company_address_city AS company_address_city',
+                                  'sub_award.company_address_zip AS company_address_zip',
+                                  'sub_award.company_address_state AS company_address_state',
+                                  'sub_award.company_address_street AS company_address_street',
+                                  'sub_award.company_address_district AS company_address_district'
+                                  ])
 
             query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + " AS award " + \
                     "JOIN fsrs_" + subaward_type +\
@@ -171,7 +205,14 @@ class Command(BaseCommand):
             query_columns.extend(['sub_award.cfda_numbers', 'sub_award.subaward_num', 'sub_award.subaward_amount',
                                   'sub_award.project_description AS overall_description',
                                   'sub_award.compensation_q1 AS q1_flag', 'sub_award.compensation_q2 AS q2_flag',
-                                  'sub_award.subaward_date'])
+                                  'sub_award.subaward_date',
+                                  'sub_award.awardee_name AS awardee_name',
+                                  'sub_award.awardee_address_country AS awardee_address_country',
+                                  'sub_award.awardee_address_city AS awardee_address_city',
+                                  'sub_award.awardee_address_zip AS awardee_address_zip',
+                                  'sub_award.awardee_address_state AS awardee_address_state',
+                                  'sub_award.awardee_address_street AS awardee_address_street',
+                                  'sub_award.awardee_address_district AS awardee_address_district'])
 
             query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + " AS award " + \
                     "JOIN fsrs_" + subaward_type +\
@@ -199,14 +240,16 @@ class Command(BaseCommand):
                 only_num = row['cfda_numbers'].split(' ')
                 cfda = Cfda.objects.filter(program_number=only_num[0]).first()
 
+            recipient, place_of_performance = self.get_subaward_references(row, award_type)
+
             subaward_dict = {
                 'award': shared_mappings['award'],
-                'recipient': shared_mappings['recipient'],
+                'recipient': recipient,
                 'data_source': "DBR",
                 'cfda': cfda,
                 'awarding_agency': shared_mappings['award'].awarding_agency,
                 'funding_agency': shared_mappings['award'].funding_agency,
-                'place_of_performance': shared_mappings['place_of_performance'],
+                'place_of_performance': place_of_performance,
                 'subaward_number': row['subaward_num'],
                 'amount': row['subaward_amount'],
                 'description': row['overall_description'],

@@ -139,10 +139,11 @@ class Command(BaseCommand):
             funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
             # Generate the unique Award ID
-            awarding_subtier_code = row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-'
-            fain = row['fain'] if row['fain'] else '-NONE-'
-            uri = row['uri'] if row['uri'] else '-NONE-'
-            generated_unique_id = 'ASST_AW_' + awarding_subtier_code + fain + uri
+            # "ASST_AW_" + awarding_sub_tier_agency_c + fain + uri
+            generated_unique_id = 'ASST_AW_' +\
+                (row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-') +\
+                (row['fain'] if row['fain'] else '-NONE-') +\
+                (row['uri'] if row['uri'] else '-NONE-')
 
             # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)

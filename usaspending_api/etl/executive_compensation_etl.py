@@ -78,7 +78,7 @@ def load_executive_compensation(db_cursor):
         # Deal with multiples that we have in our LE table
         legal_entities = LegalEntity.objects.filter(recipient_unique_id=duns_number)
         if not legal_entities.exists():
-            raise AssertionError('No record in data store for DUNS {}. Aborting.'.format(duns_number))
+            logger.info('No record in data store for DUNS {}. Skipping...'.format(duns_number))
 
         for le in legal_entities:
             leo, _ = LegalEntityOfficers.objects.get_or_create(legal_entity=le)
