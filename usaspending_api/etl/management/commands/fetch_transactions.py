@@ -361,7 +361,6 @@ VIEW_COLUMNS = [
     'generated_unique_transaction_id', 'update_date',
 ]
 
-
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
 # ==============================================================================
