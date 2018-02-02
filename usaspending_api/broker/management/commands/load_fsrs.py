@@ -154,7 +154,7 @@ class Command(BaseCommand):
                 )
                 skip_count = 0
 
-            award, recipient_name = self.get_award(row, award_type)
+            award = self.get_award(row, award_type)
 
             if not award:
                 skip_count += 1
