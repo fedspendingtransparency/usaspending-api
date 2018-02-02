@@ -43,13 +43,19 @@
           "type": "date"
         },
         "transaction_fiscal_year": {
-          "type": "integer"
+          "type": "integer",
+          "index": false
         },
         "award_fiscal_year": {
-          "type": "integer"
+          "type": "integer",
+          "index": false
         },
         "award_id": {
-          "type": "integer"
+          "type": "integer",
+          "index": false
+        },
+        "award_description": {
+          "type": "text"
         },
         "award_amount": {
           "scaling_factor": 100,
@@ -88,15 +94,12 @@
           "type": "scaled_float"
         },
         "fain": {
-          "index": false,
           "type": "text"
         },
         "piid": {
-          "index": false,
           "type": "text"
         },
         "uri": {
-          "index": false,
           "type": "text"
         },
         "modification_number": {
