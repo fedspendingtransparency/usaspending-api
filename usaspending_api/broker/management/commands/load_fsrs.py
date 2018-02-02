@@ -59,9 +59,9 @@ class Command(BaseCommand):
             # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
             # "CONT_AW_" + contract_agency_code + contract_idv_agency_code + contract_number + idv_reference_number
             generated_unique_id = 'CONT_AW_' + \
-                (row['contract_agency_code'] if row['contract_agency_code'] else '-NONE-') +\
-                (row['contract_idv_agency_code'] if row['contract_idv_agency_code'] else '-NONE-') +\
-                (row['contract_number'] if row['contract_number'] else '-NONE-') +\
+                (row['contract_agency_code'] if row['contract_agency_code'] else '-NONE-') + '_' + \
+                (row['contract_idv_agency_code'] if row['contract_idv_agency_code'] else '-NONE-') + '_' + \
+                (row['contract_number'] if row['contract_number'] else '-NONE-') + '_' + \
                 (row['idv_reference_number'] if row['idv_reference_number'] else '-NONE-')
             award = Award.objects.filter(generated_unique_award_id=generated_unique_id).\
                 distinct().order_by("-date_signed").first()
@@ -313,8 +313,8 @@ class Command(BaseCommand):
         logger.info('Get Broker FSRS procurement data...')
         self.process_award_type(db_cursor, "procurement", "subcontract")
 
-        logger.info('Get Broker FSRS grant data...')
-        self.process_award_type(db_cursor, "grant", "subgrant")
+        # logger.info('Get Broker FSRS grant data...')
+        # self.process_award_type(db_cursor, "grant", "subgrant")
 
         logger.info('Completed FSRS data load...')
 
