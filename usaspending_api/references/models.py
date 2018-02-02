@@ -227,13 +227,7 @@ class FilterHash(models.Model):
 
 class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     location_id = models.AutoField(primary_key=True)
-    location_country_code = models.ForeignKey(
-        'RefCountryCode',
-        models.DO_NOTHING,
-        db_column='location_country_code',
-        blank=True,
-        null=True,
-        verbose_name="Country Code")
+    location_country_code = models.TextField(blank=True, null=True, verbose_name="Location Country Code")
     country_name = models.TextField(blank=True, null=True, verbose_name="Country Name")
     state_code = models.TextField(blank=True, null=True, verbose_name="State Code")
     state_name = models.TextField(blank=True, null=True, verbose_name="State Name")
@@ -269,54 +263,18 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     # location, or both
     place_of_performance_flag = models.BooleanField(default=False, verbose_name="Location used as place of performance")
     recipient_flag = models.BooleanField(default=False, verbose_name="Location used as recipient location")
+    is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
+    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+                                             verbose_name="Transaction Unique ID")
 
     def pre_save(self):
-        self.load_country_data()
         self.load_city_county_data()
         self.fill_missing_state_data()
         self.fill_missing_zip5()
-        # self.populate_location_unique()
 
     def save(self, *args, **kwargs):
         self.pre_save()
         super(Location, self).save(*args, **kwargs)
-
-    def populate_location_unique(self):
-        unique_columns = \
-            ["location_country_code",
-             "country_name",
-             "state_code",
-             "state_name",
-             "state_description",
-             "city_name",
-             "city_code",
-             "county_name",
-             "county_code",
-             "address_line1",
-             "address_line2",
-             "address_line3",
-             "foreign_location_description",
-             "zip4",
-             "congressional_code",
-             "performance_code",
-             "zip_last4",
-             "zip5",
-             "foreign_postal_code",
-             "foreign_province",
-             "foreign_city_name",
-             "reporting_period_start",
-             "reporting_period_end"
-             ]
-
-        ret_vals = []
-        for col in unique_columns:
-            col_val = getattr(self, col)
-            if col_val is None:
-                ret_val = "none"
-            else:
-                ret_val = str(col_val)
-            ret_vals += [ret_val]
-        self.location_unique = "_".join(ret_vals)
 
     def fill_missing_state_data(self):
         """Fills in blank US state names or codes from its counterpart"""
@@ -342,13 +300,9 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
             if match:
                 self.zip5 = match.group(1)
 
-    def load_country_data(self):
-        if self.location_country_code:
-            self.country_name = self.location_country_code.country_name
-
     def load_city_county_data(self):
         # Here we fill in missing information from the ref city county code data
-        if self.location_country_code_id == "USA":
+        if self.location_country_code == "USA":
 
             # TODO: this should be checked to see if this is even necessary... are these fields always uppercased?
             if self.state_code:
@@ -395,15 +349,6 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
             else:
                 logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" +
                                                 str(q_kwargs) + "; got " + str(matched_reference.count()))
-
-    class Meta:
-        unique_together = [
-            'location_country_code', 'country_name', 'state_code', 'state_name', 'state_description', 'city_name',
-            'city_code', 'county_name', 'county_code', 'address_line1', 'address_line2', 'address_line3',
-            'foreign_location_description', 'zip4', 'congressional_code', 'performance_code', 'zip_last4', 'zip5',
-            'foreign_postal_code', 'foreign_province', 'foreign_city_name', 'reporting_period_start',
-            'reporting_period_end'
-        ]
 
 
 class LegalEntity(DataSourceTrackedModel):
@@ -488,114 +433,119 @@ class LegalEntity(DataSourceTrackedModel):
     business_categories = ArrayField(models.TextField(), default=list)
 
     recipient_unique_id = models.TextField(blank=True, default='', null=True, verbose_name="DUNS Number", db_index=True)
-    limited_liability_corporation = models.TextField(blank=True, null=True)
-    sole_proprietorship = models.TextField(blank=True, null=True)
-    partnership_or_limited_liability_partnership = models.TextField(blank=True, null=True)
-    subchapter_scorporation = models.TextField(blank=True, null=True)
-    foundation = models.TextField(blank=True, null=True)
-    for_profit_organization = models.TextField(blank=True, null=True)
-    nonprofit_organization = models.TextField(blank=True, null=True)
-    corporate_entity_tax_exempt = models.TextField(blank=True, null=True)
-    corporate_entity_not_tax_exempt = models.TextField(blank=True, null=True)
-    other_not_for_profit_organization = models.TextField(blank=True, null=True)
+    limited_liability_corporation = models.BooleanField(blank=False, null=False, default=False)
+    sole_proprietorship = models.BooleanField(blank=False, null=False, default=False)
+    partnership_or_limited_liability_partnership = models.BooleanField(blank=False, null=False, default=False)
+    subchapter_scorporation = models.BooleanField(blank=False, null=False, default=False)
+    foundation = models.BooleanField(blank=False, null=False, default=False)
+    for_profit_organization = models.BooleanField(blank=False, null=False, default=False)
+    nonprofit_organization = models.BooleanField(blank=False, null=False, default=False)
+    corporate_entity_tax_exempt = models.BooleanField(blank=False, null=False, default=False)
+    corporate_entity_not_tax_exempt = models.BooleanField(blank=False, null=False, default=False)
+    other_not_for_profit_organization = models.BooleanField(blank=False, null=False, default=False)
     sam_exception = models.TextField(blank=True, null=True)
-    city_local_government = models.TextField(blank=True, null=True)
-    county_local_government = models.TextField(blank=True, null=True)
-    inter_municipal_local_government = models.TextField(blank=True, null=True)
-    local_government_owned = models.TextField(blank=True, null=True)
-    municipality_local_government = models.TextField(blank=True, null=True)
-    school_district_local_government = models.TextField(blank=True, null=True)
-    township_local_government = models.TextField(blank=True, null=True)
-    us_state_government = models.TextField(blank=True, null=True)
-    us_federal_government = models.TextField(blank=True, null=True)
-    federal_agency = models.TextField(blank=True, null=True)
-    federally_funded_research_and_development_corp = models.TextField(blank=True, null=True)
-    us_tribal_government = models.TextField(blank=True, null=True)
-    foreign_government = models.TextField(blank=True, null=True)
-    community_developed_corporation_owned_firm = models.TextField(blank=True, null=True)
-    labor_surplus_area_firm = models.TextField(blank=True, null=True)
-    small_agricultural_cooperative = models.TextField(blank=True, null=True)
-    international_organization = models.TextField(blank=True, null=True)
-    us_government_entity = models.TextField(blank=True, null=True)
-    emerging_small_business = models.TextField(blank=True, null=True)
-    c8a_program_participant = models.TextField(
-        db_column='8a_program_participant', max_length=1, blank=True, null=True,
+    city_local_government = models.BooleanField(blank=False, null=False, default=False)
+    county_local_government = models.BooleanField(blank=False, null=False, default=False)
+    inter_municipal_local_government = models.BooleanField(blank=False, null=False, default=False)
+    local_government_owned = models.BooleanField(blank=False, null=False, default=False)
+    municipality_local_government = models.BooleanField(blank=False, null=False, default=False)
+    school_district_local_government = models.BooleanField(blank=False, null=False, default=False)
+    township_local_government = models.BooleanField(blank=False, null=False, default=False)
+    us_state_government = models.BooleanField(blank=False, null=False, default=False)
+    us_federal_government = models.BooleanField(blank=False, null=False, default=False)
+    federal_agency = models.BooleanField(blank=False, null=False, default=False)
+    federally_funded_research_and_development_corp = models.BooleanField(blank=False, null=False, default=False)
+    us_tribal_government = models.BooleanField(blank=False, null=False, default=False)
+    foreign_government = models.BooleanField(blank=False, null=False, default=False)
+    community_developed_corporation_owned_firm = models.BooleanField(blank=False, null=False, default=False)
+    labor_surplus_area_firm = models.BooleanField(blank=False, null=False, default=False)
+    small_agricultural_cooperative = models.BooleanField(blank=False, null=False, default=False)
+    international_organization = models.BooleanField(blank=False, null=False, default=False)
+    us_government_entity = models.BooleanField(blank=False, null=False, default=False)
+    emerging_small_business = models.BooleanField(blank=False, null=False, default=False)
+    c8a_program_participant = models.BooleanField(
+        db_column='8a_program_participant', max_length=1, blank=False, null=False, default=False,
         verbose_name="8a Program Participant")  # Field renamed because it wasn't a valid Python identifier.
-    sba_certified_8a_joint_venture = models.TextField(blank=True, null=True)
-    dot_certified_disadvantage = models.TextField(blank=True, null=True)
-    self_certified_small_disadvantaged_business = models.TextField(blank=True, null=True)
-    historically_underutilized_business_zone = models.TextField(blank=True, null=True)
-    small_disadvantaged_business = models.TextField(blank=True, null=True)
-    the_ability_one_program = models.TextField(blank=True, null=True)
-    historically_black_college = models.TextField(blank=True, null=True)
-    c1862_land_grant_college = models.TextField(
+    sba_certified_8a_joint_venture = models.BooleanField(blank=False, null=False, default=False)
+    dot_certified_disadvantage = models.BooleanField(blank=False, null=False, default=False)
+    self_certified_small_disadvantaged_business = models.BooleanField(blank=False, null=False, default=False)
+    historically_underutilized_business_zone = models.BooleanField(blank=False, null=False, default=False)
+    small_disadvantaged_business = models.BooleanField(blank=False, null=False, default=False)
+    the_ability_one_program = models.BooleanField(blank=False, null=False, default=False)
+    historically_black_college = models.BooleanField(blank=False, null=False, default=False)
+    c1862_land_grant_college = models.BooleanField(
         db_column='1862_land_grant_college',
         max_length=1,
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
+        default=False,
         verbose_name="1862 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
-    c1890_land_grant_college = models.TextField(
+    c1890_land_grant_college = models.BooleanField(
         db_column='1890_land_grant_college',
         max_length=1,
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
+        default=False,
         verbose_name="1890 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
-    c1994_land_grant_college = models.TextField(
+    c1994_land_grant_college = models.BooleanField(
         db_column='1994_land_grant_college',
         max_length=1,
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
+        default=False,
         verbose_name="1894 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
-    minority_institution = models.TextField(blank=True, null=True)
-    private_university_or_college = models.TextField(blank=True, null=True)
-    school_of_forestry = models.TextField(blank=True, null=True)
-    state_controlled_institution_of_higher_learning = models.TextField(blank=True, null=True)
-    tribal_college = models.TextField(blank=True, null=True)
-    veterinary_college = models.TextField(blank=True, null=True)
-    educational_institution = models.TextField(blank=True, null=True)
-    alaskan_native_servicing_institution = models.TextField(
-        blank=True, null=True, verbose_name="Alaskan Native Owned Servicing Institution")
-    community_development_corporation = models.TextField(blank=True, null=True)
-    native_hawaiian_servicing_institution = models.TextField(blank=True, null=True)
-    domestic_shelter = models.TextField(blank=True, null=True)
-    manufacturer_of_goods = models.TextField(blank=True, null=True)
-    hospital_flag = models.TextField(blank=True, null=True)
-    veterinary_hospital = models.TextField(blank=True, null=True)
-    hispanic_servicing_institution = models.TextField(blank=True, null=True)
-    woman_owned_business = models.TextField(blank=True, null=True)
-    minority_owned_business = models.TextField(blank=True, null=True)
-    women_owned_small_business = models.TextField(blank=True, null=True)
-    economically_disadvantaged_women_owned_small_business = models.TextField(blank=True, null=True)
-    joint_venture_women_owned_small_business = models.TextField(blank=True, null=True)
-    joint_venture_economic_disadvantaged_women_owned_small_bus = models.TextField(blank=True, null=True)
-    veteran_owned_business = models.TextField(blank=True, null=True)
-    service_disabled_veteran_owned_business = models.TextField(blank=True, null=True)
-    contracts = models.TextField(blank=True, null=True)
-    grants = models.TextField(blank=True, null=True)
-    receives_contracts_and_grants = models.TextField(blank=True, null=True)
-    airport_authority = models.TextField(blank=True, null=True, verbose_name="Airport Authority")
-    council_of_governments = models.TextField(blank=True, null=True)
-    housing_authorities_public_tribal = models.TextField(blank=True, null=True)
-    interstate_entity = models.TextField(blank=True, null=True)
-    planning_commission = models.TextField(blank=True, null=True)
-    port_authority = models.TextField(blank=True, null=True)
-    transit_authority = models.TextField(blank=True, null=True)
-    foreign_owned_and_located = models.TextField(blank=True, null=True)
-    american_indian_owned_business = models.TextField(
-        blank=True, null=True, verbose_name="American Indian Owned Business")
-    alaskan_native_owned_corporation_or_firm = models.TextField(
-        blank=True, null=True, verbose_name="Alaskan Native Owned Corporation or Firm")
-    indian_tribe_federally_recognized = models.TextField(blank=True, null=True)
-    native_hawaiian_owned_business = models.TextField(blank=True, null=True)
-    tribally_owned_business = models.TextField(blank=True, null=True)
-    asian_pacific_american_owned_business = models.TextField(
-        blank=True, null=True, verbose_name="Asian Pacific American Owned business")
-    black_american_owned_business = models.TextField(blank=True, null=True)
-    hispanic_american_owned_business = models.TextField(blank=True, null=True)
-    native_american_owned_business = models.TextField(blank=True, null=True)
-    subcontinent_asian_asian_indian_american_owned_business = models.TextField(blank=True, null=True)
-    other_minority_owned_business = models.TextField(blank=True, null=True)
-    us_local_government = models.TextField(blank=True, null=True)
+    minority_institution = models.BooleanField(blank=False, null=False, default=False)
+    private_university_or_college = models.BooleanField(blank=False, null=False, default=False)
+    school_of_forestry = models.BooleanField(blank=False, null=False, default=False)
+    state_controlled_institution_of_higher_learning = models.BooleanField(blank=False, null=False, default=False)
+    tribal_college = models.BooleanField(blank=False, null=False, default=False)
+    veterinary_college = models.BooleanField(blank=False, null=False, default=False)
+    educational_institution = models.BooleanField(blank=False, null=False, default=False)
+    alaskan_native_servicing_institution = models.BooleanField(
+        blank=False, null=False, default=False, verbose_name="Alaskan Native Owned Servicing Institution")
+    community_development_corporation = models.BooleanField(blank=False, null=False, default=False)
+    native_hawaiian_servicing_institution = models.BooleanField(blank=False, null=False, default=False)
+    domestic_shelter = models.BooleanField(blank=False, null=False, default=False)
+    manufacturer_of_goods = models.BooleanField(blank=False, null=False, default=False)
+    hospital_flag = models.BooleanField(blank=False, null=False, default=False)
+    veterinary_hospital = models.BooleanField(blank=False, null=False, default=False)
+    hispanic_servicing_institution = models.BooleanField(blank=False, null=False, default=False)
+    woman_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    minority_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    women_owned_small_business = models.BooleanField(blank=False, null=False, default=False)
+    economically_disadvantaged_women_owned_small_business = models.BooleanField(blank=False, null=False, default=False)
+    joint_venture_women_owned_small_business = models.BooleanField(blank=False, null=False, default=False)
+    joint_venture_economic_disadvantaged_women_owned_small_bus = models.BooleanField(blank=False, null=False,
+                                                                                     default=False)
+    veteran_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    service_disabled_veteran_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    contracts = models.BooleanField(blank=False, null=False, default=False)
+    grants = models.BooleanField(blank=False, null=False, default=False)
+    receives_contracts_and_grants = models.BooleanField(blank=False, null=False, default=False)
+    airport_authority = models.BooleanField(blank=False, null=False, default=False, verbose_name="Airport Authority")
+    council_of_governments = models.BooleanField(blank=False, null=False, default=False)
+    housing_authorities_public_tribal = models.BooleanField(blank=False, null=False, default=False)
+    interstate_entity = models.BooleanField(blank=False, null=False, default=False)
+    planning_commission = models.BooleanField(blank=False, null=False, default=False)
+    port_authority = models.BooleanField(blank=False, null=False, default=False)
+    transit_authority = models.BooleanField(blank=False, null=False, default=False)
+    foreign_owned_and_located = models.BooleanField(blank=False, null=False, default=False)
+    american_indian_owned_business = models.BooleanField(
+        blank=False, null=False, default=False, verbose_name="American Indian Owned Business")
+    alaskan_native_owned_corporation_or_firm = models.BooleanField(
+        blank=False, null=False, default=False, verbose_name="Alaskan Native Owned Corporation or Firm")
+    indian_tribe_federally_recognized = models.BooleanField(blank=False, null=False, default=False)
+    native_hawaiian_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    tribally_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    asian_pacific_american_owned_business = models.BooleanField(
+        blank=False, null=False, default=False, verbose_name="Asian Pacific American Owned business")
+    black_american_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    hispanic_american_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    native_american_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    subcontinent_asian_asian_indian_american_owned_business = models.BooleanField(blank=False, null=False,
+                                                                                  default=False)
+    other_minority_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    us_local_government = models.BooleanField(blank=False, null=False, default=False)
     undefinitized_action = models.TextField(blank=True, null=True)
     domestic_or_foreign_entity = models.TextField(blank=True, null=True, db_index=True)
     domestic_or_foreign_entity_description = models.TextField(null=True, blank=True)
@@ -614,12 +564,13 @@ class LegalEntity(DataSourceTrackedModel):
     small_business = models.TextField(blank=True, null=True)
     small_business_description = models.TextField(blank=True, null=True)
     individual = models.TextField(blank=True, null=True)
+    is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
+    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+                                             verbose_name="Transaction Unique ID")
 
     def save(self, *args, **kwargs):
         LegalEntity.update_business_type_categories(self)
         super(LegalEntity, self).save(*args, **kwargs)
-
-        LegalEntityOfficers.objects.get_or_create(legal_entity=self)
 
     @staticmethod
     def update_business_type_categories(le):
@@ -848,9 +799,12 @@ class LegalEntity(DataSourceTrackedModel):
         ):
             categories.append("community_development_corporations")
         if (
-            le.business_types == "M" or  # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
-            le.business_types == "N" or  # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
-            le.business_types == "12" or  # FAADS+ equivalent for M/N
+            # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
+            le.business_types == "M" or
+            # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
+            le.business_types == "N" or
+            # FAADS+ equivalent for M/N
+            le.business_types == "12" or
 
             le.nonprofit_organization == "1" or
             le.other_not_for_profit_organization == "1" or
@@ -976,7 +930,6 @@ class LegalEntity(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = 'legal_entity'
-        unique_together = ['recipient_unique_id', 'recipient_name', 'location']
 
 
 class LegalEntityOfficers(models.Model):

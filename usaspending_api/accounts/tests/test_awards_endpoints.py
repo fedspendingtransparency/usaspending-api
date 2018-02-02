@@ -7,11 +7,16 @@ import json
 @pytest.fixture
 def award_models():
     fed_acct = mommy.make('accounts.FederalAccount', agency_identifier='084')
-    treas_acct1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct, budget_function_title='Commemorative Plaques')
-    treas_acct2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct, budget_function_title='Forbidden Ancient Secrets')
-    mommy.make('awards.FinancialAccountsByAwards', treasury_account=treas_acct1, drv_obligations_incurred_total_by_award=1000)
-    mommy.make('awards.FinancialAccountsByAwards', treasury_account=treas_acct1, drv_obligations_incurred_total_by_award=2000)
-    mommy.make('awards.FinancialAccountsByAwards', treasury_account=treas_acct2, drv_obligations_incurred_total_by_award=50000)
+    treas_acct1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct,
+                             budget_function_title='Commemorative Plaques')
+    treas_acct2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fed_acct,
+                             budget_function_title='Forbidden Ancient Secrets')
+    mommy.make('awards.FinancialAccountsByAwards', treasury_account=treas_acct1,
+               drv_obligations_incurred_total_by_award=1000)
+    mommy.make('awards.FinancialAccountsByAwards', treasury_account=treas_acct1,
+               drv_obligations_incurred_total_by_award=2000)
+    mommy.make('awards.FinancialAccountsByAwards', treasury_account=treas_acct2,
+               drv_obligations_incurred_total_by_award=50000)
 
 
 @pytest.mark.django_db

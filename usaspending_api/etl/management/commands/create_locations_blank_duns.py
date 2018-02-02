@@ -8,7 +8,7 @@ import logging
 import string
 import time
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import connection
 
 logger = logging.getLogger('console')

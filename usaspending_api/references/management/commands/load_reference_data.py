@@ -1,9 +1,7 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.core.management import call_command
-import os
-import csv
+from django.conf import settings
 import logging
-import django
 from usaspending_api.references.models import RefCityCountyCode
 
 
@@ -25,13 +23,17 @@ class Command(BaseCommand):
 
         # TAS's should only be loaded after agencies to ensure they can properly link to agencies
         self.logger.info("Loading tas_list.csv")
-        call_command('loadtas', 'usaspending_api/data/tas_list.csv')
+        if settings.IS_LOCAL:
+            call_command('loadtas', 'usaspending_api/data/tas_list.csv')
+        else:
+            call_command('loadtas', 'gtas-sf133')
 
         self.logger.info("Loading program_activity.csv")
         call_command('loadprogramactivity', 'usaspending_api/data/program_activity.csv')
 
         self.logger.info("Loading ref_city_county_code.csv")
-        call_command('load_reference_csv', 'RefCityCountyCode', 'usaspending_api/data/ref_city_county_code.csv', 'Latin-1')
+        call_command('load_reference_csv', 'RefCityCountyCode', 'usaspending_api/data/ref_city_county_code.csv',
+                     'Latin-1')
         RefCityCountyCode.canonicalize()
 
         self.logger.info("Loading CFDA data")

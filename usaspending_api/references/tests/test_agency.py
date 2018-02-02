@@ -23,7 +23,7 @@ def test_department(agency_data):
     """
 
     # In this department, the FREC is being used as the cgac_code
-    department = Agency.objects.get(
+    Agency.objects.get(
         toptier_agency__cgac_code='1136',
         toptier_agency__fpds_code='1100',
         subtier_agency__subtier_code='1141')

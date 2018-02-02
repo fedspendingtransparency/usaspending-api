@@ -1,12 +1,12 @@
 """
-Creates legal entities and adds them to transaction normalized rows and award rows based on transaction_location_data from `create_locations`
+Creates legal entities and adds them to transaction normalized rows and award rows based on transaction_location_data
+from `create_locations`
 """
 
 import logging
 
 from django.core.management.base import BaseCommand
 from django.db import connection
-from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 
 logger = logging.getLogger('console')
@@ -26,12 +26,11 @@ class Command(BaseCommand):
             logger.info('FILE_C_FILE_D_UNLINKED. {} file C rows'.format(curs.rowcount))
 
             curs.execute(self.CREATE_FILE_C_FILE_D_MAPPING)
-            logger.info('NEW LINKAGES ADDED TO FABA CORRECTOR. {} potential links (including duplicates)'.format(curs.rowcount))
+            logger.info('NEW LINKAGES ADDED TO FABA CORRECTOR. {} potential links '
+                        '(including duplicates)'.format(curs.rowcount))
 
             curs.execute(self.LINK_FILE_C_FILE_D)
             logger.info('NEW LINKAGES APPLIED TO FILE C: FILE D. {} successful links'.format(curs.rowcount))
-
-
 
     CREATE_FABA_CORRECTOR_TABLE = """
         CREATE TEMPORARY TABLE faba_corrector (
@@ -42,7 +41,8 @@ class Command(BaseCommand):
     """
 
     ALTER_FABA_CORRECTOR_TABLE = """
-        ALTER TABLE faba_corrector ADD CONSTRAINT faba_corrector_uc UNIQUE (financial_accounts_by_awards_id, new_award_id);
+        ALTER TABLE faba_corrector ADD CONSTRAINT faba_corrector_uc
+        UNIQUE (financial_accounts_by_awards_id, new_award_id);
     """
 
     UNLINK_FILE_C_FILE_D = """
@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
     CREATE_FILE_C_FILE_D_MAPPING = """
         WITH bad_faba AS   -- GET BAD/Unmapped FABA
-            (SELECT 
+            (SELECT
                 financial_accounts_by_awards_id,
                 faba.piid,
                 faba.fain,
@@ -72,12 +72,13 @@ class Command(BaseCommand):
             where a.recipient_id is not Null
             )
         INSERT INTO faba_corrector (financial_accounts_by_awards_id, new_award_id)
-          SELECT bad_faba.financial_accounts_by_awards_id, correct_awards.id FROM bad_faba, correct_awards 
+          SELECT bad_faba.financial_accounts_by_awards_id, correct_awards.id FROM bad_faba, correct_awards
           WHERE COALESCE(correct_awards.piid, '') = COALESCE(bad_faba.piid, '')
             AND COALESCE(correct_awards.fain, '') = COALESCE(bad_faba.fain, '')
             AND COALESCE(correct_awards.uri, '') = COALESCE(bad_faba.uri, '')
-            AND COALESCE(correct_awards.parent_award_piid, '') = COALESCE(bad_faba.parent_award_id, '')  --FABA has piid in parent award id val
-            ON CONFLICT ON CONSTRAINT faba_corrector_uc 
+            AND COALESCE(correct_awards.parent_award_piid, '') = COALESCE(bad_faba.parent_award_id, '')
+            --FABA has piid in parent award id val
+            ON CONFLICT ON CONSTRAINT faba_corrector_uc
                 DO NOTHING
         ;
     """
@@ -87,5 +88,6 @@ class Command(BaseCommand):
             SET award_id = faba_corrector.new_award_id
             FROM faba_corrector
             WHERE (faba.financial_accounts_by_awards_id = faba_corrector.financial_accounts_by_awards_id
-            AND (Select Count(*) from faba_corrector where faba.financial_accounts_by_awards_id=faba_corrector.financial_accounts_by_awards_id) = 1);
+            AND (Select Count(*) from faba_corrector
+            where faba.financial_accounts_by_awards_id=faba_corrector.financial_accounts_by_awards_id) = 1);
     """

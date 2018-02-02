@@ -9,9 +9,8 @@ from usaspending_api.common.models import DataSourceTrackedModel
 
 class FederalAccount(models.Model):
     """
-    Represents a single federal account. A federal account encompasses
-    multiple Treasury Account Symbols (TAS), represented by:
-    model:`accounts.TreasuryAppropriationAccount`.
+    Represents a single federal account. A federal account encompasses multiple Treasury Account Symbols (TAS),
+    represented by: model:`accounts.TreasuryAppropriationAccount`.
     """
     agency_identifier = models.TextField(db_index=True)
     main_account_code = models.TextField(db_index=True)
@@ -44,10 +43,9 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         related_name="tas_ata",
         help_text="The toptier agency object associated with the ATA"
     )
-    # todo: update the agency details to match FederalAccounts. Is there a way that we can
-    # retain the text-based agency TAS components (since those are attributes of TAS
-    # while still having a convenient FK that links to our agency tables using Django's
-    # default fk naming standard? Something like agency_identifier for the 3 digit TAS
+    # todo: update the agency details to match FederalAccounts. Is there a way that we can retain the text-based agency
+    # TAS components (since those are attributes of TAS while still having a convenient FK that links to our agency
+    # tables using Django's default fk naming standard? Something like agency_identifier for the 3 digit TAS
     # component and agency_id for the FK?)
     agency_id = models.TextField()
     funding_toptier_agency = models.ForeignKey(
@@ -81,37 +79,37 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     update_date = models.DateTimeField(auto_now=True, null=True)
 
     def update_agency_linkages(self):
-        self.awarding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.allocation_transfer_agency_id).order_by("fpds_code").first()
-        self.funding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.agency_id).order_by("fpds_code").first()
+        self.awarding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.allocation_transfer_agency_id).\
+            order_by("fpds_code").first()
+        self.funding_toptier_agency = ToptierAgency.objects.filter(cgac_code=self.agency_id).order_by("fpds_code").\
+            first()
 
     @staticmethod
-    def generate_tas_rendering_label(ATA, AID, TYPECODE, BPOA, EPOA, MAC, SUB):
-        ATA = ATA.strip()
-        AID = AID.strip()
-        TYPECODE = TYPECODE.strip()
-        BPOA = BPOA.strip()
-        EPOA = EPOA.strip()
-        MAC = MAC.strip()
-        SUB = SUB.strip().lstrip("0")
+    def generate_tas_rendering_label(ata, aid, typecode, bpoa, epoa, mac, sub):
+        ata = ata.strip()
+        aid = aid.strip()
+        typecode = typecode.strip()
+        bpoa = bpoa.strip()
+        epoa = epoa.strip()
+        mac = mac.strip()
+        sub = sub.strip().lstrip("0")
 
-        # print("ATA: " + ATA + "\nAID: " + AID + "\nTYPECODE: " + TYPECODE + "\nBPOA: " + BPOA + "\nEPOA: " + EPOA + "\nMAC: " + MAC + "\nSUB: " + SUB)
+        # Attach hyphen to ata if it exists
+        if ata:
+            ata = ata + "-"
 
-        # Attach hyphen to ATA if it exists
-        if ATA:
-            ATA = ATA + "-"
-
-        POAPHRASE = BPOA
-        # If we have BOTH BPOA and EPOA
-        if BPOA and EPOA:
+        poaphrase = bpoa
+        # If we have BOTH bpoa and epoa
+        if bpoa and epoa:
             # And they're equal
-            if not BPOA == EPOA:
-                POAPHRASE = BPOA + "/" + EPOA
+            if not bpoa == epoa:
+                poaphrase = bpoa + "/" + epoa
 
-        ACCTPHRASE = MAC
-        if SUB:
-            ACCTPHRASE = ACCTPHRASE + "." + SUB
+        acctphrase = mac
+        if sub:
+            acctphrase = acctphrase + "." + sub
 
-        concatenated_tas = ATA + AID + TYPECODE + POAPHRASE + ACCTPHRASE
+        concatenated_tas = ata + aid + typecode + poaphrase + acctphrase
         return concatenated_tas
 
     @property
@@ -123,13 +121,11 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
 
     @property
     def future_object_classes(self):
+        # TODO: Once FinancialAccountsByProgramActivityObjectClass.object_class has been fixed to point to ObjectClass
+        # instead of RefObjectClassCode, this will work with:
+        #   return [pb.object_class for pb in self.program_balances.distinct('object_class')]
         results = []
         return results
-        """TODO: Once FinancialAccountsByProgramActivityObjectClass.object_class
-        has been fixed to point to ObjectClass instead of RefObjectClassCode,
-        this will work with:
-            return [pb.object_class for pb in self.program_balances.distinct('object_class')]
-        """
 
     @property
     def object_classes(self):
@@ -145,12 +141,9 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             obligations = defaultdict(Decimal)
             outlays = defaultdict(Decimal)
             for pb in self.program_balances.filter(object_class=object_class):
-                reporting_fiscal_year = fy(
-                    pb.submission.reporting_period_start)
-                obligations[
-                    reporting_fiscal_year] += pb.obligations_incurred_by_program_object_class_cpe
-                outlays[
-                    reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
+                reporting_fiscal_year = fy(pb.submission.reporting_period_start)
+                obligations[reporting_fiscal_year] += pb.obligations_incurred_by_program_object_class_cpe
+                outlays[reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
             result = {
                 'major_object_class_code': None,
                 'major_object_class_name':
@@ -169,13 +162,10 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             obligations = defaultdict(Decimal)
             outlays = defaultdict(Decimal)
             for pb in self.program_balances.filter(program_activity=pa):
-                reporting_fiscal_year = fy(
-                    pb.submission.reporting_period_start)
+                reporting_fiscal_year = fy(pb.submission.reporting_period_start)
                 # TODO: once it is present, use the reporting_fiscal_year directly
-                obligations[
-                    reporting_fiscal_year] += pb.obligations_incurred_by_program_object_class_cpe
-                outlays[
-                    reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
+                obligations[reporting_fiscal_year] += pb.obligations_incurred_by_program_object_class_cpe
+                outlays[reporting_fiscal_year] += pb.gross_outlay_amount_by_program_object_class_cpe
             result = {
                 'id': pa.id,
                 'program_activity_name': pa.program_activity_name,
@@ -217,9 +207,9 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
 class AppropriationAccountBalancesManager(models.Manager):
 
     def get_queryset(self):
-        '''
+        """
         Get only records from the last submission per TAS per fiscal year.
-        '''
+        """
 
         return super(AppropriationAccountBalancesManager, self).get_queryset().filter(final_of_fy=True)
 
@@ -240,12 +230,14 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
         related_name="account_balances"
     )
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
+    budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(max_digits=21, decimal_places=2,
+                                                                                   blank=True, null=True)
     adjustments_to_unobligated_balance_brought_forward_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     budget_authority_appropriated_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     borrowing_authority_amount_total_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     contract_authority_amount_total_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
+    spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+                                                                                    blank=True, null=True)
     other_budgetary_resources_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     budget_authority_available_amount_total_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     gross_outlay_amount_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
@@ -293,28 +285,47 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
             cursor.execute(cls.FINAL_OF_FY_SQL)
 
     # TODO: is the self-joining SQL below do-able via the ORM?
-    # note: appropriation_account_balances_id is included in the quarterly
-    # query because Django's Manage.raw()/RawQuerySet require the underlying
-    # model's primary key
+    # note: appropriation_account_balances_id is included in the quarterly query because Django's
+    # Manage.raw()/RawQuerySet require the underlying model's primary key
     QUARTERLY_SQL = """
         SELECT
             current.appropriation_account_balances_id,
             sub.submission_id,
             current.treasury_account_identifier,
             current.data_source,
-            COALESCE(current.budget_authority_unobligated_balance_brought_forward_fyb, 0) - COALESCE(previous.budget_authority_unobligated_balance_brought_forward_fyb, 0) AS budget_authority_unobligated_balance_brought_forward_fyb,
-            COALESCE(current.adjustments_to_unobligated_balance_brought_forward_cpe, 0) - COALESCE(previous.adjustments_to_unobligated_balance_brought_forward_cpe, 0) AS adjustments_to_unobligated_balance_brought_forward_cpe,
-            COALESCE(current.budget_authority_appropriated_amount_cpe, 0) - COALESCE(previous.budget_authority_appropriated_amount_cpe, 0) AS budget_authority_appropriated_amount_cpe,
-            COALESCE(current.borrowing_authority_amount_total_cpe, 0) - COALESCE(previous.borrowing_authority_amount_total_cpe, 0) AS borrowing_authority_amount_total_cpe,
-            COALESCE(current.contract_authority_amount_total_cpe, 0) - COALESCE(previous.contract_authority_amount_total_cpe, 0) AS contract_authority_amount_total_cpe,
-            COALESCE(current.spending_authority_from_offsetting_collections_amount_cpe, 0) - COALESCE(previous.spending_authority_from_offsetting_collections_amount_cpe, 0) AS spending_authority_from_offsetting_collections_amount_cpe,
-            COALESCE(current.other_budgetary_resources_amount_cpe, 0) - COALESCE(previous.other_budgetary_resources_amount_cpe, 0) AS other_budgetary_resources_amount_cpe,
-            COALESCE(current.budget_authority_available_amount_total_cpe, 0) - COALESCE(previous.budget_authority_available_amount_total_cpe, 0) AS budget_authority_available_amount_total_cpe,
-            COALESCE(current.gross_outlay_amount_by_tas_cpe, 0) - COALESCE(previous.gross_outlay_amount_by_tas_cpe, 0) AS gross_outlay_amount_by_tas_cpe,
-            COALESCE(current.deobligations_recoveries_refunds_by_tas_cpe, 0) - COALESCE(previous.deobligations_recoveries_refunds_by_tas_cpe, 0) AS deobligations_recoveries_refunds_by_tas_cpe,
-            COALESCE(current.unobligated_balance_cpe, 0) - COALESCE(previous.unobligated_balance_cpe, 0) AS unobligated_balance_cpe,
-            COALESCE(current.status_of_budgetary_resources_total_cpe, 0) - COALESCE(previous.status_of_budgetary_resources_total_cpe, 0) AS status_of_budgetary_resources_total_cpe,
-            COALESCE(current.obligations_incurred_total_by_tas_cpe, 0) - COALESCE(previous.obligations_incurred_total_by_tas_cpe, 0) AS obligations_incurred_total_by_tas_cpe
+            COALESCE(current.budget_authority_unobligated_balance_brought_forward_fyb, 0) -
+                COALESCE(previous.budget_authority_unobligated_balance_brought_forward_fyb, 0)
+                AS budget_authority_unobligated_balance_brought_forward_fyb,
+            COALESCE(current.adjustments_to_unobligated_balance_brought_forward_cpe, 0) -
+                COALESCE(previous.adjustments_to_unobligated_balance_brought_forward_cpe, 0)
+                AS adjustments_to_unobligated_balance_brought_forward_cpe,
+            COALESCE(current.budget_authority_appropriated_amount_cpe, 0) -
+                COALESCE(previous.budget_authority_appropriated_amount_cpe, 0)
+                AS budget_authority_appropriated_amount_cpe,
+            COALESCE(current.borrowing_authority_amount_total_cpe, 0) -
+                COALESCE(previous.borrowing_authority_amount_total_cpe, 0) AS borrowing_authority_amount_total_cpe,
+            COALESCE(current.contract_authority_amount_total_cpe, 0) -
+                COALESCE(previous.contract_authority_amount_total_cpe, 0) AS contract_authority_amount_total_cpe,
+            COALESCE(current.spending_authority_from_offsetting_collections_amount_cpe, 0) -
+                COALESCE(previous.spending_authority_from_offsetting_collections_amount_cpe, 0)
+                AS spending_authority_from_offsetting_collections_amount_cpe,
+            COALESCE(current.other_budgetary_resources_amount_cpe, 0) -
+                COALESCE(previous.other_budgetary_resources_amount_cpe, 0) AS other_budgetary_resources_amount_cpe,
+            COALESCE(current.budget_authority_available_amount_total_cpe, 0) -
+                COALESCE(previous.budget_authority_available_amount_total_cpe, 0)
+                AS budget_authority_available_amount_total_cpe,
+            COALESCE(current.gross_outlay_amount_by_tas_cpe, 0) -
+                COALESCE(previous.gross_outlay_amount_by_tas_cpe, 0) AS gross_outlay_amount_by_tas_cpe,
+            COALESCE(current.deobligations_recoveries_refunds_by_tas_cpe, 0) -
+                COALESCE(previous.deobligations_recoveries_refunds_by_tas_cpe, 0)
+                AS deobligations_recoveries_refunds_by_tas_cpe,
+            COALESCE(current.unobligated_balance_cpe, 0) - COALESCE(previous.unobligated_balance_cpe, 0)
+                AS unobligated_balance_cpe,
+            COALESCE(current.status_of_budgetary_resources_total_cpe, 0) -
+                COALESCE(previous.status_of_budgetary_resources_total_cpe, 0)
+                AS status_of_budgetary_resources_total_cpe,
+            COALESCE(current.obligations_incurred_total_by_tas_cpe, 0) -
+                COALESCE(previous.obligations_incurred_total_by_tas_cpe, 0) AS obligations_incurred_total_by_tas_cpe
         FROM
             appropriation_account_balances AS current
             JOIN submission_attributes AS sub
@@ -327,24 +338,20 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     @classmethod
     def get_quarterly_numbers(cls, current_submission_id=None):
         """
-        Return a RawQuerySet of quarterly financial numbers by tas
-        (aka treasury account symbol, aka appropriations account)
+        Return a RawQuerySet of quarterly financial numbers by tas (aka treasury account symbol, aka appropriations
+        account)
 
-        Because we receive financial data as YTD aggregates (i.e., Q3 numbers
-        represent financial activity in Q1, Q2, and Q3), we subtract previously
-        reported FY numbers when calculating discrete quarters.
+        Because we receive financial data as YTD aggregates (i.e., Q3 numbers represent financial activity in Q1, Q2,
+        and Q3), we subtract previously reported FY numbers when calculating discrete quarters.
 
-        For example, consider a Q3 submission in fiscal year 2017. Using
-        total_outlays (a simplified field name) as an example, we would get
-        discrete Q3 total_outlays by taking total_outlays as reported in
-        the Q3 submission and subtracting the total_outlays that were reported
-        in the Q2 submission (or the most recent prior-to-Q3 submission we
-        have on record for that agency in the current fiscal year).
+        For example, consider a Q3 submission in fiscal year 2017. Using total_outlays (a simplified field name) as an
+        example, we would get discrete Q3 total_outlays by taking total_outlays as reported in the Q3 submission and
+        subtracting the total_outlays that were reported in the Q2 submission (or the most recent prior-to-Q3 submission
+        we have on record for that agency in the current fiscal year).
 
-        If there is no previous submission matching for an agency in the
-        current fiscal year (for example, Q1 submission), quarterly numbers
-        are the same as the submission's YTD numbers). The COALESCE function
-        in the SQL above is what handles this scenario.
+        If there is no previous submission matching for an agency in the current fiscal year (for example, Q1
+        submission), quarterly numbers are the same as the submission's YTD numbers). The COALESCE function in the SQL
+        above is what handles this scenario.
 
         Args:
             current_submission_id: the submission to retrieve quarterly data for
@@ -364,21 +371,20 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
 
 class AppropriationAccountBalancesQuarterly(DataSourceTrackedModel):
     """
-    Represents quarterly financial amounts by tas (aka, treasury account symbol,
-    aka appropriation account).
-    Each data broker submission provides a snapshot of the most
-    recent numbers for that fiscal year. Thus, to populate this model, we
-    subtract previous quarters' balances from the balances of the current
-    submission.
+    Represents quarterly financial amounts by tas (aka, treasury account symbol, aka appropriation account).
+    Each data broker submission provides a snapshot of the most recent numbers for that fiscal year. Thus, to populate
+    this model, we subtract previous quarters' balances from the balances of the current submission.
     """
     treasury_account_identifier = models.ForeignKey('TreasuryAppropriationAccount', models.CASCADE)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
+    budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(max_digits=21, decimal_places=2,
+                                                                                   blank=True, null=True)
     adjustments_to_unobligated_balance_brought_forward_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     budget_authority_appropriated_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     borrowing_authority_amount_total_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     contract_authority_amount_total_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
-    spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
+    spending_authority_from_offsetting_collections_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2,
+                                                                                    blank=True, null=True)
     other_budgetary_resources_amount_cpe = models.DecimalField(max_digits=21, decimal_places=2, blank=True, null=True)
     budget_authority_available_amount_total_cpe = models.DecimalField(max_digits=21, decimal_places=2)
     gross_outlay_amount_by_tas_cpe = models.DecimalField(max_digits=21, decimal_places=2)
@@ -404,22 +410,18 @@ class AppropriationAccountBalancesQuarterly(DataSourceTrackedModel):
         if submission_id is None:
             AppropriationAccountBalancesQuarterly.objects.all().delete()
         else:
-            AppropriationAccountBalancesQuarterly.objects.filter(
-                submission_id=submission_id).delete()
+            AppropriationAccountBalancesQuarterly.objects.filter(submission_id=submission_id).delete()
 
         # retrieve RawQuerySet of quarterly breakouts
-        qtr_records = AppropriationAccountBalances.get_quarterly_numbers(
-            submission_id)
+        qtr_records = AppropriationAccountBalances.get_quarterly_numbers(submission_id)
         qtr_list = []
 
-        # for each record in the RawQuerySet, a corresponding
-        # AppropriationAccountBalancesQuarterly object and save it
+        # for each record in the RawQuerySet, a corresponding AppropriationAccountBalancesQuarterly object and save it
         # for subsequent bulk insert
         # TODO: maybe we don't want this entire list in memory?
         for rec in qtr_records:
-            # remove any fields in the qtr_record RawQuerySet object so that we
-            # can create its AppropriationAccountBalancesQuarterly counterpart
-            # more easily
+            # remove any fields in the qtr_record RawQuerySet object so that we can create its
+            # AppropriationAccountBalancesQuarterly counterpart more easily
             rec_dict = rec.__dict__
             rec_dict = {key: rec_dict[key] for key in rec_dict if key in field_list}
             qtr_list.append(AppropriationAccountBalancesQuarterly(**rec_dict))

@@ -245,7 +245,6 @@ class Command(BaseCommand):
                 as_dict=True)
 
             loc_instance = Location(**location_instance_data)
-            loc_instance.load_country_data()
             loc_instance.load_city_county_data()
             loc_instance.fill_missing_state_data()
             loc_instance.fill_missing_zip5()
