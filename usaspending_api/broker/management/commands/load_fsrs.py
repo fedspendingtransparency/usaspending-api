@@ -134,21 +134,37 @@ class Command(BaseCommand):
 
         place_of_performance = Location(**pop_value_map).save()
 
-        return self.get_award(row, award_type), recipient, place_of_performance
+        return recipient, place_of_performance
 
-    def internal_ids(self, data, award_type):
+    def gather_shared_award_data(self, data, award_type):
         """ Creates a dictionary with internal IDs as keys that stores data for each award that's shared between all
             its subawards so we don't have to query the DB repeatedly
         """
-        internal_ids = []
-        logger.info("Starting gathering internal ids")
+        shared_data = {}
+        logger.info("Starting shared data gathering")
+        counter = 0
         new_awards = len(data)
         logger.info(str(new_awards) + " new awards to process.")
+        skip_count = 0
         for row in data:
-            internal_ids += [row['internal_id']]
+            counter += 1
+            if counter % LOG_LIMIT == 0:
+                logger.info(
+                    "Processed " + str(counter) + " of " + str(new_awards) + " new awards. Skipped " + str(skip_count)
+                )
+                skip_count = 0
+
+            award, recipient_name = self.get_award(row, award_type)
+
+            if not award:
+                skip_count += 1
+                continue
+
+            # set shared data content
+            shared_data[row['internal_id']] = {'award': award}
         logger.info("Completed shared data gathering")
 
-        return internal_ids
+        return shared_data
 
     @staticmethod
     def gather_next_subawards(db_cursor, award_type, subaward_type, max_id, offset):
@@ -208,32 +224,31 @@ class Command(BaseCommand):
 
         return dictfetchall(db_cursor)
 
-    def create_subaward(self, row, internal_ids, award_type):
+    def create_subaward(self, row, shared_award_mappings, award_type):
         """ Creates a subaward if the internal ID of the current row is in the shared award mappings (this was made
             to satisfy codeclimate complexity issues)
         """
 
         # only insert the subaward if the internal_id is in our mappings, otherwise there was a problem
         # finding one or more parts of the shared data for it and we don't want to insert it.
-        if row['internal_id'] in internal_ids:
+        if row['internal_id'] in shared_award_mappings:
+            shared_mappings = shared_award_mappings[row['internal_id']]
+
             cfda = None
             # check if the key exists and if it isn't empty (only here for grants)
             if 'cfda_numbers' in row and row['cfda_numbers']:
                 only_num = row['cfda_numbers'].split(' ')
                 cfda = Cfda.objects.filter(program_number=only_num[0]).first()
 
-            award, recipient, place_of_performance = self.get_subaward_references(row, award_type)
-
-            if not award:
-                return
+            recipient, place_of_performance = self.get_subaward_references(row, award_type)
 
             subaward_dict = {
-                'award': award,
+                'award': shared_mappings['award'],
                 'recipient': recipient,
                 'data_source': "DBR",
                 'cfda': cfda,
-                'awarding_agency': award.awarding_agency,
-                'funding_agency': award.funding_agency,
+                'awarding_agency': shared_mappings['award'].awarding_agency,
+                'funding_agency': shared_mappings['award'].funding_agency,
                 'place_of_performance': place_of_performance,
                 'subaward_number': row['subaward_num'],
                 'amount': row['subaward_amount'],
@@ -251,9 +266,9 @@ class Command(BaseCommand):
             # Either we're starting with an empty table in regards to this award type or we've deleted all
             # subawards related to the internal_id, either way we just create the subaward
             Subaward.objects.create(**subaward_dict)
-            award_update_id_list.append(award.id)
+            award_update_id_list.append(shared_mappings['award'].id)
 
-    def process_subawards(self, db_cursor, internal_ids, award_type, subaward_type, max_id):
+    def process_subawards(self, db_cursor, shared_award_mappings, award_type, subaward_type, max_id):
         """ Process the subawards and insert them as we go """
         current_offset = 0
 
@@ -263,7 +278,7 @@ class Command(BaseCommand):
         while len(subaward_list) > 0:
             logger.info("Processing next 10,000 subawards, starting at offset: " + str(current_offset))
             for row in subaward_list:
-                self.create_subaward(row, internal_ids, award_type)
+                self.create_subaward(row, shared_award_mappings, award_type)
 
             current_offset += QUERY_LIMIT
             subaward_list = self.gather_next_subawards(db_cursor, award_type, subaward_type, max_id, current_offset)
@@ -279,14 +294,15 @@ class Command(BaseCommand):
             max_id = 0
 
         fsrs_award_data = self.get_award_data(db_cursor, award_type, max_id)
-        internal_ids = self.internal_ids(fsrs_award_data, award_type)
+        shared_award_mappings = self.gather_shared_award_data(fsrs_award_data, award_type)
 
         # if this is not the initial load, delete all existing subawards with internal IDs matching the list of
         # new ones because they're all updated every time any change is made on broker
         if max_id > 0:
+            internal_ids = list(shared_award_mappings)
             Subaward.objects.filter(internal_id__in=internal_ids, award_type=award_type).delete()
 
-        self.process_subawards(db_cursor, internal_ids, award_type, subaward_type, max_id)
+        self.process_subawards(db_cursor, shared_award_mappings, award_type, subaward_type, max_id)
 
     @db_transaction.atomic
     def handle(self, *args, **options):
