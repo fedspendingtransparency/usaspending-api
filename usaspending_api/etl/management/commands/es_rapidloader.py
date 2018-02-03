@@ -167,11 +167,12 @@ def download_csv(count_sql, copy_sql, filename, job_id, verbose):
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
     subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
 
-    with open(filename, 'r') as f:
-        download_count = len(f.readlines()) - 1
-    if count != download_count:
-        print('Download count doesn\'t match rows in DB!')
-        raise SystemExit
+    # with open(filename, 'r') as f:
+    #     download_count = len(f.readlines()) - 1
+    # if count != download_count:
+    #     printf({'msg': 'download_count {} in this file: {}'.format(download_count, filename), 'job': job_id, 'f': 'Download'})
+    #     print('Download count doesn\'t match rows in DB!')
+    #     raise SystemExit
     return count
 
 
