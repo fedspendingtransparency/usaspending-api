@@ -11,10 +11,11 @@ from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 from time import perf_counter
 from usaspending_api import settings
-from usaspending_api.etl.management.commands.fetch_transactions import configure_sql_strings
-from usaspending_api.etl.management.commands.fetch_transactions import execute_sql_statement
+from usaspending_api.etl.es_etl_helpers import configure_sql_strings
+from usaspending_api.etl.es_etl_helpers import execute_sql_statement
+from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS
+from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
 from usaspending_api.etl.management.commands.fetch_transactions import gather_deleted_ids
-from usaspending_api.etl.management.commands.fetch_transactions import VIEW_COLUMNS
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. [conditional] Remove recently deleted transactions from Elasticsearch
@@ -27,15 +28,6 @@ from usaspending_api.etl.management.commands.fetch_transactions import VIEW_COLU
 #   d. Lather. Rinse. Repeat.
 
 ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
-
-AWARD_DESC_CATEGORIES = {
-    'loans': 'loans',
-    'grant': 'grants',
-    'insurance': 'other',
-    'other': 'other',
-    'contract': 'contracts',
-    'direct payment': 'directpayments'
-}
 
 
 class Command(BaseCommand):

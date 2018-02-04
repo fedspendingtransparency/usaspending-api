@@ -10,7 +10,8 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from time import perf_counter
 
-from usaspending_api.etl.es_etl_helpers import configure_sql_strings, execute_sql_statement
+from usaspending_api.etl.es_etl_helpers import configure_sql_strings
+from usaspending_api.etl.es_etl_helpers import execute_sql_statement
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. [conditional] Gather the list of deleted transactions from S3
@@ -58,10 +59,6 @@ class Command(BaseCommand):
             action='store_true',
             help='Flag to include deleted transactions into script results')
         parser.add_argument(
-            '--sql-only',
-            action='store_true',
-            help='Prints SQL which would be used with the provided flags')
-        parser.add_argument(
             '--award-type',
             choices=['contract', 'grant', 'loans', 'direct payment', 'other'],
             type=str,
@@ -91,35 +88,12 @@ class Command(BaseCommand):
             print('Provided directory does not exist')
             raise SystemExit
 
-        if options['sql_only']:
-            self.sql_only_print()
-            return
-
         self.deleted_ids = gather_deleted_ids(self.config)
         self.db_interactions()
         self.write_deleted_ids()
 
         print('---------------------------------------------------------------')
         print("Script completed in {} seconds".format(perf_counter() - start))
-
-    def sql_only_print(self):
-        self.deleted_ids = {
-            '<id0>': {'timestamp': '1970-01-01'},
-            '<id1>': {'timestamp': '1970-01-01'},
-            '<id2>': {'timestamp': '1970-01-01'},
-        }
-        filename = self.config['directory'] + '<filename>'
-
-        copy_sql, id_sql, count_sql = configure_sql_strings(self.config, filename, self.deleted_ids)
-        print('========================================')
-        print('--- SQL to copy rows to CSV ---')
-        print(copy_sql)
-        print('========================================')
-        print('--- SQL to gather all existing transactions in deleted list ---')
-        if not id_sql:
-            id_sql = '*** No ID SQL generated with provided script flags ***'
-        print(id_sql)
-        print('========================================')
 
     def db_interactions(self):
         '''
@@ -146,6 +120,7 @@ class Command(BaseCommand):
         subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
 
         if id_sql:
+            print('Getting the list of "deleted" transactions')
             restored_ids = execute_sql_statement(id_sql, True, self.config['verbose'])
             if self.config['verbose']:
                 print(restored_ids)

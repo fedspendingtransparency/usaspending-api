@@ -10,9 +10,14 @@ from multiprocessing import Process, Queue
 from time import perf_counter, sleep
 from usaspending_api import settings
 
-from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS, DataJob
-from usaspending_api.etl.es_etl_helpers import printf, download_db_records
-from usaspending_api.etl.es_etl_helpers import csv_row_count, AWARD_DESC_CATEGORIES, csv_chunk_gen, streaming_post_to_es
+from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
+from usaspending_api.etl.es_etl_helpers import csv_chunk_gen
+from usaspending_api.etl.es_etl_helpers import csv_row_count
+from usaspending_api.etl.es_etl_helpers import DataJob
+from usaspending_api.etl.es_etl_helpers import download_db_records
+from usaspending_api.etl.es_etl_helpers import printf
+from usaspending_api.etl.es_etl_helpers import streaming_post_to_es
+from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS
 
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
@@ -131,7 +136,6 @@ def es_data_loader(fetch_jobs, done_jobs, config):
         if not done_jobs.empty():
             job = done_jobs.get_nowait()
             if job.name is None:
-                print('Job Name is false')
                 break
 
             printf({'msg': 'Starting new job', 'job': job.name, 'f': 'ES Ingest'})
