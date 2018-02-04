@@ -8,8 +8,9 @@ import tempfile
 from datetime import date
 from datetime import datetime
 from django.core.management.base import BaseCommand
-from django.db import connection
 from time import perf_counter
+
+from usaspending_api.etl.es_etl_helpers import configure_sql_strings, execute_sql_statement
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. [conditional] Gather the list of deleted transactions from S3
@@ -185,60 +186,6 @@ class Command(BaseCommand):
             f.writelines('\n'.join(self.deleted_ids.keys()))
 
 
-def db_rows_to_dict(cursor):
-    ''' Return a dictionary of all row results from a database connection cursor '''
-    columns = [col[0] for col in cursor.description]
-    return [
-        dict(zip(columns, row))
-        for row in cursor.fetchall()
-    ]
-
-
-def execute_sql_statement(cmd, results=False, verbose=False):
-    ''' Simple function to execute SQL using the Django DB connection'''
-    rows = None
-    if verbose:
-        print(cmd)
-    with connection.cursor() as cursor:
-        cursor.execute(cmd)
-        if results:
-            rows = db_rows_to_dict(cursor)
-    return rows
-
-
-def configure_sql_strings(config, filename, deleted_ids):
-    '''
-    Populates the formatted strings defined globally in this file to create the desired SQL
-    '''
-    update_date_str = UPDATE_DATE_SQL.format(config['starting_date'].strftime('%Y-%m-%d'))
-    award_type_str = ''
-    if config['award_category']:
-        if config['award_category'] == 'contract':
-            award_type_str = CONTRACTS_IDV_SQL.format(config['award_category'])
-        else:
-            award_type_str = CATEGORY_SQL.format(config['award_category'])
-
-    copy_sql = COPY_SQL.format(
-        fy=config['fiscal_year'],
-        update_date=update_date_str,
-        award_category=award_type_str,
-        filename=filename)
-
-    count_sql = COUNT_SQL.format(
-        fy=config['fiscal_year'],
-        update_date=update_date_str,
-        award_category=award_type_str,
-    )
-
-    if deleted_ids and config['provide_deleted']:
-        id_list = ','.join(["('{}')".format(x) for x in deleted_ids.keys()])
-        id_sql = CHECK_IDS_SQL.format(id_list=id_list)
-    else:
-        id_sql = None
-
-    return copy_sql, id_sql, count_sql
-
-
 def set_config():
 
     if not os.environ.get('CSV_AWS_REGION'):
@@ -337,60 +284,3 @@ def gather_deleted_ids(config):
     print('Found {} IDs'.format(len(deleted_ids)))
     print("Gathering deleted transactions took {} seconds".format(perf_counter() - start))
     return deleted_ids
-
-
-VIEW_COLUMNS = [
-    'transaction_id', 'modification_number', 'award_id', 'piid', 'fain', 'uri',
-    'award_description', 'product_or_service_code', 'product_or_service_description',
-    'naics_code', 'naics_description', 'type_description', 'award_category',
-    'recipient_unique_id', 'parent_recipient_unique_id', 'recipient_name',
-    'action_date', 'period_of_performance_start_date', 'period_of_performance_current_end_date',
-    'transaction_fiscal_year', 'award_fiscal_year', 'award_amount',
-    'transaction_amount', 'face_value_loan_guarantee', 'original_loan_subsidy_cost',
-    'awarding_agency_id', 'funding_agency_id', 'awarding_toptier_agency_name',
-    'funding_toptier_agency_name', 'awarding_subtier_agency_name',
-    'funding_subtier_agency_name', 'awarding_toptier_agency_abbreviation',
-    'funding_toptier_agency_abbreviation', 'awarding_subtier_agency_abbreviation',
-    'funding_subtier_agency_abbreviation', 'cfda_title', 'cfda_popular_name',
-    'type_of_contract_pricing', 'type_set_aside', 'extent_competed', 'pulled_from',
-    'type', 'pop_country_code', 'pop_country_name', 'pop_state_code', 'pop_county_code',
-    'pop_county_name', 'pop_zip5', 'pop_congressional_code',
-    'recipient_location_country_code', 'recipient_location_country_name',
-    'recipient_location_state_code', 'recipient_location_county_code',
-    'recipient_location_zip5', 'detached_award_proc_unique', 'afa_generated_unique',
-    'generated_unique_transaction_id', 'update_date',
-]
-
-# ==============================================================================
-# SQL Template Strings for Postgres Statements
-# ==============================================================================
-
-
-UPDATE_DATE_SQL = ' AND update_date >= \'{}\''
-
-CATEGORY_SQL = ' AND award_category = \'{}\''
-
-CONTRACTS_IDV_SQL = ' AND (award_category = \'{}\' OR award_category IS NULL AND pulled_from = \'IDV\')'
-
-COUNT_SQL = '''SELECT COUNT(*) AS count
-FROM transaction_delta_view
-WHERE transaction_fiscal_year={fy}{update_date}{award_category};'''
-
-COPY_SQL = '''"COPY (
-    SELECT *
-    FROM transaction_delta_view
-    WHERE transaction_fiscal_year={fy}{update_date}{award_category}
-) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
-'''
-
-CHECK_IDS_SQL = '''
-WITH temp_transaction_ids AS (
-  SELECT * FROM (VALUES {id_list}) AS unique_id_list (generated_unique_transaction_id)
-)
-SELECT transaction_id, generated_unique_transaction_id, update_date FROM transaction_delta_view
-WHERE EXISTS (
-  SELECT *
-  FROM temp_transaction_ids
-  WHERE transaction_delta_view.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id
-);
-'''

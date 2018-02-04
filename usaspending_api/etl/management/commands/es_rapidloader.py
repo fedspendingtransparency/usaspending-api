@@ -1,19 +1,19 @@
+
 import json
 import os
-import pandas as pd
-import subprocess
 
 from datetime import date
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
-from elasticsearch import helpers
 from multiprocessing import Process, Queue
 from time import perf_counter, sleep
 from usaspending_api import settings
-from usaspending_api.etl.management.commands.fetch_transactions import configure_sql_strings
-from usaspending_api.etl.management.commands.fetch_transactions import execute_sql_statement
-from usaspending_api.etl.management.commands.fetch_transactions import VIEW_COLUMNS
+
+from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS, DataJob
+from usaspending_api.etl.es_etl_helpers import printf, download_db_records
+from usaspending_api.etl.es_etl_helpers import csv_row_count, AWARD_DESC_CATEGORIES, csv_chunk_gen, streaming_post_to_es
+
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. Generate the full list of fiscal years and award descriptions to process as jobs
@@ -28,29 +28,8 @@ from usaspending_api.etl.management.commands.fetch_transactions import VIEW_COLU
 ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 
 
-class DataJob:
-    def __init__(self, *args):
-        self.name = args[0]
-        self.index = args[1]
-        self.fy = args[2]
-        self.category = args[3]
-        self.csv = args[4]
-        self.count = None
-
-
-AWARD_DESC_CATEGORIES = {
-    'loans': 'loans',
-    'grant': 'grants',
-    'insurance': 'other',
-    'other': 'other',
-    'contract': 'contracts',
-    'direct payment': 'directpayments'
-}
-
-
 class Command(BaseCommand):
-    help = '''
-    '''
+    help = ''''''
 
     # used by parent class
     def add_arguments(self, parser):
@@ -72,7 +51,12 @@ class Command(BaseCommand):
             '-s',
             '--stale',
             action='store_true',
-            help='Flag allowed existing CSVs to be used instead of downloading new data')
+            help='Flag allowed existing CSVs (if they exist) to be used instead of downloading new data')
+        parser.add_argument(
+            '-k',
+            '--keep',
+            action='store_true',
+            help='CSV files are not deleted after they are uploaded')
 
     # used by parent class
     def handle(self, *args, **options):
@@ -82,13 +66,13 @@ class Command(BaseCommand):
 
         self.config = set_config()
         self.config['formatted_now'] = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')  # ISO8601
+        self.config['starting_date'] = date(2001, 1, 1)
         self.config['verbose'] = True if options['verbosity'] > 1 else False
         self.config['fiscal_years'] = options['fiscal_years']
         self.config['directory'] = options['dir'] + os.sep
         self.config['recreate'] = options['recreate']
         self.config['stale'] = options['stale']
-
-        self.config['starting_date'] = date(2001, 1, 1)
+        self.config['keep'] = options['keep']
 
         if not os.path.isdir(self.config['directory']):
             printf({'msg': 'Provided directory does not exist'})
@@ -101,8 +85,8 @@ class Command(BaseCommand):
 
     def controller(self):
 
-        new_queue = Queue()  # Queue for jobs whch need a csv downloaded
-        ingest_queue = Queue()  # Queue for jobs which have a csv and are ready for ES ingest
+        download_queue = Queue()  # Queue for jobs whch need a csv downloaded
+        es_ingest_queue = Queue()  # Queue for jobs which have a csv and are ready for ES ingest
 
         job_id = 0
         for fy in self.config['fiscal_years']:
@@ -117,20 +101,23 @@ class Command(BaseCommand):
 
                 new_job = DataJob(job_id, index, fy, awd_cat_idx, filename)
 
-                if self.config['stale'] is False:
-                    if os.path.exists(filename):
+                if os.path.exists(filename):
+                    if self.config['stale']:
+                        new_job.count = csv_row_count(filename)
+                        printf({
+                            'msg': 'Using existing file: {} | count {}'.format(filename, new_job.count),
+                            'job': new_job.name,
+                            'f': 'Download'})
+                        es_ingest_queue.put(new_job)
+                        continue
+                    else:
                         os.remove(filename)
-                    new_queue.put(new_job)
-                else:
-                    with open(filename, 'r') as f:
-                        count = len(f.readlines()) - 1
-                        new_job.count = count
-                    ingest_queue.put(new_job)
+                download_queue.put(new_job)
 
         printf({'msg': 'There are {} jobs to process'.format(job_id)})
 
-        download_proccess = Process(target=download_db_records, args=(new_queue, ingest_queue, self.config))
-        es_index_process = Process(target=es_data_loader, args=(new_queue, ingest_queue, self.config))
+        download_proccess = Process(target=download_db_records, args=(download_queue, es_ingest_queue, self.config))
+        es_index_process = Process(target=es_data_loader, args=(download_queue, es_ingest_queue, self.config))
 
         download_proccess.start()
         es_index_process.start()
@@ -140,70 +127,22 @@ class Command(BaseCommand):
 
 
 def es_data_loader(fetch_jobs, done_jobs, config):
-    loop_again = True
-    while loop_again:
+    while True:
         if not done_jobs.empty():
             job = done_jobs.get_nowait()
             if job.name is None:
-                loop_again = False
+                print('Job Name is false')
                 break
 
             printf({'msg': 'Starting new job', 'job': job.name, 'f': 'ES Ingest'})
             post_to_elasticsearch(job, config)
-            if os.path.exists(job.csv):
+            if os.path.exists(job.csv) and not config['keep']:
                 os.remove(job.csv)
-        # elif fetch_jobs.empty() and done_jobs.empty():
         else:
             printf({'msg': 'No Job :-( Sleeping 15s', 'f': 'ES Ingest'})
             sleep(15)
 
     printf({'msg': 'Completed Elasticsearch data load', 'f': 'ES Ingest'})
-    return
-
-
-def download_csv(count_sql, copy_sql, filename, job_id, verbose):
-    count = execute_sql_statement(count_sql, True, verbose)[0]['count']
-    printf({'msg': 'Writing {} transactions to this file: {}'.format(count, filename), 'job': job_id, 'f': 'Download'})
-    # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
-    subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
-
-    # with open(filename, 'r') as f:
-    #     download_count = len(f.readlines()) - 1
-    # if count != download_count:
-    #     printf({'msg': 'download_count {} in this file: {}'.format(download_count, filename), 'job': job_id, 'f': 'Download'})
-    #     print('Download count doesn\'t match rows in DB!')
-    #     raise SystemExit
-    return count
-
-
-def download_db_records(fetch_jobs, done_jobs, config):
-    while not fetch_jobs.empty():
-        start = perf_counter()
-        job = fetch_jobs.get_nowait()
-        printf({'msg': 'Preparing to Download a new CSV', 'job': job.name, 'f': 'Download'})
-
-        sql_config = {
-            'starting_date': config['starting_date'],
-            'fiscal_year': job.fy,
-            'award_category': job.category,
-            'provide_deleted': False
-        }
-        copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
-
-        if os.path.isfile(job.csv):
-            os.remove(job.csv)
-
-        job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config['verbose'])
-        done_jobs.put(job)
-        printf({
-            'msg': 'Data fetch job took {} seconds'.format(perf_counter() - start),
-            'job': job.name,
-            'f': 'Download'
-        })
-        sleep(1)
-
-    done_jobs.put(DataJob(None, None, None, None, None))
-    printf({'msg': 'All downloads from Postgres completed', 'f': 'Download'})
     return
 
 
@@ -225,31 +164,6 @@ def set_config():
     return config
 
 
-def csv_chunk_gen(filename, chunksize, job_id):
-    printf({'msg': 'Opening {} batch size: {}'.format(filename, chunksize), 'job': job_id, 'f': 'ES Ingest'})
-    # Panda's data type guessing causes issues for Elasticsearch. Set all cols to str
-    dtype = {x: str for x in VIEW_COLUMNS}
-
-    for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize):
-        file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
-        yield file_df.to_dict(orient='records')
-
-
-def streaming_post_to_es(chunk, index_name, job_id):
-    success, failed = 0, 0
-    try:
-        for ok, item in helpers.streaming_bulk(ES_CLIENT, chunk, index=index_name, doc_type='transaction_mapping'):
-            success = [success, success + 1][ok]
-            failed = [failed + 1, failed][ok]
-
-    except Exception as e:
-        print('MASSIVE FAIL!!!\n\n{}\n\n{}'.format(e, '*' * 80))
-        raise SystemExit
-
-    printf({'msg': 'Success: {} | Fails: {}'.format(success, failed), 'job': job_id, 'f': 'ES Ingest'})
-    return success, failed
-
-
 def post_to_elasticsearch(job, config, chunksize=250000):
     printf({'msg': 'Populating ES Index : {}'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
 
@@ -265,24 +179,12 @@ def post_to_elasticsearch(job, config, chunksize=250000):
         printf({'msg': 'Deleting Existing index {}'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
         ES_CLIENT.indices.delete(job.index)
 
-    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name)
+    csv_generator = csv_chunk_gen(job.csv, VIEW_COLUMNS, chunksize, job.name)
     for count, chunk in enumerate(csv_generator):
         iteration = perf_counter()
-        streaming_post_to_es(chunk, job.index, job.name)
+        streaming_post_to_es(ES_CLIENT, chunk, job.index, job.name)
         printf({
             'msg': 'Iteration on chunk {} took {}s'.format(count, perf_counter() - iteration),
             'job': job.name,
             'f': 'ES Ingest'
         })
-
-
-def printf(items):
-    template = '[{time}] {complex:<20} | {msg}'
-    msg = items['msg']
-    func = '[' + items.get('f', 'main') + ']'
-    job = items.get('job', None)
-    j = ''
-    if job:
-        j = ' (#{})'.format(job)
-
-    print(template.format(time=datetime.utcnow().strftime('%H:%M:%S.%f'), complex=func + j, msg=msg))
