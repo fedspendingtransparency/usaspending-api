@@ -107,8 +107,8 @@ CREATE INDEX awards_uri_6982773c_like ON awards USING btree (uri text_pattern_op
 CREATE INDEX awards_total_obligation_7cdeba76 ON awards USING btree (total_obligation);
 CREATE INDEX awards_total_outlay_9e745534 ON awards USING btree (total_outlay);
 CREATE INDEX awards_date_signed_edd8cc5b ON awards USING btree (date_signed);
-CREATE INDEX awards_description_926c9c54 ON awards USING btree (description);
-CREATE INDEX awards_description_926c9c54_like ON awards USING btree (description text_pattern_ops);
+--CREATE INDEX awards_description_926c9c54 ON awards USING btree (description);
+--CREATE INDEX awards_description_926c9c54_like ON awards USING btree (description text_pattern_ops);
 CREATE INDEX awards_period_of_performance_start_date_2c08e64a ON awards USING btree (period_of_performance_start_date);
 CREATE INDEX awards_period_of_performance_current_end_date_fb888b8a ON awards USING btree (period_of_performance_current_end_date);
 CREATE INDEX awards_potential_total_value_of_award_49a2173b ON awards USING btree (potential_total_value_of_award);
