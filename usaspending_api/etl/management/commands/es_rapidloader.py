@@ -7,14 +7,14 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
 from multiprocessing import Process, Queue
-from time import perf_counter, sleep
+from time import perf_counter
 from usaspending_api import settings
 
 from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
 from usaspending_api.etl.es_etl_helpers import csv_row_count
 from usaspending_api.etl.es_etl_helpers import DataJob
 from usaspending_api.etl.es_etl_helpers import download_db_records
-from usaspending_api.etl.es_etl_helpers import post_to_elasticsearch
+from usaspending_api.etl.es_etl_helpers import es_data_loader
 from usaspending_api.etl.es_etl_helpers import printf
 
 
@@ -24,8 +24,9 @@ from usaspending_api.etl.es_etl_helpers import printf
 #   a. Download 1 CSV file
 #       i. Download the next CSV file until no more jobs need CSVs
 #   b. Upload CSV to Elasticsearch
-#       i. As a new CSV is ready, upload to ES
-#       ii. delete CSV file
+#       1. As a new CSV is ready, upload to ES
+#       2. Either recreate index or remove existing docs with matching ids
+#       3. [default] delete CSV file
 #   d. Lather. Rinse. Repeat.
 
 ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
@@ -40,6 +41,11 @@ class Command(BaseCommand):
             'fiscal_years',
             nargs='+',
             type=int)
+        parser.add_argument(
+            '--since',
+            default='2001-01-01',
+            type=str,
+            help='Start date for computing the delta of changed transactions [YYYY-MM-DD]')
         parser.add_argument(
             '--dir',
             default=os.path.dirname(os.path.abspath(__file__)),
@@ -68,14 +74,22 @@ class Command(BaseCommand):
         printf({'msg': 'Starting script\n{}'.format('=' * 56)})
 
         self.config = set_config()
-        self.config['formatted_now'] = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')  # ISO8601
-        self.config['starting_date'] = date(2001, 1, 1)
         self.config['verbose'] = True if options['verbosity'] > 1 else False
         self.config['fiscal_years'] = options['fiscal_years']
         self.config['directory'] = options['dir'] + os.sep
         self.config['recreate'] = options['recreate']
         self.config['stale'] = options['stale']
         self.config['keep'] = options['keep']
+
+        try:
+            self.config['starting_date'] = date(*[int(x) for x in options['since'].split('-')])
+        except Exception:
+            print('Malformed date string provided. `--since` requires YYYY-MM-DD')
+            raise SystemExit
+
+        if self.config['recreate'] and self.config['starting_date'] != date(2001, 1, 1):
+            print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
+            raise SystemExit
 
         if not os.path.isdir(self.config['directory']):
             printf({'msg': 'Provided directory does not exist'})
@@ -105,12 +119,14 @@ class Command(BaseCommand):
                 new_job = DataJob(job_id, index, fy, awd_cat_idx, filename)
 
                 if os.path.exists(filename):
+                    # This is mostly for testing. If previous CSVs still exist skip the download for that file
                     if self.config['stale']:
                         new_job.count = csv_row_count(filename)
                         printf({
                             'msg': 'Using existing file: {} | count {}'.format(filename, new_job.count),
                             'job': new_job.name,
                             'f': 'Download'})
+                        # Add job directly to the Elasticsearch ingest queue since the CSV exists
                         es_ingest_queue.put(new_job)
                         continue
                     else:
@@ -120,32 +136,13 @@ class Command(BaseCommand):
         printf({'msg': 'There are {} jobs to process'.format(job_id)})
 
         download_proccess = Process(target=download_db_records, args=(download_queue, es_ingest_queue, self.config))
-        es_index_process = Process(target=es_data_loader, args=(download_queue, es_ingest_queue, self.config))
+        es_index_process = Process(target=es_data_loader, args=(ES_CLIENT, download_queue, es_ingest_queue, self.config))
 
         download_proccess.start()
         es_index_process.start()
 
         download_proccess.join()
         es_index_process.join()
-
-
-def es_data_loader(fetch_jobs, done_jobs, config):
-    while True:
-        if not done_jobs.empty():
-            job = done_jobs.get_nowait()
-            if job.name is None:
-                break
-
-            printf({'msg': 'Starting new job', 'job': job.name, 'f': 'ES Ingest'})
-            post_to_elasticsearch(ES_CLIENT, job, config)
-            if os.path.exists(job.csv) and not config['keep']:
-                os.remove(job.csv)
-        else:
-            printf({'msg': 'No Job :-( Sleeping 15s', 'f': 'ES Ingest'})
-            sleep(15)
-
-    printf({'msg': 'Completed Elasticsearch data load', 'f': 'ES Ingest'})
-    return
 
 
 def set_config():
@@ -157,10 +154,15 @@ def set_config():
         print('Missing environment variable `ES_HOSTNAME`')
         raise SystemExit
 
-    config = {}
     es_mapping_file = 'usaspending_api/etl/es_mapper.json'
     with open(es_mapping_file) as f:
         data = json.load(f)
-        config['mapping'] = json.dumps(data)
+        mapping = json.dumps(data)
 
-    return config
+    return {
+        'aws_region': os.environ.get('CSV_AWS_REGION'),
+        's3_bucket': os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME'),
+        'root_index': settings.TRANSACTIONS_INDEX_ROOT,
+        'formatted_now': datetime.utcnow().strftime('%Y%m%dT%H%M%SZ'),  # ISO8601
+        'mapping': mapping,
+    }

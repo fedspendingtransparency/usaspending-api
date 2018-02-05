@@ -86,7 +86,6 @@
           "type": "text"
         },
         "cfda_title": {
-          "index": false,
           "type": "text"
         },
         "face_value_loan_guarantee": {
@@ -103,9 +102,11 @@
           "type": "text"
         },
         "modification_number": {
+          "index": false,
           "type": "integer"
         },
         "original_loan_subsidy_cost": {
+          "index": false,
           "scaling_factor": 100,
           "type": "scaled_float"
         },
@@ -135,10 +136,6 @@
         },
         "recipient_name": {
           "fielddata": true,
-          "type": "text"
-        },
-        "session_id": {
-          "index": false,
           "type": "text"
         },
         "update_date": {
