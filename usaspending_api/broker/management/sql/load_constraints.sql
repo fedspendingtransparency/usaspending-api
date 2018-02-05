@@ -5,6 +5,7 @@ ALTER TABLE references_location ADD PRIMARY KEY (location_id);
 ALTER TABLE legal_entity ADD PRIMARY KEY (legal_entity_id);
 ALTER TABLE transaction_normalized ADD PRIMARY KEY (id);
 ALTER TABLE awards ADD PRIMARY KEY (id);
+ALTER TABLE references_legalentityofficers ADD PRIMARY KEY(legal_entity_id);
 
 -- Transaction FPDS table
 ALTER TABLE transaction_fpds ADD CONSTRAINT tx_fpds_tx_norm_fk FOREIGN KEY (transaction_id) REFERENCES transaction_normalized (id);
