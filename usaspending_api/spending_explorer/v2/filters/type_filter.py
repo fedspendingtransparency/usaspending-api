@@ -34,10 +34,10 @@ def type_filter(_type, filters):
             except ValueError:
                 raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
         elif key == 'quarter':
-            if value in (1, 2, 3, 4):
-                fiscal_quarter = value
+            if value in ("1", "2", "3", "4"):
+                fiscal_quarter = int(value)
             else:
-                raise InvalidParameterException('Incorrect value provided for quarter parameter. Must be an integer '
+                raise InvalidParameterException('Incorrect value provided for quarter parameter. Must be a string '
                                                 'between 1 and 4')
 
     if fiscal_year:
