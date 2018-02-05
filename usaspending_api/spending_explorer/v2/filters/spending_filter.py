@@ -17,13 +17,13 @@ def spending_filter(alt_set, queryset, filters, _type):
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
         key_list = ['budget_function', 'budget_subfunction', 'federal_account', 'program_activity', 'object_class',
-                    'recipient', 'award', 'award_category', 'agency', 'agency_type', 'fy']
+                    'recipient', 'award', 'award_category', 'agency', 'agency_type', 'fy', 'quarter']
 
         if key not in key_list:
             raise InvalidParameterException(key + ' filter does not exist. '
                                                   'Valid Filters: budget_function, budget_subfunction, federal_account,'
                                                   'program_activity, object_class, recipient, award, award_category,'
-                                                  'agency, agency_type, fy.')
+                                                  'agency, agency_type, fy, quarter.')
 
         # Check _type to filter on correct set (alt_set or queryset)
         alt_set_keys = ['recipient', 'award', 'award_category', 'agency_type']

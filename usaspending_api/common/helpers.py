@@ -122,37 +122,43 @@ def order_nested_object(nested_object):
         return nested_object
 
 
-def generate_last_completed_fiscal_quarter(fiscal_year):
+def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
     """ Generate the most recently completed fiscal quarter """
 
     # Get the current fiscal year so that it can be compared against the FY in the request
     current_fiscal_date = FiscalDateTime.today()
-    requested_fiscal_year = FiscalYear(fiscal_year)
+    day_difference = current_fiscal_date - datetime.timedelta(days=45)
+    current_fiscal_date_adjusted = FiscalDateTime(day_difference.year, day_difference.month, day_difference.day)
 
-    if requested_fiscal_year.fiscal_year == current_fiscal_date.fiscal_year:
-        current_fiscal_quarter = current_fiscal_date.quarter
-        # If attempting to get data for the current year and we're still in quarter 1, error out because no quarter
-        # has yet completed for the current year
-        if current_fiscal_quarter == 1:
-            raise InvalidParameterException("Cannot obtain data for current fiscal year. At least one quarter must be "
-                                            "completed.")
+    # Attempting to get data for current fiscal year (minus 45 days)
+    if fiscal_year == current_fiscal_date_adjusted.fiscal_year:
+        current_fiscal_quarter = current_fiscal_date_adjusted.quarter
+        # If a fiscal quarter has been requested
+        if fiscal_quarter:
+            # If the fiscal quarter requested is not yet completed (or within 45 days of being completed), error out
+            if current_fiscal_quarter <= fiscal_quarter:
+                raise InvalidParameterException("Requested fiscal year and quarter must have been completed 45 days "
+                                                "or more prior to the current date.")
+        # If no fiscal quarter has been requested
         else:
-            # can also do: current_fiscal_date.prev_quarter.quarter
-            fiscal_quarter = current_fiscal_quarter - 1
-            fiscal_date = FiscalQuarter(fiscal_year, fiscal_quarter).end
-    elif requested_fiscal_year.fiscal_year < current_fiscal_date.fiscal_year:
-        # If the retrieving a previous FY, get the last quarter data UNLESS its the most recent quarter, then account
-        # for data loading.
-        if (current_fiscal_date - requested_fiscal_year.end).days <= 45:
-            fiscal_quarter = requested_fiscal_year.end.quarter - 1
-            fiscal_date = getattr(requested_fiscal_year, 'q' + str(fiscal_quarter)).end
-        else:
-            fiscal_quarter = requested_fiscal_year.end.quarter
-            fiscal_date = requested_fiscal_year.end
+            # If it's currently the first quarter (or within 45 days of the first quarter), throw an error
+            if current_fiscal_quarter == 1:
+                raise InvalidParameterException("Cannot obtain data for current fiscal year. At least one quarter must "
+                                                "be completed for 45 days or more.")
+            # roll back to the last completed fiscal quarter if it's any other quarter
+            else:
+                fiscal_quarter = current_fiscal_quarter - 1
+    # Attempting to get data for any fiscal year before the current one (minus 45 days)
+    elif fiscal_year < current_fiscal_date_adjusted.fiscal_year:
+        # If no fiscal quarter has been requested, give the fourth quarter of the year requested
+        if not fiscal_quarter:
+            fiscal_quarter = 4
     else:
+        raise InvalidParameterException("Cannot obtain data for future fiscal years or fiscal years that have not "
+                                        "been active for 45 days or more.")
 
-        raise InvalidParameterException("Cannot obtain data for future fiscal years.")
-
+    # get the fiscal date
+    fiscal_date = FiscalQuarter(fiscal_year, fiscal_quarter).end
     fiscal_date = datetime.datetime.strftime(fiscal_date, '%Y-%m-%d')
 
     return fiscal_date, fiscal_quarter
