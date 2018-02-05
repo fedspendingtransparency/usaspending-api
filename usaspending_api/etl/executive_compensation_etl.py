@@ -43,14 +43,14 @@ def load_executive_compensation(db_cursor):
     else:
         date = data_load_date_obj.last_load_date
 
-    logger.info("Getting DUNS/Exec Comp data from broker...")
+    logger.info("Getting DUNS/Exec Comp data from broker based on the last pull date of %s..." % str(date))
 
     # Get first page
     db_cursor.execute(EXEC_COMP_QUERY, [date])
     exec_comp_query_dict = dictfetchall(db_cursor)
 
     total_rows = len(exec_comp_query_dict)
-    logger.info('Updating Executive Compensation Data, {} rows...'.format(total_rows))
+    logger.info('Updating Executive Compensation Data, {} rows coming from the Broker...'.format(total_rows))
 
     start_time = datetime.now()
 
