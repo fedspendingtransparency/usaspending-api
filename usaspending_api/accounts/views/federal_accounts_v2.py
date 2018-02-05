@@ -1,7 +1,7 @@
 import ast
 from collections import OrderedDict
 
-from django.db.models import F, Q, Sum, Value
+from django.db.models import F, Q, Sum, Value, OuterRef, Subquery
 from django.db.models.functions import Concat
 from django.utils.dateparse import parse_date
 from rest_framework.response import Response
@@ -369,35 +369,36 @@ class FederalAccountsViewSet(APIView):
 
         limit = request.data.get("limit", 10)
         page = request.data.get("page", 1)
+        sorting = request.data.get("sort", {'field': 'budgetary_resources', 'direction': 'desc'})
+        sort_field = sorting.get('field', 'budgetary_resources')
+        sort_direction = sorting.get('direction', 'asc')
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
-        queryset = FederalAccount.objects
-        queryset = queryset.annotate(
+        agency_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('agency_identifier'))
+        queryset = FederalAccount.objects.annotate(
             account_id=F('id'),
             account_number=Concat(F('agency_identifier'), Value('-'), F('main_account_code')),
             account_name=F('account_title'),
             budgetary_resources=Sum(
                 'treasuryappropriationaccount__account_balances__obligations_incurred_total_by_tas_cpe'),
+            managing_agency=Subquery(agency_subquery.values('name')[:1]),
+            managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1]),
         )
-        result = {'count': queryset.count(), 'limit': limit, 'page': page}
 
+        if sort_direction == 'desc':
+            queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))
+        else:
+            queryset = queryset.order_by(F(sort_field).asc())
+
+        result = {'count': queryset.count(), 'limit': limit, 'page': page}
         resultset = queryset.values('account_id', 'account_number', 'account_name', 'budgetary_resources',
-                                    'agency_identifier')[lower_limit:upper_limit + 1]
+                                    'agency_identifier', 'managing_agency', 'managing_agency_acronym')
+        resultset = resultset[lower_limit:upper_limit + 1]
         page_metadata = get_simple_pagination_metadata(len(resultset), limit, page)
         result.update(page_metadata)
         resultset = resultset[:limit]
-        result['results'] = resultset
-
-        for r in result['results']:
-            agency = ToptierAgency.objects.filter(cgac_code=r['agency_identifier']).first()
-            if agency:
-                r['managing_agency'] = agency.name
-                r['managing_agency_acronym'] = agency.abbreviation
-            else:
-                r['managing_agency'] = None
-                r['managing_agency_acronym'] = None
 
         result['results'] = resultset
         return Response(result)
