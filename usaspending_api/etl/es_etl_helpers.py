@@ -54,7 +54,7 @@ def configure_sql_strings(config, filename, deleted_ids):
 
     if deleted_ids and config['provide_deleted']:
         id_list = ','.join(["('{}')".format(x) for x in deleted_ids.keys()])
-        id_sql = CHECK_IDS_SQL.format(id_list=id_list)
+        id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config['fiscal_year'])
     else:
         id_sql = None
 
@@ -231,6 +231,6 @@ SELECT transaction_id, generated_unique_transaction_id, update_date FROM transac
 WHERE EXISTS (
   SELECT *
   FROM temp_transaction_ids
-  WHERE transaction_delta_view.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id
+  WHERE transaction_delta_view.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id and transaction_fiscal_year={fy}
 );
 '''
