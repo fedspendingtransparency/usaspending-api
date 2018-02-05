@@ -140,7 +140,7 @@ def csv_chunk_gen(filename, header, chunksize, job_id):
         yield file_df.to_dict(orient='records')
 
 
-def streaming_post_to_es(client, chunk, index_name, job_id):
+def streaming_post_to_es(client, chunk, index_name, job_id=None):
     success, failed = 0, 0
     try:
         for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type='transaction_mapping'):
@@ -153,6 +153,32 @@ def streaming_post_to_es(client, chunk, index_name, job_id):
 
     printf({'msg': 'Success: {} | Fails: {}'.format(success, failed), 'job': job_id, 'f': 'ES Ingest'})
     return success, failed
+
+
+def post_to_elasticsearch(client, job, config, chunksize=250000):
+    printf({'msg': 'Populating ES Index : {}'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
+
+    try:
+        does_index_exist = client.indices.exists(job.index)
+    except Exception as e:
+        print(e)
+        raise SystemExit
+    if not does_index_exist:
+        printf({'msg': 'Creating {} index'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
+        client.indices.create(index=job.index, body=config['mapping'])
+    elif does_index_exist and config['recreate']:
+        printf({'msg': 'Deleting Existing index {}'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
+        client.indices.delete(job.index)
+
+    csv_generator = csv_chunk_gen(job.csv, VIEW_COLUMNS, chunksize, job.name)
+    for count, chunk in enumerate(csv_generator):
+        iteration = perf_counter()
+        streaming_post_to_es(client, chunk, job.index, job.name)
+        printf({
+            'msg': 'Iteration on chunk {} took {}s'.format(count, perf_counter() - iteration),
+            'job': job.name,
+            'f': 'ES Ingest'
+        })
 
 
 def printf(items):

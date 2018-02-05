@@ -5,6 +5,16 @@ DROP VIEW IF EXISTS transaction_delta_view;
 CREATE VIEW transaction_delta_view AS
 SELECT
   UTM.transaction_id,
+  FPDS.detached_award_proc_unique,
+  FABS.afa_generated_unique,
+
+  CASE
+    WHEN FPDS.detached_award_proc_unique IS NOT NULL THEN 'cont_tx_' || FPDS.detached_award_proc_unique
+    WHEN FABS.afa_generated_unique IS NOT NULL THEN 'asst_tx_' || FABS.afa_generated_unique
+    ELSE NULL  -- if this happens: Activate Batsignal
+  END AS generated_unique_transaction_id,
+
+  TM.update_date,
   TM.modification_number,
   UAM.award_id,
   UTM.piid,
@@ -63,17 +73,9 @@ SELECT
   UTM.recipient_location_country_name,
   UTM.recipient_location_state_code,
   UTM.recipient_location_county_code,
+  UTM.recipient_location_county_name,
   UTM.recipient_location_zip5,
-
-  FPDS.detached_award_proc_unique,
-  FABS.afa_generated_unique,
-
-  CASE
-    WHEN FPDS.detached_award_proc_unique IS NOT NULL THEN 'cont_tx_' || FPDS.detached_award_proc_unique
-    WHEN FABS.afa_generated_unique IS NOT NULL THEN 'asst_tx_' || FABS.afa_generated_unique
-    ELSE NULL  -- if this happens: Activate Batsignal
-  END AS generated_unique_transaction_id,
-  TM.update_date
+  UTM.recipient_location_congressional_code
 
 FROM universal_transaction_matview UTM
 JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)

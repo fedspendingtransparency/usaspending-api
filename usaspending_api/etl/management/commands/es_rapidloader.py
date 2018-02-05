@@ -11,13 +11,11 @@ from time import perf_counter, sleep
 from usaspending_api import settings
 
 from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
-from usaspending_api.etl.es_etl_helpers import csv_chunk_gen
 from usaspending_api.etl.es_etl_helpers import csv_row_count
 from usaspending_api.etl.es_etl_helpers import DataJob
 from usaspending_api.etl.es_etl_helpers import download_db_records
+from usaspending_api.etl.es_etl_helpers import post_to_elasticsearch
 from usaspending_api.etl.es_etl_helpers import printf
-from usaspending_api.etl.es_etl_helpers import streaming_post_to_es
-from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS
 
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
@@ -139,7 +137,7 @@ def es_data_loader(fetch_jobs, done_jobs, config):
                 break
 
             printf({'msg': 'Starting new job', 'job': job.name, 'f': 'ES Ingest'})
-            post_to_elasticsearch(job, config)
+            post_to_elasticsearch(ES_CLIENT, job, config)
             if os.path.exists(job.csv) and not config['keep']:
                 os.remove(job.csv)
         else:
@@ -166,29 +164,3 @@ def set_config():
         config['mapping'] = json.dumps(data)
 
     return config
-
-
-def post_to_elasticsearch(job, config, chunksize=250000):
-    printf({'msg': 'Populating ES Index : {}'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
-
-    try:
-        does_index_exist = ES_CLIENT.indices.exists(job.index)
-    except Exception as e:
-        print(e)
-        raise SystemExit
-    if not does_index_exist:
-        printf({'msg': 'Creating {} index'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
-        ES_CLIENT.indices.create(index=job.index, body=config['mapping'])
-    elif does_index_exist and config['recreate']:
-        printf({'msg': 'Deleting Existing index {}'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
-        ES_CLIENT.indices.delete(job.index)
-
-    csv_generator = csv_chunk_gen(job.csv, VIEW_COLUMNS, chunksize, job.name)
-    for count, chunk in enumerate(csv_generator):
-        iteration = perf_counter()
-        streaming_post_to_es(ES_CLIENT, chunk, job.index, job.name)
-        printf({
-            'msg': 'Iteration on chunk {} took {}s'.format(count, perf_counter() - iteration),
-            'job': job.name,
-            'f': 'ES Ingest'
-        })

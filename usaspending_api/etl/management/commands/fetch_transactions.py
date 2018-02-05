@@ -68,6 +68,10 @@ class Command(BaseCommand):
     # used by parent class
     def handle(self, *args, **options):
         ''' Script execution of custom code starts in this method'''
+        print('---------------------------------------------------------------')
+        print('NOTICE: This is a legacy script which is no longer used')
+        print('        please use es_loader or es_rapidloader')
+        print('---------------------------------------------------------------')
         start = perf_counter()
 
         self.config = set_config()

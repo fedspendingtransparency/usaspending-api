@@ -2,21 +2,22 @@ import json
 import os
 import pandas as pd
 import subprocess
-from collections import defaultdict
 
+from collections import defaultdict
 from datetime import date
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
-from elasticsearch import helpers
 from time import perf_counter
-from usaspending_api import settings
-from usaspending_api.etl.es_etl_helpers import configure_sql_strings
-from usaspending_api.etl.es_etl_helpers import execute_sql_statement
-from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS
-from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
-from usaspending_api.etl.management.commands.fetch_transactions import gather_deleted_ids
 
+from usaspending_api import settings
+from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
+from usaspending_api.etl.es_etl_helpers import configure_sql_strings
+from usaspending_api.etl.es_etl_helpers import DataJob
+from usaspending_api.etl.es_etl_helpers import execute_sql_statement
+from usaspending_api.etl.es_etl_helpers import post_to_elasticsearch
+from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS
+from usaspending_api.etl.management.commands.fetch_transactions import gather_deleted_ids
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. [conditional] Remove recently deleted transactions from Elasticsearch
 #   a. Gather the list of deleted transactions from S3
@@ -72,7 +73,7 @@ class Command(BaseCommand):
         self.config['fiscal_year'] = options['fiscal_year']
         self.config['directory'] = options['dir'] + os.sep
         self.config['provide_deleted'] = options['deleted']
-        self.config['wipe_indicies'] = options['recreate']
+        self.config['recreate'] = options['recreate']
 
         try:
             self.config['starting_date'] = date(*[int(x) for x in options['since'].split('-')])
@@ -80,7 +81,7 @@ class Command(BaseCommand):
             print('Malformed date string provided. `--since` requires YYYY-MM-DD')
             raise SystemExit
 
-        if self.config['wipe_indicies'] and self.config['starting_date'] != date(2001, 1, 1):
+        if self.config['recreate'] and self.config['starting_date'] != date(2001, 1, 1):
             print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
             raise SystemExit
 
@@ -116,16 +117,17 @@ class Command(BaseCommand):
                 fy=self.config['fiscal_year'],
                 type=award_category)
 
-            count = self.download_db_records(awd_cat_idx, self.config['fiscal_year'], filename)
-
             index = '{}-{}-{}'.format(
                 settings.TRANSACTIONS_INDEX_ROOT,
                 award_category,
                 self.config['fiscal_year'])
-            job = {'file': filename, 'index': index, 'count': count, 'wipe': self.config['wipe_indicies']}
+
+            job = DataJob(None, index, self.config['fiscal_year'], awd_cat_idx, filename)
+            job.count = self.download_db_records(awd_cat_idx, self.config['fiscal_year'], filename)
 
             # Upload CSV to ES
-            post_to_elasticsearch(job, self.config['mapping'])
+            post_to_elasticsearch(ES_CLIENT, job, self.config)
+
             # Delete File
             os.remove(filename)
             # repeat
@@ -198,48 +200,6 @@ def csv_chunk_gen(filename, chunksize):
         yield file_df.to_dict(orient='records')
 
 
-def streaming_post_to_es(chunk, index_name):
-    success, failed = 0, 0
-    try:
-        for ok, item in helpers.streaming_bulk(ES_CLIENT, chunk, index=index_name, doc_type='transaction_mapping'):
-            success = [success, success + 1][ok]
-            failed = [failed + 1, failed][ok]
-
-    except Exception as e:
-        print('MASSIVE FAIL!!!\n\n{}\n\n{}'.format(e, '*' * 80))
-        raise SystemExit
-
-    print('Success: {} | Fails: {} '.format(success, failed))
-    #
-    return success, failed
-
-
-def post_to_elasticsearch(job, mapping, chunksize=250000):
-    print('---------------------------------------------------------------')
-    print('Populating ES Index : {}'.format(job['index']))
-
-    does_index_exist = ES_CLIENT.indices.exists(job['index'])
-    if not does_index_exist:
-        print('Creating {} index'.format(job['index']))
-        ES_CLIENT.indices.create(index=job['index'], body=mapping)
-    elif does_index_exist and job['wipe']:
-        print('{} exists... deleting first'.format(job['index']))
-        ES_CLIENT.indices.delete(job['index'])
-
-    csv_generator = csv_chunk_gen(job['file'], chunksize)
-    for count, chunk in enumerate(csv_generator):
-        print('Running chunk # {}'.format(count))
-        iteration = perf_counter()
-
-        if job['wipe'] is False:
-            # Future TODO: switch to generated_transaction_unique_id
-            id_list = [{'key': c['transaction_id'], 'col':'transaction_id'} for c in chunk]
-            delete_transactions_from_es(id_list, job['index'])
-
-        streaming_post_to_es(chunk, job['index'])
-        print('Iteration took {}s'.format(perf_counter() - iteration))
-
-
 def filter_query(column, values, query_type="match_phrase"):
     queries = [{query_type: {column: str(i)}} for i in values]
     body = {
@@ -256,12 +216,11 @@ def filter_query(column, values, query_type="match_phrase"):
 
 
 def delete_query(response):
-    es_id_list = [i['_id'] for i in response['hits']['hits']]
     body = {
         "query": {
             "ids": {
                 "type": "transaction_mapping",
-                "values": es_id_list
+                "values": [i['_id'] for i in response['hits']['hits']]
             }
         }
     }
@@ -289,8 +248,8 @@ def delete_transactions_from_es(id_list, index=None, size=50000):
     start_ = ES_CLIENT.search(index=index)['hits']['total']
     print('Starting amount of indices ----- {}'.format(start_))
     col_to_items_dict = defaultdict(list)
-    for id_ in id_list:
-        col_to_items_dict[id_['col']].append(id_['key'])
+    for l in id_list:
+        col_to_items_dict[l['col']].append(l['key'])
 
     for column, values in col_to_items_dict.items():
         print('Deleting from col {}'.format(column))
