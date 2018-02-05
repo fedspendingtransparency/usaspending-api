@@ -7,12 +7,13 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
 from multiprocessing import Process, Queue
-from time import perf_counter
+from time import perf_counter, sleep
 from usaspending_api import settings
 
 from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
 from usaspending_api.etl.es_etl_helpers import csv_row_count
 from usaspending_api.etl.es_etl_helpers import DataJob
+from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
 from usaspending_api.etl.es_etl_helpers import printf
@@ -29,7 +30,7 @@ from usaspending_api.etl.es_etl_helpers import printf
 #       3. [default] delete CSV file
 #   d. Lather. Rinse. Repeat.
 
-ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
+ES = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 
 
 class Command(BaseCommand):
@@ -51,6 +52,11 @@ class Command(BaseCommand):
             default=os.path.dirname(os.path.abspath(__file__)),
             type=str,
             help='Set for a custom location of output files')
+        parser.add_argument(
+            '-d',
+            '--deleted',
+            action='store_true',
+            help='Flag to include deleted transactions from S3')
         parser.add_argument(
             '-r',
             '--recreate',
@@ -77,6 +83,7 @@ class Command(BaseCommand):
         self.config['verbose'] = True if options['verbosity'] > 1 else False
         self.config['fiscal_years'] = options['fiscal_years']
         self.config['directory'] = options['dir'] + os.sep
+        self.config['provide_deleted'] = options['deleted']
         self.config['recreate'] = options['recreate']
         self.config['stale'] = options['stale']
         self.config['keep'] = options['keep']
@@ -135,12 +142,22 @@ class Command(BaseCommand):
 
         printf({'msg': 'There are {} jobs to process'.format(job_id)})
 
+        if self.config['provide_deleted']:
+            s3_delete_process = Process(target=deleted_transactions, args=(ES, self.config))
         download_proccess = Process(target=download_db_records, args=(download_queue, es_ingest_queue, self.config))
-        es_index_process = Process(target=es_data_loader, args=(ES_CLIENT, download_queue, es_ingest_queue, self.config))
+        es_index_process = Process(target=es_data_loader, args=(ES, download_queue, es_ingest_queue, self.config))
 
         download_proccess.start()
+
+        if self.config['provide_deleted']:
+            s3_delete_process.start()
+            while s3_delete_process.is_alive():
+                printf({'msg': 'Waiting to start ES ingest until S3 deletes are complete'})
+                sleep(7)
+
         es_index_process.start()
 
+        s3_delete_process.join()
         download_proccess.join()
         es_index_process.join()
 

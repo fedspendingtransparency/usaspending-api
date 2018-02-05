@@ -22,7 +22,7 @@ AWARD_DESC_CATEGORIES = {
     'direct payment': 'directpayments'
 }
 
-UNIVERSAL_TRANSACTION_ID_NAME = 'transaction_id'
+UNIVERSAL_TRANSACTION_ID_NAME = 'generated_unique_transaction_id'
 
 
 class DataJob:
@@ -99,7 +99,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
             'starting_date': config['starting_date'],
             'fiscal_year': job.fy,
             'award_category': job.category,
-            'provide_deleted': False
+            'provide_deleted': config['provide_deleted']
         }
         copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
 
@@ -219,30 +219,10 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         })
 
 
-def printf(items):
-    t = datetime.utcnow().strftime('%H:%M:%S.%f')
-    msg = items['msg']
-    if 'error' in items:
-        template = '[{time}] [ERROR] {msg}'
-        print_msg = template.format(time=t, msg=msg)
-    else:
-        template = '[{time}] {complex:<20} | {msg}'
-        func = '[' + items.get('f', 'main') + ']'
-        job = items.get('job', None)
-        j = ''
-        if job:
-            j = ' (#{})'.format(job)
-    print_msg = template.format(time=t, complex=func + j, msg=msg)
-
-    print(print_msg)
-
-
-def csv_row_count(filename, has_header=True):
-    with open(filename, 'r') as f:
-        row_count = sum(1 for row in csv.reader(f))
-    if has_header:
-        row_count -= 1
-    return row_count
+def deleted_transactions(client, config):
+    deleted_ids = gather_deleted_ids(config)
+    id_list = [{'key': c, 'col': UNIVERSAL_TRANSACTION_ID_NAME} for c in deleted_ids]
+    delete_transactions_from_es(client, id_list, None, config, None)
 
 
 def gather_deleted_ids(config):
@@ -303,9 +283,6 @@ def gather_deleted_ids(config):
         # Next statements are ugly, but properly handle the temp files
         os.close(file)
         os.remove(file_path)
-
-        if config['verbose']:
-            printf({'msg': '{:<55} ... {}'.format(obj.key, len(new_ids))})
 
         for uid in new_ids:
             if uid in deleted_ids:
@@ -386,13 +363,43 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None, siz
             body = filter_query(column, values_)
             response = client.search(index=index, body=body, size=size)
             delete_body = delete_query(response)
-            client.delete_by_query(index=index, body=delete_body, size=size)
+            try:
+                client.delete_by_query(index=index, body=delete_body, size=size)
+            except Exception as e:
+                printf({'msg': '{}'.format(index), 'f': 'ES Delete', 'job': job_id})
+                printf({'msg': str(e), 'f': 'ES Delete', 'job': job_id})
     end_ = client.search(index=index)['hits']['total']
 
     t = perf_counter() - start
     total = str(start_ - end_)
     printf({'msg': 'ES Deletes took {}s. Deleted {} records'.format(t, total), 'f': 'ES Delete', 'job': job_id})
     return
+
+
+def printf(items):
+    t = datetime.utcnow().strftime('%H:%M:%S.%f')
+    msg = items['msg']
+    if 'error' in items:
+        template = '[{time}] [ERROR] {msg}'
+        print_msg = template.format(time=t, msg=msg)
+    else:
+        template = '[{time}] {complex:<20} | {msg}'
+        func = '[' + items.get('f', 'main') + ']'
+        job = items.get('job', None)
+        j = ''
+        if job:
+            j = ' (#{})'.format(job)
+    print_msg = template.format(time=t, complex=func + j, msg=msg)
+
+    print(print_msg)
+
+
+def csv_row_count(filename, has_header=True):
+    with open(filename, 'r') as f:
+        row_count = sum(1 for row in csv.reader(f))
+    if has_header:
+        row_count -= 1
+    return row_count
 
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
