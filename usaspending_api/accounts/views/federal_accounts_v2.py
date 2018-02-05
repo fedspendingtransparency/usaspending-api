@@ -1,7 +1,8 @@
 import ast
 from collections import OrderedDict
 
-from django.db.models import F, Q, Sum
+from django.db.models import F, Q, Sum, Value
+from django.db.models.functions import Concat
 from django.utils.dateparse import parse_date
 from rest_framework.response import Response
 
@@ -10,8 +11,10 @@ from rest_framework_extensions.cache.decorators import cache_response
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers import get_simple_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.references.models import ToptierAgency
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
@@ -356,4 +359,45 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
 
         result = {"results": {q['name']: q['obligations_incurred_by_program_object_class_cpe__sum'] for q in queryset}}
 
+        return Response(result)
+
+
+class FederalAccountsViewSet(APIView):
+    @cache_response()
+    def post(self, request, format=None):
+        """Return all high-level Federal Account information"""
+
+        limit = request.data.get("limit", 10)
+        page = request.data.get("page", 1)
+
+        lower_limit = (page - 1) * limit
+        upper_limit = page * limit
+
+        queryset = FederalAccount.objects
+        queryset = queryset.annotate(
+            account_id=F('id'),
+            account_number=Concat(F('agency_identifier'), Value('-'), F('main_account_code')),
+            account_name=F('account_title'),
+            budgetary_resources=Sum(
+                'treasuryappropriationaccount__account_balances__obligations_incurred_total_by_tas_cpe'),
+        )
+        result = {'count': queryset.count(), 'limit': limit, 'page': page}
+
+        resultset = queryset.values('account_id', 'account_number', 'account_name', 'budgetary_resources',
+                                    'agency_identifier')[lower_limit:upper_limit + 1]
+        page_metadata = get_simple_pagination_metadata(len(resultset), limit, page)
+        result.update(page_metadata)
+        resultset = resultset[:limit]
+        result['results'] = resultset
+
+        for r in result['results']:
+            agency = ToptierAgency.objects.filter(cgac_code=r['agency_identifier']).first()
+            if agency:
+                r['managing_agency'] = agency.name
+                r['managing_agency_acronym'] = agency.abbreviation
+            else:
+                r['managing_agency'] = None
+                r['managing_agency_acronym'] = None
+
+        result['results'] = resultset
         return Response(result)
