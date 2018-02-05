@@ -225,7 +225,7 @@ def get_or_create_program_activity(row, submission_attributes):
         # PA loader should overwrite the names for the unique PAs from the official
         # domain values list if the title needs updating, but for now grab it from the submission
         prg_activity = RefProgramActivity.objects.create(**filters, program_activity_name=row['program_activity_name'])
-        logger.warning('Created missing program activity record for {}'.format(str(filters)))
+        # logger.warning('Created missing program activity record for {}'.format(str(filters)))
 
     return prg_activity
 
@@ -662,7 +662,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             if award_count == 1:
                 file_d_award = award_queryset[0]
                 value_map_faba['award_id'] = file_d_award['id']
-                logger.info('individual award id mapped: {}'.format(file_d_award['id']))
+                # logger.info('individual award id mapped: {}'.format(file_d_award['id']))
 
         # Still using the cpe|fyb regex compiled above for reverse
         load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
