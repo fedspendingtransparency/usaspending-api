@@ -4,7 +4,7 @@ from usaspending_api.references.models import LegalEntity, LegalEntityOfficers
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from datetime import datetime, timedelta
+from datetime import datetime
 
 logger = logging.getLogger("console")
 
