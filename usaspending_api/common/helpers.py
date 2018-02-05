@@ -4,7 +4,7 @@ import time
 import timeit
 from calendar import monthrange, isleap
 
-from fiscalyear import FiscalDateTime, FiscalYear, FiscalQuarter, datetime
+from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
 from collections import OrderedDict
 
 from django.db import DEFAULT_DB_ALIAS
