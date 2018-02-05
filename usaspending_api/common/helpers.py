@@ -137,14 +137,14 @@ def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
         if fiscal_quarter:
             # If the fiscal quarter requested is not yet completed (or within 45 days of being completed), error out
             if current_fiscal_quarter <= fiscal_quarter:
-                raise InvalidParameterException("Requested fiscal year and quarter must have been completed 45 days "
-                                                "or more prior to the current date.")
+                raise InvalidParameterException("Requested fiscal year and quarter must have been completed over 45 "
+                                                "days prior to the current date.")
         # If no fiscal quarter has been requested
         else:
             # If it's currently the first quarter (or within 45 days of the first quarter), throw an error
             if current_fiscal_quarter == 1:
                 raise InvalidParameterException("Cannot obtain data for current fiscal year. At least one quarter must "
-                                                "be completed for 45 days or more.")
+                                                "be completed for over 45 days.")
             # roll back to the last completed fiscal quarter if it's any other quarter
             else:
                 fiscal_quarter = current_fiscal_quarter - 1
@@ -155,7 +155,7 @@ def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
             fiscal_quarter = 4
     else:
         raise InvalidParameterException("Cannot obtain data for future fiscal years or fiscal years that have not "
-                                        "been active for 45 days or more.")
+                                        "been active for over 45 days.")
 
     # get the fiscal date
     fiscal_date = FiscalQuarter(fiscal_year, fiscal_quarter).end
