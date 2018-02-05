@@ -681,7 +681,8 @@ query_paths = {
             'awarding_office_name': 'assistance_data__awarding_office_name',
             'awarding_sub_agency_code': 'assistance_data__awarding_sub_tier_agency_c',
             'awarding_sub_agency_name': 'assistance_data__awarding_sub_tier_agency_n',
-            # 'business_funds_indicator': 'assistance_data__business_funds_indicator', TODO: Field under DAIMS v1.2, not yet in broker
+            # 'business_funds_indicator': 'assistance_data__business_funds_indicator',
+            # TODO: Field under DAIMS v1.2, not yet in broker
             'business_funds_indicator_code': 'assistance_data__business_funds_indicator',
             'business_types_code': 'assistance_data__business_types',
             'cfda_number': 'assistance_data__cfda_number',
