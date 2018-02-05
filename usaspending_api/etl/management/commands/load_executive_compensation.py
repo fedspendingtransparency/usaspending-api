@@ -34,7 +34,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--date',
             dest="date",
-            nargs='+',
+            nargs=1,
             type=str,
             help="(OPTIONAL) Date from which to start the nightly loader. Expected format: YYYY-MM-DD"
         )
