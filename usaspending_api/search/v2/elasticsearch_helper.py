@@ -164,7 +164,7 @@ def get_download_ids(keyword, field, size=10000):
         found_result = False
         while not found_result:
             try:
-                response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
+                response = CLIENT.search(index=index_name, body=query, timeout='3m')
                 found_result = True
             except (TransportError, ConnectionError) as e:
                 logger.error(e)
