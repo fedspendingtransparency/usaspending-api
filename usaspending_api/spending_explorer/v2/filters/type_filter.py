@@ -31,6 +31,8 @@ def type_filter(_type, filters):
         if key == 'fy':
             try:
                 fiscal_year = int(value)
+                if fiscal_year < 1000 or fiscal_year > 9999:
+                    raise InvalidParameterException('Incorrect Fiscal Year Parameter, "fy": "YYYY"')
             except ValueError:
                 raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
         elif key == 'quarter':
