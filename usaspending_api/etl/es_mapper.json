@@ -1,7 +1,11 @@
 {
   "settings": {
     "index.mapping.ignore_malformed": true,
-    "index.max_result_window" : 500000
+    "index.max_result_window" : 500000,
+    "index": {
+      "number_of_shards" : 3,
+      "number_of_replicas" : 1
+    }
   },
   "sort": {
     "fields": [

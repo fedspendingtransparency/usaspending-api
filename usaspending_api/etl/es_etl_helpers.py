@@ -91,29 +91,33 @@ def db_rows_to_dict(cursor):
 
 def download_db_records(fetch_jobs, done_jobs, config):
     while not fetch_jobs.empty():
-        start = perf_counter()
-        job = fetch_jobs.get_nowait()
-        printf({'msg': 'Preparing to Download a new CSV', 'job': job.name, 'f': 'Download'})
+        if done_jobs.full():
+            printf({'msg': 'Waiting 60s for ingest to catchup to downloads', 'f': 'Download'})
+            sleep(60)
+        else:
+            start = perf_counter()
+            job = fetch_jobs.get_nowait()
+            printf({'msg': 'Preparing to Download a new CSV', 'job': job.name, 'f': 'Download'})
 
-        sql_config = {
-            'starting_date': config['starting_date'],
-            'fiscal_year': job.fy,
-            'award_category': job.category,
-            'provide_deleted': config['provide_deleted']
-        }
-        copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
+            sql_config = {
+                'starting_date': config['starting_date'],
+                'fiscal_year': job.fy,
+                'award_category': job.category,
+                'provide_deleted': config['provide_deleted']
+            }
+            copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
 
-        if os.path.isfile(job.csv):
-            os.remove(job.csv)
+            if os.path.isfile(job.csv):
+                os.remove(job.csv)
 
-        job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config['verbose'])
-        done_jobs.put(job)
-        printf({
-            'msg': 'Data fetch job took {} seconds'.format(perf_counter() - start),
-            'job': job.name,
-            'f': 'Download'
-        })
-        sleep(1)
+            job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config['verbose'])
+            done_jobs.put(job)
+            printf({
+                'msg': 'Data fetch job took {} seconds'.format(perf_counter() - start),
+                'job': job.name,
+                'f': 'Download'
+            })
+            sleep(1)
 
     done_jobs.put(DataJob(None, None, None, None, None))
     printf({'msg': 'All downloads from Postgres completed', 'f': 'Download'})
@@ -137,11 +141,10 @@ def download_csv(count_sql, copy_sql, filename, job_id, verbose):
     return count
 
 
-def csv_chunk_gen(filename, header, chunksize, job_id):
-    printf({'msg': 'Opening {} batch size: {}'.format(filename, chunksize), 'job': job_id, 'f': 'ES Ingest'})
-    # Panda's data type guessing causes issues for Elasticsearch. Set all cols to str
-    dtype = {x: str for x in header}
-
+def csv_chunk_gen(filename, chunksize, job_id):
+    printf({'msg': 'Opening {} (batch size = {})'.format(filename, chunksize), 'job': job_id, 'f': 'ES Ingest'})
+    # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
+    dtype = {k: str for k in VIEW_COLUMNS}  # VIEW_COLUMNS_TYPES
     for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
         yield file_df.to_dict(orient='records')
@@ -174,49 +177,64 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None):
             failed = [failed + 1, failed][ok]
 
     except Exception as e:
-        print('MASSIVE FAIL!!!\n\n{}\n\n{}'.format(e, '*' * 80))
+        print('MASSIVE FAIL!!!\n\n{}\n\n{}'.format(str(e)[:5000], '*' * 80))
         raise SystemExit
 
-    printf({'msg': 'Success: {} | Fails: {}'.format(success, failed), 'job': job_id, 'f': 'ES Ingest'})
+    printf({'msg': 'Success: {}, Fails: {}'.format(success, failed), 'job': job_id, 'f': 'ES Ingest'})
     return success, failed
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
-    printf({'msg': 'Populating ES Index : {}'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
-
+    printf({'msg': 'Populating ES Index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
     try:
         does_index_exist = client.indices.exists(job.index)
     except Exception as e:
         print(e)
         raise SystemExit
     if not does_index_exist:
-        printf({'msg': 'Creating {} index'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
-        client.indices.create(index=job.index, body=config['mapping'])
+        printf({'msg': 'Creating index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
+        client.indices.create(index=job.index)  # , body=config['mapping'])
     elif does_index_exist and config['recreate']:
-        printf({'msg': 'Deleting Existing index {}'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
+        printf({'msg': 'Deleting existing index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
         client.indices.delete(job.index)
 
-    csv_generator = csv_chunk_gen(job.csv, VIEW_COLUMNS, chunksize, job.name)
+    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name)
     for count, chunk in enumerate(csv_generator):
         if len(chunk) == 0:
-            printf({'msg': 'No records to add or delete for chunk {}'.format(count), 'f': 'ES Ingest', 'job': job.name})
+            printf({'msg': 'No documents to add/delete for chunk #{}'.format(count), 'f': 'ES Ingest', 'job': job.name})
             continue
         iteration = perf_counter()
         if config['recreate'] is False:
             id_list = [{'key': c[UNIVERSAL_TRANSACTION_ID_NAME], 'col': UNIVERSAL_TRANSACTION_ID_NAME} for c in chunk]
             delete_transactions_from_es(client, id_list, job.name, config, job.index)
 
+        current_rows = '({}-{})'.format(count * chunksize + 1, count * chunksize + len(chunk))
         printf({
-            'msg': 'streaming chunk {} to ES'.format(count),
+            'msg': 'Streaming to ES #{} rows [{}/{}]'.format(count, current_rows, job.count),
             'job': job.name,
             'f': 'ES Ingest'
         })
         streaming_post_to_es(client, chunk, job.index, job.name)
         printf({
-            'msg': 'Iteration on chunk {} took {}s'.format(count, perf_counter() - iteration),
+            'msg': 'Iteration group #{} took {}s'.format(count, perf_counter() - iteration),
             'job': job.name,
             'f': 'ES Ingest'
         })
+
+
+def create_template_if_does_not_exist(client, template_id, mapping):
+    """
+    See if a tamplate is more reliable than using the same index body on every create
+    """
+    try:
+        if client.get_template(id=template_id):
+            return
+    except Exception:
+        pass
+    mapping['index_patterns'] = ["trans*"]
+    printf({'msg': 'Creating template "{}" in ES cluster'.format(template_id)})
+    print(json.dumps(mapping))
+    client.put_template(id=template_id, body=json.dumps(mapping))
 
 
 def deleted_transactions(client, config):
@@ -301,7 +319,7 @@ def gather_deleted_ids(config):
 
 def filter_query(column, values, query_type="match_phrase"):
     queries = [{query_type: {column: str(i)}} for i in values]
-    body = {
+    return {
         "query": {
             "bool": {
                 "should": [
@@ -311,11 +329,9 @@ def filter_query(column, values, query_type="match_phrase"):
         }
     }
 
-    return json.dumps(body)
-
 
 def delete_query(response):
-    body = {
+    return {
         "query": {
             "ids": {
                 "type": "transaction_mapping",
@@ -323,7 +339,6 @@ def delete_query(response):
             }
         }
     }
-    return json.dumps(body)
 
 
 def chunks(l, n):
@@ -359,15 +374,14 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None, siz
     for column, values in col_to_items_dict.items():
         printf({'msg': 'Deleting from col {}'.format(column), 'f': 'ES Delete', 'job': job_id})
         values_generator = chunks(values, 1000)
-        for values_ in values_generator:
-            body = filter_query(column, values_)
-            response = client.search(index=index, body=body, size=size)
+        for v in values_generator:
+            body = filter_query(column, v)
+            response = client.search(index=index, body=json.dumps(body), size=size)
             delete_body = delete_query(response)
             try:
-                client.delete_by_query(index=index, body=delete_body, size=size)
+                client.delete_by_query(index=index, body=json.dumps(delete_body), size=size)
             except Exception as e:
-                printf({'msg': '{}'.format(index), 'f': 'ES Delete', 'job': job_id})
-                printf({'msg': str(e), 'f': 'ES Delete', 'job': job_id})
+                printf({'msg': '[ERROR][ERROR][ERROR]\n{}'.format(str(e)), 'f': 'ES Delete', 'job': job_id})
     end_ = client.search(index=index)['hits']['total']
 
     t = perf_counter() - start
@@ -406,27 +420,68 @@ def csv_row_count(filename, has_header=True):
 # ==============================================================================
 
 
-VIEW_COLUMNS = [
-    'transaction_id', 'modification_number', 'award_id', 'piid', 'fain', 'uri',
-    'award_description', 'product_or_service_code', 'product_or_service_description',
-    'naics_code', 'naics_description', 'type_description', 'award_category',
-    'recipient_unique_id', 'parent_recipient_unique_id', 'recipient_name',
-    'action_date', 'period_of_performance_start_date', 'period_of_performance_current_end_date',
-    'transaction_fiscal_year', 'award_fiscal_year', 'award_amount',
-    'transaction_amount', 'face_value_loan_guarantee', 'original_loan_subsidy_cost',
-    'awarding_agency_id', 'funding_agency_id', 'awarding_toptier_agency_name',
-    'funding_toptier_agency_name', 'awarding_subtier_agency_name',
-    'funding_subtier_agency_name', 'awarding_toptier_agency_abbreviation',
-    'funding_toptier_agency_abbreviation', 'awarding_subtier_agency_abbreviation',
-    'funding_subtier_agency_abbreviation', 'cfda_title', 'cfda_popular_name',
-    'type_of_contract_pricing', 'type_set_aside', 'extent_competed', 'pulled_from',
-    'type', 'pop_country_code', 'pop_country_name', 'pop_state_code', 'pop_county_code',
-    'pop_county_name', 'pop_zip5', 'pop_congressional_code',
-    'recipient_location_country_code', 'recipient_location_country_name',
-    'recipient_location_state_code', 'recipient_location_county_code',
-    'recipient_location_zip5', 'detached_award_proc_unique', 'afa_generated_unique',
-    'generated_unique_transaction_id', 'update_date',
-]
+VIEW_COLUMNS_TYPES = {
+    'transaction_id': int,
+    'modification_number': str,
+    'award_id': int,
+    'piid': str,
+    'fain': str,
+    'uri': str,
+    'award_description': str,
+    'product_or_service_code': str,
+    'product_or_service_description': str,
+    'naics_code': str,
+    'naics_description': str,
+    'type_description': str,
+    'award_category': str,
+    'recipient_unique_id': str,
+    'parent_recipient_unique_id': str,
+    'recipient_name': str,
+    'action_date': str,
+    'period_of_performance_start_date': str,
+    'period_of_performance_current_end_date': str,
+    'transaction_fiscal_year': int,
+    'award_fiscal_year': int,
+    'award_amount': float,
+    'transaction_amount': float,
+    'face_value_loan_guarantee': float,
+    'original_loan_subsidy_cost': float,
+    'awarding_agency_id': float,
+    'funding_agency_id': float,
+    'awarding_toptier_agency_name': str,
+    'funding_toptier_agency_name': str,
+    'awarding_subtier_agency_name': str,
+    'funding_subtier_agency_name': str,
+    'awarding_toptier_agency_abbreviation': str,
+    'funding_toptier_agency_abbreviation': str,
+    'awarding_subtier_agency_abbreviation': str,
+    'funding_subtier_agency_abbreviation': str,
+    'cfda_title': str,
+    'cfda_popular_name': str,
+    'type_of_contract_pricing': str,
+    'type_set_aside': str,
+    'extent_competed': str,
+    'pulled_from': str,
+    'type': str,
+    'pop_country_code': str,
+    'pop_country_name': str,
+    'pop_state_code': str,
+    'pop_county_code': str,
+    'pop_county_name': str,
+    'pop_zip5': str,
+    'pop_congressional_code': str,
+    'recipient_location_country_code': str,
+    'recipient_location_country_name': str,
+    'recipient_location_state_code': str,
+    'recipient_location_county_code': str,
+    'recipient_location_zip5': str,
+    'detached_award_proc_unique': str,
+    'afa_generated_unique': str,
+    'generated_unique_transaction_id': str,
+    'update_date': str,
+}
+
+VIEW_COLUMNS = VIEW_COLUMNS_TYPES.keys()
 
 UPDATE_DATE_SQL = ' AND update_date >= \'{}\''
 

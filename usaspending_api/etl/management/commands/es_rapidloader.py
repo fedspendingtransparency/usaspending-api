@@ -16,7 +16,7 @@ from usaspending_api.etl.es_etl_helpers import DataJob
 from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
-from usaspending_api.etl.es_etl_helpers import printf
+from usaspending_api.etl.es_etl_helpers import printf, create_template_if_does_not_exist
 
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
@@ -110,7 +110,7 @@ class Command(BaseCommand):
     def controller(self):
 
         download_queue = Queue()  # Queue for jobs whch need a csv downloaded
-        es_ingest_queue = Queue()  # Queue for jobs which have a csv and are ready for ES ingest
+        es_ingest_queue = Queue(10)  # Queue for jobs which have a csv and are ready for ES ingest
 
         job_id = 0
         for fy in self.config['fiscal_years']:
@@ -157,7 +157,8 @@ class Command(BaseCommand):
 
         es_index_process.start()
 
-        s3_delete_process.join()
+        if self.config['provide_deleted']:
+            s3_delete_process.join()
         download_proccess.join()
         es_index_process.join()
 
@@ -174,7 +175,8 @@ def set_config():
     es_mapping_file = 'usaspending_api/etl/es_mapper.json'
     with open(es_mapping_file) as f:
         data = json.load(f)
-        mapping = json.dumps(data)
+        # create_template_if_does_not_exist(ES, 'template1', data)
+    mapping = json.dumps(data)
 
     return {
         'aws_region': os.environ.get('CSV_AWS_REGION'),
