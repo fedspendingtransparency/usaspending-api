@@ -241,11 +241,11 @@ def get_sum_and_count_aggregation_results(keyword):
                  }
               }
               }, "size": 0}
-    found_result = False
-    while not found_result:
+    found_result = 0
+    while not found_result == 10:
         try:
             response = CLIENT.search(index=index_name, body=query)
-            found_result = True
+            found_result += 1
             results = {}
             results["prime_awards_count"] = response['aggregations']["prime_awards_count"]["value"]
             results["prime_awards_obligation_amount"] = \
