@@ -171,6 +171,7 @@ CREATE TABLE awards_new AS (
                     WHEN tfn.assistance_type = '09' THEN 'INSURANCE'
                     WHEN tfn.assistance_type = '10' THEN 'DIRECT PAYMENT WITH UNRESTRICTED USE'
                     WHEN tfn.assistance_type = '11' THEN 'OTHER FINANCIAL ASSISTANCE'
+                    ELSE 'UNKNOWN ASSISTANCE TYPE'
                 END AS type_description,
                 NULL::TEXT AS piid,
                 NULL::TEXT AS parent_award_piid,
