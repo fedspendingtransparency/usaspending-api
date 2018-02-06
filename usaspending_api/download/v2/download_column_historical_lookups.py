@@ -1459,7 +1459,7 @@ human_names = {
             'assistance_type_code',
             'award_description',
             'business_funds_indicator_code',
-            'business_funds_indicator',
+            # 'business_funds_indicator',  # TODO: Add when DAIMS Schema v1.2 in place
             'business_types_code',
             'action_type_code',
             'action_type',
