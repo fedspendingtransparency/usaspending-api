@@ -91,7 +91,6 @@
           "type": "integer"
         },
         "original_loan_subsidy_cost": {
-          "index": false,
           "scaling_factor": 100,
           "type": "scaled_float"
         },
