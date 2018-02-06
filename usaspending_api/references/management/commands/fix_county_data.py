@@ -18,7 +18,7 @@ class Command(BaseCommand):
                     'dbname=data_broker
                     port=5432
                     host=""" + db_host + """
-                    user=postgres
+                    user=root
                     password=""" + db_pw + """')"""
         )
 
