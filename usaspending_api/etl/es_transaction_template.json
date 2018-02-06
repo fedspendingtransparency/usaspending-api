@@ -21,43 +21,19 @@
   "mappings": {
     "transaction_mapping": {
       "properties": {
-        "transaction_id": {
-          "type": "integer"
-        },
-        "detached_award_proc_unique": {
-          "type": "text"
-        },
         "afa_generated_unique":{
-          "type": "text"
-        },
-        "generated_unique_transaction_id":{
-          "type": "text"
-        },
-        "type": {
-          "type": "text"
-        },
-        "pulled_from": {
-          "type": "text"
-        },
-        "type_description": {
-          "fielddata": true,
           "type": "text"
         },
         "action_date": {
           "format": "yyyy-MM-dd",
           "type": "date"
         },
-        "transaction_fiscal_year": {
-          "type": "integer",
-          "index": false
-        },
         "award_fiscal_year": {
-          "type": "integer",
-          "index": false
+          "index": false,       
+          "type": "integer"
         },
         "award_id": {
-          "type": "integer",
-          "index": false
+          "type": "integer"
         },
         "award_description": {
           "type": "text"
@@ -66,9 +42,9 @@
           "scaling_factor": 100,
           "type": "scaled_float"
         },
-        "transaction_amount": {
-          "scaling_factor": 100,
-          "type": "scaled_float"
+        "award_category": {
+          "index": false,
+          "type": "text"
         },
         "awarding_subtier_agency_abbreviation": {
           "index": false,
@@ -82,6 +58,20 @@
           "fielddata": true,
           "type": "text"
         },
+        "cfda_title": {
+          "type": "text"
+        },
+        "detached_award_proc_unique": {
+          "type": "text"
+        },
+        "face_value_loan_guarantee": {
+          "scaling_factor": 100,
+          "type": "scaled_float"
+        },
+        "fain": {
+          "fielddata": true,          
+          "type": "text"
+        },
         "funding_subtier_agency_name": {
           "fielddata": true,
           "type": "text"
@@ -90,24 +80,10 @@
           "fielddata": true,
           "type": "text"
         },
-        "cfda_title": {
-          "type": "text"
-        },
-        "face_value_loan_guarantee": {
-          "scaling_factor": 100,
-          "type": "scaled_float"
-        },
-        "fain": {
-          "type": "text"
-        },
-        "piid": {
-          "type": "text"
-        },
-        "uri": {
+        "generated_unique_transaction_id":{
           "type": "text"
         },
         "modification_number": {
-          "index": false,
           "type": "integer"
         },
         "original_loan_subsidy_cost": {
@@ -123,11 +99,19 @@
           "format": "yyyy-MM-dd",
           "type": "date"
         },
+        "piid": {
+          "fielddata": true,
+          "type": "text"
+        },
         "pop_county_code": {
           "index": false,
           "type": "text"
         },
         "pop_county_name": {
+          "index": false,
+          "type": "text"
+        },
+        "pulled_from": {
           "index": false,
           "type": "text"
         },
@@ -143,10 +127,32 @@
           "fielddata": true,
           "type": "text"
         },
+        "transaction_amount": {
+          "scaling_factor": 100,
+          "type": "scaled_float"
+        },
+        "transaction_fiscal_year": {
+          "index": false,          
+          "type": "integer"
+        },
+        "transaction_id": {
+          "type": "integer"
+        },
+        "type": {
+          "index": false,          
+          "type": "text"
+        },
+        "type_description": {
+          "fielddata": true,
+          "type": "text"
+        },
         "update_date": {
           "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
           "type": "date"
-        }
+        },
+        "uri": {
+          "type": "text"
+        },
       }
     }
   }
