@@ -62,9 +62,9 @@ class ObjectClassFederalAccountsViewSet(APIView):
 
 class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     @cache_response()
-    def get(self, request, pk, format=None):
+    def get(self, request, pk, fy=0, format=None):
 
-        fy = SubmissionAttributes.last_certified_fy()
+        fy = int(fy) or SubmissionAttributes.last_certified_fy()
         queryset = AppropriationAccountBalances.final_objects.filter(
             treasury_account_identifier__federal_account_id=int(pk)).filter(submission__reporting_fiscal_year=fy)
         queryset = queryset.aggregate(
