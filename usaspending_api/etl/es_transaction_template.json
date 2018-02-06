@@ -64,12 +64,16 @@
         "detached_award_proc_unique": {
           "type": "text"
         },
+        "display_award_id": {
+          "fielddata": true,
+          "type": "text"
+        },
         "face_value_loan_guarantee": {
           "scaling_factor": 100,
           "type": "scaled_float"
         },
         "fain": {
-          "fielddata": true,          
+          "index": false,          
           "type": "text"
         },
         "funding_subtier_agency_name": {
@@ -100,7 +104,7 @@
           "type": "date"
         },
         "piid": {
-          "fielddata": true,
+          "index": false,
           "type": "text"
         },
         "pop_county_code": {
