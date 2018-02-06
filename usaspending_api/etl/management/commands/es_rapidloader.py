@@ -175,7 +175,7 @@ def set_config():
     es_mapping_file = 'usaspending_api/etl/es_mapper.json'
     with open(es_mapping_file) as f:
         data = json.load(f)
-        # create_template_if_does_not_exist(ES, 'template1', data)
+        # create_template_if_does_not_exist(ES, 'template1', data, settings.TRANSACTIONS_INDEX_ROOT)
     mapping = json.dumps(data)
 
     return {

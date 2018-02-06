@@ -92,12 +92,12 @@ def db_rows_to_dict(cursor):
 def download_db_records(fetch_jobs, done_jobs, config):
     while not fetch_jobs.empty():
         if done_jobs.full():
-            printf({'msg': 'Waiting 60s for ingest to catchup to downloads', 'f': 'Download'})
+            printf({'msg': 'Waiting 60s reduce temporary disk space used', 'f': 'Download'})
             sleep(60)
         else:
             start = perf_counter()
             job = fetch_jobs.get_nowait()
-            printf({'msg': 'Preparing to Download a new CSV', 'job': job.name, 'f': 'Download'})
+            printf({'msg': 'Preparing to download "{}"'.format(job.csv), 'job': job.name, 'f': 'Download'})
 
             sql_config = {
                 'starting_date': config['starting_date'],
@@ -113,7 +113,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
             job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config['verbose'])
             done_jobs.put(job)
             printf({
-                'msg': 'Data fetch job took {} seconds'.format(perf_counter() - start),
+                'msg': 'CSV "{}" copy took {} seconds'.format(job.csv, perf_counter() - start),
                 'job': job.name,
                 'f': 'Download'
             })
@@ -186,6 +186,7 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None):
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
     printf({'msg': 'Populating ES Index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
+    start = perf_counter()
     try:
         does_index_exist = client.indices.exists(job.index)
     except Exception as e:
@@ -220,9 +221,14 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             'job': job.name,
             'f': 'ES Ingest'
         })
+    printf({
+        'msg': 'Elasticsearch Index loading took {}s'.format(perf_counter() - start),
+        'job': job.name,
+        'f': 'ES Ingest'
+    })
 
 
-def create_template_if_does_not_exist(client, template_id, mapping):
+def create_template_if_does_not_exist(client, template_id, mapping, root_index):
     """
     See if a tamplate is more reliable than using the same index body on every create
     """
@@ -231,7 +237,7 @@ def create_template_if_does_not_exist(client, template_id, mapping):
             return
     except Exception:
         pass
-    mapping['index_patterns'] = ["trans*"]
+    mapping['index_patterns'] = [root_index + '*']
     printf({'msg': 'Creating template "{}" in ES cluster'.format(template_id)})
     print(json.dumps(mapping))
     client.put_template(id=template_id, body=json.dumps(mapping))
@@ -356,7 +362,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None, siz
     start = perf_counter()
 
     printf({
-        'msg': 'Deleting up to {} transaction(s)'.format(len(id_list)),
+        'msg': 'Deleting up to {} document(s)'.format(len(id_list)),
         'f': 'ES Delete',
         'job': job_id})
 
@@ -372,7 +378,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None, siz
         col_to_items_dict[l['col']].append(l['key'])
 
     for column, values in col_to_items_dict.items():
-        printf({'msg': 'Deleting from col {}'.format(column), 'f': 'ES Delete', 'job': job_id})
+        printf({'msg': 'Deleting {} of "{}"'.format(len(values), column), 'f': 'ES Delete', 'job': job_id})
         values_generator = chunks(values, 1000)
         for v in values_generator:
             body = filter_query(column, v)
