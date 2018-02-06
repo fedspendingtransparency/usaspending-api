@@ -225,6 +225,7 @@ def get_transaction_ids_agg(keyword, size=10000):
             results.append(result['key'])
         yield results
 
+
 def get_sum_and_count_aggregation_results(keyword):
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
     query = {"query": {"query_string": {"query": keyword}},
