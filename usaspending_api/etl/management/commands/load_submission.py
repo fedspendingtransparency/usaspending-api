@@ -595,7 +595,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     total_rows = award_financial_frame.shape[0]
     start_time = datetime.now()
     awards_touched = []
-    awards = Award.objects  # this stops the property lookup each iteration, saving 3+ seconds every 100 rows!
+    # awards = Award.objects  # this stops the property lookup each iteration, saving 3+ seconds every 100 rows!
 
     # for row in award_financial_data:
     for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
