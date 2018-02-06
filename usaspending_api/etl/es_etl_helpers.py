@@ -144,7 +144,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, verbose):
 def csv_chunk_gen(filename, chunksize, job_id):
     printf({'msg': 'Opening {} (batch size = {})'.format(filename, chunksize), 'job': job_id, 'f': 'ES Ingest'})
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    dtype = {k: str for k in VIEW_COLUMNS}  # VIEW_COLUMNS_TYPES
+    dtype = {k: str for k in VIEW_COLUMNS}
     for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
         yield file_df.to_dict(orient='records')
@@ -194,7 +194,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         raise SystemExit
     if not does_index_exist:
         printf({'msg': 'Creating index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
-        client.indices.create(index=job.index)  # , body=config['mapping'])
+        client.indices.create(index=job.index)  # removed body paramter since behavior wasn't reliable
     elif does_index_exist and config['recreate']:
         printf({'msg': 'Deleting existing index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
         client.indices.delete(job.index)
@@ -226,21 +226,6 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         'job': job.name,
         'f': 'ES Ingest'
     })
-
-
-def create_template_if_does_not_exist(client, template_id, mapping, root_index):
-    """
-    See if a tamplate is more reliable than using the same index body on every create
-    """
-    try:
-        if client.get_template(id=template_id):
-            return
-    except Exception:
-        pass
-    mapping['index_patterns'] = [root_index + '*']
-    printf({'msg': 'Creating template "{}" in ES cluster'.format(template_id)})
-    print(json.dumps(mapping))
-    client.put_template(id=template_id, body=json.dumps(mapping))
 
 
 def deleted_transactions(client, config):
@@ -426,68 +411,27 @@ def csv_row_count(filename, has_header=True):
 # ==============================================================================
 
 
-VIEW_COLUMNS_TYPES = {
-    'transaction_id': int,
-    'modification_number': str,
-    'award_id': int,
-    'piid': str,
-    'fain': str,
-    'uri': str,
-    'award_description': str,
-    'product_or_service_code': str,
-    'product_or_service_description': str,
-    'naics_code': str,
-    'naics_description': str,
-    'type_description': str,
-    'award_category': str,
-    'recipient_unique_id': str,
-    'parent_recipient_unique_id': str,
-    'recipient_name': str,
-    'action_date': str,
-    'period_of_performance_start_date': str,
-    'period_of_performance_current_end_date': str,
-    'transaction_fiscal_year': int,
-    'award_fiscal_year': int,
-    'award_amount': float,
-    'transaction_amount': float,
-    'face_value_loan_guarantee': float,
-    'original_loan_subsidy_cost': float,
-    'awarding_agency_id': float,
-    'funding_agency_id': float,
-    'awarding_toptier_agency_name': str,
-    'funding_toptier_agency_name': str,
-    'awarding_subtier_agency_name': str,
-    'funding_subtier_agency_name': str,
-    'awarding_toptier_agency_abbreviation': str,
-    'funding_toptier_agency_abbreviation': str,
-    'awarding_subtier_agency_abbreviation': str,
-    'funding_subtier_agency_abbreviation': str,
-    'cfda_title': str,
-    'cfda_popular_name': str,
-    'type_of_contract_pricing': str,
-    'type_set_aside': str,
-    'extent_competed': str,
-    'pulled_from': str,
-    'type': str,
-    'pop_country_code': str,
-    'pop_country_name': str,
-    'pop_state_code': str,
-    'pop_county_code': str,
-    'pop_county_name': str,
-    'pop_zip5': str,
-    'pop_congressional_code': str,
-    'recipient_location_country_code': str,
-    'recipient_location_country_name': str,
-    'recipient_location_state_code': str,
-    'recipient_location_county_code': str,
-    'recipient_location_zip5': str,
-    'detached_award_proc_unique': str,
-    'afa_generated_unique': str,
-    'generated_unique_transaction_id': str,
-    'update_date': str,
-}
-
-VIEW_COLUMNS = VIEW_COLUMNS_TYPES.keys()
+VIEW_COLUMNS = [
+    'transaction_id', 'modification_number', 'award_id', 'piid', 'fain', 'uri',
+    'award_description', 'product_or_service_code', 'product_or_service_description',
+    'naics_code', 'naics_description', 'type_description', 'award_category',
+    'recipient_unique_id', 'parent_recipient_unique_id', 'recipient_name',
+    'action_date', 'period_of_performance_start_date', 'period_of_performance_current_end_date',
+    'transaction_fiscal_year', 'award_fiscal_year', 'total_obligation',
+    'federal_action_obligation', 'face_value_loan_guarantee', 'original_loan_subsidy_cost',
+    'awarding_agency_id', 'funding_agency_id', 'awarding_toptier_agency_name',
+    'funding_toptier_agency_name', 'awarding_subtier_agency_name',
+    'funding_subtier_agency_name', 'awarding_toptier_agency_abbreviation',
+    'funding_toptier_agency_abbreviation', 'awarding_subtier_agency_abbreviation',
+    'funding_subtier_agency_abbreviation', 'cfda_title', 'cfda_popular_name',
+    'type_of_contract_pricing', 'type_set_aside', 'extent_competed', 'pulled_from',
+    'type', 'pop_country_code', 'pop_country_name', 'pop_state_code', 'pop_county_code',
+    'pop_county_name', 'pop_zip5', 'pop_congressional_code',
+    'recipient_location_country_code', 'recipient_location_country_name',
+    'recipient_location_state_code', 'recipient_location_county_code',
+    'recipient_location_zip5', 'detached_award_proc_unique', 'afa_generated_unique',
+    'generated_unique_transaction_id', 'update_date',
+]
 
 UPDATE_DATE_SQL = ' AND update_date >= \'{}\''
 

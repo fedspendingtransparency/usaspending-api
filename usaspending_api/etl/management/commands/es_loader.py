@@ -1,4 +1,3 @@
-import json
 import os
 
 from datetime import date
@@ -84,11 +83,6 @@ class Command(BaseCommand):
         if not os.path.isdir(self.config['directory']):
             print('Provided directory does not exist')
             raise SystemExit
-
-        es_mapping_file = 'usaspending_api/etl/es_mapper.json'
-        with open(es_mapping_file) as f:
-            data = json.load(f)
-            self.config['mapping'] = json.dumps(data)
 
         self.controller()
         print('---------------------------------------------------------------')

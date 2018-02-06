@@ -1,6 +1,11 @@
 {
-	"transient" : {},
-	"persistent": {
-		"action.destructive_requires_name": true
+	"cluster": {
+		"transient" : {},
+		"persistent": {
+			"action.destructive_requires_name": true
+		}
+	},
+	"settings": {
+		"index.max_result_window" : 500000
 	}
 }

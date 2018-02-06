@@ -1,5 +1,4 @@
 
-import json
 import os
 
 from datetime import date
@@ -16,7 +15,7 @@ from usaspending_api.etl.es_etl_helpers import DataJob
 from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
-from usaspending_api.etl.es_etl_helpers import printf, create_template_if_does_not_exist
+from usaspending_api.etl.es_etl_helpers import printf
 
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
@@ -172,16 +171,9 @@ def set_config():
         print('Missing environment variable `ES_HOSTNAME`')
         raise SystemExit
 
-    es_mapping_file = 'usaspending_api/etl/es_mapper.json'
-    with open(es_mapping_file) as f:
-        data = json.load(f)
-        # create_template_if_does_not_exist(ES, 'template1', data, settings.TRANSACTIONS_INDEX_ROOT)
-    mapping = json.dumps(data)
-
     return {
         'aws_region': os.environ.get('CSV_AWS_REGION'),
         's3_bucket': os.environ.get('DELETED_TRANSACTIONS_S3_BUCKET_NAME'),
         'root_index': settings.TRANSACTIONS_INDEX_ROOT,
         'formatted_now': datetime.utcnow().strftime('%Y%m%dT%H%M%SZ'),  # ISO8601
-        'mapping': mapping,
     }
