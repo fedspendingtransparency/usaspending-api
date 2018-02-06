@@ -7,10 +7,12 @@ from time import perf_counter
 from usaspending_api import settings
 
 
+CURL_STATEMENT = 'curl -XPUT "{url}" -H "Content-Type: application/json" -d \'{data}\''
+
 CURL_COMMANDS = {
-    'template': '{es_host}/_template/{name}?pretty',
-    'cluster': '{es_host}/_cluster/settings?pretty',
-    'settings': '{es_host}/_settings?pretty',
+    'template': '{host}/_template/{name}?pretty',
+    'cluster': '{host}/_cluster/settings?pretty',
+    'settings': '{host}/_settings?pretty',
 }
 
 FILES = {
@@ -37,15 +39,15 @@ class Command(BaseCommand):
         template = create_template()
         host = settings.ES_HOSTNAME
 
-        run_curl_cmd(payload=cluster, host=host, url=CURL_COMMANDS['cluster'])
-        run_curl_cmd(payload=index_settings, host=host, url=CURL_COMMANDS['settings'])
-        run_curl_cmd(payload=template, host=host, url=CURL_COMMANDS['template'], name="transaction_template")
+        run_curl_cmd(payload=cluster, url=CURL_COMMANDS['cluster'], host=host)
+        run_curl_cmd(payload=index_settings, url=CURL_COMMANDS['settings'], host=host)
+        run_curl_cmd(payload=template, url=CURL_COMMANDS['template'], host=host, name='transaction_template')
         print("Script completed in {} seconds".format(perf_counter() - start))
 
 
-def run_curl_cmd(payload, **kwargs):
-    template = 'curl -XPUT "{host}{url}" -H "Content-Type: application/json" -d \'{data}\''
-    cmd = template.format(**kwargs, data=json.dumps(payload))
+def run_curl_cmd(**kwargs):
+    url = kwargs['url'].format(**kwargs)
+    cmd = CURL_STATEMENT.format(url=url, data=json.dumps(kwargs['payload']))
     print('Running: {}\n\n'.format(cmd))
 
     subprocess.Popen(cmd, shell=True).wait()
