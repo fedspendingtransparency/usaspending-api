@@ -107,7 +107,6 @@
           "type": "text"
         },
         "modification_number": {
-          "index": false,
           "type": "integer"
         },
         "original_loan_subsidy_cost": {
