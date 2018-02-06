@@ -669,13 +669,13 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     awards_cache.clear()
 
-    # bulk file C file D linkage if too many awards
-    if total_rows >= 100000:
-        logger.info('Updating file C - D linkage in bulk')
-
-        call_command('update_file_c_file_d_awards_sql')
-
-        logger.info('Completed file C - D linkage')
+    # # bulk file C file D linkage if too many awards
+    # if total_rows >= 100000:
+    #     logger.info('Updating file C - D linkage in bulk')
+    #
+    #     call_command('update_file_c_file_d_awards_sql')
+    #
+    #     logger.info('Completed file C - D linkage')
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
