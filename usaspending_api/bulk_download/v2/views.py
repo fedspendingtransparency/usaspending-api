@@ -480,7 +480,7 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         keyword = filters['keyword']
         if keyword:
             logger.info('Getting ids based on keyword: {}'.format(keyword))
-            transaction_ids = elasticsearch_helper.get_transaction_ids_agg(keyword=keyword)
+            transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
             # flatten ids
             transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
             logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
