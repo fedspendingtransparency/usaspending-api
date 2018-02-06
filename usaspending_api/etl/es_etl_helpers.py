@@ -412,7 +412,7 @@ def csv_row_count(filename, has_header=True):
 
 
 VIEW_COLUMNS = [
-    'transaction_id', 'modification_number', 'award_id', 'piid', 'fain', 'uri',
+    'transaction_id', 'modification_number', 'award_id', 'piid', 'fain', 'uri', 'display_award_id',
     'award_description', 'product_or_service_code', 'product_or_service_description',
     'naics_code', 'naics_description', 'type_description', 'award_category',
     'recipient_unique_id', 'parent_recipient_unique_id', 'recipient_name',

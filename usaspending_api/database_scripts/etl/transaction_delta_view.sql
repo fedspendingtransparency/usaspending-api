@@ -14,6 +14,12 @@ SELECT
     ELSE NULL  -- if this happens: Activate Batsignal
   END AS generated_unique_transaction_id,
 
+  CASE
+    WHEN UTM.type IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND UTM.fain IS NOT NULL THEN UTM.fain
+    WHEN UTM.piid IS NOT NULL THEN UTM.piid  -- contracts. Did it this way to easily handle IDV contracts
+    ELSE UTM.uri
+  END AS display_award_id,
+
   TM.update_date,
   TM.modification_number,
   UAM.award_id,

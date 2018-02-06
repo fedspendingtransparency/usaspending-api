@@ -29,7 +29,7 @@
           "type": "date"
         },
         "award_fiscal_year": {
-          "index": false,       
+          "index": false,
           "type": "integer"
         },
         "award_id": {
@@ -73,7 +73,7 @@
           "type": "scaled_float"
         },
         "fain": {
-          "index": false,          
+          "index": false,
           "type": "text"
         },
         "funding_subtier_agency_name": {
@@ -136,14 +136,14 @@
           "type": "scaled_float"
         },
         "transaction_fiscal_year": {
-          "index": false,          
+          "index": false,
           "type": "integer"
         },
         "transaction_id": {
           "type": "integer"
         },
         "type": {
-          "index": false,          
+          "index": false,
           "type": "text"
         },
         "type_description": {
