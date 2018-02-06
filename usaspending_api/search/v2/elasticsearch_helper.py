@@ -227,7 +227,7 @@ def get_transaction_ids_agg(keyword, size=10000):
 
 
 def get_sum_and_count_aggregation_results(keyword):
-    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
+    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT)+'*'
     query = {"query": {"query_string": {"query": keyword}},
              "aggs": {
               "prime_awards_obligation_amount": {
