@@ -634,6 +634,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         award_financial_data = FinancialAccountsByAwards()
 
         value_map_faba = {
+            'award': award,
             'submission': submission_attributes,
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
