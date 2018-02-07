@@ -13,10 +13,10 @@ from usaspending_api.awards.models import TransactionFABS, TransactionNormalized
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers import get_business_categories, get_assistance_type_description, \
-    get_business_type_description, get_award_category
+    get_business_type_description, get_award_category, set_legal_entity_boolean_fields
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
-from usaspending_api.etl.award_helpers import update_awards, update_award_categories
+from usaspending_api.etl.award_helpers import update_awards
 
 # start = timeit.default_timer()
 # function_call
@@ -42,8 +42,7 @@ class Command(BaseCommand):
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
                    'WHERE created_at >= %s ' \
-                   'AND (is_active = True OR UPPER(correction_late_delete_ind) = \'D\') ' \
-                   'ORDER BY published_award_financial_assistance_id ASC'
+                   'AND (is_active = True OR UPPER(correction_late_delete_ind) = \'D\') '
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
@@ -133,6 +132,7 @@ class Command(BaseCommand):
                 "business_categories": get_business_categories(row=row, data_type='fabs'),
                 "business_types_description": get_business_type_description(row.get(['business_types']))
             }
+            set_legal_entity_boolean_fields(row)
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
