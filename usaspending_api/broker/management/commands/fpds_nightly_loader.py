@@ -14,6 +14,7 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
+from usaspending_api.broker.helpers import get_business_categories, set_legal_entity_boolean_fields
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
@@ -44,8 +45,7 @@ class Command(BaseCommand):
         # by the Broker's PK since every modification is a new row
         db_query = 'SELECT * ' \
                    'FROM detached_award_procurement ' \
-                   'WHERE updated_at >= %s ' \
-                   'ORDER BY detached_award_procurement_id ASC'
+                   'WHERE updated_at >= %s'
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
@@ -164,7 +164,9 @@ class Command(BaseCommand):
             )
             legal_entity_value_map = {
                 "location": legal_entity_location,
+                "business_categories": get_business_categories(row=row, data_type='fpds')
             }
+            set_legal_entity_boolean_fields(row)
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
@@ -190,9 +192,9 @@ class Command(BaseCommand):
             award_update_id_list.append(award.id)
 
             try:
-                last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
+                last_mod_date = datetime.strptime(str(row['last_modified']), "%Y-%m-%d %H:%M:%S.%f").date()
             except ValueError:
-                last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S").date()
+                last_mod_date = datetime.strptime(str(row['last_modified']), "%Y-%m-%d %H:%M:%S").date()
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": awarding_agency,
@@ -207,6 +209,7 @@ class Command(BaseCommand):
 
             contract_field_map = {
                 "type": "contract_award_type",
+                "type_description": "contract_award_type_desc",
                 "description": "award_description"
             }
 
