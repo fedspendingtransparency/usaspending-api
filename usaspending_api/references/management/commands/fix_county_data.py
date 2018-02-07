@@ -38,7 +38,6 @@ class Command(BaseCommand):
                         AND cc.county_number = zips.county_number')
                     AS zip_broker (zip5 text, zip_last4 text, county_number text, county_name text))"""
         )
-        # sess.save()
 
         logger.info("Created zip_county temporary view, creating zip_county index on zip5")
         sess.execute("CREATE INDEX ix_zip5_zip_county ON zip_county (zip5)")
@@ -51,7 +50,6 @@ class Command(BaseCommand):
 
         logger.info("Created zip_county index on combined_zip, creating zip_county index on dashed_zip")
         sess.execute("CREATE INDEX ix_dashed_zip_zip_county ON zip_county (dashed_zip)")
-        # sess.save()
 
         logger.info("Created zip_county indexes, creating single_county temporary view")
 
@@ -68,12 +66,10 @@ class Command(BaseCommand):
                     FROM zip_county) AS tmp
                     WHERE tmp.row = 1)"""
         )
-        # sess.save()
 
         logger.info("Created single_county temporary view, creating single_county index on zip5")
 
         sess.execute("CREATE INDEX ix_zip5_single_county ON single_county (zip5)")
-        # sess.save()
 
         logger.info("Created single_county index, matview creation complete.")
 
@@ -83,7 +79,6 @@ class Command(BaseCommand):
         # zip_county view deletion
         sess.execute("DROP MATERIALIZED VIEW IF EXISTS single_county")
         sess.execute("DROP MATERIALIZED VIEW IF EXISTS zip_county")
-        # sess.save()
 
         logger.info("Finished delete of matviews.")
 
@@ -102,7 +97,6 @@ class Command(BaseCommand):
                     AND dap.legal_entity_county_code IS NULL
                     AND UPPER(dap.legal_entity_country_code) = 'USA'"""
         )
-        # sess.save()
 
         logger.info("Finished FPDS legal entity 9-digit zips without dashes, starting FPDS legal entity 9-digit zips "
                     "with dashes")
@@ -119,7 +113,6 @@ class Command(BaseCommand):
                     AND dap.legal_entity_county_code IS NULL
                     AND UPPER(dap.legal_entity_country_code) = 'USA'"""
         )
-        # sess.save()
 
         logger.info("Finished FPDS legal entity 9-digit zips with dashes, starting FPDS legal entity 5-digit zips")
 
@@ -136,7 +129,6 @@ class Command(BaseCommand):
                     AND dap.legal_entity_zip4 ~ '^\d{5}(-?\d{4})?$'
                     AND UPPER(dap.legal_entity_country_code) = 'USA'"""
         )
-        # sess.save()
         logger.info("Finished FPDS legal entity 5-digit zips, FPDS legal entity updates complete.")
 
     @staticmethod
@@ -155,7 +147,6 @@ class Command(BaseCommand):
                     AND dap.place_of_perform_county_co IS NULL
                     AND UPPER(dap.place_of_perform_country_c) = 'USA'"""
         )
-        # sess.save()
 
         logger.info("Finished FPDS PPOP 9-digit zips without dashes, starting FPDS PPOP 9-digit zips with dashes")
 
@@ -171,7 +162,6 @@ class Command(BaseCommand):
                     AND dap.place_of_perform_county_co IS NULL
                     AND UPPER(dap.place_of_perform_country_c) = 'USA'"""
         )
-        # sess.save()
 
         logger.info("Finished FPDS PPOP 9-digit zips with dashes, starting FPDS PPOP 5-digit zips")
 
@@ -188,7 +178,6 @@ class Command(BaseCommand):
                     AND dap.place_of_performance_zip4a ~ '^\d{5}(-?\d{4})?$'
                     AND UPPER(dap.place_of_perform_country_c) = 'USA'"""
         )
-        # sess.save()
         logger.info("Finished FPDS PPOP 5-digit zips, FPDS PPOP updates complete")
 
     @staticmethod
@@ -209,7 +198,6 @@ class Command(BaseCommand):
                     AND UPPER(pafa.legal_entity_country_code) = 'USA'
                     AND pafa.is_active = True"""
         )
-        # sess.save()
 
         logger.info("Finished FABS legal entity 9-digit zips, starting FABS legal entity 5-digit zips")
 
@@ -226,7 +214,6 @@ class Command(BaseCommand):
                     AND UPPER(pafa.legal_entity_country_code) = 'USA'
                     AND pafa.is_active = True"""
         )
-        # sess.save()
 
         logger.info("Finished FABS legal 5-digit zips, FABS legal entity updates complete")
 
@@ -247,7 +234,6 @@ class Command(BaseCommand):
                     AND UPPER(pafa.place_of_perform_country_c) = 'USA'
                     AND pafa.is_active = True"""
         )
-        # sess.save()
 
         logger.info("Finished FABS PPOP 9-digit zips without dashes, starting FABS PPOP 9-digit zips with dashes")
 
@@ -264,7 +250,6 @@ class Command(BaseCommand):
                     AND UPPER(pafa.place_of_perform_country_c) = 'USA'
                     AND pafa.is_active = True"""
         )
-        # sess.save()
 
         logger.info("Finished FABS PPOP 9-digit zips with dashes, starting FABS PPOP 5-digit zips")
 
@@ -282,7 +267,6 @@ class Command(BaseCommand):
                     AND UPPER(pafa.place_of_perform_country_c) = 'USA'
                     AND pafa.is_active = True"""
         )
-        # sess.save()
 
         logger.info("Finished FABS PPOP 5-digit zips, FABS PPOP updates complete.")
 
