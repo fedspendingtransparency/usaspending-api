@@ -34,12 +34,13 @@
           "type": "text"
         },
         "display_award_id": {
-          "fielddata": true,
-          "type": "text"
+          "type": "text",
+          "fielddata": true
         },
         "update_date": {
+          "type": "date",
           "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
-          "type": "date"
+          "index": false
         },
         "modification_number": {
           "type": "integer"
@@ -56,6 +57,7 @@
           "type": "text"
         },
         "uri": {
+          "index": false,
           "type": "text"
         },
         "award_description": {
@@ -103,7 +105,8 @@
         },
         "period_of_performance_current_end_date": {
           "type": "date",
-          "format": "yyyy-MM-dd"
+          "format": "yyyy-MM-dd",
+          "index": false
         },
         "transaction_fiscal_year": {
           "type": "integer",
@@ -143,7 +146,6 @@
           "fielddata": true
         },
         "funding_toptier_agency_name": {
-          "fielddata": true,
           "type": "text"
         },
         "awarding_subtier_agency_name": {
@@ -151,34 +153,32 @@
           "fielddata": true
         },
         "funding_subtier_agency_name": {
-          "fielddata": true,
           "type": "text"
         },
         "awarding_toptier_agency_abbreviation": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "funding_toptier_agency_abbreviation": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "awarding_subtier_agency_abbreviation": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "funding_subtier_agency_abbreviation": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
 
         "cfda_title": {
-          "type": "text"
+          "type": "text",
+          "index": false
         },
         "cfda_popular_name": {
-          "type": "text"
+          "type": "text",
+          "index": false
         },
         "type_of_contract_pricing": {
-          "type": "text"
+          "type": "text",
+          "index": false
         },
         "type_set_aside": {
           "type": "text",
@@ -202,8 +202,7 @@
           "index": false
         },
         "pop_country_name": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "pop_state_code": {
           "type": "text",
@@ -214,12 +213,10 @@
           "index": false
         },
         "pop_county_name": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "pop_zip5": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "pop_congressional_code": {
           "type": "text",
@@ -231,8 +228,7 @@
           "index": false
         },
         "recipient_location_country_name": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "recipient_location_state_code": {
           "type": "text",
@@ -243,12 +239,10 @@
           "index": false
         },
         "recipient_location_county_name": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "recipient_location_zip5": {
-          "type": "text",
-          "index": false
+          "type": "text"
         },
         "recipient_location_congressional_code": {
           "type": "text",
