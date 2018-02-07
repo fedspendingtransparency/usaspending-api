@@ -568,9 +568,6 @@ class LegalEntity(DataSourceTrackedModel):
     transaction_unique_id = models.TextField(blank=False, null=False, default="none",
                                              verbose_name="Transaction Unique ID")
 
-    def save(self, *args, **kwargs):
-        super(LegalEntity, self).save(*args, **kwargs)
-
     class Meta:
         managed = True
         db_table = 'legal_entity'
