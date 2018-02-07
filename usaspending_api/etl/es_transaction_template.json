@@ -21,131 +21,19 @@
   "mappings": {
     "transaction_mapping": {
       "properties": {
-        "afa_generated_unique":{
-          "type": "text"
-        },
-        "action_date": {
-          "format": "yyyy-MM-dd",
-          "type": "date"
-        },
-        "award_fiscal_year": {
-          "index": false,
+        "transaction_id": {
           "type": "integer"
-        },
-        "award_id": {
-          "type": "integer"
-        },
-        "award_description": {
-          "type": "text"
-        },
-        "award_amount": {
-          "scaling_factor": 100,
-          "type": "scaled_float"
-        },
-        "award_category": {
-          "index": false,
-          "type": "text"
-        },
-        "awarding_subtier_agency_abbreviation": {
-          "index": false,
-          "type": "text"
-        },
-        "awarding_subtier_agency_name": {
-          "fielddata": true,
-          "type": "text"
-        },
-        "awarding_toptier_agency_name": {
-          "fielddata": true,
-          "type": "text"
-        },
-        "cfda_title": {
-          "type": "text"
         },
         "detached_award_proc_unique": {
           "type": "text"
         },
-        "display_award_id": {
-          "fielddata": true,
-          "type": "text"
-        },
-        "face_value_loan_guarantee": {
-          "scaling_factor": 100,
-          "type": "scaled_float"
-        },
-        "fain": {
-          "index": false,
-          "type": "text"
-        },
-        "funding_subtier_agency_name": {
-          "fielddata": true,
-          "type": "text"
-        },
-        "funding_toptier_agency_name": {
-          "fielddata": true,
+        "afa_generated_unique":{
           "type": "text"
         },
         "generated_unique_transaction_id":{
           "type": "text"
         },
-        "modification_number": {
-          "type": "integer"
-        },
-        "original_loan_subsidy_cost": {
-          "scaling_factor": 100,
-          "type": "scaled_float"
-        },
-        "period_of_performance_current_end_date": {
-          "format": "yyyy-MM-dd",
-          "type": "date"
-        },
-        "period_of_performance_start_date": {
-          "format": "yyyy-MM-dd",
-          "type": "date"
-        },
-        "piid": {
-          "index": false,
-          "type": "text"
-        },
-        "pop_county_code": {
-          "index": false,
-          "type": "text"
-        },
-        "pop_county_name": {
-          "index": false,
-          "type": "text"
-        },
-        "pulled_from": {
-          "index": false,
-          "type": "text"
-        },
-        "recipient_location_congressional_code": {
-          "index": false,
-          "type": "text"
-        },
-        "recipient_location_county_code": {
-          "index": false,
-          "type": "text"
-        },
-        "recipient_name": {
-          "fielddata": true,
-          "type": "text"
-        },
-        "transaction_amount": {
-          "scaling_factor": 100,
-          "type": "scaled_float"
-        },
-        "transaction_fiscal_year": {
-          "index": false,
-          "type": "integer"
-        },
-        "transaction_id": {
-          "type": "integer"
-        },
-        "type": {
-          "index": false,
-          "type": "text"
-        },
-        "type_description": {
+        "display_award_id": {
           "fielddata": true,
           "type": "text"
         },
@@ -153,8 +41,218 @@
           "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
           "type": "date"
         },
+        "modification_number": {
+          "type": "integer"
+        },
+        "award_id": {
+          "type": "integer"
+        },
+        "piid": {
+          "index": false,
+          "type": "text"
+        },
+        "fain": {
+          "index": false,
+          "type": "text"
+        },
         "uri": {
           "type": "text"
+        },
+        "award_description": {
+          "type": "text"
+        },
+
+        "product_or_service_code": {
+          "type": "text"
+        },
+        "product_or_service_description": {
+          "type": "text"
+        },
+        "naics_code": {
+          "type": "text"
+        },
+        "naics_description": {
+          "type": "text"
+        },
+        "type_description": {
+          "type": "text",
+          "fielddata": true
+        },
+        "award_category": {
+          "type": "text",
+          "index": false
+        },
+        "recipient_unique_id": {
+          "type": "text"
+        },
+        "parent_recipient_unique_id": {
+          "type": "text"
+        },
+        "recipient_name": {
+          "fielddata": true,
+          "type": "text"
+        },
+
+        "action_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "period_of_performance_start_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "period_of_performance_current_end_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "transaction_fiscal_year": {
+          "type": "integer",
+          "index": false
+        },
+        "award_fiscal_year": {
+          "type": "integer",
+          "index": false
+        },
+        "award_amount": {
+          "type": "scaled_float",
+          "scaling_factor": 100
+        },
+        "transaction_amount": {
+          "type": "scaled_float",
+          "scaling_factor": 100
+        },
+        "face_value_loan_guarantee": {
+          "type": "scaled_float",
+          "scaling_factor": 100
+        },
+        "original_loan_subsidy_cost": {
+          "type": "scaled_float",
+          "scaling_factor": 100
+        },
+
+        "awarding_agency_id": {
+          "type": "integer",
+          "index": false
+        },
+        "funding_agency_id": {
+          "type": "integer",
+          "index": false
+        },
+        "awarding_toptier_agency_name": {
+          "type": "text",
+          "fielddata": true
+        },
+        "funding_toptier_agency_name": {
+          "fielddata": true,
+          "type": "text"
+        },
+        "awarding_subtier_agency_name": {
+          "type": "text",
+          "fielddata": true
+        },
+        "funding_subtier_agency_name": {
+          "fielddata": true,
+          "type": "text"
+        },
+        "awarding_toptier_agency_abbreviation": {
+          "type": "text",
+          "index": false
+        },
+        "funding_toptier_agency_abbreviation": {
+          "type": "text",
+          "index": false
+        },
+        "awarding_subtier_agency_abbreviation": {
+          "type": "text",
+          "index": false
+        },
+        "funding_subtier_agency_abbreviation": {
+          "type": "text",
+          "index": false
+        },
+
+        "cfda_title": {
+          "type": "text"
+        },
+        "cfda_popular_name": {
+          "type": "text"
+        },
+        "type_of_contract_pricing": {
+          "type": "text"
+        },
+        "type_set_aside": {
+          "type": "text",
+          "index": false
+        },
+        "extent_competed": {
+          "type": "text",
+          "index": false
+        },
+        "pulled_from": {
+          "type": "text",
+          "index": false
+        },
+        "type": {
+          "type": "text",
+          "index": false
+        },
+
+        "pop_country_code": {
+          "type": "text",
+          "index": false
+        },
+        "pop_country_name": {
+          "type": "text",
+          "index": false
+        },
+        "pop_state_code": {
+          "type": "text",
+          "index": false
+        },
+        "pop_county_code": {
+          "type": "text",
+          "index": false
+        },
+        "pop_county_name": {
+          "type": "text",
+          "index": false
+        },
+        "pop_zip5": {
+          "type": "text",
+          "index": false
+        },
+        "pop_congressional_code": {
+          "type": "text",
+          "index": false
+        },
+
+        "recipient_location_country_code": {
+          "type": "text",
+          "index": false
+        },
+        "recipient_location_country_name": {
+          "type": "text",
+          "index": false
+        },
+        "recipient_location_state_code": {
+          "type": "text",
+          "index": false
+        },
+        "recipient_location_county_code": {
+          "type": "text",
+          "index": false
+        },
+        "recipient_location_county_name": {
+          "type": "text",
+          "index": false
+        },
+        "recipient_location_zip5": {
+          "type": "text",
+          "index": false
+        },
+        "recipient_location_congressional_code": {
+          "type": "text",
+          "index": false
         }
       }
     }
