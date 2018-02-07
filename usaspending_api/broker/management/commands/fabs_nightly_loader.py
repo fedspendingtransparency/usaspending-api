@@ -12,11 +12,11 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import get_business_categories, get_assistance_type_description, \
-    get_business_type_description, get_award_category, set_legal_entity_boolean_fields
+from usaspending_api.broker.helpers import get_business_categories, get_business_type_description, \
+    get_assistance_type_description
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
-from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.etl.award_helpers import update_awards, update_award_categories
 
 # start = timeit.default_timer()
 # function_call
@@ -42,7 +42,7 @@ class Command(BaseCommand):
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
                    'WHERE created_at >= %s ' \
-                   'AND (is_active = True OR UPPER(correction_late_delete_ind) = \'D\') '
+                   'AND (is_active = True OR UPPER(correction_late_delete_ind) = \'D\')'
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
@@ -130,9 +130,8 @@ class Command(BaseCommand):
             legal_entity_value_map = {
                 "location": legal_entity_location,
                 "business_categories": get_business_categories(row=row, data_type='fabs'),
-                "business_types_description": get_business_type_description(row.get(['business_types']))
+                "business_types_description": get_business_type_description(row['business_types'])
             }
-            set_legal_entity_boolean_fields(row)
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
@@ -152,8 +151,6 @@ class Command(BaseCommand):
             # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)
             award.parent_award_piid = row.get('parent_award_id')
-            award.type_description = get_assistance_type_description(type)
-            award.category = get_award_category(award.type)
             award.save()
 
             # Append row to list of Awards updated
@@ -172,7 +169,8 @@ class Command(BaseCommand):
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
-                "last_modified_date": last_mod_date
+                "last_modified_date": last_mod_date,
+                "type_description": get_assistance_type_description(row['assistance_type'])
             }
 
             fad_field_map = {
@@ -299,6 +297,13 @@ class Command(BaseCommand):
             update_awards(tuple(award_update_id_list))
             end = timeit.default_timer()
             logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+
+            # Update AwardCategories based on changed FABS records
+            logger.info('Updating award category variables...')
+            start = timeit.default_timer()
+            update_award_categories(tuple(award_update_id_list))
+            end = timeit.default_timer()
+            logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
         else:
             logger.info('Nothing to insert...')
 

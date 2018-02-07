@@ -335,40 +335,40 @@ def get_business_categories(row, data_type):
         # SMALL BUSINESS
         if legal_entity_bool_dict['small_business_competitive'] is True or \
                         legal_entity_bool_dict['for_profit_organization'] is True:
-            business_category_set.add({'small_business', 'category_business'})
+            business_category_set |= {'small_business', 'category_business'}
 
         # MINORITY BUSINESS
         if legal_entity_bool_dict['alaskan_native_owned_corpo'] is True:
-            business_category_set.add({'alaskan_native_owned_business'})
+            business_category_set.add('alaskan_native_owned_business')
 
         if legal_entity_bool_dict['american_indian_owned_busi'] is True:
-            business_category_set.add({'american_indian_owned_business'})
+            business_category_set.add('american_indian_owned_business')
 
         if legal_entity_bool_dict['asian_pacific_american_own'] is True:
-            business_category_set.add({'asian_pacific_american_owned_business'})
+            business_category_set.add('asian_pacific_american_owned_business')
 
         if legal_entity_bool_dict['black_american_owned_busin'] is True:
-            business_category_set.add({'black_american_owned_business'})
+            business_category_set.add('black_american_owned_business')
 
         if legal_entity_bool_dict['hispanic_american_owned_bu'] is True:
-            business_category_set.add({'hispanic_american_owned_business'})
+            business_category_set.add('hispanic_american_owned_business')
 
         if legal_entity_bool_dict['native_american_owned_busi'] is True:
-            business_category_set.add({'native_american_owned_business'})
+            business_category_set.add('native_american_owned_business')
 
         if legal_entity_bool_dict['native_hawaiian_owned_busi'] is True:
-            business_category_set.add({'native_hawaiian_owned_business'})
+            business_category_set.add('native_hawaiian_owned_business')
 
         if legal_entity_bool_dict['subcontinent_asian_asian_i'] is True:
-            business_category_set.add({'subcontinent_asian_indian_american_owned_business'})
+            business_category_set.add('subcontinent_asian_indian_american_owned_business')
 
         if legal_entity_bool_dict['tribally_owned_business'] is True:
-            business_category_set.add({'tribally_owned_business'})
+            business_category_set.add('tribally_owned_business')
 
         if legal_entity_bool_dict['other_minority_owned_busin'] is True:
-            business_category_set.add({'other_minority_owned_business'})
+            business_category_set.add('other_minority_owned_business')
 
-        if legal_entity_bool_dict['minority_owned_business'] is True or\
+        if legal_entity_bool_dict['minority_owned_business'] is True or \
                 (business_category_set & {'alaskan_native_owned_business', 'american_indian_owned_business',
                                           'asian_pacific_american_owned_business', 'black_american_owned_business',
                                           'hispanic_american_owned_business', 'native_american_owned_business',
@@ -376,90 +376,90 @@ def get_business_categories(row, data_type):
                                           'subcontinent_asian_indian_american_owned_business',
                                           'tribally_owned_business',
                                           'other_minority_owned_business'}):
-            business_category_set.add({'minority_owned_business'})
+            business_category_set.add('minority_owned_business')
 
         # WOMEN OWNED BUSINESS
         if legal_entity_bool_dict['women_owned_small_business'] is True:
-            business_category_set.add({'women_owned_small_business'})
+            business_category_set.add('women_owned_small_business')
 
         if legal_entity_bool_dict['economically_disadvantaged'] is True:
-            business_category_set.add({'economically_disadvantaged_women_owned_small_business'})
+            business_category_set.add('economically_disadvantaged_women_owned_small_business')
 
         if legal_entity_bool_dict['joint_venture_women_owned'] is True:
-            business_category_set.add({'joint_venture_women_owned_small_business'})
+            business_category_set.add('joint_venture_women_owned_small_business')
 
         if legal_entity_bool_dict['joint_venture_economically'] is True:
-            business_category_set.add({'joint_venture_economically_disadvantaged_women_owned_small_business'})
+            business_category_set.add('joint_venture_economically_disadvantaged_women_owned_small_business')
 
         if legal_entity_bool_dict['woman_owned_business'] is True or \
                 (business_category_set & {'women_owned_small_business',
                                           'economically_disadvantaged_women_owned_small_business',
                                           'joint_venture_women_owned_small_business',
                                           'joint_venture_economically_disadvantaged_women_owned_small_business'}):
-            business_category_set.add({'woman_owned_business'})
+            business_category_set.add('woman_owned_business')
 
         # VETERAN OWNED BUSINESS
         if legal_entity_bool_dict['service_disabled_veteran_o'] is True:
-            business_category_set.add({'service_disabled_veteran_owned_business'})
+            business_category_set.add('service_disabled_veteran_owned_business')
 
         if legal_entity_bool_dict['veteran_owned_business'] is True or (
                     business_category_set & {'service_disabled_veteran_owned_business'}):
-            business_category_set.add({'veteran_owned_business'})
+            business_category_set.add('veteran_owned_business')
 
         # SPECIAL DESIGNATIONS
         if legal_entity_bool_dict['c8a_program_participant'] is True:
-            business_category_set.add({'8a_program_participant'})
+            business_category_set.add('8a_program_participant')
 
         if legal_entity_bool_dict['the_ability_one_program'] is True:
-            business_category_set.add({'ability_one_program'})
+            business_category_set.add('ability_one_program')
 
         if legal_entity_bool_dict['dot_certified_disadvantage'] is True:
-            business_category_set.add({'dot_certified_disadvantaged_business_enterprise'})
+            business_category_set.add('dot_certified_disadvantaged_business_enterprise')
 
         if legal_entity_bool_dict['emerging_small_business'] is True:
-            business_category_set.add({'emerging_small_business'})
+            business_category_set.add('emerging_small_business')
 
         if legal_entity_bool_dict['federally_funded_research'] is True:
-            business_category_set.add({'federally_funded_research_and_development_corp'})
+            business_category_set.add('federally_funded_research_and_development_corp')
 
         if legal_entity_bool_dict['historically_underutilized'] is True:
-            business_category_set.add({'historically_underutilized_business_firm'})
+            business_category_set.add('historically_underutilized_business_firm')
 
         if legal_entity_bool_dict['labor_surplus_area_firm'] is True:
-            business_category_set.add({'labor_surplus_area_firm'})
+            business_category_set.add('labor_surplus_area_firm')
 
         if legal_entity_bool_dict['sba_certified_8_a_joint_ve'] is True:
-            business_category_set.add({'sba_certified_8a_joint_venture'})
+            business_category_set.add('sba_certified_8a_joint_venture')
 
         if legal_entity_bool_dict['self_certified_small_disad'] is True:
-            business_category_set.add({'self_certified_small_disadvanted_business'})
+            business_category_set.add('self_certified_small_disadvanted_business')
 
         if legal_entity_bool_dict['small_agricultural_coopera'] is True:
-            business_category_set.add({'small_agricultural_cooperative'})
+            business_category_set.add('small_agricultural_cooperative')
 
         if legal_entity_bool_dict['small_disadvantaged_busine'] is True:
-            business_category_set.add({'small_disadvantaged_business'})
+            business_category_set.add('small_disadvantaged_business')
 
         if legal_entity_bool_dict['community_developed_corpor'] is True:
-            business_category_set.add({'community_developed_corporation_owned_firm'})
+            business_category_set.add('community_developed_corporation_owned_firm')
 
         # U.S. Owned Business
         if row.get('domestic_or_foreign_entity') == 'A':
-            business_category_set.add({'us_owned_business'})
+            business_category_set.add('us_owned_business')
 
         # Foreign-Owned Business Incorporated in the U.S.
         if row.get('domestic_or_foreign_entity') == 'C':
-            business_category_set.add({'foreign_owned_and_us_located_business'})
+            business_category_set.add('foreign_owned_and_us_located_business')
 
         # Foreign-Owned Business Not Incorporated in the U.S.
         if row.get('domestic_or_foreign_entity') == 'D' or legal_entity_bool_dict['foreign_owned_and_located'] is True:
-            business_category_set.add({'foreign_owned_and_located_business'})
+            business_category_set.add('foreign_owned_and_located_business')
 
         if legal_entity_bool_dict['foreign_government'] is True:
-            business_category_set.add({'foreign_government'})
+            business_category_set.add('foreign_government')
 
         if legal_entity_bool_dict['international_organization'] is True:
-            business_category_set.add({'international_organization'})
+            business_category_set.add('international_organization')
 
         if business_category_set & {'8a_program_participant', 'ability_one_program',
                                     'dot_certified_disadvantaged_business_enterprise', 'emerging_small_business',
@@ -470,29 +470,29 @@ def get_business_categories(row, data_type):
                                     'community_developed_corporation_owned_firm', 'us_owned_business',
                                     'foreign_owned_and_us_located_business', 'foreign_owned_and_located_business',
                                     'foreign_government', 'international_organization'}:
-            business_category_set.add({'special_designations'})
+            business_category_set.add('special_designations')
 
         # NON-PROFIT
         if legal_entity_bool_dict['foundation'] is True:
-            business_category_set.add({'foundation'})
+            business_category_set.add('foundation')
 
         if legal_entity_bool_dict['community_development_corp'] is True:
-            business_category_set.add({'community_development_corporations'})
+            business_category_set.add('community_development_corporations')
 
         if legal_entity_bool_dict['nonprofit_organization'] is True or \
                         legal_entity_bool_dict['other_not_for_profit_organ'] is True or \
                 (business_category_set & {'foundation', 'community_development_corporations'}):
-            business_category_set.add({'nonprofit'})
+            business_category_set.add('nonprofit')
 
         # HIGHER EDUCATION
         if legal_entity_bool_dict['state_controlled_instituti'] is True or \
                         legal_entity_bool_dict['c1862_land_grant_college'] is True or \
                         legal_entity_bool_dict['c1890_land_grant_college'] is True or \
                         legal_entity_bool_dict['c1994_land_grant_college'] is True:
-            business_category_set.add({'public_institution_of_higher_education'})
+            business_category_set.add('public_institution_of_higher_education')
 
         if legal_entity_bool_dict['private_university_or_coll'] is True:
-            business_category_set.add({'private_institution_of_higher_education'})
+            business_category_set.add('private_institution_of_higher_education')
 
         if legal_entity_bool_dict['minority_institution'] is True or \
                         legal_entity_bool_dict['historically_black_college'] is True or \
@@ -500,22 +500,22 @@ def get_business_categories(row, data_type):
                         legal_entity_bool_dict['alaskan_native_servicing_i'] is True or \
                         legal_entity_bool_dict['native_hawaiian_servicing'] is True or \
                         legal_entity_bool_dict['hispanic_servicing_institu'] is True:
-            business_category_set.add({'minority_serving_institution_of_higher_education'})
+            business_category_set.add('minority_serving_institution_of_higher_education')
 
         if business_category_set & {'public_institution_of_higher_education', 'private_institution_of_higher_education',
                                     'minority_serving_institution_of_higher_education'}:
-            business_category_set.add({'higher_education'})
+            business_category_set.add('higher_education')
 
         # GOVERNMENT
         if legal_entity_bool_dict['us_federal_government'] is True or \
                         legal_entity_bool_dict['federal_agency'] is True or \
                         legal_entity_bool_dict['us_government_entity'] is True or \
                         legal_entity_bool_dict['interstate_entity'] is True:
-            business_category_set.add({'national_government'})
+            business_category_set.add('national_government')
 
         if legal_entity_bool_dict['us_state_government'] is True or \
                         legal_entity_bool_dict['council_of_governments'] is True:
-            business_category_set.add({'regional_and_state_government'})
+            business_category_set.add('regional_and_state_government')
 
         if legal_entity_bool_dict['city_local_government'] is True or \
                         legal_entity_bool_dict['county_local_government'] is True or \
@@ -525,23 +525,23 @@ def get_business_categories(row, data_type):
                         legal_entity_bool_dict['us_local_government'] is True or \
                         legal_entity_bool_dict['local_government_owned'] is True or \
                         legal_entity_bool_dict['school_district_local_gove'] is True:
-            business_category_set.add({'local_government'})
+            business_category_set.add('local_government')
 
         if legal_entity_bool_dict['us_tribal_government'] is True or \
                         legal_entity_bool_dict['indian_tribe_federally_rec'] is True:
-            business_category_set.add({'indian_native_american_tribal_government'})
+            business_category_set.add('indian_native_american_tribal_government')
 
         if legal_entity_bool_dict['housing_authorities_public'] is True or \
                         legal_entity_bool_dict['airport_authority'] is True or \
                         legal_entity_bool_dict['port_authority'] is True or \
                         legal_entity_bool_dict['transit_authority'] is True or \
                         legal_entity_bool_dict['planning_commission'] is True:
-            business_category_set.add({'authorities_and_commissions'})
+            business_category_set.add('authorities_and_commissions')
 
         if business_category_set & {'national_government', 'regional_and_state_government',
                                     'us_territory_or_possession', 'local_government',
                                     'indian_native_american_tribal_government', 'authorities_and_commissions'}:
-            business_category_set.add({'government'})
+            business_category_set.add('government')
 
         return list(business_category_set)
     else:

@@ -14,10 +14,10 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import get_business_categories, get_award_category, set_legal_entity_boolean_fields
+from usaspending_api.broker.helpers import get_business_categories, set_legal_entity_boolean_fields
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 
 # start = timeit.default_timer()
 # function_call
@@ -45,7 +45,7 @@ class Command(BaseCommand):
         # by the Broker's PK since every modification is a new row
         db_query = 'SELECT * ' \
                    'FROM detached_award_procurement ' \
-                   'WHERE updated_at >= %s '
+                   'WHERE updated_at >= %s'
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
@@ -164,7 +164,7 @@ class Command(BaseCommand):
             )
             legal_entity_value_map = {
                 "location": legal_entity_location,
-                "business_categories": get_business_categories(row=row, data_type='fabs')
+                "business_categories": get_business_categories(row=row, data_type='fpds')
             }
             set_legal_entity_boolean_fields(row)
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
@@ -186,7 +186,6 @@ class Command(BaseCommand):
             # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)
             award.parent_award_piid = row.get('parent_award_id')
-            award.category = get_award_category(award.type)
             award.save()
 
             # Append row to list of Awards updated
@@ -210,6 +209,7 @@ class Command(BaseCommand):
 
             contract_field_map = {
                 "type": "contract_award_type",
+                "type_description": "contract_award_type_desc",
                 "description": "award_description"
             }
 
@@ -306,6 +306,12 @@ class Command(BaseCommand):
             update_contract_awards(tuple(award_update_id_list))
             end = timeit.default_timer()
             logger.info('Finished updating contract specific awards in ' + str(end - start) + ' seconds')
+
+            logger.info('Updating award category variables...')
+            start = timeit.default_timer()
+            update_award_categories(tuple(award_update_id_list))
+            end = timeit.default_timer()
+            logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
         else:
             logger.info('Nothing to insert...')
 
