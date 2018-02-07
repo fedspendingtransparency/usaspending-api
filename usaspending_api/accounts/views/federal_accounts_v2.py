@@ -389,7 +389,7 @@ class FederalAccountsViewSet(APIView):
             account_number=Concat(F('agency_identifier'), Value('-'), F('main_account_code')),
             account_name=F('account_title'),
             budgetary_resources=Sum(
-                'treasuryappropriationaccount__account_balances__obligations_incurred_total_by_tas_cpe'),
+                'treasuryappropriationaccount__account_balances__budget_authority_available_amount_total_cpe'),
             managing_agency=Subquery(agency_subquery.values('name')[:1]),
             managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1]),
         )

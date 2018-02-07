@@ -18,32 +18,32 @@ def fixture_data(db):
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta0,
-               obligations_incurred_total_by_tas_cpe=1000,
+               budget_authority_available_amount_total_cpe'=1000,
                submission__reporting_period_start='2017-06-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=False,  # so filter it out
                treasury_account_identifier=ta0,
-               obligations_incurred_total_by_tas_cpe=100,
+               budget_authority_available_amount_total_cpe'=100,
                submission__reporting_period_start='2017-03-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta0,
-               obligations_incurred_total_by_tas_cpe=2000,
+               budget_authority_available_amount_total_cpe'=2000,
                submission__reporting_period_start='2017-06-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta1,
-               obligations_incurred_total_by_tas_cpe=9000,
+               budget_authority_available_amount_total_cpe'=9000,
                submission__reporting_period_start='2017-06-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta1,
-               obligations_incurred_total_by_tas_cpe=500,
+               budget_authority_available_amount_total_cpe'=500,
                submission__reporting_period_start='2016-06-01')
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier__treasury_account_identifier='999',
-               obligations_incurred_total_by_tas_cpe=4000,
+               budget_authority_available_amount_total_cpe'=4000,
                submission__reporting_period_start='2017-06-01')
 
 
