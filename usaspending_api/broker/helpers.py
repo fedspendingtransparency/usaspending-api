@@ -178,7 +178,7 @@ def build_legal_entity_booleans_dict(row):
             if row['other_not_for_profit_organ'] else False,
             'us_local_government': bool(strtobool(row['us_local_government']))
             if row['us_local_government'] else False
-    }
+        }
     return bool_dict
 
 
@@ -303,7 +303,7 @@ def get_business_categories(row, data_type):
             business_category_set.add('minority_serving_institution_of_higher_education')
 
         if business_category_set & {'public_institution_of_higher_education', 'private_institution_of_higher_education',
-                                'minority_serving_institution_of_higher_education'}:
+                                    'minority_serving_institution_of_higher_education'}:
             business_category_set.add('higher_education')
 
         if business_types in ('A', 'E', '00'):
@@ -322,7 +322,7 @@ def get_business_categories(row, data_type):
             business_category_set.add('authorities_and_commissions')
 
         if business_category_set & {'regional_and_state_government', 'us_territory_or_possession', 'local_government',
-                                'indian_native_american_tribal_government', 'authorities_and_commissions'}:
+                                    'indian_native_american_tribal_government', 'authorities_and_commissions'}:
             business_category_set.add('government')
 
         if business_types in ('P', '21'):
@@ -333,8 +333,8 @@ def get_business_categories(row, data_type):
     elif data_type == 'fpds':
         legal_entity_bool_dict = build_legal_entity_booleans_dict(row)
         # SMALL BUSINESS
-        if legal_entity_bool_dict['small_business_competitive'] is True or \
-                        legal_entity_bool_dict['for_profit_organization'] is True:
+        if legal_entity_bool_dict['small_business_competitive'] is True \
+                or legal_entity_bool_dict['for_profit_organization'] is True:
             business_category_set |= {'small_business', 'category_business'}
 
         # MINORITY BUSINESS
@@ -479,27 +479,27 @@ def get_business_categories(row, data_type):
         if legal_entity_bool_dict['community_development_corp'] is True:
             business_category_set.add('community_development_corporations')
 
-        if legal_entity_bool_dict['nonprofit_organization'] is True or \
-                        legal_entity_bool_dict['other_not_for_profit_organ'] is True or \
+        if legal_entity_bool_dict['nonprofit_organization'] is True \
+                or legal_entity_bool_dict['other_not_for_profit_organ'] is True or \
                 (business_category_set & {'foundation', 'community_development_corporations'}):
             business_category_set.add('nonprofit')
 
         # HIGHER EDUCATION
-        if legal_entity_bool_dict['state_controlled_instituti'] is True or \
-                        legal_entity_bool_dict['c1862_land_grant_college'] is True or \
-                        legal_entity_bool_dict['c1890_land_grant_college'] is True or \
-                        legal_entity_bool_dict['c1994_land_grant_college'] is True:
+        if legal_entity_bool_dict['state_controlled_instituti'] is True \
+                or legal_entity_bool_dict['c1862_land_grant_college'] is True \
+                or legal_entity_bool_dict['c1890_land_grant_college'] is True \
+                or legal_entity_bool_dict['c1994_land_grant_college'] is True:
             business_category_set.add('public_institution_of_higher_education')
 
         if legal_entity_bool_dict['private_university_or_coll'] is True:
             business_category_set.add('private_institution_of_higher_education')
 
-        if legal_entity_bool_dict['minority_institution'] is True or \
-                        legal_entity_bool_dict['historically_black_college'] is True or \
-                        legal_entity_bool_dict['tribal_college'] is True or \
-                        legal_entity_bool_dict['alaskan_native_servicing_i'] is True or \
-                        legal_entity_bool_dict['native_hawaiian_servicing'] is True or \
-                        legal_entity_bool_dict['hispanic_servicing_institu'] is True:
+        if legal_entity_bool_dict['minority_institution'] is True \
+                or legal_entity_bool_dict['historically_black_college'] is True \
+                or legal_entity_bool_dict['tribal_college'] is True \
+                or legal_entity_bool_dict['alaskan_native_servicing_i'] is True \
+                or legal_entity_bool_dict['native_hawaiian_servicing'] is True \
+                or legal_entity_bool_dict['hispanic_servicing_institu'] is True:
             business_category_set.add('minority_serving_institution_of_higher_education')
 
         if business_category_set & {'public_institution_of_higher_education', 'private_institution_of_higher_education',
@@ -507,35 +507,35 @@ def get_business_categories(row, data_type):
             business_category_set.add('higher_education')
 
         # GOVERNMENT
-        if legal_entity_bool_dict['us_federal_government'] is True or \
-                        legal_entity_bool_dict['federal_agency'] is True or \
-                        legal_entity_bool_dict['us_government_entity'] is True or \
-                        legal_entity_bool_dict['interstate_entity'] is True:
+        if legal_entity_bool_dict['us_federal_government'] is True \
+                or legal_entity_bool_dict['federal_agency'] is True \
+                or legal_entity_bool_dict['us_government_entity'] is True \
+                or legal_entity_bool_dict['interstate_entity'] is True:
             business_category_set.add('national_government')
 
-        if legal_entity_bool_dict['us_state_government'] is True or \
-                        legal_entity_bool_dict['council_of_governments'] is True:
+        if legal_entity_bool_dict['us_state_government'] is True \
+                or legal_entity_bool_dict['council_of_governments'] is True:
             business_category_set.add('regional_and_state_government')
 
-        if legal_entity_bool_dict['city_local_government'] is True or \
-                        legal_entity_bool_dict['county_local_government'] is True or \
-                        legal_entity_bool_dict['inter_municipal_local_gove'] is True or \
-                        legal_entity_bool_dict['municipality_local_governm'] is True or \
-                        legal_entity_bool_dict['township_local_government'] is True or \
-                        legal_entity_bool_dict['us_local_government'] is True or \
-                        legal_entity_bool_dict['local_government_owned'] is True or \
-                        legal_entity_bool_dict['school_district_local_gove'] is True:
+        if legal_entity_bool_dict['city_local_government'] is True \
+                or legal_entity_bool_dict['county_local_government'] is True \
+                or legal_entity_bool_dict['inter_municipal_local_gove'] is True \
+                or legal_entity_bool_dict['municipality_local_governm'] is True \
+                or legal_entity_bool_dict['township_local_government'] is True \
+                or legal_entity_bool_dict['us_local_government'] is True \
+                or legal_entity_bool_dict['local_government_owned'] is True \
+                or legal_entity_bool_dict['school_district_local_gove'] is True:
             business_category_set.add('local_government')
 
-        if legal_entity_bool_dict['us_tribal_government'] is True or \
-                        legal_entity_bool_dict['indian_tribe_federally_rec'] is True:
+        if legal_entity_bool_dict['us_tribal_government'] is True \
+                or legal_entity_bool_dict['indian_tribe_federally_rec'] is True:
             business_category_set.add('indian_native_american_tribal_government')
 
-        if legal_entity_bool_dict['housing_authorities_public'] is True or \
-                        legal_entity_bool_dict['airport_authority'] is True or \
-                        legal_entity_bool_dict['port_authority'] is True or \
-                        legal_entity_bool_dict['transit_authority'] is True or \
-                        legal_entity_bool_dict['planning_commission'] is True:
+        if legal_entity_bool_dict['housing_authorities_public'] is True \
+                or legal_entity_bool_dict['airport_authority'] is True \
+                or legal_entity_bool_dict['port_authority'] is True \
+                or legal_entity_bool_dict['transit_authority'] is True \
+                or legal_entity_bool_dict['planning_commission'] is True:
             business_category_set.add('authorities_and_commissions')
 
         if business_category_set & {'national_government', 'regional_and_state_government',
