@@ -1,6 +1,5 @@
 import os
 
-from datetime import date
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
@@ -69,14 +68,9 @@ class Command(BaseCommand):
         self.config['directory'] = options['dir'] + os.sep
         self.config['provide_deleted'] = options['deleted']
         self.config['recreate'] = options['recreate']
+        self.config['starting_date'] = datetime.strptime(options['since'], "%Y-%m-%d")
 
-        try:
-            self.config['starting_date'] = date(*[int(x) for x in options['since'].split('-')])
-        except Exception:
-            print('Malformed date string provided. `--since` requires YYYY-MM-DD')
-            raise SystemExit
-
-        if self.config['recreate'] and self.config['starting_date'] != date(2001, 1, 1):
+        if self.config['recreate'] and self.config['starting_date'] != datetime(2001, 1, 1):
             print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
             raise SystemExit
 

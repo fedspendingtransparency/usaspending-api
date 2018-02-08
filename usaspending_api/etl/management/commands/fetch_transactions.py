@@ -1,7 +1,6 @@
 import os
 import subprocess
 
-from datetime import date
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from time import perf_counter
@@ -78,12 +77,7 @@ class Command(BaseCommand):
         self.config['directory'] = options['dir'] + os.sep
         self.config['provide_deleted'] = options['deleted']
         self.config['award_category'] = options['award_type']
-
-        try:
-            self.config['starting_date'] = date(*[int(x) for x in options['since'].split('-')])
-        except Exception:
-            print('Malformed date string provided. `--since` requires YYYY-MM-DD')
-            raise SystemExit
+        self.config['starting_date'] = datetime.strptime(options['since'], "%Y-%m-%d")
 
         if not os.path.isdir(self.config['directory']):
             print('Provided directory does not exist')
