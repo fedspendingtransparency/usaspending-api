@@ -194,6 +194,9 @@ class BaseDownloadViewSet(APIView):
             download_job_kwargs[award_level] = True
         for award_type in json_request['filters']['award_types']:
             download_job_kwargs[award_type] = True
+        keyword = json_request['filters']['keyword']
+        if keyword:
+            download_job_kwargs['keyword'] = keyword
         agency = json_request['filters']['agency']
         if agency and agency != 'all':
             download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
