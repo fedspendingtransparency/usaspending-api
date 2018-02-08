@@ -50,9 +50,18 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
         '_source': query_fields,
         'from': lower_limit,
         'size': limit,
-        'query': {
-            'query_string': {
-                'query': keyword
+        "query": {
+            "multi_match": {
+                "query": keyword,
+                "fields": ["recipient_unique_id",
+                           "parent_recipient_unique_id",
+                           "naics_code",
+                           "naics_description",
+                           "product_or_service_code",
+                           "product_or_service_description",
+                           "award_description",
+                           "recipient_name",
+                           "display_award_id"]
                 }
             },
         'sort': [{
@@ -82,9 +91,18 @@ def get_total_results(keyword, index_name):
     index_name = '{}-{}'.format(TRANSACTIONS_INDEX_ROOT,
                                 index_name.replace('_', ''))+'*'
     query = {
-        'query': {
-            'query_string': {
-                'query': keyword
+        "query": {
+            "multi_match": {
+                "query": keyword,
+                "fields": ["recipient_unique_id",
+                           "parent_recipient_unique_id",
+                           "naics_code",
+                           "naics_description",
+                           "product_or_service_code",
+                           "product_or_service_description",
+                           "award_description",
+                           "recipient_name",
+                           "display_award_id"]
                 }
             }
     }
@@ -110,10 +128,19 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
     """
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
     query = {'query': {
-                'query_string': {
-                    'query': keyword
-                    }
-                },
+            "multi_match": {
+                "query": keyword,
+                "fields": ["recipient_unique_id",
+                           "parent_recipient_unique_id",
+                           "naics_code",
+                           "naics_description",
+                           "product_or_service_code",
+                           "product_or_service_description",
+                           "award_description",
+                           "recipient_name",
+                           "display_award_id"]
+                }
+            },
              'aggs': {
                 'transaction_sum': {
                     'sum': {
@@ -149,7 +176,20 @@ def get_download_ids(keyword, field, size=10000):
     n_iter = min(max(1, total//size), n_iter)
     for i in range(n_iter):
         query = {"_source": [field],
-                 "query": {"query_string": {"query": keyword}},
+                 "query": {
+                     "multi_match": {
+                         "query": keyword,
+                         "fields": ["recipient_unique_id",
+                                    "parent_recipient_unique_id",
+                                    "naics_code",
+                                    "naics_description",
+                                    "product_or_service_code",
+                                    "product_or_service_description",
+                                    "award_description",
+                                    "recipient_name",
+                                    "display_award_id"]
+                         }
+                     },
                  "aggs": {
                         "results": {
                          "terms": {
@@ -173,3 +213,38 @@ def get_download_ids(keyword, field, size=10000):
         for result in response['aggregations']['results']['buckets']:
             results.append(result['key'])
         yield results
+
+
+def get_sum_and_count_aggregation_results(keyword):
+    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT)+'*'
+    query = {"query": {"query_string": {"query": keyword}},
+             "aggs": {
+              "prime_awards_obligation_amount": {
+                 "sum": {
+                    "field": "transaction_amount"
+                 }
+              },
+              "prime_awards_count": {
+                 "value_count": {
+                    "field": "transaction_id"
+                 }
+              }
+              }, "size": 0}
+    found_result = 0
+    while not found_result > 10:
+        found_result += 1
+        try:
+            response = CLIENT.search(index=index_name, body=query)
+            results = {}
+            results["prime_awards_count"] = response['aggregations']["prime_awards_count"]["value"]
+            results["prime_awards_obligation_amount"] = \
+                round(response['aggregations']["prime_awards_obligation_amount"]["value"], 2)
+            return results
+        except (TransportError, ConnectionError) as e:
+            logger.error(e)
+            logger.error('Error retrieving ids. Retrying connection.')
+
+
+def spending_by_transaction_sum_and_count(filters):
+    keyword = filters['keyword']
+    return get_sum_and_count_aggregation_results(keyword)

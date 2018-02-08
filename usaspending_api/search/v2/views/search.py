@@ -28,7 +28,6 @@ from usaspending_api.awards.v2.filters.view_selector import get_view_queryset
 from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
 from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
 from usaspending_api.awards.v2.filters.view_selector import spending_over_time
-from usaspending_api.awards.v2.filters.view_selector import transaction_spending_summary
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, loan_type_mapping, \
     non_loan_assistance_type_mapping
@@ -36,7 +35,8 @@ from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_ma
     non_loan_assistance_award_mapping
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
-from usaspending_api.search.v2.elasticsearch_helper import search_transactions, spending_by_transaction_count
+from usaspending_api.search.v2.elasticsearch_helper import search_transactions, spending_by_transaction_count,\
+     spending_by_transaction_sum_and_count
 
 
 logger = logging.getLogger(__name__)
@@ -821,25 +821,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
-        queryset, model = transaction_spending_summary(filters)
-
-        if model in ['UniversalTransactionView']:
-            agg_results = queryset.aggregate(
-                award_count=Count('*'),  # surprisingly, this works to create "SELECT COUNT(*) ..."
-                award_spending=Sum("federal_action_obligation"))
-        else:
-            # "summary" materialized views are pre-aggregated and contain a counts col
-            agg_results = queryset.aggregate(
-                award_count=Sum('counts'),
-                award_spending=Sum("federal_action_obligation"))
-
-        results = {
-            # The Django Aggregate command will return None if no rows are a match.
-            # It is cleaner to return 0 than "None"/null so the values are checked for None
-            'prime_awards_count': agg_results['award_count'] or 0,
-            'prime_awards_obligation_amount': agg_results['award_spending'] or 0.0,
-        }
-
+        results = spending_by_transaction_sum_and_count(filters)
         # build response
         return Response({"results": results})
 
