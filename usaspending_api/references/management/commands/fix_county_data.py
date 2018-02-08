@@ -9,18 +9,8 @@ logger = logging.getLogger('console')
 
 class Command(BaseCommand):
     @staticmethod
-    def create_matviews(sess, db_host, db_pw):
+    def create_matviews(sess):
         logger.info("Creating zip_county temporary view")
-
-        sess.execute(
-            """SELECT
-                dblink_connect('broker_server',
-                    'dbname=data_broker
-                    port=5432
-                    host=""" + db_host + """
-                    user=root
-                    password=""" + db_pw + """')"""
-        )
 
         # zip_county view creation
         sess.execute(
@@ -38,6 +28,9 @@ class Command(BaseCommand):
                         AND cc.county_number = zips.county_number')
                     AS zip_broker (zip5 text, zip_last4 text, county_number text, county_name text))"""
         )
+
+        sess.execute("SELECT dblink_disconnect('broker_server')")
+        sess.execute("DROP EXTENSION dblink")
 
         logger.info("Created zip_county temporary view, creating zip_county index on zip5")
         sess.execute("CREATE INDEX ix_zip5_zip_county ON zip_county (zip5)")
@@ -282,8 +275,6 @@ class Command(BaseCommand):
                             action='store_true')
         parser.add_argument('-am', '--all_matview', help='Run all updates and create and delete matviews',
                             action='store_true')
-        parser.add_argument('-db', '--database', help='Host for the broker db', nargs=1, type=str)
-        parser.add_argument('-pw', '--password', help='Password for the broker db', nargs=1, type=str)
 
     def handle(self, *args, **options):
         with connection.cursor() as sess:
@@ -292,9 +283,7 @@ class Command(BaseCommand):
 
             if options['all_matview'] or options['all']:
                 if options['all_matview']:
-                    if not options['database'] or not options['password']:
-                        raise InvalidParameterException('Must provide a broker host and password when creating matview')
-                    self.create_matviews(sess, options['database'][0], options['password'][0])
+                    self.create_matviews(sess)
 
                 self.update_fpds_le(sess)
                 self.update_fpds_ppop(sess)
@@ -305,9 +294,7 @@ class Command(BaseCommand):
                     self.delete_matviews(sess)
             else:
                 if options['matview']:
-                    if not options['database'] or not options['password']:
-                        raise InvalidParameterException('Must provide a broker host and password when creating matview')
-                    self.create_matviews(sess, options['database'][0], options['password'][0])
+                    self.create_matviews(sess)
                 if options['fpds_le']:
                     self.update_fpds_le(sess)
                 if options['fpds_ppop']:
