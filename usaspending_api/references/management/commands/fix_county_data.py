@@ -13,24 +13,24 @@ class Command(BaseCommand):
         logger.info("Creating zip_county temporary view")
 
         # zip_county view creation
-        sess.execute(
-            """CREATE MATERIALIZED VIEW zip_county AS (
-                SELECT
-                    concat(zip5, zip_last4) AS combined_zip,
-                    concat(zip5, '-', zip_last4) AS dashed_zip,
-                    zip5,
-                    zip_last4,
-                    county_number,
-                    county_name
-                FROM dblink('broker_server', 'SELECT zip5, zip_last4, zips.county_number, county_name FROM zips
-                    LEFT OUTER JOIN county_code AS cc
-                        ON cc.state_code = zips.state_abbreviation
-                        AND cc.county_number = zips.county_number')
-                    AS zip_broker (zip5 text, zip_last4 text, county_number text, county_name text))"""
-        )
-
-        sess.execute("SELECT dblink_disconnect('broker_server')")
-        sess.execute("DROP EXTENSION dblink")
+        # sess.execute(
+        #     """CREATE MATERIALIZED VIEW zip_county AS (
+        #         SELECT
+        #             concat(zip5, zip_last4) AS combined_zip,
+        #             concat(zip5, '-', zip_last4) AS dashed_zip,
+        #             zip5,
+        #             zip_last4,
+        #             county_number,
+        #             county_name
+        #         FROM dblink('broker_server', 'SELECT zip5, zip_last4, zips.county_number, county_name FROM zips
+        #             LEFT OUTER JOIN county_code AS cc
+        #                 ON cc.state_code = zips.state_abbreviation
+        #                 AND cc.county_number = zips.county_number')
+        #             AS zip_broker (zip5 text, zip_last4 text, county_number text, county_name text))"""
+        # )
+        #
+        # sess.execute("SELECT dblink_disconnect('broker_server')")
+        # sess.execute("DROP EXTENSION dblink")
 
         logger.info("Created zip_county temporary view, creating zip_county index on zip5")
         sess.execute("CREATE INDEX ix_zip5_zip_county ON zip_county (zip5)")
@@ -72,6 +72,8 @@ class Command(BaseCommand):
         # zip_county view deletion
         sess.execute("DROP MATERIALIZED VIEW IF EXISTS single_county")
         sess.execute("DROP MATERIALIZED VIEW IF EXISTS zip_county")
+        sess.execute("SELECT dblink_disconnect('broker_server')")
+        sess.execute("DROP EXTENSION dblink")
 
         logger.info("Finished delete of matviews.")
 
