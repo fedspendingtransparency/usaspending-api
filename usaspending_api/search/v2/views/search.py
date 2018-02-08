@@ -786,7 +786,10 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         results = []
         for transaction in response:
             transaction["internal_id"] = transaction["Award ID"]
-            if transaction_type != 'Contracts':
+            if 'display_award_id' in transaction:
+                transaction["Award ID"] = transaction['display_award_id']
+                del transaction['display_award_id']
+            elif transaction_type != 'Contracts':
                 transaction["Award ID"] = transaction['fain']
             else:
                 transaction["Award ID"] = transaction['piid']
