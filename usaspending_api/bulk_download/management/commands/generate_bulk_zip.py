@@ -72,6 +72,7 @@ class Command(BaseCommand):
                     logger.info('Message Received: {}'.format(message))
                     if message.message_attributes is not None:
                         self.current_job_id = message.message_attributes['download_job_id']['StringValue']
+                        self.mark_job_status(self.current_job_id, 'running')
 
                         # Recreate the sources
                         json_request = json.loads(message.message_attributes['request']['StringValue'])
