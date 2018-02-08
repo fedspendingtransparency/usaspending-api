@@ -239,6 +239,10 @@ class BaseDownloadViewSet(APIView):
         json_request['columns'] = json_request.get('columns', [])
         json_request['file_format'] = json_request.get('file_format', 'csv')
 
+        # Overriding all other filters if the keyword filter is provided
+        if 'keyword' in filters:
+            filters = {'keyword': filters['keyword']}
+
         fields_defaults = {
             'award_types': list(award_type_mappings.keys()),
             'agency': '',
