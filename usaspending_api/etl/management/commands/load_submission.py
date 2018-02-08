@@ -578,6 +578,28 @@ def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None,
     # If the ID is fain or a uri, it's financial assistance. If the award transaction
     # has both a fain and a uri, include both.
     try:
+        # Look for an existing award record
+
+        # Check individual FILE C D linkage first
+        lookup_kwargs = {'recipient_id__isnull': False}
+        if piid is not None:
+            lookup_kwargs['piid'] = piid
+        if parent_award_id is not None:
+            lookup_kwargs['parent_award__piid'] = parent_award_id
+        if fain is not None:
+            lookup_kwargs['fain'] = fain
+        if uri is not None:
+            lookup_kwargs['uri'] = uri
+
+        award_queryset = Award.objects.filter(**lookup_kwargs)[:2]
+
+        award_count = len(award_queryset)
+
+        if award_count == 1:
+            summary_award = award_queryset[0]
+            return [], summary_award
+
+        # if nothing found revert to looking for an award that this record could've already created
         lookup_kwargs = {"awarding_agency": awarding_agency}
         for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
             lookup_kwargs[i[1]] = i[0]
@@ -663,7 +685,6 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     total_rows = award_financial_frame.shape[0]
     start_time = datetime.now()
     awards_touched = []
-    awards = Award.objects  # this stops the property lookup each iteration, saving 3+ seconds every 100 rows!
 
     # for row in award_financial_data:
     for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
@@ -709,28 +730,6 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             'object_class': row.get('object_class'),
             'program_activity': row.get('program_activity'),
         }
-
-        # individual FILE C D linkage
-        if not created:
-            kwargs = {'recipient_id__isnull': False}
-            if row.get('piid') is not None:
-                kwargs['piid'] = row.get('piid')
-            if row.get('parent_award_id') is not None:
-                kwargs['parent_award__piid'] = row.get('parent_award_id'),
-            if row.get('fain') is not None:
-                kwargs['fain'] = row.get('fain')
-            if row.get('uri') is not None:
-                kwargs['uri'] = row.get('uri')
-
-            award_queryset = awards.filter(**kwargs).values("id")[:2]
-
-            award_count = len(award_queryset)
-
-            if award_count == 1:
-                file_d_award = award_queryset[0]
-                value_map_faba['award_id'] = file_d_award['id']
-                del value_map_faba['award']  # remove a potentially bad reference to the related award
-                # logger.info('individual award id mapped: {}'.format(file_d_award['id']))
 
         # Still using the cpe|fyb regex compiled above for reverse
         load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
