@@ -316,7 +316,7 @@ class Command(BaseCommand):
                     self.update_fabs_le(sess)
                 if options['fabs_ppop']:
                     self.update_fabs_ppop(sess)
-                if options['delete_matview']:
-                    self.delete_matviews(sess)
+            if options['delete_matview']:
+                self.delete_matviews(sess)
 
             logger.info("Completed county code fixes")
