@@ -7,7 +7,8 @@ from uuid import uuid4
 '''
 POSTGRES INDEX FORMAT
     CREATE [ UNIQUE ] INDEX [ name ] ON table_name [ USING method ]
-    ( { column_name | ( expression ) } [ COLLATE collation ] [ opclass ] [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [, ...] )
+    ( { column_name | ( expression ) } [ COLLATE collation ]
+        [ opclass ] [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [, ...] )
     [ WITH ( storage_parameter = value [, ... ] ) ]
     [ WHERE predicate ]
 

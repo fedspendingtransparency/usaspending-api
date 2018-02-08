@@ -8,7 +8,6 @@ import smart_open
 import zipstream
 from django.conf import settings
 
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.v2 import download_column_historical_lookups
 import traceback

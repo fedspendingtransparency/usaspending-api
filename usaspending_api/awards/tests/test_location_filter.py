@@ -8,14 +8,9 @@ from usaspending_api.awards.v2.filters.award import award_filter
 
 @pytest.fixture()
 def transaction_data():
-    country_1 = mommy.make(
-        'references.RefCountryCode',
-        country_code='ABC'
-    )
-
     location_1 = mommy.make(
         'references.Location',
-        location_country_code=country_1,
+        location_country_code='ABC',
         state_code="AA", county_code='001',
         congressional_code='01',
         zip5='12345',
@@ -23,7 +18,7 @@ def transaction_data():
 
     location_2 = mommy.make(
         'references.Location',
-        location_country_code=country_1,
+        location_country_code='ABC',
         state_code="AB",
         county_code='002',
         congressional_code='02',
@@ -48,7 +43,7 @@ def transaction_data():
         recipient=recipient_1,
     )
 
-    award_1 = mommy.make(
+    mommy.make(
         'awards.Award',
         place_of_performance=location_1,
         recipient=recipient_1,
@@ -56,7 +51,7 @@ def transaction_data():
         category="A"
     )
 
-    award_2 = mommy.make(
+    mommy.make(
         'awards.Award',
         place_of_performance=location_2,
         recipient=recipient_1,
@@ -105,7 +100,7 @@ def test_transaction_filter_pop_multi(transaction_data):
 @pytest.mark.django_db
 def test_award_filter_recipient_error(transaction_data):
     # Testing for missing fields
-    with pytest.raises(InvalidParameterException) as error_msg:
+    with pytest.raises(InvalidParameterException):
         filter_error = {'recipient_locations': [
             {'country': 'ABC', 'district': '01'},
             {'country': 'DEF'},

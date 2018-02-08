@@ -10,7 +10,6 @@ from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY, DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
-
 class AgencyViewSet(APIView):
 
     """Return an agency name and active fy"""

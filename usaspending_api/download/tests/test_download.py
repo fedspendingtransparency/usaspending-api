@@ -1,4 +1,3 @@
-from datetime import date
 import json
 
 from model_mommy import mommy
@@ -23,10 +22,10 @@ def award_data(db):
             description=js.desc)
 
     # Create Locations
-    loc1 = mommy.make('references.Location')
+    mommy.make('references.Location')
 
     # Create LE
-    le1 = mommy.make('references.LegalEntity')
+    mommy.make('references.LegalEntity')
 
     # Create Awarding Top Agency
     ata1 = mommy.make(
@@ -45,7 +44,7 @@ def award_data(db):
         icon_filename='test')
 
     # Create Awarding subs
-    asa1 = mommy.make('references.SubtierAgency', name="Bureau of Things")
+    mommy.make('references.SubtierAgency', name="Bureau of Things")
 
     # Create Awarding Agencies
     aa1 = mommy.make(
@@ -54,7 +53,7 @@ def award_data(db):
         'references.Agency', id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
-    fta = mommy.make(
+    mommy.make(
         'references.ToptierAgency',
         name="Bureau of Money",
         cgac_code='102',
@@ -63,10 +62,10 @@ def award_data(db):
         icon_filename='test')
 
     # Create Funding SUB
-    fsa1 = mommy.make('references.SubtierAgency', name="Bureau of Things")
+    mommy.make('references.SubtierAgency', name="Bureau of Things")
 
     # Create Funding Agency
-    fa1 = mommy.make('references.Agency', id=3, toptier_flag=False)
+    mommy.make('references.Agency', id=3, toptier_flag=False)
 
     # Create Awards
     award1 = mommy.make('awards.Award', category='contracts')
@@ -91,11 +90,11 @@ def award_data(db):
         awarding_agency=aa2)
 
     # Create TransactionContract
-    tfpds1 = mommy.make(TransactionFPDS, transaction=trann1, piid='tc1piid')
-    tfpds2 = mommy.make(TransactionFPDS, transaction=trann2, piid='tc2piid')
+    mommy.make(TransactionFPDS, transaction=trann1, piid='tc1piid')
+    mommy.make(TransactionFPDS, transaction=trann2, piid='tc2piid')
 
     # Create TransactionAssistance
-    tfabs1 = mommy.make(TransactionFABS, transaction=trann3, fain='ta1fain')
+    mommy.make(TransactionFABS, transaction=trann3, fain='ta1fain')
 
     # Set latest_award for each award
     update_awards()

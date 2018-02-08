@@ -5,7 +5,7 @@ to be displayed for the front end
 TRANSACTIONS_LOOKUP = {"Recipient Name": "recipient_name",
                        "Action Date": "action_date",
                        "Transaction Amount": "transaction_amount",
-                       "Contract Award Type": "type_description",
+                       "Award Type": "type_description",
                        "Awarding Agency": "awarding_toptier_agency_name",
                        "Awarding Sub Agency": "awarding_subtier_agency_name",
                        "Funding Agency": "funding_toptier_agency_name",
@@ -15,7 +15,6 @@ TRANSACTIONS_LOOKUP = {"Recipient Name": "recipient_name",
                        "Subsidy Cost": "original_loan_subsidy_cost",
                        "Mod": "modification_number",
                        "Award ID": "award_id",
-                       "Award Type": "type_description",
                        "awarding_agency_id": "awarding_agency_id"}
 
 award_type_mapping = {
@@ -39,3 +38,5 @@ award_type_mapping = {
     # 'S': 'Funded Space Act Agreement',
     # 'T': 'Training Grant'}
 }
+
+award_categories = ['contracts', 'direct_payments', 'loans', 'grants', 'other']

@@ -1,16 +1,10 @@
-from django.db.models import Q
 from django.conf import settings
 from django.db import connection
 from retrying import retry
 from multiprocessing import Process, JoinableQueue
 from django import db
-import multiprocessing
-import time
 import logging
 import csv
-import queue
-import sys
-import json
 import smart_open
 import os
 
@@ -192,8 +186,8 @@ class DataLoaderThread(Process):
                 if self.references["pre_row_function"] is not None:
                     self.references["pre_row_function"](row=row, instance=model_instance)
 
-                processed_row = self.load_data_into_model(model_instance, self.references["fields"], self.field_map,
-                                                          self.value_map, row, self.references["logger"])
+                self.load_data_into_model(model_instance, self.references["fields"], self.field_map,
+                                          self.value_map, row, self.references["logger"])
 
                 # If we have a post row function, run it before saving
                 if self.references["post_row_function"] is not None:

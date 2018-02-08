@@ -1,9 +1,10 @@
-import datetime
+import contextlib
 import logging
 import time
-from calendar import monthrange
+import timeit
+from calendar import monthrange, isleap
 
-from fiscalyear import *
+from fiscalyear import FiscalDateTime, FiscalYear, FiscalQuarter, datetime
 from collections import OrderedDict
 
 from django.db import DEFAULT_DB_ALIAS
@@ -82,6 +83,19 @@ def generate_all_fiscal_years_in_range(start, end):
     return fiscal_years
 
 
+def within_one_year(d1, d2):
+    """ includes leap years """
+    year_range = list(range(d1.year, d2.year+1))
+    if len(year_range) > 2:
+        return False
+    days_diff = abs((d2 - d1).days)
+    for leap_year in [year for year in year_range if isleap(year)]:
+        leap_date = datetime.datetime(leap_year, 2, 29)
+        if leap_date >= d1 and leap_date <= d2:
+            days_diff = days_diff - 1
+    return days_diff <= 365
+
+
 def generate_raw_quoted_query(queryset):
     """
     Generates the raw sql from a queryset with quotable types quoted.
@@ -99,7 +113,7 @@ def generate_raw_quoted_query(queryset):
 
 
 def order_nested_object(nested_object):
-    ''' Simply recursively order the item. To be used for standardizing objects for JSON dumps'''
+    """ Simply recursively order the item. To be used for standardizing objects for JSON dumps"""
     if isinstance(nested_object, list):
         return sorted([order_nested_object(subitem) for subitem in nested_object])
     elif isinstance(nested_object, dict):
@@ -207,7 +221,7 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
 
 
 def fy(raw_date):
-    'Federal fiscal year corresponding to date'
+    """Federal fiscal year corresponding to date"""
 
     if raw_date is None:
         return None
@@ -223,6 +237,24 @@ def fy(raw_date):
         raise TypeError('{} needs year and month attributes'.format(raw_date))
 
     return result
+
+
+@contextlib.contextmanager
+def timer(msg='', logging_func=print):
+    """
+    Use as a context manager or decorator to report on elapsed time.
+
+    with timer('stuff', logger.info):
+        (active code)
+
+    """
+    start = timeit.default_timer()
+    logging_func('Beginning {}...'.format(msg))
+    try:
+        yield {}
+    finally:
+        elapsed = timeit.default_timer() - start
+        logging_func('... finished {} in {} sec'.format(msg, elapsed))
 
 
 # Raw SQL run during a migration

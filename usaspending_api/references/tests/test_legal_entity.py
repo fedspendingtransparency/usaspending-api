@@ -5,6 +5,7 @@ from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.references.models import LegalEntity
+from usaspending_api.broker.helpers import get_business_categories
 
 
 @pytest.fixture
@@ -90,37 +91,17 @@ def test_update_business_type_categories(recipients_data):
     le = LegalEntity.objects.filter(legal_entity_id=1111).first()
 
     le.business_types = 'P'
-    LegalEntity.update_business_type_categories(le)
+    le.business_categories = get_business_categories({'business_types': le.business_types}, 'fabs')
     assert le.business_categories == ['individuals']
 
     le.business_types = 'L'
-    LegalEntity.update_business_type_categories(le)
+    le.business_categories = get_business_categories({'business_types': le.business_types}, 'fabs')
     assert 'authorities_and_commissions' in le.business_categories
     assert 'government' in le.business_categories
 
-    le.business_types = 'L'
-    le.individual = '1'
-    LegalEntity.update_business_type_categories(le)
-    assert 'individuals' in le.business_categories
-
-    le.business_types = 'L'
-    le.individual = '1'
-    le.city_local_government = '1'
-    le.federal_agency = '1'
-    LegalEntity.update_business_type_categories(le)
-    assert 'national_government' in le.business_categories
-
     le.business_types = 'M'
-    le.individual = '0'
-    le.city_local_government = '1'
-    le.federal_agency = '0'
-    le.minority_institution = '1'
-    LegalEntity.update_business_type_categories(le)
+    le.business_categories = get_business_categories({'business_types': le.business_types}, 'fabs')
     assert 'nonprofit' in le.business_categories
-    assert 'minority_serving_institution_of_higher_education' in le.business_categories
-    assert 'individuals' not in le.business_categories
-    assert 'national_government' not in le.business_categories
-    assert 'government' in le.business_categories
 
 
 @pytest.mark.django_db
@@ -128,19 +109,19 @@ def test_update_business_type_categories_faads_format(recipients_data):
     le = LegalEntity.objects.filter(legal_entity_id=1111).first()
 
     le.business_types = '01'  # B equivalent
-    LegalEntity.update_business_type_categories(le)
+    le.business_categories = get_business_categories({'business_types': le.business_types}, 'fabs')
     assert 'government' in le.business_categories
     assert 'local_government' in le.business_categories
 
     le.business_types = '12'  # M equivalent
-    LegalEntity.update_business_type_categories(le)
+    le.business_categories = get_business_categories({'business_types': le.business_types}, 'fabs')
     assert 'nonprofit' in le.business_categories
 
     le.business_types = '21'  # P equivalent
-    LegalEntity.update_business_type_categories(le)
+    le.business_categories = get_business_categories({'business_types': le.business_types}, 'fabs')
     assert 'individuals' in le.business_categories
 
     le.business_types = '23'  # R equivalent
-    LegalEntity.update_business_type_categories(le)
+    le.business_categories = get_business_categories({'business_types': le.business_types}, 'fabs')
     assert 'small_business' in le.business_categories
     assert 'category_business' in le.business_categories

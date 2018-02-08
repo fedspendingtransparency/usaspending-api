@@ -2,6 +2,8 @@ import logging
 
 from usaspending_api.references.models import LegalEntity, LegalEntityOfficers
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
+from usaspending_api.broker.models import ExternalDataLoadDate
+from usaspending_api.broker import lookups
 from datetime import datetime
 
 logger = logging.getLogger("console")
@@ -17,7 +19,8 @@ INNER JOIN (
 ) ex ON e.awardee_or_recipient_uniqu = ex.awardee_or_recipient_uniqu
     AND e.created_at = ex.MaxDate
 WHERE
-TRIM(high_comp_officer1_full_na) != '' OR
+e.created_at >= %s AND
+(TRIM(high_comp_officer1_full_na) != '' OR
 TRIM(high_comp_officer2_full_na) != '' OR
 TRIM(high_comp_officer3_full_na) != '' OR
 TRIM(high_comp_officer4_full_na) != '' OR
@@ -26,21 +29,20 @@ TRIM(high_comp_officer1_amount) != '' OR
 TRIM(high_comp_officer2_amount) != '' OR
 TRIM(high_comp_officer3_amount) != '' OR
 TRIM(high_comp_officer4_amount) != '' OR
-TRIM(high_comp_officer5_amount) != ''
+TRIM(high_comp_officer5_amount) != '')
 """
 
 
 # Updates all executive compensation data
-def load_executive_compensation(db_cursor):
-
-    logger.info("Getting DUNS/Exec Comp data from broker...")
+def load_executive_compensation(db_cursor, date):
+    logger.info("Getting DUNS/Exec Comp data from broker based on the last pull date of %s..." % str(date))
 
     # Get first page
-    db_cursor.execute(EXEC_COMP_QUERY)
+    db_cursor.execute(EXEC_COMP_QUERY, [date])
     exec_comp_query_dict = dictfetchall(db_cursor)
 
     total_rows = len(exec_comp_query_dict)
-    logger.info('Updating Executive Compensation Data, {} rows...'.format(total_rows))
+    logger.info('Updating Executive Compensation Data, {} rows coming from the Broker...'.format(total_rows))
 
     start_time = datetime.now()
 
@@ -78,7 +80,7 @@ def load_executive_compensation(db_cursor):
         # Deal with multiples that we have in our LE table
         legal_entities = LegalEntity.objects.filter(recipient_unique_id=duns_number)
         if not legal_entities.exists():
-            raise AssertionError('No record in data store for DUNS {}. Aborting.'.format(duns_number))
+            logger.info('No record in data store for DUNS {}. Skipping...'.format(duns_number))
 
         for le in legal_entities:
             leo, _ = LegalEntityOfficers.objects.get_or_create(legal_entity=le)
@@ -87,3 +89,8 @@ def load_executive_compensation(db_cursor):
                     value = None
                 setattr(leo, attr, value)
             leo.save()
+
+    # Update the date for the last time the data load was run
+    ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).delete()
+    ExternalDataLoadDate(last_load_date=datetime.now().strftime('%Y-%m-%d'),
+                         external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).save()

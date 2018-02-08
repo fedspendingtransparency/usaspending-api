@@ -1,12 +1,7 @@
 import pytest
-import json
-from datetime import date
 
 from model_mommy import mommy
 from rest_framework import status
-
-from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
@@ -27,13 +22,13 @@ def financial_spending_data(db):
     # submission_2 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016, cgac_code='100')
 
     # CREATE AppropriationAccountBalances
-    aab = mommy.make('accounts.AppropriationAccountBalances', final_of_fy=True, reporting_period_start="2017-1-1",
-                     submission=submission_1, budget_authority_available_amount_total_cpe=2,
-                     obligations_incurred_total_by_tas_cpe=2, gross_outlay_amount_by_tas_cpe=2,
-                     treasury_account_identifier=tas)
+    mommy.make('accounts.AppropriationAccountBalances', final_of_fy=True, reporting_period_start="2017-1-1",
+               submission=submission_1, budget_authority_available_amount_total_cpe=2,
+               obligations_incurred_total_by_tas_cpe=2, gross_outlay_amount_by_tas_cpe=2,
+               treasury_account_identifier=tas)
 
     # CREATE OverallTotals
-    ot = mommy.make('references.OverallTotals', fiscal_year=2017, total_budget_authority=3860000000.00)
+    mommy.make('references.OverallTotals', fiscal_year=2017, total_budget_authority=3860000000.00)
 
 
 @pytest.mark.django_db

@@ -1,9 +1,7 @@
-import datetime
-
 from django.db import models
 from django.utils import timezone
 from usaspending_api.download.models import JobStatus
-from usaspending_api.references.models import ToptierAgency, SubtierAgency
+from usaspending_api.references.models import ToptierAgency
 
 
 class BulkDownloadJob(models.Model):
