@@ -71,7 +71,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
     index_name = index_name[:-1]+'*'
     found_result = 0
     while not found_result > 10:
-        found_result += 1    
+        found_result += 1
         try:
             response = CLIENT.search(index=index_name, body=query)
         except (TransportError, ConnectionError) as e:
@@ -177,16 +177,11 @@ def get_download_ids(keyword, field, size=10000):
                              "size": size}
                         }
                     }, "size": 0}
-        found_result = 0
-        while not found_result > 10:
-            found_result += 1
-            try:
-                response = CLIENT.search(index=index_name, body=query, timeout='3m')
-            except (TransportError, ConnectionError) as e:
-                logger.error(e)
-                logger.error('Error retrieving ids. Retrying connection.')
-                if found_result == 10:
-                    return HttpResponseServerError()
+        try:
+            response = CLIENT.search(index=index_name, body=query, timeout='3m')
+        except (TransportError, ConnectionError) as e:
+            logger.error(e)
+            logger.error('Error retrieving ids. Retrying connection.')
         results = []
         for result in response['aggregations']['results']['buckets']:
             results.append(result['key'])
