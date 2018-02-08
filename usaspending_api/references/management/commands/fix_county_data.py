@@ -72,8 +72,6 @@ class Command(BaseCommand):
         # zip_county view deletion
         sess.execute("DROP MATERIALIZED VIEW IF EXISTS single_county")
         sess.execute("DROP MATERIALIZED VIEW IF EXISTS zip_county")
-        sess.execute("SELECT dblink_disconnect('broker_server')")
-        sess.execute("DROP EXTENSION dblink")
 
         logger.info("Finished delete of matviews.")
 
