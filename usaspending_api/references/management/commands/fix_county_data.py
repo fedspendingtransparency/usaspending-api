@@ -32,8 +32,8 @@ class Command(BaseCommand):
                     zip_last4,
                     county_number,
                     county_name
-                FROM dblink('broker_server', 'SELECT zip5, zip_last4, cc.county_number, county_name FROM zips
-                    JOIN county_code AS cc
+                FROM dblink('broker_server', 'SELECT zip5, zip_last4, zips.county_number, county_name FROM zips
+                    LEFT OUTER JOIN county_code AS cc
                         ON cc.state_code = zips.state_abbreviation
                         AND cc.county_number = zips.county_number')
                     AS zip_broker (zip5 text, zip_last4 text, county_number text, county_name text))"""
