@@ -711,25 +711,24 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         }
 
         # individual FILE C D linkage
-#         if not created and total_rows < 100000:
-#             kwargs = {}
-#             kwargs['recipient_id__isnull'] = False
-#             if row.get('piid') is not None:
-#                 kwargs['piid'] = row.get('piid')
-#             if row.get('parent_award_id') is not None:
-#                 kwargs['parent_award__piid'] = row.get('parent_award_id'),
-#             if row.get('fain') is not None:
-#                 kwargs['fain'] = row.get('fain')
-#             if row.get('uri') is not None:
-#                 kwargs['uri'] = row.get('uri')
+        if not created and total_rows < 100000:
+            kwargs = {'recipient_id__isnull': False}
+            if row.get('piid') is not None:
+                kwargs['piid'] = row.get('piid')
+            if row.get('parent_award_id') is not None:
+                kwargs['parent_award__piid'] = row.get('parent_award_id'),
+            if row.get('fain') is not None:
+                kwargs['fain'] = row.get('fain')
+            if row.get('uri') is not None:
+                kwargs['uri'] = row.get('uri')
 
-#             award_queryset = awards.filter(**kwargs).values("id")[:2]
+            award_queryset = Award.filter(**kwargs).values("id")[:2]
 
-#             award_count = len(award_queryset)
+            award_count = len(award_queryset)
 
-#             if award_count == 1:
-#                 file_d_award = award_queryset[0]
-#                 value_map_faba['award_id'] = file_d_award['id']
+            if award_count == 1:
+                file_d_award = award_queryset[0]
+                value_map_faba['award_id'] = file_d_award['id']
                 # logger.info('individual award id mapped: {}'.format(file_d_award['id']))
 
         # Still using the cpe|fyb regex compiled above for reverse
@@ -737,13 +736,13 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
 
     awards_cache.clear()
 
-    # # bulk file C file D linkage if too many awards
-    # if total_rows >= 100000:
-    #     logger.info('Updating file C - D linkage in bulk')
-    #
-    #     call_command('update_file_c_file_d_awards_sql')
-    #
-    #     logger.info('Completed file C - D linkage')
+    # bulk file C file D linkage if too many awards
+    if total_rows >= 100000:
+        logger.info('Updating file C - D linkage in bulk')
+
+        call_command('update_file_c_file_d_awards_sql')
+
+        logger.info('Completed file C - D linkage')
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
