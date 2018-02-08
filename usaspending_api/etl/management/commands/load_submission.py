@@ -663,7 +663,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     total_rows = award_financial_frame.shape[0]
     start_time = datetime.now()
     awards_touched = []
-    # awards = Award.objects  # this stops the property lookup each iteration, saving 3+ seconds every 100 rows!
+    awards = Award.objects  # this stops the property lookup each iteration, saving 3+ seconds every 100 rows!
 
     # for row in award_financial_data:
     for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
@@ -722,13 +722,12 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             if row.get('uri') is not None:
                 kwargs['uri'] = row.get('uri')
 
-            award_queryset = Award.filter(**kwargs).values("id")[:2]
+            award_queryset = awards.filter(**kwargs).values("id")[:2]
 
             award_count = len(award_queryset)
 
             if award_count == 1:
-                file_d_award = award_queryset[0]
-                value_map_faba['award_id'] = file_d_award['id']
+                value_map_faba['award'] = award_queryset[0]
                 # logger.info('individual award id mapped: {}'.format(file_d_award['id']))
 
         # Still using the cpe|fyb regex compiled above for reverse
