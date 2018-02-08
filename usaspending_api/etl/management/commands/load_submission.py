@@ -729,7 +729,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             if award_count == 1:
                 file_d_award = award_queryset[0]
                 value_map_faba['award_id'] = file_d_award['id']
-                del value_map_faba['award'] # remove a potentially bad reference to the related award
+                del value_map_faba['award']  # remove a potentially bad reference to the related award
                 # logger.info('individual award id mapped: {}'.format(file_d_award['id']))
 
         # Still using the cpe|fyb regex compiled above for reverse
