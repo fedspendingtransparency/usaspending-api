@@ -13,6 +13,7 @@ import multiprocessing
 from filechunkio import FileChunkIO
 import mimetypes
 from collections import OrderedDict
+import tempfile
 
 import boto
 from django.conf import settings
@@ -234,11 +235,7 @@ def write_csvs(download_job, file_name, columns, sources):
                 split_csv_query_raw = '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)
 
                 # Create a unique temporary file to hold the raw query
-                temp_sql_file_path = os.path.join('/', 'tmp', 'bd_sql.sql')
-                unique_id = 0
-                while os.path.exists(temp_sql_file_path):
-                    temp_sql_file_path = os.path.join('/', 'tmp', 'bd_sql_{}.sql'.format(unique_id))
-                    unique_id = unique_id + 1
+                (temp_sql_file_fd, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
                 with open(temp_sql_file_path, 'w') as temp_sql_file:
                     temp_sql_file.write(split_csv_query_raw)
                 # Generate the csv with \copy
@@ -246,6 +243,7 @@ def write_csvs(download_job, file_name, columns, sources):
                 subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=cat_command.stdout)
                 # save it to the zip
                 zipped_csvs.write(split_csv_path, split_csv_name)
+                os.close(temp_sql_file_fd)
                 os.remove(temp_sql_file_path)
                 logger.info('wrote {} took {} seconds'.format(split_csv_name, time.time() - start_split_writing))
 
