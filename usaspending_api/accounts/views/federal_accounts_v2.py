@@ -1,16 +1,21 @@
 import ast
 from collections import OrderedDict
 
-from django.db.models import F, Q, Sum
+from django.db.models import F, OuterRef, Q, Subquery, Sum, Value
+from django.db.models.functions import Concat
 from django.utils.dateparse import parse_date
 from rest_framework.response import Response
-
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
+from usaspending_api.accounts.models import (AppropriationAccountBalances,
+                                             FederalAccount,
+                                             TreasuryAppropriationAccount)
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.common.helpers import get_simple_pagination_metadata
+from usaspending_api.financial_activities.models import \
+    FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -356,4 +361,51 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
 
         result = {"results": {q['name']: q['obligations_incurred_by_program_object_class_cpe__sum'] for q in queryset}}
 
+        return Response(result)
+
+
+class FederalAccountsViewSet(APIView):
+    @cache_response()
+    def post(self, request, format=None):
+        """Return all high-level Federal Account information"""
+
+        limit = request.data.get("limit", 10)
+        page = request.data.get("page", 1)
+        sorting = request.data.get("sort", {'field': 'budgetary_resources', 'direction': 'desc'})
+        sort_field = sorting.get('field', 'budgetary_resources')
+        sort_direction = sorting.get('direction', 'asc')
+        filters = request.data.get('filters', {})
+        fy = filters.get('fy') or SubmissionAttributes.last_certified_fy()
+
+        lower_limit = (page - 1) * limit
+        upper_limit = page * limit
+
+        agency_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('agency_identifier'))
+        queryset = FederalAccount.objects.filter(
+            treasuryappropriationaccount__account_balances__final_of_fy=True,
+            treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy
+            ).annotate(
+            account_id=F('id'),
+            account_number=Concat(F('agency_identifier'), Value('-'), F('main_account_code')),
+            account_name=F('account_title'),
+            budgetary_resources=Sum(
+                'treasuryappropriationaccount__account_balances__budget_authority_available_amount_total_cpe'),
+            managing_agency=Subquery(agency_subquery.values('name')[:1]),
+            managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1]),
+        )
+
+        if sort_direction == 'desc':
+            queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))
+        else:
+            queryset = queryset.order_by(F(sort_field).asc())
+
+        result = {'count': queryset.count(), 'limit': limit, 'page': page, 'fy': fy}
+        resultset = queryset.values('account_id', 'account_number', 'account_name', 'budgetary_resources',
+                                    'agency_identifier', 'managing_agency', 'managing_agency_acronym')
+        resultset = resultset[lower_limit:upper_limit + 1]
+        page_metadata = get_simple_pagination_metadata(len(resultset), limit, page)
+        result.update(page_metadata)
+        resultset = resultset[:limit]
+
+        result['results'] = resultset
         return Response(result)
