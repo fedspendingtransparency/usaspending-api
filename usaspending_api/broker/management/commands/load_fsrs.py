@@ -110,7 +110,7 @@ class Command(BaseCommand):
 
         location_value_map.pop("location_zip")
 
-        recipient_location = Location(**location_value_map).save()
+        recipient_location = Location.objects.create(**location_value_map)
         recipient = LegalEntity.objects.create(
             recipient_unique_id=row['duns'],
             recipient_name=recipient_name,
@@ -132,7 +132,7 @@ class Command(BaseCommand):
 
         pop_value_map.pop("location_zip")
 
-        place_of_performance = Location(**pop_value_map).save()
+        place_of_performance = Location.objects.create(**pop_value_map)
 
         return recipient, place_of_performance
 
@@ -312,9 +312,9 @@ class Command(BaseCommand):
 
         logger.info('Get Broker FSRS procurement data...')
         self.process_award_type(db_cursor, "procurement", "subcontract")
-
-        logger.info('Get Broker FSRS grant data...')
-        self.process_award_type(db_cursor, "grant", "subgrant")
+        #
+        # logger.info('Get Broker FSRS grant data...')
+        # self.process_award_type(db_cursor, "grant", "subgrant")
 
         logger.info('Completed FSRS data load...')
 
