@@ -3,7 +3,7 @@ import logging
 from django.conf import settings
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import TransportError, ConnectionError
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import award_categories
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import award_categories, indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import award_type_mapping
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
 
@@ -57,13 +57,15 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
         }]
     }
 
-    transaction_type = next((award_type_mapping[k] for k in
-                             filters['award_type_codes']
-                             if k in award_type_mapping), 'contracts')
+    for index, award_types in indices_to_award_types.items():
+        if sorted(award_types) == sorted(filters['award_type_codes']):
+            index_name = '{}-{}-*'.format(TRANSACTIONS_INDEX_ROOT, index)
+            transaction_type = index
+            break
+    else:
+        logger.exception('Bad/Missing Award Types requested')
+        return None
 
-    index_name = '{}-{}'.format(TRANSACTIONS_INDEX_ROOT,
-                                transaction_type.lower().replace(' ', ''))
-    index_name = index_name[:-1] + '*'
     try:
         start = perf_counter()
         print('======================================')
