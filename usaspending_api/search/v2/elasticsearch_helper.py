@@ -76,7 +76,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
             response = CLIENT.search(index=index_name, body=query)
         except (TransportError, ConnectionError) as e:
             logger.error(e)
-            logging.exception("There was an error connecting to the ElasticSearch instance.")
+            logger.exception("There was an error connecting to the ElasticSearch instance.")
             if found_result == 10:
                 return HttpResponseServerError()
     total = response['hits']['total']
@@ -102,7 +102,7 @@ def get_total_results(keyword, index_name):
             return response['hits']['total']
         except (TransportError, ConnectionError) as e:
             logger.error(e)
-            logging.exception("There was an error connecting to the ElasticSearch instance.")
+            logger.exception("There was an error connecting to the ElasticSearch instance.")
             if found_result == 10:
                 return HttpResponseServerError()
 
