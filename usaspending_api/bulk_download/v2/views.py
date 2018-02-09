@@ -370,11 +370,12 @@ class BulkDownloadListAgenciesViewSet(APIView):
                 raise InvalidParameterException('Agency ID not found')
             top_tier_agency = top_tier_agency[0]
             # Get the sub agencies and federal accounts associated with that top tier agency
+            # Removed distinct subtier_agency_name since removing subtiers with multiple codes that aren't in the
+            # modified list
             response_data['sub_agencies'] = Agency.objects.filter(toptier_agency_id=agency_id)\
                 .values(subtier_agency_name=F('subtier_agency__name'),
                         subtier_agency_code=F('subtier_agency__subtier_code'))\
-                .order_by('subtier_agency_name')\
-                .distinct('subtier_agency_name')
+                .order_by('subtier_agency_name')
             # Tried converting this to queryset filtering but ran into issues trying to
             # double check the right used subtier_agency by cross checking the cgac_code
             # see the last 2 lines of the list comprehension below
