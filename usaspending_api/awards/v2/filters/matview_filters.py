@@ -23,7 +23,7 @@ def matview_search_filter(filters, model):
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
         key_list = [
-            'keyword',
+            # 'keyword',
             'time_period',
             'award_type_codes',
             'agencies',
@@ -51,24 +51,24 @@ def matview_search_filter(filters, model):
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
 
-        if key == "keyword":
-            keyword = value
-            upper_kw = keyword.upper()
+        # if key == "keyword":
+        #     keyword = value
+        #     upper_kw = keyword.upper()
+        #
+        #     compound_or = Q(keyword_string__contains=upper_kw) | \
+        #         Q(award_id_string__contains=upper_kw) | \
+        #         Q(recipient_unique_id=upper_kw) | \
+        #         Q(parent_recipient_unique_id=keyword)
+        #
+        #     if keyword.isnumeric():
+        #         compound_or |= Q(naics_code__contains=keyword)
+        #
+        #     if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
+        #         compound_or |= Q(product_or_service_code__iexact=keyword)
+        #
+        #     queryset = queryset.filter(compound_or)
 
-            compound_or = Q(keyword_string__contains=upper_kw) | \
-                Q(award_id_string__contains=upper_kw) | \
-                Q(recipient_unique_id=upper_kw) | \
-                Q(parent_recipient_unique_id=keyword)
-
-            if keyword.isnumeric():
-                compound_or |= Q(naics_code__contains=keyword)
-
-            if len(keyword) == 4 and PSC.objects.all().filter(code__iexact=keyword).exists():
-                compound_or |= Q(product_or_service_code__iexact=keyword)
-
-            queryset = queryset.filter(compound_or)
-
-        elif key == "time_period":
+        if key == "time_period":
             success, or_queryset = date_or_fy_queryset(value, model, "fiscal_year",
                                                        "action_date")
             if success:
