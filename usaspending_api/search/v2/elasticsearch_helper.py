@@ -1,6 +1,7 @@
 import logging
 from django.conf import settings
 from elasticsearch import Elasticsearch
+from elasticsearch import TransportError
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
