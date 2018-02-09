@@ -104,42 +104,23 @@ def spending_by_transaction_count(filters):
     return response
 
 
-def search_keyword_id_list_all(keyword):
-    """
-    althought query size has been increased,
-    scrolling may still be time consuming.
-
-    Timeout has been implemented in the
-    client to prevent the connection
-    from timing out.
-    """
-    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
-    query = {"query": {"query_string": {"query": keyword}},
-             "aggs": {
-                    "results": {
-                     "terms": {"field": "transaction_id", "size": DOWNLOAD_QUERY_SIZE}
-                    }
-                }, "size": 0}
-    try:
-        responses = CLIENT.search(index=index_name, body=query, timeout='3m')
-    except Exception:
-        logging.exception("There was an error connecting to the ElasticSearch instance.")
-        return None
-    try:
-        responses = responses["aggregations"]['results']
-        return [response['key'] for response in responses['buckets']]
-    except Exception:
-        logging.exception("There was an error parsing the transaction ID's")
-        return None
-
-
-def get_sum_aggregation_results(keyword):
+def get_sum_aggregation_results(keyword, field='transaction_amount'):
     """
     Size has to be zero here because you only want the aggregations
     """
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
-    query = {"query": {"query_string": {"query": keyword}},
-             "aggs": {"transaction_sum": {"sum": {"field": "transaction_amount"}}}}
+    query = {'query': {
+                'query_string': {
+                    'query': keyword
+                    }
+                },
+             'aggs': {
+                'transaction_sum': {
+                    'sum': {
+                        'field': field
+                    }
+                }
+            }}
     try:
         response = CLIENT.search(index=index_name, body=query)
         return response['aggregations']
@@ -153,46 +134,13 @@ def spending_by_transaction_sum(filters):
     return get_sum_aggregation_results(keyword)
 
 
-def extract_field_data(response, fieldname):
+def get_download_ids(keyword, field, size=10000):
     '''
-    takes in a response body and
-    returns list of given
+    returns a generator that
+    yields list of transaction ids in chunksize SIZE
+
+    Note: this only works for fields in ES of integer type.
     '''
-    hits = response['hits']['hits']
-    return [hit['_source'][fieldname] for hit in hits]
-
-
-def scroll(scroll_id, fieldname):
-    '''returns scroll_id and field
-    data for a given
-     fieldname'''
-    response = CLIENT.scroll(scroll_id, scroll='2m')
-    results = extract_field_data(response, fieldname)
-    scroll_id = response['_scroll_id']
-    return results, scroll_id
-
-
-def get_transaction_ids(keyword, size=100):
-    '''returns a generator that
-    yields list of transaction ids in chunksize SIZE'''
-    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
-    query = {
-        "query": {
-            "query_string": {
-                "query": keyword
-            }
-        }, "size": size}
-    response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
-    n_iter = DOWNLOAD_QUERY_SIZE//size
-    scroll_id = response['_scroll_id']
-    for i in range(n_iter):
-        results, scroll_id = scroll(scroll_id, 'transaction_id')
-        yield results
-
-
-def get_transaction_ids_agg(keyword, size=10000):
-    '''returns a generator that
-    yields list of transaction ids in chunksize SIZE'''
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))+'*'
     n_iter = DOWNLOAD_QUERY_SIZE//size
     total = None
@@ -200,11 +148,12 @@ def get_transaction_ids_agg(keyword, size=10000):
         total = get_total_results(keyword, '*')
     n_iter = min(max(1, total//size), n_iter)
     for i in range(n_iter):
-        query = {"query": {"query_string": {"query": keyword}},
+        query = {"_source": [field],
+                 "query": {"query_string": {"query": keyword}},
                  "aggs": {
                         "results": {
                          "terms": {
-                             "field": "transaction_id",
+                             "field": field,
                              "include": {
                                  "partition": i,
                                  "num_partitions": n_iter
@@ -215,7 +164,7 @@ def get_transaction_ids_agg(keyword, size=10000):
         found_result = False
         while not found_result:
             try:
-                response = CLIENT.search(index=index_name, body=query, scroll='2m', timeout='3m')
+                response = CLIENT.search(index=index_name, body=query, timeout='3m')
                 found_result = True
             except (TransportError, ConnectionError) as e:
                 logger.error(e)
@@ -224,3 +173,38 @@ def get_transaction_ids_agg(keyword, size=10000):
         for result in response['aggregations']['results']['buckets']:
             results.append(result['key'])
         yield results
+
+
+def get_sum_and_count_aggregation_results(keyword):
+    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT)+'*'
+    query = {"query": {"query_string": {"query": keyword}},
+             "aggs": {
+              "prime_awards_obligation_amount": {
+                 "sum": {
+                    "field": "transaction_amount"
+                 }
+              },
+              "prime_awards_count": {
+                 "value_count": {
+                    "field": "transaction_id"
+                 }
+              }
+              }, "size": 0}
+    found_result = 0
+    while not found_result > 10:
+        found_result += 1
+        try:
+            response = CLIENT.search(index=index_name, body=query)
+            results = {}
+            results["prime_awards_count"] = response['aggregations']["prime_awards_count"]["value"]
+            results["prime_awards_obligation_amount"] = \
+                round(response['aggregations']["prime_awards_obligation_amount"]["value"], 2)
+            return results
+        except (TransportError, ConnectionError) as e:
+            logger.error(e)
+            logger.error('Error retrieving ids. Retrying connection.')
+
+
+def spending_by_transaction_sum_and_count(filters):
+    keyword = filters['keyword']
+    return get_sum_and_count_aggregation_results(keyword)
