@@ -5,22 +5,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, F, Value
+from django.db.models import Sum, Count, F, Value, FloatField
 from django.db.models.functions import ExtractMonth, Cast, Coalesce
-from django.db.models import FloatField
+from django.http import HttpResponseServerError
 
 from collections import OrderedDict
 from functools import total_ordering
-
 from datetime import date
 from fiscalyear import FiscalDate
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
-
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
-
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.view_selector import can_use_view
@@ -29,7 +26,6 @@ from usaspending_api.awards.v2.filters.view_selector import spending_by_award_co
 from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
 from usaspending_api.awards.v2.filters.view_selector import spending_over_time
 from usaspending_api.awards.v2.filters.view_selector import transaction_spending_summary
-
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, loan_type_mapping, \
     non_loan_assistance_type_mapping
 from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_mapping, loan_award_mapping, \
@@ -777,11 +773,11 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
-        response, total, transaction_type = search_transactions(filters, fields, sort,
+        success, response, total, transaction_type = search_transactions(filters, fields, sort,
                                                                 order, lower_limit, limit)
-        if total == -1:
+        if not success:
             # will make error catching more robust
-            raise InvalidParameterException("Elasticsearch error")
+            raise InvalidParameterException(response)
         has_next = total > upper_limit
         results = []
         for transaction in response:
@@ -859,4 +855,7 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         results = spending_by_transaction_count(filters)
-        return Response({"results": results})
+        if results:
+            return Response({"results": results})
+        else:
+            return HttpResponseServerError('Error during the aggregations')

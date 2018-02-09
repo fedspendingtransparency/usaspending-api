@@ -1,10 +1,9 @@
-from time import perf_counter
 import logging
 from django.conf import settings
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import TransportError, ConnectionError
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import award_categories, indices_to_award_types
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import award_type_mapping
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import award_categories
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
 
 logger = logging.getLogger('console')
@@ -64,20 +63,16 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
             break
     else:
         logger.exception('Bad/Missing Award Types requested')
-        return None
+        return False, 'Bad/Missing Award Types requested', None, None
 
     try:
-        start = perf_counter()
-        print('======================================')
-        print(query)
         response = CLIENT.search(index=index_name, body=query)
-        print('client search took {}s'.format(perf_counter() - start))
     except Exception:
-        logger.exception("There was an error connecting to the ElasticSearch instance.")
-        return None
+        logger.exception('There was an error connecting to the ElasticSearch instance.')
+        return False, 'There was an error connecting to the ElasticSearch instance', None, None
     total = response['hits']['total']
     results = format_for_frontend(response['hits']['hits'])
-    return results, total, transaction_type
+    return True, results, total, transaction_type
 
 
 def get_total_results(keyword, index_name):
@@ -102,7 +97,11 @@ def spending_by_transaction_count(filters):
     keyword = filters['keyword']
     response = {}
     for category in award_categories:
-        response[category] = get_total_results(keyword, category)
+        total = get_total_results(keyword, category)
+        if total:
+            response[category] = total
+        else:
+            return None
     return response
 
 
