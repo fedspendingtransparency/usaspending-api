@@ -73,18 +73,23 @@ class Command(BaseCommand):
                     logger.info('Message Received: {}'.format(message))
                     if message.message_attributes is not None:
                         self.current_job_id = message.message_attributes['download_job_id']['StringValue']
-                        self.mark_job_status(self.current_job_id, 'running')
-
-                        # Recreate the sources
-                        json_request = json.loads(message.message_attributes['request']['StringValue'])
-                        csv_sources = BulkDownloadAwardsViewSet().get_csv_sources(json_request)
-                        kwargs = {
-                            'download_job': self.get_current_job(),
-                            'file_name': message.message_attributes['file_name']['StringValue'],
-                            'columns': json.loads(message.message_attributes['columns']['StringValue']),
-                            'sources': csv_sources
-                        }
-                        csv_selection.write_csvs(**kwargs)
+                        current_job = self.get_current_job()
+                        run_status = ['ready', 'running']
+                        if current_job.job_status_id in [JOB_STATUS_DICT[status] for status in run_status]:
+                            self.mark_job_status(self.current_job_id, 'running')
+                            # Recreate the sources
+                            json_request = json.loads(message.message_attributes['request']['StringValue'])
+                            csv_sources = BulkDownloadAwardsViewSet().get_csv_sources(json_request)
+                            kwargs = {
+                                'download_job': current_job,
+                                'file_name': message.message_attributes['file_name']['StringValue'],
+                                'columns': json.loads(message.message_attributes['columns']['StringValue']),
+                                'sources': csv_sources
+                            }
+                            csv_selection.write_csvs(**kwargs)
+                        else:
+                            logger.warning('Skipping and deleting message (job_id:{}) that re-entered the queue '
+                                           'with a status of {}'.format(self.current_job_id, current_job.job_status_id))
 
                     # delete from SQS once processed
                     message.delete()
