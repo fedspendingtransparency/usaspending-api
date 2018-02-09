@@ -312,9 +312,9 @@ class Command(BaseCommand):
 
         logger.info('Get Broker FSRS procurement data...')
         self.process_award_type(db_cursor, "procurement", "subcontract")
-        #
-        # logger.info('Get Broker FSRS grant data...')
-        # self.process_award_type(db_cursor, "grant", "subgrant")
+
+        logger.info('Get Broker FSRS grant data...')
+        self.process_award_type(db_cursor, "grant", "subgrant")
 
         logger.info('Completed FSRS data load...')
 
