@@ -188,8 +188,7 @@ class Command(BaseCommand):
                 WHERE zc.zip5 = pafa.legal_entity_zip5
                     AND zc.zip_last4 = pafa.legal_entity_zip_last4
                     AND pafa.legal_entity_county_code IS NULL
-                    AND UPPER(pafa.legal_entity_country_code) = 'USA'
-                    AND pafa.is_active = True"""
+                    AND UPPER(pafa.legal_entity_country_code) = 'USA'"""
         )
 
         logger.info("Finished FABS legal entity 9-digit zips, starting FABS legal entity 5-digit zips")
@@ -204,8 +203,7 @@ class Command(BaseCommand):
                 FROM single_county AS sc
                 WHERE sc.zip5 = pafa.legal_entity_zip5
                     AND pafa.legal_entity_county_code IS NULL
-                    AND UPPER(pafa.legal_entity_country_code) = 'USA'
-                    AND pafa.is_active = True"""
+                    AND UPPER(pafa.legal_entity_country_code) = 'USA'"""
         )
 
         logger.info("Finished FABS legal 5-digit zips, FABS legal entity updates complete")
@@ -224,8 +222,7 @@ class Command(BaseCommand):
                 FROM zip_county AS zc
                 WHERE zc.combined_zip = pafa.place_of_performance_zip4a
                     AND pafa.place_of_perform_county_co IS NULL
-                    AND UPPER(pafa.place_of_perform_country_c) = 'USA'
-                    AND pafa.is_active = True"""
+                    AND UPPER(pafa.place_of_perform_country_c) = 'USA'"""
         )
 
         logger.info("Finished FABS PPOP 9-digit zips without dashes, starting FABS PPOP 9-digit zips with dashes")
@@ -240,8 +237,7 @@ class Command(BaseCommand):
                 FROM zip_county AS zc
                 WHERE zc.dashed_zip = pafa.place_of_performance_zip4a
                     AND pafa.place_of_perform_county_co IS NULL
-                    AND UPPER(pafa.place_of_perform_country_c) = 'USA'
-                    AND pafa.is_active = True"""
+                    AND UPPER(pafa.place_of_perform_country_c) = 'USA'"""
         )
 
         logger.info("Finished FABS PPOP 9-digit zips with dashes, starting FABS PPOP 5-digit zips")
@@ -257,8 +253,7 @@ class Command(BaseCommand):
                 WHERE sc.zip5 = LEFT(pafa.place_of_performance_zip4a, 5)
                     AND pafa.place_of_perform_county_co IS NULL
                     AND pafa.place_of_performance_zip4a ~ '^\d{5}(-?\d{4})?$'
-                    AND UPPER(pafa.place_of_perform_country_c) = 'USA'
-                    AND pafa.is_active = True"""
+                    AND UPPER(pafa.place_of_perform_country_c) = 'USA'"""
         )
 
         logger.info("Finished FABS PPOP 5-digit zips, FABS PPOP updates complete.")
