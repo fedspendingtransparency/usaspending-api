@@ -110,7 +110,7 @@ class Command(BaseCommand):
 
         location_value_map.pop("location_zip")
 
-        recipient_location = Location(**location_value_map).save()
+        recipient_location = Location.objects.create(**location_value_map)
         recipient = LegalEntity.objects.create(
             recipient_unique_id=row['duns'],
             recipient_name=recipient_name,
@@ -132,7 +132,7 @@ class Command(BaseCommand):
 
         pop_value_map.pop("location_zip")
 
-        place_of_performance = Location(**pop_value_map).save()
+        place_of_performance = Location.objects.create(**pop_value_map)
 
         return recipient, place_of_performance
 

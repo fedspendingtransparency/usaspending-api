@@ -13,7 +13,7 @@ CREATE TABLE references_legalentityofficers_new AS (
         broker_exec_comp.officer_3_amount AS officer_3_amount,
         broker_exec_comp.officer_4_amount AS officer_4_amount,
         broker_exec_comp.officer_5_amount AS officer_5_amount,
-        NOW() AS update_date
+        NOW()::DATE AS update_date
     FROM
         dblink ('broker_server', '(
             SELECT
