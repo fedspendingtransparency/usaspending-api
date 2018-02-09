@@ -16,7 +16,7 @@ from usaspending_api.accounts.models import (
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass, TasProgramActivityObjectClassQuarterly)
-from usaspending_api.references.models import ObjectClass, RefProgramActivity
+from usaspending_api.references.models import Agency, ObjectClass, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.award_helpers import get_award_financial_transaction, get_awarding_agency
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
@@ -225,7 +225,7 @@ def get_or_create_program_activity(row, submission_attributes):
         # PA loader should overwrite the names for the unique PAs from the official
         # domain values list if the title needs updating, but for now grab it from the submission
         prg_activity = RefProgramActivity.objects.create(**filters, program_activity_name=row['program_activity_name'])
-        logger.warning('Created missing program activity record for {}'.format(str(filters)))
+        # logger.warning('Created missing program activity record for {}'.format(str(filters)))
 
     return prg_activity
 
@@ -564,6 +564,96 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     logger.info('Skipped a total of {} TAS rows for File B'.format(total_tas_skipped))
 
 
+def get_or_create_summary_award(awarding_agency=None, piid=None, fain=None,
+                                uri=None, parent_award_id=None, save=True):
+    """
+    Given a set of award identifiers and awarding agency information,
+    find a corresponding Award record. If we can't find one, create it.
+
+    Returns:
+        created: a list of new awards created, used to enable bulk insert
+        summary_award: the summary award that the calling process can map to
+    """
+    # If an award transaction's ID is a piid, it's contract data
+    # If the ID is fain or a uri, it's financial assistance. If the award transaction
+    # has both a fain and a uri, include both.
+    try:
+        # Look for an existing award record
+
+        # Check individual FILE C D linkage first
+        lookup_kwargs = {'recipient_id__isnull': False}
+        if piid is not None:
+            lookup_kwargs['piid'] = piid
+        if parent_award_id is not None:
+            lookup_kwargs['parent_award__piid'] = parent_award_id
+        if fain is not None:
+            lookup_kwargs['fain'] = fain
+        if uri is not None:
+            lookup_kwargs['uri'] = uri
+
+        award_queryset = Award.objects.filter(**lookup_kwargs)[:2]
+
+        award_count = len(award_queryset)
+
+        if award_count == 1:
+            summary_award = award_queryset[0]
+            return [], summary_award
+
+        # if nothing found revert to looking for an award that this record could've already created
+        lookup_kwargs = {"awarding_agency": awarding_agency}
+        for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+            lookup_kwargs[i[1]] = i[0]
+            if parent_award_id:
+                # parent_award__piid
+                lookup_kwargs["parent_award_piid"] = parent_award_id
+
+        # Look for an existing award record
+        summary_award = Award.objects \
+            .filter(Q(**lookup_kwargs)) \
+            .filter(awarding_agency=awarding_agency) \
+            .first()
+        if (summary_award is None and
+                awarding_agency is not None and
+                awarding_agency.toptier_agency.name != awarding_agency.subtier_agency.name):
+            # No award match found when searching by award id info +
+            # awarding subtier agency. Relax the awarding agency
+            # critera to just the toptier agency instead of the subtier
+            # agency and try the search again.
+            awarding_agency_toptier = Agency.get_by_toptier(
+                awarding_agency.toptier_agency.cgac_code)
+
+            summary_award = Award.objects \
+                .filter(Q(**lookup_kwargs)) \
+                .filter(awarding_agency=awarding_agency_toptier) \
+                .first()
+
+        if summary_award:
+            return [], summary_award
+
+        parent_created, parent_award = [], None
+
+        # Now create the award record for this award transaction
+        create_kwargs = {"awarding_agency": awarding_agency, "parent_award": parent_award,
+                         "parent_award_piid": parent_award_id}
+        for i in [(piid, "piid"), (fain, "fain"), (uri, "uri")]:
+            create_kwargs[i[1]] = i[0]
+        summary_award = Award(**create_kwargs)
+        created = [summary_award, ]
+        created.extend(parent_created)
+
+        if save:
+            summary_award.save()
+
+        return created, summary_award
+
+    # Do not use bare except
+    except ValueError:
+        raise ValueError(
+            'Unable to find or create an award with the provided information: '
+            'piid={}, fain={}, uri={}, parent_id={}, awarding_agency={}'.format(
+                piid, fain, uri, parent_award_id, awarding_agency))
+
+
 def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     """
     Process and load file C broker data.
@@ -595,7 +685,6 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     total_rows = award_financial_frame.shape[0]
     start_time = datetime.now()
     awards_touched = []
-    awards = Award.objects  # this stops the property lookup each iteration, saving 3+ seconds every 100 rows!
 
     # for row in award_financial_data:
     for index, row in enumerate(award_financial_frame.replace({np.nan: None}).to_dict(orient='records'), 1):
@@ -621,19 +710,19 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
         # Award record.
 
         # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-        created, award = Award.get_or_create_summary_award(
+        created, award = get_or_create_summary_award(
             awarding_agency=row['awarding_agency'],
             piid=row.get('piid'),
             fain=row.get('fain'),
             uri=row.get('uri'),
-            parent_award_id=row.get('parent_award_id'),
-            use_cache=False)
+            parent_award_id=row.get('parent_award_id'))
 
         awards_touched += [award]
 
         award_financial_data = FinancialAccountsByAwards()
 
         value_map_faba = {
+            'award': award,
             'submission': submission_attributes,
             'reporting_period_start': submission_attributes.reporting_period_start,
             'reporting_period_end': submission_attributes.reporting_period_end,
@@ -642,40 +731,10 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
             'program_activity': row.get('program_activity'),
         }
 
-        # individual FILE C D linkage
-        if not created and total_rows < 100000:
-            kwargs = {}
-            kwargs['recipient_id__isnull'] = False
-            if row.get('piid') is not None:
-                kwargs['piid'] = row.get('piid')
-            if row.get('parent_award_id') is not None:
-                kwargs['parent_award__piid'] = row.get('parent_award_id'),
-            if row.get('fain') is not None:
-                kwargs['fain'] = row.get('fain')
-            if row.get('uri') is not None:
-                kwargs['uri'] = row.get('uri')
-
-            award_queryset = awards.filter(**kwargs).values("id")[:2]
-
-            award_count = len(award_queryset)
-
-            if award_count == 1:
-                file_d_award = award_queryset[0]
-                value_map_faba['award_id'] = file_d_award['id']
-                logger.info('individual award id mapped: {}'.format(file_d_award['id']))
-
         # Still using the cpe|fyb regex compiled above for reverse
         load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
 
     awards_cache.clear()
-
-    # bulk file C file D linkage if too many awards
-    if total_rows >= 100000:
-        logger.info('Updating file C - D linkage in bulk')
-
-        call_command('update_file_c_file_d_awards_sql')
-
-        logger.info('Completed file C - D linkage')
 
     for key in skipped_tas:
         logger.info('Skipped %d rows due to missing TAS: %s', skipped_tas[key]['count'], key)
