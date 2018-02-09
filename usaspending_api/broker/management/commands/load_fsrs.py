@@ -63,7 +63,8 @@ class Command(BaseCommand):
                 (row['contract_idv_agency_code'] if row['contract_idv_agency_code'] else '-NONE-') + '_' + \
                 (row['contract_number'] if row['contract_number'] else '-NONE-') + '_' + \
                 (row['idv_reference_number'] if row['idv_reference_number'] else '-NONE-')
-            award = Award.objects.filter(generated_unique_award_id=generated_unique_id).\
+            award = Award.objects.filter(generated_unique_award_id=generated_unique_id,
+                                         latest_transaction_id__isnull=False).\
                 distinct().order_by("-date_signed").first()
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
@@ -77,7 +78,8 @@ class Command(BaseCommand):
         else:
             # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
             # a transaction with a matching fain
-            all_awards = Award.objects.filter(fain=row['fain']).distinct().order_by("-date_signed")
+            all_awards = Award.objects.filter(fain=row['fain'],
+                                              latest_transaction_id__isnull=False).distinct().order_by("-date_signed")
             award = all_awards.first()
 
             if all_awards.count() > 1:
