@@ -53,6 +53,7 @@ class Command(BaseCommand):
         job = BulkDownloadJob.objects.filter(bulk_download_job_id=job_id).first()
         # update job status
         job.job_status_id = JOB_STATUS_DICT[status_name]
+        job.save()
 
     def handle(self, *args, **options):
         """Run the application."""
