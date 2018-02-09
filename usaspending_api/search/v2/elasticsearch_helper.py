@@ -1,17 +1,15 @@
 import logging
 from django.conf import settings
 from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import TransportError, ConnectionError
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import award_categories
+
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
 
 logger = logging.getLogger('console')
-ES_HOSTNAME = settings.ES_HOSTNAME
+
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
-CLIENT = Elasticsearch(ES_HOSTNAME)
-
+CLIENT = Elasticsearch(settings.ES_HOSTNAME)
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 
 
@@ -24,6 +22,22 @@ def format_for_frontend(response):
     '''calls reverse key from TRANSACTIONS_LOOKUP '''
     response = [result['_source'] for result in response]
     return [swap_keys(result) for result in response]
+
+
+def es_client_query(index, body, timeout='1m', retries=1):
+    if retries > 20:
+        retries = 20
+    elif retries < 1:
+        retries = 1
+    for attempt in range(retries):
+        try:
+            response = CLIENT.search(index=index, body=body, timeout=timeout)
+        except Exception:
+            logger.exception('There was an error connecting to the ElasticSearch cluster.')
+            continue
+        return response
+    logger.error('Error connecting to elasticsearch. {} attempts made'.format(retries))
+    return None
 
 
 def search_transactions(filters, fields, sort, order, lower_limit, limit):
@@ -65,19 +79,17 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
         logger.exception('Bad/Missing Award Types requested')
         return False, 'Bad/Missing Award Types requested', None, None
 
-    try:
-        response = CLIENT.search(index=index_name, body=query)
-    except Exception:
-        logger.exception('There was an error connecting to the ElasticSearch instance.')
-        return False, 'There was an error connecting to the ElasticSearch instance', None, None
-    total = response['hits']['total']
-    results = format_for_frontend(response['hits']['hits'])
-    return True, results, total, transaction_type
+    response = es_client_query(index=index_name, body=query, retries=10)
+    if response:
+        total = response['hits']['total']
+        results = format_for_frontend(response['hits']['hits'])
+        return True, results, total, transaction_type
+    else:
+        return False, 'There was an error connecting to the ElasticSearch cluster', None, None
 
 
-def get_total_results(keyword, index_name):
-    index_name = '{}-{}'.format(TRANSACTIONS_INDEX_ROOT,
-                                index_name.replace('_', '')) + '*'
+def get_total_results(keyword, sub_index, retries=3):
+    index_name = '{}-{}*'.format(TRANSACTIONS_INDEX_ROOT, sub_index.replace('_', ''))
     query = {
         'query': {
             'query_string': {
@@ -85,23 +97,30 @@ def get_total_results(keyword, index_name):
             }
         }
     }
-    try:
-        response = CLIENT.search(index=index_name, body=query)
-        return response['hits']['total']
-    except Exception:
-        logger.exception("There was an error connecting to the ElasticSearch instance.")
+
+    response = es_client_query(index=index_name, body=query, retries=retries)
+    if response:
+        try:
+            return response['hits']['total']
+        except KeyError:
+            logger.error('Unexpected Response')
+    else:
+        logger.error('No Response')
         return None
 
 
 def spending_by_transaction_count(filters):
     keyword = filters['keyword']
     response = {}
-    for category in award_categories:
+
+    for category in indices_to_award_types.keys():
         total = get_total_results(keyword, category)
-        if total:
+        if total is not None:
+            if category == 'directpayments':
+                category = 'direct_payments'
             response[category] = total
         else:
-            return None
+            return total
     return response
 
 
@@ -109,7 +128,7 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
     """
     Size has to be zero here because you only want the aggregations
     """
-    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT.replace('_', '')) + '*'
+    index_name = '{}-*'.format(TRANSACTIONS_INDEX_ROOT)
     query = {
         'query': {
             'query_string': {
@@ -124,11 +143,11 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
             }
         }
     }
-    try:
-        response = CLIENT.search(index=index_name, body=query)
+
+    response = es_client_query(index=index_name, body=query, retries=10)
+    if response:
         return response['aggregations']
-    except Exception:
-        logger.exception("There was an error connecting to the ElasticSearch instance.")
+    else:
         return None
 
 
@@ -144,16 +163,12 @@ def get_download_ids(keyword, field, size=10000):
 
     Note: this only works for fields in ES of integer type.
     '''
-    index_name = '{}-*'.format(TRANSACTIONS_INDEX_ROOT.replace('_', ''))
+    index_name = '{}-*'.format(TRANSACTIONS_INDEX_ROOT)
     n_iter = DOWNLOAD_QUERY_SIZE // size
-    total = None
-    # Changed from (potentially an infinite loop to a max of 10 attempts)
+
     max_iterations = 10
-    for i in max_iterations:
-        total = get_total_results(keyword, '*')
-        if total:
-            break
-    else:
+    total = get_total_results(keyword, '*', max_iterations)
+    if not total:
         logger.error('Error retrieving total results. Max number of attempts reached')
         return None
 
@@ -177,16 +192,9 @@ def get_download_ids(keyword, field, size=10000):
             "size": 0
         }
 
-        for i in max_iterations:
-            try:
-                response = CLIENT.search(index=index_name, body=query, timeout='3m')
-                break
-            except (TransportError, ConnectionError) as e:
-                logger.error(e)
-                logger.error('Error retrieving ids. Retrying connection.')
-        else:
-            logger.error('Error retrieving ids. Max number of retries reached')
-            raise
+        response = es_client_query(index=index_name, body=query, retries=max_iterations, timeout='3m')
+        if not response:
+            raise Exception('Breaking generator, unable to reach cluster')
         results = []
         for result in response['aggregations']['results']['buckets']:
             results.append(result['key'])
