@@ -3,6 +3,7 @@ Handling elasticsearch queries
 '''
 import logging
 from django.conf import settings
+from django.http import HttpResponseServerError
 from elasticsearch import Elasticsearch
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups \
         import TRANSACTIONS_LOOKUP, award_type_mapping, award_categories
@@ -68,11 +69,16 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
     index_name = '{}-{}'.format(TRANSACTIONS_INDEX_ROOT,
                                 transaction_type.lower().replace(' ', ''))
     index_name = index_name[:-1]+'*'
-    try:
-        response = CLIENT.search(index=index_name, body=query)
-    except Exception:
-        logging.exception("There was an error connecting to the ElasticSearch instance.")
-        return None
+    found_result = 0
+    while not found_result > 10:
+        found_result += 1
+        try:
+            response = CLIENT.search(index=index_name, body=query)
+        except (TransportError, ConnectionError) as e:
+            logger.error(e)
+            logger.exception("There was an error connecting to the ElasticSearch instance.")
+            if found_result == 10:
+                return HttpResponseServerError()
     total = response['hits']['total']
     results = format_for_frontend(response['hits']['hits'])
     return results, total, transaction_type
@@ -88,12 +94,17 @@ def get_total_results(keyword, index_name):
                 }
             }
     }
-    try:
-        response = CLIENT.search(index=index_name, body=query)
-        return response['hits']['total']
-    except Exception:
-        logging.exception("There was an error connecting to the ElasticSearch instance.")
-        return None
+    found_result = 0
+    while not found_result > 10:
+        found_result += 1
+        try:
+            response = CLIENT.search(index=index_name, body=query)
+            return response['hits']['total']
+        except (TransportError, ConnectionError) as e:
+            logger.error(e)
+            logger.exception("There was an error connecting to the ElasticSearch instance.")
+            if found_result == 10:
+                return HttpResponseServerError()
 
 
 def spending_by_transaction_count(filters):
@@ -121,12 +132,17 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
                     }
                 }
             }}
-    try:
-        response = CLIENT.search(index=index_name, body=query)
-        return response['aggregations']
-    except Exception:
-        logging.exception("There was an error connecting to the ElasticSearch instance.")
-        return None
+    found_result = 0
+    while not found_result > 10:
+        found_result += 1
+        try:
+            response = CLIENT.search(index=index_name, body=query)
+            return response['aggregations']
+        except (TransportError, ConnectionError) as e:
+            logger.error(e)
+            logging.exception("There was an error connecting to the ElasticSearch instance.")
+            if found_result == 10:
+                return HttpResponseServerError()
 
 
 def spending_by_transaction_sum(filters):
@@ -161,14 +177,11 @@ def get_download_ids(keyword, field, size=10000):
                              "size": size}
                         }
                     }, "size": 0}
-        found_result = False
-        while not found_result:
-            try:
-                response = CLIENT.search(index=index_name, body=query, timeout='3m')
-                found_result = True
-            except (TransportError, ConnectionError) as e:
-                logger.error(e)
-                logger.error('Error retrieving ids. Retrying connection.')
+        try:
+            response = CLIENT.search(index=index_name, body=query, timeout='3m')
+        except (TransportError, ConnectionError) as e:
+            logger.error(e)
+            logger.error('Error retrieving ids. Retrying connection.')
         results = []
         for result in response['aggregations']['results']['buckets']:
             results.append(result['key'])
@@ -202,7 +215,9 @@ def get_sum_and_count_aggregation_results(keyword):
             return results
         except (TransportError, ConnectionError) as e:
             logger.error(e)
-            logger.error('Error retrieving ids. Retrying connection.')
+            logger.error('Error retrieving sums and counts. Retrying connection.')
+            if found_result == 10:
+                return HttpResponseServerError()
 
 
 def spending_by_transaction_sum_and_count(filters):
