@@ -5,22 +5,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, F, Value
+from django.db.models import Sum, Count, F, Value, FloatField
 from django.db.models.functions import ExtractMonth, Cast, Coalesce
-from django.db.models import FloatField
 
 from collections import OrderedDict
 from functools import total_ordering
-
 from datetime import date
 from fiscalyear import FiscalDate
 
+from usaspending_api.common.exceptions import ElasticsearchConnectionException
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
-
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
-
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
 from usaspending_api.awards.v2.filters.view_selector import can_use_view
@@ -777,16 +774,17 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         if sort not in fields:
             raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
 
-        response, total, transaction_type = search_transactions(filters, fields, sort,
-                                                                order, lower_limit, limit)
-        if total == -1:
-            # will make error catching more robust
-            raise InvalidParameterException("Elasticsearch error")
+        success, response, total, award_type = search_transactions(filters, fields, sort, order, lower_limit, limit)
+        if not success:
+            raise InvalidParameterException(response)
         has_next = total > upper_limit
         results = []
         for transaction in response:
             transaction["internal_id"] = transaction["Award ID"]
-            if transaction_type != 'Contracts':
+            if 'display_award_id' in transaction:
+                transaction["Award ID"] = transaction['display_award_id']
+                del transaction['display_award_id']
+            elif award_type != 'contracts':
                 transaction["Award ID"] = transaction['fain']
             else:
                 transaction["Award ID"] = transaction['piid']
@@ -837,4 +835,6 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
             raise InvalidParameterException("Missing one or more required request parameters: filters")
 
         results = spending_by_transaction_count(filters)
+        if not results:
+            raise ElasticsearchConnectionException('Error during the aggregations')
         return Response({"results": results})
