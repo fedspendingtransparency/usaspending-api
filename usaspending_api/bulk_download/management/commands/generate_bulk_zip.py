@@ -19,7 +19,7 @@ from usaspending_api.bulk_download.v2.views import BulkDownloadAwardsViewSet
 #                     level=logging.INFO)
 logger = logging.getLogger('console')
 
-DEFAULT_BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
+DEFAULT_BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 60*30
 
 # # AWS parameters
 # BULK_DOWNLOAD_S3_BUCKET_NAME = os.environ.get('BULK_DOWNLOAD_S3_BUCKET_NAME')
@@ -93,12 +93,9 @@ class Command(BaseCommand):
                 # Handle uncaught exceptions in validation process.
                 logger.error(str(e))
 
-                # csv-specific errors get a different job status and response code
-                if isinstance(e, ValueError) or isinstance(e, csv.Error) or isinstance(e, UnicodeDecodeError):
-                    job_status = 'failed'
                 job = self.get_current_job()
                 if job:
-                    self.mark_job_status(job.bulk_download_job_id, job_status)
+                    self.mark_job_status(job.bulk_download_job_id, 'failed')
             finally:
                 # Set visibility to 0 so that another attempt can be made to process in SQS immediately,
                 # instead of waiting for the timeout window to expire

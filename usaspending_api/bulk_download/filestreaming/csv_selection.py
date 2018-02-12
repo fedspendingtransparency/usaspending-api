@@ -295,20 +295,21 @@ def write_csvs(download_job, file_name, columns, sources, message=None):
             os.remove(file_path)
 
     except Exception as e:
-        download_job.job_status_id = JOB_STATUS_DICT['failed']
+        # Set error message; job_status_id will be set in generate_bulk_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to write the CSV'
         if settings.DEBUG:
             download_job.error_message += '\n' + str(e)
-        logger.error(download_job.error_message + ': ' + str(e))
+        download_job.save()
+        raise e
     else:
         download_job.job_status_id = JOB_STATUS_DICT['finished']
+        download_job.save()
 
     logger.info('Processed Job: {}\n'
                 'Filename: {}\n'
                 'Request Params: {}'.format(download_job.bulk_download_job_id,
                                             download_job.file_name,
                                             download_job.json_request))
-    download_job.save()
 
     logger.info('generate_zips took {} seconds'.format(time.time() - start_zip_generation))
 
