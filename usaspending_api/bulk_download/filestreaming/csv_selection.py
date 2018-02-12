@@ -300,7 +300,7 @@ def write_csvs(download_job, file_name, columns, sources, message=None):
         if settings.DEBUG:
             download_job.error_message += '\n' + str(e)
         download_job.save()
-        raise e
+        raise Exception(download_job.error_message)
     else:
         download_job.job_status_id = JOB_STATUS_DICT['finished']
         download_job.save()

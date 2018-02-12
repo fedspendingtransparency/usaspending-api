@@ -41,22 +41,10 @@ class Command(BaseCommand):
         if job_id:
             return BulkDownloadJob.objects.filter(bulk_download_job_id=job_id).first()
 
-    def mark_job_status(self, job_id, status_name, skip_check=False):
-        """
-        Mark job as having specified status.
-        Jobs being marked as finished will add dependent jobs to queue.
-
-        Args:
-            job_id: ID for job being marked
-            status_name: Status to change job to
-        """
-        job = BulkDownloadJob.objects.filter(bulk_download_job_id=job_id).first()
-        # update job status
-        job.job_status_id = JOB_STATUS_DICT[status_name]
-        job.save()
 
     def process_message(self, message, current_job):
-        self.mark_job_status(self.current_job_id, 'running')
+        current_job.job_status_id = JOB_STATUS_DICT['running']
+        current_job.save()
         # Recreate the sources
         json_request = json.loads(message.message_attributes['request']['StringValue'])
         csv_sources = BulkDownloadAwardsViewSet().get_csv_sources(json_request)
@@ -70,6 +58,7 @@ class Command(BaseCommand):
         csv_selection.write_csvs(**kwargs)
         message.delete()
 
+
     def handle(self, *args, **options):
         """Run the application."""
         queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
@@ -77,6 +66,7 @@ class Command(BaseCommand):
 
         logger.info('Starting SQS polling')
         while True:
+            first_attempt = True
             try:
                 # Grabs one (or more) messages from the queue
                 messages = queue.receive_messages(WaitTimeSeconds=10, MessageAttributeNames=['All'],
@@ -88,14 +78,19 @@ class Command(BaseCommand):
                         self.current_job_id = message.message_attributes['download_job_id']['StringValue']
                         current_job = self.get_current_job()
 
+                        first_attempt = current_job.error_message is None
                         self.process_message(message, current_job)
             except Exception as e:
                 # Handle uncaught exceptions in validation process.
-                logger.error(str(e))
+                job.error_message = str(e)
+                job.save()
+
+                logger.error(job.error_message)
 
                 job = self.get_current_job()
                 if job:
-                    self.mark_job_status(job.bulk_download_job_id, 'failed')
+                    job.job_status_id = JOB_STATUS_DICT['ready' if first_attempt else 'failed']
+                    job.save()
             finally:
                 # Set visibility to 0 so that another attempt can be made to process in SQS immediately,
                 # instead of waiting for the timeout window to expire
