@@ -22,6 +22,9 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.v2 import download_column_historical_lookups
 from usaspending_api.common.helpers import generate_raw_quoted_query
 
+BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
+MAX_VISIBILITY_TIMEOUT = 60*60*4
+
 BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
 
@@ -183,7 +186,7 @@ def apply_annotations_to_sql(raw_query, aliases):
     return raw_query.replace(select_string, new_select_string)
 
 
-def write_csvs(download_job, file_name, columns, sources):
+def write_csvs(download_job, file_name, columns, sources, message=None):
     """Derive the relevant location and write CSVs to it.
 
     :return: the final file name (complete with prefix)"""
@@ -215,6 +218,8 @@ def write_csvs(download_job, file_name, columns, sources):
         d_map = {'d1': 'contracts',
                  'd2': 'assistance'}
 
+        overall_start_time = time.time()
+
         for source in sources:
             source_name = '{}_{}'.format(source_map[source.source_type], d_map[source.file_type])
 
@@ -238,9 +243,29 @@ def write_csvs(download_job, file_name, columns, sources):
                 (temp_sql_file_fd, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
                 with open(temp_sql_file_path, 'w') as temp_sql_file:
                     temp_sql_file.write(split_csv_query_raw)
-                # Generate the csv with \copy
-                cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
-                subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=cat_command.stdout)
+
+                # Run the psql command as a separate Process
+                psql_process = multiprocessing.Process(target=execute_psql, args=(temp_sql_file_path, split_csv_path,))
+
+                # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of
+                # BULK_DOWNLOAD_VISIBILITY_TIMEOUT
+                while psql_process.is_alive() and (time.time() - overall_start_time) < MAX_VISIBILITY_TIMEOUT:
+                    if message:
+                        message.change_visibility(VisibilityTimeout=BULK_DOWNLOAD_VISIBILITY_TIMEOUT)
+                    time.sleep(60)
+
+                if (time.time() - overall_start_time) >= MAX_VISIBILITY_TIMEOUT:
+                    # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
+                    psql_process.terminate()
+
+                    # Remove all temp files
+                    os.close(temp_sql_file_fd)
+                    os.remove(temp_sql_file_path)
+                    shutil.rmtree(working_dir)
+                    zipped_csvs.close()
+                    os.remove(file_path)
+                    raise TimeoutError('Bulk download job lasted longer than 4 hours')
+
                 # save it to the zip
                 zipped_csvs.write(split_csv_path, split_csv_name)
                 os.close(temp_sql_file_fd)
@@ -287,3 +312,13 @@ def write_csvs(download_job, file_name, columns, sources):
     logger.info('generate_zips took {} seconds'.format(time.time() - start_zip_generation))
 
     return file_name
+
+
+def execute_psql(temp_sql_file_path, split_csv_path):
+    try:
+        # Generate the csv with \copy
+        cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
+        subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=cat_command.stdout)
+    except Exception as e:
+        logger.error(str(e))
+        raise e

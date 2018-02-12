@@ -19,10 +19,7 @@ from usaspending_api.bulk_download.v2.views import BulkDownloadAwardsViewSet
 #                     level=logging.INFO)
 logger = logging.getLogger('console')
 
-# Repurposing this constant to represent the amount of time we reset the visibility timeout
-# Currently it's set to a minute.
-BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
-MAX_VISIBILITY_TIMEOUT = 60*60*4
+DEFAULT_BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
 
 # # AWS parameters
 # BULK_DOWNLOAD_S3_BUCKET_NAME = os.environ.get('BULK_DOWNLOAD_S3_BUCKET_NAME')
@@ -67,43 +64,36 @@ class Command(BaseCommand):
             'download_job': current_job,
             'file_name': message.message_attributes['file_name']['StringValue'],
             'columns': json.loads(message.message_attributes['columns']['StringValue']),
-            'sources': csv_sources
+            'sources': csv_sources,
+            'message': message
         }
         csv_selection.write_csvs(**kwargs)
+        message.delete()
 
     def handle(self, *args, **options):
         """Run the application."""
-
         queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
                           QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
 
         logger.info('Starting SQS polling')
         while True:
-            processed_messages = []
             try:
                 # Grabs one (or more) messages from the queue
-                messages = queue.receive_messages(WaitTimeSeconds=10,
-                                                  VisibilityTimeout=BULK_DOWNLOAD_VISIBILITY_TIMEOUT,
-                                                  MessageAttributeNames=['All'])
+                messages = queue.receive_messages(WaitTimeSeconds=10, MessageAttributeNames=['All'],
+                                                  VisibilityTimeout=DEFAULT_BULK_DOWNLOAD_VISIBILITY_TIMEOUT)
                 for message in messages:
                     logger.info('Message Received: {}'.format(message))
                     if message.message_attributes is not None:
+                        # Retrieve the job from the message
                         self.current_job_id = message.message_attributes['download_job_id']['StringValue']
                         current_job = self.get_current_job()
+
                         run_status = ['ready', 'running']
                         if current_job.job_status_id in [JOB_STATUS_DICT[status] for status in run_status]:
-                            process_thread = Thread(target=self.process_message, args=(message, current_job))
-                            process_thread.start()
-                            while process_thread.is_alive():
-                                message.change_visibility(VisibilityTimeout=BULK_DOWNLOAD_VISIBILITY_TIMEOUT)
-                                time.sleep(60)
+                            self.process_message(message, current_job)
                         else:
                             logger.warning('Skipping and deleting message (job_id:{}) that re-entered the queue '
                                            'with a status of {}'.format(self.current_job_id, current_job.job_status_id))
-
-                    # delete from SQS once processed
-                    message.delete()
-                    processed_messages.append(message)
             except Exception as e:
                 # Handle uncaught exceptions in validation process.
                 logger.error(str(e))
@@ -118,5 +108,8 @@ class Command(BaseCommand):
                 # Set visibility to 0 so that another attempt can be made to process in SQS immediately,
                 # instead of waiting for the timeout window to expire
                 for message in messages:
-                    if message not in processed_messages:
+                    try:
                         message.change_visibility(VisibilityTimeout=0)
+                    except Exception:
+                        # TODO: check existence instead of catching error
+                        logger.error('Failed to change visibility on message')
