@@ -1,6 +1,6 @@
 import logging
 import json
-from botocore.exceptions import ClientError
+import botocore
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -67,9 +67,8 @@ class Command(BaseCommand):
                 # Set visibility to 0 so that another attempt can be made to process in SQS immediately,
                 # instead of waiting for the timeout window to expire
                 for message in messages:
-                    message.change_visibility(VisibilityTimeout=0)
                     try:
                         message.change_visibility(VisibilityTimeout=0)
-                    except ClientError:
+                    except botocore.exceptions.ClientError:
                         # TODO: check existence instead of catching error
                         continue
