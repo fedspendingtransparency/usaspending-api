@@ -33,7 +33,7 @@ class Command(BaseCommand):
         total_start = datetime.now()
         tables = options.get('tables')
 
-        if options.get('all'): # if parameter is not provided, run vacuum analyze on the entire database
+        if options.get('all'):  # if parameter is not provided, run vacuum analyze on the entire database
             logger.info('Running VACUUM ANALZYE on entire database...')
             with connection.cursor() as cursor:
                 cursor.execute("VACUUM ANALYZE VERBOSE;")
@@ -43,6 +43,7 @@ class Command(BaseCommand):
                 logger.info('Running VACUUM ANALYZE on the %s table' % table)
                 with connection.cursor() as cursor:
                     cursor.execute("VACUUM ANALYZE VERBOSE %s;" % table)
-                logger.info('Finished running VACUUM ANALYZE on the %s table in %s seconds' % (table, str(datetime.now() - total_start)))
+                logger.info('Finished running VACUUM ANALYZE on the %s table in %s seconds' %
+                            (table, str(datetime.now() - total_start)))
 
         logger.info('Finished VACUUM ANALYZE-ing tables in %s seconds' % str(datetime.now() - total_start))
