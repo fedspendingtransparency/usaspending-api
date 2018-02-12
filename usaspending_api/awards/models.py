@@ -711,7 +711,7 @@ class TransactionFABS(models.Model):
         TransactionNormalized, on_delete=models.CASCADE,
         primary_key=True, related_name='assistance_data')
     published_award_financial_assistance_id = models.TextField(blank=True, null=True, db_index=True)
-    afa_generated_unique = models.TextField(blank=True, null=False)
+    afa_generated_unique = models.TextField(unique=True, null=False)
     action_date = models.TextField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)
     assistance_type = models.TextField(blank=True, null=True)
