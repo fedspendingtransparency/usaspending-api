@@ -98,9 +98,9 @@ class Command(BaseCommand):
                 # Handle uncaught exceptions in validation process.
                 logger.error(str(e))
 
-                # Delete failed jobs
-                message.delete()
-                processed_messages.append(message)
+                # # Delete failed jobs - commenting out for dead letter queue
+                # message.delete()
+                # processed_messages.append(message)
 
                 # csv-specific errors get a different job status and response code
                 if isinstance(e, ValueError) or isinstance(e, csv.Error) or isinstance(e, UnicodeDecodeError):
