@@ -1,6 +1,6 @@
 from datetime import datetime
 from django.core.management.base import BaseCommand
-from django.db import connection
+from django.db import connection, transaction
 import logging
 
 logger = logging.getLogger('console')
@@ -95,6 +95,7 @@ class Command(BaseCommand):
                     if raw_sql.strip():
                         cursor.execute(raw_sql)
 
+    @transaction.atomic
     def handle(self, *args, **options):
         logger.info('Running exec comp SQL to recreate (aka reload) ALL exec comp data')
         total_start = datetime.now()
