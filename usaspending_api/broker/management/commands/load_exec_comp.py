@@ -59,7 +59,7 @@ CREATE TABLE references_legalentityofficers_new AS (
             TRIM(high_comp_officer4_amount) != '''' OR
             TRIM(high_comp_officer5_amount) != '''')') AS broker_exec_comp
             (
-            	duns text,
+                duns text,
                 officer_1_name text,
                 officer_2_name text,
                 officer_3_name text,
