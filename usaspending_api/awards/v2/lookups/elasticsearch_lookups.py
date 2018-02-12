@@ -40,3 +40,12 @@ award_type_mapping = {
 }
 
 award_categories = ['contracts', 'direct_payments', 'loans', 'grants', 'other']
+
+
+indices_to_award_types = {
+    'contracts': ('A', 'B', 'C', 'D'),
+    'directpayments': ('06', '10'),
+    'grants': ('02', '03', '04', '05'),
+    'loans': ('07', '08'),
+    'other': ('09', '11'),
+}

@@ -237,6 +237,19 @@ def test_agency_filter_success(client):
                 }}))
     assert resp.status_code == status.HTTP_200_OK
 
+    # Test for Object Class Results
+    resp = client.post(
+        '/api/v2/spending/',
+        content_type='application/json',
+        data=json.dumps(
+            {
+                "type": "agency",
+                "filters": {
+                    "fy": "2017",
+                    "quarter": "3"
+                }}))
+    assert resp.status_code == status.HTTP_200_OK
+
     # Test for Agency Results
     resp = client.post(
         '/api/v2/spending/',
@@ -317,4 +330,17 @@ def test_agency_failure(client):
         '/api/v2/search/spending_over_time/',
         content_type='application/json',
         data=json.dumps({}))
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+    # Test for Object Class Results
+    resp = client.post(
+        '/api/v2/spending/',
+        content_type='application/json',
+        data=json.dumps(
+            {
+                "type": "agency",
+                "filters": {
+                    "fy": "23",
+                    "quarter": "3"
+                }}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

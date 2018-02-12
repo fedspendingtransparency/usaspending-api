@@ -740,7 +740,7 @@ query_paths = {
         'd1': {
             'subaward_number': 'subaward_number',
             'prime_award_piid': 'award__piid',
-            'prime_award_parent_piid': 'award__parent_award_id',
+            'prime_award_parent_piid': 'award__parent_award_piid',
             'subaward_amount': 'amount',
             'subaward_action_date': 'action_date',
             'subaward_report_year': 'award_report_fy_year',
