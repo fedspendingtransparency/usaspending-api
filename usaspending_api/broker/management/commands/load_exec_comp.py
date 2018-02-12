@@ -1,6 +1,8 @@
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
+from usaspending_api.broker.models import ExternalDataLoadDate
+from usaspending_api.broker import lookups
 import logging
 
 logger = logging.getLogger('console')
@@ -102,5 +104,10 @@ class Command(BaseCommand):
 
         with connection.cursor() as cursor:
             cursor.execute(exec_comp_sql)
+
+        # Update the date for the last time the data load was run
+        ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).delete()
+        ExternalDataLoadDate(last_load_date=datetime.now().strftime('%Y-%m-%d'),
+                             external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).save()
 
         logger.info('Finished exec comp SQL in %s seconds' % str(datetime.now()-total_start))
