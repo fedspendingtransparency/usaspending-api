@@ -23,7 +23,7 @@ from usaspending_api.download.v2 import download_column_historical_lookups
 from usaspending_api.common.helpers import generate_raw_quoted_query
 
 BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
-MAX_VISIBILITY_TIMEOUT = 60*60*4
+MAX_VISIBILITY_TIMEOUT = 60*1
 
 BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
