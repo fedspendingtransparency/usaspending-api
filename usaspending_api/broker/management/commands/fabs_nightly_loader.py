@@ -170,7 +170,8 @@ class Command(BaseCommand):
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
                 "last_modified_date": last_mod_date,
-                "type_description": get_assistance_type_description(row['assistance_type'])
+                "type_description": get_assistance_type_description(row['assistance_type']),
+                "transaction_unique_id": row['afa_generated_unique']
             }
 
             fad_field_map = {

@@ -207,6 +207,7 @@ class Command(BaseCommand):
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
                 "last_modified_date": last_mod_date,
+                "transaction_unique_id": row['detached_award_proc_unique'],
                 "is_fpds": True
             }
 
