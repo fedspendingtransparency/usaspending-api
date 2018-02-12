@@ -1,6 +1,8 @@
 import logging
 import csv
 import json
+from threading import Thread
+import time
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -17,9 +19,10 @@ from usaspending_api.bulk_download.v2.views import BulkDownloadAwardsViewSet
 #                     level=logging.INFO)
 logger = logging.getLogger('console')
 
-# Average time for Bulk Download's an hour so far but theoretically someone could request
-# all data from all agencies from all fiscal years, max is 12 hours, setting this to 3
-BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 10800
+# Repurposing this constant to represent the amount of time we reset the visibility timeout
+# Currently it's set to a minute.
+BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
+MAX_VISIBILITY_TIMEOUT = 60*60*4
 
 # # AWS parameters
 # BULK_DOWNLOAD_S3_BUCKET_NAME = os.environ.get('BULK_DOWNLOAD_S3_BUCKET_NAME')
@@ -55,6 +58,19 @@ class Command(BaseCommand):
         job.job_status_id = JOB_STATUS_DICT[status_name]
         job.save()
 
+    def process_message(self, message, current_job):
+        self.mark_job_status(self.current_job_id, 'running')
+        # Recreate the sources
+        json_request = json.loads(message.message_attributes['request']['StringValue'])
+        csv_sources = BulkDownloadAwardsViewSet().get_csv_sources(json_request)
+        kwargs = {
+            'download_job': current_job,
+            'file_name': message.message_attributes['file_name']['StringValue'],
+            'columns': json.loads(message.message_attributes['columns']['StringValue']),
+            'sources': csv_sources
+        }
+        csv_selection.write_csvs(**kwargs)
+
     def handle(self, *args, **options):
         """Run the application."""
 
@@ -76,17 +92,11 @@ class Command(BaseCommand):
                         current_job = self.get_current_job()
                         run_status = ['ready', 'running']
                         if current_job.job_status_id in [JOB_STATUS_DICT[status] for status in run_status]:
-                            self.mark_job_status(self.current_job_id, 'running')
-                            # Recreate the sources
-                            json_request = json.loads(message.message_attributes['request']['StringValue'])
-                            csv_sources = BulkDownloadAwardsViewSet().get_csv_sources(json_request)
-                            kwargs = {
-                                'download_job': current_job,
-                                'file_name': message.message_attributes['file_name']['StringValue'],
-                                'columns': json.loads(message.message_attributes['columns']['StringValue']),
-                                'sources': csv_sources
-                            }
-                            csv_selection.write_csvs(**kwargs)
+                            process_thread = Thread(target=self.process_message, args=(message, current_job))
+                            process_thread.start()
+                            while process_thread.is_alive():
+                                message.change_visibility(VisibilityTimeout=BULK_DOWNLOAD_VISIBILITY_TIMEOUT)
+                                time.sleep(60)
                         else:
                             logger.warning('Skipping and deleting message (job_id:{}) that re-entered the queue '
                                            'with a status of {}'.format(self.current_job_id, current_job.job_status_id))
@@ -98,14 +108,8 @@ class Command(BaseCommand):
                 # Handle uncaught exceptions in validation process.
                 logger.error(str(e))
 
-                # # Delete failed jobs - commenting out for dead letter queue
-                # message.delete()
-                # processed_messages.append(message)
-
                 # csv-specific errors get a different job status and response code
                 if isinstance(e, ValueError) or isinstance(e, csv.Error) or isinstance(e, UnicodeDecodeError):
-                    job_status = 'invalid'
-                else:
                     job_status = 'failed'
                 job = self.get_current_job()
                 if job:
