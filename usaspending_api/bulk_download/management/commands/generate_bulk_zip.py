@@ -1,5 +1,6 @@
 import logging
 import json
+from botocore.exceptions import ClientError
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -67,8 +68,8 @@ class Command(BaseCommand):
                 # instead of waiting for the timeout window to expire
                 for message in messages:
                     message.change_visibility(VisibilityTimeout=0)
-                    # try:
-                    #     message.change_visibility(VisibilityTimeout=0)
-                    # except Exception:
-                    #     # TODO: check existence instead of catching error
-                    #     continue
+                    try:
+                        message.change_visibility(VisibilityTimeout=0)
+                    except ClientError:
+                        # TODO: check existence instead of catching error
+                        continue
