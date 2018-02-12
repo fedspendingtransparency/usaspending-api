@@ -144,8 +144,8 @@ class Command(BaseCommand):
             # Generate the unique Award ID
             # "ASST_AW_" + awarding_sub_tier_agency_c + fain + uri
             generated_unique_id = 'ASST_AW_' +\
-                (row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-') +\
-                (row['fain'] if row['fain'] else '-NONE-') +\
+                (row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-') + '_' + \
+                (row['fain'] if row['fain'] else '-NONE-') + '_' + \
                 (row['uri'] if row['uri'] else '-NONE-')
 
             # Create the summary Award
