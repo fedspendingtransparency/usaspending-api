@@ -286,6 +286,8 @@ class Award(DataSourceTrackedModel):
             create_kwargs[lookup_value[1]] = lookup_value[0]
             if generated_unique_award_id:
                 create_kwargs["generated_unique_award_id"] = generated_unique_award_id
+            if generated_unique_award_id.startswith('CONT_AW_'):
+                create_kwargs["is_fpds"] = True
             summary_award = Award(**create_kwargs)
 
             if save:
@@ -354,6 +356,7 @@ class TransactionNormalized(models.Model):
                                              verbose_name="Transaction Unique ID")
     generated_unique_award_id = models.TextField(blank=False, null=False, default='none',
                                                  verbose_name="Generated Unique Award ID")
+    is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
 
     def __str__(self):
         return '%s award: %s' % (self.type_description, self.award)

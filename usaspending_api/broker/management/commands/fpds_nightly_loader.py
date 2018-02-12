@@ -156,7 +156,8 @@ class Command(BaseCommand):
                                                                                        datetime.now() - start_time))
 
             # Create new LegalEntityLocation and LegalEntity from the row data
-            legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
+            legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True,
+                                                                                           "is_fpds": True})
             recipient_name = row['awardee_or_recipient_legal']
             legal_entity = LegalEntity.objects.create(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
@@ -164,7 +165,8 @@ class Command(BaseCommand):
             )
             legal_entity_value_map = {
                 "location": legal_entity_location,
-                "business_categories": get_business_categories(row=row, data_type='fpds')
+                "business_categories": get_business_categories(row=row, data_type='fpds'),
+                "is_fpds": True
             }
             set_legal_entity_boolean_fields(row)
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
@@ -204,7 +206,8 @@ class Command(BaseCommand):
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
-                "last_modified_date": last_mod_date
+                "last_modified_date": last_mod_date,
+                "is_fpds": True
             }
 
             contract_field_map = {
