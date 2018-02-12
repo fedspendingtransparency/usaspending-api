@@ -9,20 +9,9 @@ from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.v2.views import BulkDownloadAwardsViewSet
 
-# Logging
-# logging.basicConfig(filename='bulk-download-worker.log',
-#                     format='%(levelname)s %(asctime)s :: %(message)s',
-#                     datefmt='%m/%d/%Y %I:%M:%S %p',
-#                     level=logging.INFO)
 logger = logging.getLogger('console')
 
 DEFAULT_BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 60*30
-
-# # AWS parameters
-# BULK_DOWNLOAD_S3_BUCKET_NAME = os.environ.get('BULK_DOWNLOAD_S3_BUCKET_NAME')
-# BULK_DOWNLOAD_SQS_QUEUE_NAME = os.environ.get('BULK_DOWNLOAD_SQS_QUEUE_NAME')
-# BULK_DOWNLOAD_AWS_REGION = os.environ.get('BULK_DOWNLOAD_AWS_REGION')
-# DATABASE_URL = os.environ.get('DATABASE_URL')
 
 
 class Command(BaseCommand):
