@@ -16,22 +16,6 @@ DEFAULT_BULK_DOWNLOAD_VISIBILITY_TIMEOUT = 60*30
 
 class Command(BaseCommand):
 
-    def process_message(self, message, current_job):
-        current_job.job_status_id = JOB_STATUS_DICT['running']
-        current_job.save()
-        # Recreate the sources
-        json_request = json.loads(message.message_attributes['request']['StringValue'])
-        csv_sources = BulkDownloadAwardsViewSet().get_csv_sources(json_request)
-        kwargs = {
-            'download_job': current_job,
-            'file_name': message.message_attributes['file_name']['StringValue'],
-            'columns': json.loads(message.message_attributes['columns']['StringValue']),
-            'sources': csv_sources,
-            'message': message
-        }
-        csv_selection.write_csvs(**kwargs)
-        message.delete()
-
     def handle(self, *args, **options):
         """Run the application."""
         queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
@@ -39,7 +23,7 @@ class Command(BaseCommand):
 
         logger.info('Starting SQS polling')
         while True:
-            first_attempt = True
+            second_attempt = True
             try:
                 # Grabs one (or more) messages from the queue
                 messages = queue.receive_messages(WaitTimeSeconds=10, MessageAttributeNames=['All'],
@@ -47,26 +31,44 @@ class Command(BaseCommand):
                 for message in messages:
                     logger.info('Message Received: {}'.format(message))
                     if message.message_attributes is not None:
-                        # Retrieve the job from the message
+                        # Retrieve the job from the message and update it
                         job_id = message.message_attributes['download_job_id']['StringValue']
                         current_job = BulkDownloadJob.objects.filter(bulk_download_job_id=job_id).first()
+                        second_attempt = current_job.error_message is not None
+                        current_job.job_status_id = JOB_STATUS_DICT['running']
+                        current_job.save()
 
-                        first_attempt = current_job.error_message is None
-                        self.process_message(message, current_job)
+                        # Recreate the sources
+                        json_request = json.loads(message.message_attributes['request']['StringValue'])
+                        csv_sources = BulkDownloadAwardsViewSet().get_csv_sources(json_request)
+
+                        # Begin writing the CSVs
+                        kwargs = {
+                            'download_job': current_job,
+                            'file_name': message.message_attributes['file_name']['StringValue'],
+                            'columns': json.loads(message.message_attributes['columns']['StringValue']),
+                            'sources': csv_sources,
+                            'message': message
+                        }
+                        csv_selection.write_csvs(**kwargs)
+
+                        # If successful, we do not want to run again; delete
+                        message.delete()
             except Exception as e:
-                # Handle uncaught exceptions in validation process.
+                # Handle uncaught exceptions in validation process
                 logger.error(str(e))
 
                 if current_job:
                     current_job.error_message = str(e)
-                    current_job.job_status_id = JOB_STATUS_DICT['ready' if first_attempt else 'failed']
+                    current_job.job_status_id = JOB_STATUS_DICT['failed' if second_attempt else 'ready']
                     current_job.save()
             finally:
                 # Set visibility to 0 so that another attempt can be made to process in SQS immediately,
                 # instead of waiting for the timeout window to expire
                 for message in messages:
-                    try:
-                        message.change_visibility(VisibilityTimeout=0)
-                    except Exception:
-                        # TODO: check existence instead of catching error
-                        logger.error('Failed to change visibility on message')
+                    message.change_visibility(VisibilityTimeout=0)
+                    # try:
+                    #     message.change_visibility(VisibilityTimeout=0)
+                    # except Exception:
+                    #     # TODO: check existence instead of catching error
+                    #     continue
