@@ -286,8 +286,8 @@ class Award(DataSourceTrackedModel):
             create_kwargs[lookup_value[1]] = lookup_value[0]
             if generated_unique_award_id:
                 create_kwargs["generated_unique_award_id"] = generated_unique_award_id
-            if generated_unique_award_id.startswith('CONT_AW_'):
-                create_kwargs["is_fpds"] = True
+                if generated_unique_award_id.startswith('CONT_AW_'):
+                    create_kwargs["is_fpds"] = True
             summary_award = Award(**create_kwargs)
 
             if save:
