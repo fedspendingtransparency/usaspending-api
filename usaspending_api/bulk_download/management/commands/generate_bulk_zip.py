@@ -88,12 +88,7 @@ class Command(BaseCommand):
                         self.current_job_id = message.message_attributes['download_job_id']['StringValue']
                         current_job = self.get_current_job()
 
-                        run_status = ['ready', 'running']
-                        if current_job.job_status_id in [JOB_STATUS_DICT[status] for status in run_status]:
-                            self.process_message(message, current_job)
-                        else:
-                            logger.warning('Skipping and deleting message (job_id:{}) that re-entered the queue '
-                                           'with a status of {}'.format(self.current_job_id, current_job.job_status_id))
+                        self.process_message(message, current_job)
             except Exception as e:
                 # Handle uncaught exceptions in validation process.
                 logger.error(str(e))
