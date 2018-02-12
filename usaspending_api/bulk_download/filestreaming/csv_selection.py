@@ -246,6 +246,7 @@ def write_csvs(download_job, file_name, columns, sources, message=None):
 
                 # Run the psql command as a separate Process
                 psql_process = multiprocessing.Process(target=execute_psql, args=(temp_sql_file_path, split_csv_path,))
+                psql_process.start()
 
                 # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of
                 # BULK_DOWNLOAD_VISIBILITY_TIMEOUT
