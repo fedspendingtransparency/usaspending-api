@@ -208,6 +208,7 @@ class Command(BaseCommand):
                 "action_date": format_date(row['action_date']),
                 "last_modified_date": last_mod_date,
                 "transaction_unique_id": row['detached_award_proc_unique'],
+                "generated_unique_award_id": generated_unique_id,
                 "is_fpds": True
             }
 
