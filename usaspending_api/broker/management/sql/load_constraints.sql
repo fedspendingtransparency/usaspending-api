@@ -62,6 +62,8 @@ CREATE INDEX legal_entity_domestic_or_foreign_entity_2404797e_like ON legal_enti
 CREATE INDEX legal_entity_location_id_7f712296 ON legal_entity USING btree (location_id);
 
 -- Transaction FABS
+CREATE UNIQUE INDEX transaction_fabs_afa_generated_unique_key ON transaction_fabs USING btree (afa_generated_unique);
+CREATE INDEX transaction_fabs_afa_generated_unique_bb7b8f4b_like ON transaction_fabs USING btree (afa_generated_unique text_pattern_ops);
 CREATE UNIQUE INDEX transaction_fabs_awarding_sub_tier_agency_cc5ccd22_uniq ON transaction_fabs USING btree (awarding_sub_tier_agency_c, award_modification_amendme, fain, uri);
 CREATE INDEX transaction_fabs_cfda_number_0222a383 ON transaction_fabs USING btree (cfda_number);
 CREATE INDEX transaction_fabs_cfda_number_0222a383_like ON transaction_fabs USING btree (cfda_number text_pattern_ops);

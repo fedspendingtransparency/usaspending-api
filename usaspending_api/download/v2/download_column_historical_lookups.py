@@ -234,7 +234,7 @@ query_paths = {
                 'latest_transaction__contract_data__other_than_full_and_open_c',
             'parent_award_agency_id': 'latest_transaction__contract_data__referenced_idv_agency_iden',
             'parent_award_agency_name': 'latest_transaction__contract_data__referenced_idv_agency_desc',
-            'parent_award_id': 'parent_award_id',
+            'parent_award_id': 'parent_award_piid',
             'parent_award_single_or_multiple': 'latest_transaction__contract_data__referenced_mult_or_si_desc',
             'parent_award_single_or_multiple_code': 'latest_transaction__contract_data__referenced_mult_or_single',
             'parent_award_type': 'latest_transaction__contract_data__referenced_idv_type_desc',
