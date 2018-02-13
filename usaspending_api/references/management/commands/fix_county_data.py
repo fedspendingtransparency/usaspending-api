@@ -12,26 +12,6 @@ class Command(BaseCommand):
     def create_matviews(sess):
         logger.info("Creating zip_county temporary view")
 
-        # zip_county view creation
-        # sess.execute(
-        #     """CREATE MATERIALIZED VIEW zip_county AS (
-        #         SELECT
-        #             concat(zip5, zip_last4) AS combined_zip,
-        #             concat(zip5, '-', zip_last4) AS dashed_zip,
-        #             zip5,
-        #             zip_last4,
-        #             county_number,
-        #             county_name
-        #         FROM dblink('broker_server', 'SELECT zip5, zip_last4, zips.county_number, county_name FROM zips
-        #             LEFT OUTER JOIN county_code AS cc
-        #                 ON cc.state_code = zips.state_abbreviation
-        #                 AND cc.county_number = zips.county_number')
-        #             AS zip_broker (zip5 text, zip_last4 text, county_number text, county_name text))"""
-        # )
-        #
-        # sess.execute("SELECT dblink_disconnect('broker_server')")
-        # sess.execute("DROP EXTENSION dblink")
-
         logger.info("Created zip_county temporary view, creating zip_county index on zip5")
         sess.execute("CREATE INDEX ix_zip5_zip_county ON zip_county (zip5)")
 
@@ -206,7 +186,7 @@ class Command(BaseCommand):
                     AND UPPER(pafa.legal_entity_country_code) = 'USA'"""
         )
 
-        logger.info("Finished FABS legal 5-digit zips, FABS legal entity updates complete")
+        logger.info("Finished FABS legal entity 5-digit zips, FABS legal entity updates complete")
 
     @staticmethod
     def update_fabs_ppop(sess):
@@ -258,6 +238,80 @@ class Command(BaseCommand):
 
         logger.info("Finished FABS PPOP 5-digit zips, FABS PPOP updates complete.")
 
+    @staticmethod
+    def update_location(sess):
+        logger.info("Starting location updates, starting legal entity location updates")
+
+        # Location LE
+        sess.execute(
+            """WITH transaction_combined AS (
+                SELECT
+                    le.location_id,
+                    CASE WHEN afa_generated_unique IS NOT NULL
+                    THEN tfab.legal_entity_county_code
+                    ELSE tfpds.legal_entity_county_code
+                    END AS county_code,
+                    CASE WHEN afa_generated_unique IS NOT NULL
+                    THEN tfab.legal_entity_county_name
+                    ELSE tfpds.legal_entity_county_name
+                    END AS county_name
+                FROM transaction_normalized AS tn
+                JOIN legal_entity AS le
+                    ON tn.recipient_id = le.legal_entity_id
+                LEFT OUTER JOIN transaction_fabs AS tfab
+                    ON tfab.transaction_id = tn.id
+                LEFT OUTER JOIN transaction_fpds AS tfpds
+                    ON tfpds.transaction_id = tn.id
+                WHERE UPPER(tfab.legal_entity_country_code) = 'USA'
+                    OR UPPER(tfpds.legal_entity_country_code) = 'USA'
+            )
+            UPDATE references_location AS rl
+                SET county_code = tc.county_code,
+                    county_name = CASE WHEN rl.county_name IS NULL
+                                        THEN tc.county_name
+                                        ELSE rl.county_name END
+                FROM transaction_combined AS tc
+                WHERE tc.location_id = rl.location_id
+                    AND rl.county_code IS NULL
+                    AND UPPER(rl.location_country_code) = 'USA'"""
+        )
+
+        logger.info("Finished legal entity location updates, starting PPOP location updates")
+
+        # Location PPOP
+        sess.execute(
+            """WITH transaction_combined AS (
+                SELECT
+                    tn.place_of_performance_id,
+                    CASE WHEN afa_generated_unique IS NOT NULL
+                        THEN tfab.place_of_perform_county_co
+                        ELSE tfpds.place_of_perform_county_co
+                        END AS county_code,
+                    CASE WHEN afa_generated_unique IS NOT NULL
+                        THEN tfab.place_of_perform_county_na
+                        ELSE tfpds.place_of_perform_county_na
+                        END AS county_name
+                FROM transaction_normalized AS tn
+                LEFT OUTER JOIN transaction_fabs AS tfab
+                    ON tfab.transaction_id = tn.id
+                LEFT OUTER JOIN transaction_fpds AS tfpds
+                    ON tfpds.transaction_id = tn.id
+                WHERE UPPER(tfab.place_of_perform_country_c) = 'USA'
+                    OR UPPER(tfpds.place_of_perform_country_c) = 'USA'
+            )
+            UPDATE references_location AS rl
+                SET county_code = tc.county_code,
+                    county_name = CASE WHEN rl.county_name IS NULL
+                                        THEN tc.county_name
+                                        ELSE rl.county_name END
+                FROM transaction_combined AS tc
+                WHERE tc.place_of_performance_id = rl.location_id
+                    AND rl.county_code IS NULL
+                    AND UPPER(rl.location_country_code) = 'USA'"""
+        )
+
+        logger.info("Finished ppop location updates, finished location updates")
+
     def add_arguments(self, parser):
         parser.add_argument('-mv', '--matview', help='Create the matviews, make sure they do not already exist',
                             action='store_true')
@@ -266,6 +320,7 @@ class Command(BaseCommand):
         parser.add_argument('-fpdsppop', '--fpds_ppop', help='Run FPDS PPOP updates', action='store_true')
         parser.add_argument('-fabsle', '--fabs_le', help='Run FABS Legal Entity updates', action='store_true')
         parser.add_argument('-fabsppop', '--fabs_ppop', help='Run FABS PPOP updates', action='store_true')
+        parser.add_argument('-l', '--location', help='Fix location county codes/names', action='store_true')
         parser.add_argument('-a', '--all', help='Run all updates without creating or deleting matviews',
                             action='store_true')
         parser.add_argument('-am', '--all_matview', help='Run all updates and create and delete matviews',
@@ -284,6 +339,7 @@ class Command(BaseCommand):
                 self.update_fpds_ppop(sess)
                 self.update_fabs_le(sess)
                 self.update_fabs_ppop(sess)
+                self.update_location(sess)
 
                 if options['all_matview']:
                     self.delete_matviews(sess)
@@ -298,6 +354,8 @@ class Command(BaseCommand):
                     self.update_fabs_le(sess)
                 if options['fabs_ppop']:
                     self.update_fabs_ppop(sess)
+                if options['location']:
+                    self.update_location(sess)
             if options['delete_matview']:
                 self.delete_matviews(sess)
 
