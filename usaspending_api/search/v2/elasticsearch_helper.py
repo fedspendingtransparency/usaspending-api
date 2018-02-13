@@ -1,7 +1,6 @@
 import logging
 from django.conf import settings
 from elasticsearch import Elasticsearch
-from elasticsearch import TransportError
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
@@ -171,7 +170,6 @@ def get_download_ids(keyword, field, size=10000):
     total = get_total_results(keyword, '*', max_iterations)
     if not total:
         logger.error('Error retrieving total results. Max number of attempts reached')
-        return None
 
     n_iter = min(max(1, total // size), n_iter)
     for i in range(n_iter):
