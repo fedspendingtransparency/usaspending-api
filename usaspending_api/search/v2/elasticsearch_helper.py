@@ -1,7 +1,6 @@
 import logging
 from django.conf import settings
 from elasticsearch import Elasticsearch
-from elasticsearch import TransportError
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
@@ -169,10 +168,9 @@ def get_download_ids(keyword, field, size=10000):
 
     max_iterations = 10
     total = get_total_results(keyword, '*', max_iterations)
-    if not total:
+    if total is None:
         logger.error('Error retrieving total results. Max number of attempts reached')
-        return None
-
+        return
     n_iter = min(max(1, total // size), n_iter)
     for i in range(n_iter):
         query = {
@@ -217,19 +215,18 @@ def get_sum_and_count_aggregation_results(keyword):
                  }
               }
               }, "size": 0}
-    found_result = 0
-    while not found_result > 10:
-        found_result += 1
+    response = es_client_query(index=index_name, body=query, retries=10)
+    if response:
         try:
-            response = CLIENT.search(index=index_name, body=query)
             results = {}
             results["prime_awards_count"] = response['aggregations']["prime_awards_count"]["value"]
             results["prime_awards_obligation_amount"] = \
                 round(response['aggregations']["prime_awards_obligation_amount"]["value"], 2)
             return results
-        except (TransportError, ConnectionError) as e:
-            logger.error(e)
-            logger.error('Error retrieving ids. Retrying connection.')
+        except KeyError:
+            logger.error('Unexpected Response')
+    else:
+        return None
 
 
 def spending_by_transaction_sum_and_count(filters):
