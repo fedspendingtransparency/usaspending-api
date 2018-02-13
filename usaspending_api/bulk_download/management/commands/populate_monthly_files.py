@@ -45,39 +45,16 @@ class Command(BaseCommand):
         json_request = {'award_levels': award_levels,
                         'filters': {
                             'award_types': award_types,
-                            'agency': agency,
+                            'agency': str(agency),
                             'date_type': date_type,
                             'date_range': date_range,
                         },
                         'columns': columns,
                         'file_format': file_format}
-        sources = BulkDownloadAwardsViewSet().get_csv_sources(json_request=json_request)
-
-        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
-                               'monthly_download': monthly_download,
-                               'json_request': json.dumps(order_nested_object(json_request)),
-                               'file_name': file_name,
-                               'date_type': date_type}
-        for award_level in award_levels:
-            download_job_kwargs[award_level] = True
-        for award_type in award_types:
-            download_job_kwargs[award_type] = True
-        if agency and agency != 'all':
-            download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
-        if sub_agency:
-            download_job_kwargs['sub_agency'] = SubtierAgency.objects.filter(subtier_agency_id=sub_agency).first()
-        if start_date:
-            download_job_kwargs['start_date'] = start_date
-        if end_date:
-            download_job_kwargs['end_date'] = end_date
-        download_job = BulkDownloadJob(**download_job_kwargs)
-        download_job.save()
-
-        logger.info('Added Bulk Download Job: {}\n'
-                    'Filename: {}\n'
-                    'Request Params: {}'.format(download_job.bulk_download_job_id,
-                                                download_job.file_name,
-                                                download_job.json_request))
+        bd_viewset = BulkDownloadAwardsViewSet()
+        json_request = bd_viewset.validate_request(json_request)
+        sources = bd_viewset.get_csv_sources(json_request=json_request)
+        download_job = bd_viewset.create_bulk_download_job(json_request, file_name, monthly_download=True)
 
         kwargs = {
             'download_job': download_job,
