@@ -170,7 +170,7 @@ def get_download_ids(keyword, field, size=10000):
     total = get_total_results(keyword, '*', max_iterations)
     if not total:
         logger.error('Error retrieving total results. Max number of attempts reached')
-
+        return None
     n_iter = min(max(1, total // size), n_iter)
     for i in range(n_iter):
         query = {
@@ -217,14 +217,11 @@ def get_sum_and_count_aggregation_results(keyword):
               }, "size": 0}
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
-        try:
-            results = {}
-            results["prime_awards_count"] = response['aggregations']["prime_awards_count"]["value"]
-            results["prime_awards_obligation_amount"] = \
-                round(response['aggregations']["prime_awards_obligation_amount"]["value"], 2)
-            return results
-        except KeyError:
-            logger.error('Unexpected Response')
+        results = {}
+        results["prime_awards_count"] = response['aggregations']["prime_awards_count"]["value"]
+        results["prime_awards_obligation_amount"] = \
+            round(response['aggregations']["prime_awards_obligation_amount"]["value"], 2)
+        return results
     else:
         return None
 
