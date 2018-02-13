@@ -95,11 +95,11 @@ def parse_limit(json_request):
             limit = int(json_request['limit'])
         except (ValueError, TypeError):
             raise ParseError('limit must be integer; {} given'.format(limit))
-        if limit is None:
-            limit = settings.MAX_DOWNLOAD_LIMIT
         if limit > settings.MAX_DOWNLOAD_LIMIT:
             msg = 'Requested limit {} beyond max supported ({})'
             raise ParseError(msg.format(limit, settings.MAX_DOWNLOAD_LIMIT))
+    else:
+        limit = settings.MAX_DOWNLOAD_LIMIT
     return limit   # None is a workable slice argument
 
 
