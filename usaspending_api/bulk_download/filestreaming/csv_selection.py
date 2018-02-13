@@ -186,20 +186,20 @@ def apply_annotations_to_sql(raw_query, aliases):
     return raw_query.replace(select_string, new_select_string)
 
 
-def write_csvs(job, file_name, columns, sources, message=None):
+def write_csvs(download_job, file_name, columns, sources, message=None):
     """Derive the relevant location and write CSVs to it.
 
     :return: the final file name (complete with prefix)"""
     start_time = time.time()
 
-    job.job_status_id = JOB_STATUS_DICT['running']
-    job.number_of_rows = 0
-    job.number_of_columns = 0
-    job.file_size = 0
-    job.save()
+    download_job.job_status_id = JOB_STATUS_DICT['running']
+    download_job.number_of_rows = 0
+    download_job.number_of_columns = 0
+    download_job.file_size = 0
+    download_job.save()
 
     logger.info('Processing Job: {}\nFilename: {}\nRequest Params: {}'.
-                format(job.bulk_download_job_id, job.file_name, job.json_request))
+                format(download_job.bulk_download_job_id, download_job.file_name, download_job.json_request))
     try:
         # Create temporary files and working directory
         file_path = settings.BULK_DOWNLOAD_LOCAL_PATH + file_name
@@ -211,21 +211,21 @@ def write_csvs(job, file_name, columns, sources, message=None):
         logger.info('Generating {}'.format(file_name))
         for source in sources:
             # Write data to the file
-            job.number_of_columns = max(job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, job, working_dir, start_time, message, zipped_csvs)
+            download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
+            parse_source(source, columns, download_job, working_dir, start_time, message, zipped_csvs)
 
         # Remove temporary files and working directory
         shutil.rmtree(working_dir)
         zipped_csvs.close()
-        job.file_size = os.stat(file_path).st_size
+        download_job.file_size = os.stat(file_path).st_size
     except Exception as e:
         if os.path.exists(file_path):
             os.remove(file_path)
 
         # Set error message; job_status_id will be set in generate_bulk_zip.handle()
-        job.error_message = 'An exception was raised while attempting to write the CSV:\n' + str(e)
-        job.save()
-        raise Exception(job.error_message)
+        download_job.error_message = 'An exception was raised while attempting to write the CSV:\n' + str(e)
+        download_job.save()
+        raise Exception(download_job.error_message)
     try:
         # push file to S3 bucket, if not local
         if not settings.IS_LOCAL:
@@ -240,21 +240,21 @@ def write_csvs(job, file_name, columns, sources, message=None):
             os.remove(file_path)
 
         # Set error message; job_status_id will be set in generate_bulk_zip.handle()
-        job.error_message = 'An exception was raised while attempting to upload the CSV:\n' + str(e)
-        job.save()
-        raise Exception(job.error_message)
+        download_job.error_message = 'An exception was raised while attempting to upload the CSV:\n' + str(e)
+        download_job.save()
+        raise Exception(download_job.error_message)
 
-    job.job_status_id = JOB_STATUS_DICT['finished']
-    job.save()
+    download_job.job_status_id = JOB_STATUS_DICT['finished']
+    download_job.save()
 
     logger.info('Processed Job: {}\nFilename: {}\nRequest Params: {}'.
-                format(job.bulk_download_job_id, job.file_name, job.json_request))
+                format(download_job.bulk_download_job_id, download_job.file_name, download_job.json_request))
     logger.info('write_csvs() took {} seconds'.format(time.time() - start_time))
 
     return file_name
 
 
-def parse_source(source, columns, job, working_dir, start_time, message, zipped_csvs):
+def parse_source(source, columns, download_job, working_dir, start_time, message, zipped_csvs):
     """Write to csv and zip files using the source data"""
     source_map = {'prime_awards': 'awards', 'sub_awards': "subawards"}
     d_map = {'d1': 'contracts', 'd2': 'assistance'}
@@ -315,7 +315,7 @@ def parse_source(source, columns, job, working_dir, start_time, message, zipped_
         last_count = len(open(split_csv_path).readlines())
         if last_count < EXCEL_ROW_LIMIT + 1:
             # Will be hit when line 201 ((split_csv - 1) * EXCEL_ROW_LIMIT) > number of rows in source
-            job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + last_count
+            download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + last_count
             reached_end = True
         else:
             split_csv += 1
