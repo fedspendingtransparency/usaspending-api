@@ -168,7 +168,7 @@ def get_download_ids(keyword, field, size=10000):
 
     max_iterations = 10
     total = get_total_results(keyword, '*', max_iterations)
-    if not total:
+    if total is None:
         logger.error('Error retrieving total results. Max number of attempts reached')
         yield None
         return
