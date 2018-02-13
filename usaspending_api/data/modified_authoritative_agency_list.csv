@@ -332,4 +332,5 @@ CGAC AGENCY CODE,FPDS DEPARTMENT ID,AGENCY NAME,AGENCY ABBREVIATION,REGISTERED I
 097,9700,Department of Defense,DOD,YES,YES,NIST (2008),97F6,Office of Economic Adjustment,,,,DE00,Department of Defense,,,,,,FALSE,,,
 472,,Surface Transportation Board,STB,YES,NO,A-11 Circular & NIST (2008),6959,Surface Transportation Board,STB,,,9501,Surface Transportation Board,GPO Acronym List,,,,,FALSE,,,
 474,,Institute of Museum and Library Services,IMLS,YES,YES,A-11 Circular; FPDS File,5950,Institute of Museum and Library Services,IMLS,,,5903,Institute of Museum and Library Services,,,,,[new from FPDS file],FALSE,,,
+519,,Vietnam Education Foundation,VEF,NO,NO,A-11 & NIST (2008),9591,Vietnam Education Foundation,VEF,,,9561,Vietnam Education Foundation,,,,,,FALSE,,,
 573,,Northern Border Regional Commission,NBRC,YES,NO,A-11 Circular and FPDS file (SubTier),9557,Northern Border Regional Commission,,,,9570,National Border Regional Commission,,,,,,FALSE,,,
