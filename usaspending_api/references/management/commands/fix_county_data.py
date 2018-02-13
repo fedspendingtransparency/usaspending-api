@@ -310,7 +310,7 @@ class Command(BaseCommand):
                     AND UPPER(rl.location_country_code) = 'USA'"""
         )
 
-        logger.info("Finished ppop location updates, finished location updates")
+        logger.info("Finished PPOP location updates, finished location updates")
 
     def add_arguments(self, parser):
         parser.add_argument('-mv', '--matview', help='Create the matviews, make sure they do not already exist',
