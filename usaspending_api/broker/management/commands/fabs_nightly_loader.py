@@ -144,8 +144,8 @@ class Command(BaseCommand):
             # Generate the unique Award ID
             # "ASST_AW_" + awarding_sub_tier_agency_c + fain + uri
             generated_unique_id = 'ASST_AW_' +\
-                (row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-') +\
-                (row['fain'] if row['fain'] else '-NONE-') +\
+                (row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-') + '_' + \
+                (row['fain'] if row['fain'] else '-NONE-') + '_' + \
                 (row['uri'] if row['uri'] else '-NONE-')
 
             # Create the summary Award
@@ -170,7 +170,9 @@ class Command(BaseCommand):
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
                 "last_modified_date": last_mod_date,
-                "type_description": get_assistance_type_description(row['assistance_type'])
+                "type_description": get_assistance_type_description(row['assistance_type']),
+                "transaction_unique_id": row['afa_generated_unique'],
+                "generated_unique_award_id": generated_unique_id
             }
 
             fad_field_map = {
