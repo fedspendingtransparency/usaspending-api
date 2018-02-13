@@ -186,25 +186,22 @@ def apply_annotations_to_sql(raw_query, aliases):
     return raw_query.replace(select_string, new_select_string)
 
 
-def write_csvs(download_job, file_name, columns, sources, message=None):
+def write_csvs(job, file_name, columns, sources, message=None):
     """Derive the relevant location and write CSVs to it.
 
     :return: the final file name (complete with prefix)"""
-    start_zip_generation = time.time()
+    start_time = time.time()
 
-    download_job.job_status_id = JOB_STATUS_DICT['running']
-    download_job.number_of_rows = 0
-    download_job.number_of_columns = 0
-    download_job.file_size = 0
-    download_job.save()
+    job.job_status_id = JOB_STATUS_DICT['running']
+    job.number_of_rows = 0
+    job.number_of_columns = 0
+    job.file_size = 0
+    job.save()
 
-    logger.info('Processing Job: {}\n'
-                'Filename: {}\n'
-                'Request Params: {}'.format(download_job.bulk_download_job_id,
-                                            download_job.file_name,
-                                            download_job.json_request))
-
+    logger.info('Processing Job: {}\nFilename: {}\nRequest Params: {}'.
+                format(job.bulk_download_job_id, job.file_name, job.json_request))
     try:
+        # Create temporary files and working directory
         file_path = settings.BULK_DOWNLOAD_LOCAL_PATH + file_name
         working_dir = os.path.splitext(file_path)[0]
         if not os.path.exists(working_dir):
@@ -212,79 +209,25 @@ def write_csvs(download_job, file_name, columns, sources, message=None):
         zipped_csvs = zipfile.ZipFile(file_path, 'w', allowZip64=True)
 
         logger.info('Generating {}'.format(file_name))
-
-        source_map = {'prime_awards': 'awards',
-                      'sub_awards': "subawards"}
-        d_map = {'d1': 'contracts',
-                 'd2': 'assistance'}
-
-        overall_start_time = time.time()
-
         for source in sources:
-            source_name = '{}_{}'.format(source_map[source.source_type], d_map[source.file_type])
+            # Write data to the file
+            job.number_of_columns = max(job.number_of_columns, len(source.columns(columns)))
+            parse_source(source, columns, job, working_dir, start_time, message, zipped_csvs)
 
-            source_query = source.row_emitter(columns)
-            download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            reached_end = False
-            split_csv = 1
-            while not reached_end:
-                split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
-                split_csv_path = os.path.join(working_dir, split_csv_name)
-
-                start_split_writing = time.time()
-                # Generate the final query, values, limits, dates fixed
-                split_csv_query = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
-                split_csv_query_raw = generate_raw_quoted_query(split_csv_query)
-                split_csv_query_raw = apply_annotations_to_sql(split_csv_query_raw, source.human_names)
-                logger.debug('PSQL Query: {}'.format(split_csv_query_raw))
-                split_csv_query_raw = '\copy ({}) To STDOUT with CSV HEADER'.format(split_csv_query_raw)
-
-                # Create a unique temporary file to hold the raw query
-                (temp_sql_file_fd, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
-                with open(temp_sql_file_path, 'w') as temp_sql_file:
-                    temp_sql_file.write(split_csv_query_raw)
-
-                # Run the psql command as a separate Process
-                psql_process = multiprocessing.Process(target=execute_psql, args=(temp_sql_file_path, split_csv_path,))
-                psql_process.start()
-
-                # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of
-                # BULK_DOWNLOAD_VISIBILITY_TIMEOUT
-                while psql_process.is_alive() and (time.time() - overall_start_time) < MAX_VISIBILITY_TIMEOUT:
-                    if message:
-                        message.change_visibility(VisibilityTimeout=BULK_DOWNLOAD_VISIBILITY_TIMEOUT)
-                    time.sleep(60)
-
-                if (time.time() - overall_start_time) >= MAX_VISIBILITY_TIMEOUT:
-                    # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
-                    psql_process.terminate()
-
-                    # Remove all temp files
-                    os.close(temp_sql_file_fd)
-                    os.remove(temp_sql_file_path)
-                    shutil.rmtree(working_dir)
-                    zipped_csvs.close()
-                    os.remove(file_path)
-                    raise TimeoutError('Bulk download job lasted longer than 4 hours')
-
-                # save it to the zip
-                zipped_csvs.write(split_csv_path, split_csv_name)
-                os.close(temp_sql_file_fd)
-                os.remove(temp_sql_file_path)
-                logger.info('wrote {} took {} seconds'.format(split_csv_name, time.time() - start_split_writing))
-
-                last_count = len(open(split_csv_path).readlines())
-                if last_count < EXCEL_ROW_LIMIT + 1:
-                    # Will be hit when line 201 ((split_csv - 1) * EXCEL_ROW_LIMIT) > number of rows in source
-                    download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + last_count
-                    reached_end = True
-                else:
-                    split_csv += 1
-
+        # Remove temporary files and working directory
         shutil.rmtree(working_dir)
         zipped_csvs.close()
-        download_job.file_size = os.stat(file_path).st_size
+        job.file_size = os.stat(file_path).st_size
+    except Exception as e:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
+        # Set error message; job_status_id will be set in generate_bulk_zip.handle()
+        job.error_message = 'An exception was raised while attempting to write the CSV:\n' + str(e)
+        job.save()
+        raise Exception(job.error_message)
+    try:
+        # push file to S3 bucket, if not local
         if not settings.IS_LOCAL:
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.BULK_DOWNLOAD_AWS_REGION
@@ -292,27 +235,90 @@ def write_csvs(download_job, file_name, columns, sources, message=None):
             upload(bucket, region, file_path, os.path.basename(file_path), acl='public-read',
                    parallel_processes=multiprocessing.cpu_count())
             logger.info('uploading took {} seconds'.format(time.time() - start_uploading))
+    except Exception as e:
+        if os.path.exists(file_path):
             os.remove(file_path)
 
-    except Exception as e:
         # Set error message; job_status_id will be set in generate_bulk_zip.handle()
-        download_job.error_message = 'An exception was raised while attempting to write the CSV:\n' + str(e)
-        download_job.save()
+        job.error_message = 'An exception was raised while attempting to upload the CSV:\n' + str(e)
+        job.save()
+        raise Exception(job.error_message)
 
-        raise Exception(download_job.error_message)
-    else:
-        download_job.job_status_id = JOB_STATUS_DICT['finished']
-        download_job.save()
+    job.job_status_id = JOB_STATUS_DICT['finished']
+    job.save()
 
-    logger.info('Processed Job: {}\n'
-                'Filename: {}\n'
-                'Request Params: {}'.format(download_job.bulk_download_job_id,
-                                            download_job.file_name,
-                                            download_job.json_request))
-
-    logger.info('generate_zips took {} seconds'.format(time.time() - start_zip_generation))
+    logger.info('Processed Job: {}\nFilename: {}\nRequest Params: {}'.
+                format(job.bulk_download_job_id, job.file_name, job.json_request))
+    logger.info('write_csvs() took {} seconds'.format(time.time() - start_time))
 
     return file_name
+
+
+def parse_source(source, columns, job, working_dir, start_time, message, zipped_csvs):
+    """Write to csv and zip files using the source data"""
+    source_map = {'prime_awards': 'awards', 'sub_awards': "subawards"}
+    d_map = {'d1': 'contracts', 'd2': 'assistance'}
+
+    source_name = '{}_{}'.format(source_map[source.source_type], d_map[source.file_type])
+    source_query = source.row_emitter(columns)
+
+    reached_end = False
+    split_csv = 1
+    while not reached_end:
+        start_split_writing = time.time()
+        split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
+        split_csv_path = os.path.join(working_dir, split_csv_name)
+
+        # Generate the final query, values, limits, dates fixed
+        csv_query_split = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
+        csv_query_raw = generate_raw_quoted_query(csv_query_split)
+        csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
+        logger.debug('PSQL Query: {}'.format(csv_query_annotated))
+        csv_query_cmd = '\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated)
+
+        # Create a unique temporary file to hold the raw query
+        (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
+        with open(temp_sql_file_path, 'w') as file:
+            file.write(csv_query_cmd)
+
+        # Run the PSQL command as a separate Process
+        psql_process = multiprocessing.Process(target=execute_psql, args=(temp_sql_file_path, split_csv_path,))
+        psql_process.start()
+
+        # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of
+        # BULK_DOWNLOAD_VISIBILITY_TIMEOUT
+        while psql_process.is_alive() and (time.time() - start_time) < MAX_VISIBILITY_TIMEOUT:
+            if message:
+                message.change_visibility(VisibilityTimeout=BULK_DOWNLOAD_VISIBILITY_TIMEOUT)
+            time.sleep(60)
+
+        if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT:
+            # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
+            logger.error('Attempting to terminate process (pid {})'.format(psql_process.pid))
+            psql_process.terminate()
+
+            # Remove all temp files
+            os.close(temp_sql_file)
+            os.remove(temp_sql_file_path)
+            shutil.rmtree(working_dir)
+            zipped_csvs.close()
+            raise TimeoutError('Bulk download job lasted longer than {} hours'.format(str(MAX_VISIBILITY_TIMEOUT/3600)))
+
+        # Write it to the zip
+        zipped_csvs.write(split_csv_path, split_csv_name)
+        logger.info('Wrote {}, took {} seconds'.format(split_csv_name, time.time() - start_split_writing))
+
+        # Remove temporary files
+        os.close(temp_sql_file)
+        os.remove(temp_sql_file_path)
+
+        last_count = len(open(split_csv_path).readlines())
+        if last_count < EXCEL_ROW_LIMIT + 1:
+            # Will be hit when line 201 ((split_csv - 1) * EXCEL_ROW_LIMIT) > number of rows in source
+            job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + last_count
+            reached_end = True
+        else:
+            split_csv += 1
 
 
 def execute_psql(temp_sql_file_path, split_csv_path):
