@@ -13,10 +13,7 @@ from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.v2.views import BulkDownloadAwardsViewSet
 from usaspending_api.common.helpers import generate_fiscal_year
 from usaspending_api.common.csv_helpers import sqs_queue
-from usaspending_api.bulk_download.models import BulkDownloadJob
-from usaspending_api.download.lookups import JOB_STATUS_DICT
-from usaspending_api.references.models import ToptierAgency, SubtierAgency
-from usaspending_api.common.helpers import order_nested_object
+from usaspending_api.references.models import ToptierAgency
 
 # Logging
 logger = logging.getLogger('console')
