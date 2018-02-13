@@ -820,8 +820,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
 
         results = spending_by_transaction_sum_and_count(filters)
         if not results:
-            raise ElasticsearchConnectionException('Error generating the transaction sums and counts')         
-        
+            raise ElasticsearchConnectionException('Error generating the transaction sums and counts')
         # build response
         return Response({"results": results})
 
