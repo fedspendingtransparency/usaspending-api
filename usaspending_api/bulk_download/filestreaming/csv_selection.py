@@ -243,7 +243,8 @@ def write_csvs(download_job, file_name, columns, sources):
                     temp_sql_file.write(split_csv_query_raw)
                 # Generate the csv with \copy
                 cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
-                subprocess.call(['psql', '-o', split_csv_path, os.environ['DATABASE_URL']], stdin=cat_command.stdout)
+                subprocess.call(['psql', '-o', split_csv_path, os.environ['BULK_DOWNLOAD_DATABASE_URL']],
+                                stdin=cat_command.stdout)
                 # save it to the zip
                 zipped_csvs.write(split_csv_path, split_csv_name)
                 os.remove(temp_sql_file_path)
