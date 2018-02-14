@@ -35,9 +35,10 @@ def type_filter(_type, filters):
 
     # Recipient, Award Queryset
     alt_set = FinancialAccountsByAwards.objects.all().exclude(
-            transaction_obligated_amount__isnull=True).filter(
-            submission__reporting_fiscal_quarter=fiscal_quarter).annotate(
-            amount=Sum('transaction_obligated_amount'))
+        transaction_obligated_amount__isnull=True).exclude(
+        transaction_obligated_amount='NaN').filter(
+        submission__reporting_fiscal_quarter=fiscal_quarter).annotate(
+        amount=Sum('transaction_obligated_amount'))
 
     # Base Queryset
     queryset = FinancialAccountsByProgramActivityObjectClass.objects.all().exclude(
