@@ -1,34 +1,37 @@
-import sys
-import itertools
+import boto
+import datetime
 import json
 import logging
 import os
 import pandas as pd
-import datetime
 import re
-import boto
+import sys
+
 from collections import OrderedDict
 
 from django.conf import settings
-from django.db.models import F, Q
+from django.db.models import F
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
 
+from usaspending_api.accounts.models import FederalAccount
+from usaspending_api.awards.models import Award, Subaward, Agency, TransactionNormalized
 from usaspending_api.awards.v2.lookups.lookups import (contract_type_mapping, grant_type_mapping,
                                                        direct_payment_type_mapping, loan_type_mapping,
                                                        other_type_mapping)
-from usaspending_api.awards.models import Subaward, Agency, TransactionNormalized
-from usaspending_api.references.models import ToptierAgency
-from usaspending_api.accounts.models import FederalAccount
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.csv_helpers import sqs_queue
-from usaspending_api.common.helpers import order_nested_object, within_one_year
+from usaspending_api.awards.v2.filters import award, sub_award, transaction
 from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
+from usaspending_api.common.csv_helpers import sqs_queue
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers import order_nested_object, within_one_year
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-from usaspending_api.search.v2 import elasticsearch_helper
+from usaspending_api.references.models import ToptierAgency
+
+logger = logging.getLogger('console')
 
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference
 # TODO: Find a solution that marks the CFO agencies in the database AND have the correct order
@@ -58,60 +61,40 @@ CFO_CGACS_MAPPING = OrderedDict([('012', 'Department of Agriculture'),
                                  ('072', 'Agency for International Development')])
 CFO_CGACS = list(CFO_CGACS_MAPPING.keys())
 
-logger = logging.getLogger('console')
-
 # Mappings to help with the filters
-award_type_mappings = {
+AWARD_TYPE_MAPPINGS = {
     'contracts': list(contract_type_mapping.keys()),
     'grants': list(grant_type_mapping.keys()),
     'direct_payments': list(direct_payment_type_mapping.keys()),
     'loans': list(loan_type_mapping.keys()),
     'other_financial_assistance': list(other_type_mapping.keys())
 }
-award_mappings = {
-    'contracts': ['contracts'],
-    'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
-}
-value_mappings = {
+VALUE_MAPPINGS = {
     # Award Level
-    # 'prime_awards': {
-    #     'table': Award,
-    #     'table_name': 'award',
-    #     'download_name': 'awards',
-    #     'action_date': 'latest_transaction__action_date',
-    #     'last_modified_date': 'last_modified_date',
-    #     'type': 'type',
-    #     'awarding_agency_id': 'awarding_agency_id',
-    #     'funding_agency_id': 'funding_agency_id',
-    #     'contract_data': 'latest_transaction__contract_data',
-    #     'assistance_data': 'latest_transaction__assistance_data'
-    # },
+    'awards': {
+        'table': Award,
+        'table_name': 'award',
+        'download_name': 'awards',
+        'contract_data': 'latest_transaction__contract_data',
+        'assistance_data': 'latest_transaction__assistance_data',
+        'filter_function': award.award_filter
+    },
     # Transaction Level
     'prime_awards': {
         'table': TransactionNormalized,
         'table_name': 'transaction',
         'download_name': 'awards',
-        'action_date': 'action_date',
-        'last_modified_date': 'last_modified_date',
-        'type': 'award__type',
-        'awarding_agency_id': 'awarding_agency_id',
-        'funding_agency_id': 'funding_agency_id',
         'contract_data': 'contract_data',
         'assistance_data': 'assistance_data',
-        'transaction_id': 'id'
+        'filter_function': transaction.transaction_filter
     },
     'sub_awards': {
         'table': Subaward,
         'table_name': 'subaward',
         'download_name': 'subawards',
-        'action_date': 'action_date',
-        'last_modified_date': 'award__last_modified_date',
-        'type': 'award__type',
-        'awarding_agency_id': 'awarding_agency_id',
-        'funding_agency_id': 'funding_agency_id',
         'contract_data': 'award__latest_transaction__contract_data',
         'assistance_data': 'award__latest_transaction__assistance_data',
-        'transaction_id': 'award__latest_transaction__id'
+        'filter_function': sub_award.subaward_filter
     }
 }
 
@@ -244,7 +227,7 @@ class BaseDownloadViewSet(APIView):
         filters = json_request['filters']
 
         fields_defaults = {
-            'award_types': list(award_type_mappings.keys()),
+            'award_types': list(AWARD_TYPE_MAPPINGS.keys()),
             'agency': '',
             'sub_agency': '',
             'date_range': {},
@@ -266,7 +249,7 @@ class BaseDownloadViewSet(APIView):
         if not filters['keyword']:
             # award types
             for award_type in filters['award_types']:
-                if award_type not in award_type_mappings:
+                if award_type not in AWARD_TYPE_MAPPINGS:
                     raise InvalidParameterException('Invalid award_type: {}'.format(award_type))
             # date range
             earliest_date = '1000-01-01'
@@ -302,7 +285,7 @@ class BaseDownloadViewSet(APIView):
             cached_filename = cached_download[0]['file_name']
             return self.get_download_response(file_name=cached_filename)
 
-        download_name = '_'.join(value_mappings[award_level]['download_name']
+        download_name = '_'.join(VALUE_MAPPINGS[award_level]['download_name']
                                  for award_level in json_request['award_levels'])
         # get timestamped name to provide unique file name
         timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
@@ -479,66 +462,6 @@ class ListMonthylDownloadsViewset(APIView):
 class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
     """Generate bulk download for awards"""
 
-    # TODO: Merge into award and transaction filters
-    def process_filters(self, filters, award_level):
-        """Filter function for Bulk Download Award Generation"""
-        table = value_mappings[award_level]['table']
-        queryset = table.objects.all()
-
-        keyword = filters['keyword']
-        if keyword:
-            logger.info('Getting ids based on keyword: {}'.format(keyword))
-            transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
-            # flatten ids
-            transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
-            logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
-            transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
-            queryset = queryset.filter(**{'{}__isnull'.format(value_mappings[award_level]['transaction_id']): False})
-            queryset &= queryset.extra(
-                where=['\"transaction_normalized\".\"id\" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))]
-            )
-            return queryset
-
-        # Adding award type filter
-        award_types = []
-        for award_type in filters['award_types']:
-            award_types.extend(award_type_mappings[award_type])
-
-        # if the filter is calling everything, just remove the filter, save on the query performance
-        if set(award_types) != set(itertools.chain(*award_type_mappings.values())):
-            type_queryset_filters = {}
-            type_queryset_filters['{}__in'.format(value_mappings[award_level]['type'])] = award_types
-            type_queryset = Q(**type_queryset_filters)
-            if (filters['award_types'] == ['contracts']):
-                # IDV Flag
-                idv_queryset_filters = {'{}__pulled_from'.format(value_mappings[award_level]['contract_data']): 'IDV'}
-                type_queryset |= Q(**idv_queryset_filters)
-            queryset &= table.objects.filter(type_queryset)
-
-        # Adding date range filters
-        # Get the date type attribute
-        date_attribute = None
-        if filters['date_type'] == 'action_date':
-            date_attribute = value_mappings[award_level]['action_date']
-        elif filters['date_type'] == 'last_modified_date':
-            date_attribute = value_mappings[award_level]['last_modified_date']
-        # Get the date ranges
-        date_range_filters = {}
-        if filters['date_range']['start_date']:
-            date_range_filters['{}__gte'.format(date_attribute)] = filters['date_range']['start_date']
-        if filters['date_range']['end_date']:
-            date_range_filters['{}__lte'.format(date_attribute)] = filters['date_range']['end_date']
-        queryset &= table.objects.filter(**date_range_filters)
-
-        # Agencies are to be OR'd together and then AND'd to the major query
-        if filters['agency'] and filters['agency'] != 'all':
-            agencies_queryset = Q(awarding_agency__toptier_agency_id=filters['agency'])
-            if filters['sub_agency']:
-                agencies_queryset &= Q(awarding_agency__subtier_agency__name=filters['sub_agency'])
-            queryset &= table.objects.filter(agencies_queryset)
-
-        return queryset
-
     def get_csv_sources(self, json_request):
         """
         Generate the CSV Sources (filtered queryset and metadata) based on the request
@@ -549,25 +472,25 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
 
         csv_sources = []
         for award_level in award_levels:
-            if award_level not in value_mappings:
+            if award_level not in VALUE_MAPPINGS:
                 raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
 
-            queryset = self.process_filters(json_request['filters'], award_level)
-            award_level_table = value_mappings[award_level]['table']
+            queryset = VALUE_MAPPINGS[award_level]['filter_function'](json_request['filters'])
+            award_level_table = VALUE_MAPPINGS[award_level]['table']
 
             award_types = set(json_request['filters']['award_types'])
             d1_award_types = set(['contracts'])
             d2_award_types = set(['grants', 'direct_payments', 'loans', 'other_financial_assistance'])
             if award_types & d1_award_types:
                 # only generate d1 files if the user is asking for contracts
-                d1_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd1', award_level)
-                d1_filters = {'{}__isnull'.format(value_mappings[award_level]['contract_data']): False}
+                d1_source = csv_selection.CsvSource(VALUE_MAPPINGS[award_level]['table_name'], 'd1', award_level)
+                d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[award_level]['contract_data']): False}
                 d1_source.queryset = queryset & award_level_table.objects.filter(**d1_filters)
                 csv_sources.append(d1_source)
             if award_types & d2_award_types:
                 # only generate d2 files if the user is asking for assistance data
-                d2_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd2', award_level)
-                d2_filters = {'{}__isnull'.format(value_mappings[award_level]['assistance_data']): False}
+                d2_source = csv_selection.CsvSource(VALUE_MAPPINGS[award_level]['table_name'], 'd2', award_level)
+                d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[award_level]['assistance_data']): False}
                 d2_source.queryset = queryset & award_level_table.objects.filter(**d2_filters)
                 csv_sources.append(d2_source)
             verify_requested_columns_available(tuple(csv_sources), json_request['columns'])
