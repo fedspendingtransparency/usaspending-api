@@ -155,6 +155,10 @@ class Command(BaseCommand):
                 logger.info('Inserting Stale FPDS: Inserting row {} of {} ({})'.format(str(index), str(total_rows),
                                                                                        datetime.now() - start_time))
 
+            for key in row:
+                if isinstance(row[key], str):
+                    row[key] = row[key].upper()
+
             # Create new LegalEntityLocation and LegalEntity from the row data
             legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True,
                                                                                            "is_fpds": True})
@@ -186,7 +190,8 @@ class Command(BaseCommand):
                 (row['parent_award_id'] if row['parent_award_id'] else '-NONE-')
 
             # Create the summary Award
-            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)
+            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id,
+                                                                 piid=row['piid'])
             award.parent_award_piid = row.get('parent_award_id')
             award.save()
 
