@@ -149,8 +149,10 @@ class Command(BaseCommand):
                 (row['uri'] if row['uri'] else '-NONE-')
 
             # Create the summary Award
-            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)
-            award.parent_award_piid = row.get('parent_award_id')
+            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id,
+                                                                 fain=row['fain'],
+                                                                 uri=row['uri'],
+                                                                 record_type=row['record_type'])
             award.save()
 
             # Append row to list of Awards updated

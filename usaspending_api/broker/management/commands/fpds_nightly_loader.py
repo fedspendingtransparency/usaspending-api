@@ -186,7 +186,8 @@ class Command(BaseCommand):
                 (row['parent_award_id'] if row['parent_award_id'] else '-NONE-')
 
             # Create the summary Award
-            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)
+            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id,
+                                                                 piid=row['piid'])
             award.parent_award_piid = row.get('parent_award_id')
             award.save()
 
