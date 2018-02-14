@@ -98,6 +98,8 @@ def parse_limit(json_request):
         if limit > settings.MAX_DOWNLOAD_LIMIT:
             msg = 'Requested limit {} beyond max supported ({})'
             raise ParseError(msg.format(limit, settings.MAX_DOWNLOAD_LIMIT))
+    else:
+        limit = settings.MAX_DOWNLOAD_LIMIT
     return limit   # None is a workable slice argument
 
 

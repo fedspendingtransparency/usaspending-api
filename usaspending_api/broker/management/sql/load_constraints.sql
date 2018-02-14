@@ -8,33 +8,41 @@ ALTER TABLE awards ADD PRIMARY KEY (id);
 ALTER TABLE references_legalentityofficers ADD PRIMARY KEY(legal_entity_id);
 
 -- Transaction FPDS table
-ALTER TABLE transaction_fpds ADD CONSTRAINT tx_fpds_tx_norm_fk FOREIGN KEY (transaction_id) REFERENCES transaction_normalized (id);
+ALTER TABLE transaction_fpds ADD CONSTRAINT tx_fpds_tx_norm_fk FOREIGN KEY (transaction_id) REFERENCES transaction_normalized (id) DEFERRABLE INITIALLY DEFERRED;
 
 -- Transaction FABS table
-ALTER TABLE transaction_fabs ADD CONSTRAINT tx_fabs_tx_norm_fk FOREIGN KEY (transaction_id) REFERENCES transaction_normalized (id);
+ALTER TABLE transaction_fabs ADD CONSTRAINT tx_fabs_tx_norm_fk FOREIGN KEY (transaction_id) REFERENCES transaction_normalized (id) DEFERRABLE INITIALLY DEFERRED;
 
 -- Location table
 ALTER TABLE references_location ALTER location_id SET DEFAULT NEXTVAL('references_location_id_seq');
 
 -- Legal Entity table
 ALTER TABLE legal_entity ALTER legal_entity_id SET DEFAULT NEXTVAL('legal_entity_id_seq');
-ALTER TABLE legal_entity ADD CONSTRAINT le_location_fk FOREIGN KEY (location_id) REFERENCES references_location (location_id);
+ALTER TABLE legal_entity ADD CONSTRAINT le_location_fk FOREIGN KEY (location_id) REFERENCES references_location (location_id) DEFERRABLE INITIALLY DEFERRED;
 
 -- Transaction Normalized table
 ALTER TABLE transaction_normalized ALTER id SET DEFAULT NEXTVAL('tx_norm_id_seq');
-ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_ppop_location_fk FOREIGN KEY (place_of_performance_id) REFERENCES references_location (location_id);
-ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_legal_entity_fk FOREIGN KEY (recipient_id) REFERENCES legal_entity (legal_entity_id);
+ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_ppop_location_fk FOREIGN KEY (place_of_performance_id) REFERENCES references_location (location_id) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_legal_entity_fk FOREIGN KEY (recipient_id) REFERENCES legal_entity (legal_entity_id) DEFERRABLE INITIALLY DEFERRED;
 ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_awarding_agency_fk FOREIGN KEY (awarding_agency_id) REFERENCES agency (id);
 ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_funding_agency_fk FOREIGN KEY (funding_agency_id) REFERENCES agency (id);
-ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_award_fk FOREIGN KEY (award_id) REFERENCES awards (id);
+ALTER TABLE transaction_normalized ADD CONSTRAINT tx_norm_award_fk FOREIGN KEY (award_id) REFERENCES awards (id) DEFERRABLE INITIALLY DEFERRED;
 
 -- Awards table
 ALTER TABLE awards ALTER id SET DEFAULT NEXTVAL('award_id_seq');
-ALTER TABLE awards ADD CONSTRAINT award_latest_tx_fk FOREIGN KEY (latest_transaction_id) REFERENCES transaction_normalized (id);
-ALTER TABLE awards ADD CONSTRAINT award_ppop_location_fk FOREIGN KEY (place_of_performance_id) REFERENCES references_location (location_id);
-ALTER TABLE awards ADD CONSTRAINT award_legal_entity_fk FOREIGN KEY (recipient_id) REFERENCES legal_entity (legal_entity_id);
+ALTER TABLE awards ADD CONSTRAINT award_latest_tx_fk FOREIGN KEY (latest_transaction_id) REFERENCES transaction_normalized (id) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE awards ADD CONSTRAINT award_ppop_location_fk FOREIGN KEY (place_of_performance_id) REFERENCES references_location (location_id) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE awards ADD CONSTRAINT award_legal_entity_fk FOREIGN KEY (recipient_id) REFERENCES legal_entity (legal_entity_id) DEFERRABLE INITIALLY DEFERRED;
 ALTER TABLE awards ADD CONSTRAINT award_awarding_agency_fk FOREIGN KEY (awarding_agency_id) REFERENCES agency (id);
 ALTER TABLE awards ADD CONSTRAINT award_funding_agency_fk FOREIGN KEY (funding_agency_id) REFERENCES agency (id);
+
+-- Subawards table
+ALTER TABLE awards_subaward ADD CONSTRAINT awards_subaward_award_fk FOREIGN KEY (award_id) REFERENCES awards (id) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE awards_subaward ADD CONSTRAINT awards_subaward_legal_entity_fk FOREIGN KEY (recipient_id) REFERENCES legal_entity (legal_entity_id) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE awards_subaward ADD CONSTRAINT awards_subaward_ppop_location_fk FOREIGN KEY (place_of_performance_id) REFERENCES references_location (location_id) DEFERRABLE INITIALLY DEFERRED;
+
+-- Financial accounts by award table
+ALTER TABLE financial_accounts_by_awards ADD CONSTRAINT faba_award_fk FOREIGN KEY (award_id) REFERENCES awards (id) DEFERRABLE INITIALLY DEFERRED;
 
 -- Create indexes
 
@@ -54,6 +62,8 @@ CREATE INDEX legal_entity_domestic_or_foreign_entity_2404797e_like ON legal_enti
 CREATE INDEX legal_entity_location_id_7f712296 ON legal_entity USING btree (location_id);
 
 -- Transaction FABS
+CREATE UNIQUE INDEX transaction_fabs_afa_generated_unique_key ON transaction_fabs USING btree (afa_generated_unique);
+CREATE INDEX transaction_fabs_afa_generated_unique_bb7b8f4b_like ON transaction_fabs USING btree (afa_generated_unique text_pattern_ops);
 CREATE UNIQUE INDEX transaction_fabs_awarding_sub_tier_agency_cc5ccd22_uniq ON transaction_fabs USING btree (awarding_sub_tier_agency_c, award_modification_amendme, fain, uri);
 CREATE INDEX transaction_fabs_cfda_number_0222a383 ON transaction_fabs USING btree (cfda_number);
 CREATE INDEX transaction_fabs_cfda_number_0222a383_like ON transaction_fabs USING btree (cfda_number text_pattern_ops);
