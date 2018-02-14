@@ -240,30 +240,21 @@ class Command(BaseCommand):
 
     @staticmethod
     def update_location(sess):
-        logger.info("Starting location updates, starting legal entity location updates")
+        logger.info("Starting location updates, starting FABS legal entity location updates")
 
-        # Location LE
+        # Location FABS LE
         sess.execute(
             """WITH transaction_combined AS (
                 SELECT
                     le.location_id,
-                    CASE WHEN afa_generated_unique IS NOT NULL
-                    THEN tfab.legal_entity_county_code
-                    ELSE tfpds.legal_entity_county_code
-                    END AS county_code,
-                    CASE WHEN afa_generated_unique IS NOT NULL
-                    THEN tfab.legal_entity_county_name
-                    ELSE tfpds.legal_entity_county_name
-                    END AS county_name
+                    tf.legal_entity_county_code AS county_code,
+                    tf.legal_entity_county_name AS county_name
                 FROM transaction_normalized AS tn
                 JOIN legal_entity AS le
                     ON tn.recipient_id = le.legal_entity_id
-                LEFT OUTER JOIN transaction_fabs AS tfab
-                    ON tfab.transaction_id = tn.id
-                LEFT OUTER JOIN transaction_fpds AS tfpds
-                    ON tfpds.transaction_id = tn.id
-                WHERE UPPER(tfab.legal_entity_country_code) = 'USA'
-                    OR UPPER(tfpds.legal_entity_country_code) = 'USA'
+                LEFT OUTER JOIN transaction_fabs AS tf
+                    ON tf.transaction_id = tn.id
+                WHERE UPPER(tf.legal_entity_country_code) = 'USA'
             )
             UPDATE references_location AS rl
                 SET county_code = tc.county_code,
@@ -276,28 +267,46 @@ class Command(BaseCommand):
                     AND UPPER(rl.location_country_code) = 'USA'"""
         )
 
-        logger.info("Finished legal entity location updates, starting PPOP location updates")
+        logger.info("Finished FABS legal entity location updates, starting FPDS legal entity location updates")
 
-        # Location PPOP
+        # Location FPDS LE
+        sess.execute(
+            """WITH transaction_combined AS (
+                SELECT
+                    le.location_id,
+                    tf.legal_entity_county_code AS county_code,
+                    tf.legal_entity_county_name AS county_name
+                FROM transaction_normalized AS tn
+                JOIN legal_entity AS le
+                    ON tn.recipient_id = le.legal_entity_id
+                LEFT OUTER JOIN transaction_fpds AS tf
+                    ON tf.transaction_id = tn.id
+                WHERE UPPER(tf.legal_entity_country_code) = 'USA'
+            )
+            UPDATE references_location AS rl
+                SET county_code = tc.county_code,
+                    county_name = CASE WHEN rl.county_name IS NULL
+                                        THEN tc.county_name
+                                        ELSE rl.county_name END
+                FROM transaction_combined AS tc
+                WHERE tc.location_id = rl.location_id
+                    AND rl.county_code IS NULL
+                    AND UPPER(rl.location_country_code) = 'USA'"""
+        )
+
+        logger.info("Finished FPDS legal entity location updates, starting FABS PPOP location updates")
+
+        # Location FABS PPOP
         sess.execute(
             """WITH transaction_combined AS (
                 SELECT
                     tn.place_of_performance_id,
-                    CASE WHEN afa_generated_unique IS NOT NULL
-                        THEN tfab.place_of_perform_county_co
-                        ELSE tfpds.place_of_perform_county_co
-                        END AS county_code,
-                    CASE WHEN afa_generated_unique IS NOT NULL
-                        THEN tfab.place_of_perform_county_na
-                        ELSE tfpds.place_of_perform_county_na
-                        END AS county_name
+                    tf.place_of_perform_county_co AS county_code,
+                    tf.place_of_perform_county_na AS county_name
                 FROM transaction_normalized AS tn
-                LEFT OUTER JOIN transaction_fabs AS tfab
-                    ON tfab.transaction_id = tn.id
-                LEFT OUTER JOIN transaction_fpds AS tfpds
-                    ON tfpds.transaction_id = tn.id
-                WHERE UPPER(tfab.place_of_perform_country_c) = 'USA'
-                    OR UPPER(tfpds.place_of_perform_country_c) = 'USA'
+                LEFT OUTER JOIN transaction_fabs AS tf
+                    ON tf.transaction_id = tn.id
+                WHERE UPPER(tf.place_of_perform_country_c) = 'USA'
             )
             UPDATE references_location AS rl
                 SET county_code = tc.county_code,
@@ -310,7 +319,32 @@ class Command(BaseCommand):
                     AND UPPER(rl.location_country_code) = 'USA'"""
         )
 
-        logger.info("Finished PPOP location updates, finished location updates")
+        logger.info("Finished FABS PPOP location updates, starting FPDS PPOP location updates")
+
+        # Location FPDS PPOP
+        sess.execute(
+            """WITH transaction_combined AS (
+                SELECT
+                    tn.place_of_performance_id,
+                    tf.place_of_perform_county_co AS county_code,
+                    tf.place_of_perform_county_na AS county_name
+                FROM transaction_normalized AS tn
+                LEFT OUTER JOIN transaction_fpds AS tf
+                    ON tf.transaction_id = tn.id
+                WHERE UPPER(tf.place_of_perform_country_c) = 'USA'
+            )
+            UPDATE references_location AS rl
+                SET county_code = tc.county_code,
+                    county_name = CASE WHEN rl.county_name IS NULL
+                                        THEN tc.county_name
+                                        ELSE rl.county_name END
+                FROM transaction_combined AS tc
+                WHERE tc.place_of_performance_id = rl.location_id
+                    AND rl.county_code IS NULL
+                    AND UPPER(rl.location_country_code) = 'USA'"""
+        )
+
+        logger.info("Finished FPDS PPOP location updates, finished location updates")
 
     def add_arguments(self, parser):
         parser.add_argument('-mv', '--matview', help='Create the matviews, make sure they do not already exist',
