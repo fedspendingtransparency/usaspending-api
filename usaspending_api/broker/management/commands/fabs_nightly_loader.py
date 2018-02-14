@@ -120,6 +120,10 @@ class Command(BaseCommand):
                 logger.info('Inserting Stale FABS: Inserting row {} of {} ({})'.format(str(index), str(total_rows),
                                                                                        datetime.now() - start_time))
 
+            for key in row:
+                if isinstance(row[key], str):
+                    row[key] = row[key].upper()
+
             # Create new LegalEntityLocation and LegalEntity from the row data
             legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
             recipient_name = row['awardee_or_recipient_legal']
