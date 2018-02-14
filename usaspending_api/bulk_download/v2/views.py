@@ -18,9 +18,7 @@ from rest_framework.exceptions import NotFound
 
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.models import Award, Subaward, Agency, TransactionNormalized
-from usaspending_api.awards.v2.lookups.lookups import (contract_type_mapping, grant_type_mapping,
-                                                       direct_payment_type_mapping, loan_type_mapping,
-                                                       other_type_mapping)
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.awards.v2.filters import award, sub_award, transaction
 from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
@@ -61,14 +59,6 @@ CFO_CGACS_MAPPING = OrderedDict([('012', 'Department of Agriculture'),
                                  ('072', 'Agency for International Development')])
 CFO_CGACS = list(CFO_CGACS_MAPPING.keys())
 
-# Mappings to help with the filters
-AWARD_TYPE_MAPPINGS = {
-    'contracts': list(contract_type_mapping.keys()),
-    'grants': list(grant_type_mapping.keys()),
-    'direct_payments': list(direct_payment_type_mapping.keys()),
-    'loans': list(loan_type_mapping.keys()),
-    'other_financial_assistance': list(other_type_mapping.keys())
-}
 VALUE_MAPPINGS = {
     # Award Level
     'awards': {
@@ -222,51 +212,58 @@ class BaseDownloadViewSet(APIView):
         json_request['file_format'] = json_request.get('file_format', 'csv')
 
         # Overriding all other filters if the keyword filter is provided
-        if 'keyword' in json_request['filters']:
-            json_request['filters'] = {'keyword': json_request['filters']['keyword']}
-        filters = json_request['filters']
+        if 'elasticsearch_keyword' in json_request['filters']:
+            json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword']}
+            return json_request
 
+        # Initial filter validation
+        # TODO: Should be a common function with all the universal filters
+        filters = json_request['filters']
         fields_defaults = {
-            'award_types': list(AWARD_TYPE_MAPPINGS.keys()),
-            'agency': '',
-            'sub_agency': '',
-            'date_range': {},
-            'date_type': 'action_date',
-            'keyword': ''
+            'award_type_codes': list(award_type_mapping.keys()),
+            'agencies': [],
+            'time_period': [],
+            'elasticsearch_keyword': ''
         }
         for field in fields_defaults:
             filters[field] = filters.get(field, fields_defaults[field])
             if not isinstance(filters[field], type(fields_defaults[field])):
                 type_name = type(fields_defaults[field]).__name__
                 raise InvalidParameterException('{} parameter not provided as a {}'.format(field, type_name))
-        filters['date_range']['start_date'] = filters['date_range'].get('start_date', '')
-        filters['date_range']['end_date'] = filters['date_range'].get('end_date', '')
-        for date_range_param in ['start_date', 'end_date']:
-            if not isinstance(filters['date_range'][date_range_param], str):
-                raise InvalidParameterException('{} parameter not provided as a str'.format(field))
 
-        # Ignoring the specific filter checking if keyword is provided
-        if not filters['keyword']:
-            # award types
-            for award_type in filters['award_types']:
-                if award_type not in AWARD_TYPE_MAPPINGS:
-                    raise InvalidParameterException('Invalid award_type: {}'.format(award_type))
-            # date range
-            earliest_date = '1000-01-01'
-            current_date = datetime.datetime.utcnow()
-            latest_date = datetime.datetime.strftime(current_date, '%Y-%m-%d')
-            start = filters['date_range']['start_date'] if filters['date_range']['start_date'] else earliest_date
-            end = filters['date_range']['end_date'] if filters['date_range']['end_date'] else latest_date
+        # Time Period Validation
+        if len(filters['time_period']) == 0:
+            filters['time_period'].append({'start_date': '', 'end_date':'', 'date_type': 'action_date'})
+        earliest_date = '1000-01-01'
+        current_date = datetime.datetime.utcnow()
+        latest_date = datetime.datetime.strftime(current_date, '%Y-%m-%d')
+        total_range_count = 0
+        for date_range in filters['time_period']:
+            if not ('start_date' in date_range and date_range['start_date']):
+                date_range['start_date'] = earliest_date
+            if not ('end_date' in date_range and date_range['end_date']):
+                date_range['end_date'] = latest_date
+            if not ('date_type' in date_range and date_range['date_type']):
+                date_range['date_type'] = 'action_date'
             try:
-                d1 = datetime.datetime.strptime(start, "%Y-%m-%d")
-                d2 = datetime.datetime.strptime(end, "%Y-%m-%d")
+                d1 = datetime.datetime.strptime(date_range['start_date'], "%Y-%m-%d")
+                d2 = datetime.datetime.strptime(date_range['end_date'], "%Y-%m-%d")
                 if not within_one_year(d1, d2):
                     raise InvalidParameterException('Date Range must be within a year.')
             except ValueError:
                 raise InvalidParameterException('Date Ranges must be in the format YYYY-MM-DD.')
+            total_range_count += abs((d2 - d1).days)
             # date type
-            if filters['date_type'] not in ['action_date', 'last_modified_date']:
+            if date_range['date_type'] not in ['action_date', 'last_modified_date']:
                 raise InvalidParameterException('Invalid parameter for date_type: {}'.format(filters['date_type']))
+        if total_range_count > 365:
+            raise InvalidParameterException('Time Period total days must be within a year.')
+
+        # award types
+        for award_type_code in filters['award_type_codes']:
+            if award_type_code not in award_type_mapping:
+                raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
+
         return json_request
 
     def post(self, request):
