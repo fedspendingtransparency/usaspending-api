@@ -23,11 +23,12 @@ from usaspending_api.references.models import ToptierAgency
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.csv_helpers import sqs_queue
-from usaspending_api.common.helpers import order_nested_object
+from usaspending_api.common.helpers import order_nested_object, within_one_year
 from usaspending_api.bulk_download.filestreaming import csv_selection
 from usaspending_api.bulk_download.filestreaming.s3_handler import S3Handler
 from usaspending_api.bulk_download.models import BulkDownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
+from usaspending_api.search.v2 import elasticsearch_helper
 
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference
 # TODO: Find a solution that marks the CFO agencies in the database AND have the correct order
@@ -96,7 +97,8 @@ value_mappings = {
         'awarding_agency_id': 'awarding_agency_id',
         'funding_agency_id': 'funding_agency_id',
         'contract_data': 'contract_data',
-        'assistance_data': 'assistance_data'
+        'assistance_data': 'assistance_data',
+        'transaction_id': 'id'
     },
     'sub_awards': {
         'table': Subaward,
@@ -108,7 +110,8 @@ value_mappings = {
         'awarding_agency_id': 'awarding_agency_id',
         'funding_agency_id': 'funding_agency_id',
         'contract_data': 'award__latest_transaction__contract_data',
-        'assistance_data': 'award__latest_transaction__assistance_data'
+        'assistance_data': 'award__latest_transaction__assistance_data',
+        'transaction_id': 'award__latest_transaction__id'
     }
 }
 
@@ -145,74 +148,14 @@ class BaseDownloadViewSet(APIView):
 
         return Response(response)
 
-    def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-        json_request = request.data
-
-        for required_param in ['file_format', 'award_levels', 'filters']:
-            if required_param not in json_request:
-                raise InvalidParameterException('{} parameter not provided'.format(required_param))
-
-        # TODO: Refactor with the bulk_download method in populate_monthly_files.py
-        # Check if the same request has been called today
-        current_date = datetime.datetime.utcnow()
-        updated_date_timestamp = datetime.datetime.strftime(current_date, '%Y-%m-%d')
-        cached_download = BulkDownloadJob.objects.filter(
-            json_request=json.dumps(order_nested_object(json_request)),
-            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
-        if cached_download:
-            # By returning the cached files, there should be no duplicates on a daily basis
-            cached_filename = cached_download[0]['file_name']
-            return self.get_download_response(file_name=cached_filename)
-
-        csv_sources = self.get_csv_sources(json_request)
-
-        # get timestamped name to provide unique file name
-        timestamped_file_name = self.s3_handler.get_timestamped_filename(
-            self.DOWNLOAD_NAME + '.zip')
-
-        # create download job in database to track progress. Starts at 'ready'
-        # status by default.
-        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
-                               'json_request': json.dumps(order_nested_object(json_request)),
-                               'file_name': timestamped_file_name}
-        award_levels = json_request['award_levels']
-        award_types = json_request['filters']['award_types']
-        agency = json_request['filters']['agency']
-        sub_agency = json_request['filters'].get('sub_agency', None)
-        start_date = json_request['filters']['date_range'].get('start_date', None)
-        end_date = json_request['filters']['date_range'].get('end_date', None)
-        date_type = json_request['filters']['date_type']
-
-        for award_level in award_levels:
-            download_job_kwargs[award_level] = True
-        for award_type in award_types:
-            download_job_kwargs[award_type] = True
-        if agency and agency != 'all':
-            download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
-        if sub_agency:
-            download_job_kwargs['sub_agency'] = sub_agency
-        if start_date:
-            download_job_kwargs['start_date'] = start_date
-        if end_date:
-            download_job_kwargs['end_date'] = end_date
-        if date_type:
-            download_job_kwargs['date_type'] = date_type
-        download_job = BulkDownloadJob(**download_job_kwargs)
-        download_job.save()
-
-        logger.info('Added Bulk Download Job: {}\n'
-                    'Filename: {}\n'
-                    'Request Params: {}'.format(download_job.bulk_download_job_id,
-                                                download_job.file_name,
-                                                download_job.json_request))
-
+    def process_request(self, json_request, download_job, file_name):
         kwargs = {'download_job': download_job,
-                  'file_name': timestamped_file_name,
-                  'columns': json_request.get('columns', None),
-                  'sources': csv_sources}
+                  'file_name': file_name,
+                  'columns': json_request.get('columns', None)}
 
         if 'pytest' in sys.modules:
+            csv_sources = self.get_csv_sources(json_request)
+            kwargs['sources'] = csv_sources
             # We are testing, and cannot use threads - the testing db connection is not shared with the thread
             csv_selection.write_csvs(**kwargs)
         else:
@@ -231,14 +174,144 @@ class BaseDownloadViewSet(APIView):
                     'StringValue': json.dumps(kwargs['columns']),
                     'DataType': 'String'
                 },
-                'sources': {
-                    'StringValue': json.dumps(tuple([source.toJsonDict() for source in kwargs['sources']])),
+                'request': {
+                    'StringValue': json.dumps(json_request),
                     'DataType': 'String'
                 }
             }
             queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
                               QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody='Test', MessageAttributes=message_attributes)
+
+    def create_bulk_download_job(self, json_request, file_name, monthly_download=False):
+        # create download job in database to track progress. Starts at 'ready'
+        # status by default.
+        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
+                               'json_request': json.dumps(order_nested_object(json_request)),
+                               'file_name': file_name}
+
+        for award_level in json_request['award_levels']:
+            download_job_kwargs[award_level] = True
+        for award_type in json_request['filters']['award_types']:
+            download_job_kwargs[award_type] = True
+        keyword = json_request['filters']['keyword']
+        if keyword:
+            download_job_kwargs['keyword'] = keyword
+        agency = json_request['filters']['agency']
+        if agency and agency != 'all':
+            download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
+        sub_agency = json_request['filters']['sub_agency']
+        if sub_agency:
+            download_job_kwargs['sub_agency'] = sub_agency
+        start_date = json_request['filters']['date_range']['start_date']
+        if start_date:
+            download_job_kwargs['start_date'] = start_date
+        end_date = json_request['filters']['date_range']['end_date']
+        if end_date:
+            download_job_kwargs['end_date'] = end_date
+        date_type = json_request['filters']['date_type']
+        if date_type:
+            download_job_kwargs['date_type'] = date_type
+        if monthly_download:
+            download_job_kwargs['monthly_download'] = monthly_download
+        download_job = BulkDownloadJob(**download_job_kwargs)
+        download_job.save()
+
+        logger.info('Added Bulk Download Job: {}\n'
+                    'Filename: {}\n'
+                    'Request Params: {}'.format(download_job.bulk_download_job_id,
+                                                download_job.file_name,
+                                                download_job.json_request))
+        return download_job
+
+    def validate_request(self, json_request):
+        # Initial Argument Checking
+        for required_param in ['award_levels', 'filters']:
+            if required_param not in json_request:
+                raise InvalidParameterException('{} parameter not provided'.format(required_param))
+        if not isinstance(json_request['award_levels'], list):
+            raise InvalidParameterException('Award levels parameter not provided as a list')
+        elif len(json_request['award_levels']) == 0:
+            raise InvalidParameterException('At least one award level is required.')
+        if not isinstance(json_request['filters'], dict):
+            raise InvalidParameterException('Filters parameter not provided as a dict')
+        elif len(json_request['filters']) == 0:
+            raise InvalidParameterException('At least one filter is required.')
+        json_request['columns'] = json_request.get('columns', [])
+        json_request['file_format'] = json_request.get('file_format', 'csv')
+
+        # Overriding all other filters if the keyword filter is provided
+        if 'keyword' in json_request['filters']:
+            json_request['filters'] = {'keyword': json_request['filters']['keyword']}
+        filters = json_request['filters']
+
+        fields_defaults = {
+            'award_types': list(award_type_mappings.keys()),
+            'agency': '',
+            'sub_agency': '',
+            'date_range': {},
+            'date_type': 'action_date',
+            'keyword': ''
+        }
+        for field in fields_defaults:
+            filters[field] = filters.get(field, fields_defaults[field])
+            if not isinstance(filters[field], type(fields_defaults[field])):
+                type_name = type(fields_defaults[field]).__name__
+                raise InvalidParameterException('{} parameter not provided as a {}'.format(field, type_name))
+        filters['date_range']['start_date'] = filters['date_range'].get('start_date', '')
+        filters['date_range']['end_date'] = filters['date_range'].get('end_date', '')
+        for date_range_param in ['start_date', 'end_date']:
+            if not isinstance(filters['date_range'][date_range_param], str):
+                raise InvalidParameterException('{} parameter not provided as a str'.format(field))
+
+        # Ignoring the specific filter checking if keyword is provided
+        if not filters['keyword']:
+            # award types
+            for award_type in filters['award_types']:
+                if award_type not in award_type_mappings:
+                    raise InvalidParameterException('Invalid award_type: {}'.format(award_type))
+            # date range
+            earliest_date = '1000-01-01'
+            current_date = datetime.datetime.utcnow()
+            latest_date = datetime.datetime.strftime(current_date, '%Y-%m-%d')
+            start = filters['date_range']['start_date'] if filters['date_range']['start_date'] else earliest_date
+            end = filters['date_range']['end_date'] if filters['date_range']['end_date'] else latest_date
+            try:
+                d1 = datetime.datetime.strptime(start, "%Y-%m-%d")
+                d2 = datetime.datetime.strptime(end, "%Y-%m-%d")
+                if not within_one_year(d1, d2):
+                    raise InvalidParameterException('Date Range must be within a year.')
+            except ValueError:
+                raise InvalidParameterException('Date Ranges must be in the format YYYY-MM-DD.')
+            # date type
+            if filters['date_type'] not in ['action_date', 'last_modified_date']:
+                raise InvalidParameterException('Invalid parameter for date_type: {}'.format(filters['date_type']))
+        return json_request
+
+    def post(self, request):
+        """Return all budget function/subfunction titles matching the provided search text"""
+        json_request = self.validate_request(request.data)
+
+        # TODO: Refactor with the bulk_download method in populate_monthly_files.py
+        # Check if the same request has been called today
+        current_date = datetime.datetime.utcnow()
+        updated_date_timestamp = datetime.datetime.strftime(current_date, '%Y-%m-%d')
+        cached_download = BulkDownloadJob.objects.filter(
+            json_request=json.dumps(order_nested_object(json_request)),
+            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
+        if cached_download:
+            # By returning the cached files, there should be no duplicates on a daily basis
+            cached_filename = cached_download[0]['file_name']
+            return self.get_download_response(file_name=cached_filename)
+
+        download_name = '_'.join(value_mappings[award_level]['download_name']
+                                 for award_level in json_request['award_levels'])
+        # get timestamped name to provide unique file name
+        timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
+
+        download_job = self.create_bulk_download_job(json_request, timestamped_file_name)
+
+        self.process_request(json_request, download_job, timestamped_file_name)
 
         return self.get_download_response(file_name=timestamped_file_name)
 
@@ -306,11 +379,12 @@ class BulkDownloadListAgenciesViewSet(APIView):
                 raise InvalidParameterException('Agency ID not found')
             top_tier_agency = top_tier_agency[0]
             # Get the sub agencies and federal accounts associated with that top tier agency
+            # Removed distinct subtier_agency_name since removing subtiers with multiple codes that aren't in the
+            # modified list
             response_data['sub_agencies'] = Agency.objects.filter(toptier_agency_id=agency_id)\
                 .values(subtier_agency_name=F('subtier_agency__name'),
                         subtier_agency_code=F('subtier_agency__subtier_code'))\
-                .order_by('subtier_agency_name')\
-                .distinct('subtier_agency_name')
+                .order_by('subtier_agency_name')
             # Tried converting this to queryset filtering but ran into issues trying to
             # double check the right used subtier_agency by cross checking the cgac_code
             # see the last 2 lines of the list comprehension below
@@ -410,24 +484,28 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
     # TODO: Merge into award and transaction filters
     def process_filters(self, filters, award_level):
         """Filter function for Bulk Download Award Generation"""
-
-        for required_param in ['award_types', 'agency', 'date_type', 'date_range']:
-            if required_param not in filters:
-                raise InvalidParameterException('{} filter not provided'.format(required_param))
-
         table = value_mappings[award_level]['table']
         queryset = table.objects.all()
 
+        keyword = filters['keyword']
+        if keyword:
+            logger.info('Getting ids based on keyword: {}'.format(keyword))
+            transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
+            # flatten ids
+            transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
+            logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
+            transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
+            queryset = queryset.filter(**{'{}__isnull'.format(value_mappings[award_level]['transaction_id']): False})
+            queryset &= queryset.extra(
+                where=['\"transaction_normalized\".\"id\" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))]
+            )
+            return queryset
+
         # Adding award type filter
         award_types = []
-        try:
-            for award_type in filters['award_types']:
-                if award_type in award_type_mappings:
-                    award_types.extend(award_type_mappings[award_type])
-                else:
-                    raise InvalidParameterException('Invalid award_type: {}'.format(award_type))
-        except TypeError:
-            raise InvalidParameterException('award_types parameter not provided as a list')
+        for award_type in filters['award_types']:
+            award_types.extend(award_type_mappings[award_type])
+
         # if the filter is calling everything, just remove the filter, save on the query performance
         if set(award_types) != set(itertools.chain(*award_type_mappings.values())):
             type_queryset_filters = {}
@@ -446,24 +524,18 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
             date_attribute = value_mappings[award_level]['action_date']
         elif filters['date_type'] == 'last_modified_date':
             date_attribute = value_mappings[award_level]['last_modified_date']
-        else:
-            raise InvalidParameterException('Invalid parameter for date_type: {}'.format(filters['date_type']))
         # Get the date ranges
-        try:
-            date_range_filters = {}
-            if 'start_date' in filters['date_range'] and filters['date_range']['start_date']:
-                date_range_filters['{}__gte'.format(date_attribute)] = filters['date_range']['start_date']
-            if 'end_date' in filters['date_range'] and filters['date_range']['end_date']:
-                date_range_filters['{}__lte'.format(date_attribute)] = filters['date_range']['end_date']
-            queryset &= table.objects.filter(**date_range_filters)
-        except TypeError:
-            raise InvalidParameterException('date_range parameter not provided as an object')
+        date_range_filters = {}
+        if filters['date_range']['start_date']:
+            date_range_filters['{}__gte'.format(date_attribute)] = filters['date_range']['start_date']
+        if filters['date_range']['end_date']:
+            date_range_filters['{}__lte'.format(date_attribute)] = filters['date_range']['end_date']
+        queryset &= table.objects.filter(**date_range_filters)
 
         # Agencies are to be OR'd together and then AND'd to the major query
-        agencies_queryset = None
-        if filters['agency'] != 'all':
+        if filters['agency'] and filters['agency'] != 'all':
             agencies_queryset = Q(awarding_agency__toptier_agency_id=filters['agency'])
-            if 'sub_agency' in filters and filters['sub_agency']:
+            if filters['sub_agency']:
                 agencies_queryset &= Q(awarding_agency__subtier_agency__name=filters['sub_agency'])
             queryset &= table.objects.filter(agencies_queryset)
 
@@ -478,35 +550,29 @@ class BulkDownloadAwardsViewSet(BaseDownloadViewSet):
         # file_format = json_request['file_format']
 
         csv_sources = []
-        self.DOWNLOAD_NAME = '_'.join(value_mappings[award_level]['download_name']
-                                      for award_level in award_levels)
-        try:
-            for award_level in award_levels:
-                if award_level not in value_mappings:
-                    raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
+        for award_level in award_levels:
+            if award_level not in value_mappings:
+                raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
 
-                queryset = self.process_filters(json_request['filters'], award_level)
-                award_level_table = value_mappings[award_level]['table']
+            queryset = self.process_filters(json_request['filters'], award_level)
+            award_level_table = value_mappings[award_level]['table']
 
-                award_types = set(json_request['filters']['award_types'])
-                d1_award_types = set(['contracts'])
-                d2_award_types = set(['grants', 'direct_payments', 'loans', 'other_financial_assistance'])
-                if award_types & d1_award_types:
-                    # only generate d1 files if the user is asking for contracts
-                    d1_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd1', award_level)
-                    d1_filters = {'{}__isnull'.format(value_mappings[award_level]['contract_data']): False}
-                    d1_source.queryset = queryset & award_level_table.objects.filter(**d1_filters)
-                    csv_sources.append(d1_source)
-                if award_types & d2_award_types:
-                    # only generate d2 files if the user is asking for assistance data
-                    d2_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd2', award_level)
-                    d2_filters = {'{}__isnull'.format(value_mappings[award_level]['assistance_data']): False}
-                    d2_source.queryset = queryset & award_level_table.objects.filter(**d2_filters)
-                    csv_sources.append(d2_source)
-                verify_requested_columns_available(tuple(csv_sources), json_request.get('columns', None))
-
-        except TypeError:
-            raise InvalidParameterException('award_levels parameter not provided as a list')
+            award_types = set(json_request['filters']['award_types'])
+            d1_award_types = set(['contracts'])
+            d2_award_types = set(['grants', 'direct_payments', 'loans', 'other_financial_assistance'])
+            if award_types & d1_award_types:
+                # only generate d1 files if the user is asking for contracts
+                d1_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd1', award_level)
+                d1_filters = {'{}__isnull'.format(value_mappings[award_level]['contract_data']): False}
+                d1_source.queryset = queryset & award_level_table.objects.filter(**d1_filters)
+                csv_sources.append(d1_source)
+            if award_types & d2_award_types:
+                # only generate d2 files if the user is asking for assistance data
+                d2_source = csv_selection.CsvSource(value_mappings[award_level]['table_name'], 'd2', award_level)
+                d2_filters = {'{}__isnull'.format(value_mappings[award_level]['assistance_data']): False}
+                d2_source.queryset = queryset & award_level_table.objects.filter(**d2_filters)
+                csv_sources.append(d2_source)
+            verify_requested_columns_available(tuple(csv_sources), json_request['columns'])
         return tuple(csv_sources)
 
 

@@ -271,48 +271,10 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
         self.load_city_county_data()
         self.fill_missing_state_data()
         self.fill_missing_zip5()
-        # self.populate_location_unique()
 
     def save(self, *args, **kwargs):
         self.pre_save()
         super(Location, self).save(*args, **kwargs)
-
-    def populate_location_unique(self):
-        unique_columns = \
-            ["location_country_code",
-             "country_name",
-             "state_code",
-             "state_name",
-             "state_description",
-             "city_name",
-             "city_code",
-             "county_name",
-             "county_code",
-             "address_line1",
-             "address_line2",
-             "address_line3",
-             "foreign_location_description",
-             "zip4",
-             "congressional_code",
-             "performance_code",
-             "zip_last4",
-             "zip5",
-             "foreign_postal_code",
-             "foreign_province",
-             "foreign_city_name",
-             "reporting_period_start",
-             "reporting_period_end"
-             ]
-
-        ret_vals = []
-        for col in unique_columns:
-            col_val = getattr(self, col)
-            if col_val is None:
-                ret_val = "none"
-            else:
-                ret_val = str(col_val)
-            ret_vals += [ret_val]
-        self.location_unique = "_".join(ret_vals)
 
     def fill_missing_state_data(self):
         """Fills in blank US state names or codes from its counterpart"""
@@ -387,15 +349,6 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
             else:
                 logging.getLogger('debug').info("Could not find single matching city/county for following arguments:" +
                                                 str(q_kwargs) + "; got " + str(matched_reference.count()))
-
-    class Meta:
-        unique_together = [
-            'location_country_code', 'country_name', 'state_code', 'state_name', 'state_description', 'city_name',
-            'city_code', 'county_name', 'county_code', 'address_line1', 'address_line2', 'address_line3',
-            'foreign_location_description', 'zip4', 'congressional_code', 'performance_code', 'zip_last4', 'zip5',
-            'foreign_postal_code', 'foreign_province', 'foreign_city_name', 'reporting_period_start',
-            'reporting_period_end'
-        ]
 
 
 class LegalEntity(DataSourceTrackedModel):
@@ -480,114 +433,119 @@ class LegalEntity(DataSourceTrackedModel):
     business_categories = ArrayField(models.TextField(), default=list)
 
     recipient_unique_id = models.TextField(blank=True, default='', null=True, verbose_name="DUNS Number", db_index=True)
-    limited_liability_corporation = models.TextField(blank=True, null=True)
-    sole_proprietorship = models.TextField(blank=True, null=True)
-    partnership_or_limited_liability_partnership = models.TextField(blank=True, null=True)
-    subchapter_scorporation = models.TextField(blank=True, null=True)
-    foundation = models.TextField(blank=True, null=True)
-    for_profit_organization = models.TextField(blank=True, null=True)
-    nonprofit_organization = models.TextField(blank=True, null=True)
-    corporate_entity_tax_exempt = models.TextField(blank=True, null=True)
-    corporate_entity_not_tax_exempt = models.TextField(blank=True, null=True)
-    other_not_for_profit_organization = models.TextField(blank=True, null=True)
+    limited_liability_corporation = models.BooleanField(blank=False, null=False, default=False)
+    sole_proprietorship = models.BooleanField(blank=False, null=False, default=False)
+    partnership_or_limited_liability_partnership = models.BooleanField(blank=False, null=False, default=False)
+    subchapter_scorporation = models.BooleanField(blank=False, null=False, default=False)
+    foundation = models.BooleanField(blank=False, null=False, default=False)
+    for_profit_organization = models.BooleanField(blank=False, null=False, default=False)
+    nonprofit_organization = models.BooleanField(blank=False, null=False, default=False)
+    corporate_entity_tax_exempt = models.BooleanField(blank=False, null=False, default=False)
+    corporate_entity_not_tax_exempt = models.BooleanField(blank=False, null=False, default=False)
+    other_not_for_profit_organization = models.BooleanField(blank=False, null=False, default=False)
     sam_exception = models.TextField(blank=True, null=True)
-    city_local_government = models.TextField(blank=True, null=True)
-    county_local_government = models.TextField(blank=True, null=True)
-    inter_municipal_local_government = models.TextField(blank=True, null=True)
-    local_government_owned = models.TextField(blank=True, null=True)
-    municipality_local_government = models.TextField(blank=True, null=True)
-    school_district_local_government = models.TextField(blank=True, null=True)
-    township_local_government = models.TextField(blank=True, null=True)
-    us_state_government = models.TextField(blank=True, null=True)
-    us_federal_government = models.TextField(blank=True, null=True)
-    federal_agency = models.TextField(blank=True, null=True)
-    federally_funded_research_and_development_corp = models.TextField(blank=True, null=True)
-    us_tribal_government = models.TextField(blank=True, null=True)
-    foreign_government = models.TextField(blank=True, null=True)
-    community_developed_corporation_owned_firm = models.TextField(blank=True, null=True)
-    labor_surplus_area_firm = models.TextField(blank=True, null=True)
-    small_agricultural_cooperative = models.TextField(blank=True, null=True)
-    international_organization = models.TextField(blank=True, null=True)
-    us_government_entity = models.TextField(blank=True, null=True)
-    emerging_small_business = models.TextField(blank=True, null=True)
-    c8a_program_participant = models.TextField(
-        db_column='8a_program_participant', max_length=1, blank=True, null=True,
+    city_local_government = models.BooleanField(blank=False, null=False, default=False)
+    county_local_government = models.BooleanField(blank=False, null=False, default=False)
+    inter_municipal_local_government = models.BooleanField(blank=False, null=False, default=False)
+    local_government_owned = models.BooleanField(blank=False, null=False, default=False)
+    municipality_local_government = models.BooleanField(blank=False, null=False, default=False)
+    school_district_local_government = models.BooleanField(blank=False, null=False, default=False)
+    township_local_government = models.BooleanField(blank=False, null=False, default=False)
+    us_state_government = models.BooleanField(blank=False, null=False, default=False)
+    us_federal_government = models.BooleanField(blank=False, null=False, default=False)
+    federal_agency = models.BooleanField(blank=False, null=False, default=False)
+    federally_funded_research_and_development_corp = models.BooleanField(blank=False, null=False, default=False)
+    us_tribal_government = models.BooleanField(blank=False, null=False, default=False)
+    foreign_government = models.BooleanField(blank=False, null=False, default=False)
+    community_developed_corporation_owned_firm = models.BooleanField(blank=False, null=False, default=False)
+    labor_surplus_area_firm = models.BooleanField(blank=False, null=False, default=False)
+    small_agricultural_cooperative = models.BooleanField(blank=False, null=False, default=False)
+    international_organization = models.BooleanField(blank=False, null=False, default=False)
+    us_government_entity = models.BooleanField(blank=False, null=False, default=False)
+    emerging_small_business = models.BooleanField(blank=False, null=False, default=False)
+    c8a_program_participant = models.BooleanField(
+        db_column='8a_program_participant', max_length=1, blank=False, null=False, default=False,
         verbose_name="8a Program Participant")  # Field renamed because it wasn't a valid Python identifier.
-    sba_certified_8a_joint_venture = models.TextField(blank=True, null=True)
-    dot_certified_disadvantage = models.TextField(blank=True, null=True)
-    self_certified_small_disadvantaged_business = models.TextField(blank=True, null=True)
-    historically_underutilized_business_zone = models.TextField(blank=True, null=True)
-    small_disadvantaged_business = models.TextField(blank=True, null=True)
-    the_ability_one_program = models.TextField(blank=True, null=True)
-    historically_black_college = models.TextField(blank=True, null=True)
-    c1862_land_grant_college = models.TextField(
+    sba_certified_8a_joint_venture = models.BooleanField(blank=False, null=False, default=False)
+    dot_certified_disadvantage = models.BooleanField(blank=False, null=False, default=False)
+    self_certified_small_disadvantaged_business = models.BooleanField(blank=False, null=False, default=False)
+    historically_underutilized_business_zone = models.BooleanField(blank=False, null=False, default=False)
+    small_disadvantaged_business = models.BooleanField(blank=False, null=False, default=False)
+    the_ability_one_program = models.BooleanField(blank=False, null=False, default=False)
+    historically_black_college = models.BooleanField(blank=False, null=False, default=False)
+    c1862_land_grant_college = models.BooleanField(
         db_column='1862_land_grant_college',
         max_length=1,
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
+        default=False,
         verbose_name="1862 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
-    c1890_land_grant_college = models.TextField(
+    c1890_land_grant_college = models.BooleanField(
         db_column='1890_land_grant_college',
         max_length=1,
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
+        default=False,
         verbose_name="1890 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
-    c1994_land_grant_college = models.TextField(
+    c1994_land_grant_college = models.BooleanField(
         db_column='1994_land_grant_college',
         max_length=1,
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
+        default=False,
         verbose_name="1894 Land Grant College")  # Field renamed because it wasn't a valid Python identifier.
-    minority_institution = models.TextField(blank=True, null=True)
-    private_university_or_college = models.TextField(blank=True, null=True)
-    school_of_forestry = models.TextField(blank=True, null=True)
-    state_controlled_institution_of_higher_learning = models.TextField(blank=True, null=True)
-    tribal_college = models.TextField(blank=True, null=True)
-    veterinary_college = models.TextField(blank=True, null=True)
-    educational_institution = models.TextField(blank=True, null=True)
-    alaskan_native_servicing_institution = models.TextField(
-        blank=True, null=True, verbose_name="Alaskan Native Owned Servicing Institution")
-    community_development_corporation = models.TextField(blank=True, null=True)
-    native_hawaiian_servicing_institution = models.TextField(blank=True, null=True)
-    domestic_shelter = models.TextField(blank=True, null=True)
-    manufacturer_of_goods = models.TextField(blank=True, null=True)
-    hospital_flag = models.TextField(blank=True, null=True)
-    veterinary_hospital = models.TextField(blank=True, null=True)
-    hispanic_servicing_institution = models.TextField(blank=True, null=True)
-    woman_owned_business = models.TextField(blank=True, null=True)
-    minority_owned_business = models.TextField(blank=True, null=True)
-    women_owned_small_business = models.TextField(blank=True, null=True)
-    economically_disadvantaged_women_owned_small_business = models.TextField(blank=True, null=True)
-    joint_venture_women_owned_small_business = models.TextField(blank=True, null=True)
-    joint_venture_economic_disadvantaged_women_owned_small_bus = models.TextField(blank=True, null=True)
-    veteran_owned_business = models.TextField(blank=True, null=True)
-    service_disabled_veteran_owned_business = models.TextField(blank=True, null=True)
-    contracts = models.TextField(blank=True, null=True)
-    grants = models.TextField(blank=True, null=True)
-    receives_contracts_and_grants = models.TextField(blank=True, null=True)
-    airport_authority = models.TextField(blank=True, null=True, verbose_name="Airport Authority")
-    council_of_governments = models.TextField(blank=True, null=True)
-    housing_authorities_public_tribal = models.TextField(blank=True, null=True)
-    interstate_entity = models.TextField(blank=True, null=True)
-    planning_commission = models.TextField(blank=True, null=True)
-    port_authority = models.TextField(blank=True, null=True)
-    transit_authority = models.TextField(blank=True, null=True)
-    foreign_owned_and_located = models.TextField(blank=True, null=True)
-    american_indian_owned_business = models.TextField(
-        blank=True, null=True, verbose_name="American Indian Owned Business")
-    alaskan_native_owned_corporation_or_firm = models.TextField(
-        blank=True, null=True, verbose_name="Alaskan Native Owned Corporation or Firm")
-    indian_tribe_federally_recognized = models.TextField(blank=True, null=True)
-    native_hawaiian_owned_business = models.TextField(blank=True, null=True)
-    tribally_owned_business = models.TextField(blank=True, null=True)
-    asian_pacific_american_owned_business = models.TextField(
-        blank=True, null=True, verbose_name="Asian Pacific American Owned business")
-    black_american_owned_business = models.TextField(blank=True, null=True)
-    hispanic_american_owned_business = models.TextField(blank=True, null=True)
-    native_american_owned_business = models.TextField(blank=True, null=True)
-    subcontinent_asian_asian_indian_american_owned_business = models.TextField(blank=True, null=True)
-    other_minority_owned_business = models.TextField(blank=True, null=True)
-    us_local_government = models.TextField(blank=True, null=True)
+    minority_institution = models.BooleanField(blank=False, null=False, default=False)
+    private_university_or_college = models.BooleanField(blank=False, null=False, default=False)
+    school_of_forestry = models.BooleanField(blank=False, null=False, default=False)
+    state_controlled_institution_of_higher_learning = models.BooleanField(blank=False, null=False, default=False)
+    tribal_college = models.BooleanField(blank=False, null=False, default=False)
+    veterinary_college = models.BooleanField(blank=False, null=False, default=False)
+    educational_institution = models.BooleanField(blank=False, null=False, default=False)
+    alaskan_native_servicing_institution = models.BooleanField(
+        blank=False, null=False, default=False, verbose_name="Alaskan Native Owned Servicing Institution")
+    community_development_corporation = models.BooleanField(blank=False, null=False, default=False)
+    native_hawaiian_servicing_institution = models.BooleanField(blank=False, null=False, default=False)
+    domestic_shelter = models.BooleanField(blank=False, null=False, default=False)
+    manufacturer_of_goods = models.BooleanField(blank=False, null=False, default=False)
+    hospital_flag = models.BooleanField(blank=False, null=False, default=False)
+    veterinary_hospital = models.BooleanField(blank=False, null=False, default=False)
+    hispanic_servicing_institution = models.BooleanField(blank=False, null=False, default=False)
+    woman_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    minority_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    women_owned_small_business = models.BooleanField(blank=False, null=False, default=False)
+    economically_disadvantaged_women_owned_small_business = models.BooleanField(blank=False, null=False, default=False)
+    joint_venture_women_owned_small_business = models.BooleanField(blank=False, null=False, default=False)
+    joint_venture_economic_disadvantaged_women_owned_small_bus = models.BooleanField(blank=False, null=False,
+                                                                                     default=False)
+    veteran_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    service_disabled_veteran_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    contracts = models.BooleanField(blank=False, null=False, default=False)
+    grants = models.BooleanField(blank=False, null=False, default=False)
+    receives_contracts_and_grants = models.BooleanField(blank=False, null=False, default=False)
+    airport_authority = models.BooleanField(blank=False, null=False, default=False, verbose_name="Airport Authority")
+    council_of_governments = models.BooleanField(blank=False, null=False, default=False)
+    housing_authorities_public_tribal = models.BooleanField(blank=False, null=False, default=False)
+    interstate_entity = models.BooleanField(blank=False, null=False, default=False)
+    planning_commission = models.BooleanField(blank=False, null=False, default=False)
+    port_authority = models.BooleanField(blank=False, null=False, default=False)
+    transit_authority = models.BooleanField(blank=False, null=False, default=False)
+    foreign_owned_and_located = models.BooleanField(blank=False, null=False, default=False)
+    american_indian_owned_business = models.BooleanField(
+        blank=False, null=False, default=False, verbose_name="American Indian Owned Business")
+    alaskan_native_owned_corporation_or_firm = models.BooleanField(
+        blank=False, null=False, default=False, verbose_name="Alaskan Native Owned Corporation or Firm")
+    indian_tribe_federally_recognized = models.BooleanField(blank=False, null=False, default=False)
+    native_hawaiian_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    tribally_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    asian_pacific_american_owned_business = models.BooleanField(
+        blank=False, null=False, default=False, verbose_name="Asian Pacific American Owned business")
+    black_american_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    hispanic_american_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    native_american_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    subcontinent_asian_asian_indian_american_owned_business = models.BooleanField(blank=False, null=False,
+                                                                                  default=False)
+    other_minority_owned_business = models.BooleanField(blank=False, null=False, default=False)
+    us_local_government = models.BooleanField(blank=False, null=False, default=False)
     undefinitized_action = models.TextField(blank=True, null=True)
     domestic_or_foreign_entity = models.TextField(blank=True, null=True, db_index=True)
     domestic_or_foreign_entity_description = models.TextField(null=True, blank=True)
@@ -610,371 +568,9 @@ class LegalEntity(DataSourceTrackedModel):
     transaction_unique_id = models.TextField(blank=False, null=False, default="none",
                                              verbose_name="Transaction Unique ID")
 
-    def save(self, *args, **kwargs):
-        LegalEntity.update_business_type_categories(self)
-        super(LegalEntity, self).save(*args, **kwargs)
-
-        LegalEntityOfficers.objects.get_or_create(legal_entity=self)
-
-    @staticmethod
-    def update_business_type_categories(le):
-        # Create a new list of categories
-        categories = []
-
-        # Start adding categories to the list
-        # Business Category
-        if (
-            le.small_business == "1" or
-
-            le.business_types in ("R", "23")  # For-Profit Organization (Other than Small Business)
-        ):
-            categories.append("small_business")
-
-        if (
-            le.business_types in ("Q", "22")  # For-Profit Organization (Other than Small Business)
-        ):
-            categories.append("other_than_small_business")
-
-        if (
-            le.for_profit_organization == "1" or
-
-            "small_business" in categories or
-            "other_than_small_business" in categories
-        ):
-            categories.append("category_business")
-        # End Business Category
-
-        # Minority Owned Business Category
-        if (
-            le.alaskan_native_owned_corporation_or_firm == "1"
-        ):
-            categories.append("alaskan_native_owned_business")
-        if (
-            le.american_indian_owned_business == "1"
-        ):
-            categories.append("american_indian_owned_business")
-        if (
-            le.asian_pacific_american_owned_business == "1"
-        ):
-            categories.append("asian_pacific_american_owned_business")
-        if (
-            le.black_american_owned_business == "1"
-        ):
-            categories.append("black_american_owned_business")
-        if (
-            le.hispanic_american_owned_business == "1"
-        ):
-            categories.append("hispanic_american_owned_business")
-        if (
-            le.native_american_owned_business == "1"
-        ):
-            categories.append("native_american_owned_business")
-        if (
-            le.native_hawaiian_owned_business == "1"
-        ):
-            categories.append("native_hawaiian_owned_business")
-        if (
-            le.subcontinent_asian_asian_indian_american_owned_business == "1"
-        ):
-            categories.append("subcontinent_asian_indian_american_owned_business")
-        if (
-            le.tribally_owned_business == "1"
-        ):
-            categories.append("tribally_owned_business")
-        if (
-            le.other_minority_owned_business == "1"
-        ):
-            categories.append("other_minority_owned_business")
-        if (
-            le.minority_owned_business == "1" or
-            "alaskan_native_owned_business" in categories or
-            "american_indian_owned_business" in categories or
-            "asian_pacific_american_owned_business" in categories or
-            "black_american_owned_business" in categories or
-            "hispanic_american_owned_business" in categories or
-            "native_american_owned_business" in categories or
-            "native_hawaiian_owned_business" in categories or
-            "subcontinent_asian_indian_american_owned_business" in categories or
-            "tribally_owned_business" in categories or
-            "other_minority_owned_business" in categories
-        ):
-            categories.append("minority_owned_business")
-        # End Minority Owned Business Category
-
-        # Woman Owned Business Category
-        if (
-            le.women_owned_small_business == "1"
-        ):
-            categories.append("women_owned_small_business")
-        if (
-            le.economically_disadvantaged_women_owned_small_business == "1"
-        ):
-            categories.append("economically_disadvantaged_women_owned_small_business")
-        if (
-            le.joint_venture_women_owned_small_business == "1"
-        ):
-            categories.append("joint_venture_women_owned_small_business")
-        if (
-            le.joint_venture_economic_disadvantaged_women_owned_small_bus == "1"
-        ):
-            categories.append("joint_venture_economically_disadvantaged_women_owned_small_business")
-        if (
-            le.woman_owned_business == "1" or
-            "women_owned_small_business" in categories or
-            "economically_disadvantaged_women_owned_small_business" in categories or
-            "joint_venture_women_owned_small_business" in categories or
-            "joint_venture_economically_disadvantaged_women_owned_small_business" in categories
-        ):
-            categories.append("woman_owned_business")
-
-        # Veteran Owned Business Category
-        if (
-            le.service_disabled_veteran_owned_business == "1"
-        ):
-            categories.append("service_disabled_veteran_owned_business")
-        if (
-            le.veteran_owned_business == "1" or
-
-            "service_disabled_veteran_owned_business" in categories
-        ):
-            categories.append("veteran_owned_business")
-        # End Veteran Owned Business
-
-        # Special Designations Category
-        if (
-            le.c8a_program_participant == "1"
-        ):
-            categories.append("8a_program_participant")
-        if (
-            le.the_ability_one_program == "1"
-        ):
-            categories.append("ability_one_program")
-        if (
-            le.dot_certified_disadvantage == "1"
-        ):
-            categories.append("dot_certified_disadvantaged_business_enterprise")
-        if (
-            le.emerging_small_business == "1"
-        ):
-            categories.append("emerging_small_business")
-        if (
-            le.federally_funded_research_and_development_corp == "1"
-        ):
-            categories.append("federally_funded_research_and_development_corp")
-        if (
-            le.historically_underutilized_business_zone == "1"
-        ):
-            categories.append("historically_underutilized_business_firm")
-        if (
-            le.labor_surplus_area_firm == "1"
-        ):
-            categories.append("labor_surplus_area_firm")
-        if (
-            le.sba_certified_8a_joint_venture == "1"
-        ):
-            categories.append("sba_certified_8a_joint_venture")
-        if (
-            le.self_certified_small_disadvantaged_business == "1"
-        ):
-            categories.append("self_certified_small_disadvanted_business")
-        if (
-            le.small_agricultural_cooperative == "1"
-        ):
-            categories.append("small_agricultural_cooperative")
-        if (
-            le.small_disadvantaged_business == "1"
-        ):
-            categories.append("small_disadvantaged_business")
-        if (
-            le.community_developed_corporation_owned_firm == "1"
-        ):
-            categories.append("community_developed_corporation_owned_firm")
-        if (
-            le.domestic_or_foreign_entity == "A"  # U.S. Owned Business
-        ):
-            categories.append("us_owned_business")
-        if (
-            le.domestic_or_foreign_entity == "C"  # Foreign-Owned Business Incorporated in the U.S.
-        ):
-            categories.append("foreign_owned_and_us_located_business")
-        if (
-            le.domestic_or_foreign_entity == "D" or  # Foreign-Owned Business Not Incorporated in the U.S.
-
-            le.foreign_owned_and_located == "1"
-        ):
-            categories.append("foreign_owned_and_located_business")
-        if (
-            le.foreign_government == "1"
-        ):
-            categories.append("foreign_government")
-        if (
-            le.international_organization == "1"
-        ):
-            categories.append("international_organization")
-        if (
-            "8a_program_participant" in categories or
-            "ability_one_program" in categories or
-            "dot_certified_disadvantaged_business_enterprise" in categories or
-            "emerging_small_business" in categories or
-            "federally_funded_research_and_development_corp" in categories or
-            "historically_underutilized_business_firm" in categories or
-            "labor_surplus_area_firm" in categories or
-            "sba_certified_8a_joint_venture" in categories or
-            "self_certified_small_disadvanted_business" in categories or
-            "small_agricultural_cooperative" in categories or
-            "small_disadvantaged_business" in categories or
-            "community_developed_corporation_owned_firm" in categories or
-            "us_owned_business" in categories or
-            "foreign_owned_and_us_located_business" in categories or
-            "foreign_owned_and_located_business" in categories or
-            "foreign_government" in categories or
-            "international_organization" in categories
-        ):
-            categories.append("special_designations")
-        # End Special Designations
-
-        # Non-profit category
-        if (
-            le.foundation == "1"
-        ):
-            categories.append("foundation")
-        if (
-            le.community_developed_corporation_owned_firm == "1"
-        ):
-            categories.append("community_development_corporations")
-        if (
-            # Nonprofit with 501(c)(3) IRS Status (Other than Institution of Higher Education)
-            le.business_types == "M" or
-            # Nonprofit without 501(c)(3) IRS Status (Other than Institution of Higher Education)
-            le.business_types == "N" or
-            # FAADS+ equivalent for M/N
-            le.business_types == "12" or
-
-            le.nonprofit_organization == "1" or
-            le.other_not_for_profit_organization == "1" or
-            "foundation" in categories or
-            "community_development_corporations" in categories
-        ):
-            categories.append("nonprofit")
-        # End Non-profit category
-
-        # Higher Education Category
-        if (
-            le.business_types in ("H", "06") or  # Public/State Controlled Institution of Higher Education
-
-            le.state_controlled_institution_of_higher_learning == "1" or
-            le.c1862_land_grant_college == "1" or
-            le.c1890_land_grant_college == "1" or
-            le.c1994_land_grant_college == "1"
-        ):
-            categories.append("public_institution_of_higher_education")
-        if (
-            le.business_types in ("O", "20") or  # Private Institution of Higher Education
-
-            le.private_university_or_college == "1"
-        ):
-            categories.append("private_institution_of_higher_education")
-        if (
-            le.business_types == "T" or  # Historically Black Colleges and Universities (HBCUs)
-            le.business_types == "U" or  # Tribally Controlled Colleges and Universities (TCCUs)
-            le.business_types == "V" or  # Alaska Native and Native Hawaiian Serving Institutions
-            le.business_types == "S" or  # Hispanic-serving Institution
-
-            le.minority_institution == "1" or
-            le.historically_black_college == "1" or
-            le.tribal_college == "1" or
-            le.alaskan_native_servicing_institution == "1" or
-            le.native_hawaiian_servicing_institution == "1" or
-            le.hispanic_servicing_institution == "1"
-        ):
-            categories.append("minority_serving_institution_of_higher_education")
-        if (
-            "public_institution_of_higher_education" in categories or
-            "private_institution_of_higher_education" in categories or
-            "minority_serving_institution_of_higher_education" in categories
-        ):
-            categories.append("higher_education")
-        # End Higher Education Category
-
-        # Government Category
-        if (
-            le.us_federal_government == "1" or
-            le.federal_agency == "1" or
-            le.us_government_entity == "1" or
-            le.interstate_entity == "1"
-        ):
-            categories.append("national_government")
-        if (
-            le.business_types in ("A", "00") or  # State government
-            le.business_types == "E" or  # Regional Organization
-
-            le.us_state_government == "1" or
-            le.council_of_governments == "1"
-        ):
-            categories.append("regional_and_state_government")
-        if (
-            le.business_types == "F"  # U.S. Territory or Possession
-        ):
-            categories.append("us_territory_or_possession")
-        if (
-            le.business_types in ("C", "02") or  # City or Township Government
-            le.business_types in ("B", "01") or  # County Government
-            le.business_types in ("D", "04") or  # Special District Government
-            le.business_types in ("G", "05") or  # Independent School District
-
-            le.city_local_government == "1" or
-            le.county_local_government == "1" or
-            le.inter_municipal_local_government == "1" or
-            le.municipality_local_government == "1" or
-            le.township_local_government == "1" or
-            le.us_local_government == "1" or
-            le.local_government_owned == "1" or
-            le.school_district_local_government == "1"
-        ):
-            categories.append("local_government")
-        if (
-            le.business_types in ("I", "11") or  # Indian/Native American Tribal Government (Federally Recognized)
-            le.business_types == "J" or  # Indian/Native American Tribal Government (Other than Federally Recognized)
-
-            le.us_tribal_government == "1" or
-            le.indian_tribe_federally_recognized == "1"
-        ):
-            categories.append("indian_native_american_tribal_government")
-        if (
-            le.business_types == "L" or  # Public/Indian Housing Authority
-
-            le.housing_authorities_public_tribal == "1" or
-            le.airport_authority == "1" or
-            le.port_authority == "1" or
-            le.transit_authority == "1" or
-            le.planning_commission == "1"
-        ):
-            categories.append("authorities_and_commissions")
-        if (
-            "national_government" in categories or
-            "regional_and_state_government" in categories or
-            "us_territory_or_possession" in categories or
-            "local_government" in categories or
-            "indian_native_american_tribal_government" in categories or
-            "authorities_and_commissions" in categories
-        ):
-            categories.append("government")
-        # End Government Category
-
-        # Individuals Category
-        if (
-            le.individual == "1" or
-            le.business_types in ("P", "21")  # Individual
-        ):
-            categories.append("individuals")
-        # End Individuals category
-
-        le.business_categories = categories
-
     class Meta:
         managed = True
         db_table = 'legal_entity'
-        unique_together = ['recipient_unique_id', 'recipient_name', 'location']
 
 
 class LegalEntityOfficers(models.Model):

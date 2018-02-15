@@ -13,7 +13,7 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from usaspending_api.common.helpers import timer
+from usaspending_api.broker.helpers import get_business_categories, set_legal_entity_boolean_fields, timer
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
@@ -39,8 +39,7 @@ class Command(BaseCommand):
         # by the Broker's PK since every modification is a new row
         db_query = 'SELECT * ' \
                    'FROM detached_award_procurement ' \
-                   'WHERE updated_at >= %s ' \
-                   'ORDER BY detached_award_procurement_id ASC'
+                   'WHERE updated_at >= %s'
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
@@ -150,8 +149,13 @@ class Command(BaseCommand):
                 logger.info('Inserting Stale FPDS: Inserting row {} of {} ({})'.format(str(index), str(total_rows),
                                                                                        datetime.now() - start_time))
 
+            for key in row:
+                if isinstance(row[key], str):
+                    row[key] = row[key].upper()
+
             # Create new LegalEntityLocation and LegalEntity from the row data
-            legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
+            legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True,
+                                                                                           "is_fpds": True})
             recipient_name = row['awardee_or_recipient_legal']
             legal_entity = LegalEntity.objects.create(
                 recipient_unique_id=row['awardee_or_recipient_uniqu'],
@@ -159,7 +163,10 @@ class Command(BaseCommand):
             )
             legal_entity_value_map = {
                 "location": legal_entity_location,
+                "business_categories": get_business_categories(row=row, data_type='fpds'),
+                "is_fpds": True
             }
+            set_legal_entity_boolean_fields(row)
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
             # Create the place of performance location
@@ -169,9 +176,16 @@ class Command(BaseCommand):
             awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
             funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
+            # Generate the unique Award ID
+            # "CONT_AW_" + agency_id + referenced_idv_agency_iden + piid + parent_award_id
+            generated_unique_id = 'CONT_AW_' + (row['agency_id'] if row['agency_id'] else '-NONE-') + '_' + \
+                (row['referenced_idv_agency_iden'] if row['referenced_idv_agency_iden'] else '-NONE-') + '_' + \
+                (row['piid'] if row['piid'] else '-NONE-') + '_' + \
+                (row['parent_award_id'] if row['parent_award_id'] else '-NONE-')
+
             # Create the summary Award
-            generated_unique_id = self.generate_unique_id(row)
-            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)
+            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id,
+                                                                 piid=row['piid'])
             award.parent_award_piid = row.get('parent_award_id')
             award.save()
 
@@ -179,9 +193,9 @@ class Command(BaseCommand):
             award_update_id_list.append(award.id)
 
             try:
-                last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S.%f").date()
+                last_mod_date = datetime.strptime(str(row['last_modified']), "%Y-%m-%d %H:%M:%S.%f").date()
             except ValueError:
-                last_mod_date = datetime.strptime(str(row['modified_at']), "%Y-%m-%d %H:%M:%S").date()
+                last_mod_date = datetime.strptime(str(row['last_modified']), "%Y-%m-%d %H:%M:%S").date()
             parent_txn_value_map = {
                 "award": award,
                 "awarding_agency": awarding_agency,
@@ -191,11 +205,15 @@ class Command(BaseCommand):
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
-                "last_modified_date": last_mod_date
+                "last_modified_date": last_mod_date,
+                "transaction_unique_id": row['detached_award_proc_unique'],
+                "generated_unique_award_id": generated_unique_id,
+                "is_fpds": True
             }
 
             contract_field_map = {
                 "type": "contract_award_type",
+                "type_description": "contract_award_type_desc",
                 "description": "award_description"
             }
 
@@ -229,15 +247,6 @@ class Command(BaseCommand):
                 # create TransactionFPDS
                 transaction_fpds = TransactionFPDS(transaction=transaction, **contract_instance)
                 transaction_fpds.save()
-
-    @staticmethod
-    def generate_unique_id(row):
-        unique_award_id = 'CONT_AW_'
-        unique_award_id += row['agency_id'] if row['agency_id'] else '-NONE-'
-        unique_award_id += row['referenced_idv_agency_iden'] if row['referenced_idv_agency_iden'] else '-NONE-'
-        unique_award_id += row['piid'] if row['piid'] else '-NONE-'
-        unique_award_id += row['parent_award_id'] if row['parent_award_id'] else '-NONE-'
-        return unique_award_id
 
     def add_arguments(self, parser):
         parser.add_argument(

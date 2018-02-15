@@ -9,6 +9,7 @@ from usaspending_api.spending_explorer.v2.filters.spending_filter import spendin
 
 
 def type_filter(_type, filters):
+    fiscal_year = None
     fiscal_quarter = None
     fiscal_date = None
 
@@ -28,22 +29,36 @@ def type_filter(_type, filters):
     # Get fiscal_date and fiscal_quarter
     for key, value in filters.items():
         if key == 'fy':
-            if value is not None:
-                fiscal_date, fiscal_quarter = generate_last_completed_fiscal_quarter(fiscal_year=value)
-            else:
+            try:
+                fiscal_year = int(value)
+                if fiscal_year < 1000 or fiscal_year > 9999:
+                    raise InvalidParameterException('Incorrect Fiscal Year Parameter, "fy": "YYYY"')
+            except ValueError:
                 raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
+        elif key == 'quarter':
+            if value in ("1", "2", "3", "4"):
+                fiscal_quarter = int(value)
+            else:
+                raise InvalidParameterException('Incorrect value provided for quarter parameter. Must be a string '
+                                                'between 1 and 4')
+
+    if fiscal_year:
+        fiscal_date, fiscal_quarter = generate_last_completed_fiscal_quarter(fiscal_year=fiscal_year,
+                                                                             fiscal_quarter=fiscal_quarter)
 
     # Recipient, Award Queryset
-    alt_set = FinancialAccountsByAwards.objects.all().exclude(
-            transaction_obligated_amount__isnull=True).filter(
-            submission__reporting_fiscal_quarter=fiscal_quarter).annotate(
-            amount=Sum('transaction_obligated_amount'))
+    alt_set = FinancialAccountsByAwards.objects.all().\
+        exclude(transaction_obligated_amount__isnull=True).\
+        filter(submission__reporting_fiscal_quarter=fiscal_quarter).\
+        filter(submission__reporting_fiscal_year=fiscal_year).\
+        annotate(amount=Sum('transaction_obligated_amount'))
 
     # Base Queryset
-    queryset = FinancialAccountsByProgramActivityObjectClass.objects.all().exclude(
-            obligations_incurred_by_program_object_class_cpe__isnull=True).filter(
-            submission__reporting_fiscal_quarter=fiscal_quarter).annotate(
-            amount=Sum('obligations_incurred_by_program_object_class_cpe'))
+    queryset = FinancialAccountsByProgramActivityObjectClass.objects.all().\
+        exclude(obligations_incurred_by_program_object_class_cpe__isnull=True).\
+        filter(submission__reporting_fiscal_quarter=fiscal_quarter).\
+        filter(submission__reporting_fiscal_year=fiscal_year).\
+        annotate(amount=Sum('obligations_incurred_by_program_object_class_cpe'))
 
     # Apply filters to queryset results
     alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)

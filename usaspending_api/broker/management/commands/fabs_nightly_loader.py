@@ -11,7 +11,8 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from usaspending_api.common.helpers import timer
+from usaspending_api.broker.helpers import get_business_categories, get_business_type_description, \
+    get_assistance_type_description, timer
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
@@ -35,8 +36,7 @@ class Command(BaseCommand):
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
                    'WHERE created_at >= %s ' \
-                   'AND (is_active = True OR UPPER(correction_late_delete_ind) = \'D\') ' \
-                   'ORDER BY published_award_financial_assistance_id ASC'
+                   'AND (is_active = True OR UPPER(correction_late_delete_ind) = \'D\')'
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
@@ -114,6 +114,10 @@ class Command(BaseCommand):
                 logger.info('Inserting Stale FABS: Inserting row {} of {} ({})'.format(str(index), str(total_rows),
                                                                                        datetime.now() - start_time))
 
+            for key in row:
+                if isinstance(row[key], str):
+                    row[key] = row[key].upper()
+
             # Create new LegalEntityLocation and LegalEntity from the row data
             legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
             recipient_name = row['awardee_or_recipient_legal']
@@ -123,6 +127,8 @@ class Command(BaseCommand):
             )
             legal_entity_value_map = {
                 "location": legal_entity_location,
+                "business_categories": get_business_categories(row=row, data_type='fabs'),
+                "business_types_description": get_business_type_description(row['business_types'])
             }
             legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
@@ -133,10 +139,18 @@ class Command(BaseCommand):
             awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
             funding_agency = Agency.get_by_subtier_only(row["funding_sub_tier_agency_co"])
 
+            # Generate the unique Award ID
+            # "ASST_AW_" + awarding_sub_tier_agency_c + fain + uri
+            generated_unique_id = 'ASST_AW_' +\
+                (row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-') + '_' + \
+                (row['fain'] if row['fain'] else '-NONE-') + '_' + \
+                (row['uri'] if row['uri'] else '-NONE-')
+
             # Create the summary Award
-            generated_unique_id = self.generate_unique_id(row)
-            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)
-            award.parent_award_piid = row.get('parent_award_id')
+            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id,
+                                                                 fain=row['fain'],
+                                                                 uri=row['uri'],
+                                                                 record_type=row['record_type'])
             award.save()
 
             # Append row to list of Awards updated
@@ -155,7 +169,10 @@ class Command(BaseCommand):
                 "period_of_performance_start_date": format_date(row['period_of_performance_star']),
                 "period_of_performance_current_end_date": format_date(row['period_of_performance_curr']),
                 "action_date": format_date(row['action_date']),
-                "last_modified_date": last_mod_date
+                "last_modified_date": last_mod_date,
+                "type_description": get_assistance_type_description(row['assistance_type']),
+                "transaction_unique_id": row['afa_generated_unique'],
+                "generated_unique_award_id": generated_unique_id
             }
 
             fad_field_map = {
@@ -218,14 +235,6 @@ class Command(BaseCommand):
             with smart_open.smart_open(conn, 'w') as writer:
                 for row in file_with_headers:
                     writer.write(row + '\n')
-
-    @staticmethod
-    def generate_unique_id(row):
-        unique_award_id = 'ASST_AW_'
-        unique_award_id += row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-'
-        unique_award_id += row['fain'] if row['fain'] else '-NONE-'
-        unique_award_id += row['uri'] if row['uri'] else '-NONE-'
-        return unique_award_id
 
     def add_arguments(self, parser):
         parser.add_argument(
