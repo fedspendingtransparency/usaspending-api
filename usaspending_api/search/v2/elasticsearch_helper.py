@@ -4,7 +4,7 @@ from elasticsearch import Elasticsearch
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
-
+from usaspending_api.core.elasticsearch.client import es_client_query
 logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
@@ -22,22 +22,6 @@ def format_for_frontend(response):
     '''calls reverse key from TRANSACTIONS_LOOKUP '''
     response = [result['_source'] for result in response]
     return [swap_keys(result) for result in response]
-
-
-def es_client_query(index, body, timeout='1m', retries=1):
-    if retries > 20:
-        retries = 20
-    elif retries < 1:
-        retries = 1
-    for attempt in range(retries):
-        try:
-            response = CLIENT.search(index=index, body=body, timeout=timeout)
-        except Exception:
-            logger.exception('There was an error connecting to the ElasticSearch cluster.')
-            continue
-        return response
-    logger.error('Error connecting to elasticsearch. {} attempts made'.format(retries))
-    return None
 
 
 def search_transactions(filters, fields, sort, order, lower_limit, limit):
