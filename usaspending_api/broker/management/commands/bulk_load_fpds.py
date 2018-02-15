@@ -1,5 +1,4 @@
 import logging
-import timeit
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import connections, connection, transaction as db_transaction
@@ -8,6 +7,7 @@ from usaspending_api.common.helpers import fy
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
+from usaspending_api.common.helpers import timer
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date
 from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.references.models import RefCountryCode, Location, LegalEntity, Agency, ToptierAgency, \
@@ -510,92 +510,53 @@ class Command(BaseCommand):
 
         logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
 
-        logger.info('Diff-ing FPDS data...')
-        start = timeit.default_timer()
-        to_insert, to_delete = self.diff_fpds_data(db_cursor=db_cursor, ds_cursor=ds_cursor, fiscal_year=fiscal_year)
-        end = timeit.default_timer()
-        logger.info('Finished diff-ing FPDS data in ' + str(end - start) + ' seconds')
+        with timer('Diff-ing FPDS data', logger.info):
+            to_insert, to_delete = self.diff_fpds_data(db_cursor=db_cursor, ds_cursor=ds_cursor, fiscal_year=fiscal_year)
 
         total_rows = len(to_insert)
         total_rows_delete = len(to_delete)
 
         if total_rows_delete > 0:
-            logger.info('Deleting stale FPDS data...')
-            start = timeit.default_timer()
-            self.delete_stale_fpds(to_delete=to_delete)
-            end = timeit.default_timer()
-            logger.info('Finished deleting stale FPDS data in ' + str(end - start) + ' seconds')
+            with timer('Deleting stale FPDS data', logger.info):
+                self.delete_stale_fpds(to_delete=to_delete)
 
         if total_rows > 0:
             # Set lookups after deletions to only get latest
             self.set_lookup_maps()
 
-            logger.info('Get Broker FPDS data...')
-            start = timeit.default_timer()
-            fpds_broker_data = self.get_fpds_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)
-            end = timeit.default_timer()
-            logger.info('Finished getting Broker FPDS data in ' + str(end - start) + ' seconds')
+            with timer('Get Broker FPDS data', logger.info):
+                fpds_broker_data = self.get_fpds_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)
 
-            logger.info('Loading POP Location data...')
-            start = timeit.default_timer()
-            self.load_locations(fpds_broker_data=fpds_broker_data, total_rows=total_rows, pop_flag=True)
-            end = timeit.default_timer()
-            logger.info('Finished POP Location bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading POP Location data', logger.info):
+                self.load_locations(fpds_broker_data=fpds_broker_data, total_rows=total_rows, pop_flag=True)
 
-            logger.info('Loading LE Location data...')
-            start = timeit.default_timer()
-            self.load_locations(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished LE Location bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading LE Location data', logger.info):
+                self.load_locations(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
 
-            logger.info('Loading Legal Entity data...')
-            start = timeit.default_timer()
-            self.load_legal_entity(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished Legal Entity bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading Legal Entity data', logger.info):
+                self.load_legal_entity(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
 
-            logger.info('Loading Parent Award data...')
-            start = timeit.default_timer()
-            self.load_parent_awards(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished Parent Award bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading Parent Award data', logger.info):
+                self.load_parent_awards(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
 
-            logger.info('Loading Award data...')
-            start = timeit.default_timer()
-            self.load_awards(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished Award bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading Award data', logger.info):
+                self.load_awards(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
 
-            logger.info('Loading Transaction Normalized data...')
-            start = timeit.default_timer()
-            self.load_transaction_normalized(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished Transaction Normalized bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading Transaction Normalized data', logger.info):
+                self.load_transaction_normalized(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
 
-            logger.info('Loading Transaction FPDS data...')
-            start = timeit.default_timer()
-            self.load_transaction_fpds(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished FPDS bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading Transaction FPDS data', logger.info):
+                self.load_transaction_fpds(fpds_broker_data=fpds_broker_data, total_rows=total_rows)
 
             award_update_id_list = [award.id for award in award_lookup]
 
-            logger.info('Updating awards to reflect their latest associated transaction info...')
-            start = timeit.default_timer()
-            update_awards(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+            with timer('Updating awards to reflect their latest associated transaction info', logger.info):
+                update_awards(tuple(award_update_id_list))
 
-            logger.info('Updating contract-specific awards to reflect their latest transaction info...')
-            start = timeit.default_timer()
-            update_contract_awards(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating contract specific awards in ' + str(end - start) + ' seconds')
+            with timer('Updating contract-specific awards to reflect their latest transaction info', logger.info):
+                update_contract_awards(tuple(award_update_id_list))
 
-            logger.info('Updating award category variables...')
-            start = timeit.default_timer()
-            update_award_categories(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+            with timer('Updating award category variables', logger.info):
+                update_award_categories(tuple(award_update_id_list))
         else:
             logger.info('Nothing to insert...FINISHED!')

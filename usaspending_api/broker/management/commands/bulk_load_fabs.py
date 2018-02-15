@@ -1,5 +1,4 @@
 import logging
-import timeit
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import connections, connection, transaction as db_transaction
@@ -475,80 +474,47 @@ class Command(BaseCommand):
 
         logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
 
-        logger.info('Diff-ing FABS data...')
-        start = timeit.default_timer()
-        to_insert, to_delete = self.diff_fabs_data(db_cursor=db_cursor, ds_cursor=ds_cursor, fiscal_year=fiscal_year)
-        end = timeit.default_timer()
-        logger.info('Finished diff-ing FABS data in ' + str(end - start) + ' seconds')
+        with timer('Diff-ing FABS data', logger.info):
+            to_insert, to_delete = self.diff_fabs_data(db_cursor=db_cursor, ds_cursor=ds_cursor, fiscal_year=fiscal_year)
 
         total_rows = len(to_insert)
         total_rows_delete = len(to_delete)
 
         if total_rows_delete > 0:
-            logger.info('Deleting stale FABS data...')
-            start = timeit.default_timer()
-            self.delete_stale_fabs(to_delete=to_delete)
-            end = timeit.default_timer()
-            logger.info('Finished deleting stale FABS data in ' + str(end - start) + ' seconds')
+            with timer('Deleting stale FABS data', logger.info):
+                self.delete_stale_fabs(to_delete=to_delete)
 
         if total_rows > 0:
             # Set lookups after deletions to only get latest
             self.set_lookup_maps()
 
-            logger.info('Get Broker FABS data...')
-            start = timeit.default_timer()
-            fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)
-            end = timeit.default_timer()
-            logger.info('Finished getting Broker FABS data in ' + str(end - start) + ' seconds')
+            with timer('Get Broker FABS data', logger.info):
+                fabs_broker_data = self.get_fabs_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)
 
-            logger.info('Loading POP Location data...')
-            start = timeit.default_timer()
-            self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows, pop_flag=True)
-            end = timeit.default_timer()
-            logger.info('Finished POP Location bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading POP Location data...', logger.info):
+                self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows, pop_flag=True)
 
-            logger.info('Loading LE Location data...')
-            start = timeit.default_timer()
-            self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished LE Location bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading LE Location data', logger.info):
+                self.load_locations(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
 
-            logger.info('Loading Legal Entity data...')
-            start = timeit.default_timer()
-            self.load_legal_entity(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished Legal Entity bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading Legal Entity data', logger.info):
+                self.load_legal_entity(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
 
-            logger.info('Loading Award data...')
-            start = timeit.default_timer()
-            self.load_awards(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished Award bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading Award data', logger.info):
+                self.load_awards(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
 
-            logger.info('Loading Transaction Normalized data...')
-            start = timeit.default_timer()
-            self.load_transaction_normalized(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished Transaction Normalized bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading Transaction Normalized data', logger.info):
+                self.load_transaction_normalized(fabs_broker_data=fabs_broker_data, total_rows=total_rows)
 
-            logger.info('Loading Transaction FABS data...')
-            start = timeit.default_timer()
-            self.load_transaction_fabs(fabs_broker_data, total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished FABS bulk data load in ' + str(end - start) + ' seconds')
+            with timer('Loading Transaction FABS data', logger.info):
+                self.load_transaction_fabs(fabs_broker_data, total_rows)
 
             award_update_id_list = [award.id for award in award_lookup]
 
-            logger.info('Updating awards to reflect their latest associated transaction info...')
-            start = timeit.default_timer()
-            update_awards(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+            with timer('Updating awards to reflect their latest associated transaction info', logger.info):
+                update_awards(tuple(award_update_id_list))
 
-            logger.info('Updating award category variables...')
-            start = timeit.default_timer()
-            update_award_categories(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+            with timer('Updating award category variables', logger.info):
+                update_award_categories(tuple(award_update_id_list))
         else:
             logger.info('Nothing to insert...FINISHED!')
