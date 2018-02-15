@@ -183,7 +183,7 @@ class BaseDownloadViewSet(APIView):
                               QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody='Test', MessageAttributes=message_attributes)
 
-    def create_bulk_download_job(self, json_request, file_name):
+    def create_bulk_download_job(self, json_request, file_name, monthly_download=False):
         # create download job in database to track progress. Starts at 'ready'
         # status by default.
         download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
@@ -194,6 +194,9 @@ class BaseDownloadViewSet(APIView):
             download_job_kwargs[award_level] = True
         for award_type in json_request['filters']['award_types']:
             download_job_kwargs[award_type] = True
+        keyword = json_request['filters']['keyword']
+        if keyword:
+            download_job_kwargs['keyword'] = keyword
         agency = json_request['filters']['agency']
         if agency and agency != 'all':
             download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
@@ -209,6 +212,8 @@ class BaseDownloadViewSet(APIView):
         date_type = json_request['filters']['date_type']
         if date_type:
             download_job_kwargs['date_type'] = date_type
+        if monthly_download:
+            download_job_kwargs['monthly_download'] = monthly_download
         download_job = BulkDownloadJob(**download_job_kwargs)
         download_job.save()
 
@@ -232,9 +237,13 @@ class BaseDownloadViewSet(APIView):
             raise InvalidParameterException('Filters parameter not provided as a dict')
         elif len(json_request['filters']) == 0:
             raise InvalidParameterException('At least one filter is required.')
-        filters = json_request['filters']
         json_request['columns'] = json_request.get('columns', [])
         json_request['file_format'] = json_request.get('file_format', 'csv')
+
+        # Overriding all other filters if the keyword filter is provided
+        if 'keyword' in json_request['filters']:
+            json_request['filters'] = {'keyword': json_request['filters']['keyword']}
+        filters = json_request['filters']
 
         fields_defaults = {
             'award_types': list(award_type_mappings.keys()),
