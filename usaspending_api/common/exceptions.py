@@ -9,6 +9,13 @@ class InvalidParameterException(APIException):
     default_code = 'invalid_request'
 
 
+class UnprocessableEntityException(APIException):
+    """https://tools.ietf.org/html/rfc4918"""
+    status_code = 422
+    default_detail = 'Request parameter is valid but unable to process due to contraints'
+    default_code = 'invalid_request'
+
+
 class ElasticsearchConnectionException(APIException):
     """Exception for invalid request parameters."""
     status_code = 500
