@@ -88,167 +88,6 @@ logger = logging.getLogger('console')
 
 class BaseDownloadViewSet(APIView):
 
-    s3_handler = S3Handler()
-
-    def get_download_response(self, file_name):
-        """ Generate download response which encompasses various elements to provide accurate status for state
-        of a download job"""
-
-        download_job = DownloadJob.objects.filter(file_name=file_name).first()
-        if not download_job:
-            raise NotFound('Download job with filename {} does not exist.'.format(file_name))
-
-        # compile url to file
-        file_path = settings.CSV_LOCAL_PATH + file_name if settings.IS_LOCAL else \
-            self.s3_handler.get_simple_url(file_name=file_name)
-
-        # add additional response elements that should be part of anything calling this function
-        response = {
-            'status': download_job.job_status.name,
-            'url': file_path,
-            'message': download_job.error_message,
-            'file_name': file_name,
-            # converting size from bytes to kilobytes if file_size isn't None
-            # TODO: 1000 or 1024?  Put units in name?
-            'total_size': download_job.file_size / 1000 if download_job.file_size else None,
-            'total_columns': download_job.number_of_columns,
-            'total_rows': download_job.number_of_rows,
-            'seconds_elapsed': download_job.seconds_elapsed()
-        }
-
-        return Response(response)
-
-    def post(self, request):
-        """Return all budget function/subfunction titles matching the provided search text"""
-
-        csv_sources = self.get_csv_sources(request.data)
-
-        # get timestamped name to provide unique file name
-        timestamped_file_name = self.s3_handler.get_timestamped_filename(
-            self.DOWNLOAD_NAME + '.zip')
-
-        # create download job in database to track progress. Starts at "ready"
-        # status by default.
-        download_job = DownloadJob(job_status_id=JOB_STATUS_DICT['ready'],
-                                   file_name=timestamped_file_name)
-        download_job.save()
-
-        kwargs = {'download_job': download_job,
-                  'file_name': timestamped_file_name,
-                  'columns': request.data['columns'],
-                  'sources': csv_sources}
-
-        if 'pytest' in sys.modules:
-            # We are testing, and cannot use threads - the testing db connection
-            # is not shared with the thread
-            csv_selection.write_csvs(**kwargs)
-        else:
-            t = threading.Thread(target=csv_selection.write_csvs,
-                                 kwargs=kwargs)
-
-            # Thread will stop when csv_selection.write_csvs stops
-            t.start()
-
-        return self.get_download_response(file_name=timestamped_file_name)
-
-
-class DownloadAwardsViewSet(BaseDownloadViewSet):
-    def post(self, request):
-        request['download_type'] = 'awards'
-        return super(BaseDownloadViewSet, self).post(request)
-
-    def get_csv_sources(self, json_request):
-        d1_source = csv_selection.CsvSource('award', 'd1')
-        d2_source = csv_selection.CsvSource('award', 'd2')
-        verify_requested_columns_available((d1_source, d2_source), json_request['columns'])
-        filters = json_request['filters']
-
-        queryset = award_filter(filters)
-
-        # Contract file
-        d1_source.queryset = queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False)
-
-        # Assistance file
-        d2_source.queryset = queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False)
-
-        return d1_source, d2_source
-
-    DOWNLOAD_NAME = 'awards'
-
-
-class DownloadTransactionsViewSet(BaseDownloadViewSet):
-    def post(self, request):
-        request['download_type'] = 'transactions'
-        return super(BaseDownloadViewSet, self).post(request)
-
-    def get_csv_sources(self, json_request):
-        limit = parse_limit(json_request)
-        contract_source = csv_selection.CsvSource('transaction', 'd1')
-        assistance_source = csv_selection.CsvSource('transaction', 'd2')
-        verify_requested_columns_available((contract_source, assistance_source), json_request['columns'])
-        filters = json_request['filters']
-
-        base_qset = transaction_filter(filters).values_list('id')[:limit]
-
-        # Contract file
-        queryset = TransactionNormalized.objects.filter(id__in=base_qset, contract_data__isnull=False)
-        contract_source.queryset = queryset
-
-        # Assistance file
-        queryset = TransactionNormalized.objects.filter(id__in=base_qset, assistance_data__isnull=False)
-        assistance_source.queryset = queryset
-
-        return contract_source, assistance_source
-
-    DOWNLOAD_NAME = 'transactions'
-
-
-class DownloadStatusViewSet(BaseDownloadViewSet):
-    def get(self, request):
-        """Obtain status for the download job matching the file name provided"""
-
-        get_request = request.query_params
-        file_name = get_request.get('file_name')
-
-        if not file_name:
-            raise InvalidParameterException(
-                'Missing one or more required query parameters: file_name')
-
-        return self.get_download_response(file_name=file_name)
-
-
-class DownloadTransactionCountViewSet(APIView):
-
-    @cache_response()
-    def post(self, request):
-        """Returns boolean of whether a download request is greater
-        than the max limit. """
-
-        json_request = request.data
-
-        # If no filters in request return empty object to return all transactions
-        filters = json_request.get('filters', {})
-        is_over_limit = False
-        queryset, model = download_transaction_count(filters)
-
-        if model in ['UniversalTransactionView']:
-            total_count = queryset.count()
-        else:
-            # "summary" materialized views are pre-aggregated and contain a counts col
-            total_count = queryset.aggregate(total_count=Sum('counts'))['total_count']
-
-        if total_count and total_count > settings.MAX_DOWNLOAD_LIMIT:
-            is_over_limit = True
-
-        result = {
-            "transaction_rows_gt_limit": is_over_limit
-        }
-
-        return Response(result)
-
-
-class DownloadViewSet(APIView):
-
     def post(self, request):
         """Push a message to SQS with the validated request JSON"""
         json_request = self.validate_request(request.data)
@@ -280,10 +119,11 @@ class DownloadViewSet(APIView):
     def validate_request(self, json_request):
         """Analyze request and raise any formatting errors as Exceptions"""
 
-        # Check required parameters
+        # Validate required parameters
         for required_param in ['award_levels', 'filters']:
             if required_param not in json_request:
-                raise InvalidParameterException('{} parameter not provided'.format(required_param))
+                raise InvalidParameterException(
+                    'Missing one or more required query parameters: {}'.format(required_param))
 
         if not isinstance(json_request['award_levels'], list):
             raise InvalidParameterException('Award levels parameter not provided as a list')
@@ -298,7 +138,7 @@ class DownloadViewSet(APIView):
         elif len(json_request['filters']) == 0:
             raise InvalidParameterException('At least one filter is required.')
 
-        # Check other base-level parameters or set to their defaults
+        # Set defaults of non-required parameters
         json_request['columns'] = json_request.get('columns', [])
         json_request['file_format'] = json_request.get('file_format', 'csv')
 
@@ -333,16 +173,10 @@ class DownloadViewSet(APIView):
                 raise InvalidParameterException(
                     'Invalid parameter within time_period\'s date_type: {}'.format(filters['date_type']))
 
-        if filters.keys() in ROW_CONSTRAINT_FILTER_DEFAULTS.keys() or total_range_count > 365:
-            # Generate files with a row count constraint
-            json_request['constraint_type'] = 'row_count'
-
+        if json_request['constraint_type'] == 'row_count':
             # Validate row_count-constrainted filter types and assign defaults
             check_types_and_assign_defaults(filters, ROW_CONSTRAINT_FILTER_DEFAULTS)
-        else:
-            # Generate files with a 365-day time constraint
-            json_request['constraint_type'] = 'year'
-
+        elif json_request['constraint_type'] == 'year':
             # Validate year-constrainted filter types and assign defaults
             check_types_and_assign_defaults(filters, YEAR_CONSTRAINT_FILTER_DEFAULTS)
 
@@ -351,6 +185,8 @@ class DownloadViewSet(APIView):
             if 'elasticsearch_keyword' in json_request['filters']:
                 json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword']}
                 return json_request
+        else:
+            raise InvalidParameterException('Invalid parameter: "constraint_type" must be "row_count" or "year"')
 
         return json_request
 
@@ -390,6 +226,58 @@ class DownloadViewSet(APIView):
         }
 
         return Response(response)
+
+
+class RowLimitedDownloadViewSet(BaseDownloadViewSet):
+    def post(self, request):
+        request['constraint_type'] = 'row_count'
+        return super(BaseDownloadViewSet, self).post(request)
+
+
+class YearLimitedDownloadViewSet(BaseDownloadViewSet):
+    def post(self, request):
+        request['constraint_type'] = 'year'
+        return super(BaseDownloadViewSet, self).post(request)
+
+
+class DownloadStatusViewSet(BaseDownloadViewSet):
+    def get(self, request):
+        """Obtain status for the download job matching the file name provided"""
+        get_request = request.query_params
+        file_name = get_request.get('file_name')
+
+        if not file_name:
+            raise InvalidParameterException('Missing one or more required query parameters: file_name')
+
+        return self.get_download_response(file_name=file_name)
+
+
+class DownloadTransactionCountViewSet(APIView):
+
+    @cache_response()
+    def post(self, request):
+        """Returns boolean of whether a download request is greater than the max limit. """
+        json_request = request.data
+
+        # If no filters in request return empty object to return all transactions
+        filters = json_request.get('filters', {})
+        is_over_limit = False
+        queryset, model = download_transaction_count(filters)
+
+        if model in ['UniversalTransactionView']:
+            total_count = queryset.count()
+        else:
+            # "summary" materialized views are pre-aggregated and contain a counts col
+            total_count = queryset.aggregate(total_count=Sum('counts'))['total_count']
+
+        if total_count and total_count > settings.MAX_DOWNLOAD_LIMIT:
+            is_over_limit = True
+
+        result = {
+            "transaction_rows_gt_limit": is_over_limit
+        }
+
+        return Response(result)
 
 
 def verify_requested_columns_available(sources, requested):
