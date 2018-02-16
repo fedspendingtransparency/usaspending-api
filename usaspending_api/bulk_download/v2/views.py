@@ -194,6 +194,9 @@ class BaseDownloadViewSet(APIView):
             download_job_kwargs[award_level] = True
         for award_type in json_request['filters']['award_types']:
             download_job_kwargs[award_type] = True
+        keyword = json_request['filters']['keyword']
+        if keyword:
+            download_job_kwargs['keyword'] = keyword
         agency = json_request['filters']['agency']
         if agency and agency != 'all':
             download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
@@ -234,9 +237,13 @@ class BaseDownloadViewSet(APIView):
             raise InvalidParameterException('Filters parameter not provided as a dict')
         elif len(json_request['filters']) == 0:
             raise InvalidParameterException('At least one filter is required.')
-        filters = json_request['filters']
         json_request['columns'] = json_request.get('columns', [])
         json_request['file_format'] = json_request.get('file_format', 'csv')
+
+        # Overriding all other filters if the keyword filter is provided
+        if 'keyword' in json_request['filters']:
+            json_request['filters'] = {'keyword': json_request['filters']['keyword']}
+        filters = json_request['filters']
 
         fields_defaults = {
             'award_types': list(award_type_mappings.keys()),
@@ -372,11 +379,12 @@ class BulkDownloadListAgenciesViewSet(APIView):
                 raise InvalidParameterException('Agency ID not found')
             top_tier_agency = top_tier_agency[0]
             # Get the sub agencies and federal accounts associated with that top tier agency
+            # Removed distinct subtier_agency_name since removing subtiers with multiple codes that aren't in the
+            # modified list
             response_data['sub_agencies'] = Agency.objects.filter(toptier_agency_id=agency_id)\
                 .values(subtier_agency_name=F('subtier_agency__name'),
                         subtier_agency_code=F('subtier_agency__subtier_code'))\
-                .order_by('subtier_agency_name')\
-                .distinct('subtier_agency_name')
+                .order_by('subtier_agency_name')
             # Tried converting this to queryset filtering but ran into issues trying to
             # double check the right used subtier_agency by cross checking the cgac_code
             # see the last 2 lines of the list comprehension below

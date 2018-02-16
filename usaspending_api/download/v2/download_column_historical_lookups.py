@@ -669,7 +669,7 @@ query_paths = {
         },
         'd2': {
             'action_date': 'action_date',
-            'action_type': 'assistance_data__action_type',
+            'action_type': 'action_type_description',
             'action_type_code': 'action_type',
             'assistance_type_code': 'assistance_data__assistance_type',
             'award_description': 'assistance_data__award_description',
@@ -681,7 +681,8 @@ query_paths = {
             'awarding_office_name': 'assistance_data__awarding_office_name',
             'awarding_sub_agency_code': 'assistance_data__awarding_sub_tier_agency_c',
             'awarding_sub_agency_name': 'assistance_data__awarding_sub_tier_agency_n',
-            'business_funds_indicator': 'assistance_data__business_funds_indicator',
+            # 'business_funds_indicator': 'assistance_data__business_funds_indicator',
+            # TODO: Field under DAIMS v1.2, not yet in broker
             'business_funds_indicator_code': 'assistance_data__business_funds_indicator',
             'business_types_code': 'assistance_data__business_types',
             'cfda_number': 'assistance_data__cfda_number',
@@ -1458,7 +1459,7 @@ human_names = {
             'assistance_type_code',
             'award_description',
             'business_funds_indicator_code',
-            'business_funds_indicator',
+            # 'business_funds_indicator',  # TODO: Add when DAIMS Schema v1.2 in place
             'business_types_code',
             'action_type_code',
             'action_type',

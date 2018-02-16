@@ -168,11 +168,11 @@ def get_download_ids(keyword, field, size=10000):
 
     max_iterations = 10
     total = get_total_results(keyword, '*', max_iterations)
-    if not total:
+    if total is None:
         logger.error('Error retrieving total results. Max number of attempts reached')
-        return None
-
-    n_iter = min(max(1, total // size), n_iter)
+        return
+    required_iter = (total // size) + 1
+    n_iter = min(max(1, required_iter), n_iter)
     for i in range(n_iter):
         query = {
             "_source": [field],
@@ -199,3 +199,37 @@ def get_download_ids(keyword, field, size=10000):
         for result in response['aggregations']['results']['buckets']:
             results.append(result['key'])
         yield results
+
+
+def get_sum_and_count_aggregation_results(keyword):
+    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT)+'*'
+    query = {"query": {"query_string": {"query": keyword}},
+             "aggs": {
+              "prime_awards_obligation_amount": {
+                 "sum": {
+                    "field": "transaction_amount"
+                 }
+              },
+              "prime_awards_count": {
+                 "value_count": {
+                    "field": "transaction_id"
+                 }
+              }
+              }, "size": 0}
+    response = es_client_query(index=index_name, body=query, retries=10)
+    if response:
+        try:
+            results = {}
+            results["prime_awards_count"] = response['aggregations']["prime_awards_count"]["value"]
+            results["prime_awards_obligation_amount"] = \
+                round(response['aggregations']["prime_awards_obligation_amount"]["value"], 2)
+            return results
+        except KeyError:
+            logger.error('Unexpected Response')
+    else:
+        return None
+
+
+def spending_by_transaction_sum_and_count(filters):
+    keyword = filters['keyword']
+    return get_sum_and_count_aggregation_results(keyword)
