@@ -27,7 +27,7 @@ from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import order_nested_object, within_one_year
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
 logger = logging.getLogger('console')
 
@@ -112,8 +112,8 @@ class BaseDownloadViewSet(APIView):
             'message': download_job.error_message,
             'file_name': file_name,
             # converting size from bytes to kilobytes if file_size isn't None
-            'total_size': download_job.file_size / 1000  # TODO: 1000 or 1024?  Put units in name?
-            if download_job.file_size else None,
+            # TODO: 1000 or 1024?  Put units in name?
+            'total_size': (download_job.file_size / 1000) if download_job.file_size else None,
             'total_columns': download_job.number_of_columns,
             'total_rows': download_job.number_of_rows,
             'seconds_elapsed': download_job.seconds_elapsed()
@@ -157,19 +157,23 @@ class BaseDownloadViewSet(APIView):
             queue.send_message(MessageBody='Test', MessageAttributes=message_attributes)
 
     def create_bulk_download_job(self, json_request, file_name):
-        # create download job in database to track progress. Starts at 'ready'
-        # status by default.
-        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'],
-                               'json_request': json.dumps(order_nested_object(json_request)),
-                               'file_name': file_name}
+        # Create download job in database to track progress. Starts at 'ready' status by default.
+        download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'], 'file_name': file_name,
+                               'json_request': json.dumps(order_nested_object(json_request))}
 
         for award_level in json_request['award_levels']:
             download_job_kwargs[award_level] = True
-        for award_type in json_request['filters']['award_types']:
-            download_job_kwargs[award_type] = True
+        for award_type_code in json_request['filters']['award_type_codes']:
+            download_job_kwargs[award_type_code] = True
         keyword = json_request['filters']['keyword']
         if keyword:
             download_job_kwargs['keyword'] = keyword
+
+        download_job_kwargs['agencies'] = []
+        for agency in json_request['filters']['agencies']:
+            agency_model = SubtierAgency if agency['tier'] == 'subtier' else ToptierAgency
+            download_job_kwargs['agencies'].append(agency_model.objects.filter(name=agency['name']))
+
         agency = json_request['filters']['agency']
         if agency and agency != 'all':
             download_job_kwargs['agency'] = ToptierAgency.objects.filter(toptier_agency_id=agency).first()
@@ -188,11 +192,9 @@ class BaseDownloadViewSet(APIView):
         download_job = BulkDownloadJob(**download_job_kwargs)
         download_job.save()
 
-        logger.info('Added Bulk Download Job: {}\n'
-                    'Filename: {}\n'
-                    'Request Params: {}'.format(download_job.bulk_download_job_id,
-                                                download_job.file_name,
-                                                download_job.json_request))
+        logger.info('Added Bulk Download Job: {}\nFilename: {}\nRequest Params: {}'.
+                    format(download_job.bulk_download_job_id, download_job.file_name, download_job.json_request))
+
         return download_job
 
     def validate_request(self, json_request):
@@ -233,7 +235,7 @@ class BaseDownloadViewSet(APIView):
 
         # Time Period Validation
         if len(filters['time_period']) == 0:
-            filters['time_period'].append({'start_date': '', 'end_date':'', 'date_type': 'action_date'})
+            filters['time_period'].append({'start_date': '', 'end_date': '', 'date_type': 'action_date'})
         earliest_date = '1000-01-01'
         current_date = datetime.datetime.utcnow()
         latest_date = datetime.datetime.strftime(current_date, '%Y-%m-%d')
