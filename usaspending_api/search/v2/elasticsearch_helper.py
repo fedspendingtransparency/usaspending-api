@@ -1,6 +1,5 @@
 import logging
 from django.conf import settings
-from elasticsearch import Elasticsearch
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
@@ -9,7 +8,7 @@ logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
-CLIENT = Elasticsearch(settings.ES_HOSTNAME)
+
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 
 
@@ -185,20 +184,23 @@ def get_download_ids(keyword, field, size=10000):
 
 
 def get_sum_and_count_aggregation_results(keyword):
-    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT)+'*'
-    query = {"query": {"query_string": {"query": keyword}},
-             "aggs": {
-              "prime_awards_obligation_amount": {
-                 "sum": {
+    index_name = '{}-*'.format(TRANSACTIONS_INDEX_ROOT)
+    query = {
+        "query": {
+            "query_string": {"query": keyword}},
+        "aggs": {
+            "prime_awards_obligation_amount": {
+                "sum": {
                     "field": "transaction_amount"
-                 }
-              },
-              "prime_awards_count": {
-                 "value_count": {
+                }
+            },
+            "prime_awards_count": {
+                "value_count": {
                     "field": "transaction_id"
-                 }
-              }
-              }, "size": 0}
+                }
+            }
+        },
+        "size": 0}
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
         try:
