@@ -93,7 +93,8 @@ class BaseDownloadViewSet(APIView):
         check_types_and_assign_defaults(filters, SHARED_FILTER_DEFAULTS)
 
         # Validate award type types
-        filters['award_type_codes'] = filters.get('award_type_codes', list(award_type_mapping.keys()))
+        if not filters.get('award_type_codes', None) or len(filters['award_type_codes']) < 1:
+            filters['award_type_codes'] = list(award_type_mapping.keys())
         for award_type_code in filters['award_type_codes']:
             if award_type_code not in award_type_mapping:
                 raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
