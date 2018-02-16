@@ -124,7 +124,7 @@ class BaseDownloadViewSet(APIView):
 
         if json_request['constraint_type'] == 'row_count':
             # Validate row_count-constrainted filter types and assign defaults
-            parse_limit(json_request)
+            json_request['limit'] = parse_limit(json_request)
 
             check_types_and_assign_defaults(filters, ROW_CONSTRAINT_FILTER_DEFAULTS)
         elif json_request['constraint_type'] == 'year':
