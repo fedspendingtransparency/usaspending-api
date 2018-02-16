@@ -109,7 +109,7 @@ def test_download_transactions_v2_endpoint(client, award_data):
         '/api/v2/download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "filters": {},
+            "filters": {"award_type_codes": []},
             "columns": {}
         }))
 
@@ -126,7 +126,7 @@ def test_download_awards_v2_endpoint(client, award_data):
         '/api/v2/download/awards',
         content_type='application/json',
         data=json.dumps({
-            "filters": {},
+            "filters": {"award_type_codes": []},
             "columns": []
         }))
 
@@ -143,7 +143,7 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
         '/api/v2/download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "filters": {},
+            "filters": {"award_type_codes": []},
             "columns": []
         }))
 
@@ -164,7 +164,7 @@ def test_download_awards_v2_status_endpoint(client, award_data):
         '/api/v2/download/awards',
         content_type='application/json',
         data=json.dumps({
-            "filters": {},
+            "filters": {"award_type_codes": []},
             "columns": []
         }))
 
@@ -187,7 +187,7 @@ def test_download_transactions_v2_endpoint_column_limit(client, award_data):
         '/api/v2/download/transactions',
         content_type='application/json',
         data=json.dumps({
-            "filters": {},
+            "filters": {"award_type_codes": []},
             "columns": ["award_id_piid", "modification_number"]
         }))
     resp = client.get('/api/v2/download/status/?file_name={}'
@@ -271,7 +271,7 @@ def test_download_transactions_v2_bad_column_list_raises(client):
 
     # Nonexistent filter
     payload = {
-        "filters": {},
+        "filters": {"award_type_codes": []},
         "columns": ["modification_number", "bogus_column"]
     }
     resp = client.post(
@@ -354,11 +354,10 @@ def test_download_transactions_limit(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "limit": 2,
-            "filters": {},
+            "filters": {"award_type_codes": []},
             "columns": []
         }))
-    resp = client.get('/api/v2/download/status/?file_name={}'
-                      .format(dl_resp.json()['file_name']))
+    resp = client.get('/api/v2/download/status/?file_name={}'.format(dl_resp.json()['file_name']))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()['total_rows'] == 2
 
@@ -371,7 +370,7 @@ def test_download_transactions_bad_limit(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "limit": "wombats",
-            "filters": {},
+            "filters": {"award_type_codes": []},
             "columns": []
         }))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
@@ -385,7 +384,7 @@ def test_download_transactions_excessive_limit(client, award_data):
         content_type='application/json',
         data=json.dumps({
             "limit": settings.MAX_DOWNLOAD_LIMIT + 1,
-            "filters": {},
+            "filters": {"award_type_codes": []},
             "columns": []
         }))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

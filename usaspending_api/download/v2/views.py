@@ -33,6 +33,7 @@ logger = logging.getLogger('console')
 
 
 class BaseDownloadViewSet(APIView):
+    s3_handler = S3Handler(name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
     def post(self, request):
         """Push a message to SQS with the validated request JSON"""
@@ -52,11 +53,11 @@ class BaseDownloadViewSet(APIView):
         download_name = '_'.join(VALUE_MAPPINGS[award_level]['download_name']
                                  for award_level in json_request['award_levels'])
         timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
-        download_job = DownloadJob.objects.create({'job_status_id': JOB_STATUS_DICT['ready'],
-                                                   'file_name': timestamped_file_name,
-                                                   'json_request': json.dumps(order_nested_object(json_request))})
-        logger.info('Created Bulk Download Job: {}\nFilename: {}\nRequest Params: {}'.
-                    format(download_job.bulk_download_job_id, download_job.file_name, download_job.json_request))
+        download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'],
+                                                  file_name=timestamped_file_name,
+                                                  json_request=json.dumps(order_nested_object(json_request)))
+        logger.info('Created Download Job: {}\nFilename: {}\nRequest Params: {}'.
+                    format(download_job.download_job_id, download_job.file_name, download_job.json_request))
 
         self.process_request(download_job)
 
@@ -64,7 +65,6 @@ class BaseDownloadViewSet(APIView):
 
     def validate_request(self, json_request):
         """Analyze request and raise any formatting errors as Exceptions"""
-
         # Validate required parameters
         for required_param in ['award_levels', 'filters']:
             if required_param not in json_request:
@@ -92,22 +92,25 @@ class BaseDownloadViewSet(APIView):
         filters = json_request['filters']
         check_types_and_assign_defaults(filters, SHARED_FILTER_DEFAULTS)
 
-        # Validate award types
+        # Validate award type types
+        filters['award_type_codes'] = filters.get('award_type_codes', list(award_type_mapping.keys()))
         for award_type_code in filters['award_type_codes']:
             if award_type_code not in award_type_mapping:
                 raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
 
         # Validate time periods
-        if len(filters['time_period']) == 0:
-            filters['time_period'].append({'start_date': '', 'end_date': '', 'date_type': 'action_date'})
         default_date_values = {
             'start_date': '1000-01-01',
             'end_date': datetime.datetime.strftime(datetime.datetime.utcnow(), '%Y-%m-%d'),
             'date_type': 'action_date'
         }
+        if len(filters.get('time_period', [])) == 0:
+            filters['time_period'] = [default_date_values]
         total_range_count = 0
         for date_range in filters['time_period']:
-            check_types_and_assign_defaults(date_range, default_date_values)
+            date_range.get('start_date', default_date_values['start_date'])
+            date_range.get('end_date', default_date_values['end_date'])
+            date_range.get('date_type', default_date_values['date_type'])
             try:
                 d1 = datetime.datetime.strptime(date_range['start_date'], "%Y-%m-%d")
                 d2 = datetime.datetime.strptime(date_range['end_date'], "%Y-%m-%d")
@@ -121,12 +124,13 @@ class BaseDownloadViewSet(APIView):
 
         if json_request['constraint_type'] == 'row_count':
             # Validate row_count-constrainted filter types and assign defaults
+            parse_limit(json_request)
+
             check_types_and_assign_defaults(filters, ROW_CONSTRAINT_FILTER_DEFAULTS)
         elif json_request['constraint_type'] == 'year':
             # Validate year-constrainted filter types and assign defaults
             check_types_and_assign_defaults(filters, YEAR_CONSTRAINT_FILTER_DEFAULTS)
 
-            # TODO: Is this for both download types or just Bulk?
             # Overriding all other filters if the keyword filter is provided
             if 'elasticsearch_keyword' in json_request['filters']:
                 json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword']}
@@ -174,16 +178,24 @@ class BaseDownloadViewSet(APIView):
         return Response(response)
 
 
-class RowLimitedDownloadViewSet(BaseDownloadViewSet):
+class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
-        request['constraint_type'] = 'row_count'
-        return super(BaseDownloadViewSet, self).post(request)
+        request.data['award_levels'] = ['awards']
+        request.data['constraint_type'] = 'row_count'
+        return BaseDownloadViewSet.post(self, request)
+
+
+class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
+    def post(self, request):
+        request.data['award_levels'] = ['transactions']
+        request.data['constraint_type'] = 'row_count'
+        return BaseDownloadViewSet.post(self, request)
 
 
 class YearLimitedDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
-        request['constraint_type'] = 'year'
-        return super(BaseDownloadViewSet, self).post(request)
+        request.data['constraint_type'] = 'year'
+        return BaseDownloadViewSet.post(self, request)
 
 
 class DownloadStatusViewSet(BaseDownloadViewSet):
@@ -390,9 +402,13 @@ def verify_requested_columns_available(sources, requested):
 def check_types_and_assign_defaults(request_dict, defaults_dict):
     for field in defaults_dict.keys():
         request_dict[field] = request_dict.get(field, defaults_dict[field])
+        # Validate the field's data type
         if not isinstance(request_dict[field], type(defaults_dict[field])):
             type_name = type(defaults_dict[field]).__name__
             raise InvalidParameterException('{} parameter not provided as a {}'.format(field, type_name))
+        # Remove empty filters
+        if request_dict[field] == defaults_dict[field]:
+            del(request_dict[field])
 
 
 def parse_limit(json_request):

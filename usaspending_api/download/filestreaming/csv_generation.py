@@ -1,4 +1,5 @@
 import boto
+import json
 import logging
 import math
 import mimetypes
@@ -74,7 +75,7 @@ def generate_csvs(download_job, sqs_message=None):
 
     # Parse data from download_job
     file_name = download_job.file_name
-    json_request = download_job.json_request
+    json_request = json.loads(download_job.json_request)
     columns = json_request.get('columns', None)
 
     # Update job attributes
@@ -85,7 +86,7 @@ def generate_csvs(download_job, sqs_message=None):
     download_job.save()
 
     logger.info('Starting to process Job: {}\nFilename: {}\nRequest Params: {}'.
-                format(download_job.bulk_download_job_id, download_job.file_name, download_job.json_request))
+                format(download_job.download_job_id, download_job.file_name, download_job.json_request))
     try:
         # Create temporary files and working directory
         file_path = settings.BULK_DOWNLOAD_LOCAL_PATH + file_name
@@ -138,12 +139,12 @@ def generate_csvs(download_job, sqs_message=None):
     download_job.save()
 
     logger.info('Processed Job: {}\nFilename: {}\nRequest Params: {}'.
-                format(download_job.bulk_download_job_id, download_job.file_name, download_job.json_request))
+                format(download_job.download_job_id, download_job.file_name, download_job.json_request))
 
     return file_name
 
 
-def get_csv_sources(self, json_request):
+def get_csv_sources(json_request):
     csv_sources = []
     for award_level in json_request['award_levels']:
         queryset = VALUE_MAPPINGS[award_level]['filter_function'](json_request['filters'])

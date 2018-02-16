@@ -32,7 +32,7 @@ VALUE_MAPPINGS = {
         'filter_function': award_filter
     },
     # Transaction Level
-    'prime_awards': {
+    'transactions': {
         'table': TransactionNormalized,
         'table_name': 'transaction',
         'download_name': 'awards',
