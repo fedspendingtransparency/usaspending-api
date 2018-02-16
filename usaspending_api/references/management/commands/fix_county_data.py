@@ -63,7 +63,7 @@ class Command(BaseCommand):
                 SET legal_entity_county_code = zc.county_number,
                     legal_entity_county_name = CASE WHEN dap.legal_entity_county_name IS NOT NULL
                                                     THEN dap.legal_entity_county_name
-                                                    ELSE UPPER(zc.county_name) END
+                                                    ELSE zc.county_name END
                 FROM zip_county AS zc
                 WHERE zc.combined_zip = dap.legal_entity_zip4
                     AND dap.legal_entity_county_code IS NULL
@@ -79,7 +79,7 @@ class Command(BaseCommand):
                 SET legal_entity_county_code = zc.county_number,
                     legal_entity_county_name = CASE WHEN dap.legal_entity_county_name IS NOT NULL
                                                     THEN dap.legal_entity_county_name
-                                                    ELSE UPPER(zc.county_name) END
+                                                    ELSE zc.county_name END
                 FROM zip_county AS zc
                 WHERE zc.dashed_zip = dap.legal_entity_zip4
                     AND dap.legal_entity_county_code IS NULL
@@ -94,7 +94,7 @@ class Command(BaseCommand):
                 SET legal_entity_county_code = sc.county_number,
                     legal_entity_county_name = CASE WHEN dap.legal_entity_county_name IS NOT NULL
                                                     THEN dap.legal_entity_county_name
-                                                    ELSE UPPER(sc.county_name) END
+                                                    ELSE sc.county_name END
                 FROM single_county AS sc
                 WHERE sc.zip5 = LEFT(dap.legal_entity_zip4, 5)
                     AND dap.legal_entity_county_code IS NULL
@@ -113,7 +113,7 @@ class Command(BaseCommand):
                 SET place_of_perform_county_co = zc.county_number,
                     place_of_perform_county_na = CASE WHEN dap.place_of_perform_county_na IS NOT NULL
                                                       THEN dap.place_of_perform_county_na
-                                                      ELSE UPPER(zc.county_name) END
+                                                      ELSE zc.county_name END
                 FROM zip_county AS zc
                 WHERE zc.combined_zip = dap.place_of_performance_zip4a
                     AND dap.place_of_perform_county_co IS NULL
@@ -128,7 +128,7 @@ class Command(BaseCommand):
                 SET place_of_perform_county_co = zc.county_number,
                     place_of_perform_county_na = CASE WHEN dap.place_of_perform_county_na IS NOT NULL
                                                       THEN dap.place_of_perform_county_na
-                                                      ELSE UPPER(zc.county_name) END
+                                                      ELSE zc.county_name END
                 FROM zip_county AS zc
                 WHERE zc.dashed_zip = dap.place_of_performance_zip4a
                     AND dap.place_of_perform_county_co IS NULL
@@ -143,7 +143,7 @@ class Command(BaseCommand):
                 SET place_of_perform_county_co = sc.county_number,
                     place_of_perform_county_na = CASE WHEN dap.place_of_perform_county_na IS NOT NULL
                                                       THEN dap.place_of_perform_county_na
-                                                      ELSE UPPER(sc.county_name) END
+                                                      ELSE sc.county_name END
                 FROM single_county AS sc
                 WHERE sc.zip5 = LEFT(dap.place_of_performance_zip4a, 5)
                     AND dap.place_of_perform_county_co IS NULL
