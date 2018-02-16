@@ -53,6 +53,7 @@ TEMPLATE = {
     'drop_matview': 'DROP MATERIALIZED VIEW IF EXISTS {};',
     'rename_matview': 'ALTER MATERIALIZED VIEW {}{} RENAME TO {};',
     'cluster_matview': 'CLUSTER VERBOSE {} USING {};',
+    'refresh_matview': 'REFRESH MATERIALIZED VIEW CONCURRENTLY {} WITH DATA;',
     'analyze': 'ANALYZE VERBOSE {};',
     'vacuum': 'VACUUM ANALYZE VERBOSE {};',
     'create_index': 'CREATE {}INDEX {} ON {} USING {}({}){}{};',
@@ -114,7 +115,83 @@ def create_index_string(matview_name, index_name, idx):
     return idx_str
 
 
-def create_sql_strings(sql_json):
+def make_sql_header():
+    return ['\n'.join(HEADER)]
+
+
+def make_matview_drops(final_matview_name):
+    matview_temp_name = final_matview_name + '_temp'
+    matview_archive_name = final_matview_name + '_old'
+
+    return [
+        TEMPLATE['drop_matview'].format(matview_temp_name),
+        TEMPLATE['drop_matview'].format(matview_archive_name)
+    ]
+
+
+def make_matview_create(final_matview_name, sql):
+    matview_sql = '\n'.join(sql)
+    matview_temp_name = final_matview_name + '_temp'
+    return [TEMPLATE['create_matview'].format(matview_temp_name, matview_sql)]
+
+
+def make_matview_refresh(matview_name):
+    return [
+        TEMPLATE['refresh_matview'].format(matview_name),
+        TEMPLATE['analyze'].format(matview_name)
+    ]
+
+
+def make_indexes_sql(sql_json, matview_name):
+    unique_name_list = []
+    create_indexes = []
+    rename_old_indexes = []
+    rename_new_indexes = []
+    for idx in sql_json['indexes']:
+        if len(idx['name']) > MAX_NAME_LENGTH:
+            raise Exception('Desired index name is too long. Keep under {} chars'.format(MAX_NAME_LENGTH))
+        final_index = 'idx_' + RANDOM_CHARS + '__' + idx['name']
+        unique_name_list.append(final_index)
+        tmp_index = final_index + '_temp'
+        old_index = final_index + '_old'
+
+        idx_str = create_index_string(matview_name, tmp_index, idx)
+
+        create_indexes.append(idx_str)
+        rename_old_indexes.append(TEMPLATE['rename_index'].format('IF EXISTS ', final_index, old_index))
+        rename_new_indexes.append(TEMPLATE['rename_index'].format('', tmp_index, final_index))
+
+    if len(unique_name_list) != len(set(unique_name_list)):
+        raise Exception('Name collision detected. Examine JSON file')
+    print('There are {} index creations'.format(len(create_indexes)))
+
+    return create_indexes, rename_old_indexes, rename_new_indexes
+
+
+def make_modification_sql(matview_name):
+    global CLUSTERING_INDEX
+    sql_strings = []
+    if CLUSTERING_INDEX:
+        print('*** This matview will be clustered on {} ***'.format(CLUSTERING_INDEX))
+        sql_strings.append(TEMPLATE['cluster_matview'].format(matview_name, CLUSTERING_INDEX))
+    sql_strings.append(TEMPLATE['analyze'].format(matview_name))
+    sql_strings.append(TEMPLATE['grant_select'].format(matview_name, 'readonly'))
+    return sql_strings
+
+
+def make_rename_sql(matview_name, old_indexes, new_indexes):
+    matview_temp_name = matview_name + '_temp'
+    matview_archive_name = matview_name + '_old'
+    sql_strings = []
+    sql_strings.append(TEMPLATE['rename_matview'].format('IF EXISTS ', matview_name, matview_archive_name))
+    sql_strings += old_indexes
+    sql_strings.append('')
+    sql_strings.append(TEMPLATE['rename_matview'].format('', matview_temp_name, matview_name))
+    sql_strings += new_indexes
+    return sql_strings
+
+
+def create_all_sql_strings(sql_json):
     ''' Desired ordering of steps for final SQL:
         1. Drop existing "_temp" and "_old" matviews
         2. Create new matview
@@ -126,60 +203,24 @@ def create_sql_strings(sql_json):
         8. Rename new matview
         9. Rename new matview indexes
     '''
-    unique_name_list = []
     final_sql_strings = []
-    create_indexes = []
-    rename_old_indexes = []
-    rename_new_indexes = []
 
     matview_name = sql_json['final_name']
     matview_temp_name = matview_name + '_temp'
-    matview_archive_name = matview_name + '_old'
-    matview_sql = '\n'.join(sql_json['matview_sql'])
 
-    unique_name_list.append(matview_name)
+    create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
 
-    final_sql_strings.append('\n'.join(HEADER))
-    final_sql_strings.append(TEMPLATE['drop_matview'].format(matview_temp_name))
-    final_sql_strings.append(TEMPLATE['drop_matview'].format(matview_archive_name))
+    final_sql_strings.extend(make_sql_header())
+    final_sql_strings.extend(make_matview_drops(matview_name))
     final_sql_strings.append('')
-    final_sql_strings.append(TEMPLATE['create_matview'].format(matview_temp_name, matview_sql))
-
-    for idx in sql_json['indexes']:
-        if len(idx['name']) > MAX_NAME_LENGTH:
-            raise Exception('Desired index name is too long. Keep under {} chars'.format(MAX_NAME_LENGTH))
-        final_index = 'idx_' + RANDOM_CHARS + '__' + idx['name']
-        unique_name_list.append(final_index)
-        tmp_index = final_index + '_temp'
-        old_index = final_index + '_old'
-
-        idx_str = create_index_string(matview_temp_name, tmp_index, idx)
-
-        create_indexes.append(idx_str)
-        rename_old_indexes.append(TEMPLATE['rename_index'].format('IF EXISTS ', final_index, old_index))
-        rename_new_indexes.append(TEMPLATE['rename_index'].format('', tmp_index, final_index))
-
-    if len(unique_name_list) != len(set(unique_name_list)):
-        raise Exception('Name collision detected. Examine JSON file')
-    print('There are {} index creations'.format(len(create_indexes)))
+    final_sql_strings.extend(make_matview_create(matview_name, sql_json['matview_sql']))
 
     final_sql_strings.append('')
     final_sql_strings += create_indexes
     final_sql_strings.append('')
-    if CLUSTERING_INDEX:
-        print('*** This matview will be clustered on {} ***'.format(CLUSTERING_INDEX))
-        final_sql_strings.append(TEMPLATE['cluster_matview'].format(matview_temp_name, CLUSTERING_INDEX))
-        final_sql_strings.append('')
-    final_sql_strings.append(TEMPLATE['analyze'].format(matview_temp_name))
+    final_sql_strings.extend(make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes))
     final_sql_strings.append('')
-    final_sql_strings.append(TEMPLATE['rename_matview'].format('IF EXISTS ', matview_name, matview_archive_name))
-    final_sql_strings += rename_old_indexes
-    final_sql_strings.append('')
-    final_sql_strings.append(TEMPLATE['rename_matview'].format('', matview_temp_name, matview_name))
-    final_sql_strings += rename_new_indexes
-    final_sql_strings.append('')
-    final_sql_strings.append(TEMPLATE['grant_select'].format(matview_name, 'readonly'))
-    final_sql_strings.append('')
+    final_sql_strings.extend(make_modification_sql(matview_name))
     return final_sql_strings
 
 
@@ -195,6 +236,52 @@ def write_sql_file(str_list, filename):
     with open(fname, 'w') as f:
         fstring = '\n'.join(str_list)
         f.write(fstring)
+        f.write('\n')
+
+
+def create_componentized_files(sql_json):
+    filename_base = DEST_FOLDER + 'componentized/' + sql_json['final_name']
+
+    matview_name = sql_json['final_name']
+    matview_temp_name = matview_name + '_temp'
+
+    create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
+
+    # final_sql_strings.extend(make_sql_header())
+    # final_sql_strings.extend(make_matview_drops(matview_name))
+    sql_strings = make_sql_header() + make_matview_drops(matview_name)
+    write_sql_file(sql_strings, filename_base + '__drops')
+
+    sql_strings = make_sql_header() + make_matview_create(matview_name, sql_json['matview_sql'])
+    write_sql_file(sql_strings, filename_base + '__matview')
+
+    sql_strings = make_sql_header() + create_indexes
+    write_sql_file(sql_strings, filename_base + '__indexes')
+
+    sql_strings = make_sql_header() + make_modification_sql(matview_name)
+    write_sql_file(sql_strings, filename_base + '__mods')
+
+    sql_strings = make_sql_header() + make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes)
+    write_sql_file(sql_strings, filename_base + '__renames')
+
+    if 'refresh' in sql_json and sql_json['refresh'] is True:
+        sql_strings = make_sql_header() + make_matview_refresh(matview_name)
+        write_sql_file(sql_strings, filename_base + '__refresh')
+
+    # final_sql_strings.append('')
+    # final_sql_strings += create_indexes
+    # final_sql_strings.append('')
+
+    # final_sql_strings.extend(make_modification_sql(matview_temp_name))
+    # final_sql_strings.append('')
+    # final_sql_strings.extend(make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes))
+    # final_sql_strings.append('')
+
+
+def create_monolith_file(sql_json):
+    sql_strings = create_all_sql_strings(sql_json)
+    print('Preparing to store "{}" in sql file'.format(sql_json['final_name']))
+    write_sql_file(sql_strings, DEST_FOLDER + sql_json['final_name'])
 
 
 def main(source_file):
@@ -203,9 +290,8 @@ def main(source_file):
     except Exception as e:
         print(e)
         raise SystemExit
-    sql_strings = create_sql_strings(sql_json)
-    print('Preparing to store "{}" in sql file'.format(sql_json['final_name']))
-    write_sql_file(sql_strings, DEST_FOLDER + sql_json['final_name'])
+    create_monolith_file(sql_json)
+    create_componentized_files(sql_json)
     print('Done')
 
 
