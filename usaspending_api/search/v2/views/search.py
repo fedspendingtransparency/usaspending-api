@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, F, Value, FloatField
+from django.db.models import Sum, Count, F, Value, FloatField, Case, When
 from django.db.models.functions import ExtractMonth, Cast, Coalesce
 
 from collections import OrderedDict
@@ -37,6 +37,14 @@ from usaspending_api.search.v2.elasticsearch_helper import search_transactions,\
 
 
 logger = logging.getLogger(__name__)
+
+
+def sum_transaction_amount(qs):
+    """ Returns correct amount for transaction if loan (07, 08) vs all other award types"""
+    # Using one as a placeholder until we get the field
+    return qs.annotate(federal_action_obligation=Sum(Case(When(type__in=['07', '08'], then=1),
+                                                          default=F('federal_action_obligation'),
+                                                          output_field=FloatField())))
 
 
 class SpendingOverTimeVisualizationViewSet(APIView):
@@ -74,8 +82,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         if group == 'fy' or group == 'fiscal_year':
 
-            fy_set = queryset.values('fiscal_year')\
-                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+            fy_set = sum_transaction_amount(queryset.values('fiscal_year'))
 
             for trans in fy_set:
                 key = {'fiscal_year': str(trans['fiscal_year'])}
@@ -85,8 +92,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         elif group == 'm' or group == 'month':
 
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
-                .values('fiscal_year', 'month') \
-                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+                .values('fiscal_year', 'month')
+            month_set = sum_transaction_amount(month_set)
 
             for trans in month_set:
                 # Convert month to fiscal month
@@ -99,8 +106,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         else:  # quarterly, take months and add them up
 
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
-                .values('fiscal_year', 'month') \
-                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+                .values('fiscal_year', 'month')
+            month_set = sum_transaction_amount(month_set)
 
             for trans in month_set:
                 # Convert month to quarter
@@ -510,8 +517,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             filter_args['{}__isnull'.format(loc_lookup)] = False
 
         self.geo_queryset = self.queryset.filter(**filter_args) \
-            .values(*lookup_fields) \
-            .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+            .values(*lookup_fields)
+        self.geo_queryset = sum_transaction_amount(self.geo_queryset)
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
@@ -546,10 +553,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Codes in location table ex: '01', '1', '1.0'
         # Cast will group codes as a float and will combine inconsistent codes
         self.geo_queryset = self.queryset.filter(**kwargs) \
-            .values(*fields_list) \
-            .annotate(federal_action_obligation=Sum('federal_action_obligation'),
-                      code_as_float=Cast(loc_lookup, FloatField())
-                      )
+            .values(*fields_list)
+        self.geo_queryset = self.geo_queryset.annotate(code_as_float=Cast(loc_lookup, FloatField()))
+        self.geo_queryset = sum_transaction_amount(self.geo_queryset)
 
         return self.geo_queryset
 
