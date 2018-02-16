@@ -150,10 +150,6 @@ def get_csv_sources(json_request):
         queryset = VALUE_MAPPINGS[award_level]['filter_function'](json_request['filters'])
         award_level_table = VALUE_MAPPINGS[award_level]['table']
 
-        # Enforcing limit if provided
-        if json_request.get('limit', None):
-            queryset = queryset[:json_request['limit']]
-
         award_type_codes = set(json_request['filters']['award_type_codes'])
         d1_award_types = set(contract_type_mapping.keys())
         d2_award_types = set(award_assistance_mapping.keys())
@@ -188,6 +184,8 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         start_split_writing = time.time()
         split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
         split_csv_path = os.path.join(working_dir, split_csv_name)
+
+        #TODO: Add limit to PSQL query
 
         # Generate the final query, values, limits, dates fixed
         csv_query_split = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
