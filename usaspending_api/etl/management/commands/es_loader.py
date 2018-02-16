@@ -38,7 +38,7 @@ class Command(BaseCommand):
             help='If only one fiscal year is desired')
         parser.add_argument(
             '--since',
-            default='2001-01-01',
+            default=None,
             type=str,
             help='Start date for computing the delta of changed transactions [YYYY-MM-DD]')
         parser.add_argument(
@@ -68,11 +68,17 @@ class Command(BaseCommand):
         self.config['directory'] = options['dir'] + os.sep
         self.config['provide_deleted'] = options['deleted']
         self.config['recreate'] = options['recreate']
-        self.config['starting_date'] = datetime.strptime(options['since'] + '+0000', '%Y-%m-%d%z')
 
-        if self.config['recreate'] and self.config['starting_date'] > datetime(2007, 1, 1):
-            print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
-            raise SystemExit
+        if not options['since']:
+            # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
+            #   before the earliest records in S3 and when Postgres records were updated.
+            #   Choose the beginning of FY2008, and made it timezone-award for S3
+            self.config['starting_date'] = datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')
+        else:
+            if self.config['recreate']:
+                print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
+                raise SystemExit
+            self.config['starting_date'] = datetime.strptime(options['since'] + '+0000', '%Y-%m-%d%z')
 
         if not os.path.isdir(self.config['directory']):
             print('Provided directory does not exist')
