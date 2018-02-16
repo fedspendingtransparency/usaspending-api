@@ -5,10 +5,10 @@ import botocore
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from usaspending_api.bulk_download.models import BulkDownloadJob
+from usaspending_api.download.v2.views import YearConstraintDownloadViewSet
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.bulk_download.filestreaming import csv_selection
-from usaspending_api.bulk_download.v2.views import BulkDownloadAwardsViewSet
 
 logger = logging.getLogger('console')
 
@@ -41,7 +41,7 @@ class Command(BaseCommand):
 
                         # Recreate the sources
                         json_request = json.loads(message.message_attributes['request']['StringValue'])
-                        csv_sources = BulkDownloadAwardsViewSet().get_csv_sources(json_request)
+                        csv_sources = YearConstraintDownloadViewSet().get_csv_sources(json_request)
 
                         # Begin writing the CSVs
                         kwargs = {

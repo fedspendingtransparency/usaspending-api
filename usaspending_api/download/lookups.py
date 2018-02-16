@@ -2,7 +2,13 @@
 # define the values in the db setup scripts and then make db calls to lookup the surrogate keys, we'll define everything
 # here, in a file that can be used by the db setup scripts *and* the application code.
 
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
+
+from usaspending_api.awards.models import Subaward, Award, TransactionNormalized
+from usaspending_api.awards.v2.filters.award import award_filter
+from usaspending_api.awards.v2.filters.transaction import transaction_filter
+from usaspending_api.awards.v2.filters.sub_award import subaward_filter
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 
 LookupType = namedtuple('LookupType', ['id', 'name', 'desc'])
 
@@ -14,3 +20,87 @@ JOB_STATUS = [
 ]
 JOB_STATUS_DICT = {item.name: item.id for item in JOB_STATUS}
 JOB_STATUS_DICT_ID = {item.id: item.name for item in JOB_STATUS}
+
+VALUE_MAPPINGS = {
+    # Award Level
+    'awards': {
+        'table': Award,
+        'table_name': 'award',
+        'download_name': 'awards',
+        'contract_data': 'latest_transaction__contract_data',
+        'assistance_data': 'latest_transaction__assistance_data',
+        'filter_function': award_filter
+    },
+    # Transaction Level
+    'prime_awards': {
+        'table': TransactionNormalized,
+        'table_name': 'transaction',
+        'download_name': 'awards',
+        'contract_data': 'contract_data',
+        'assistance_data': 'assistance_data',
+        'filter_function': transaction_filter
+    },
+    # SubAward Level
+    'sub_awards': {
+        'table': Subaward,
+        'table_name': 'subaward',
+        'download_name': 'subawards',
+        'contract_data': 'award__latest_transaction__contract_data',
+        'assistance_data': 'award__latest_transaction__assistance_data',
+        'filter_function': subaward_filter
+    }
+}
+SHARED_FILTER_DEFAULTS = {
+    'award_type_codes': list(award_type_mapping.keys()),
+    'agencies': [],
+    'time_period': []
+}
+YEAR_CONSTRAINT_FILTER_DEFAULTS = {'elasticsearch_keyword': ''}
+ROW_CONSTRAINT_FILTER_DEFAULTS = {
+    'keyword': '',
+    'legal_entities': [],
+    'recipient_search_text': '',
+    'recipient_scope': '',
+    'recipient_locations': [],
+    'recipient_type_names': [],
+    'place_of_performance_scope': '',
+    'place_of_performance_locations': [],
+    'award_amounts': [],
+    'award_ids': [],
+    'program_numbers': [],
+    'naics_codes': [],
+    'psc_codes': [],
+    'contract_pricing_type_codes': [],
+    'set_aside_type_codes': [],
+    'extent_competed_type_codes': [],
+    'federal_account_ids': [],
+    'object_class_ids': [],
+    'program_activity_ids': []
+}
+# List of CFO CGACS for list agencies viewset in the correct order, names included for reference
+# TODO: Find a solution that marks the CFO agencies in the database AND have the correct order
+CFO_CGACS_MAPPING = OrderedDict([('012', 'Department of Agriculture'),
+                                 ('013', 'Department of Commerce'),
+                                 ('097', 'Department of Defense'),
+                                 ('091', 'Department of Education'),
+                                 ('089', 'Department of Energy'),
+                                 ('075', 'Department of Health and Human Services'),
+                                 ('070', 'Department of Homeland Security'),
+                                 ('086', 'Department of Housing and Urban Development'),
+                                 ('015', 'Department of Justice'),
+                                 ('1601', 'Department of Labor'),
+                                 ('019', 'Department of State'),
+                                 ('014', 'Department of the Interior'),
+                                 ('020', 'Department of the Treasury'),
+                                 ('069', 'Department of Transportation'),
+                                 ('036', 'Department of Veterans Affairs'),
+                                 ('068', 'Environmental Protection Agency'),
+                                 ('047', 'General Services Administration'),
+                                 ('080', 'National Aeronautics and Space Administration'),
+                                 ('049', 'National Science Foundation'),
+                                 ('031', 'Nuclear Regulatory Commission'),
+                                 ('024', 'Office of Personnel Management'),
+                                 ('073', 'Small Business Administration'),
+                                 ('028', 'Social Security Administration'),
+                                 ('072', 'Agency for International Development')])
+CFO_CGACS = list(CFO_CGACS_MAPPING.keys())

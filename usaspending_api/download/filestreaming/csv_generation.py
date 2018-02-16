@@ -15,49 +15,16 @@ from collections import OrderedDict
 from django.conf import settings
 from filechunkio import FileChunkIO
 
-from usaspending_api.awards.models import Award, SubAward, TransactionNormalized
-from usaspending_api.awards.v2.filters.award import award_filter
-from usaspending_api.awards.v2.filters.transaction import transaction_filter
-from usaspending_api.awards.v2.filters.subaward import subaward_filter
-from usaspending_api.awards.v2.filters.lookups import contract_type_mapping, award_assistance_mapping
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, award_assistance_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_raw_quoted_query
-from usaspending_api.download.lookups import JOB_STATUS_DICT
+from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 from usaspending_api.download.v2 import download_column_historical_lookups
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
 MAX_VISIBILITY_TIMEOUT = 60*60*4
 BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
-VALUE_MAPPINGS = {
-    # Award Level
-    'awards': {
-        'table': Award,
-        'table_name': 'award',
-        'download_name': 'awards',
-        'contract_data': 'latest_transaction__contract_data',
-        'assistance_data': 'latest_transaction__assistance_data',
-        'filter_function': award_filter
-    },
-    # Transaction Level
-    'prime_awards': {
-        'table': TransactionNormalized,
-        'table_name': 'transaction',
-        'download_name': 'awards',
-        'contract_data': 'contract_data',
-        'assistance_data': 'assistance_data',
-        'filter_function': transaction_filter
-    },
-    # SubAward Level
-    'sub_awards': {
-        'table': SubAward,
-        'table_name': 'subaward',
-        'download_name': 'subawards',
-        'contract_data': 'award__latest_transaction__contract_data',
-        'assistance_data': 'award__latest_transaction__assistance_data',
-        'filter_function': subaward_filter
-    }
-}
 
 logger = logging.getLogger('console')
 

@@ -10,7 +10,7 @@ import re
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from usaspending_api.bulk_download.filestreaming import csv_selection
-from usaspending_api.bulk_download.v2.views import BulkDownloadAwardsViewSet
+from usaspending_api.bulk_download.v2.views import YearLimitedDownloadViewSet
 from usaspending_api.common.helpers import generate_fiscal_year
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.references.models import ToptierAgency
@@ -48,7 +48,7 @@ class Command(BaseCommand):
                         },
                         'columns': columns,
                         'file_format': file_format}
-        bd_viewset = BulkDownloadAwardsViewSet()
+        bd_viewset = YearLimitedDownloadViewSet()
         json_request = bd_viewset.validate_request(json_request)
         sources = bd_viewset.get_csv_sources(json_request=json_request)
         download_job = bd_viewset.create_bulk_download_job(json_request, file_name, monthly_download=True)
