@@ -156,7 +156,7 @@ class BaseDownloadViewSet(APIView):
                               QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody='Test', MessageAttributes=message_attributes)
 
-    def create_bulk_download_job(self, json_request, file_name):
+    def create_bulk_download_job(self, json_request, file_name, monthly_download=False):
         # Create download job in database to track progress. Starts at 'ready' status by default.
         download_job_kwargs = {'job_status_id': JOB_STATUS_DICT['ready'], 'file_name': file_name,
                                'json_request': json.dumps(order_nested_object(json_request))}
@@ -189,6 +189,8 @@ class BaseDownloadViewSet(APIView):
         date_type = json_request['filters']['date_type']
         if date_type:
             download_job_kwargs['date_type'] = date_type
+        if monthly_download:
+            download_job_kwargs['monthly_download'] = monthly_download
         download_job = BulkDownloadJob(**download_job_kwargs)
         download_job.save()
 
