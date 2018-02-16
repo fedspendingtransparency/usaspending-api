@@ -109,6 +109,42 @@ def get_total_results(keyword, sub_index, retries=3):
         return None
 
 
+def category_query_for_all_but_contracts(keyword, sub_index):
+    query = {
+              "query": {
+                "bool": {
+                  "must": [
+            	  { "query_string": { "query": keyword}}
+            	],
+                  "filter": {
+                    "term": {
+                      "award_category": sub_index
+                    }
+                  }
+                }
+              }
+            }
+    return query
+
+def category_query_for_contracts(keyword, sub_index):
+    query = {}
+    return query
+
+
+def get_total_results_by_award_category(keyword, sub_index, retries=3):
+    index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
+
+    response = es_client_query(index=index_name, body=query, retries=retries)
+    if response:
+        try:
+            return response['hits']['total']
+        except KeyError:
+            logger.error('Unexpected Response')
+    else:
+        logger.error('No Response')
+        return None
+
+
 def spending_by_transaction_count(filters):
     keyword = filters['keyword']
     response = {}
