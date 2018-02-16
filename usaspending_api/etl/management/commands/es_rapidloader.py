@@ -1,5 +1,4 @@
 import os
-import pytz
 
 from datetime import datetime
 from django.core.management.base import BaseCommand
@@ -86,8 +85,7 @@ class Command(BaseCommand):
         self.config['recreate'] = options['recreate']
         self.config['stale'] = options['stale']
         self.config['keep'] = options['keep']
-        self.config['starting_date'] = datetime.strptime(options['since'], '%Y-%m-%d')
-        self.config['starting_date'] = datetime.combine(self.config['starting_date'], datetime.min.time(), tzinfo=pytz.UTC)
+        self.config['starting_date'] = datetime.strptime(options['since'] + '+0000', '%Y-%m-%d%z')
 
         if self.config['recreate'] and self.config['starting_date'] > datetime(2007, 1, 1):
             print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
