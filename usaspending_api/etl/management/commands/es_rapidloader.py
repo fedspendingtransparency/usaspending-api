@@ -1,12 +1,14 @@
 import os
+import pytz
 
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
 from multiprocessing import Process, Queue
-from time import perf_counter, sleep
-from usaspending_api import settings
+from time import perf_counter
+from time import sleep
 
+from usaspending_api import settings
 from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
 from usaspending_api.etl.es_etl_helpers import csv_row_count
 from usaspending_api.etl.es_etl_helpers import DataJob
@@ -84,9 +86,10 @@ class Command(BaseCommand):
         self.config['recreate'] = options['recreate']
         self.config['stale'] = options['stale']
         self.config['keep'] = options['keep']
-        self.config['starting_date'] = datetime.strptime(options['since'], "%Y-%m-%d")
+        self.config['starting_date'] = datetime.strptime(options['since'], '%Y-%m-%d')
+        self.config['starting_date'] = datetime.combine(self.config['starting_date'], datetime.min.time(), tzinfo=pytz.UTC)
 
-        if self.config['recreate'] and self.config['starting_date'] != datetime(2001, 1, 1):
+        if self.config['recreate'] and self.config['starting_date'] > datetime(2007, 1, 1):
             print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
             raise SystemExit
 

@@ -3,7 +3,6 @@ import csv
 import os
 import json
 import pandas as pd
-import pytz
 import subprocess
 import tempfile
 
@@ -325,13 +324,12 @@ def gather_deleted_ids(config):
     if config['verbose']:
         printf({'msg': 'CSV data from {} to now'.format(config['starting_date'])})
 
-    to_datetime = datetime.combine(config['starting_date'], datetime.min.time(), tzinfo=pytz.UTC)
     filtered_csv_list = [
         x for x in bucket_objects
         if (
             x.key.endswith('.csv') and
             not x.key.startswith('staging') and
-            x.last_modified >= to_datetime
+            x.last_modified >= config['starting_date']
         )
     ]
 
