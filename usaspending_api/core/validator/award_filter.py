@@ -11,29 +11,74 @@ AWARD_FILTER = [
     {'name': 'program_numbers', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'psc_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'recipient_scope', 'type': 'enum', 'enum_values': ('domestic', 'foreign')},
-    {'name': 'recipient_search_text', 'type': 'array', 'max': 1, 'min': 1},
+    {'name': 'recipient_search_text', 'type': 'array', 'array_type': 'text', 'text_type': 'search', 'max': 1, 'min': 1},
     {'name': 'recipient_type_names', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'set_aside_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
+    {'name': 'place_of_performance_scope', 'type': 'enum', 'enum_values': ['domestic', 'foreign']},
+    {
+        'name': 'time_period',
+        'type': 'array',
+        'array_type': 'object',
+        'object_keys': {
+            'start_date': {'type': 'date', 'optional': False},
+            'end_date': {'type': 'date', 'optional': False}
+        },
+        'min': 1,
+    },
+    {
+        'name': 'award_amounts',
+        'type': 'array',
+        'array_type': 'object',
+        'object_keys': {
+            'lower_bound': {'type': 'float', 'optional': True},
+            'upper_bound': {'type': 'float', 'optional': True}
+        },
+        'min': 1,
+
+    },
+    {
+        'name': 'agencies',
+        'type': 'array',
+        'array_type': 'object',
+        'object_keys': {
+            'type': {'type': 'enum', 'enum_values': ['funding', 'awarding'], 'optional': False},
+            'tier': {'type': 'enum', 'enum_values': ['toptier', 'subtier'], 'optional': False},
+            'name': {'type': 'text', 'text_type': 'search', 'optional': False}
+        },
+        'min': 1,
+
+    },
+    {
+        'name': 'recipient_locations',
+        'type': 'array',
+        'array_type': 'object',
+        'object_keys': {
+            'country': {'type': 'text', 'text_type': 'search', 'optional': False},
+            'state': {'type': 'text', 'text_type': 'search', 'optional': True},
+            'zip': {'type': 'text', 'text_type': 'search', 'optional': True},
+            'district': {'type': 'text', 'text_type': 'search', 'optional': True},
+            'county': {'type': 'text', 'text_type': 'search', 'optional': True},
+        },
+        'min': 1,
+
+    },
+    {
+        'name': 'place_of_performance_locations',
+        'type': 'array',
+        'array_type': 'object',
+        'object_keys': {
+            'country': {'type': 'text', 'text_type': 'search', 'optional': False},
+            'state': {'type': 'text', 'text_type': 'search', 'optional': True},
+            'zip': {'type': 'text', 'text_type': 'search', 'optional': True},
+            'district': {'type': 'text', 'text_type': 'search', 'optional': True},
+            'county': {'type': 'text', 'text_type': 'search', 'optional': True},
+        },
+        'min': 1,
+
+    },
+
 ]
 
 for a in AWARD_FILTER:
-    a['optional'] = a.get('optional', True)  # want to make time_period non-optional
+    a['optional'] = a.get('optional', True)  # want to make/keep time_period required
     a['key'] = 'filters|{}'.format(a['name'])
-
-
-'''
-TODO: Add these to the filter dictionary
-========================================
-
-'time_period', # list of dics [{"start_date": "2016-10-01", "end_date": "2017-09-30"}]
-
-'recipient_locations', "recipient_locations": [{"country": "USA","state": "VA","county": "059"}]
-
-'place_of_performance_scope',  # enum (county, state, congressional district)
-
-'place_of_performance_locations', [ {"country": "USA", "state": "VA", "county": "059"}]
-
-'award_amounts', # [{"lower_bound": 1000000.00,"upper_bound": 25000000.00},{"upper_bound": 1000000.00}, ...]
-
-'agencies', [{ "type": "funding", "tier": "toptier", "name": "Office of Pizza"}, ...]
-'''
