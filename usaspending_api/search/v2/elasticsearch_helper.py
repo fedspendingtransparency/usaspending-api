@@ -23,7 +23,7 @@ def format_for_frontend(response):
     return [swap_keys(result) for result in response]
 
 
-def search_transactions(filters, fields, sort, order, lower_limit, limit):
+def search_transactions(request_data, lower_limit, limit):
     '''
     filters: dictionary
     fields: list
@@ -34,10 +34,10 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
 
     if transaction_type_code not found, return results for contracts
     '''
-    keyword = filters['keyword']
-    query_fields = [TRANSACTIONS_LOOKUP[i] for i in fields]
+    keyword = request_data['keyword']
+    query_fields = [TRANSACTIONS_LOOKUP[i] for i in request_data['fields']]
     query_fields.extend(['piid', 'fain', 'uri', 'display_award_id'])
-    query_sort = TRANSACTIONS_LOOKUP[sort]
+    query_sort = TRANSACTIONS_LOOKUP[request_data['sort']]
     query = {
         '_source': query_fields,
         'from': lower_limit,
@@ -49,24 +49,23 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
         },
         'sort': [{
             query_sort: {
-                'order': order}
+                'order': request_data['order']}
         }]
     }
 
     for index, award_types in indices_to_award_types.items():
-        if sorted(award_types) == sorted(filters['award_type_codes']):
+        if sorted(award_types) == sorted(request_data['award_type_codes']):
             index_name = '{}-{}-*'.format(TRANSACTIONS_INDEX_ROOT, index)
-            transaction_type = index
             break
     else:
-        logger.exception('Bad/Missing Award Types requested')
+        logger.exception('Bad/Missing Award Types request_dataed')
         return False, 'Bad/Missing Award Types requested', None, None
 
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
         total = response['hits']['total']
         results = format_for_frontend(response['hits']['hits'])
-        return True, results, total, transaction_type
+        return True, results, total
     else:
         return False, 'There was an error connecting to the ElasticSearch cluster', None, None
 
@@ -92,8 +91,8 @@ def get_total_results(keyword, sub_index, retries=3):
         return None
 
 
-def spending_by_transaction_count(filters):
-    keyword = filters['keyword']
+def spending_by_transaction_count(request_data):
+    keyword = request_data['keyword']
     response = {}
 
     for category in indices_to_award_types.keys():
@@ -216,6 +215,5 @@ def get_sum_and_count_aggregation_results(keyword):
         return None
 
 
-def spending_by_transaction_sum_and_count(filters):
-    keyword = filters['keyword']
-    return get_sum_and_count_aggregation_results(keyword)
+def spending_by_transaction_sum_and_count(request_data):
+    return get_sum_and_count_aggregation_results(request_data['keyword'])

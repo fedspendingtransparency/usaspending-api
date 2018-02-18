@@ -11,7 +11,7 @@ logger = logging.getLogger('console')
 if not settings.ES_HOSTNAME:
     raise Exception('Elasticsearch cluster connection string isn\'t set!')
 try:
-    CLIENT = Elasticsearch(settings.ES_HOSTNAME)
+    CLIENT = Elasticsearch(host=settings.ES_HOSTNAME, timeout=15)
 except Exception as e:
     logger.exception('Error creating the elasticsearch client')
 

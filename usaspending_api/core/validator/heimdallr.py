@@ -2,13 +2,7 @@ import datetime
 import logging
 import sys
 import urllib
-
-################################################################################
-# TEMP FOR TESTING..... Remove before PR
-sys.path.insert(0, '/Users/tonysappe/dev/fedspendingtransparency/usaspending-api/')
-from django.conf import settings
-settings.configure()
-################################################################################
+import copy
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
@@ -95,15 +89,8 @@ class Heimdallr():
         # Array is a "special" type since it is a list of other types which need to be validated
         if model['type'] == 'array':
             value = _validate_array(model)
-            temp_model = {
-                'type': model['array_type'],
-                'key': model['key'],
-                'name': model['name'],
-                'min': model.get('min', None),
-                'max': model.get('max', None),
-                'text_type': model.get('text_type', None),
-                'object_keys': model.get('object_keys', None),
-            }
+            temp_model = copy.copy(model)
+            temp_model['type'] = model['array_type']
             array_result = []
             for v in value:
                 temp_model['value'] = v
@@ -114,19 +101,15 @@ class Heimdallr():
         elif model['type'] == 'object':
             provided_object = _validate_object(model)
 
-            # for k, v in provided_object.items():
             object_result = {}
             for k, v in model['object_keys'].items():
                 if k not in provided_object:
                     if 'optional' in v and v['optional'] is False:
                         raise Exception('Object {} is missing required key {}'.format(provided_object, k))
                 else:
-                    temp_model = {
-                        'value': provided_object[k],
-                        'type': v['type'],
-                        'key': model['key'],
-                        'name': model['name']
-                    }
+                    temp_model = copy.copy(model)
+                    temp_model['type'] = v['type']
+                    temp_model['value'] = provided_object[k]
                     object_result[k] = self.validate_model(temp_model)
 
             return object_result
@@ -197,7 +180,8 @@ def _validate_array(model):
 def _validate_enum(model):
     value = model['value']
     if value not in model['enum_values']:
-        raise InvalidParameterException('Value {} is in enumerated value list [{}]'.format(value, model['enum_values']))
+        error_message = 'Field \'{}\' is outside valid values {}'.format(model['key'], model['enum_values'])
+        raise InvalidParameterException(error_message)
     return value
 
 
@@ -285,7 +269,7 @@ def _verify_float_value(value):
     try:
         return float(value)
     except Exception as e:
-        raise InvalidParameterException('Invalid value is not a float: {}'.format(value))
+        raise InvalidParameterException('Invalid value {} is not a float'.format(value))
 
 
 VALIDATORS = {
