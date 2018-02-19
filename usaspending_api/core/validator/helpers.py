@@ -1,0 +1,181 @@
+import datetime
+import logging
+import sys
+import urllib
+
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import UnprocessableEntityException
+
+logger = logging.getLogger('console')
+
+MAX_INT = sys.maxsize  # == 2^(63-1) == 9223372036854775807
+MIN_INT = -sys.maxsize - 1  # == -2^(63-1) - 1 == 9223372036854775808
+MAX_FLOAT = sys.float_info.max  # 1.7976931348623157e+308
+MIN_FLOAT = sys.float_info.min  # 2.2250738585072014e-308
+
+
+INVALID_TYPE_MSG = 'Invalid value in \'{key}\'. \'{value}\' is not a valid {type}'
+ABOVE_MAXIMUM_MSG = 'Field \'{key}\' value \'{value}\' is above max {max}'
+BELOW_MINIMUM_MSG = 'Field \'{key}\' value \'{value}\' is below min {min}'
+
+
+def _check_max(rule):
+    value = rule['value']
+    if rule['type'] in ('integer', 'float'):
+        if value > rule['max']:
+            raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule))
+
+    if rule['type'] in ('text', 'array', 'object', 'enum'):
+        if len(value) > rule['max']:
+            raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + " items")
+
+
+def _check_min(rule):
+    value = rule['value']
+    if rule['type'] in ('integer', 'float'):
+        if value < rule['min']:
+            raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule))
+
+    if rule['type'] in ('text', 'array', 'object', 'enum'):
+        if len(value) < rule['min']:
+            raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule))
+
+
+def _verify_int_value(value):
+    try:
+        return int(value)
+    except Exception as e:
+        pass
+    return None
+
+
+def _verify_float_value(value):
+    try:
+        return float(value)
+    except Exception as e:
+        pass
+    return None
+
+
+def validate_array(rule):
+    rule['min'] = rule.get('min') or MIN_INT
+    rule['max'] = rule.get('max') or MAX_INT
+    value = rule['value']
+    if type(value) is not list:
+        raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
+    _check_max(rule)
+    _check_min(rule)
+    return value
+
+
+def validate_boolean(rule):
+    # Could restrict this to ONLY True or False. Some tools like to use 0/1 or t/f so this function is inclusive
+    if str(rule['value']).lower() in ('1', 't', 'true'):
+        return True
+    elif str(rule['value']).lower() in ('0', 'f', 'false'):
+        return False
+    else:
+        msg = INVALID_TYPE_MSG.format(**rule) + '. Use true/false'
+        raise InvalidParameterException(msg)
+
+
+def validate_datetime(rule):
+    # Utilizing the Python datetime strptime since format errors are already provided
+    dt_format = '%Y-%m-%dT%H:%M:%S'
+    if len(rule['value']) == 10 or rule['type'] == 'date':
+        dt_format = '%Y-%m-%d'
+    elif len(rule['value']) > 19:
+        dt_format = '%Y-%m-%dT%H:%M:%SZ'
+    try:
+        value = datetime.datetime.strptime(rule['value'], dt_format)
+    except ValueError as e:
+        error_message = 'Value {} is invalid or does not conform to format ({})'.format(rule['value'], dt_format)
+        raise InvalidParameterException(error_message)
+
+    if rule['type'] == 'date':
+        return value.date().isoformat()
+    return value.isoformat() + 'Z'  # adding in "zulu" timezone to keep the datetime UTC. Can switch to "+0000"
+
+
+def validate_enum(rule):
+    value = rule['value']
+    if value not in rule['enum_values']:
+        error_message = 'Field \'{}\' is outside valid values {}'.format(rule['key'], list(rule['enum_values']))
+        raise InvalidParameterException(error_message)
+    return value
+
+
+def validate_float(rule):
+    rule['min'] = rule.get('min') or MIN_FLOAT
+    rule['max'] = rule.get('max') or MAX_FLOAT
+    temp = _verify_float_value(rule['value'])
+    if temp is None:
+        raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
+    rule['value'] = temp
+    _check_max(rule)
+    _check_min(rule)
+    return rule['value']
+
+
+def validate_integer(rule):
+    rule['min'] = rule.get('min') or MIN_INT
+    rule['max'] = rule.get('max') or MAX_INT
+    temp = _verify_int_value(rule['value'])
+    if temp is None:
+        raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
+    rule['value'] = temp
+    _check_max(rule)
+    _check_min(rule)
+    return rule['value']
+
+
+def validate_object(rule):
+    provided_object = rule['value']
+
+    if type(provided_object) is not dict:
+        raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
+
+    for field in provided_object.keys():
+        if field not in rule['object_keys'].keys():
+            raise InvalidParameterException('Unexpected field "{}" in parameter {}'.format(field, rule['key']))
+
+    for key, value in rule['object_keys'].items():
+        if key not in provided_object:
+            if 'optional' in value and value['optional'] is True:
+                continue
+            else:
+                raise UnprocessableEntityException('Required object fields: {}'.format(rule['object_keys'].keys()))
+
+    return provided_object
+
+
+def validate_text(rule):
+    rule['min'] = rule.get('min') or 1
+    rule['max'] = rule.get('max') or MAX_INT
+    if type(rule['value']) is not str:
+        raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
+    _check_max(rule)
+    _check_min(rule)
+    search_remap = {
+        ord('\t'): None,
+        ord('\f'): None,
+        ord('\r'): None,
+        ord('\n'): None,
+        ord('.'): None,
+    }
+    text_type = rule['text_type']
+    if text_type == 'raw':
+        val = rule['value']
+    elif text_type == 'sql':
+        logger.warn('text_type "sql" not implemented')
+        val = rule['value']
+    elif text_type == 'url':
+        val = urllib.parse.quote_plus(rule['value'])
+    elif text_type == 'password':
+        logger.warn('text_type "password" not implemented')
+        val = rule['value']
+    elif text_type == 'search':
+        val = rule['value'].translate(search_remap).strip()
+    else:
+        raise InvalidParameterException('{} is not a valid text type'.format(text_type))
+    return val

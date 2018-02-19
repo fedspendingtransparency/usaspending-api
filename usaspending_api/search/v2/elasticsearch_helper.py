@@ -58,8 +58,8 @@ def search_transactions(request_data, lower_limit, limit):
             index_name = '{}-{}-*'.format(TRANSACTIONS_INDEX_ROOT, index)
             break
     else:
-        logger.exception('Bad/Missing Award Types request_dataed')
-        return False, 'Bad/Missing Award Types requested', None, None
+        logger.exception('Bad/Missing Award Types. Did not meet 100% of a category\'s types')
+        return False, 'Bad/Missing Award Types requested', None
 
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:

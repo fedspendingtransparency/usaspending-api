@@ -33,6 +33,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
 from usaspending_api.core.validator.heimdallr import Heimdallr
+from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
 from usaspending_api.search.v2.elasticsearch_helper import search_transactions
@@ -747,18 +748,15 @@ class SpendingByTransactionVisualizationViewSet(APIView):
     def post(self, request):
 
         models = [
-            {'name': 'page', 'key': 'page', 'type': 'integer', 'optional': True, 'default': 1, 'min': 1},
-            {'name': 'limit', 'key': 'limit', 'type': 'integer', 'optional': True, 'default': 10, 'min': 1, 'max': 100},
             {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
-            {'name': 'sort', 'key': 'sort', 'type': 'text', 'text_type': 'search', 'optional': True,
-                'default': 'Transaction Amount'},
-            {'name': 'order', 'key': 'order', 'type': 'enum', 'enum_values': ['asc', 'desc'], 'default': 'desc',
-                'optional': True},
         ]
         models.extend(AWARD_FILTER)
+        models.extend(PAGINATION)
         for m in models:
-            if m['name'] in ('keyword'):
+            if m['name'] in ('keyword', 'award_type_codes'):
                 m['optional'] = False
+            if m['name'] in ('sort'):
+                m['default'] = 'Transaction Amount'
         validated_payload = Heimdallr(models).shield(request.data)
 
         if validated_payload['sort'] not in validated_payload['fields']:

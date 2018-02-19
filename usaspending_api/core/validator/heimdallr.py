@@ -1,18 +1,75 @@
-import datetime
 import logging
-import sys
-import urllib
 import copy
 
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.core.validator.helpers import validate_array
+from usaspending_api.core.validator.helpers import validate_boolean
+from usaspending_api.core.validator.helpers import validate_datetime
+from usaspending_api.core.validator.helpers import validate_enum
+from usaspending_api.core.validator.helpers import validate_float
+from usaspending_api.core.validator.helpers import validate_integer
+from usaspending_api.core.validator.helpers import validate_object
+from usaspending_api.core.validator.helpers import validate_text
 
 logger = logging.getLogger('console')
 
-MAX_INT = sys.maxsize  # == 2^(63-1) == 9223372036854775807
-MIN_INT = -sys.maxsize - 1  # == -2^(63-1) - 1 == 9223372036854775808
-MAX_FLOAT = sys.float_info.max  # 1.7976931348623157e+308
-MIN_FLOAT = sys.float_info.min  # 2.2250738585072014e-308
+VALIDATORS = {
+    'array': {
+        # "special case" since an array is a list of other types
+        'func': validate_array,
+        'required_fields': ['array_type'],
+        'defaults': {},
+    },
+    'boolean': {
+        'func': validate_boolean,
+        'required_fields': [],
+        'defaults': {},
+    },
+    'date': {
+        'func': validate_datetime,
+        'required_fields': [],
+        'defaults': {},
+    },
+    'datetime': {
+        'func': validate_datetime,
+        'required_fields': [],
+        'defaults': {},
+    },
+    'enum': {
+        'func': validate_enum,
+        'required_fields': ['enum_values'],
+        'defaults': {},
+    },
+    'float': {
+        'func': validate_float,
+        'required_fields': [],
+        'defaults': {},
+    },
+    'integer': {
+        'func': validate_integer,
+        'required_fields': [],
+        'defaults': {},
+    },
+    'object': {
+        'func': validate_object,
+        'required_fields': ['object_keys'],
+        'defaults': {},
+    },
+    'passthrough': {
+        'func': lambda k: k['value'],  # Allow any value provided. Not recommended for production code
+        'required_fields': [],
+        'defaults': {},
+    },
+    'text': {
+        'func': validate_text,
+        'types': ['search', 'raw', 'sql', 'url', 'password'],
+        'required_fields': ['text_type'],
+        'defaults': {
+            'min': 1,
+            'max': 500
+        }
+    }
+}
 
 
 class Heimdallr():
@@ -21,12 +78,12 @@ class Heimdallr():
     '''
 
     def __init__(self, model_list):
-        self.models = self.check_models(model_list)
+        self.rules = self.check_models(model_list)
         self.data = {}
 
     def shield(self, request):
         self.parse_request(request)
-        self.validate_all_models()
+        self.enforce_rules()
         return self.data
 
     def check_models(self, models):
@@ -52,7 +109,6 @@ class Heimdallr():
                 model[default_key] = model.get(default_key, default_value)
 
             model['optional'] = model.get('optional', False)
-            # model['on_error'] = model.get('on_error', 'warn')
 
         # Check to ensure unique names for destination dictionary
         keys = [x['name'] for x in models]
@@ -61,7 +117,7 @@ class Heimdallr():
         return models
 
     def parse_request(self, request):
-        for item in self.models:
+        for item in self.rules:
             # Loop through the request to find the expected key
             value = request
             for subkey in item['key'].split('|'):
@@ -71,7 +127,7 @@ class Heimdallr():
                 item['value'] = value
             elif item['optional'] is False:
                 # If the value is required, raise exception since key wasn't found
-                raise UnprocessableEntityException('{} is required but missing from request'.format(item['name']))
+                raise UnprocessableEntityException('Missing value: \'{}\' is a required field'.format(item['key']))
             elif 'default' in item:
                 # If value wasn't found, and this is optional, use the default
                 item['value'] = item['default']
@@ -80,251 +136,46 @@ class Heimdallr():
                 # Use the "hidden" feature Ellipsis since None can be a valid value provided in the request
                 item['value'] = ...
 
-    def validate_all_models(self):
-        for item in self.models:
+    def enforce_rules(self):
+        for item in self.rules:
             if item['value'] != ...:
-                self.data[item['name']] = self.validate_model(item)
+                self.data[item['name']] = self.apply_rule(item)
 
-    def validate_model(self, model):
+    def apply_rule(self, rule):
         # Array is a "special" type since it is a list of other types which need to be validated
-        if model['type'] == 'array':
-            value = _validate_array(model)
-            temp_model = copy.copy(model)
-            temp_model['type'] = model['array_type']
+        if rule['type'] == 'array':
+            value = VALIDATORS[rule['type']]['func'](rule)
+            child_rule = copy.copy(rule)
+            child_rule['type'] = rule['array_type']
+            child_rule['min'] = rule.get('array_min', None)
+            child_rule['max'] = rule.get('array_max', None)
             array_result = []
             for v in value:
-                temp_model['value'] = v
-                array_result.append(self.validate_model(temp_model))
+                child_rule['value'] = v
+                array_result.append(self.apply_rule(child_rule))
             return array_result
 
         # Object is a "special" type since it is comprised of other types which need to be validated
-        elif model['type'] == 'object':
-            provided_object = _validate_object(model)
+        elif rule['type'] == 'object':
+            provided_object = VALIDATORS[rule['type']]['func'](rule)
 
             object_result = {}
-            for k, v in model['object_keys'].items():
+            for k, v in rule['object_keys'].items():
                 if k not in provided_object:
                     if 'optional' in v and v['optional'] is False:
                         raise Exception('Object {} is missing required key {}'.format(provided_object, k))
                 else:
-                    temp_model = copy.copy(model)
-                    temp_model['type'] = v['type']
-                    temp_model['value'] = provided_object[k]
-                    object_result[k] = self.validate_model(temp_model)
+                    child_rule = copy.copy(rule)
+                    child_rule['type'] = v['type']
+                    child_rule['value'] = provided_object[k]
+                    child_rule['min'] = rule.get('object_min', None)
+                    child_rule['max'] = rule.get('object_max', None)
+
+                    object_result[k] = self.apply_rule(child_rule)
 
             return object_result
 
-        elif model['type'] in VALIDATORS:
-            return VALIDATORS[model['type']]['func'](model)
+        elif rule['type'] in VALIDATORS:
+            return VALIDATORS[rule['type']]['func'](rule)
         else:
-            raise Exception('Invalid Type {} in model'.format(model['type']))
-
-
-def _validate_boolean(model):
-    if str(model['value']).lower() in ('1', 't', 'true'):
-        return True
-    elif str(model['value']).lower() in ('0', 'f', 'false'):
-        return False
-    else:
-        msg = 'Incorrect value {} provided for boolean field {}. Use true/false'
-        raise InvalidParameterException(msg.format(model['value'], model['key']))
-
-
-def _validate_integer(model):
-    model['min'] = model.get('min', MIN_INT)
-    model['max'] = model.get('max', MAX_INT)
-    model['value'] = _verify_int_value(model['value'])
-    _check_max(model)
-    _check_min(model)
-    return model['value']
-
-
-def _validate_float(model):
-    model['min'] = model.get('min', MIN_FLOAT)
-    model['max'] = model.get('max', MAX_FLOAT)
-    model['value'] = _verify_float_value(model['value'])
-    _check_max(model)
-    _check_min(model)
-    return model['value']
-
-
-def _validate_datetime(model):
-    # Utilizing the Python datetime strptime since format errors are already provided
-    dt_format = '%Y-%m-%dT%H:%M:%S'
-    if len(model['value']) == 10 or model['type'] == 'date':
-        dt_format = '%Y-%m-%d'
-    elif len(model['value']) > 19:
-        dt_format = '%Y-%m-%dT%H:%M:%SZ'
-    try:
-        value = datetime.datetime.strptime(model['value'], dt_format)
-    except ValueError as e:
-        error_message = 'Value {} is invalid or does not conform to format ({})'.format(model['value'], dt_format)
-        raise InvalidParameterException(error_message)
-
-    if model['type'] == 'date':
-        return value.date().isoformat()
-    return value.isoformat() + 'Z'  # adding in "zulu" timezone to keep the datetime UTC. Can switch to "+0000"
-
-
-def _validate_array(model):
-    model['min'] = model.get('min', MIN_INT)
-    model['max'] = model.get('max', MAX_INT)
-    value = model['value']
-    if type(value) is not list:
-        raise InvalidParameterException()
-    _check_max(model)
-    _check_min(model)
-    return value
-
-
-def _validate_enum(model):
-    value = model['value']
-    if value not in model['enum_values']:
-        error_message = 'Field \'{}\' is outside valid values {}'.format(model['key'], model['enum_values'])
-        raise InvalidParameterException(error_message)
-    return value
-
-
-def _validate_object(model):
-    provided_object = model['value']
-
-    if type(provided_object) is not dict:
-        raise InvalidParameterException('Value "{}" is not an object'.format(provided_object))
-
-    for field in provided_object.keys():
-        if field not in model['object_keys'].keys():
-            raise InvalidParameterException('Unexpected field "{}" in parameter {}'.format(field, model['key']))
-
-    for key, value in model['object_keys'].items():
-        if key not in provided_object:
-            if 'optional' in value and value['optional'] is True:
-                continue
-            else:
-                raise UnprocessableEntityException('Required object fields: {}'.format(model['object_keys'].keys()))
-
-    return provided_object
-
-
-def _validate_text(model):
-    model['min'] = model.get('min', 1)
-    model['max'] = model.get('max', MAX_INT)
-    model['value'] = str(model['value'])
-    _check_max(model)
-    _check_min(model)
-    search_remap = {
-        ord('\t'): None,
-        ord('\f'): None,
-        ord('\r'): None,
-        ord('\n'): None,
-        ord('.'): None,
-    }
-    text_type = model['text_type']
-    if text_type == 'raw':
-        val = model['value']
-    elif text_type == 'sql':
-        logger.warn('text_type "sql" not implemented')
-        val = model['value']
-    elif text_type == 'url':
-        val = urllib.parse.quote_plus(model['value'])
-    elif text_type == 'password':
-        logger.warn('text_type "password" not implemented')
-        val = model['value']
-    elif text_type == 'search':
-        val = model['value'].translate(search_remap).strip()
-    else:
-        raise InvalidParameterException('{} is not a valid text type'.format(text_type))
-    return val
-
-
-def _check_max(model):
-    value = model['value']
-    if model['type'] in ('integer', 'float'):
-        if value > model['max']:
-            raise UnprocessableEntityException('Value {} is above maximum [{}]'.format(value, model['max']))
-
-    if model['type'] in ('text', 'array', 'object', 'enum'):
-        if len(value) > model['max']:
-            raise UnprocessableEntityException('Value {} is too long. Maximum [{}]'.format(value, model['max']))
-
-
-def _check_min(model):
-    value = model['value']
-    if model['type'] in ('integer', 'float'):
-        if value < model['min']:
-            raise UnprocessableEntityException('Value {} is below minimum [{}]'.format(value, model['min']))
-
-    if model['type'] in ('text', 'array'):
-        if len(value) < model['min']:
-            raise UnprocessableEntityException('Value {} is below minimum [{}]'.format(value, model['min']))
-
-
-def _verify_int_value(value):
-    try:
-        return int(value)
-    except Exception as e:
-        raise InvalidParameterException('Invalid value is not an integer: {}'.format(value))
-
-
-def _verify_float_value(value):
-    try:
-        return float(value)
-    except Exception as e:
-        raise InvalidParameterException('Invalid value {} is not a float'.format(value))
-
-
-VALIDATORS = {
-    'boolean': {
-        'func': _validate_boolean,
-        'required_fields': [],
-        'defaults': {},
-    },
-    'integer': {
-        'func': _validate_integer,
-        'required_fields': [],
-        'defaults': {},
-    },
-    'text': {
-        'func': _validate_text,
-        'types': ['search', 'raw', 'sql', 'url', 'password'],
-        'required_fields': ['text_type'],
-        'defaults': {
-            'min': 1,
-            'max': 500
-        }
-    },
-    'float': {
-        'func': _validate_float,
-        'required_fields': [],
-        'defaults': {},
-    },
-    'date': {
-        'func': _validate_datetime,
-        'required_fields': [],
-        'defaults': {},
-    },
-    'datetime': {
-        'func': _validate_datetime,
-        'required_fields': [],
-        'defaults': {},
-    },
-    'enum': {
-        'func': _validate_enum,
-        'required_fields': ['enum_values'],
-        'defaults': {},
-    },
-    'object': {
-        'func': _validate_object,
-        'required_fields': ['object_keys'],
-        'defaults': {},
-    },
-    'array': {
-        # "special case" since an array is a list of other types
-        'required_fields': ['array_type'],
-        'defaults': {},
-    },
-    'passthrough': {
-        'func': lambda k: k['value'],  # Allow any value provided. Not recommended for production code
-        'required_fields': [],
-        'defaults': {},
-    }
-}
+            raise Exception('Invalid Type {} in rule'.format(rule['type']))
