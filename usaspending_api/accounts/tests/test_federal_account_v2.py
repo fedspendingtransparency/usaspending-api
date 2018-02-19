@@ -11,10 +11,13 @@ from usaspending_api.accounts.models import FederalAccount
 def fixture_data(db):
     mommy.make('references.ToptierAgency', cgac_code='001', abbreviation='ABCD', name='Dept. of Depts')
     mommy.make('references.ToptierAgency', cgac_code='002', abbreviation='EFGH', name='The Bureau')
+    mommy.make('references.ToptierAgency', cgac_code='1601', abbreviation='DOL', name='Department of Labor')
     fa0 = mommy.make(FederalAccount, agency_identifier='001', )
     fa1 = mommy.make(FederalAccount, agency_identifier='002', )
+    fa2 = mommy.make(FederalAccount, agency_identifier='1600', )
     ta0 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa0)
     ta1 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa1)
+    ta2 = mommy.make('accounts.TreasuryAppropriationAccount', federal_account=fa2)
     mommy.make('accounts.AppropriationAccountBalances',
                final_of_fy=True,
                treasury_account_identifier=ta0,
@@ -45,6 +48,11 @@ def fixture_data(db):
                treasury_account_identifier__treasury_account_identifier='999',
                budget_authority_available_amount_total_cpe=4000,
                submission__reporting_period_start='2017-06-01')
+    mommy.make('accounts.AppropriationAccountBalances',
+               final_of_fy=True,
+               treasury_account_identifier=ta2,
+               budget_authority_available_amount_total_cpe=1000,
+               submission__reporting_period_start='2015-06-01')
 
 
 @pytest.mark.django_db
@@ -146,3 +154,16 @@ def test_federal_accounts_endpoint_sorting(client, fixture_data):
                                         'filters': {'fy': 2017}}))
     response_data = resp.json()
     assert response_data['results'][0]['budgetary_resources'] > response_data['results'][1]['budgetary_resources']
+
+
+@pytest.mark.django_db
+def test_federal_accounts_uses_corrected_cgac(client, fixture_data):
+    """Verify that CGAC reported as 1600 in FederalAccount will map to ToptierAgency 1601"""
+
+    resp = client.post('/api/v2/federal_accounts/',
+                       content_type='application/json',
+                       data=json.dumps({'sort': {'field': 'managing_agency',
+                                                 'direction': 'asc'},
+                                        'filters': {'fy': 2015}}))
+    response_data = resp.json()
+    response_data['results'][0]['managing_agency_acronym'] == 'DOL'
