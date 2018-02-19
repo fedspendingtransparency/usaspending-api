@@ -339,8 +339,8 @@ Also, query performance will stink unless/until the field is indexed.
 CREATE INDEX ON awards(FY(field_name))
 """
 
-CORRECTED_CGAC_PG_FUNCTION_DEV = '''
-    CREATE FUNCTION corrected_cgac(text) RETURNS integer AS $$
+CORRECTED_CGAC_PG_FUNCTION_DEF = '''
+    CREATE FUNCTION corrected_cgac(text) RETURNS text AS $$
     SELECT
         CASE $1
         WHEN '1600' THEN '1601'
