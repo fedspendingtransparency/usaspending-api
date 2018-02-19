@@ -2,6 +2,7 @@ import logging
 import copy
 
 from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.core.validator.helpers import SUPPORTED_TEXT_TYPES
 from usaspending_api.core.validator.helpers import validate_array
 from usaspending_api.core.validator.helpers import validate_boolean
 from usaspending_api.core.validator.helpers import validate_datetime
@@ -15,7 +16,6 @@ logger = logging.getLogger('console')
 
 VALIDATORS = {
     'array': {
-        # "special case" since an array is a list of other types
         'func': validate_array,
         'required_fields': ['array_type'],
         'defaults': {},
@@ -62,7 +62,7 @@ VALIDATORS = {
     },
     'text': {
         'func': validate_text,
-        'types': ['search', 'raw', 'sql', 'url', 'password'],
+        'types': SUPPORTED_TEXT_TYPES,
         'required_fields': ['text_type'],
         'defaults': {
             'min': 1,
@@ -104,6 +104,10 @@ class Heimdallr():
             for required_field in required_fields:
                 if required_field not in model:
                     raise Exception('Model {} missing a type required field: {}'.format(model, required_field))
+
+            if model.get('text_type') and model['text_type'] not in SUPPORTED_TEXT_TYPES:
+                msg = 'Invalid model \'{key}\': \'{text_type}\' is not a valid text_type'.format(**model)
+                raise Exception(msg + ' Possible types: {}'.format(SUPPORTED_TEXT_TYPES))
 
             for default_key, default_value in type_description['defaults'].items():
                 model[default_key] = model.get(default_key, default_value)

@@ -18,6 +18,8 @@ INVALID_TYPE_MSG = 'Invalid value in \'{key}\'. \'{value}\' is not a valid {type
 ABOVE_MAXIMUM_MSG = 'Field \'{key}\' value \'{value}\' is above max {max}'
 BELOW_MINIMUM_MSG = 'Field \'{key}\' value \'{value}\' is below min {min}'
 
+SUPPORTED_TEXT_TYPES = ['search', 'raw', 'sql', 'url', 'password']
+
 
 def _check_max(rule):
     value = rule['value']
@@ -27,7 +29,7 @@ def _check_max(rule):
 
     if rule['type'] in ('text', 'array', 'object', 'enum'):
         if len(value) > rule['max']:
-            raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + " items")
+            raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + ' items')
 
 
 def _check_min(rule):
@@ -38,7 +40,7 @@ def _check_min(rule):
 
     if rule['type'] in ('text', 'array', 'object', 'enum'):
         if len(value) < rule['min']:
-            raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule))
+            raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + ' items')
 
 
 def _verify_int_value(value):
@@ -92,6 +94,7 @@ def validate_datetime(rule):
         error_message = 'Value {} is invalid or does not conform to format ({})'.format(rule['value'], dt_format)
         raise InvalidParameterException(error_message)
 
+    # Future TODO: change this to returning the appropriate object (Date or Datetime) instead of converting to string
     if rule['type'] == 'date':
         return value.date().isoformat()
     return value.isoformat() + 'Z'  # adding in "zulu" timezone to keep the datetime UTC. Can switch to "+0000"
@@ -157,25 +160,25 @@ def validate_text(rule):
     _check_max(rule)
     _check_min(rule)
     search_remap = {
-        ord('\t'): None,
-        ord('\f'): None,
-        ord('\r'): None,
-        ord('\n'): None,
-        ord('.'): None,
+        ord('\t'): None,  # horizontal tab
+        ord('\v'): None,  # vertical tab
+        ord('\b'): None,  # ascii backspace
+        ord('\f'): None,  # ascii formfeed
+        ord('\r'): None,  # carriage return
+        ord('\n'): None,  # newline
+        ord('.'): None,  # period
     }
     text_type = rule['text_type']
-    if text_type == 'raw':
-        val = rule['value']
-    elif text_type == 'sql':
-        logger.warn('text_type "sql" not implemented')
+    if text_type not in SUPPORTED_TEXT_TYPES:
+        msg = 'Invalid model \'{key}\': \'{text_type}\' is not a valid text_type'.format(**rule)
+        raise Exception(msg + ' Possible types: {}'.format(SUPPORTED_TEXT_TYPES))
+    if text_type in ('raw', 'sql', 'password'):
+        # TODO: flesh out expectations and constraints for sql and password types
+        if text_type in ('sql', 'password'):
+            logger.warn('text_type \'{}\' not fully implemented in code'.format(text_type))
         val = rule['value']
     elif text_type == 'url':
         val = urllib.parse.quote_plus(rule['value'])
-    elif text_type == 'password':
-        logger.warn('text_type "password" not implemented')
-        val = rule['value']
     elif text_type == 'search':
         val = rule['value'].translate(search_remap).strip()
-    else:
-        raise InvalidParameterException('{} is not a valid text type'.format(text_type))
     return val
