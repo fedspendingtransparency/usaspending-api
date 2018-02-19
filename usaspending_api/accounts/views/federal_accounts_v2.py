@@ -1,7 +1,7 @@
 import ast
 from collections import OrderedDict
 
-from django.db.models import F, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import F, Func, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Concat
 from django.utils.dateparse import parse_date
 from rest_framework.response import Response
@@ -380,11 +380,12 @@ class FederalAccountsViewSet(APIView):
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
-        agency_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('agency_identifier'))
+        agency_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('corrected_agency_identifier'))
         queryset = FederalAccount.objects.filter(
             treasuryappropriationaccount__account_balances__final_of_fy=True,
             treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy
             ).annotate(
+            corrected_agency_identifier=Func('agency_identifier', function='CORRECTED_CGAC'),
             account_id=F('id'),
             account_number=Concat(F('agency_identifier'), Value('-'), F('main_account_code')),
             account_name=F('account_title'),
