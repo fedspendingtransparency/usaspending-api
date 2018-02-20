@@ -9,6 +9,7 @@
     "  \"transaction_fpds\".\"naics\" AS naics_code,",
     "  \"transaction_fpds\".\"naics_description\",",
     "  SUM(\"transaction_normalized\".\"federal_action_obligation\") AS \"federal_action_obligation\",",
+    "  0::NUMERIC AS \"original_loan_subsidy_cost\",",
     "  COUNT(*) counts",
     "FROM",
     "  \"transaction_normalized\"",

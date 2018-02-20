@@ -17,11 +17,13 @@
     "  \"transaction_normalized\".\"award_id\",",
     "  \"awards\".\"category\" AS award_category,",
     "  \"awards\".\"total_obligation\",",
+    "  \"awards\".\"total_subsidy_cost\",",
     "  obligation_to_enum(\"awards\".\"total_obligation\") AS total_obl_bin,",
     "  \"awards\".\"fain\",",
     "  \"awards\".\"uri\",",
     "  \"awards\".\"piid\",",
-    "  \"transaction_normalized\".\"federal_action_obligation\",",
+    "  COALESCE(NULLIF(\"transaction_normalized\".\"federal_action_obligation\", '')::NUMERIC, 0) AS \"federal_action_obligation\",",
+    "  COALESCE(NULLIF(\"transaction_normalized\".\"original_loan_subsidy_cost\", '')::NUMERIC, 0) AS \"original_loan_subsidy_cost\",",
     "  \"transaction_normalized\".\"description\" AS transaction_description,",
     "  \"transaction_normalized\".\"modification_number\",",
     "",
@@ -102,7 +104,6 @@
     "  \"psc\" ON (\"transaction_fpds\".\"product_or_service_code\" = \"psc\".\"code\")",
     "WHERE",
     "  \"transaction_normalized\".\"action_date\" >= '2007-10-01' AND",
-    "  \"transaction_normalized\".\"federal_action_obligation\" IS NOT NULL",
     "ORDER BY",
     "  \"transaction_normalized\".\"action_date\" DESC"
   ],
@@ -143,6 +144,13 @@
     }, {
       "name": "total_obl_bin",
       "columns": [{"name": "\"total_obl_bin\""}]
+    }, {
+      "name": "total_subsidy_cost",
+      "where": "\"total_subsidy_cost\" IS NOT NULL",
+      "columns": [{"name": "\"total_subsidy_cost\""}]
+    }, {
+      "name": "ordered_total_subsidy_cost",
+      "columns": [{"name": "\"total_subsidy_cost\"", "order": "DESC NULLS LAST"}]
     }, {
       "name": "pop_country_code",
       "where": "\"pop_country_code\" IS NOT NULL",
