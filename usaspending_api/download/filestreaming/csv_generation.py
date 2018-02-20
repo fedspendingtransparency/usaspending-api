@@ -16,6 +16,7 @@ from collections import OrderedDict
 from django.conf import settings
 from filechunkio import FileChunkIO
 
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, award_assistance_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_raw_quoted_query
@@ -35,10 +36,8 @@ class CsvSource:
         self.model_type = model_type
         self.file_type = file_type
         self.source_type = source_type
-        self.human_names = download_column_historical_lookups.human_names[
-            model_type][file_type]
-        self.query_paths = download_column_historical_lookups.query_paths[
-            model_type][file_type]
+        self.human_names = download_column_historical_lookups.human_names[model_type][file_type]
+        self.query_paths = download_column_historical_lookups.query_paths[model_type][file_type]
         self.queryset = None
 
     def values(self, header):
@@ -77,6 +76,7 @@ def generate_csvs(download_job, sqs_message=None):
     file_name = download_job.file_name
     json_request = json.loads(download_job.json_request)
     columns = json_request.get('columns', None)
+    limit = json_request.get('limit', None)
 
     # Update job attributes
     download_job.job_status_id = JOB_STATUS_DICT['running']
@@ -102,7 +102,7 @@ def generate_csvs(download_job, sqs_message=None):
         for source in sources:
             # Write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, start_time, sqs_message, zipped_csvs)
+            parse_source(source, columns, download_job, working_dir, start_time, sqs_message, zipped_csvs, limit)
 
         # Remove temporary files and working directory
         shutil.rmtree(working_dir)
@@ -112,7 +112,7 @@ def generate_csvs(download_job, sqs_message=None):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        # Set error message; job_status_id will be set in generate_bulk_zip.handle()
+        # Set error message; job_status_id will be set in generate_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to write the CSV:\n' + str(e)
         download_job.save()
         raise Exception(download_job.error_message)
@@ -130,7 +130,7 @@ def generate_csvs(download_job, sqs_message=None):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        # Set error message; job_status_id will be set in generate_bulk_zip.handle()
+        # Set error message; job_status_id will be set in generate_zip.handle()
         download_job.error_message = 'An exception was raised while attempting to write the CSV:\n' + str(e)
         download_job.save()
         raise Exception(download_job.error_message)
@@ -170,12 +170,10 @@ def get_csv_sources(json_request):
     return csv_sources
 
 
-def parse_source(source, columns, download_job, working_dir, start_time, message, zipped_csvs):
+def parse_source(source, columns, download_job, working_dir, start_time, message, zipped_csvs, limit):
     """Write to csv and zip files using the source data"""
-    source_map = {'prime_awards': 'awards', 'sub_awards': "subawards"}
     d_map = {'d1': 'contracts', 'd2': 'assistance'}
-
-    source_name = '{}_{}'.format(source_map[source.source_type], d_map[source.file_type])
+    source_name = '{}_{}'.format(VALUE_MAPPINGS[source.source_type]['download_name'], d_map[source.file_type])
     source_query = source.row_emitter(columns)
 
     reached_end = False
@@ -185,14 +183,14 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
         split_csv_path = os.path.join(working_dir, split_csv_name)
 
-        #TODO: Add limit to PSQL query
-
         # Generate the final query, values, limits, dates fixed
-        csv_query_split = source_query[(split_csv - 1) * EXCEL_ROW_LIMIT:split_csv * EXCEL_ROW_LIMIT]
+        csv_limit = split_csv * EXCEL_ROW_LIMIT
+        csv_query_split = source_query[csv_limit - EXCEL_ROW_LIMIT:csv_limit if csv_limit < limit else limit]
         csv_query_raw = generate_raw_quoted_query(csv_query_split)
         csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
         logger.debug('PSQL Query: {}'.format(csv_query_annotated))
-        csv_query_cmd = '\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated)
+        # csv_query_cmd = '\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated)
+        csv_query_cmd = '\copy ({}) To STDOUT with CSV HEADER'.format('SELECT * FROM "transaction_normalized" LIMIT 2')
 
         # Create a unique temporary file to hold the raw query
         (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
@@ -220,7 +218,7 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
             os.remove(temp_sql_file_path)
             shutil.rmtree(working_dir)
             zipped_csvs.close()
-            raise TimeoutError('Bulk download job lasted longer than {} hours'.format(str(MAX_VISIBILITY_TIMEOUT/3600)))
+            raise TimeoutError('Download job lasted longer than {} hours'.format(str(MAX_VISIBILITY_TIMEOUT/3600)))
 
         # Write it to the zip
         zipped_csvs.write(split_csv_path, split_csv_name)
@@ -231,9 +229,9 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         os.remove(temp_sql_file_path)
 
         last_count = len(open(split_csv_path).readlines())
-        if last_count < EXCEL_ROW_LIMIT + 1:
+        if last_count <= EXCEL_ROW_LIMIT:
             # Will be hit when line 201 ((split_csv - 1) * EXCEL_ROW_LIMIT) > number of rows in source
-            download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + last_count
+            download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + last_count - 1
             reached_end = True
         else:
             split_csv += 1
@@ -322,8 +320,7 @@ def apply_annotations_to_sql(raw_query, aliases):
     if len(selects) != len(aliases):
         raise Exception("Length of alises doesn't match the columns in selects")
     selects_mapping = OrderedDict(zip(aliases, selects))
-    new_select_string = ", ".join(['{} AS \"{}\"'.format(select, alias)
-                                   for alias, select in selects_mapping.items()])
+    new_select_string = ", ".join(['{} AS \"{}\"'.format(select, alias) for alias, select in selects_mapping.items()])
     return raw_query.replace(select_string, new_select_string)
 
 
