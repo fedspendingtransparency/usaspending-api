@@ -114,8 +114,7 @@ def category_query_for_all(keyword, sub_index):
               "query": {
                 "bool": {
                   "must": [
-            	  { "query_string": { "query": keyword}}
-            	],
+                      {"query_string": {"query": keyword}}],
                   "filter": {
                     "term": {
                       "award_category": sub_index
@@ -126,29 +125,33 @@ def category_query_for_all(keyword, sub_index):
             }
     return query
 
+
 def category_query_for_contract_nulls(keyword, sub_index):
-    query = {
-                "query": {
+    query = {"query": {
                     "bool": {
-                    	"must": [
-                            	  { "query_string": { "query": keyword}},
-                                  { "match": { "pulled_from": "IDV" }}
-                              ],
-                        "must_not": {
-                            "exists": {
-                                "field": sub_index
-                            }
+                        "must": [
+                            {"query_string": {"query": "DOD"}},
+                            {"match": {"pulled_from": "IDV"}}
+                        ]
                         }
                     }
-                }
-            }
+             }
     return query
+
+
+def clean_sub_index(sub_index):
+    if sub_index == "other":
+        item = sub_index
+    else:
+        item = sub_index[:-1]
+    return item
 
 
 def get_total_results_by_award_category(keyword, sub_index, retries=3):
     index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
-    
-    if sub_index == "contracts":
+
+    sub_index = clean_sub_index(sub_index)
+    if sub_index == "contract":
         contracts_count = 0
         query = category_query_for_contract_nulls(keyword, sub_index)
         response = es_client_query(index=index_name, body=query, retries=retries)
@@ -157,17 +160,24 @@ def get_total_results_by_award_category(keyword, sub_index, retries=3):
                 contracts_count += response['hits']['total']
             except KeyError:
                 logger.error('Unexpected Response')
+        else:
+            logger.error('No Response')
 
         query = category_query_for_all(keyword, sub_index)
         response = es_client_query(index=index_name, body=query, retries=retries)
+
         if response:
             try:
                 contracts_count += response['hits']['total']
             except KeyError:
                 logger.error('Unexpected Response')
+        else:
+            logger.error('No Response')
         return contracts_count
-
     else:
+        query = category_query_for_all(keyword, sub_index)
+        response = es_client_query(index=index_name, body=query, retries=retries)
+
         if response:
             try:
                 return response['hits']['total']
@@ -175,7 +185,6 @@ def get_total_results_by_award_category(keyword, sub_index, retries=3):
                 logger.error('Unexpected Response')
         else:
             logger.error('No Response')
-        return None
 
 
 def spending_by_transaction_count(filters):
