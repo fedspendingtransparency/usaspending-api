@@ -802,7 +802,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
             *Note* Only deals with prime awards, future plans to include sub-awards.
         """
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search'}]
+        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
         validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_sum_and_count(validated_payload)
@@ -816,7 +816,7 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     @cache_response()
     def post(self, request):
 
-        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search'}]
+        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
         validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_count(validated_payload)

@@ -12,7 +12,7 @@ class InvalidParameterException(APIException):
 class UnprocessableEntityException(APIException):
     """https://tools.ietf.org/html/rfc4918"""
     status_code = 422
-    default_detail = 'Request parameter is valid but unable to process due to contraints'
+    default_detail = 'Request parameter is valid but unable to process due to constraints'
     default_code = 'invalid_request'
 
 
