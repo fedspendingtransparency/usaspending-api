@@ -46,23 +46,18 @@ class CsvSource:
 
     def columns(self, requested):
         """Given a list of column names requested, returns the ones available in the source"""
-
+        result = self.human_names
         if requested:
-            result = []
-            for column in requested:
-                if column in self.human_names:
-                    result.append(column)
-        else:
-            result = self.human_names
+            result = [header for header in requested if header in self.human_names]
 
         # remove headers that we don't have a query path for
-        result = [h for h in result if h in self.query_paths]
+        result = [header for header in result if header in self.query_paths]
 
         return result
 
     def row_emitter(self, headers_requested):
         headers = self.columns(headers_requested)
-        # Not yieling headers as the files can be split
+        # Not yielding headers as the files can be split
         # yield headers
         query_paths = [self.query_paths[hn] for hn in headers]
         return self.queryset.values(*query_paths)
@@ -100,7 +95,7 @@ def generate_csvs(download_job, sqs_message=None):
         # Generate sources from the JSON request object
         sources = get_csv_sources(json_request)
         for source in sources:
-            # Write data to the file
+            # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
             parse_source(source, columns, download_job, working_dir, start_time, sqs_message, zipped_csvs, limit)
 
@@ -109,13 +104,7 @@ def generate_csvs(download_job, sqs_message=None):
         zipped_csvs.close()
         download_job.file_size = os.stat(file_path).st_size
     except Exception as e:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
-        # Set error message; job_status_id will be set in generate_zip.handle()
-        download_job.error_message = 'An exception was raised while attempting to write the CSV:\n' + str(e)
-        download_job.save()
-        raise Exception(download_job.error_message)
+        handle_file_generation_exception(file_path, download_job, 'write', str(e))
 
     try:
         # push file to S3 bucket, if not local
@@ -127,13 +116,7 @@ def generate_csvs(download_job, sqs_message=None):
                    parallel_processes=multiprocessing.cpu_count())
             logger.info('uploading took {} seconds'.format(time.time() - start_uploading))
     except Exception as e:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
-        # Set error message; job_status_id will be set in generate_zip.handle()
-        download_job.error_message = 'An exception was raised while attempting to write the CSV:\n' + str(e)
-        download_job.save()
-        raise Exception(download_job.error_message)
+        handle_file_generation_exception(file_path, download_job, 'upload', str(e))
 
     download_job.job_status_id = JOB_STATUS_DICT['finished']
     download_job.save()
@@ -189,13 +172,11 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         csv_query_raw = generate_raw_quoted_query(csv_query_split)
         csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
         logger.debug('PSQL Query: {}'.format(csv_query_annotated))
-        # csv_query_cmd = '\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated)
-        csv_query_cmd = '\copy ({}) To STDOUT with CSV HEADER'.format('SELECT * FROM "transaction_normalized" LIMIT 2')
 
         # Create a unique temporary file to hold the raw query
         (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
         with open(temp_sql_file_path, 'w') as file:
-            file.write(csv_query_cmd)
+            file.write('\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
 
         # Run the PSQL command as a separate Process
         psql_process = multiprocessing.Process(target=execute_psql, args=(temp_sql_file_path, split_csv_path,))
@@ -299,7 +280,20 @@ def _upload_part(bucketname, regionname, multipart_id, part_num, source_path, of
     _upload()
 
 
+def handle_file_generation_exception(file_path, download_job, error_type, error):
+    """Removes the temporary file, updates the job, and raises the exception"""
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    # Set error message; job_status_id will be set in generate_zip.handle()
+    download_job.error_message = 'An exception was raised while attempting to {} the CSV:\n{}'.format(error_type, error)
+    download_job.save()
+
+    raise Exception(download_job.error_message)
+
+
 def verify_requested_columns_available(sources, requested):
+    """Ensures the user-requested columns are availble to write to"""
     bad_cols = set(requested)
     for source in sources:
         bad_cols -= set(source.columns(requested))
@@ -325,6 +319,7 @@ def apply_annotations_to_sql(raw_query, aliases):
 
 
 def execute_psql(temp_sql_file_path, split_csv_path):
+    """Executes a single PSQL command within its own Subprocess"""
     try:
         # Generate the csv with \copy
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
