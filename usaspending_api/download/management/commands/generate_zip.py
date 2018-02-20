@@ -32,7 +32,7 @@ class Command(BaseCommand):
                     logger.info('Message Received: {}'.format(message))
                     if message.body is not None:
                         # Retrieve and update the job
-                        current_job = DownloadJob.objects.filter(download_job_id=message.body).first()
+                        current_job = DownloadJob.objects.filter(download_job_id=int(message.body)).first()
                         second_attempt = current_job.error_message is not None
 
                         # Begin writing the CSVs

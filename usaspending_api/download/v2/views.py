@@ -150,7 +150,7 @@ class BaseDownloadViewSet(APIView):
             # csv_selection.write_csvs(**kwargs) (see generate_zip.py)
             queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
                               QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
-            queue.send_message(MessageBody=download_job.download_job_id)
+            queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def get_download_response(self, file_name):
         """Generate download response which encompasses various elements to provide accurate status for state of a
