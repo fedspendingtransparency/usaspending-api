@@ -5,5 +5,5 @@
 --                                                    --
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS summary_view_naics_codes_temp;
-DROP MATERIALIZED VIEW IF EXISTS summary_view_naics_codes_old;
+DROP MATERIALIZED VIEW IF EXISTS summary_view_naics_codes_temp CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS summary_view_naics_codes_old CASCADE;
