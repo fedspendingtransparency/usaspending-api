@@ -3,7 +3,6 @@ import csv
 import os
 import json
 import pandas as pd
-import pytz
 import subprocess
 import tempfile
 
@@ -228,8 +227,8 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
             if os.path.exists(job.csv) and not config['keep']:
                 os.remove(job.csv)
         else:
-            printf({'msg': 'No Job :-( Sleeping 15s', 'f': 'ES Ingest'})
-            sleep(15)
+            printf({'msg': 'No Job. Sleeping 45s', 'f': 'ES Ingest'})
+            sleep(45)
 
     printf({'msg': 'Completed Elasticsearch data load', 'f': 'ES Ingest'})
     return
@@ -325,13 +324,12 @@ def gather_deleted_ids(config):
     if config['verbose']:
         printf({'msg': 'CSV data from {} to now'.format(config['starting_date'])})
 
-    to_datetime = datetime.combine(config['starting_date'], datetime.min.time(), tzinfo=pytz.UTC)
     filtered_csv_list = [
         x for x in bucket_objects
         if (
             x.key.endswith('.csv') and
             not x.key.startswith('staging') and
-            x.last_modified >= to_datetime
+            x.last_modified >= config['starting_date']
         )
     ]
 
