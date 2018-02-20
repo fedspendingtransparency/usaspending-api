@@ -5,5 +5,5 @@
 --                                                    --
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS summary_transaction_view_temp;
-DROP MATERIALIZED VIEW IF EXISTS summary_transaction_view_old;
+DROP MATERIALIZED VIEW IF EXISTS summary_transaction_view_temp CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS summary_transaction_view_old CASCADE;

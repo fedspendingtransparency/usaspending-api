@@ -5,5 +5,5 @@
 --                                                    --
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS universal_transaction_matview_temp;
-DROP MATERIALIZED VIEW IF EXISTS universal_transaction_matview_old;
+DROP MATERIALIZED VIEW IF EXISTS universal_transaction_matview_temp CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS universal_transaction_matview_old CASCADE;

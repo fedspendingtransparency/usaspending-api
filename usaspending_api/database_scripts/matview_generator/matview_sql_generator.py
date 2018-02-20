@@ -4,6 +4,9 @@ import os
 import sys
 from uuid import uuid4
 
+# Usage: python matview_sql_generator.py (from usaspending_api/database_scripts/matview_generator)
+#        ^--- Will clobber files in usaspending_api/database_scripts/matviews
+
 '''
 POSTGRES INDEX FORMAT
     CREATE [ UNIQUE ] INDEX [ name ] ON table_name [ USING method ]
@@ -50,7 +53,7 @@ EXAMPLE SQL DESCRIPTION JSON FILE:
 
 TEMPLATE = {
     'create_matview': 'CREATE MATERIALIZED VIEW {} AS\n{};',
-    'drop_matview': 'DROP MATERIALIZED VIEW IF EXISTS {};',
+    'drop_matview': 'DROP MATERIALIZED VIEW IF EXISTS {} CASCADE;',
     'rename_matview': 'ALTER MATERIALIZED VIEW {}{} RENAME TO {};',
     'cluster_matview': 'CLUSTER VERBOSE {} USING {};',
     'refresh_matview': 'REFRESH MATERIALIZED VIEW CONCURRENTLY {} WITH DATA;',

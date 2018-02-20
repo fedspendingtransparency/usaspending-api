@@ -5,5 +5,5 @@
 --                                                    --
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS summary_view_cfda_number_temp;
-DROP MATERIALIZED VIEW IF EXISTS summary_view_cfda_number_old;
+DROP MATERIALIZED VIEW IF EXISTS summary_view_cfda_number_temp CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS summary_view_cfda_number_old CASCADE;
