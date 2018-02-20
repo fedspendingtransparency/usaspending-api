@@ -8,7 +8,7 @@
     "  \"transaction_fpds\".\"pulled_from\",",
     "  \"transaction_fpds\".\"naics\" AS naics_code,",
     "  \"transaction_fpds\".\"naics_description\",",
-    "  SUM(\"transaction_normalized\".\"federal_action_obligation\") AS \"federal_action_obligation\",",
+    "  SUM(COALESCE(\"transaction_normalized\".\"federal_action_obligation\", 0)) AS \"federal_action_obligation\",",
     "  0::NUMERIC AS \"original_loan_subsidy_cost\",",
     "  COUNT(*) counts",
     "FROM",
