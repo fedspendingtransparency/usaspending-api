@@ -109,7 +109,7 @@ def get_total_results(keyword, sub_index, retries=3):
         return None
 
 
-def category_query_for_all_but_contracts(keyword, sub_index):
+def category_query_for_all(keyword, sub_index):
     query = {
               "query": {
                 "bool": {
@@ -126,22 +126,55 @@ def category_query_for_all_but_contracts(keyword, sub_index):
             }
     return query
 
-def category_query_for_contracts(keyword, sub_index):
-    query = {}
+def category_query_for_contract_nulls(keyword, sub_index):
+    query = {
+                "query": {
+                    "bool": {
+                    	"must": [
+                            	  { "query_string": { "query": keyword}},
+                                  { "match": { "pulled_from": "IDV" }}
+                              ],
+                        "must_not": {
+                            "exists": {
+                                "field": sub_index
+                            }
+                        }
+                    }
+                }
+            }
     return query
 
 
 def get_total_results_by_award_category(keyword, sub_index, retries=3):
     index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
+    
+    if sub_index == "contracts":
+        contracts_count = 0
+        query = category_query_for_contract_nulls(keyword, sub_index)
+        response = es_client_query(index=index_name, body=query, retries=retries)
+        if response:
+            try:
+                contracts_count += response['hits']['total']
+            except KeyError:
+                logger.error('Unexpected Response')
 
-    response = es_client_query(index=index_name, body=query, retries=retries)
-    if response:
-        try:
-            return response['hits']['total']
-        except KeyError:
-            logger.error('Unexpected Response')
+        query = category_query_for_all(keyword, sub_index)
+        response = es_client_query(index=index_name, body=query, retries=retries)
+        if response:
+            try:
+                contracts_count += response['hits']['total']
+            except KeyError:
+                logger.error('Unexpected Response')
+        return contracts_count
+
     else:
-        logger.error('No Response')
+        if response:
+            try:
+                return response['hits']['total']
+            except KeyError:
+                logger.error('Unexpected Response')
+        else:
+            logger.error('No Response')
         return None
 
 
@@ -150,7 +183,7 @@ def spending_by_transaction_count(filters):
     response = {}
 
     for category in indices_to_award_types.keys():
-        total = get_total_results(keyword, category)
+        total = get_total_results_by_award_category(keyword, category)
         if total is not None:
             if category == 'directpayments':
                 category = 'direct_payments'
