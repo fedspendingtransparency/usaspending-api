@@ -375,7 +375,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 else:
                     queryset = queryset \
                         .filter(naics_code__isnull=False) \
-                        .values("naics_code") \
+                        .values("naics_code")
                     queryset = sum_transaction_amount(queryset, 'aggregated_amount') \
                         .order_by('-aggregated_amount') \
                         .values(
