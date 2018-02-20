@@ -39,12 +39,13 @@ from usaspending_api.search.v2.elasticsearch_helper import search_transactions,\
 logger = logging.getLogger(__name__)
 
 
-def sum_transaction_amount(qs):
+def sum_transaction_amount(qs, aggregate_name='federal_action_obligation'):
     """ Returns correct amount for transaction if loan (07, 08) vs all other award types"""
     # Using one as a placeholder until we get the field
-    return qs.annotate(federal_action_obligation=Sum(Case(When(type__in=['07', '08'], then=1),
-                                                          default=F('federal_action_obligation'),
-                                                          output_field=FloatField())))
+    aggregate_dict = {aggregate_name: Sum(Case(When(type__in=['07', '08'], then=1),
+                                               default=F('federal_action_obligation'),
+                                               output_field=FloatField()))}
+    return qs.annotate(**aggregate_dict)
 
 
 class SpendingOverTimeVisualizationViewSet(APIView):
@@ -189,18 +190,16 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .filter(awarding_toptier_agency_name__isnull=False) \
                     .values(
                         agency_name=F('awarding_toptier_agency_name'),
-                        agency_abbreviation=F('awarding_toptier_agency_abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                    .order_by('-aggregated_amount')
+                        agency_abbreviation=F('awarding_toptier_agency_abbreviation'))
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount').order_by('-aggregated_amount')
             elif scope == "subagency":
                 queryset = queryset \
                     .filter(
                         awarding_subtier_agency_name__isnull=False) \
                     .values(
                         agency_name=F('awarding_subtier_agency_name'),
-                        agency_abbreviation=F('awarding_subtier_agency_abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
-                    .order_by('-aggregated_amount')
+                        agency_abbreviation=F('awarding_subtier_agency_abbreviation'))
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount').order_by('-aggregated_amount')
             elif scope == "office":
                     # NOT IMPLEMENTED IN UI
                     raise NotImplementedError
@@ -224,18 +223,16 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .filter(funding_toptier_agency_name__isnull=False) \
                     .values(
                         agency_name=F('funding_toptier_agency_name'),
-                        agency_abbreviation=F('funding_toptier_agency_abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                    .order_by('-aggregated_amount')
+                        agency_abbreviation=F('funding_toptier_agency_abbreviation'))
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount').order_by('-aggregated_amount')
             elif scope == "subagency":
                 queryset = queryset \
                     .filter(
                         funding_subtier_agency_name__isnull=False) \
                     .values(
                         agency_name=F('funding_subtier_agency_name'),
-                        agency_abbreviation=F('funding_subtier_agency_abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
-                    .order_by('-aggregated_amount')
+                        agency_abbreviation=F('funding_subtier_agency_abbreviation'))
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount').order_by('-aggregated_amount')
             elif scope == "office":
                 # NOT IMPLEMENTED IN UI
                 raise NotImplementedError
@@ -252,8 +249,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif category == "recipient":
             if scope == "duns":
                 queryset = queryset \
-                    .values(legal_entity_id=F("recipient_id")) \
-                    .annotate(aggregated_amount=Sum("federal_action_obligation")) \
+                    .values(legal_entity_id=F("recipient_id"))
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount').order_by('-aggregated_amount') \
                     .values("aggregated_amount", "legal_entity_id", "recipient_name") \
                     .order_by("-aggregated_amount")
 
@@ -265,8 +262,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "parent_duns":
                 queryset = queryset \
-                    .filter(parent_recipient_unique_id__isnull=False) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .filter(parent_recipient_unique_id__isnull=False)
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount') \
                     .values(
                         'aggregated_amount',
                         'recipient_name',
@@ -292,8 +289,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .filter(
                         federal_action_obligation__isnull=False,
                         cfda_number__isnull=False) \
-                    .values(cfda_program_number=F("cfda_number")) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values(cfda_program_number=F("cfda_number"))
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount') \
                     .values(
                         "aggregated_amount",
                         "cfda_program_number",
@@ -320,8 +317,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 queryset = queryset \
                     .filter(
                         cfda_number__isnull=False) \
-                    .values(cfda_program_number=F("cfda_number")) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values(cfda_program_number=F("cfda_number"))
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount') \
                     .values(
                         "aggregated_amount",
                         "cfda_program_number",
@@ -343,14 +340,14 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     queryset = get_view_queryset(filters, 'SummaryPscCodesView')
                     queryset = queryset \
                         .filter(product_or_service_code__isnull=False) \
-                        .values(psc_code=F("product_or_service_code")) \
-                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .values(psc_code=F("product_or_service_code"))
+                    queryset = sum_transaction_amount(queryset, 'aggregated_amount') \
                         .order_by('-aggregated_amount')
                 else:
                     queryset = queryset \
                         .filter(psc_code__isnull=False) \
-                        .values("psc_code") \
-                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .values("psc_code")
+                    queryset = sum_transaction_amount(queryset, 'aggregated_amount') \
                         .order_by('-aggregated_amount')
 
                 # Begin DB hits here
@@ -368,8 +365,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     queryset = get_view_queryset(filters, 'SummaryNaicsCodesView')
                     queryset = queryset \
                         .filter(naics__isnull=False) \
-                        .values('naics_code') \
-                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .values('naics_code')
+                    queryset = sum_transaction_amount(queryset, 'aggregated_amount') \
                         .order_by('-aggregated_amount') \
                         .values(
                             'naics_code',
@@ -379,7 +376,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     queryset = queryset \
                         .filter(naics_code__isnull=False) \
                         .values("naics_code") \
-                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    queryset = sum_transaction_amount(queryset, 'aggregated_amount') \
                         .order_by('-aggregated_amount') \
                         .values(
                             'naics_code',
