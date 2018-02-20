@@ -72,16 +72,13 @@ VALIDATORS = {
 }
 
 
-class Heimdallr():
-    '''
-    https://en.wikipedia.org/wiki/Heimdallr
-    '''
+class TinyShield():
 
     def __init__(self, model_list):
         self.rules = self.check_models(model_list)
         self.data = {}
 
-    def shield(self, request):
+    def block(self, request):
         self.parse_request(request)
         self.enforce_rules()
         return self.data

@@ -32,7 +32,7 @@ from usaspending_api.common.exceptions import ElasticsearchConnectionException
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
-from usaspending_api.core.validator.heimdallr import Heimdallr
+from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.core.validator.pagination import PAGINATION
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
@@ -757,7 +757,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                 m['optional'] = False
             if m['name'] in ('sort'):
                 m['default'] = 'Transaction Amount'
-        validated_payload = Heimdallr(models).shield(request.data)
+        validated_payload = TinyShield(models).block(request.data)
 
         if validated_payload['sort'] not in validated_payload['fields']:
             raise InvalidParameterException("Sort value not found in fields: {}".format(validated_payload['sort']))
@@ -803,7 +803,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
         """
 
         models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search'}]
-        validated_payload = Heimdallr(models).shield(request.data)
+        validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_sum_and_count(validated_payload)
         if not results:
@@ -817,7 +817,7 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     def post(self, request):
 
         models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search'}]
-        validated_payload = Heimdallr(models).shield(request.data)
+        validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_count(validated_payload)
         if not results:

@@ -140,7 +140,7 @@ def validate_object(rule):
 
     for field in provided_object.keys():
         if field not in rule['object_keys'].keys():
-            raise InvalidParameterException('Unexpected field "{}" in parameter {}'.format(field, rule['key']))
+            raise InvalidParameterException('Unexpected field \'{}\' in parameter {}'.format(field, rule['key']))
 
     for key, value in rule['object_keys'].items():
         if key not in provided_object:
@@ -166,19 +166,21 @@ def validate_text(rule):
         ord('\f'): None,  # ascii formfeed
         ord('\r'): None,  # carriage return
         ord('\n'): None,  # newline
-        ord('.'): None,  # period
     }
     text_type = rule['text_type']
     if text_type not in SUPPORTED_TEXT_TYPES:
-        msg = 'Invalid model \'{key}\': \'{text_type}\' is not a valid text_type'.format(**rule)
+        msg = 'Invalid model {key}: \'{text_type}\' is not a valid text_type'.format(**rule)
         raise Exception(msg + ' Possible types: {}'.format(SUPPORTED_TEXT_TYPES))
     if text_type in ('raw', 'sql', 'password'):
         # TODO: flesh out expectations and constraints for sql and password types
         if text_type in ('sql', 'password'):
-            logger.warn('text_type \'{}\' not fully implemented in code'.format(text_type))
+            logger.warn('Caution: text_type \'{}\' not yet fully implemented'.format(text_type))
         val = rule['value']
     elif text_type == 'url':
         val = urllib.parse.quote_plus(rule['value'])
     elif text_type == 'search':
+        # Remove leading and trailing whitespace. Remove ASCII escape characters
         val = rule['value'].translate(search_remap).strip()
+        if val != rule['value']:
+            logger.warn('Field {} value was changed from {} to {}'.format(rule['key'], repr(rule['value']), repr(val)))
     return val
