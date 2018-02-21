@@ -118,8 +118,8 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
         verify_requested_columns_available((d1_source, d2_source), json_request['columns'])
         filters = json_request['filters']
         queryset = award_filter(filters)
-        d1_source.queryset = queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False)
-        d2_source.queryset = queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False)
+        d1_source.queryset = (queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False))[:250000]
+        d2_source.queryset = (queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False))[:250000]
         return d1_source, d2_source
 
     DOWNLOAD_NAME = 'awards'
@@ -132,6 +132,9 @@ class DownloadTransactionsViewSet(BaseDownloadViewSet):
         assistance_source = csv_selection.CsvSource('transaction', 'd2')
         verify_requested_columns_available((contract_source, assistance_source), json_request['columns'])
         filters = json_request['filters']
+
+        if limit is None or limit > 500000:
+            limit = 500000
 
         base_qset = transaction_filter(filters).values_list('id')[:limit]
 
