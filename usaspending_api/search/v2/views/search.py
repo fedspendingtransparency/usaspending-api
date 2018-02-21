@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_types=award_type_mapping,
                            calculate_totals=True):
     """ Returns correct amount for transaction if loan (07, 08) vs all other award types"""
-    types_sans_loans = [type for type in award_type_mapping if type not in contract_type_mapping]
+    types_sans_loans = [type for type in award_type_mapping if type not in loan_type_mapping]
     aggregate_dict = {}
     if calculate_totals:
         aggregate_dict = {'total_subsidy_cost': Sum(Case(When(type__in=list(loan_type_mapping),
