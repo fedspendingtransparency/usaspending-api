@@ -141,7 +141,7 @@ def category_query_for_contract_nulls(keyword, sub_index):
 
 def clean_sub_index(sub_index):
     lookup = {"loans": ["loans"], "other": ["other"], "contracts":
-              ["contract"], "direct_payments": ["direct", "payment"], "grants": ["grant"]}
+              ["contract"], "direct_payments": ["direct", "payment"], "grants": ["grant"], "insurance": ["insurance"]}
     try:
         return lookup[(sub_index)]
     except KeyError:
@@ -176,6 +176,32 @@ def get_total_results_by_award_category(keyword, sub_index, retries=3):
             logger.error('No Response')
 
         return contracts_count
+    elif sub_index == ["other"]:
+        other_count = 0
+
+        query = category_query_for_all(keyword, sub_index)
+        response = es_client_query(index=index_name, body=query, retries=retries)
+        if response:
+            try:
+                other_count += response['hits']['total']
+            except KeyError:
+                logger.error('Unexpected Response')
+        else:
+            logger.error('No Response')
+
+        query = category_query_for_all(keyword, ["insurance"])
+        response = es_client_query(index=index_name, body=query, retries=retries)
+
+        if response:
+            try:
+                other_count += response['hits']['total']
+            except KeyError:
+                logger.error('Unexpected Response')
+        else:
+            logger.error('No Response')
+
+        return other_count
+
     else:
         query = category_query_for_all(keyword, sub_index)
         response = es_client_query(index=index_name, body=query, retries=retries)
