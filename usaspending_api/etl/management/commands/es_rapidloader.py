@@ -4,9 +4,10 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
 from multiprocessing import Process, Queue
-from time import perf_counter, sleep
-from usaspending_api import settings
+from time import perf_counter
+from time import sleep
 
+from usaspending_api import settings
 from usaspending_api.etl.es_etl_helpers import AWARD_DESC_CATEGORIES
 from usaspending_api.etl.es_etl_helpers import csv_row_count
 from usaspending_api.etl.es_etl_helpers import DataJob
@@ -41,7 +42,7 @@ class Command(BaseCommand):
             type=int)
         parser.add_argument(
             '--since',
-            default='2001-01-01',
+            default=None,
             type=str,
             help='Start date for computing the delta of changed transactions [YYYY-MM-DD]')
         parser.add_argument(
@@ -84,11 +85,17 @@ class Command(BaseCommand):
         self.config['recreate'] = options['recreate']
         self.config['stale'] = options['stale']
         self.config['keep'] = options['keep']
-        self.config['starting_date'] = datetime.strptime(options['since'], "%Y-%m-%d")
 
-        if self.config['recreate'] and self.config['starting_date'] != datetime(2001, 1, 1):
-            print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
-            raise SystemExit
+        if not options['since']:
+            # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
+            #   before the earliest records in S3 and when Postgres records were updated.
+            #   Choose the beginning of FY2008, and made it timezone-award for S3
+            self.config['starting_date'] = datetime.strptime('2007-10-01+0000', '%Y-%m-%d%z')
+        else:
+            if self.config['recreate']:
+                print('Bad mix of parameters! An index should not be dropped if only a subset of data will be loaded')
+                raise SystemExit
+            self.config['starting_date'] = datetime.strptime(options['since'] + '+0000', '%Y-%m-%d%z')
 
         if not os.path.isdir(self.config['directory']):
             printf({'msg': 'Provided directory does not exist'})
