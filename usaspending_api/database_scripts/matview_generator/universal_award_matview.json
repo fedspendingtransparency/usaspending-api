@@ -1,5 +1,6 @@
 {
   "final_name": "universal_award_matview",
+  "refresh": true,
   "matview_sql": [
     "SELECT",
     "  UPPER(CONCAT(",
@@ -18,6 +19,7 @@
     "  \"awards\".\"uri\",",
     "  \"awards\".\"total_obligation\",",
     "  obligation_to_enum(\"awards\".\"total_obligation\") AS total_obl_bin,",
+    "  \"awards\".\"total_subsidy_cost\",",
     "",
     "  \"awards\".\"recipient_id\",",
     "  UPPER(recipient.\"recipient_name\") AS recipient_name,",
@@ -153,6 +155,13 @@
     }, {
       "name": "total_obl_bin",
       "columns": [{"name": "\"total_obl_bin\""}]
+    }, {
+      "name": "total_subsidy_cost",
+      "where": "\"total_subsidy_cost\" IS NOT NULL",
+      "columns": [{"name": "\"total_subsidy_cost\""}]
+    }, {
+      "name": "ordered_total_subsidy_cost",
+      "columns": [{"name": "\"total_subsidy_cost\"", "order": "DESC NULLS LAST"}]
     }, {
       "name": "period_of_performance_start_date",
       "columns": [{"name": "\"period_of_performance_start_date\"", "order": "DESC NULLS LAST"}]

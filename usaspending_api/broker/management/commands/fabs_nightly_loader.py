@@ -120,6 +120,10 @@ class Command(BaseCommand):
                 logger.info('Inserting Stale FABS: Inserting row {} of {} ({})'.format(str(index), str(total_rows),
                                                                                        datetime.now() - start_time))
 
+            for key in row:
+                if isinstance(row[key], str):
+                    row[key] = row[key].upper()
+
             # Create new LegalEntityLocation and LegalEntity from the row data
             legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
             recipient_name = row['awardee_or_recipient_legal']
@@ -149,8 +153,10 @@ class Command(BaseCommand):
                 (row['uri'] if row['uri'] else '-NONE-')
 
             # Create the summary Award
-            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id)
-            award.parent_award_piid = row.get('parent_award_id')
+            (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id,
+                                                                 fain=row['fain'],
+                                                                 uri=row['uri'],
+                                                                 record_type=row['record_type'])
             award.save()
 
             # Append row to list of Awards updated

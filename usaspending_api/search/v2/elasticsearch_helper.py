@@ -171,7 +171,8 @@ def get_download_ids(keyword, field, size=10000):
     if total is None:
         logger.error('Error retrieving total results. Max number of attempts reached')
         return
-    n_iter = min(max(1, total // size), n_iter)
+    required_iter = (total // size) + 1
+    n_iter = min(max(1, required_iter), n_iter)
     for i in range(n_iter):
         query = {
             "_source": [field],
