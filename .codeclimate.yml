@@ -10,6 +10,9 @@ engines:
         enabled: false
   radon:
     enabled: true
+    config:
+      python_version: 3
+      threshold: "D"
 
 ratings:
   paths:
