@@ -5,8 +5,8 @@
 --                                                    --
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS summary_view_cfda_number_temp;
-DROP MATERIALIZED VIEW IF EXISTS summary_view_cfda_number_old;
+DROP MATERIALIZED VIEW IF EXISTS summary_view_cfda_number_temp CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS summary_view_cfda_number_old CASCADE;
 
 CREATE MATERIALIZED VIEW summary_view_cfda_number_temp AS
 SELECT
@@ -34,20 +34,19 @@ GROUP BY
   "transaction_fabs"."cfda_number",
   "transaction_fabs"."cfda_title";
 
-CREATE INDEX idx_8bf732c2__action_date_temp ON summary_view_cfda_number_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_8bf732c2__type_temp ON summary_view_cfda_number_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
-CREATE INDEX idx_8bf732c2__tuned_type_and_idv_temp ON summary_view_cfda_number_temp USING BTREE("type", "pulled_from") WITH (fillfactor = 100) WHERE "type" IS NULL AND "pulled_from" IS NOT NULL;
-
-ANALYZE VERBOSE summary_view_cfda_number_temp;
+CREATE INDEX idx_dcc360e5__action_date_temp ON summary_view_cfda_number_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_dcc360e5__type_temp ON summary_view_cfda_number_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_dcc360e5__tuned_type_and_idv_temp ON summary_view_cfda_number_temp USING BTREE("type", "pulled_from") WITH (fillfactor = 100) WHERE "type" IS NULL AND "pulled_from" IS NOT NULL;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_cfda_number RENAME TO summary_view_cfda_number_old;
-ALTER INDEX IF EXISTS idx_8bf732c2__action_date RENAME TO idx_8bf732c2__action_date_old;
-ALTER INDEX IF EXISTS idx_8bf732c2__type RENAME TO idx_8bf732c2__type_old;
-ALTER INDEX IF EXISTS idx_8bf732c2__tuned_type_and_idv RENAME TO idx_8bf732c2__tuned_type_and_idv_old;
+ALTER INDEX IF EXISTS idx_dcc360e5__action_date RENAME TO idx_dcc360e5__action_date_old;
+ALTER INDEX IF EXISTS idx_dcc360e5__type RENAME TO idx_dcc360e5__type_old;
+ALTER INDEX IF EXISTS idx_dcc360e5__tuned_type_and_idv RENAME TO idx_dcc360e5__tuned_type_and_idv_old;
 
 ALTER MATERIALIZED VIEW summary_view_cfda_number_temp RENAME TO summary_view_cfda_number;
-ALTER INDEX idx_8bf732c2__action_date_temp RENAME TO idx_8bf732c2__action_date;
-ALTER INDEX idx_8bf732c2__type_temp RENAME TO idx_8bf732c2__type;
-ALTER INDEX idx_8bf732c2__tuned_type_and_idv_temp RENAME TO idx_8bf732c2__tuned_type_and_idv;
+ALTER INDEX idx_dcc360e5__action_date_temp RENAME TO idx_dcc360e5__action_date;
+ALTER INDEX idx_dcc360e5__type_temp RENAME TO idx_dcc360e5__type;
+ALTER INDEX idx_dcc360e5__tuned_type_and_idv_temp RENAME TO idx_dcc360e5__tuned_type_and_idv;
 
+ANALYZE VERBOSE summary_view_cfda_number;
 GRANT SELECT ON summary_view_cfda_number TO readonly;
