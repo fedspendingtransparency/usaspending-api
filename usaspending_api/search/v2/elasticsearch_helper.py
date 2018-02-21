@@ -149,6 +149,19 @@ def clean_sub_index(sub_index):
         return None
 
 
+def get_response_hits(response):
+    count = 0
+    if response:
+        try:
+            count += response['hits']['total']
+        except KeyError:
+            logger.error('Unexpected Response')
+    else:
+        logger.error('No Response')
+    
+    return count
+
+
 def get_total_results_by_award_category(keyword, sub_index, retries=3):
     index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
     sub_index = clean_sub_index(sub_index)
@@ -156,63 +169,25 @@ def get_total_results_by_award_category(keyword, sub_index, retries=3):
         contracts_count = 0
         query = category_query_for_contract_nulls(keyword, sub_index)
         response = es_client_query(index=index_name, body=query, retries=retries)
-        if response:
-            try:
-                contracts_count += response['hits']['total']
-            except KeyError:
-                logger.error('Unexpected Response')
-        else:
-            logger.error('No Response')
-
+        contracts_count += get_response_hits(response)
         query = category_query_for_all(keyword, sub_index)
         response = es_client_query(index=index_name, body=query, retries=retries)
-
-        if response:
-            try:
-                contracts_count += response['hits']['total']
-            except KeyError:
-                logger.error('Unexpected Response')
-        else:
-            logger.error('No Response')
-
+        contracts_count += get_response_hits(response)
         return contracts_count
     elif sub_index == ["other"]:
         other_count = 0
-
         query = category_query_for_all(keyword, sub_index)
         response = es_client_query(index=index_name, body=query, retries=retries)
-        if response:
-            try:
-                other_count += response['hits']['total']
-            except KeyError:
-                logger.error('Unexpected Response')
-        else:
-            logger.error('No Response')
-
+        other_count += get_response_hits(response)
         query = category_query_for_all(keyword, ["insurance"])
         response = es_client_query(index=index_name, body=query, retries=retries)
-
-        if response:
-            try:
-                other_count += response['hits']['total']
-            except KeyError:
-                logger.error('Unexpected Response')
-        else:
-            logger.error('No Response')
-
+        other_count += get_response_hits(response)
         return other_count
-
     else:
+        count = 0
         query = category_query_for_all(keyword, sub_index)
         response = es_client_query(index=index_name, body=query, retries=retries)
-
-        if response:
-            try:
-                return response['hits']['total']
-            except KeyError:
-                logger.error('Unexpected Response')
-        else:
-            logger.error('No Response')
+        count = get_response_hits(response)
 
 
 def spending_by_transaction_count(filters):
