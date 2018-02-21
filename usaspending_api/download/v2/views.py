@@ -12,7 +12,7 @@ from django.db.models import Sum, F
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import NotFound, ParseError
+from rest_framework.exceptions import NotFound
 from rest_framework_extensions.cache.decorators import cache_response
 
 from usaspending_api.accounts.models import FederalAccount
@@ -24,6 +24,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import order_nested_object
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
+from usaspending_api.download.helpers import check_types_and_assign_defaults, parse_limit
 from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, SHARED_FILTER_DEFAULTS, CFO_CGACS,
                                               YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS)
 from usaspending_api.download.models import DownloadJob
@@ -109,9 +110,9 @@ class BaseDownloadViewSet(APIView):
             filters['time_period'] = [default_date_values]
         total_range_count = 0
         for date_range in filters['time_period']:
-            date_range.get('start_date', default_date_values['start_date'])
-            date_range.get('end_date', default_date_values['end_date'])
-            date_range.get('date_type', default_date_values['date_type'])
+            date_range['start_date'] = date_range.get('start_date', default_date_values['start_date'])
+            date_range['end_date'] = date_range.get('end_date', default_date_values['end_date'])
+            date_range['date_type'] = date_range.get('date_type', default_date_values['date_type'])
             try:
                 d1 = datetime.datetime.strptime(date_range['start_date'], "%Y-%m-%d")
                 d2 = datetime.datetime.strptime(date_range['end_date'], "%Y-%m-%d")
@@ -124,11 +125,16 @@ class BaseDownloadViewSet(APIView):
                     'Invalid parameter within time_period\'s date_type: {}'.format(filters['date_type']))
 
         if json_request['constraint_type'] == 'row_count':
-            # Validate row_count-constrainted filter types and assign defaults
+            # Validate limit exists and is below MAX_DOWNLOAD_LIMIT
             json_request['limit'] = parse_limit(json_request)
 
+            # Validate row_count-constrainted filter types and assign defaults
             check_types_and_assign_defaults(filters, ROW_CONSTRAINT_FILTER_DEFAULTS)
         elif json_request['constraint_type'] == 'year':
+            # Validate combined total dates within one year
+            if total_range_count > 366:
+                raise InvalidParameterException('Invalid Parameter: "time_period" total days must be within a year')
+
             # Validate year-constrainted filter types and assign defaults
             check_types_and_assign_defaults(filters, YEAR_CONSTRAINT_FILTER_DEFAULTS)
 
@@ -390,39 +396,3 @@ class ListMonthlyDownloadsViewset(APIView):
                               'url': self.s3_handler.get_simple_url(file_name=name)})
         response_data['monthly_files'] = downloads
         return Response(response_data)
-
-
-def verify_requested_columns_available(sources, requested):
-    bad_cols = set(requested)
-    for source in sources:
-        bad_cols -= set(source.columns(requested))
-    if bad_cols:
-        raise InvalidParameterException('Unknown columns: {}'.format(bad_cols))
-
-
-def check_types_and_assign_defaults(request_dict, defaults_dict):
-    for field in defaults_dict.keys():
-        request_dict[field] = request_dict.get(field, defaults_dict[field])
-        # Validate the field's data type
-        if not isinstance(request_dict[field], type(defaults_dict[field])):
-            type_name = type(defaults_dict[field]).__name__
-            raise InvalidParameterException('{} parameter not provided as a {}'.format(field, type_name))
-        # Remove empty filters
-        if request_dict[field] == defaults_dict[field]:
-            del(request_dict[field])
-
-
-def parse_limit(json_request):
-    """Extracts the `limit` from a request and validates"""
-    limit = json_request.get('limit')
-    if limit:
-        try:
-            limit = int(json_request['limit'])
-        except (ValueError, TypeError):
-            raise ParseError('limit must be integer; {} given'.format(limit))
-        if limit > settings.MAX_DOWNLOAD_LIMIT:
-            msg = 'Requested limit {} beyond max supported ({})'
-            raise ParseError(msg.format(limit, settings.MAX_DOWNLOAD_LIMIT))
-    else:
-        limit = settings.MAX_DOWNLOAD_LIMIT
-    return limit   # None is a workable slice argument

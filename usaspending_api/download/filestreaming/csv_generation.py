@@ -1,8 +1,5 @@
-import boto
 import json
 import logging
-import math
-import mimetypes
 import multiprocessing
 import os
 import re
@@ -14,12 +11,10 @@ import zipfile
 
 from collections import OrderedDict
 from django.conf import settings
-from filechunkio import FileChunkIO
 
-from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, award_assistance_mapping
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_raw_quoted_query
+from usaspending_api.download.helpers import verify_requested_columns_available, multipart_upload
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 from usaspending_api.download.v2 import download_column_historical_lookups
 
@@ -112,8 +107,8 @@ def generate_csvs(download_job, sqs_message=None):
             bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             region = settings.BULK_DOWNLOAD_AWS_REGION
             start_uploading = time.time()
-            upload(bucket, region, file_path, os.path.basename(file_path), acl='public-read',
-                   parallel_processes=multiprocessing.cpu_count())
+            multipart_upload(bucket, region, file_path, os.path.basename(file_path), acl='public-read',
+                             parallel_processes=multiprocessing.cpu_count())
             logger.info('uploading took {} seconds'.format(time.time() - start_uploading))
     except Exception as e:
         handle_file_generation_exception(file_path, download_job, 'upload', str(e))
@@ -218,68 +213,6 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
             split_csv += 1
 
 
-# Multipart upload functions copied from Fabian Topfstedt's solution
-# http://www.topfstedt.de/python-parallel-s3-multipart-upload-with-retries.html
-def upload(bucketname, regionname, source_path, keyname, acl='private', headers={}, guess_mimetype=True,
-           parallel_processes=4):
-    """
-    Parallel multipart upload.
-    """
-    bucket = boto.s3.connect_to_region(regionname).get_bucket(bucketname)
-    if guess_mimetype:
-        mtype = mimetypes.guess_type(keyname)[0] or 'application/octet-stream'
-        headers.update({'Content-Type': mtype})
-
-    mp = bucket.initiate_multipart_upload(keyname, headers=headers)
-
-    source_size = os.stat(source_path).st_size
-    bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)),
-                          5242880)
-    chunk_amount = int(math.ceil(source_size / float(bytes_per_chunk)))
-
-    pool = multiprocessing.Pool(processes=parallel_processes)
-    for i in range(chunk_amount):
-        offset = i * bytes_per_chunk
-        remaining_bytes = source_size - offset
-        bytes = min([bytes_per_chunk, remaining_bytes])
-        part_num = i + 1
-        pool.apply_async(_upload_part, [bucketname, regionname, mp.id,
-                         part_num, source_path, offset, bytes])
-    pool.close()
-    pool.join()
-
-    if len(mp.get_all_parts()) == chunk_amount:
-        mp.complete_upload()
-        key = bucket.get_key(keyname)
-        key.set_acl(acl)
-    else:
-        mp.cancel_upload()
-
-
-def _upload_part(bucketname, regionname, multipart_id, part_num, source_path, offset, bytes, amount_of_retries=10):
-    """Uploads a part with retries."""
-    bucket = boto.s3.connect_to_region(regionname).get_bucket(bucketname)
-
-    def _upload(retries_left=amount_of_retries):
-        try:
-            logging.info('Start uploading part #%d ...' % part_num)
-            for mp in bucket.get_all_multipart_uploads():
-                if mp.id == multipart_id:
-                    with FileChunkIO(source_path, 'r', offset=offset,
-                                     bytes=bytes) as fp:
-                        mp.upload_part_from_file(fp=fp, part_num=part_num)
-                    break
-        except Exception as exc:
-            if retries_left:
-                _upload(retries_left=retries_left - 1)
-            else:
-                logging.info('... Failed uploading part #%d' % part_num)
-                raise exc
-        else:
-            logging.info('... Uploaded part #%d' % part_num)
-    _upload()
-
-
 def handle_file_generation_exception(file_path, download_job, error_type, error):
     """Removes the temporary file, updates the job, and raises the exception"""
     if os.path.exists(file_path):
@@ -292,22 +225,11 @@ def handle_file_generation_exception(file_path, download_job, error_type, error)
     raise Exception(download_job.error_message)
 
 
-def verify_requested_columns_available(sources, requested):
-    """Ensures the user-requested columns are availble to write to"""
-    bad_cols = set(requested)
-    for source in sources:
-        bad_cols -= set(source.columns(requested))
-    if bad_cols:
-        raise InvalidParameterException('Unknown columns: {}'.format(bad_cols))
-
-
 def apply_annotations_to_sql(raw_query, aliases):
     """
-    Django's ORM understandably doesn't allow aliases to be the same names
-    as other fields available. However, if we want to use the efficiency of
-    psql's \copy method and keep the column names, we need to allow these
-    scenarios. This function simply outputs a modified raw sql which
-    does the aliasing, allowing these scenarios.
+    Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
+    want to use the efficiency of psql's \copy method and keep the column names, we need to allow these scenarios. This
+    function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
     select_string = re.findall('SELECT (.*) FROM', raw_query)[0]
     selects = [select.strip() for select in select_string.split(',')]
