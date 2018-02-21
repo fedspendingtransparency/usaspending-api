@@ -1,5 +1,4 @@
 import json
-import logging
 import multiprocessing
 import os
 import re
@@ -14,7 +13,8 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, award_assistance_mapping
 from usaspending_api.common.helpers import generate_raw_quoted_query
-from usaspending_api.download.helpers import verify_requested_columns_available, multipart_upload
+from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload,
+                                              write_to_download_log as write_to_log)
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 from usaspending_api.download.v2 import download_column_historical_lookups
 
@@ -22,8 +22,6 @@ DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
 MAX_VISIBILITY_TIMEOUT = 60*60*4
 BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
-
-logger = logging.getLogger('console')
 
 
 class CsvSource:
@@ -63,20 +61,11 @@ def generate_csvs(download_job, sqs_message=None):
     start_time = time.time()
 
     # Parse data from download_job
-    file_name = download_job.file_name
     json_request = json.loads(download_job.json_request)
     columns = json_request.get('columns', None)
     limit = json_request.get('limit', None)
 
-    # Update job attributes
-    download_job.job_status_id = JOB_STATUS_DICT['running']
-    download_job.number_of_rows = 0
-    download_job.number_of_columns = 0
-    download_job.file_size = 0
-    download_job.save()
-
-    logger.info('Starting to process Job: {}\nFilename: {}\nRequest Params: {}'.
-                format(download_job.download_job_id, download_job.file_name, download_job.json_request))
+    file_name = start_download(download_job)
     try:
         # Create temporary files and working directory
         file_path = settings.BULK_DOWNLOAD_LOCAL_PATH + file_name
@@ -85,7 +74,7 @@ def generate_csvs(download_job, sqs_message=None):
             os.mkdir(working_dir)
         zipped_csvs = zipfile.ZipFile(file_path, 'w', allowZip64=True)
 
-        logger.info('Generating {}'.format(file_name))
+        write_to_log(message='Generating {}'.format(file_name), download_job=download_job)
 
         # Generate sources from the JSON request object
         sources = get_csv_sources(json_request)
@@ -109,17 +98,13 @@ def generate_csvs(download_job, sqs_message=None):
             start_uploading = time.time()
             multipart_upload(bucket, region, file_path, os.path.basename(file_path), acl='public-read',
                              parallel_processes=multiprocessing.cpu_count())
-            logger.info('uploading took {} seconds'.format(time.time() - start_uploading))
+
+            write_to_log(message='Uploading took {} seconds'.format(time.time() - start_uploading),
+                         download_job=download_job)
     except Exception as e:
         handle_file_generation_exception(file_path, download_job, 'upload', str(e))
 
-    download_job.job_status_id = JOB_STATUS_DICT['finished']
-    download_job.save()
-
-    logger.info('Processed Job: {}\nFilename: {}\nRequest Params: {}'.
-                format(download_job.download_job_id, download_job.file_name, download_job.json_request))
-
-    return file_name
+    return finish_download(download_job)
 
 
 def get_csv_sources(json_request):
@@ -131,18 +116,21 @@ def get_csv_sources(json_request):
         award_type_codes = set(json_request['filters']['award_type_codes'])
         d1_award_types = set(contract_type_mapping.keys())
         d2_award_types = set(award_assistance_mapping.keys())
+
         if award_type_codes & d1_award_types:
             # only generate d1 files if the user is asking for contracts
             d1_source = CsvSource(VALUE_MAPPINGS[award_level]['table_name'], 'd1', award_level)
             d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[award_level]['contract_data']): False}
             d1_source.queryset = queryset & award_level_table.objects.filter(**d1_filters)
             csv_sources.append(d1_source)
+
         if award_type_codes & d2_award_types:
             # only generate d2 files if the user is asking for assistance data
             d2_source = CsvSource(VALUE_MAPPINGS[award_level]['table_name'], 'd2', award_level)
             d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[award_level]['assistance_data']): False}
             d2_source.queryset = queryset & award_level_table.objects.filter(**d2_filters)
             csv_sources.append(d2_source)
+
         verify_requested_columns_available(tuple(csv_sources), json_request['columns'])
 
     return csv_sources
@@ -161,20 +149,11 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
         split_csv_path = os.path.join(working_dir, split_csv_name)
 
-        # Generate the final query, values, limits, dates fixed
-        csv_limit = split_csv * EXCEL_ROW_LIMIT
-        csv_query_split = source_query[csv_limit - EXCEL_ROW_LIMIT:csv_limit if csv_limit < limit else limit]
-        csv_query_raw = generate_raw_quoted_query(csv_query_split)
-        csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
-        logger.debug('PSQL Query: {}'.format(csv_query_annotated))
-
-        # Create a unique temporary file to hold the raw query
-        (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
-        with open(temp_sql_file_path, 'w') as file:
-            file.write('\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
+        # Generate the query file; values, limits, dates fixed
+        temp_file, temp_file_path = generate_temp_query_file(split_csv, source_query, limit, source, download_job)
 
         # Run the PSQL command as a separate Process
-        psql_process = multiprocessing.Process(target=execute_psql, args=(temp_sql_file_path, split_csv_path,))
+        psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, split_csv_path,))
         psql_process.start()
 
         # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of
@@ -186,23 +165,25 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
 
         if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT:
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
-            logger.error('Attempting to terminate process (pid {})'.format(psql_process.pid))
+            write_to_log(message='Attempting to terminate process (pid {})'.format(psql_process.pid),
+                         download_job=download_job, is_error=True)
             psql_process.terminate()
 
             # Remove all temp files
-            os.close(temp_sql_file)
-            os.remove(temp_sql_file_path)
+            os.close(temp_file)
+            os.remove(temp_file_path)
             shutil.rmtree(working_dir)
             zipped_csvs.close()
             raise TimeoutError('Download job lasted longer than {} hours'.format(str(MAX_VISIBILITY_TIMEOUT/3600)))
 
         # Write it to the zip
         zipped_csvs.write(split_csv_path, split_csv_name)
-        logger.info('Wrote {}, took {} seconds'.format(split_csv_name, time.time() - start_split_writing))
+        write_to_log(message='Wrote {}, took {} seconds'.format(split_csv_name, time.time() - start_split_writing),
+                     download_job=download_job)
 
         # Remove temporary files
-        os.close(temp_sql_file)
-        os.remove(temp_sql_file_path)
+        os.close(temp_file)
+        os.remove(temp_file_path)
 
         last_count = len(open(split_csv_path).readlines())
         if last_count <= EXCEL_ROW_LIMIT:
@@ -211,6 +192,47 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
             reached_end = True
         else:
             split_csv += 1
+
+
+def start_download(download_job):
+    # Update job attributes
+    download_job.job_status_id = JOB_STATUS_DICT['running']
+    download_job.number_of_rows = 0
+    download_job.number_of_columns = 0
+    download_job.file_size = 0
+    download_job.save()
+
+    write_to_log(message='Starting to process DownloadJob {}'.format(download_job.download_job_id),
+                 download_job=download_job)
+
+    return download_job.file_name
+
+
+def finish_download(download_job):
+    download_job.job_status_id = JOB_STATUS_DICT['finished']
+    download_job.save()
+
+    write_to_log(message='Finished to processing DownloadJob {}'.format(download_job.download_job_id),
+                 download_job=download_job)
+
+    return download_job.file_name
+
+
+def generate_temp_query_file(split_csv, source_query, limit, source, download_job):
+    csv_limit = split_csv * EXCEL_ROW_LIMIT
+    csv_query_split = source_query[csv_limit - EXCEL_ROW_LIMIT:csv_limit if csv_limit < limit else limit]
+    csv_query_raw = generate_raw_quoted_query(csv_query_split)
+    csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
+
+    write_to_log(message='Creating PSQL Query: {}'.format(csv_query_annotated), download_job=download_job,
+                 is_debug=True)
+
+    # Create a unique temporary file to hold the raw query
+    (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix='bd_sql_', dir='/tmp')
+    with open(temp_sql_file_path, 'w') as file:
+        file.write('\copy ({}) To STDOUT with CSV HEADER'.format(csv_query_annotated))
+
+    return temp_sql_file, temp_sql_file_path
 
 
 def handle_file_generation_exception(file_path, download_job, error_type, error):
@@ -247,5 +269,5 @@ def execute_psql(temp_sql_file_path, split_csv_path):
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
         subprocess.call(['psql', '-o', split_csv_path, os.environ['DOWNLOAD_DATABASE_URL']], stdin=cat_command.stdout)
     except Exception as e:
-        logger.error(str(e))
+        write_to_log(message=str(e), is_error=True)
         raise e

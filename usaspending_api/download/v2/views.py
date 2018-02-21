@@ -22,9 +22,11 @@ from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import order_nested_object
+from usaspending_api.common.logging import get_remote_addr
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
-from usaspending_api.download.helpers import check_types_and_assign_defaults, parse_limit
+from usaspending_api.download.helpers import (check_types_and_assign_defaults, parse_limit,
+                                              write_to_download_log as write_to_log)
 from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, SHARED_FILTER_DEFAULTS, CFO_CGACS,
                                               YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS)
 from usaspending_api.download.models import DownloadJob
@@ -39,11 +41,12 @@ class BaseDownloadViewSet(APIView):
     def post(self, request):
         """Push a message to SQS with the validated request JSON"""
         json_request = self.validate_request(request.data)
+        ordered_json_request = json.dumps(order_nested_object(json_request))
 
         # Check if the same request has been called today
         updated_date_timestamp = datetime.datetime.strftime(datetime.datetime.utcnow(), '%Y-%m-%d')
         cached_download = DownloadJob.objects.filter(
-            json_request=json.dumps(order_nested_object(json_request)),
+            json_request=ordered_json_request,
             update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
         if cached_download:
             # By returning the cached files, there should be no duplicates on a daily basis
@@ -56,10 +59,10 @@ class BaseDownloadViewSet(APIView):
         timestamped_file_name = self.s3_handler.get_timestamped_filename(download_name + '.zip')
         download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'],
                                                   file_name=timestamped_file_name,
-                                                  json_request=json.dumps(order_nested_object(json_request)))
-        logger.info('Created Download Job: {}\nFilename: {}\nRequest Params: {}'.
-                    format(download_job.download_job_id, download_job.file_name, download_job.json_request))
+                                                  json_request=ordered_json_request)
 
+        write_to_log(message='Starting new download job'.format(download_job.download_job_id),
+                     download_job=download_job, request_addr=get_remote_addr(request))
         self.process_request(download_job)
 
         return self.get_download_response(file_name=timestamped_file_name)
@@ -153,7 +156,9 @@ class BaseDownloadViewSet(APIView):
             csv_generation.generate_csvs(download_job=download_job)
         else:
             # Send a SQS message that will be processed by another server which will eventually run
-            # csv_selection.write_csvs(**kwargs) (see generate_zip.py)
+            # csv_generation.write_csvs(**kwargs) (see generate_zip.py)
+            write_to_log(message='Passing download_job {} to SQS'.format(download_job.download_job_id),
+                         download_job=download_job)
             queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
                               QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
