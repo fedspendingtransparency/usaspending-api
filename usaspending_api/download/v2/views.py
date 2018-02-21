@@ -62,7 +62,7 @@ class BaseDownloadViewSet(APIView):
                                                   json_request=ordered_json_request)
 
         write_to_log(message='Starting new download job'.format(download_job.download_job_id),
-                     download_job=download_job, request_addr=get_remote_addr(request))
+                     download_job=download_job, other_params={'request_addr': get_remote_addr(request)})
         self.process_request(download_job)
 
         return self.get_download_response(file_name=timestamped_file_name)
@@ -207,7 +207,54 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
 class YearLimitedDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['constraint_type'] = 'year'
+
+        # TODO: update front end to use the Common Filter Object and get rid of this function
+        self.process_filters(request.data)
+
         return BaseDownloadViewSet.post(self, request)
+
+    def process_filters(self, request_data):
+        """Filter function to update Bulk Download parameters to shared parameters"""
+
+        # Check for all parameters previously required by the Bulk Download endpoint
+        filters = request_data.get('filters', None)
+        if not filters:
+            raise InvalidParameterException('Missing one or more required query parameters: filters')
+        for required_param in ['award_types', 'agency', 'date_type', 'date_range']:
+            if required_param not in filters:
+                raise InvalidParameterException('Missing one or more required query parameters: {}'.
+                                                format(required_param))
+
+        # Replacing award_types with award_type_codes
+        filters['award_type_codes'] = []
+        try:
+            for award_type_code in filters['award_types']:
+                if award_type_code in award_type_mapping:
+                    filters['award_type_codes'].extend(award_type_mapping[award_type_code])
+                else:
+                    raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
+            del filters['award_types']
+        except TypeError:
+            raise InvalidParameterException('award_types parameter not provided as a list')
+
+        # Replacing date_range with time_period
+        date_range_copied = filters['date_range'].copy()
+        date_range_copied['date_type'] = filters['date_type']
+        filters['time_period'] = [date_range_copied]
+        del filters['date_range']
+
+        # Replacing agency with agencies
+        if filters['agency'] != 'all':
+            toptier_name = (ToptierAgency.objects.filter(toptier_agency_id=filters['agency']).values('name'))
+            if not toptier_name:
+                raise InvalidParameterException('Toptier ID not found: {}'.format(filters['agency']))
+            toptier_name = toptier_name[0]['name']
+            filters['agencies'] = [{'type': 'awarding', 'tier': 'toptier', 'name': toptier_name}]
+            if 'sub_agency' in filters and filters['sub_agency']:
+                filters['agencies'].append({'type': 'awarding', 'tier': 'subtier', 'name': filters['sub_agency']})
+        del filters['agency']
+
+        request_data['filters'] = filters
 
 
 class DownloadStatusViewSet(BaseDownloadViewSet):
@@ -283,7 +330,7 @@ class DownloadListAgenciesViewSet(APIView):
         post_data = request.data
         if post_data:
             if 'agency' not in post_data:
-                raise InvalidParameterException('agency parameter not provided')
+                raise InvalidParameterException('Missing one or more required query parameters: agency')
             agency_id = post_data['agency']
 
         # Get all the top tier agencies
@@ -344,7 +391,8 @@ class ListMonthlyDownloadsViewset(APIView):
         required_params = {'agency': agency_id, 'fiscal_year': fiscal_year, 'type': download_type}
         for required_param, param_value in required_params.items():
             if param_value is None:
-                raise InvalidParameterException('Required param not provided: {}'.format(required_param))
+                raise InvalidParameterException('Missing one or more required query parameters: {}'.
+                                                format(required_param))
 
         # Populate regex
         fiscal_year_regex = str(fiscal_year) if fiscal_year else '\d{4}'
