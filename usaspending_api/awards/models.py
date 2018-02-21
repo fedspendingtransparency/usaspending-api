@@ -173,6 +173,9 @@ class Award(DataSourceTrackedModel):
                                                      "award")
     total_outlay = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True,
                                        help_text="The total amount of money paid out for this award")
+    total_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True,
+                                             help_text="The total of the original_loan_subsidy_cost from associated "
+                                                       "transactions")
     awarding_agency = models.ForeignKey(Agency, related_name='+', null=True,
                                         help_text="The awarding agency for the award", db_index=True)
     funding_agency = models.ForeignKey(Agency, related_name='+', null=True,
@@ -329,6 +332,9 @@ class TransactionNormalized(models.Model):
                                                     null=True,
                                                     help_text="The obligation of the federal government for this "
                                                               "transaction")
+    original_loan_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True,
+                                                     help_text="The original_loan_subsidy_cost for loan type "
+                                                               "transactions")
     modification_number = models.TextField(blank=True, null=True, verbose_name="Modification Number",
                                            help_text="The modification number for this transaction")
     awarding_agency = models.ForeignKey(Agency, related_name='%(app_label)s_%(class)s_awarding_agency', null=True,
