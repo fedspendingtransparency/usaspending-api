@@ -4,7 +4,7 @@ from elasticsearch import Elasticsearch
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
-
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import award_categories
 logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
@@ -116,7 +116,7 @@ def category_query_for_all(keyword, sub_index):
                   "must": [
                       {"query_string": {"query": keyword}}],
                   "filter": {
-                    "term": {
+                    "terms": {
                       "award_category": sub_index
                     }
                   }
@@ -130,7 +130,7 @@ def category_query_for_contract_nulls(keyword, sub_index):
     query = {"query": {
                     "bool": {
                         "must": [
-                            {"query_string": {"query": "DOD"}},
+                            {"query_string": {"query": keyword}},
                             {"match": {"pulled_from": "IDV"}}
                         ]
                         }
@@ -140,18 +140,20 @@ def category_query_for_contract_nulls(keyword, sub_index):
 
 
 def clean_sub_index(sub_index):
-    if sub_index == "other":
-        item = sub_index
-    else:
-        item = sub_index[:-1]
-    return item
+    #['contracts', 'direct_payments', 'loans', 'grants', 'other']
+    #lookup = {"loans": "loans", "other": "other", "contracts": "contract", 'direct_payments': "direct payment", "grants": "grant"}
+    lookup = {"loans": ["loans"], "other": ["other"], "contracts": ["contract"], "direct_payments": ["direct", "payment"], "grants" : ["grant"]}
+    try:
+        return lookup[(sub_index)]
+    except:
+        logger.error('Unexpected Response')
+        return None
 
 
 def get_total_results_by_award_category(keyword, sub_index, retries=3):
     index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
-
     sub_index = clean_sub_index(sub_index)
-    if sub_index == "contract":
+    if sub_index == ["contract"]:
         contracts_count = 0
         query = category_query_for_contract_nulls(keyword, sub_index)
         response = es_client_query(index=index_name, body=query, retries=retries)
@@ -173,6 +175,7 @@ def get_total_results_by_award_category(keyword, sub_index, retries=3):
                 logger.error('Unexpected Response')
         else:
             logger.error('No Response')
+
         return contracts_count
     else:
         query = category_query_for_all(keyword, sub_index)
@@ -191,11 +194,9 @@ def spending_by_transaction_count(filters):
     keyword = filters['keyword']
     response = {}
 
-    for category in indices_to_award_types.keys():
+    for category in award_categories:
         total = get_total_results_by_award_category(keyword, category)
         if total is not None:
-            if category == 'directpayments':
-                category = 'direct_payments'
             response[category] = total
         else:
             return total
