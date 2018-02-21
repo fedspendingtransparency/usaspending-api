@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, F, Value, FloatField, Case, When
+from django.db.models import Sum, Count, F, Q, Value, FloatField, Case, When
 from django.db.models.functions import ExtractMonth, Cast, Coalesce
 
 from collections import OrderedDict
@@ -42,20 +42,19 @@ logger = logging.getLogger(__name__)
 def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_types=award_type_mapping,
                            calculate_totals=True):
     """ Returns correct amount for transaction if loan (07, 08) vs all other award types"""
-    types_sans_loans = [type for type in award_type_mapping if type not in loan_type_mapping]
     aggregate_dict = {}
     if calculate_totals:
         aggregate_dict = {'total_subsidy_cost': Sum(Case(When(type__in=list(loan_type_mapping),
                                                               then=F('original_loan_subsidy_cost')),
                                                    default=0,
                                                    output_field=FloatField())),
-                          'total_obligation': Sum(Case(When(type__in=types_sans_loans,
+                          'total_obligation': Sum(Case(When(~Q(type__in=list(loan_type_mapping)),
                                                             then=F('federal_action_obligation')),
                                                    default=0,
                                                    output_field=FloatField()))
                           }
 
-    if set(filter_types) <= set(types_sans_loans):
+    if not set(filter_types) & set(loan_type_mapping):
         # just sans loans
         aggregate_dict[aggregated_name] = F('total_obligation')
     elif set(filter_types) <= set(loan_type_mapping):
