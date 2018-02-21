@@ -39,7 +39,7 @@ award_type_mapping = {
     # 'T': 'Training Grant'}
 }
 
-award_categories = ['contracts', 'direct_payments', 'loans', 'grants', 'other', 'insurance']
+award_categories = ['contracts', 'direct_payments', 'loans', 'grants', 'other']
 
 
 indices_to_award_types = {
