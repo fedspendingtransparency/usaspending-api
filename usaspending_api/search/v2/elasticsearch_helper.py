@@ -140,12 +140,11 @@ def category_query_for_contract_nulls(keyword, sub_index):
 
 
 def clean_sub_index(sub_index):
-    #['contracts', 'direct_payments', 'loans', 'grants', 'other']
-    #lookup = {"loans": "loans", "other": "other", "contracts": "contract", 'direct_payments': "direct payment", "grants": "grant"}
-    lookup = {"loans": ["loans"], "other": ["other"], "contracts": ["contract"], "direct_payments": ["direct", "payment"], "grants" : ["grant"]}
+    lookup = {"loans": ["loans"], "other": ["other"], "contracts":
+              ["contract"], "direct_payments": ["direct", "payment"], "grants": ["grant"]}
     try:
         return lookup[(sub_index)]
-    except:
+    except KeyError:
         logger.error('Unexpected Response')
         return None
 
