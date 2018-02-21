@@ -149,7 +149,7 @@
       "columns": [{"name": "\"total_obligation\""}]
     }, {
       "name": "ordered_total_obligation",
-      "columns": [{"name": "\"total_obligation\"", "order": "DESC NULLS LAST"}]
+      "columns": [{"name": "\"total_obligation\"", "order": "DESC"}]
     }, {
       "name": "total_obl_bin",
       "columns": [{"name": "\"total_obl_bin\""}]
