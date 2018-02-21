@@ -81,13 +81,8 @@
           "fielddata": true
         },
         "award_category": {
-            "type": "text",
-            "fields": {
-                "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                }
-            }
+          "type": "text",
+          "index": true
         },
         "recipient_unique_id": {
           "type": "text"
