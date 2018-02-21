@@ -124,13 +124,13 @@ class BaseDownloadViewSet(APIView):
                 raise InvalidParameterException(
                     'Invalid parameter within time_period\'s date_type: {}'.format(filters['date_type']))
 
-        if json_request['constraint_type'] == 'row_count':
+        if json_request.get('constraint_type', None) == 'row_count':
             # Validate limit exists and is below MAX_DOWNLOAD_LIMIT
             json_request['limit'] = parse_limit(json_request)
 
             # Validate row_count-constrainted filter types and assign defaults
             check_types_and_assign_defaults(filters, ROW_CONSTRAINT_FILTER_DEFAULTS)
-        elif json_request['constraint_type'] == 'year':
+        elif json_request.get('constraint_type', None) == 'year':
             # Validate combined total dates within one year
             if total_range_count > 366:
                 raise InvalidParameterException('Invalid Parameter: "time_period" total days must be within a year')

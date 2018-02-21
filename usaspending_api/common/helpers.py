@@ -2,15 +2,15 @@ import contextlib
 import logging
 import time
 import timeit
+
 from calendar import monthrange, isleap
-
-from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
 from collections import OrderedDict
-
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.dateparse import parse_date
-from usaspending_api.references.models import Agency
+from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
+
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.models import Agency
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,6 @@ QUOTABLE_TYPES = (str, datetime.date)
 
 def check_valid_toptier_agency(agency_id):
     """ Check if the ID provided (corresponding to Agency.id) is a valid toptier agency """
-
     agency = Agency.objects.filter(id=agency_id, toptier_flag=True).first()
     return agency is not None
 
@@ -113,9 +112,21 @@ def generate_raw_quoted_query(queryset):
 
 
 def order_nested_object(nested_object):
-    """ Simply recursively order the item. To be used for standardizing objects for JSON dumps"""
+    """ Simply recursively order the item. To be used for standardizing objects for JSON dumps
+    Makes the assumption that any list of dictionaries does not contain a list or dictionary within itself """
     if isinstance(nested_object, list):
-        return sorted([order_nested_object(subitem) for subitem in nested_object])
+        if len(nested_object) > 0 and isinstance(nested_object[0], dict):
+            sorted_subitems = []
+            sort_dict = {}
+            for subitem in nested_object:
+                hash_list = [subitem[key] for key in sorted(list(nested_object[0].keys()))]
+                hash_str = ''.join(str(hash_list))
+                sort_dict[hash_str] = subitem
+            for sorted_hash in sorted(list(sort_dict.keys())):
+                sorted_subitems.append(sort_dict[sorted_hash])
+            return sorted_subitems
+        else:
+            return sorted([order_nested_object(subitem) for subitem in nested_object])
     elif isinstance(nested_object, dict):
         return OrderedDict([(key, order_nested_object(nested_object[key])) for key in sorted(nested_object.keys())])
     else:
