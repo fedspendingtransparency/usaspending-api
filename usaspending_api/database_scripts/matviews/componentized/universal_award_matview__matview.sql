@@ -23,6 +23,7 @@ SELECT
   "awards"."uri",
   "awards"."total_obligation",
   obligation_to_enum("awards"."total_obligation") AS total_obl_bin,
+  "awards"."total_subsidy_cost",
 
   "awards"."recipient_id",
   UPPER(recipient."recipient_name") AS recipient_name,
