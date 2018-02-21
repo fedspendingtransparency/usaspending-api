@@ -119,7 +119,8 @@ class DownloadAwardsViewSet(BaseDownloadViewSet):
         filters = json_request['filters']
         queryset = award_filter(filters)
         d1_source.queryset = (queryset & Award.objects.filter(latest_transaction__contract_data__isnull=False))[:250000]
-        d2_source.queryset = (queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False))[:250000]
+        d2_source.queryset = \
+            (queryset & Award.objects.filter(latest_transaction__assistance_data__isnull=False))[:250000]
         return d1_source, d2_source
 
     DOWNLOAD_NAME = 'awards'
