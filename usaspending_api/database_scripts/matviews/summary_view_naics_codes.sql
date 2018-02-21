@@ -5,8 +5,8 @@
 --                                                    --
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS summary_view_naics_codes_temp;
-DROP MATERIALIZED VIEW IF EXISTS summary_view_naics_codes_old;
+DROP MATERIALIZED VIEW IF EXISTS summary_view_naics_codes_temp CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS summary_view_naics_codes_old CASCADE;
 
 CREATE MATERIALIZED VIEW summary_view_naics_codes_temp AS
 SELECT
@@ -16,8 +16,7 @@ SELECT
   "transaction_fpds"."pulled_from",
   "transaction_fpds"."naics" AS naics_code,
   "transaction_fpds"."naics_description",
-  SUM(COALESCE("transaction_normalized"."federal_action_obligation", 0)) AS "federal_action_obligation",
-  0::NUMERIC AS "original_loan_subsidy_cost",
+  SUM("transaction_normalized"."federal_action_obligation") AS "federal_action_obligation",
   COUNT(*) counts
 FROM
   "transaction_normalized"
@@ -33,23 +32,22 @@ GROUP BY
   "transaction_fpds"."naics",
   "transaction_fpds"."naics_description";
 
-CREATE INDEX idx_986dfcf5__action_date_temp ON summary_view_naics_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_986dfcf5__type_temp ON summary_view_naics_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
-CREATE INDEX idx_986dfcf5__naics_temp ON summary_view_naics_codes_temp USING BTREE("naics_code") WITH (fillfactor = 100) WHERE "naics_code" IS NOT NULL;
-CREATE INDEX idx_986dfcf5__tuned_type_and_idv_temp ON summary_view_naics_codes_temp USING BTREE("type", "pulled_from") WITH (fillfactor = 100) WHERE "type" IS NULL AND "pulled_from" IS NOT NULL;
-
-ANALYZE VERBOSE summary_view_naics_codes_temp;
+CREATE INDEX idx_53abb10f__action_date_temp ON summary_view_naics_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_53abb10f__type_temp ON summary_view_naics_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 100);
+CREATE INDEX idx_53abb10f__naics_temp ON summary_view_naics_codes_temp USING BTREE("naics_code") WITH (fillfactor = 100) WHERE "naics_code" IS NOT NULL;
+CREATE INDEX idx_53abb10f__tuned_type_and_idv_temp ON summary_view_naics_codes_temp USING BTREE("type", "pulled_from") WITH (fillfactor = 100) WHERE "type" IS NULL AND "pulled_from" IS NOT NULL;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_naics_codes RENAME TO summary_view_naics_codes_old;
-ALTER INDEX IF EXISTS idx_986dfcf5__action_date RENAME TO idx_986dfcf5__action_date_old;
-ALTER INDEX IF EXISTS idx_986dfcf5__type RENAME TO idx_986dfcf5__type_old;
-ALTER INDEX IF EXISTS idx_986dfcf5__naics RENAME TO idx_986dfcf5__naics_old;
-ALTER INDEX IF EXISTS idx_986dfcf5__tuned_type_and_idv RENAME TO idx_986dfcf5__tuned_type_and_idv_old;
+ALTER INDEX IF EXISTS idx_53abb10f__action_date RENAME TO idx_53abb10f__action_date_old;
+ALTER INDEX IF EXISTS idx_53abb10f__type RENAME TO idx_53abb10f__type_old;
+ALTER INDEX IF EXISTS idx_53abb10f__naics RENAME TO idx_53abb10f__naics_old;
+ALTER INDEX IF EXISTS idx_53abb10f__tuned_type_and_idv RENAME TO idx_53abb10f__tuned_type_and_idv_old;
 
 ALTER MATERIALIZED VIEW summary_view_naics_codes_temp RENAME TO summary_view_naics_codes;
-ALTER INDEX idx_986dfcf5__action_date_temp RENAME TO idx_986dfcf5__action_date;
-ALTER INDEX idx_986dfcf5__type_temp RENAME TO idx_986dfcf5__type;
-ALTER INDEX idx_986dfcf5__naics_temp RENAME TO idx_986dfcf5__naics;
-ALTER INDEX idx_986dfcf5__tuned_type_and_idv_temp RENAME TO idx_986dfcf5__tuned_type_and_idv;
+ALTER INDEX idx_53abb10f__action_date_temp RENAME TO idx_53abb10f__action_date;
+ALTER INDEX idx_53abb10f__type_temp RENAME TO idx_53abb10f__type;
+ALTER INDEX idx_53abb10f__naics_temp RENAME TO idx_53abb10f__naics;
+ALTER INDEX idx_53abb10f__tuned_type_and_idv_temp RENAME TO idx_53abb10f__tuned_type_and_idv;
 
+ANALYZE VERBOSE summary_view_naics_codes;
 GRANT SELECT ON summary_view_naics_codes TO readonly;

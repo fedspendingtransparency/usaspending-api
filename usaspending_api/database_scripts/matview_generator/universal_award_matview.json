@@ -1,5 +1,6 @@
 {
   "final_name": "universal_award_matview",
+  "refresh": true,
   "matview_sql": [
     "SELECT",
     "  UPPER(CONCAT(",
