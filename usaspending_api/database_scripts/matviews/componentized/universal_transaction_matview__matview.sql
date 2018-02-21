@@ -22,11 +22,13 @@ SELECT
   "transaction_normalized"."award_id",
   "awards"."category" AS award_category,
   "awards"."total_obligation",
+  "awards"."total_subsidy_cost",
   obligation_to_enum("awards"."total_obligation") AS total_obl_bin,
   "awards"."fain",
   "awards"."uri",
   "awards"."piid",
-  "transaction_normalized"."federal_action_obligation",
+  COALESCE("transaction_normalized"."federal_action_obligation", 0)::NUMERIC(20, 2) AS "federal_action_obligation",
+  COALESCE("transaction_normalized"."original_loan_subsidy_cost", 0)::NUMERIC(20, 2) AS "original_loan_subsidy_cost",
   "transaction_normalized"."description" AS transaction_description,
   "transaction_normalized"."modification_number",
 
@@ -106,7 +108,6 @@ LEFT OUTER JOIN
 LEFT OUTER JOIN
   "psc" ON ("transaction_fpds"."product_or_service_code" = "psc"."code")
 WHERE
-  "transaction_normalized"."action_date" >= '2007-10-01' AND
-  "transaction_normalized"."federal_action_obligation" IS NOT NULL
+  "transaction_normalized"."action_date" >= '2007-10-01'
 ORDER BY
   "transaction_normalized"."action_date" DESC;

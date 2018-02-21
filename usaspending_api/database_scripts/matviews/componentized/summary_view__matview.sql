@@ -23,7 +23,8 @@ SELECT
   SAA."abbreviation" AS awarding_subtier_agency_abbreviation,
   SFA."abbreviation" AS funding_subtier_agency_abbreviation,
 
-  SUM("transaction_normalized"."federal_action_obligation") AS "federal_action_obligation",
+  SUM(COALESCE("transaction_normalized"."federal_action_obligation", 0))::NUMERIC(20, 2) AS "federal_action_obligation",
+  SUM(COALESCE("transaction_normalized"."original_loan_subsidy_cost", 0))::NUMERIC(20, 2) AS "original_loan_subsidy_cost",
   COUNT(*) AS counts
 FROM
   "transaction_normalized"

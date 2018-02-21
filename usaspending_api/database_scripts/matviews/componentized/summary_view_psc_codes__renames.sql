@@ -6,11 +6,11 @@
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_psc_codes RENAME TO summary_view_psc_codes_old;
-ALTER INDEX IF EXISTS idx_e9050605__action_date RENAME TO idx_e9050605__action_date_old;
-ALTER INDEX IF EXISTS idx_e9050605__type RENAME TO idx_e9050605__type_old;
-ALTER INDEX IF EXISTS idx_e9050605__tuned_type_and_idv RENAME TO idx_e9050605__tuned_type_and_idv_old;
+ALTER INDEX IF EXISTS idx_94831233__action_date RENAME TO idx_94831233__action_date_old;
+ALTER INDEX IF EXISTS idx_94831233__type RENAME TO idx_94831233__type_old;
+ALTER INDEX IF EXISTS idx_94831233__tuned_type_and_idv RENAME TO idx_94831233__tuned_type_and_idv_old;
 
 ALTER MATERIALIZED VIEW summary_view_psc_codes_temp RENAME TO summary_view_psc_codes;
-ALTER INDEX idx_e9050605__action_date_temp RENAME TO idx_e9050605__action_date;
-ALTER INDEX idx_e9050605__type_temp RENAME TO idx_e9050605__type;
-ALTER INDEX idx_e9050605__tuned_type_and_idv_temp RENAME TO idx_e9050605__tuned_type_and_idv;
+ALTER INDEX idx_94831233__action_date_temp RENAME TO idx_94831233__action_date;
+ALTER INDEX idx_94831233__type_temp RENAME TO idx_94831233__type;
+ALTER INDEX idx_94831233__tuned_type_and_idv_temp RENAME TO idx_94831233__tuned_type_and_idv;
