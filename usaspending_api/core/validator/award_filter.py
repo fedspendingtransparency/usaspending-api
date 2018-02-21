@@ -16,8 +16,8 @@ AWARD_FILTER = [
     {'name': 'recipient_type_names', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'set_aside_type_codes', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
     {'name': 'time_period', 'type': 'array', 'array_type': 'object', 'object_keys': {
-        'start_date': {'type': 'date', 'optional': False},
-        'end_date': {'type': 'date', 'optional': False}
+        'start_date': {'type': 'date', 'optional': True},
+        'end_date': {'type': 'date', 'optional': True}
     }},
     {'name': 'award_amounts', 'type': 'array', 'array_type': 'object', 'object_keys': {
         'lower_bound': {'type': 'float', 'optional': True},
@@ -45,7 +45,7 @@ AWARD_FILTER = [
 ]
 
 for a in AWARD_FILTER:
-    a['optional'] = a.get('optional', True)  # want to make/keep time_period required
+    a['optional'] = a.get('optional', True)  # future TODO: want to make time_period required
     a['key'] = 'filters|{}'.format(a['name'])
     if a['type'] == 'array':
         a['min'] = a.get('min', 1)
