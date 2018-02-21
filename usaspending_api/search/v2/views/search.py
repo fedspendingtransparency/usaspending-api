@@ -94,7 +94,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
 
         # define what values are needed in the sql query
-        queryset = queryset.values('action_date', 'federal_action_obligation')
+        queryset = queryset.values('action_date', 'federal_action_obligation', 'original_loan_subsidy_cost')
 
         # build response
         response = {'group': group, 'results': []}
