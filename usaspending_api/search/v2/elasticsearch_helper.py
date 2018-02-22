@@ -109,39 +109,9 @@ def get_total_results(keyword, sub_index, retries=3):
         return None
 
 
-def category_query_for_all(keyword, sub_index):
-    query = {
-              "query": {
-                "bool": {
-                  "must": [
-                      {"query_string": {"query": keyword}}],
-                  "filter": {
-                    "terms": {
-                      "award_category": sub_index
-                    }
-                  }
-                }
-              }
-            }
-    return query
-
-
-def category_query_for_contract_nulls(keyword, sub_index):
-    query = {"query": {
-                    "bool": {
-                        "must": [
-                            {"query_string": {"query": keyword}},
-                            {"match": {"pulled_from": "IDV"}}
-                        ]
-                        }
-                    }
-             }
-    return query
-
-
 def clean_sub_index(sub_index):
-    lookup = {"loans": ["loans"], "other": ["other"], "contracts":
-              ["contract"], "direct_payments": ["direct", "payment"], "grants": ["grant"], "insurance": ["insurance"]}
+    lookup = {"loans": "loans", "other": "other", "contract":
+              "contracts", "direct": "direct_payments", "grant": "grants", "insurance": "insurance"}
     try:
         return lookup[(sub_index)]
     except KeyError:
@@ -149,59 +119,59 @@ def clean_sub_index(sub_index):
         return None
 
 
-def get_response_hits(response):
-    count = 0
+def category_aggregation_query(keyword):
+    query = {
+            "query": {"query_string": {"query": keyword}},
+            "aggs": {
+                "award_category": {
+                    "terms": {
+                        "field": "award_category"
+                    }
+                },
+                "pulled_from": {
+                    "terms": {
+                        "field": "pulled_from"
+                    }
+                }
+            },
+            "size": 0
+        }
+    return query
+
+
+def get_total_results_by_category_aggregation(keyword, retries=3):
+    index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
+    query = category_aggregation_query(keyword)
+    response = es_client_query(index=index_name, body=query, retries=retries)
+    results = {key: 0 for key in award_categories}
+    pulled_from_idv = 0
+    insurance_count = 0
     if response:
         try:
-            count += response['hits']['total']
+            pulled_from_buckets = response['aggregations']["pulled_from"]["buckets"]
+            for bucket in pulled_from_buckets:
+                if bucket["key"] == "idv":
+                    pulled_from_idv += bucket["doc_count"]
+                    print(pulled_from_idv)
+            award_category_buckets = response['aggregations']["award_category"]["buckets"]
+            for bucket in award_category_buckets:
+                if bucket["key"] == "insurance":
+                    insurance_count += bucket["doc_count"]
+                    print(insurance_count)
+                else:
+                    results[clean_sub_index(bucket["key"])] = bucket["doc_count"]
+            results["contracts"] += pulled_from_idv
+            results["other"] += insurance_count
+            return results
         except KeyError:
             logger.error('Unexpected Response')
     else:
-        logger.error('No Response')
-    
-    return count
-
-
-def get_total_results_by_award_category(keyword, sub_index, retries=3):
-    #index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
-    index_name = "*"
-    sub_index = clean_sub_index(sub_index)
-    if sub_index == ["contract"]:
-        contracts_count = 0
-        query = category_query_for_contract_nulls(keyword, sub_index)
-        response = es_client_query(index=index_name, body=query, retries=retries)
-        contracts_count += get_response_hits(response)
-        query = category_query_for_all(keyword, sub_index)
-        response = es_client_query(index=index_name, body=query, retries=retries)
-        contracts_count += get_response_hits(response)
-        return contracts_count
-    elif sub_index == ["other"]:
-        other_count = 0
-        query = category_query_for_all(keyword, sub_index)
-        response = es_client_query(index=index_name, body=query, retries=retries)
-        other_count += get_response_hits(response)
-        query = category_query_for_all(keyword, ["insurance"])
-        response = es_client_query(index=index_name, body=query, retries=retries)
-        other_count += get_response_hits(response)
-        return other_count
-    else:
-        count = 0
-        query = category_query_for_all(keyword, sub_index)
-        response = es_client_query(index=index_name, body=query, retries=retries)
-        count = get_response_hits(response)
-        return count
+        return None
 
 
 def spending_by_transaction_count(filters):
     keyword = filters['keyword']
-    response = {}
-
-    for category in award_categories:
-        total = get_total_results_by_award_category(keyword, category)
-        if total is not None:
-            response[category] = total
-        else:
-            return total
+    response = get_total_results_by_category_aggregation(keyword)
     return response
 
 
