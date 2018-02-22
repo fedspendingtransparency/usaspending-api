@@ -216,7 +216,7 @@ class Award(DataSourceTrackedModel):
     generated_unique_award_id = models.TextField(blank=False, null=False, default="none",
                                                  verbose_name="Generated Unique Award ID")
     is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
-    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+    transaction_unique_id = models.TextField(blank=False, null=False, default="NONE",
                                              verbose_name="Transaction Unique ID")
 
     # Subaward aggregates
@@ -358,7 +358,7 @@ class TransactionNormalized(models.Model):
     update_date = models.DateTimeField(auto_now=True, null=True,
                                        help_text="The last time this transaction was updated in the API", db_index=True)
     fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
-    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+    transaction_unique_id = models.TextField(blank=False, null=False, default="NONE",
                                              verbose_name="Transaction Unique ID")
     generated_unique_award_id = models.TextField(blank=False, null=False, default='none',
                                                  verbose_name="Generated Unique Award ID")
