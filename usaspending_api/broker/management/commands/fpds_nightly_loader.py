@@ -239,6 +239,8 @@ class Command(BaseCommand):
             unique_fpds = TransactionFPDS.objects.filter(detached_award_proc_unique=detached_award_proc_unique)
 
             if unique_fpds.first():
+                transaction_normalized_dict["update_date"] = datetime.utcnow()
+
                 # update TransactionNormalized
                 TransactionNormalized.objects.filter(id=unique_fpds.first().transaction.id).\
                     update(**transaction_normalized_dict)
@@ -274,9 +276,10 @@ class Command(BaseCommand):
             data_load_date_obj = ExternalDataLoadDate.objects. \
                 filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fpds']).first()
             if not data_load_date_obj:
-                date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+                date = (datetime.utcnow() - timedelta(days=1)).strftime('%Y-%m-%d')
             else:
                 date = data_load_date_obj.last_load_date
+        start_date = datetime.utcnow().strftime('%Y-%m-%d')
 
         logger.info('Processing data for FPDS starting from %s' % date)
 
@@ -327,7 +330,7 @@ class Command(BaseCommand):
 
         # Update the date for the last time the data load was run
         ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fpds']).delete()
-        ExternalDataLoadDate(last_load_date=datetime.now().strftime('%Y-%m-%d'),
+        ExternalDataLoadDate(last_load_date=start_date,
                              external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fpds']).save()
 
         logger.info('FPDS NIGHTLY UPDATE FINISHED!')

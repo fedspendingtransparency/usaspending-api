@@ -34,7 +34,7 @@ TRIM(high_comp_officer5_amount) != '')
 
 
 # Updates all executive compensation data
-def load_executive_compensation(db_cursor, date):
+def load_executive_compensation(db_cursor, date, start_date):
     logger.info("Getting DUNS/Exec Comp data from broker based on the last pull date of %s..." % str(date))
 
     # Get first page
@@ -92,5 +92,5 @@ def load_executive_compensation(db_cursor, date):
 
     # Update the date for the last time the data load was run
     ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).delete()
-    ExternalDataLoadDate(last_load_date=datetime.now().strftime('%Y-%m-%d'),
+    ExternalDataLoadDate(last_load_date=start_date,
                          external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['exec_comp']).save()
