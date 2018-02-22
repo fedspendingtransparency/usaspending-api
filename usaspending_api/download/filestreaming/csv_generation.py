@@ -273,7 +273,8 @@ def execute_psql(temp_sql_file_path, split_csv_path):
     try:
         # Generate the csv with \copy
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
-        subprocess.call(['psql', '-o', split_csv_path, os.environ['DOWNLOAD_DATABASE_URL']], stdin=cat_command.stdout)
+        something = subprocess.check_output(['psql', '-o', split_csv_path, os.environ['DOWNLOAD_DATABASE_URL']], stdin=cat_command.stdout)
+        logger.info(something)
     except Exception as e:
         logger.error(e)
         raise e

@@ -227,8 +227,10 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
                 raise InvalidParameterException('Toptier ID not found: {}'.format(filters['agency']))
             toptier_name = toptier_name[0]['name']
             filters['agencies'] = [{'type': 'awarding', 'tier': 'toptier', 'name': toptier_name}]
-            if 'sub_agency' in filters and filters['sub_agency']:
-                filters['agencies'].append({'type': 'awarding', 'tier': 'subtier', 'name': filters['sub_agency']})
+            if 'sub_agency' in filters:
+                if filters['sub_agency']:
+                    filters['agencies'].append({'type': 'awarding', 'tier': 'subtier', 'name': filters['sub_agency']})
+                del filters['sub_agency']
         del filters['agency']
 
         request_data['filters'] = filters
