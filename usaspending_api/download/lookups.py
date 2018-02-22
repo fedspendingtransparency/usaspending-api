@@ -50,6 +50,7 @@ VALUE_MAPPINGS = {
         'filter_function': subaward_filter
     }
 }
+
 SHARED_FILTER_DEFAULTS = {
     'award_type_codes': list(award_type_mapping.keys()),
     'agencies': [],
@@ -77,6 +78,7 @@ ROW_CONSTRAINT_FILTER_DEFAULTS = {
     'object_class_ids': [],
     'program_activity_ids': []
 }
+
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference
 # TODO: Find a solution that marks the CFO agencies in the database AND have the correct order
 CFO_CGACS_MAPPING = OrderedDict([('012', 'Department of Agriculture'),

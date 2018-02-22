@@ -1,7 +1,6 @@
 import boto
 import datetime
 import json
-import logging
 import os
 import re
 
@@ -18,7 +17,7 @@ from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.models import Agency
 from usaspending_api.awards.v2.filters.view_selector import download_transaction_count
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, all_award_types_mappings
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import order_nested_object
@@ -31,8 +30,6 @@ from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, S
                                               YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS)
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.references.models import ToptierAgency
-
-logger = logging.getLogger('console')
 
 
 class BaseDownloadViewSet(APIView):
@@ -229,8 +226,8 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         filters['award_type_codes'] = []
         try:
             for award_type_code in filters['award_types']:
-                if award_type_code in award_type_mapping:
-                    filters['award_type_codes'].extend(award_type_mapping[award_type_code])
+                if award_type_code in all_award_types_mappings:
+                    filters['award_type_codes'].extend(all_award_types_mappings[award_type_code])
                 else:
                     raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
             del filters['award_types']
