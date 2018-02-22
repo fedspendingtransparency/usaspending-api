@@ -123,11 +123,10 @@ class TinyShield():
 
             if model['type'] not in VALIDATORS:
                 raise Exception('Invalid model type [{}] provided in description'.format(model['type']))
+
             type_description = VALIDATORS[model['type']]
-            if type_description == 'object':
-                required_fields = type_description['required_fields'].keys()
-            else:
-                required_fields = type_description['required_fields']
+            required_fields = type_description['required_fields']
+
             for required_field in required_fields:
                 if required_field not in model:
                     raise Exception('Model {} missing a type required field: {}'.format(model, required_field))

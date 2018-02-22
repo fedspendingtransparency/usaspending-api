@@ -85,14 +85,16 @@ def validate_boolean(rule):
 def validate_datetime(rule):
     # Utilizing the Python datetime strptime since format errors are already provided
     dt_format = '%Y-%m-%dT%H:%M:%S'
-    if len(rule['value']) == 10 or rule['type'] == 'date':
+    val = str(rule['value'])
+
+    if len(val) == 10 or rule['type'] == 'date':
         dt_format = '%Y-%m-%d'
-    elif len(rule['value']) > 19:
+    elif len(val) > 19:
         dt_format = '%Y-%m-%dT%H:%M:%SZ'
     try:
-        value = datetime.datetime.strptime(rule['value'], dt_format)
+        value = datetime.datetime.strptime(val, dt_format)
     except ValueError as e:
-        error_message = 'Value {} is invalid or does not conform to format ({})'.format(rule['value'], dt_format)
+        error_message = INVALID_TYPE_MSG.format(**rule) + '. Expected format: ({})'.format(dt_format)
         raise InvalidParameterException(error_message)
 
     # Future TODO: change this to returning the appropriate object (Date or Datetime) instead of converting to string
