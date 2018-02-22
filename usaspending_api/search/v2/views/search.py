@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_types=award_type_mapping,
                            calculate_totals=True):
-    """ Returns correct amount for transaction if loan (07, 08) vs all other award types"""
+    """ Returns correct amount for transaction if loan (07, 08) vs all other award types (covers IDV)"""
     aggregate_dict = {}
     if calculate_totals:
         aggregate_dict = {'total_subsidy_cost': Sum(Case(When(type__in=list(loan_type_mapping),
@@ -54,15 +54,17 @@ def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_type
                                                        output_field=FloatField()))
                           }
 
+    # Coalescing total_obligation and total_subsidy since fields can be null
     if not set(filter_types) & set(loan_type_mapping):
         # just sans loans
-        aggregate_dict[aggregated_name] = F('total_obligation')
+        aggregate_dict[aggregated_name] = Coalesce(F('total_obligation'), 0)
     elif set(filter_types) <= set(loan_type_mapping):
         # just loans
-        aggregate_dict[aggregated_name] = F('total_subsidy_cost')
+        aggregate_dict[aggregated_name] = Coalesce(F('total_subsidy_cost'), 0)
     else:
-        # mix
-        aggregate_dict[aggregated_name] = F('total_subsidy_cost') + F('total_obligation')
+        # mix of loans and other award types
+        # Adding null field to a populated field will return null, used Coalesce to fixes that
+        aggregate_dict[aggregated_name] = Coalesce(F('total_subsidy_cost'), 0) + Coalesce(F('total_obligation'), 0)
 
     return qs.annotate(**aggregate_dict)
 
@@ -290,13 +292,14 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             elif scope == "parent_duns":
                 queryset = queryset \
                     .filter(parent_recipient_unique_id__isnull=False)
-                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types,
+                                                  calculate_totals=False) \
                     .values(
                         'aggregated_amount',
                         'recipient_name',
                         'parent_recipient_unique_id') \
                     .order_by('-aggregated_amount')
-
+                print(queryset.query)
                 # Begin DB hits here
                 results = list(queryset[lower_limit:upper_limit + 1])
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)
