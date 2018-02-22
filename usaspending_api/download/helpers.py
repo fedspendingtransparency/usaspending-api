@@ -112,21 +112,24 @@ def _upload_part(bucketname, regionname, multipart_id, part_num, source_path, of
 
 
 def write_to_download_log(message, download_job=None, is_debug=False, is_error=False, other_params={}):
-    log_dict = {
-        'message': message,
-        'message_type': 'USAspendingDownloader'
-    }
+    if settings.IS_LOCAL:
+        log_dict = message
+    else:
+        log_dict = {
+            'message': message,
+            'message_type': 'USAspendingDownloader'
+        }
 
-    if download_job:
-        log_dict['download_job_id'] = download_job.download_job_id
-        log_dict['file_name'] = download_job.file_name
-        log_dict['json_request'] = download_job.json_request
-        if download_job.error_message:
-            log_dict['error_message'] = download_job.error_message
+        if download_job:
+            log_dict['download_job_id'] = download_job.download_job_id
+            log_dict['file_name'] = download_job.file_name
+            log_dict['json_request'] = download_job.json_request
+            if download_job.error_message:
+                log_dict['error_message'] = download_job.error_message
 
-    for param in other_params:
-        if param not in log_dict:
-            log_dict[param] = other_params[param]
+        for param in other_params:
+            if param not in log_dict:
+                log_dict[param] = other_params[param]
 
     if is_error:
         logger.error(log_dict)
