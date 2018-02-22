@@ -163,7 +163,8 @@ def get_response_hits(response):
 
 
 def get_total_results_by_award_category(keyword, sub_index, retries=3):
-    index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
+    #index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
+    index_name = "*"
     sub_index = clean_sub_index(sub_index)
     if sub_index == ["contract"]:
         contracts_count = 0
@@ -188,6 +189,7 @@ def get_total_results_by_award_category(keyword, sub_index, retries=3):
         query = category_query_for_all(keyword, sub_index)
         response = es_client_query(index=index_name, body=query, retries=retries)
         count = get_response_hits(response)
+        return count
 
 
 def spending_by_transaction_count(filters):
