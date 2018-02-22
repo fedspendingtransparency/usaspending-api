@@ -67,7 +67,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
         'size': limit,
         'query': {
             'query_string': {
-                'query': preprocess(keyword)
+                'query': keyword
                 }
         },
         'sort': [{
@@ -99,7 +99,7 @@ def get_total_results(keyword, sub_index, retries=3):
     query = {
         'query': {
             'query_string': {
-                'query': preprocess(keyword)
+                'query': keyword
             }
         }
     }
@@ -138,7 +138,7 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
     query = {
         'query': {
             'query_string': {
-                'query': preprocess(keyword)
+                'query': keyword
             }
         },
         'aggs': {
@@ -182,7 +182,7 @@ def get_download_ids(keyword, field, size=10000):
     for i in range(n_iter):
         query = {
             "_source": [field],
-            "query": {"query_string": {"query": preprocess(keyword)}},
+            "query": {"query_string": {"query": keyword}},
             "aggs": {
                 "results": {
                     "terms": {
@@ -209,7 +209,7 @@ def get_download_ids(keyword, field, size=10000):
 
 def get_sum_and_count_aggregation_results(keyword):
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT)+'*'
-    query = {"query": {"query_string": {"query": preprocess(keyword)}},
+    query = {"query": {"query_string": {"query": keyword}},
              "aggs": {
               "prime_awards_obligation_amount": {
                  "sum": {
