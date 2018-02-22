@@ -753,10 +753,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         models.extend(AWARD_FILTER)
         models.extend(PAGINATION)
         for m in models:
-            if m['name'] in ('keyword', 'award_type_codes'):
+            if m['name'] in ('keyword', 'award_type_codes', 'sort'):
                 m['optional'] = False
-            if m['name'] in ('sort'):
-                m['default'] = 'Transaction Amount'
         validated_payload = TinyShield(models).block(request.data)
 
         if validated_payload['sort'] not in validated_payload['fields']:

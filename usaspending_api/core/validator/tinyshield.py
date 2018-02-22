@@ -3,6 +3,7 @@ import copy
 
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.core.validator.helpers import SUPPORTED_TEXT_TYPES
+from usaspending_api.core.validator.helpers import TINY_SHIELD_SEPARATOR
 from usaspending_api.core.validator.helpers import validate_array
 from usaspending_api.core.validator.helpers import validate_boolean
 from usaspending_api.core.validator.helpers import validate_datetime
@@ -73,6 +74,35 @@ VALIDATORS = {
 
 
 class TinyShield():
+    """
+    Structure
+    model- dictionary representing a validator
+    {
+        name:
+        key: dict|subitem|all|split|by|pipes
+        type: type of validator
+            array
+            boolean
+            date
+            datetime
+            enum
+            float
+            integer
+            object
+            passthrough
+            text
+        text_type:
+            search
+            raw
+            sql
+            url
+            password
+        default:
+            the default value
+    }
+
+    Validated data is stored in self.data, which is a flat dictionary
+    """
 
     def __init__(self, model_list):
         self.rules = self.check_models(model_list)
@@ -121,7 +151,7 @@ class TinyShield():
         for item in self.rules:
             # Loop through the request to find the expected key
             value = request
-            for subkey in item['key'].split('|'):
+            for subkey in item['key'].split(TINY_SHIELD_SEPARATOR):
                 value = value.get(subkey, {})
             if value != {}:
                 # Key found in provided request dictionary, use the value

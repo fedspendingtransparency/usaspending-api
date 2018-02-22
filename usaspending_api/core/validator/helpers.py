@@ -13,6 +13,7 @@ MIN_INT = -sys.maxsize - 1  # == -2^(63-1) - 1 == 9223372036854775808
 MAX_FLOAT = sys.float_info.max  # 1.7976931348623157e+308
 MIN_FLOAT = sys.float_info.min  # 2.2250738585072014e-308
 
+TINY_SHIELD_SEPARATOR = '|'
 
 INVALID_TYPE_MSG = 'Invalid value in \'{key}\'. \'{value}\' is not a valid {type}'
 ABOVE_MAXIMUM_MSG = 'Field \'{key}\' value \'{value}\' is above max {max}'

@@ -1,4 +1,6 @@
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.core.validator.helpers import TINY_SHIELD_SEPARATOR
+
 
 AWARD_FILTER = [
     {'name': 'award_ids', 'type': 'array', 'array_type': 'integer'},
@@ -46,6 +48,6 @@ AWARD_FILTER = [
 
 for a in AWARD_FILTER:
     a['optional'] = a.get('optional', True)  # future TODO: want to make time_period required
-    a['key'] = 'filters|{}'.format(a['name'])
+    a['key'] = 'filters{sep}{name}'.format(sep=TINY_SHIELD_SEPARATOR, name=a['name'])
     if a['type'] == 'array':
         a['min'] = a.get('min', 1)

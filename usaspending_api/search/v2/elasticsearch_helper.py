@@ -67,7 +67,7 @@ def search_transactions(request_data, lower_limit, limit):
         results = format_for_frontend(response['hits']['hits'])
         return True, results, total
     else:
-        return False, 'There was an error connecting to the ElasticSearch cluster', None, None
+        return False, 'There was an error connecting to the ElasticSearch cluster', None
 
 
 def get_total_results(keyword, sub_index, retries=3):

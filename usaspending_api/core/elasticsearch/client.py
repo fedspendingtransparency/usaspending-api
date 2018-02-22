@@ -1,15 +1,19 @@
 import logging
+import json
 from django.conf import settings
 from elasticsearch import ConnectionError
 from elasticsearch import ConnectionTimeout
 from elasticsearch import Elasticsearch
 from elasticsearch import NotFoundError
 from elasticsearch import TransportError
+from urllib3.exceptions import LocationValueError
 
 logger = logging.getLogger('console')
 
 try:
-    CLIENT = Elasticsearch(host=settings.ES_HOSTNAME, timeout=15)
+    CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=15)
+except LocationValueError as e:
+    logging.error('ES_HOSTNAME is not specified!!!')
 except Exception as e:
     logger.exception('Error creating the elasticsearch client')
 
@@ -21,7 +25,9 @@ def es_client_query(index, body, timeout='1m', retries=1):
         retries = 1
     for attempt in range(retries):
         response = _es_search(index=index, body=body, timeout=timeout)
-        if response is not None:
+        if response is None:
+            logger.info('Failure using these: Index=\'{}\', body={}'.format(index, json.dumps(body)))
+        else:
             return response
     logger.error('Unable to reach elasticsearch cluster. {} attempt(s) made'.format(retries))
     return None
