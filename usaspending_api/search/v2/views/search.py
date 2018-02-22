@@ -3,8 +3,8 @@ import logging
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_extensions.cache.decorators import cache_response
-
+# from rest_framework_extensions.cache.decorators import cache_response
+from usaspending_api.common.cache_decorator import cache_response
 from django.db.models import Sum, Count, F, Value, FloatField
 from django.db.models.functions import ExtractMonth, Cast, Coalesce
 
