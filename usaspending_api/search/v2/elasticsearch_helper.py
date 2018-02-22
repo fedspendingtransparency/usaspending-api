@@ -10,7 +10,7 @@ logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
-CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=60)
+CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=settings.ES_TIMEOUT)
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 
 
