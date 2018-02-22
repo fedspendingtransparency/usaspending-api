@@ -40,8 +40,8 @@ UPPERCASE_UPDATES = {
             afa_generated_unique = UPPER(afa_generated_unique),
             place_of_performance_zip5 = UPPER(place_of_performance_zip5),
             place_of_perform_zip_last4 = UPPER(place_of_perform_zip_last4)
-        WHERE created_at => '2018-01-29'
-            AND created_at <= '2018-02-14';
+        WHERE created_at >= '2018-01-29'
+            AND created_at <= '2018-02-14'
             AND (UPPER(award_description) != award_description
                 OR UPPER(awardee_or_recipient_legal) != awardee_or_recipient_legal
                 OR UPPER(business_types) != business_types
@@ -78,8 +78,8 @@ UPPERCASE_UPDATES = {
             product_or_service_co_desc = UPPER(product_or_service_co_desc),
             program_acronym = UPPER(program_acronym),
             pulled_from = UPPER(pulled_from)
-        WHERE updated_at => '2018-01-29'
-            AND updated_at <= '2018-02-14';
+        WHERE updated_at >= '2018-01-29'
+            AND updated_at <= '2018-02-14'
             AND (UPPER(detached_award_proc_unique) != detached_award_proc_unique
                 OR UPPER(awarding_agency_name) != awarding_agency_name
                 OR UPPER(ultimate_parent_legal_enti) != ultimate_parent_legal_enti
@@ -94,7 +94,7 @@ UPPERCASE_UPDATES = {
                 OR UPPER(major_program) != major_program
                 OR UPPER(product_or_service_co_desc) != product_or_service_co_desc
                 OR UPPER(program_acronym) != program_acronym
-                OR UPPER(pulled_from) != pulled_from)
+                OR UPPER(pulled_from) != pulled_from);
         """,
     'transaction_normalized': """
         UPDATE transaction_normalized
@@ -102,10 +102,10 @@ UPPERCASE_UPDATES = {
             generated_unique_award_id = UPPER(generated_unique_award_id),
             description = UPPER(description)
         WHERE update_date > '2018-02-02'
-            AND update_date <= '2018-02-15';
+            AND update_date <= '2018-02-15'
             AND (UPPER(transaction_unique_id) != transaction_unique_id
                 OR UPPER(generated_unique_award_id) != generated_unique_award_id
-                OR UPPER(description) != description)
+                OR UPPER(description) != description);
         """,
     'references_location': """
         UPDATE references_location
@@ -121,8 +121,8 @@ UPPERCASE_UPDATES = {
             address_line1 = UPPER(address_line1),
             congressional_code = UPPER(congressional_code),
             zip4 = UPPER(zip4)
-        WHERE create_date => '2018-02-08'
-            AND create_date <= '2018-02-23';
+        WHERE create_date >= '2018-02-08'
+            AND create_date <= '2018-02-23'
             AND (UPPER(transaction_unique_id) != transaction_unique_id
                 OR UPPER(foreign_city_name) != foreign_city_name
                 OR UPPER(foreign_postal_code) != foreign_postal_code
@@ -134,7 +134,7 @@ UPPERCASE_UPDATES = {
                 OR UPPER(city_name) != city_name
                 OR UPPER(address_line1) != address_line1
                 OR UPPER(congressional_code) != congressional_code
-                OR UPPER(zip4) != zip4)
+                OR UPPER(zip4) != zip4);
         """,
     'legal_entity': """
         UPDATE legal_entity
@@ -142,12 +142,12 @@ UPPERCASE_UPDATES = {
             recipient_name = UPPER(recipient_name),
             business_types = UPPER(business_types),
             vendor_fax_number = UPPER(vendor_fax_number)
-        WHERE create_date => '2018-02-08'
-            AND create_date <= '2018-02-23';
+        WHERE create_date >= '2018-02-08'
+            AND create_date <= '2018-02-23'
             AND (UPPER(transaction_unique_id) != transaction_unique_id
                 OR UPPER(recipient_name) != recipient_name
                 OR UPPER(business_types) != business_types
-                OR UPPER(vendor_fax_number) != vendor_fax_number)
+                OR UPPER(vendor_fax_number) != vendor_fax_number);
         """,
     'awards': """
         UPDATE awards
@@ -158,13 +158,13 @@ UPPERCASE_UPDATES = {
             uri = UPPER(uri),
             fain = UPPER(fain),
             description = UPPER(description)
-        WHERE update_date => '2018-02-04'
-            AND update_date <= '2018-02-23';
+        WHERE update_date >= '2018-02-04'
+            AND update_date <= '2018-02-23'
             AND (UPPER(transaction_unique_id) != transaction_unique_id
                 OR UPPER(generated_unique_award_id) != generated_unique_award_id
                 OR UPPER(parent_award_piid) != parent_award_piid
                 OR UPPER(piid) != piid
                 OR UPPER(uri) != uri
                 OR UPPER(fain) != fain
-                OR UPPER(description) != description)
+                OR UPPER(description) != description);
         """}
