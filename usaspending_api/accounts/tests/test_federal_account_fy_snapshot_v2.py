@@ -81,3 +81,12 @@ def test_federal_account_fiscal_year_snapshot_v2_endpoint_no_results(client, fin
     resp = client.get('/api/v2/federal_accounts/999/fiscal_year_snapshot')
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {}
+
+
+def test_federal_account_fiscal_year_snapshot_v2_endpoint_specific_fy(client, financial_spending_data):
+    """Test that fy parameter accepted and honored."""
+
+    resp = client.get('/api/v2/federal_accounts/1/fiscal_year_snapshot/2016')
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json()['results']
+    assert results['outlay'] == 999
