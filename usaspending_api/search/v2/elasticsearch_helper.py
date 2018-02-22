@@ -1,4 +1,5 @@
 import logging
+import re
 from django.conf import settings
 from elasticsearch import Elasticsearch
 
@@ -9,8 +10,13 @@ logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
-CLIENT = Elasticsearch(settings.ES_HOSTNAME)
+CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=60)
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
+
+
+def preprocess(keyword):
+    '''Escape characters that error out ES'''
+    return re.sub('[\/:\]\[\^!]', '', keyword)
 
 
 def swap_keys(dictionary_):
@@ -61,8 +67,8 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
         'size': limit,
         'query': {
             'query_string': {
-                'query': keyword
-            }
+                'query': preprocess(keyword)
+                }
         },
         'sort': [{
             query_sort: {
@@ -72,7 +78,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
 
     for index, award_types in indices_to_award_types.items():
         if sorted(award_types) == sorted(filters['award_type_codes']):
-            index_name = '{}-{}-*'.format(TRANSACTIONS_INDEX_ROOT, index)
+            index_name = '{}-{}*'.format(TRANSACTIONS_INDEX_ROOT, index)
             transaction_type = index
             break
     else:
@@ -93,7 +99,7 @@ def get_total_results(keyword, sub_index, retries=3):
     query = {
         'query': {
             'query_string': {
-                'query': keyword
+                'query': preprocess(keyword)
             }
         }
     }
@@ -132,7 +138,7 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
     query = {
         'query': {
             'query_string': {
-                'query': keyword
+                'query': preprocess(keyword)
             }
         },
         'aggs': {
@@ -176,7 +182,7 @@ def get_download_ids(keyword, field, size=10000):
     for i in range(n_iter):
         query = {
             "_source": [field],
-            "query": {"query_string": {"query": keyword}},
+            "query": {"query_string": {"query": preprocess(keyword)}},
             "aggs": {
                 "results": {
                     "terms": {
@@ -203,7 +209,7 @@ def get_download_ids(keyword, field, size=10000):
 
 def get_sum_and_count_aggregation_results(keyword):
     index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT)+'*'
-    query = {"query": {"query_string": {"query": keyword}},
+    query = {"query": {"query_string": {"query": preprocess(keyword)}},
              "aggs": {
               "prime_awards_obligation_amount": {
                  "sum": {
