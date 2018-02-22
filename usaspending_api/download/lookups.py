@@ -50,7 +50,7 @@ VALUE_MAPPINGS = {
         'filter_function': subaward_filter
     }
 }
-# bulk download still uses "prime awards" instead of "transactions"
+# Bulk Download still uses "prime awards" instead of "transactions"
 VALUE_MAPPINGS['prime_awards'] = VALUE_MAPPINGS['transactions']
 
 SHARED_FILTER_DEFAULTS = {

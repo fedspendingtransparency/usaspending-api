@@ -12,7 +12,7 @@ import zipfile
 from collections import OrderedDict
 from django.conf import settings
 
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, award_assistance_mapping
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
 from usaspending_api.common.helpers import generate_raw_quoted_query
 from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload,
                                               write_to_download_log as write_to_log)
@@ -120,7 +120,7 @@ def get_csv_sources(json_request):
 
         award_type_codes = set(json_request['filters']['award_type_codes'])
         d1_award_types = set(contract_type_mapping.keys())
-        d2_award_types = set(award_assistance_mapping.keys())
+        d2_award_types = set(assistance_type_mapping.keys())
 
         if award_type_codes & d1_award_types:
             # only generate d1 files if the user is asking for contracts
