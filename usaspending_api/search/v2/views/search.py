@@ -46,12 +46,12 @@ def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_type
     if calculate_totals:
         aggregate_dict = {'total_subsidy_cost': Sum(Case(When(type__in=list(loan_type_mapping),
                                                               then=F('original_loan_subsidy_cost')),
-                                                   default=0,
-                                                   output_field=FloatField())),
+                                                         default=0,
+                                                         output_field=FloatField())),
                           'total_obligation': Sum(Case(When(~Q(type__in=list(loan_type_mapping)),
                                                             then=F('federal_action_obligation')),
-                                                   default=0,
-                                                   output_field=FloatField()))
+                                                       default=0,
+                                                       output_field=FloatField()))
                           }
 
     if not set(filter_types) & set(loan_type_mapping):
@@ -391,7 +391,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 if can_use_view(filters, 'SummaryNaicsCodesView'):
                     queryset = get_view_queryset(filters, 'SummaryNaicsCodesView')
                     queryset = queryset \
-                        .filter(naics__isnull=False) \
+                        .filter(naics_code__isnull=False) \
                         .values('naics_code')
                     queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
                         .order_by('-aggregated_amount') \
