@@ -18,8 +18,18 @@ class Migration(migrations.Migration):
             field=models.TextField(default='NONE', verbose_name='Transaction Unique ID'),
         ),
         migrations.AlterField(
+            model_name='award',
+            name='generated_unique_award_id',
+            field=models.TextField(default='NONE', verbose_name='Generated Unique Award ID'),
+        ),
+        migrations.AlterField(
             model_name='transactionnormalized',
             name='transaction_unique_id',
             field=models.TextField(default='NONE', verbose_name='Transaction Unique ID'),
+        ),
+        migrations.AlterField(
+            model_name='transactionnormalized',
+            name='generated_unique_award_id',
+            field=models.TextField(default='NONE', verbose_name='Generated Unique Award ID'),
         ),
     ]
