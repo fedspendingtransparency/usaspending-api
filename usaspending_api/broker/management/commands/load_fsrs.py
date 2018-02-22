@@ -93,7 +93,8 @@ class Command(BaseCommand):
                 return None
         return award
 
-    def get_subaward_references(self, row, award_type):
+    @staticmethod
+    def get_subaward_references(row, award_type):
         # Create Recipient/Location entries specific to this subaward row
         if award_type == 'procurement':
             location_value_map = location_d1_recipient_mapper(row)
@@ -280,6 +281,11 @@ class Command(BaseCommand):
         while len(subaward_list) > 0:
             logger.info("Processing next 10,000 subawards, starting at offset: " + str(current_offset))
             for row in subaward_list:
+
+                for key in row:
+                    if isinstance(row[key], str):
+                        row[key] = row[key].upper()
+
                 self.create_subaward(row, shared_award_mappings, award_type)
 
             current_offset += QUERY_LIMIT
