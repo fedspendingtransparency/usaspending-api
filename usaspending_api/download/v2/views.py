@@ -24,7 +24,7 @@ from usaspending_api.common.helpers import order_nested_object
 from usaspending_api.common.logging import get_remote_addr
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
-from usaspending_api.download.helpers import (check_types_and_assign_defaults, parse_limit,
+from usaspending_api.download.helpers import (check_types_and_assign_defaults, parse_limit, validate_time_periods,
                                               write_to_download_log as write_to_log)
 from usaspending_api.download.lookups import (JOB_STATUS_DICT, VALUE_MAPPINGS, SHARED_FILTER_DEFAULTS, CFO_CGACS,
                                               YEAR_CONSTRAINT_FILTER_DEFAULTS, ROW_CONSTRAINT_FILTER_DEFAULTS)
@@ -101,28 +101,7 @@ class BaseDownloadViewSet(APIView):
                 raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
 
         # Validate time periods
-        default_date_values = {
-            'start_date': '1000-01-01',
-            'end_date': datetime.datetime.strftime(datetime.datetime.utcnow(), '%Y-%m-%d'),
-            'date_type': 'action_date'
-        }
-        if len(filters.get('time_period', [])) == 0:
-            filters['time_period'] = [default_date_values]
-        total_range_count = 0
-        for date_range in filters['time_period']:
-            date_range['start_date'] = date_range.get('start_date', default_date_values['start_date'])
-            date_range['end_date'] = date_range.get('end_date', default_date_values['end_date'])
-            date_range['date_type'] = date_range.get('date_type', default_date_values['date_type'])
-            try:
-                d1 = datetime.datetime.strptime(date_range['start_date'], "%Y-%m-%d")
-                d2 = datetime.datetime.strptime(date_range['end_date'], "%Y-%m-%d")
-            except ValueError:
-                raise InvalidParameterException('Date Ranges must be in the format YYYY-MM-DD.')
-            total_range_count += (d2 - d1).days
-            # Derive date type
-            if date_range['date_type'] not in ['action_date', 'last_modified_date']:
-                raise InvalidParameterException(
-                    'Invalid parameter within time_period\'s date_type: {}'.format(filters['date_type']))
+        total_range_count = validate_time_periods(filters)
 
         if json_request.get('constraint_type', None) == 'row_count':
             # Validate limit exists and is below MAX_DOWNLOAD_LIMIT
@@ -131,9 +110,9 @@ class BaseDownloadViewSet(APIView):
             # Validate row_count-constrainted filter types and assign defaults
             check_types_and_assign_defaults(filters, ROW_CONSTRAINT_FILTER_DEFAULTS)
         elif json_request.get('constraint_type', None) == 'year':
-            # Validate combined total dates within one year
+            # Validate combined total dates within one year (allow for leap years)
             if total_range_count > 366:
-                raise InvalidParameterException('Invalid Parameter: "time_period" total days must be within a year')
+                raise InvalidParameterException('Invalid Parameter: time_period total days must be within a year')
 
             # Validate year-constrainted filter types and assign defaults
             check_types_and_assign_defaults(filters, YEAR_CONSTRAINT_FILTER_DEFAULTS)
@@ -143,7 +122,7 @@ class BaseDownloadViewSet(APIView):
                 json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword']}
                 return json_request
         else:
-            raise InvalidParameterException('Invalid parameter: "constraint_type" must be "row_count" or "year"')
+            raise InvalidParameterException('Invalid parameter: constraint_type must be "row_count" or "year"')
 
         return json_request
 
@@ -239,6 +218,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         date_range_copied['date_type'] = filters['date_type']
         filters['time_period'] = [date_range_copied]
         del filters['date_range']
+        del filters['date_type']
 
         # Replacing agency with agencies
         if filters['agency'] != 'all':

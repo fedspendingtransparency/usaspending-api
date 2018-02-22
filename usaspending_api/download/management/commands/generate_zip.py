@@ -1,4 +1,5 @@
 import botocore
+import logging
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -10,6 +11,8 @@ from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.filestreaming import csv_generation
 
 DEFAULT_VISIBILITY_TIMEOUT = 60*30
+
+logger = logging.getLogger('console')
 
 
 class Command(BaseCommand):
@@ -42,6 +45,7 @@ class Command(BaseCommand):
                         message.delete()
             except Exception as e:
                 # Handle uncaught exceptions in validation process
+                logger.error(e)
                 write_to_log(message=str(e), download_job=download_job, is_error=True)
 
                 if download_job:

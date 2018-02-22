@@ -5,6 +5,7 @@ import mimetypes
 import multiprocessing
 import os
 
+from datetime import datetime
 from django.conf import settings
 from filechunkio import FileChunkIO
 from rest_framework.exceptions import ParseError
@@ -40,6 +41,43 @@ def parse_limit(json_request):
     else:
         limit = settings.MAX_DOWNLOAD_LIMIT
     return limit   # None is a workable slice argument
+
+
+def validate_time_periods(filters):
+    default_date_values = {
+        'start_date': '1000-01-01',
+        'end_date': datetime.strftime(datetime.utcnow(), '%Y-%m-%d'),
+        'date_type': 'action_date'
+    }
+
+    # Enforcing that time_period always has content
+    if len(filters.get('time_period', [])) == 0:
+        filters['time_period'] = [default_date_values]
+
+    total_range_count = 0
+    for date_range in filters['time_period']:
+        # Empty strings, Nones, or missing keys should be replaced with the default values
+        for key in default_date_values:
+            date_range[key] = date_range.get(key, default_date_values[key])
+            if date_range[key] == '':
+                date_range[key] = default_date_values[key]
+
+        # Validate date values
+        try:
+            d1 = datetime.strptime(date_range['start_date'], "%Y-%m-%d")
+            d2 = datetime.strptime(date_range['end_date'], "%Y-%m-%d")
+        except ValueError:
+            raise InvalidParameterException('Date Ranges must be in the format YYYY-MM-DD.')
+
+        # Add to total_range_count for year-constraint validations
+        total_range_count += (d2 - d1).days
+
+        # Validate and derive date type
+        if date_range['date_type'] not in ['action_date', 'last_modified_date']:
+            raise InvalidParameterException(
+                'Invalid parameter within time_period\'s date_type: {}'.format(filters['date_type']))
+
+    return total_range_count
 
 
 def verify_requested_columns_available(sources, requested):

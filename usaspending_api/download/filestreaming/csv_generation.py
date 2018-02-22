@@ -1,4 +1,5 @@
 import json
+import logging
 import multiprocessing
 import os
 import re
@@ -22,6 +23,8 @@ DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
 MAX_VISIBILITY_TIMEOUT = 60*60*4
 BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
+
+logger = logging.getLogger('console')
 
 
 class CsvSource:
@@ -88,6 +91,7 @@ def generate_csvs(download_job, sqs_message=None):
         zipped_csvs.close()
         download_job.file_size = os.stat(file_path).st_size
     except Exception as e:
+        logger.error(e)
         handle_file_generation_exception(file_path, download_job, 'write', str(e))
 
     try:
@@ -102,6 +106,7 @@ def generate_csvs(download_job, sqs_message=None):
             write_to_log(message='Uploading took {} seconds'.format(time.time() - start_uploading),
                          download_job=download_job)
     except Exception as e:
+        logger.error(e)
         handle_file_generation_exception(file_path, download_job, 'upload', str(e))
 
     return finish_download(download_job)
@@ -220,7 +225,7 @@ def finish_download(download_job):
 
 def generate_temp_query_file(split_csv, source_query, limit, source, download_job):
     csv_limit = split_csv * EXCEL_ROW_LIMIT
-    csv_query_split = source_query[csv_limit - EXCEL_ROW_LIMIT:csv_limit if csv_limit < limit else limit]
+    csv_query_split = source_query[csv_limit - EXCEL_ROW_LIMIT:csv_limit if (not limit or csv_limit < limit) else limit]
     csv_query_raw = generate_raw_quoted_query(csv_query_split)
     csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
 
@@ -237,6 +242,7 @@ def generate_temp_query_file(split_csv, source_query, limit, source, download_jo
 
 def handle_file_generation_exception(file_path, download_job, error_type, error):
     """Removes the temporary file, updates the job, and raises the exception"""
+    logger.error(error)
     if os.path.exists(file_path):
         os.remove(file_path)
 
@@ -269,5 +275,5 @@ def execute_psql(temp_sql_file_path, split_csv_path):
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
         subprocess.call(['psql', '-o', split_csv_path, os.environ['DOWNLOAD_DATABASE_URL']], stdin=cat_command.stdout)
     except Exception as e:
-        write_to_log(message=str(e), is_error=True)
+        logger.error(e)
         raise e
