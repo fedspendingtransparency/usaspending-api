@@ -44,7 +44,6 @@ class FederalAccountByObligationViewSet(DetailViewSet):
             )
 
         queryset = queryset.annotate(
-            agency_name=F('treasury_account_identifier__reporting_agency_name'),
             account_title=F('treasury_account_identifier__federal_account__account_title'),
             id=F('treasury_account_identifier__federal_account')
 
@@ -52,7 +51,6 @@ class FederalAccountByObligationViewSet(DetailViewSet):
         # Sum and sort descending obligations_incurred by account
         queryset = queryset.values(
             'id',
-            'agency_name',
             'account_title'
         ).annotate(
             obligated_amount=Sum('obligations_incurred_total_by_tas_cpe')
