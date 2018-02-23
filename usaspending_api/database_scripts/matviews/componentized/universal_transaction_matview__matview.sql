@@ -7,13 +7,26 @@
 --------------------------------------------------------
 CREATE MATERIALIZED VIEW universal_transaction_matview_temp AS
 SELECT
-  UPPER(CONCAT(
+  to_tsvector(CONCAT(
     "legal_entity"."recipient_name",
     ' ', "transaction_fpds"."naics",
     ' ', "naics"."description",
     ' ', "psc"."description",
     ' ', "awards"."description")) AS keyword_string,
-  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,
+  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,
+  to_tsvector(coalesce(TAA."name", '')) AS awarding_toptier_agency_ts_vector,
+  to_tsvector(coalesce(TFA."name", '')) AS funding_toptier_agency_ts_vector,
+  to_tsvector(coalesce(SAA."name", '')) AS awarding_subtier_agency_ts_vector,
+  to_tsvector(coalesce(SFA."name", '')) AS funding_subtier_agency_ts_vector,
+  to_tsvector(coalesce("legal_entity"."recipient_name", '')) AS recipient_name_ts_vector,
+
+  UPPER(CONCAT(
+    "legal_entity"."recipient_name",
+    ' ', "transaction_fpds"."naics",
+    ' ', "naics"."description",
+    ' ', "psc"."description",
+    ' ', "awards"."description")) AS keyword_string_old,
+  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string_old,
   "transaction_normalized"."id" AS transaction_id,
   "transaction_normalized"."action_date"::date,
   "transaction_normalized"."fiscal_year",
