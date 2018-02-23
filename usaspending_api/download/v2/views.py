@@ -66,6 +66,13 @@ class BaseDownloadViewSet(APIView):
 
     def validate_request(self, json_request):
         """Analyze request and raise any formatting errors as Exceptions"""
+        constraint_type = json_request.get('constraint_type', None)
+
+        # Overriding all other filters if the keyword filter is provided in year-constraint download
+        if constraint_type == 'year' and 'elasticsearch_keyword' in json_request['filters']:
+            json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword']}
+            return json_request
+
         # Validate required parameters
         for required_param in ['award_levels', 'filters']:
             if required_param not in json_request:
@@ -103,24 +110,19 @@ class BaseDownloadViewSet(APIView):
         # Validate time periods
         total_range_count = validate_time_periods(filters)
 
-        if json_request.get('constraint_type', None) == 'row_count':
+        if constraint_type == 'row_count':
             # Validate limit exists and is below MAX_DOWNLOAD_LIMIT
             json_request['limit'] = parse_limit(json_request)
 
             # Validate row_count-constrainted filter types and assign defaults
             check_types_and_assign_defaults(filters, ROW_CONSTRAINT_FILTER_DEFAULTS)
-        elif json_request.get('constraint_type', None) == 'year':
+        elif constraint_type == 'year':
             # Validate combined total dates within one year (allow for leap years)
             if total_range_count > 366:
                 raise InvalidParameterException('Invalid Parameter: time_period total days must be within a year')
 
             # Validate year-constrainted filter types and assign defaults
             check_types_and_assign_defaults(filters, YEAR_CONSTRAINT_FILTER_DEFAULTS)
-
-            # Overriding all other filters if the keyword filter is provided
-            if 'elasticsearch_keyword' in json_request['filters']:
-                json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword']}
-                return json_request
         else:
             raise InvalidParameterException('Invalid parameter: constraint_type must be "row_count" or "year"')
 

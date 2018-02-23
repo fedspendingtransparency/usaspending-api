@@ -106,7 +106,12 @@ def generate_raw_quoted_query(queryset):
     sql, params = queryset.query.get_compiler(DEFAULT_DB_ALIAS).as_sql()
     str_fix_params = []
     for param in params:
-        str_fix_param = '\'{}\''.format(param) if isinstance(param, QUOTABLE_TYPES) else param
+        if isinstance(param, QUOTABLE_TYPES):
+            str_fix_param = '\'{}\''.format(param)
+        if isinstance(param, list):
+            str_fix_param = 'ARRAY{}'.format(param)
+        else:
+            str_fix_param = param
         str_fix_params.append(str_fix_param)
     return sql % tuple(str_fix_params)
 
@@ -116,12 +121,15 @@ def order_nested_object(nested_object):
     Makes the assumption that any list of dictionaries does not contain a list or dictionary within itself """
     if isinstance(nested_object, list):
         if len(nested_object) > 0 and isinstance(nested_object[0], dict):
+            # Lists of dicts aren't handled by python's sorted(), so we handle sorting manually
             sorted_subitems = []
             sort_dict = {}
+            # Create a hash using keys & values
             for subitem in nested_object:
-                hash_list = [subitem[key] for key in sorted(list(nested_object[0].keys()))]
-                hash_str = ''.join(str(hash_list))
+                hash_list = ['{}{}'.format(key, subitem[key]) for key in sorted(list(subitem.keys()))]
+                hash_str = '_'.join(str(hash_list))
                 sort_dict[hash_str] = subitem
+            # Sort by the new hash
             for sorted_hash in sorted(list(sort_dict.keys())):
                 sorted_subitems.append(sort_dict[sorted_hash])
             return sorted_subitems
