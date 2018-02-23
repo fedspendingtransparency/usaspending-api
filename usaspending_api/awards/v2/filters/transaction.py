@@ -258,8 +258,8 @@ def transaction_filter(filters):
                 for column in total_transaction_columns:
                     if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                         bounds_dict = {
-                            '{}__gt'.format(column): v['lower_bound'],
-                            '{}__lt'.format(column): v['upper_bound']
+                            '{}__gte'.format(column): v['lower_bound'],
+                            '{}__lte'.format(column): v['upper_bound']
                         }
                         if queryset_init:
                             or_queryset |= TransactionNormalized.objects.filter(**bounds_dict)
@@ -267,14 +267,14 @@ def transaction_filter(filters):
                             queryset_init = True
                             or_queryset = TransactionNormalized.objects.filter(**bounds_dict)
                     elif v.get("lower_bound") is not None:
-                        bounds_dict = {'{}__gt'.format(column): v['lower_bound']}
+                        bounds_dict = {'{}__gte'.format(column): v['lower_bound']}
                         if queryset_init:
                             or_queryset |= TransactionNormalized.objects.filter(**bounds_dict)
                         else:
                             queryset_init = True
                             or_queryset = TransactionNormalized.objects.filter(**bounds_dict)
                     elif v.get("upper_bound") is not None:
-                        bounds_dict = {'{}__lt'.format(column): v['upper_bound']}
+                        bounds_dict = {'{}__lte'.format(column): v['upper_bound']}
                         if queryset_init:
                             or_queryset |= TransactionNormalized.objects.filter(**bounds_dict)
                         else:
