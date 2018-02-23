@@ -174,8 +174,7 @@ def matview_search_filter(filters, model):
             )
 
         elif key == "award_amounts":
-            filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
-            success, and_queryset = total_obligation_queryset(value, model, award_types_requested=filter_types)
+            success, and_queryset = total_obligation_queryset(value, model, filters)
             if success:
                 queryset &= and_queryset
 

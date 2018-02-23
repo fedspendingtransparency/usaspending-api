@@ -77,8 +77,9 @@ def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_type
     return qs.annotate(**aggregate_dict)
 
 
-def get_total_transaction_columns(award_types_requested, model):
+def get_total_transaction_columns(filters, model):
     total_transaction_columns = []
+    award_types_requested = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
     awards_sans_loans = [award_type for award_type in award_type_mapping if type not in award_type_mapping]
     award_join = 'award__' if model == TransactionNormalized else ''
     if set(award_types_requested) & set(loan_type_mapping):
@@ -90,7 +91,7 @@ def get_total_transaction_columns(award_types_requested, model):
     return total_transaction_columns
 
 
-def total_obligation_queryset(amount_obj, model, award_types_requested=[]):
+def total_obligation_queryset(amount_obj, model, filters):
     bins = []
     for v in amount_obj:
         lower_bound = v.get("lower_bound")
@@ -100,7 +101,7 @@ def total_obligation_queryset(amount_obj, model, award_types_requested=[]):
                 bins.append(key)
                 break
 
-    total_transaction_columns = get_total_transaction_columns(award_types_requested, model)
+    total_transaction_columns = get_total_transaction_columns(filters, model)
 
     if len(bins) == len(amount_obj):
         return True, model.objects.filter(total_obl_bin__in=bins)

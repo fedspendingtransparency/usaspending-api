@@ -251,8 +251,7 @@ def transaction_filter(filters):
 
         # award_amounts
         elif key == "award_amounts":
-            filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
-            total_transaction_columns = get_total_transaction_columns(filter_types, TransactionNormalized)
+            total_transaction_columns = get_total_transaction_columns(filters, TransactionNormalized)
             or_queryset = None
             queryset_init = False
             for v in value:
