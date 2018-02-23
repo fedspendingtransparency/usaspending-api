@@ -1,6 +1,11 @@
 import ast
 import logging
 
+from collections import OrderedDict
+from datetime import date
+from fiscalyear import FiscalDate
+from functools import total_ordering
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
@@ -8,14 +13,6 @@ from rest_framework_extensions.cache.decorators import cache_response
 from django.db.models import Sum, Count, F, Value, FloatField
 from django.db.models.functions import ExtractMonth, Cast, Coalesce
 
-from collections import OrderedDict
-from functools import total_ordering
-from datetime import date
-from fiscalyear import FiscalDate
-
-from usaspending_api.common.exceptions import ElasticsearchConnectionException
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
@@ -25,15 +22,23 @@ from usaspending_api.awards.v2.filters.view_selector import get_view_queryset
 from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
 from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
 from usaspending_api.awards.v2.filters.view_selector import spending_over_time
-
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, loan_type_mapping, \
-    non_loan_assistance_type_mapping
-from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_mapping, loan_award_mapping, \
-    non_loan_assistance_award_mapping
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import non_loan_assistance_type_mapping
+from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_mapping
+from usaspending_api.awards.v2.lookups.matview_lookups import loan_award_mapping
+from usaspending_api.awards.v2.lookups.matview_lookups import non_loan_assistance_award_mapping
+from usaspending_api.common.exceptions import ElasticsearchConnectionException
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
+from usaspending_api.core.validator.award_filter import AWARD_FILTER
+from usaspending_api.core.validator.pagination import PAGINATION
+from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
-from usaspending_api.search.v2.elasticsearch_helper import search_transactions,\
-     spending_by_transaction_count, spending_by_transaction_sum_and_count
+from usaspending_api.search.v2.elasticsearch_helper import search_transactions
+from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count
+from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_sum_and_count
 
 
 logger = logging.getLogger(__name__)
@@ -56,11 +61,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if group not in potential_groups:
             raise InvalidParameterException('group does not have a valid value')
 
-        # build sql query filters
-        # if can_use_view(filters, 'SummaryView'):
-        #     queryset = get_view_queryset(filters, 'SummaryView')
-        # else:
-        #     queryset = transaction_filter(filters, UniversalTransactionView)
         queryset = spending_over_time(filters)
 
         # define what values are needed in the sql query
@@ -746,57 +746,43 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """Return all budget function/subfunction
-        titles matching the provided search text"""
-        json_request = request.data
-        fields = json_request.get("fields", None)
-        filters = json_request.get("filters", None)
-        order = json_request.get("order", "desc")
-        limit = json_request.get("limit", 10)
-        page = json_request.get("page", 1)
-        sort = json_request.get("sort", "Transaction Amount")
 
-        lower_limit = (page - 1) * limit
-        upper_limit = page * limit
+        models = [
+            {'name': 'fields', 'key': 'fields', 'type': 'array', 'array_type': 'text', 'text_type': 'search'},
+        ]
+        models.extend(AWARD_FILTER)
+        models.extend(PAGINATION)
+        for m in models:
+            if m['name'] in ('keyword', 'award_type_codes', 'sort'):
+                m['optional'] = False
+        validated_payload = TinyShield(models).block(request.data)
 
-        if fields is None:
-            raise InvalidParameterException("Missing one or more required request parameters: fields")
-        elif len(fields) == 0:
-            raise InvalidParameterException("Please provide a field in the fields request parameter.")
-        if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
-        if "award_type_codes" not in filters:
-            raise InvalidParameterException(
-                "Missing one or more required request parameters: filters['award_type_codes']")
+        if validated_payload['sort'] not in validated_payload['fields']:
+            raise InvalidParameterException("Sort value not found in fields: {}".format(validated_payload['sort']))
 
-        if order not in ["asc", "desc"]:
-            raise InvalidParameterException("Invalid value for order: {}".format(order))
-        if sort not in fields:
-            raise InvalidParameterException("Sort value not found in fields: {}".format(sort))
-
-        success, response, total, award_type = search_transactions(filters, fields, sort, order, lower_limit, limit)
+        lower_limit = (validated_payload['page'] - 1) * validated_payload['limit']
+        success, response, total = search_transactions(validated_payload, lower_limit, validated_payload['limit'] + 1)
         if not success:
             raise InvalidParameterException(response)
-        has_next = total > upper_limit
+
+        metadata = get_simple_pagination_metadata(len(response), validated_payload['limit'], validated_payload['page'])
+
         results = []
-        for transaction in response:
+        for transaction in response[:validated_payload['limit']]:
             transaction["internal_id"] = transaction["Award ID"]
             if 'display_award_id' in transaction:
                 transaction["Award ID"] = transaction['display_award_id']
                 del transaction['display_award_id']
-            elif award_type != 'contracts':
-                transaction["Award ID"] = transaction['fain']
-            else:
-                transaction["Award ID"] = transaction['piid']
+            # elif award_type != 'contracts':
+            #     transaction["Award ID"] = transaction['fain']
+            # else:
+            #     transaction["Award ID"] = transaction['piid']
             results.append(transaction)
-        # build response
+
         response = {
-            'limit': limit,
+            'limit': validated_payload['limit'],
             'results': results,
-            'page_metadata': {
-                'page': page,
-                'hasNext': has_next
-            }
+            'page_metadata': metadata
         }
         return Response(response)
 
@@ -813,15 +799,13 @@ class TransactionSummaryVisualizationViewSet(APIView):
 
             *Note* Only deals with prime awards, future plans to include sub-awards.
         """
-        json_request = request.data
-        filters = json_request.get("filters", None)
-        if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
 
-        results = spending_by_transaction_sum_and_count(filters)
+        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
+        validated_payload = TinyShield(models).block(request.data)
+
+        results = spending_by_transaction_sum_and_count(validated_payload)
         if not results:
             raise ElasticsearchConnectionException('Error generating the transaction sums and counts')
-        # build response
         return Response({"results": results})
 
 
@@ -830,13 +814,10 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     @cache_response()
     def post(self, request):
 
-        json_request = request.data
-        filters = json_request.get("filters", None)
+        models = [{'name': 'keyword', 'key': 'filters|keyword', 'type': 'text', 'text_type': 'search', 'min': 3}]
+        validated_payload = TinyShield(models).block(request.data)
 
-        if filters is None:
-            raise InvalidParameterException("Missing one or more required request parameters: filters")
-
-        results = spending_by_transaction_count(filters)
+        results = spending_by_transaction_count(validated_payload)
         if not results:
             raise ElasticsearchConnectionException('Error during the aggregations')
         return Response({"results": results})
