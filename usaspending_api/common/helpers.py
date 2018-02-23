@@ -97,18 +97,16 @@ def within_one_year(d1, d2):
 
 def generate_raw_quoted_query(queryset):
     """
-    Generates the raw sql from a queryset with quotable types quoted.
-    This function exists cause queryset.query doesn't quote some types such as
-    dates and strings. If Django is updated to fix this, please use that instead.
-    Note: To add types that should be in quotes in queryset.query, add it to
-          QUOTABLE_TYPES above
+    Generates the raw sql from a queryset with quotable types quoted. This function exists cause queryset.query doesn't
+    quote some types such as dates and strings. If Django is updated to fix this, please use that instead.
+    Note: To add types that should be in quotes in queryset.query, add it to QUOTABLE_TYPES above
     """
     sql, params = queryset.query.get_compiler(DEFAULT_DB_ALIAS).as_sql()
     str_fix_params = []
     for param in params:
         if isinstance(param, QUOTABLE_TYPES):
             str_fix_param = '\'{}\''.format(param)
-        if isinstance(param, list):
+        elif isinstance(param, list):
             str_fix_param = 'ARRAY{}'.format(param)
         else:
             str_fix_param = param
