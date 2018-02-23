@@ -385,7 +385,7 @@ class FederalAccountsViewSet(APIView):
             treasuryappropriationaccount__account_balances__final_of_fy=True,
             treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy
             ).annotate(
-            corrected_agency_identifier=Func('agency_identifier', function='CORRECTED_CGAC'),
+            corrected_agency_identifier=Func(F('agency_identifier'), function='CORRECTED_CGAC'),
             account_id=F('id'),
             account_number=Concat(F('agency_identifier'), Value('-'), F('main_account_code')),
             account_name=F('account_title'),
