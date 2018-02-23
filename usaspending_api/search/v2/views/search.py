@@ -642,7 +642,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 values.add(non_loan_assistance_award_mapping.get(field))
 
         # Modify queryset to be ordered if we specify "sort" in the request
-        if sort:
+        if sort and "no intersection" not in filters["award_type_codes"]:
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 sort_filters = [award_contracts_mapping[sort]]
             elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
