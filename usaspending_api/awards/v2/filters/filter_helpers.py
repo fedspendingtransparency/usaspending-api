@@ -110,7 +110,6 @@ def total_obligation_queryset(amount_obj, model, award_types_requested=[]):
 
         for v in amount_obj:
             for column in total_transaction_columns:
-                print(model, column)
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     bound_dict = {
                         '{}__gte'.format(column): v["lower_bound"],

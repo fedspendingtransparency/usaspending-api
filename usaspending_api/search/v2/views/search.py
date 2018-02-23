@@ -270,7 +270,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                         'recipient_name',
                         'parent_recipient_unique_id') \
                     .order_by('-aggregated_amount')
-                print(queryset.query)
                 # Begin DB hits here
                 results = list(queryset[lower_limit:upper_limit + 1])
                 page_metadata = get_simple_pagination_metadata(len(results), limit, page)

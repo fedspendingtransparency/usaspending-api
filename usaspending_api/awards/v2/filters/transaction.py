@@ -255,7 +255,6 @@ def transaction_filter(filters):
             total_transaction_columns = get_total_transaction_columns(filter_types, TransactionNormalized)
             or_queryset = None
             queryset_init = False
-            print('start transaction award amounts')
             for v in value:
                 for column in total_transaction_columns:
                     if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
@@ -286,7 +285,6 @@ def transaction_filter(filters):
                         raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
             if queryset_init:
                 queryset &= or_queryset
-            print('end transaction award amounts')
 
         # award_ids
         elif key == "award_ids":
