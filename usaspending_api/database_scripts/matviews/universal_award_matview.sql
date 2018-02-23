@@ -5,8 +5,8 @@
 --                                                    --
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
-DROP MATERIALIZED VIEW IF EXISTS universal_award_matview_temp;
-DROP MATERIALIZED VIEW IF EXISTS universal_award_matview_old;
+DROP MATERIALIZED VIEW IF EXISTS universal_award_matview_temp CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS universal_award_matview_old CASCADE;
 
 CREATE MATERIALIZED VIEW universal_award_matview_temp AS
 SELECT
@@ -26,6 +26,7 @@ SELECT
   "awards"."uri",
   "awards"."total_obligation",
   obligation_to_enum("awards"."total_obligation") AS total_obl_bin,
+  "awards"."total_subsidy_cost",
 
   "awards"."recipient_id",
   UPPER(recipient."recipient_name") AS recipient_name,
@@ -283,4 +284,5 @@ ALTER INDEX idx_a51c26f3__gin_keyword_string_temp RENAME TO idx_a51c26f3__gin_ke
 ALTER INDEX idx_a51c26f3__gin_award_id_string_temp RENAME TO idx_a51c26f3__gin_award_id_string;
 ALTER INDEX idx_a51c26f3__tuned_type_and_idv_temp RENAME TO idx_a51c26f3__tuned_type_and_idv;
 
+ANALYZE VERBOSE universal_award_matview;
 GRANT SELECT ON universal_award_matview TO readonly;

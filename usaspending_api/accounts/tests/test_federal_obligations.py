@@ -106,12 +106,10 @@ def test_financial_obligations(client, financial_obligations_models):
     assert len(resp.data['results']) == 2
     res_awesome = resp.data['results'][0]
     assert res_awesome['id'] == '1234'
-    assert res_awesome['agency_name'] == 'Department of Style'
     assert res_awesome['account_title'] == 'Suits and Ties'
     assert res_awesome['obligated_amount'] == '400.00'
     res_lame = resp.data['results'][1]
     assert res_lame['id'] == '6969'
-    assert res_lame['agency_name'] == 'Department of Style'
     assert res_lame['account_title'] == 'Turtlenecks and Chains'
     assert res_lame['obligated_amount'] == '100.00'
 

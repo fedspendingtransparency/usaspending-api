@@ -669,7 +669,8 @@ query_paths = {
         },
         'd2': {
             'action_date': 'action_date',
-            'action_type': 'action_type_description',
+            # 'action_type': 'action_type_description',
+            # TODO: Field under DAIMS v1.2, not yet in broker
             'action_type_code': 'action_type',
             'assistance_type_code': 'assistance_data__assistance_type',
             'award_description': 'assistance_data__award_description',
@@ -1462,7 +1463,7 @@ human_names = {
             # 'business_funds_indicator',  # TODO: Add when DAIMS Schema v1.2 in place
             'business_types_code',
             'action_type_code',
-            'action_type',
+            #  'action_type',  # TODO: Add when DAIMS Schema v1.2 in place
             'record_type_code',
             'fiscal_year_and_quarter_correction',
             'last_modified_date'
