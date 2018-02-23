@@ -1,4 +1,5 @@
 import logging
+import re
 from django.conf import settings
 from elasticsearch import Elasticsearch
 
@@ -9,8 +10,13 @@ logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
-CLIENT = Elasticsearch(settings.ES_HOSTNAME)
+CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=settings.ES_TIMEOUT)
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
+
+
+def preprocess(keyword):
+    '''Escape characters that error out ES'''
+    return re.sub('[\/:\]\[\^!]', '', keyword)
 
 
 def swap_keys(dictionary_):
@@ -62,7 +68,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
         'query': {
             'query_string': {
                 'query': keyword
-            }
+                }
         },
         'sort': [{
             query_sort: {
@@ -72,7 +78,7 @@ def search_transactions(filters, fields, sort, order, lower_limit, limit):
 
     for index, award_types in indices_to_award_types.items():
         if sorted(award_types) == sorted(filters['award_type_codes']):
-            index_name = '{}-{}-*'.format(TRANSACTIONS_INDEX_ROOT, index)
+            index_name = '{}-{}*'.format(TRANSACTIONS_INDEX_ROOT, index)
             transaction_type = index
             break
     else:
