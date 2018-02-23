@@ -4,7 +4,6 @@ from usaspending_api.awards.models import Award, LegalEntity, FinancialAccountsB
 from usaspending_api.references.models import NAICS, PSC
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.awards.v2.filters.filter_helpers import get_total_transaction_columns
 
 import logging
