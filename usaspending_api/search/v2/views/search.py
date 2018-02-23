@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 
-from django.db.models import Sum, Count, F, Q, Value, FloatField, Case, When
+from django.db.models import Sum, Count, F, Value, FloatField
 from django.db.models.functions import ExtractMonth, Cast, Coalesce
 
 from collections import OrderedDict
@@ -20,6 +20,7 @@ from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
+from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
 from usaspending_api.awards.v2.filters.view_selector import can_use_view
 from usaspending_api.awards.v2.filters.view_selector import get_view_queryset
 from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
@@ -37,36 +38,6 @@ from usaspending_api.search.v2.elasticsearch_helper import search_transactions,\
 
 
 logger = logging.getLogger(__name__)
-
-
-def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_types=award_type_mapping,
-                           calculate_totals=True):
-    """ Returns correct amount for transaction if loan (07, 08) vs all other award types (covers IDV)"""
-    aggregate_dict = {}
-    if calculate_totals:
-        aggregate_dict = {'total_subsidy_cost': Sum(Case(When(type__in=list(loan_type_mapping),
-                                                              then=F('original_loan_subsidy_cost')),
-                                                         default=0,
-                                                         output_field=FloatField())),
-                          'total_obligation': Sum(Case(When(~Q(type__in=list(loan_type_mapping)),
-                                                            then=F('federal_action_obligation')),
-                                                       default=0,
-                                                       output_field=FloatField()))
-                          }
-
-    # Coalescing total_obligation and total_subsidy since fields can be null
-    if not set(filter_types) & set(loan_type_mapping):
-        # just sans loans
-        aggregate_dict[aggregated_name] = Coalesce(F('total_obligation'), 0)
-    elif set(filter_types) <= set(loan_type_mapping):
-        # just loans
-        aggregate_dict[aggregated_name] = Coalesce(F('total_subsidy_cost'), 0)
-    else:
-        # mix of loans and other award types
-        # Adding null field to a populated field will return null, used Coalesce to fixes that
-        aggregate_dict[aggregated_name] = Coalesce(F('total_subsidy_cost'), 0) + Coalesce(F('total_obligation'), 0)
-
-    return qs.annotate(**aggregate_dict)
 
 
 class SpendingOverTimeVisualizationViewSet(APIView):
@@ -687,7 +658,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             queryset = queryset.order_by(*sort_filters).values(*list(values))
 
-        queryset = sum_transaction_amount(queryset, filter_types=filters['award_type_codes'], calculate_totals=False)
 
         limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit

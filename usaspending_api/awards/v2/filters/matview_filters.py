@@ -1,7 +1,7 @@
 import logging
 from django.db.models import Q
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
@@ -174,9 +174,13 @@ def matview_search_filter(filters, model):
             )
 
         elif key == "award_amounts":
-            success, and_queryset = total_obligation_queryset(value, model)
+            print('start matview award amounts')
+            filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
+            success, and_queryset = total_obligation_queryset(value, model, award_types_requested=filter_types)
             if success:
                 queryset &= and_queryset
+            print(queryset.query)
+            print('end transaction award amounts')
 
         elif key == "award_ids":
             if len(value) != 0:
