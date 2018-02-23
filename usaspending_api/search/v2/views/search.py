@@ -32,8 +32,8 @@ from usaspending_api.common.exceptions import ElasticsearchConnectionException
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import generate_fiscal_month, get_simple_pagination_metadata
 from usaspending_api.core.validator.award_filter import AWARD_FILTER
-from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.core.validator.pagination import PAGINATION
+from usaspending_api.core.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import Cfda
 from usaspending_api.search.v2.elasticsearch_helper import search_transactions

@@ -9,9 +9,10 @@ from elasticsearch import TransportError
 from urllib3.exceptions import LocationValueError
 
 logger = logging.getLogger('console')
+client_timeout = settings.ES_TIMEOUT or 15
 
 try:
-    CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=15)
+    CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=client_timeout)
 except LocationValueError as e:
     logging.error('ES_HOSTNAME is not specified!!!')
 except Exception as e:

@@ -321,6 +321,7 @@ SPAGHETTI_SAUCE = {
 ES_HOSTNAME = ""
 TRANSACTIONS_INDEX_ROOT = os.environ.get('ES_TRX_ROOT') or 'future-transactions'
 DOWNLOAD_QUERY_SIZE = 500000
+ES_TIMEOUT = 30
 
 LONG_TO_TERSE_LABELS = {
     "allocation_transfer_agency_id": "allocation_transfer_agency_id",

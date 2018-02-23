@@ -1,4 +1,5 @@
 import logging
+import re
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
@@ -10,6 +11,16 @@ TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
 
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
+
+
+def preprocess(keyword):
+    """Remove Lucene special characters instead of escaping for now"""
+    processed_string = re.sub('[\/:\]\[\^!]', '', keyword)
+    if len(processed_string) != len(keyword):
+        msg = 'Stripped characters from ES keyword search string New: \'{}\' Original: \'{}\''
+        logger.info(msg.format(processed_string, keyword))
+        keyword = processed_string
+    return keyword
 
 
 def swap_keys(dictionary_):
@@ -44,7 +55,7 @@ def search_transactions(request_data, lower_limit, limit):
         'size': limit,
         'query': {
             'query_string': {
-                'query': keyword
+                'query': preprocess(keyword)
             }
         },
         'sort': [{
@@ -55,7 +66,7 @@ def search_transactions(request_data, lower_limit, limit):
 
     for index, award_types in indices_to_award_types.items():
         if sorted(award_types) == sorted(request_data['award_type_codes']):
-            index_name = '{}-{}-*'.format(TRANSACTIONS_INDEX_ROOT, index)
+            index_name = '{}-{}*'.format(TRANSACTIONS_INDEX_ROOT, index)
             break
     else:
         logger.exception('Bad/Missing Award Types. Did not meet 100% of a category\'s types')
@@ -75,7 +86,7 @@ def get_total_results(keyword, sub_index, retries=3):
     query = {
         'query': {
             'query_string': {
-                'query': keyword
+                'query': preprocess(keyword)
             }
         }
     }
@@ -114,7 +125,7 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
     query = {
         'query': {
             'query_string': {
-                'query': keyword
+                'query': preprocess(keyword)
             }
         },
         'aggs': {
@@ -158,7 +169,7 @@ def get_download_ids(keyword, field, size=10000):
     for i in range(n_iter):
         query = {
             "_source": [field],
-            "query": {"query_string": {"query": keyword}},
+            "query": {"query_string": {"query": preprocess(keyword)}},
             "aggs": {
                 "results": {
                     "terms": {
@@ -187,7 +198,7 @@ def get_sum_and_count_aggregation_results(keyword):
     index_name = '{}-*'.format(TRANSACTIONS_INDEX_ROOT)
     query = {
         "query": {
-            "query_string": {"query": keyword}},
+            "query_string": {"query": preprocess(keyword)}},
         "aggs": {
             "prime_awards_obligation_amount": {
                 "sum": {
