@@ -202,6 +202,7 @@ class Command(BaseCommand):
             unique_fabs = TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique)
 
             if unique_fabs.first():
+                transaction_normalized_dict["update_date"] = datetime.utcnow()
                 # Update TransactionNormalized
                 TransactionNormalized.objects.filter(id=unique_fabs.first().transaction.id).\
                     update(**transaction_normalized_dict)
@@ -262,9 +263,10 @@ class Command(BaseCommand):
             data_load_date_obj = ExternalDataLoadDate.objects. \
                 filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']).first()
             if not data_load_date_obj:
-                date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+                date = (datetime.utcnow() - timedelta(days=1)).strftime('%Y-%m-%d')
             else:
                 date = data_load_date_obj.last_load_date
+        start_date = datetime.utcnow().strftime('%Y-%m-%d')
 
         logger.info('Processing data for FABS starting from %s' % date)
 
@@ -317,7 +319,7 @@ class Command(BaseCommand):
 
         # Update the date for the last time the data load was run
         ExternalDataLoadDate.objects.filter(external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']).delete()
-        ExternalDataLoadDate(last_load_date=datetime.now().strftime('%Y-%m-%d'),
+        ExternalDataLoadDate(last_load_date=start_date,
                              external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT['fabs']).save()
 
         logger.info('FABS NIGHTLY UPDATE FINISHED!')
