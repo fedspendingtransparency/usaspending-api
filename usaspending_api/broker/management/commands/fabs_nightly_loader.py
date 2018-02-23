@@ -147,10 +147,23 @@ class Command(BaseCommand):
 
             # Generate the unique Award ID
             # "ASST_AW_" + awarding_sub_tier_agency_c + fain + uri
+
+            # this will raise an exception if the cast to an int fails, that's ok since we don't want to process
+            # non-numeric record type values
+            record_type_int = int(row['record_type'])
+            if record_type_int == 1:
+                uri = row['uri'] if row['uri'] else '-NONE-'
+                fain = '-NONE-'
+            elif record_type_int == 2:
+                uri = '-NONE-'
+                fain = row['fain'] if row['fain'] else '-NONE-'
+            else:
+                raise Exception('Invalid record type encountered for the following afa_generated_unique record: %s' %
+                                row['afa_generated_unique'])
+
             generated_unique_id = 'ASST_AW_' +\
                 (row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-') + '_' + \
-                (row['fain'] if row['fain'] else '-NONE-') + '_' + \
-                (row['uri'] if row['uri'] else '-NONE-')
+                fain + '_' + uri
 
             # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id,
