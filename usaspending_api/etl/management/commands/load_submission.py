@@ -693,6 +693,10 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
                                                                         str(total_rows),
                                                                         datetime.now() - start_time))
 
+        for key in row:
+            if isinstance(row[key], str):
+                row[key] = row[key].upper()
+
         # Check and see if there is an entry for this TAS
         treasury_account = get_treasury_appropriation_account_tas_lookup(
             row.get('tas_id'), db_cursor)

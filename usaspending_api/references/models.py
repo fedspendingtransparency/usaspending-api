@@ -264,7 +264,7 @@ class Location(DataSourceTrackedModel, DeleteIfChildlessMixin):
     place_of_performance_flag = models.BooleanField(default=False, verbose_name="Location used as place of performance")
     recipient_flag = models.BooleanField(default=False, verbose_name="Location used as recipient location")
     is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
-    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+    transaction_unique_id = models.TextField(blank=False, null=False, default="NONE",
                                              verbose_name="Transaction Unique ID")
 
     def pre_save(self):
@@ -565,7 +565,7 @@ class LegalEntity(DataSourceTrackedModel):
     small_business_description = models.TextField(blank=True, null=True)
     individual = models.TextField(blank=True, null=True)
     is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
-    transaction_unique_id = models.TextField(blank=False, null=False, default="none",
+    transaction_unique_id = models.TextField(blank=False, null=False, default="NONE",
                                              verbose_name="Transaction Unique ID")
 
     class Meta:

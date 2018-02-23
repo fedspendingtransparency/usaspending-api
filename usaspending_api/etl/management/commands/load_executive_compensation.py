@@ -66,5 +66,6 @@ class Command(BaseCommand):
                 date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
             else:
                 date = data_load_date_obj.last_load_date
+        start_date = datetime.utcnow().strftime('%Y-%m-%d')
 
-        load_executive_compensation(db_cursor, date)
+        load_executive_compensation(db_cursor, date, start_date)
