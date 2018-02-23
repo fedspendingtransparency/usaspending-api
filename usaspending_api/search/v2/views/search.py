@@ -657,7 +657,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             queryset = queryset.order_by(*sort_filters).values(*list(values))
 
-
         limited_queryset = queryset[lower_limit:upper_limit + 1]
         has_next = len(limited_queryset) > limit
 

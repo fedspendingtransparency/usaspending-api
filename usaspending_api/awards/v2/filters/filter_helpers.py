@@ -8,7 +8,7 @@ from usaspending_api.common.helpers import generate_all_fiscal_years_in_range
 from usaspending_api.common.helpers import generate_date_from_string
 from usaspending_api.common.helpers import dates_are_month_bookends
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping
-from usaspending_api.awards.models import TransactionNormalized, Award
+from usaspending_api.awards.models import TransactionNormalized
 
 
 def date_or_fy_queryset(date_dict, table, fiscal_year_column, action_date_column):
