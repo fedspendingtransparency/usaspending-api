@@ -6,11 +6,11 @@
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_psc_codes RENAME TO summary_view_psc_codes_old;
-ALTER INDEX IF EXISTS idx_de76ae2a__action_date RENAME TO idx_de76ae2a__action_date_old;
-ALTER INDEX IF EXISTS idx_de76ae2a__type RENAME TO idx_de76ae2a__type_old;
-ALTER INDEX IF EXISTS idx_de76ae2a__tuned_type_and_idv RENAME TO idx_de76ae2a__tuned_type_and_idv_old;
+ALTER INDEX IF EXISTS idx_3a7bb23c$268__action_date RENAME TO idx_3a7bb23c$268__action_date_old;
+ALTER INDEX IF EXISTS idx_3a7bb23c$268__type RENAME TO idx_3a7bb23c$268__type_old;
+ALTER INDEX IF EXISTS idx_3a7bb23c$268__tuned_type_and_idv RENAME TO idx_3a7bb23c$268__tuned_type_and_idv_old;
 
 ALTER MATERIALIZED VIEW summary_view_psc_codes_temp RENAME TO summary_view_psc_codes;
-ALTER INDEX idx_de76ae2a__action_date_temp RENAME TO idx_de76ae2a__action_date;
-ALTER INDEX idx_de76ae2a__type_temp RENAME TO idx_de76ae2a__type;
-ALTER INDEX idx_de76ae2a__tuned_type_and_idv_temp RENAME TO idx_de76ae2a__tuned_type_and_idv;
+ALTER INDEX idx_3a7bb23c$268__action_date_temp RENAME TO idx_3a7bb23c$268__action_date;
+ALTER INDEX idx_3a7bb23c$268__type_temp RENAME TO idx_3a7bb23c$268__type;
+ALTER INDEX idx_3a7bb23c$268__tuned_type_and_idv_temp RENAME TO idx_3a7bb23c$268__tuned_type_and_idv;

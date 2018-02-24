@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import subprocess
 import sys
 from uuid import uuid4
 
@@ -72,11 +73,12 @@ HEADER = [
     '--  DO NOT DIRECTLY EDIT THIS FILE!!!                 --',
     '--------------------------------------------------------',
 ]
-MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
-RANDOM_CHARS = str(uuid4())[:8]
 CLUSTERING_INDEX = None
+COMMIT_HASH = ''
 DEST_FOLDER = '../matviews/'
+MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
 OVERWRITE_FILE = True
+RANDOM_CHARS = ''
 
 
 def ingest_json(path):
@@ -153,7 +155,7 @@ def make_indexes_sql(sql_json, matview_name):
     for idx in sql_json['indexes']:
         if len(idx['name']) > MAX_NAME_LENGTH:
             raise Exception('Desired index name is too long. Keep under {} chars'.format(MAX_NAME_LENGTH))
-        final_index = 'idx_' + RANDOM_CHARS + '__' + idx['name']
+        final_index = 'idx_' + COMMIT_HASH + RANDOM_CHARS + '__' + idx['name']
         unique_name_list.append(final_index)
         tmp_index = final_index + '_temp'
         old_index = final_index + '_old'
@@ -287,6 +289,14 @@ def create_monolith_file(sql_json):
     write_sql_file(sql_strings, DEST_FOLDER + sql_json['final_name'])
 
 
+def get_git_commit():
+    args = 'git log -n 1 --pretty=format:"%H"'.split(' ')
+    shell = subprocess.run(args, stdout=subprocess.PIPE, check=True)
+    if shell.stdout:
+        return shell.stdout[1:9].decode() + '$'
+    return None
+
+
 def main(source_file):
     try:
         sql_json = ingest_json(source_file)
@@ -299,6 +309,8 @@ def main(source_file):
 
 
 if __name__ == '__main__':
+    COMMIT_HASH = get_git_commit() or str(uuid4())[:9]
+    RANDOM_CHARS = str(uuid4())[:3]
     if len(sys.argv) > 1:
         print('Creating matview SQL using {}'.format(sys.argv[1]))
         main(sys.argv[1])
@@ -307,7 +319,7 @@ if __name__ == '__main__':
         if ans.lower() in ['y', 'yes']:
             all_files = glob.glob('*.json')
             for f in all_files:
-                RANDOM_CHARS = str(uuid4())[:8]
+                RANDOM_CHARS = str(uuid4())[:3]
                 print('\n==== {}'.format(f))
                 main(f)
         else:
