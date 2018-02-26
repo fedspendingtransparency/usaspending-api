@@ -346,3 +346,7 @@ CORRECTED_CGAC_PG_FUNCTION_DEF = '''
         WHEN '1600' THEN '1601'
         ELSE $1 END;
     $$ LANGUAGE SQL;'''
+
+REV_CORRECTED_CGAC_PG_FUNCTION_DEF = '''
+    DROP FUNCTION corrected_cgac(text);
+'''
