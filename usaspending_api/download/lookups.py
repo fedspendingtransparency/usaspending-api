@@ -26,7 +26,7 @@ VALUE_MAPPINGS = {
     'awards': {
         'table': Award,
         'table_name': 'award',
-        'download_name': 'awards',
+        'download_name': 'prime_awards',
         'contract_data': 'latest_transaction__contract_data',
         'assistance_data': 'latest_transaction__assistance_data',
         'filter_function': award_filter
@@ -35,7 +35,7 @@ VALUE_MAPPINGS = {
     'transactions': {
         'table': TransactionNormalized,
         'table_name': 'transaction',
-        'download_name': 'awards',
+        'download_name': 'prime_transactions',
         'contract_data': 'contract_data',
         'assistance_data': 'assistance_data',
         'filter_function': transaction_filter

@@ -72,6 +72,7 @@ class BaseDownloadViewSet(APIView):
         if constraint_type == 'year' and 'elasticsearch_keyword' in json_request['filters']:
             json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword'],
                                        'award_type_codes': list(award_type_mapping.keys())}
+            json_request['limit'] = settings.MAX_DOWNLOAD_LIMIT
             return json_request
 
         # Validate required parameters
@@ -131,7 +132,7 @@ class BaseDownloadViewSet(APIView):
 
     def process_request(self, download_job):
         if settings.IS_LOCAL:
-            # We are testing, and cannot use SQS - the testing db connection is not shared with the thread
+            # Locally, we do not use SQS
             csv_generation.generate_csvs(download_job=download_job)
         else:
             # Send a SQS message that will be processed by another server which will eventually run

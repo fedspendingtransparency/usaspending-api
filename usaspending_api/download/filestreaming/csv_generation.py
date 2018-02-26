@@ -119,17 +119,17 @@ def get_csv_sources(json_request):
         award_level_table = VALUE_MAPPINGS[award_level]['table']
 
         award_type_codes = set(json_request['filters']['award_type_codes'])
-        d1_award_types = set(contract_type_mapping.keys())
-        d2_award_types = set(assistance_type_mapping.keys())
+        d1_award_type_codes = set(contract_type_mapping.keys())
+        d2_award_type_codes = set(assistance_type_mapping.keys())
 
-        if award_type_codes & d1_award_types:
-            # only generate d1 files if the user is asking for contracts
+        if award_type_codes & d1_award_type_codes:
+            # only generate d1 files if the user is asking for contract data
             d1_source = CsvSource(VALUE_MAPPINGS[award_level]['table_name'], 'd1', award_level)
             d1_filters = {'{}__isnull'.format(VALUE_MAPPINGS[award_level]['contract_data']): False}
             d1_source.queryset = queryset & award_level_table.objects.filter(**d1_filters)
             csv_sources.append(d1_source)
 
-        if award_type_codes & d2_award_types:
+        if award_type_codes & d2_award_type_codes:
             # only generate d2 files if the user is asking for assistance data
             d2_source = CsvSource(VALUE_MAPPINGS[award_level]['table_name'], 'd2', award_level)
             d2_filters = {'{}__isnull'.format(VALUE_MAPPINGS[award_level]['assistance_data']): False}
@@ -144,7 +144,7 @@ def get_csv_sources(json_request):
 def parse_source(source, columns, download_job, working_dir, start_time, message, zipped_csvs, limit):
     """Write to csv and zip files using the source data"""
     d_map = {'d1': 'contracts', 'd2': 'assistance'}
-    source_name = '{}_{}'.format(VALUE_MAPPINGS[source.source_type]['download_name'], d_map[source.file_type])
+    source_name = '{}_{}'.format(d_map[source.file_type], VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
 
     reached_end = False
@@ -217,7 +217,7 @@ def finish_download(download_job):
     download_job.job_status_id = JOB_STATUS_DICT['finished']
     download_job.save()
 
-    write_to_log(message='Finished to processing DownloadJob {}'.format(download_job.download_job_id),
+    write_to_log(message='Finished processing DownloadJob {}'.format(download_job.download_job_id),
                  download_job=download_job)
 
     return download_job.file_name
