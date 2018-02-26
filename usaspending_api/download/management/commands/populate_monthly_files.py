@@ -13,6 +13,8 @@ from usaspending_api.common.helpers import generate_fiscal_year, order_nested_ob
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.download.filestreaming import csv_generation
 from usaspending_api.download.helpers import multipart_upload
+from usaspending_api.download.lookups import JOB_STATUS_DICT
+from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.views import YearLimitedDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
 
@@ -49,15 +51,15 @@ class Command(BaseCommand):
             'file_format': file_format
         }
         download_viewset = YearLimitedDownloadViewSet()
-        processed_request = download_viewset.process_filters(json_request)
-        validated_request = download_viewset.validate_request(processed_request)
+        download_viewset.process_filters(json_request)
+        validated_request = download_viewset.validate_request(json_request)
         download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'], file_name=file_name,
                                                   json_request=json.dumps(order_nested_object(validated_request)),
                                                   monthly_download=True)
 
         if not use_sqs:
             # Note: Because of the line below, it's advised to only run this script on a separate instance as this will
-            #         modify your bulk download settings.
+            #       modify your bulk download settings.
             settings.BULK_DOWNLOAD_S3_BUCKET_NAME = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
             csv_generation.generate_csvs(download_job=download_job)
             if cleanup:
