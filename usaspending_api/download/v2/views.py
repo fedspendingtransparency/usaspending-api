@@ -194,10 +194,17 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
     def process_filters(self, request_data):
         """Filter function to update Bulk Download parameters to shared parameters"""
 
-        # Check for all parameters previously required by the Bulk Download endpoint
+        # Validate filter parameter
         filters = request_data.get('filters', None)
         if not filters:
             raise InvalidParameterException('Missing one or more required query parameters: filters')
+
+        # Validate keyword search first, remove all other filters
+        if 'elasticsearch_keyword' in filters:
+            request_data['filters'] = {'elasticsearch_keyword': filters['elasticsearch_keyword']}
+            return
+
+        # Validate other parameters previously required by the Bulk Download endpoint
         for required_param in ['award_types', 'agency', 'date_type', 'date_range']:
             if required_param not in filters:
                 raise InvalidParameterException('Missing one or more required query parameters: {}'.
