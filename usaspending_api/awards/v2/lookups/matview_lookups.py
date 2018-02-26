@@ -29,7 +29,7 @@ loan_award_mapping = {
     'Recipient Name': 'recipient_name',
     'Issued Date': 'action_date',
     'Loan Value': 'face_value_loan_guarantee',
-    'Subsidy Cost': 'original_loan_subsidy_cost',
+    'Subsidy Cost': 'total_subsidy_cost',
     'Awarding Agency': 'awarding_toptier_agency_name',
     'Awarding Sub Agency': 'awarding_subtier_agency_name',
     'Funding Agency': 'funding_toptier_agency_name',  # Leave in for possible future use
