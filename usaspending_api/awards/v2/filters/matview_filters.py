@@ -8,6 +8,7 @@ from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
 
+from django.contrib.postgres.search import SearchVector, SearchQuery
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +55,14 @@ def matview_search_filter(filters, model):
         if key == "keyword":
             keyword = value
             upper_kw = keyword.upper()
+            lower_kw = keyword.lower()
 
-            compound_or = Q(keyword_string__contains=upper_kw) | \
-                Q(award_id_string__contains=upper_kw) | \
+            # compound_or = Q(keyword_string__contains=upper_kw) | \
+            #     Q(award_id_string__contains=upper_kw) | \
+            #     Q(recipient_unique_id=upper_kw) | \
+            #     Q(parent_recipient_unique_id=keyword)
+            compound_or = SearchQuery(keyword_string=upper_kw) | \
+                SearchQuery(award_id_string=upper_kw) | \
                 Q(recipient_unique_id=upper_kw) | \
                 Q(parent_recipient_unique_id=keyword)
 
