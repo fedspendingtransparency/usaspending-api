@@ -7,11 +7,6 @@
 --------------------------------------------------------
 CREATE MATERIALIZED VIEW summary_transaction_month_view_temp AS
 SELECT
-  to_tsvector(coalesce(TAA."name", '')) AS awarding_toptier_agency_ts_vector,
-  to_tsvector(coalesce(TFA."name", '')) AS funding_toptier_agency_ts_vector,
-  to_tsvector(coalesce(SAA."name", '')) AS awarding_subtier_agency_ts_vector,
-  to_tsvector(coalesce(SFA."name", '')) AS funding_subtier_agency_ts_vector,
-
   cast(date_trunc('month', "transaction_normalized"."action_date") as date) as "action_date",
   "transaction_normalized"."fiscal_year",
   "transaction_normalized"."type",

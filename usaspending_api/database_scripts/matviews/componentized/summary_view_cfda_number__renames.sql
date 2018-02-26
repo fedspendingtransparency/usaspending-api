@@ -6,11 +6,11 @@
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_cfda_number RENAME TO summary_view_cfda_number_old;
-ALTER INDEX IF EXISTS idx_3a7bb23c$a2d__action_date RENAME TO idx_3a7bb23c$a2d__action_date_old;
-ALTER INDEX IF EXISTS idx_3a7bb23c$a2d__type RENAME TO idx_3a7bb23c$a2d__type_old;
-ALTER INDEX IF EXISTS idx_3a7bb23c$a2d__tuned_type_and_idv RENAME TO idx_3a7bb23c$a2d__tuned_type_and_idv_old;
+ALTER INDEX IF EXISTS idx_bf26125d$718__action_date RENAME TO idx_bf26125d$718__action_date_old;
+ALTER INDEX IF EXISTS idx_bf26125d$718__type RENAME TO idx_bf26125d$718__type_old;
+ALTER INDEX IF EXISTS idx_bf26125d$718__pulled_from RENAME TO idx_bf26125d$718__pulled_from_old;
 
 ALTER MATERIALIZED VIEW summary_view_cfda_number_temp RENAME TO summary_view_cfda_number;
-ALTER INDEX idx_3a7bb23c$a2d__action_date_temp RENAME TO idx_3a7bb23c$a2d__action_date;
-ALTER INDEX idx_3a7bb23c$a2d__type_temp RENAME TO idx_3a7bb23c$a2d__type;
-ALTER INDEX idx_3a7bb23c$a2d__tuned_type_and_idv_temp RENAME TO idx_3a7bb23c$a2d__tuned_type_and_idv;
+ALTER INDEX idx_bf26125d$718__action_date_temp RENAME TO idx_bf26125d$718__action_date;
+ALTER INDEX idx_bf26125d$718__type_temp RENAME TO idx_bf26125d$718__type;
+ALTER INDEX idx_bf26125d$718__pulled_from_temp RENAME TO idx_bf26125d$718__pulled_from;

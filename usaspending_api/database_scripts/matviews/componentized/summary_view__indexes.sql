@@ -5,17 +5,13 @@
 --                                                    --
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
-CREATE INDEX idx_3a7bb23c$d42__action_date_temp ON summary_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_3a7bb23c$d42__type_temp ON summary_view_temp USING BTREE("type") WITH (fillfactor = 100);
-CREATE INDEX idx_3a7bb23c$d42__fy_temp ON summary_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_3a7bb23c$d42__pulled_from_temp ON summary_view_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
-CREATE INDEX idx_3a7bb23c$d42__awarding_agency_id_temp ON summary_view_temp USING BTREE("awarding_agency_id" ASC NULLS LAST) WITH (fillfactor = 100) WHERE "awarding_agency_id" IS NOT NULL;
-CREATE INDEX idx_3a7bb23c$d42__funding_agency_id_temp ON summary_view_temp USING BTREE("funding_agency_id" ASC NULLS LAST) WITH (fillfactor = 100) WHERE "funding_agency_id" IS NOT NULL;
-CREATE INDEX idx_3a7bb23c$d42__awarding_toptier_agency_name_temp ON summary_view_temp USING BTREE("awarding_toptier_agency_name") WITH (fillfactor = 100) WHERE "awarding_toptier_agency_name" IS NOT NULL;
-CREATE INDEX idx_3a7bb23c$d42__awarding_subtier_agency_name_temp ON summary_view_temp USING BTREE("awarding_subtier_agency_name") WITH (fillfactor = 100) WHERE "awarding_subtier_agency_name" IS NOT NULL;
-CREATE INDEX idx_3a7bb23c$d42__funding_toptier_agency_name_temp ON summary_view_temp USING BTREE("funding_toptier_agency_name") WITH (fillfactor = 100) WHERE "funding_toptier_agency_name" IS NOT NULL;
-CREATE INDEX idx_3a7bb23c$d42__funding_subtier_agency_name_temp ON summary_view_temp USING BTREE("funding_subtier_agency_name") WITH (fillfactor = 100) WHERE "funding_subtier_agency_name" IS NOT NULL;
-CREATE INDEX idx_3a7bb23c$d42__awarding_toptier_agency_ts_vector_temp ON summary_view_temp USING GIN("awarding_toptier_agency_ts_vector");
-CREATE INDEX idx_3a7bb23c$d42__awarding_subtier_agency_ts_vector_temp ON summary_view_temp USING GIN("awarding_subtier_agency_ts_vector");
-CREATE INDEX idx_3a7bb23c$d42__funding_toptier_agency_ts_vector_temp ON summary_view_temp USING GIN("funding_toptier_agency_ts_vector");
-CREATE INDEX idx_3a7bb23c$d42__funding_subtier_agency_ts_vector_temp ON summary_view_temp USING GIN("funding_subtier_agency_ts_vector");
+CREATE INDEX idx_bf26125d$e1c__action_date_temp ON summary_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_bf26125d$e1c__type_temp ON summary_view_temp USING BTREE("type") WITH (fillfactor = 100);
+CREATE INDEX idx_bf26125d$e1c__fy_temp ON summary_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
+CREATE INDEX idx_bf26125d$e1c__pulled_from_temp ON summary_view_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
+CREATE INDEX idx_bf26125d$e1c__awarding_agency_id_temp ON summary_view_temp USING BTREE("awarding_agency_id" ASC NULLS LAST) WITH (fillfactor = 100) WHERE "awarding_agency_id" IS NOT NULL;
+CREATE INDEX idx_bf26125d$e1c__funding_agency_id_temp ON summary_view_temp USING BTREE("funding_agency_id" ASC NULLS LAST) WITH (fillfactor = 100) WHERE "funding_agency_id" IS NOT NULL;
+CREATE INDEX idx_bf26125d$e1c__awarding_toptier_agency_name_temp ON summary_view_temp USING BTREE("awarding_toptier_agency_name") WITH (fillfactor = 100) WHERE "awarding_toptier_agency_name" IS NOT NULL;
+CREATE INDEX idx_bf26125d$e1c__awarding_subtier_agency_name_temp ON summary_view_temp USING BTREE("awarding_subtier_agency_name") WITH (fillfactor = 100) WHERE "awarding_subtier_agency_name" IS NOT NULL;
+CREATE INDEX idx_bf26125d$e1c__funding_toptier_agency_name_temp ON summary_view_temp USING BTREE("funding_toptier_agency_name") WITH (fillfactor = 100) WHERE "funding_toptier_agency_name" IS NOT NULL;
+CREATE INDEX idx_bf26125d$e1c__funding_subtier_agency_name_temp ON summary_view_temp USING BTREE("funding_subtier_agency_name") WITH (fillfactor = 100) WHERE "funding_subtier_agency_name" IS NOT NULL;

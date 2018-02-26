@@ -8,7 +8,6 @@ from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
 
-from django.contrib.postgres.search import SearchVector, SearchQuery
 
 logger = logging.getLogger(__name__)
 
@@ -55,14 +54,10 @@ def matview_search_filter(filters, model):
         if key == "keyword":
             keyword = value
             upper_kw = keyword.upper()
-            lower_kw = keyword.lower()
 
-            # compound_or = Q(keyword_string__contains=upper_kw) | \
-            #     Q(award_id_string__contains=upper_kw) | \
-            #     Q(recipient_unique_id=upper_kw) | \
-            #     Q(parent_recipient_unique_id=keyword)
-            compound_or = SearchQuery(keyword_string=upper_kw) | \
-                SearchQuery(award_id_string=upper_kw) | \
+            # keyword_string & award_id_string are Postgres TS_vectors.
+            compound_or = Q(keyword_string=keyword) | \
+                Q(award_id_string=keyword) | \
                 Q(recipient_unique_id=upper_kw) | \
                 Q(parent_recipient_unique_id=keyword)
 
@@ -141,7 +136,8 @@ def matview_search_filter(filters, model):
                 raise InvalidParameterException('Invalid filter: recipient_search_text must have exactly one value.')
             upper_recipient_string = str(value[0]).upper()
 
-            filter_obj = Q(recipient_name__contains=upper_recipient_string)
+            # recipient_name_ts_vector is a postgres TS_Vector
+            filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                 filter_obj |= Q(recipient_unique_id=upper_recipient_string)
@@ -188,7 +184,8 @@ def matview_search_filter(filters, model):
             if len(value) != 0:
                 filter_obj = Q()
                 for val in value:
-                    filter_obj |= Q(award_id_string__contains=val.upper())
+                    # award_id_string is a Postgres TS_vector
+                    filter_obj |= Q(award_id_string=val)
                 queryset &= model.objects.filter(filter_obj)
 
         elif key == "program_numbers":
