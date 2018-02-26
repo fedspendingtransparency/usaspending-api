@@ -1,36 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
-from django.utils import six
-from django.utils.decorators import available_attrs
-from functools import wraps
-from rest_framework_extensions.cache.decorators import get_cache
-from rest_framework_extensions.settings import extensions_api_settings
+from rest_framework_extensions.cache.decorators import CacheResponse
 
 logger = logging.getLogger(__name__)
 
 
-# Borrowed from django-rest-framework_extensions cache decorator (rest_framework_extensions.cache.decorators)
-class CacheResponse(object):
-    def __init__(self, timeout=None, key_func=None, cache=None, cache_errors=None):
-        self.timeout = timeout or extensions_api_settings.DEFAULT_CACHE_RESPONSE_TIMEOUT
-        self.key_func = key_func or extensions_api_settings.DEFAULT_CACHE_KEY_FUNC
-        self.cache_errors = cache_errors or extensions_api_settings.DEFAULT_CACHE_ERRORS
-        self.cache = get_cache(cache or extensions_api_settings.DEFAULT_USE_CACHE)
-
-    def __call__(self, func):
-        this = self
-
-        @wraps(func, assigned=available_attrs(func))
-        def inner(self, request, *args, **kwargs):
-            return this.process_cache_response(
-                view_instance=self,
-                view_method=func,
-                request=request,
-                args=args,
-                kwargs=kwargs,
-            )
-        return inner
-
+class CustomCacheResponse(CacheResponse):
     def process_cache_response(self, view_instance, view_method, request, args, kwargs):
         key = self.calculate_key(view_instance=view_instance, view_method=view_method,
                                  request=request, args=args, kwargs=kwargs)
@@ -58,12 +33,5 @@ class CacheResponse(object):
 
         return response
 
-    def calculate_key(self, view_instance, view_method, request, args, kwargs):
-        if isinstance(self.key_func, six.string_types):
-            key_func = getattr(view_instance, self.key_func)
-        else:
-            key_func = self.key_func
-        return key_func(view_instance=view_instance, view_method=view_method, request=request, args=args, kwargs=kwargs)
 
-
-cache_response = CacheResponse
+cache_response = CustomCacheResponse
