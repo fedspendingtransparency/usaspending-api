@@ -139,8 +139,10 @@ def category_aggregation_query(keyword):
     return query
 
 
-def get_total_results_by_category_aggregation(keyword, retries=3):
-    index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
+def spending_by_transaction_count(filters, retries=3):
+    #index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
+    keyword = filters['keyword']
+    index_name = "mega_index"
     query = category_aggregation_query(keyword)
     response = es_client_query(index=index_name, body=query, retries=retries)
     results = {key: 0 for key in award_categories}
@@ -152,27 +154,19 @@ def get_total_results_by_category_aggregation(keyword, retries=3):
             for bucket in pulled_from_buckets:
                 if bucket["key"] == "idv":
                     pulled_from_idv += bucket["doc_count"]
-                    print(pulled_from_idv)
             award_category_buckets = response['aggregations']["award_category"]["buckets"]
             for bucket in award_category_buckets:
                 if bucket["key"] == "insurance":
                     insurance_count += bucket["doc_count"]
-                    print(insurance_count)
                 else:
                     results[clean_sub_index(bucket["key"])] = bucket["doc_count"]
             results["contracts"] += pulled_from_idv
             results["other"] += insurance_count
             return results
         except KeyError:
-            logger.error('Unexpected Response')
+            logger.error('Was unable to parse aggregation responses.')
     else:
         return None
-
-
-def spending_by_transaction_count(filters):
-    keyword = filters['keyword']
-    response = get_total_results_by_category_aggregation(keyword)
-    return response
 
 
 def get_sum_aggregation_results(keyword, field='transaction_amount'):
