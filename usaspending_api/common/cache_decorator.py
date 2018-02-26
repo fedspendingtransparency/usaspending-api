@@ -2,7 +2,7 @@
 import logging
 from rest_framework_extensions.cache.decorators import CacheResponse
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('console')
 
 
 class CustomCacheResponse(CacheResponse):
