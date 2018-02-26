@@ -140,9 +140,8 @@ def category_aggregation_query(keyword):
 
 
 def spending_by_transaction_count(filters, retries=3):
-    #index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
+    index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
     keyword = filters['keyword']
-    index_name = "mega_index"
     query = category_aggregation_query(keyword)
     response = es_client_query(index=index_name, body=query, retries=retries)
     results = {key: 0 for key in award_categories}
