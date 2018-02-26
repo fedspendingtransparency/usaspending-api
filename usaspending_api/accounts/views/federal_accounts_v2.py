@@ -392,7 +392,7 @@ class FederalAccountsViewSet(APIView):
             budgetary_resources=Sum(
                 'treasuryappropriationaccount__account_balances__budget_authority_available_amount_total_cpe'),
             managing_agency=Subquery(agency_subquery.values('name')[:1]),
-            managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1]),
+            managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1])
         )
 
         if sort_direction == 'desc':
