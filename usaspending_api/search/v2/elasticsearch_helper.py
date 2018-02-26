@@ -1,26 +1,22 @@
 import logging
 import re
 from django.conf import settings
+from elasticsearch import Elasticsearch
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
-from usaspending_api.core.elasticsearch.client import es_client_query
+
 logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
-
+CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=settings.ES_TIMEOUT)
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 
 
 def preprocess(keyword):
-    """Remove Lucene special characters instead of escaping for now"""
-    processed_string = re.sub('[\/:\]\[\^!]', '', keyword)
-    if len(processed_string) != len(keyword):
-        msg = 'Stripped characters from ES keyword search string New: \'{}\' Original: \'{}\''
-        logger.info(msg.format(processed_string, keyword))
-        keyword = processed_string
-    return keyword
+    '''Escape characters that error out ES'''
+    return re.sub('[\/:\]\[\^!]', '', keyword)
 
 
 def swap_keys(dictionary_):
@@ -34,7 +30,23 @@ def format_for_frontend(response):
     return [swap_keys(result) for result in response]
 
 
-def search_transactions(request_data, lower_limit, limit):
+def es_client_query(index, body, timeout='1m', retries=1):
+    if retries > 20:
+        retries = 20
+    elif retries < 1:
+        retries = 1
+    for attempt in range(retries):
+        try:
+            response = CLIENT.search(index=index, body=body, timeout=timeout)
+        except Exception:
+            logger.exception('There was an error connecting to the ElasticSearch cluster.')
+            continue
+        return response
+    logger.error('Error connecting to elasticsearch. {} attempts made'.format(retries))
+    return None
+
+
+def search_transactions(filters, fields, sort, order, lower_limit, limit):
     '''
     filters: dictionary
     fields: list
@@ -45,40 +57,41 @@ def search_transactions(request_data, lower_limit, limit):
 
     if transaction_type_code not found, return results for contracts
     '''
-    keyword = request_data['keyword']
-    query_fields = [TRANSACTIONS_LOOKUP[i] for i in request_data['fields']]
+    keyword = filters['keyword']
+    query_fields = [TRANSACTIONS_LOOKUP[i] for i in fields]
     query_fields.extend(['piid', 'fain', 'uri', 'display_award_id'])
-    query_sort = TRANSACTIONS_LOOKUP[request_data['sort']]
+    query_sort = TRANSACTIONS_LOOKUP[sort]
     query = {
         '_source': query_fields,
         'from': lower_limit,
         'size': limit,
         'query': {
             'query_string': {
-                'query': preprocess(keyword)
-            }
+                'query': keyword
+                }
         },
         'sort': [{
             query_sort: {
-                'order': request_data['order']}
+                'order': order}
         }]
     }
 
     for index, award_types in indices_to_award_types.items():
-        if sorted(award_types) == sorted(request_data['award_type_codes']):
+        if sorted(award_types) == sorted(filters['award_type_codes']):
             index_name = '{}-{}*'.format(TRANSACTIONS_INDEX_ROOT, index)
+            transaction_type = index
             break
     else:
-        logger.exception('Bad/Missing Award Types. Did not meet 100% of a category\'s types')
-        return False, 'Bad/Missing Award Types requested', None
+        logger.exception('Bad/Missing Award Types requested')
+        return False, 'Bad/Missing Award Types requested', None, None
 
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
         total = response['hits']['total']
         results = format_for_frontend(response['hits']['hits'])
-        return True, results, total
+        return True, results, total, transaction_type
     else:
-        return False, 'There was an error connecting to the ElasticSearch cluster', None
+        return False, 'There was an error connecting to the ElasticSearch cluster', None, None
 
 
 def get_total_results(keyword, sub_index, retries=3):
@@ -86,7 +99,7 @@ def get_total_results(keyword, sub_index, retries=3):
     query = {
         'query': {
             'query_string': {
-                'query': preprocess(keyword)
+                'query': keyword
             }
         }
     }
@@ -102,8 +115,8 @@ def get_total_results(keyword, sub_index, retries=3):
         return None
 
 
-def spending_by_transaction_count(request_data):
-    keyword = request_data['keyword']
+def spending_by_transaction_count(filters):
+    keyword = filters['keyword']
     response = {}
 
     for category in indices_to_award_types.keys():
@@ -125,7 +138,7 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
     query = {
         'query': {
             'query_string': {
-                'query': preprocess(keyword)
+                'query': keyword
             }
         },
         'aggs': {
@@ -169,7 +182,7 @@ def get_download_ids(keyword, field, size=10000):
     for i in range(n_iter):
         query = {
             "_source": [field],
-            "query": {"query_string": {"query": preprocess(keyword)}},
+            "query": {"query_string": {"query": keyword}},
             "aggs": {
                 "results": {
                     "terms": {
@@ -195,23 +208,20 @@ def get_download_ids(keyword, field, size=10000):
 
 
 def get_sum_and_count_aggregation_results(keyword):
-    index_name = '{}-*'.format(TRANSACTIONS_INDEX_ROOT)
-    query = {
-        "query": {
-            "query_string": {"query": preprocess(keyword)}},
-        "aggs": {
-            "prime_awards_obligation_amount": {
-                "sum": {
+    index_name = '{}-'.format(TRANSACTIONS_INDEX_ROOT)+'*'
+    query = {"query": {"query_string": {"query": keyword}},
+             "aggs": {
+              "prime_awards_obligation_amount": {
+                 "sum": {
                     "field": "transaction_amount"
-                }
-            },
-            "prime_awards_count": {
-                "value_count": {
+                 }
+              },
+              "prime_awards_count": {
+                 "value_count": {
                     "field": "transaction_id"
-                }
-            }
-        },
-        "size": 0}
+                 }
+              }
+              }, "size": 0}
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
         try:
@@ -226,5 +236,6 @@ def get_sum_and_count_aggregation_results(keyword):
         return None
 
 
-def spending_by_transaction_sum_and_count(request_data):
-    return get_sum_and_count_aggregation_results(request_data['keyword'])
+def spending_by_transaction_sum_and_count(filters):
+    keyword = filters['keyword']
+    return get_sum_and_count_aggregation_results(keyword)

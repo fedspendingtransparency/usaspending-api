@@ -4,6 +4,7 @@ from usaspending_api.awards.models import Award, LegalEntity, FinancialAccountsB
 from usaspending_api.references.models import NAICS, PSC
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
+from usaspending_api.awards.v2.filters.filter_helpers import get_total_transaction_columns
 
 import logging
 
@@ -236,31 +237,37 @@ def award_filter(filters):
             queryset &= or_queryset
 
         elif key == "award_amounts":
+            total_transaction_columns = get_total_transaction_columns(filters, Award)
             or_queryset = None
             queryset_init = False
             for v in value:
-                if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
-                    if queryset_init:
-                        or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"],
-                                                            total_obligation__lt=v["upper_bound"])
+                for column in total_transaction_columns:
+                    if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
+                        bounds_dict = {
+                            '{}__gte'.format(column): v['lower_bound'],
+                            '{}__lte'.format(column): v['upper_bound']
+                        }
+                        if queryset_init:
+                            or_queryset |= Award.objects.filter(**bounds_dict)
+                        else:
+                            queryset_init = True
+                            or_queryset = Award.objects.filter(**bounds_dict)
+                    elif v.get("lower_bound") is not None:
+                        bounds_dict = {'{}__gte'.format(column): v['lower_bound']}
+                        if queryset_init:
+                            or_queryset |= Award.objects.filter(**bounds_dict)
+                        else:
+                            queryset_init = True
+                            or_queryset = Award.objects.filter(**bounds_dict)
+                    elif v.get("upper_bound") is not None:
+                        bounds_dict = {'{}__lte'.format(column): v['upper_bound']}
+                        if queryset_init:
+                            or_queryset |= Award.objects.filter(**bounds_dict)
+                        else:
+                            queryset_init = True
+                            or_queryset = Award.objects.filter(**bounds_dict)
                     else:
-                        queryset_init = True
-                        or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"],
-                                                           total_obligation__lt=v["upper_bound"])
-                elif v.get("lower_bound") is not None:
-                    if queryset_init:
-                        or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"])
-                    else:
-                        queryset_init = True
-                        or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"])
-                elif v.get("upper_bound") is not None:
-                    if queryset_init:
-                        or_queryset |= Award.objects.filter(total_obligation__lt=v["upper_bound"])
-                    else:
-                        queryset_init = True
-                        or_queryset = Award.objects.filter(total_obligation__lt=v["upper_bound"])
-                else:
-                    raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
+                        raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
             if queryset_init:
                 queryset &= or_queryset
 

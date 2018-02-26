@@ -318,7 +318,7 @@ SPAGHETTI_SAUCE = {
 # TERSE_TO_LONG UNUSED.  IF NEEDED, change LONG_TO_TERSE to a bidict or invert the dict.
 
 # Elasticsearch
-ES_HOSTNAME = ""
+ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
 TRANSACTIONS_INDEX_ROOT = os.environ.get('ES_TRX_ROOT') or 'future-transactions'
 DOWNLOAD_QUERY_SIZE = 500000
 ES_TIMEOUT = 30
