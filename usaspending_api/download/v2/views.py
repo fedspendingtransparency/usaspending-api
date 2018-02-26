@@ -70,7 +70,8 @@ class BaseDownloadViewSet(APIView):
 
         # Overriding all other filters if the keyword filter is provided in year-constraint download
         if constraint_type == 'year' and 'elasticsearch_keyword' in json_request['filters']:
-            json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword']}
+            json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword'],
+                                       'award_type_codes': list(award_type_mapping.keys())}
             return json_request
 
         # Validate required parameters
@@ -200,8 +201,8 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('Missing one or more required query parameters: filters')
 
         # Validate keyword search first, remove all other filters
-        if 'elasticsearch_keyword' in filters:
-            request_data['filters'] = {'elasticsearch_keyword': filters['elasticsearch_keyword']}
+        if 'keyword' in filters:
+            request_data['filters'] = {'elasticsearch_keyword': filters['keyword']}
             return
 
         # Validate other parameters previously required by the Bulk Download endpoint

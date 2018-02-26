@@ -136,7 +136,7 @@ def get_csv_sources(json_request):
             d2_source.queryset = queryset & award_level_table.objects.filter(**d2_filters)
             csv_sources.append(d2_source)
 
-        verify_requested_columns_available(tuple(csv_sources), json_request['columns'])
+        verify_requested_columns_available(tuple(csv_sources), json_request.get('columns', []))
 
     return csv_sources
 
