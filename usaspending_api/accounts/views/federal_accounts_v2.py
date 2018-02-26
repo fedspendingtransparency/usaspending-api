@@ -381,19 +381,18 @@ class FederalAccountsViewSet(APIView):
         upper_limit = page * limit
 
         agency_subquery = ToptierAgency.objects.filter(cgac_code=OuterRef('corrected_agency_identifier'))
-        queryset = FederalAccount.objects.filter(
-            treasuryappropriationaccount__account_balances__final_of_fy=True,
-            treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy
-            ).annotate(
-            corrected_agency_identifier=Func(F('agency_identifier'), function='CORRECTED_CGAC'),
-            account_id=F('id'),
-            account_number=Concat(F('agency_identifier'), Value('-'), F('main_account_code')),
-            account_name=F('account_title'),
-            budgetary_resources=Sum(
-                'treasuryappropriationaccount__account_balances__budget_authority_available_amount_total_cpe'),
-            managing_agency=Subquery(agency_subquery.values('name')[:1]),
-            managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1])
-        )
+        queryset = FederalAccount.objects.\
+            filter(treasuryappropriationaccount__account_balances__final_of_fy=True,
+                   treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy).\
+            annotate(corrected_agency_identifier=Func(F('agency_identifier'), function='CORRECTED_CGAC')).\
+            annotate(account_id=F('id'),
+                     account_number=Concat(F('agency_identifier'), Value('-'), F('main_account_code')),
+                     account_name=F('account_title'),
+                     budgetary_resources=Sum(
+                         'treasuryappropriationaccount__account_balances__budget_authority_available_amount_total_cpe'),
+                     managing_agency=Subquery(agency_subquery.values('name')[:1]),
+                     managing_agency_acronym=Subquery(agency_subquery.values('abbreviation')[:1])
+                     )
 
         if sort_direction == 'desc':
             queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))
