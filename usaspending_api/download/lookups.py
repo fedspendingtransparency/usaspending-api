@@ -62,7 +62,7 @@ YEAR_CONSTRAINT_FILTER_DEFAULTS = {'elasticsearch_keyword': ''}
 ROW_CONSTRAINT_FILTER_DEFAULTS = {
     'keyword': '',
     'legal_entities': [],
-    'recipient_search_text': '',
+    'recipient_search_text': [],
     'recipient_scope': '',
     'recipient_locations': [],
     'recipient_type_names': [],
