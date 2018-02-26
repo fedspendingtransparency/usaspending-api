@@ -52,15 +52,15 @@ def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_type
     """ Returns correct amount for transaction if loan (07, 08) vs all other award types (covers IDV)"""
     aggregate_dict = {}
     if calculate_totals:
-        aggregate_dict = {'total_subsidy_cost': Sum(Case(When(type__in=list(loan_type_mapping),
-                                                              then=F('original_loan_subsidy_cost')),
-                                                         default=0,
-                                                         output_field=FloatField())),
-                          'total_obligation': Sum(Case(When(~Q(type__in=list(loan_type_mapping)),
-                                                            then=F('federal_action_obligation')),
-                                                       default=0,
-                                                       output_field=FloatField()))
-                          }
+        qs = qs.annotate(total_subsidy_cost=Sum(Case(When(type__in=list(loan_type_mapping),
+                                                          then=F('original_loan_subsidy_cost')),
+                                                     default=0,
+                                                     output_field=FloatField())))
+
+        qs = qs.annotate(total_obligation=Sum(Case(When(~Q(type__in=list(loan_type_mapping)),
+                                                        then=F('federal_action_obligation')),
+                                                   default=0,
+                                                   output_field=FloatField())))
 
     # Coalescing total_obligation and total_subsidy since fields can be null
     if not set(filter_types) & set(loan_type_mapping):
