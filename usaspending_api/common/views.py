@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_extensions.cache.decorators import cache_response
+from usaspending_api.common.cache_decorator import cache_response
 from django.views.generic import TemplateView
 
 from usaspending_api.common.mixins import AutocompleteResponseMixin
