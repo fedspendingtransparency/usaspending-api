@@ -9,13 +9,15 @@ import re
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from usaspending_api.bulk_download.filestreaming import csv_selection
-from usaspending_api.bulk_download.v2.views import BulkDownloadAwardsViewSet
-from usaspending_api.common.helpers import generate_fiscal_year
+from usaspending_api.common.helpers import generate_fiscal_year, order_nested_object
 from usaspending_api.common.csv_helpers import sqs_queue
+from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.helpers import multipart_upload
+from usaspending_api.download.lookups import JOB_STATUS_DICT
+from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.v2.views import YearLimitedDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
 
-# Logging
 logger = logging.getLogger('console')
 
 award_mappings = {
@@ -23,51 +25,45 @@ award_mappings = {
     'assistance': ['grants', 'direct_payments', 'loans', 'other_financial_assistance']
 }
 
-MODIFIED_AGENCIES_LIST = os.path.join(settings.BASE_DIR,
-                                      'usaspending_api', 'data',
+MODIFIED_AGENCIES_LIST = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                                       'modified_authoritative_agency_list.csv')
 
 
 class Command(BaseCommand):
-    # TODO: This function reveals most of bulk download relies on its REST origins.
-    #       This and most of Bulk Download will definitely need to be refactored to address this.
-    def bulk_download(self, file_name, award_levels, award_types=None, agency=None, sub_agency=None,
-                      date_type=None, start_date=None, end_date=None, columns=[], file_format="csv",
-                      monthly_download=False, cleanup=False, use_sqs=False):
+
+    def download(self, file_name, award_levels, award_types=None, agency=None, sub_agency=None, date_type=None,
+                 start_date=None, end_date=None, columns=[], file_format="csv", monthly_download=False, cleanup=False,
+                 use_sqs=False):
         date_range = {}
         if start_date:
             date_range['start_date'] = start_date
         if end_date:
             date_range['end_date'] = end_date
-        json_request = {'award_levels': award_levels,
-                        'filters': {
-                            'award_types': award_types,
-                            'agency': str(agency),
-                            'date_type': date_type,
-                            'date_range': date_range,
-                        },
-                        'columns': columns,
-                        'file_format': file_format}
-        bd_viewset = BulkDownloadAwardsViewSet()
-        json_request = bd_viewset.validate_request(json_request)
-        sources = bd_viewset.get_csv_sources(json_request=json_request)
-        download_job = bd_viewset.create_bulk_download_job(json_request, file_name, monthly_download=True)
-
-        kwargs = {
-            'download_job': download_job,
-            'file_name': file_name,
-            'columns': [],
-            'sources': tuple(sources)
+        json_request = {
+            'award_levels': award_levels,
+            'filters': {
+                'award_types': award_types,
+                'agency': str(agency),
+                'date_type': date_type,
+                'date_range': date_range,
+            },
+            'columns': columns,
+            'file_format': file_format
         }
+        download_viewset = YearLimitedDownloadViewSet()
+        download_viewset.process_filters(json_request)
+        validated_request = download_viewset.validate_request(json_request)
+        download_job = DownloadJob.objects.create(job_status_id=JOB_STATUS_DICT['ready'], file_name=file_name,
+                                                  json_request=json.dumps(order_nested_object(validated_request)),
+                                                  monthly_download=True)
+
         if not use_sqs:
-            # Note: Because of the line below, it's advised to only run this script
-            #        on a separate instance as this will modify your bulk download
-            #        settings.
+            # Note: Because of the line below, it's advised to only run this script on a separate instance as this will
+            #       modify your bulk download settings.
             settings.BULK_DOWNLOAD_S3_BUCKET_NAME = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
-            csv_selection.write_csvs(**kwargs)
+            csv_generation.generate_csvs(download_job=download_job)
             if cleanup:
-                # Get all the files that have the same prefix except for the
-                #  update date
+                # Get all the files that have the same prefix except for the update date
                 file_name_prefix = file_name[:-12]  # subtracting the 'YYYYMMDD.zip'
                 for key in self.bucket.list(prefix=file_name_prefix):
                     if key.name == file_name:
@@ -76,39 +72,19 @@ class Command(BaseCommand):
                     self.bucket.delete_key(key.name)
                     logger.info('Deleting {} from bucket'.format(key.name))
         else:
-            # Send a SQS message that will be processed by another server
-            # which will eventually run csv_selection.write_csvs(**kwargs)
-            # (see generate_bulk_zip.py)
-            message_attributes = {
-                'download_job_id': {
-                    'StringValue': str(kwargs['download_job'].bulk_download_job_id),
-                    'DataType': 'String'
-                },
-                'file_name': {
-                    'StringValue': kwargs['file_name'],
-                    'DataType': 'String'
-                },
-                'columns': {
-                    'StringValue': json.dumps(kwargs['columns']),
-                    'DataType': 'String'
-                },
-                'sources': {
-                    'StringValue': json.dumps(
-                        tuple([source.toJsonDict() for source in kwargs['sources']])),
-                    'DataType': 'String'
-                }
-            }
+            # Send a SQS message that will be processed by another server, which will eventually run
+            # csv_generation.generate_csvs(download_job, message) (see generate_zip.py)
             queue = sqs_queue(region_name=settings.BULK_DOWNLOAD_AWS_REGION,
                               QueueName=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
-            queue.send_message(MessageBody='Test', MessageAttributes=message_attributes)
+            queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def upload_placeholder(self, file_name, empty_file):
         bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
         region = settings.BULK_DOWNLOAD_AWS_REGION
 
-        logger.info('uploading {}'.format(file_name))
-        csv_selection.upload(bucket, region, empty_file, file_name, acl='public-read',
-                             parallel_processes=multiprocessing.cpu_count())
+        logger.info('Uploading {}'.format(file_name))
+        multipart_upload(bucket, region, empty_file, file_name, acl='public-read',
+                         parallel_processes=multiprocessing.cpu_count())
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -192,8 +168,7 @@ class Command(BaseCommand):
         with open(MODIFIED_AGENCIES_LIST, encoding='Latin-1') as modified_agencies_list_csv:
             mod_gencies_list_df = pd.read_csv(modified_agencies_list_csv, dtype=str)
         mod_gencies_list_df = mod_gencies_list_df[['CGAC AGENCY CODE']]
-        mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'] \
-            .apply(lambda x: x.zfill(3))
+        mod_gencies_list_df['CGAC AGENCY CODE'] = mod_gencies_list_df['CGAC AGENCY CODE'].apply(lambda x: x.zfill(3))
         for _, row in mod_gencies_list_df.iterrows():
             cgac_codes.append(row['CGAC AGENCY CODE'])
         return cgac_codes
@@ -271,13 +246,8 @@ class Command(BaseCommand):
                         empty_file = empty_contracts_file if award_type == 'contracts' else empty_asssistance_file
                         self.upload_placeholder(file_name=full_file_name, empty_file=empty_file)
                     else:
-                        self.bulk_download(full_file_name, ['prime_awards'],
-                                           award_types=award_mappings[award_type],
-                                           agency=agency['toptier_agency_id'],
-                                           date_type='action_date',
-                                           start_date=start_date,
-                                           end_date=end_date,
-                                           monthly_download=True,
-                                           cleanup=cleanup,
-                                           use_sqs=(not local))
+                        self.download(full_file_name, ['prime_awards'], award_types=award_mappings[award_type],
+                                      agency=agency['toptier_agency_id'], date_type='action_date',
+                                      start_date=start_date, end_date=end_date, monthly_download=True, cleanup=cleanup,
+                                      use_sqs=(not local))
         logger.info('Populate Monthly Files complete')
