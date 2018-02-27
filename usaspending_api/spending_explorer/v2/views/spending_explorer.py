@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework_extensions.cache.decorators import cache_response
 from usaspending_api.spending_explorer.v2.filters.type_filter import type_filter
 
-#
+# Limits the amount of results the spending explorer returns
 SPENDING_EXPLORER_LIMIT = 5000
 
 
