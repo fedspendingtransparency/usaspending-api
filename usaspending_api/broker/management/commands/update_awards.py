@@ -3,9 +3,12 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS
+from usaspending_api.awards.models import TransactionFPDS
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.helper import timer
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
+from usaspending_api.etl.award_helpers import update_award_categories
+from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.etl.award_helpers import update_contract_awards
 
 
 logger = logging.getLogger('console')
@@ -59,9 +62,12 @@ class Command(BaseCommand):
             update_awards() if all_records_flag else update_awards(tuple(award_update_id_list))
 
         with timer('updating contract-specific awards to reflect their latest transaction info...', logger.info):
-            update_contract_awards() if all_records_flag else update_contract_awards(tuple(award_contract_update_id_list))
+            if all_records_flag:
+                update_contract_awards()
+            else:
+                update_contract_awards(tuple(award_contract_update_id_list))
 
-        logger.info('updating award category variables', logger.info):
+        with timer('updating award category variables', logger.info):
             update_award_categories() if all_records_flag else update_award_categories(tuple(award_update_id_list))
 
         # Done!

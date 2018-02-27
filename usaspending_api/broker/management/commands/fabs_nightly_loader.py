@@ -268,7 +268,7 @@ class Command(BaseCommand):
         logger.info('Processing data for FABS starting from %s' % date)
 
         # Retrieve FABS data
-        with timer('retrieving/diff-ing FABS Data', info.logger):
+        with timer('retrieving/diff-ing FABS Data', logger.info):
             to_insert, ids_to_delete = self.get_fabs_data(date=date)
 
         total_rows = len(to_insert)

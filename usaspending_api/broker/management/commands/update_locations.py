@@ -28,11 +28,11 @@ def update_country_code(d_file, location, country_code, state_code=None, state_n
         # OR the place of performance location country code is empty and there isn't a performance code
         # OR the country code is a US territory
         # THEN we can assume that the location country code is 'USA'
-        if (location.recipient_flag and (country_code is None or country_code == 'UNITED STATES')) \
-                or (location.place_of_performance_flag and country_code is None
-                    and place_of_performance_code and place_of_performance_code != '00FORGN') \
-                or (location.place_of_performance_flag and country_code is None and not place_of_performance_code) \
-                or (country_code in territory_country_codes):
+        cond_country = location.recipient_flag and (country_code is None or country_code == 'UNITED STATES')
+        cond_2 = location.place_of_performance_flag and country_code is None and place_of_performance_code \
+            and place_of_performance_code != '00FORGN'
+        cond_3 = location.place_of_performance_flag and country_code is None and not place_of_performance_code
+        if cond_country or cond_2 or cond_3 or (country_code in territory_country_codes):
             updated_location_country_code = 'USA'
 
     if not country_code_map.get(updated_location_country_code, None):
@@ -264,7 +264,7 @@ class Command(BaseCommand):
         if not options['assistance']:
             with timer('D1 historical data location insert', logger.info):
                 self.update_location_transaction_contract(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page,
-                                                        limit=limit, save=save)
+                                                          limit=limit, save=save)
 
         if not options['contracts']:
             with timer('D2 historical data location insert', logger.info):

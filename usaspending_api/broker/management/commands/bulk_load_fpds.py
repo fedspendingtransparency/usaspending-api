@@ -1,18 +1,19 @@
 import logging
 from datetime import datetime
+
 from django.core.management.base import BaseCommand
 from django.db import connections, connection, transaction as db_transaction
 from django.db.models import Count
-from usaspending_api.common.helpers import fy
 
-from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
+from usaspending_api.common.helpers import fy
 from usaspending_api.common.helpers import timer
+from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date
 from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.references.models import RefCountryCode, Location, LegalEntity, Agency, ToptierAgency, \
     SubtierAgency
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
 
 BATCH_SIZE = 100000
 
@@ -79,38 +80,38 @@ class Command(BaseCommand):
         self.subtier_agency_map = {
             subtier_agency['subtier_code']: subtier_agency['subtier_agency_id']
             for subtier_agency in SubtierAgency.objects.values('subtier_code', 'subtier_agency_id')
-            }
+        }
         self.subtier_to_agency_map = {
             agency['subtier_agency_id']: {'agency_id': agency['id'], 'toptier_agency_id': agency['toptier_agency_id']}
             for agency in Agency.objects.values('id', 'toptier_agency_id', 'subtier_agency_id')
-            }
+        }
         self.toptier_agency_map = {
             toptier_agency['toptier_agency_id']: toptier_agency['cgac_code']
             for toptier_agency in ToptierAgency.objects.values('toptier_agency_id', 'cgac_code')
-            }
+        }
         self.agency_no_sub_map = {
             (agency.toptier_agency.cgac_code, agency.subtier_agency.subtier_code): agency
             for agency in Agency.objects.filter(subtier_agency__isnull=False)
-            }
+        }
         self.agency_sub_only_map = {
             agency.toptier_agency.cgac_code: agency
             for agency in Agency.objects.filter(subtier_agency__isnull=True)
-            }
+        }
         self.agency_toptier_map = {
             agency.toptier_agency.cgac_code: agency
             for agency in Agency.objects.filter(toptier_flag=True)
-            }
+        }
         self.agency_subtier_map = {
             sa.subtier_code: sa.agency_set.first()
             for sa in SubtierAgency.objects
             .annotate(n_agencies=Count('agency')).filter(n_agencies=1)
-            }
+        }
         self.award_map = {award.piid: award for award in Award.objects.filter(piid__isnull=False)}
         self.le_map = {(le.recipient_unique_id, le.recipient_name): le for le in LegalEntity.objects.all()}
 
     def diff_fpds_data(self, db_cursor, ds_cursor, fiscal_year=None):
         db_query = 'SELECT detached_award_procurement_id ' \
-                'FROM detached_award_procurement'
+            'FROM detached_award_procurement'
         db_arguments = []
 
         ds_query = 'SELECT detached_award_procurement_id ' \
@@ -287,7 +288,7 @@ class Command(BaseCommand):
                 legal_entity = load_data_into_model(
                     legal_entity,
                     row,
-                    value_map={"location": lel_bulk[index-1]},
+                    value_map={"location": lel_bulk[index - 1]},
                     save=False)
 
                 LegalEntity.update_business_type_categories(legal_entity)
@@ -408,7 +409,7 @@ class Command(BaseCommand):
                 # create the award since it wasn't found
                 create_kwargs = {'awarding_agency': awarding_agency, 'piid': piid}
                 award = Award(**create_kwargs)
-                award.parent_award = parent_award_lookup[index-1]
+                award.parent_award = parent_award_lookup[index - 1]
                 self.award_map[piid] = award
                 award_bulk.append(award)
 
@@ -471,7 +472,7 @@ class Command(BaseCommand):
                 as_dict=True)
 
             fpds_instance = TransactionFPDS(**fpds_instance_data)
-            fpds_instance.transaction = transaction_normalized_bulk[index-1]
+            fpds_instance.transaction = transaction_normalized_bulk[index - 1]
             fpds_bulk.append(fpds_instance)
 
         logger.info('Bulk creating Transaction FPDS (batch_size: {})...'.format(BATCH_SIZE))
@@ -511,7 +512,9 @@ class Command(BaseCommand):
         logger.info('Processing data for Fiscal Year ' + str(fiscal_year))
 
         with timer('Diff-ing FPDS data', logger.info):
-            to_insert, to_delete = self.diff_fpds_data(db_cursor=db_cursor, ds_cursor=ds_cursor, fiscal_year=fiscal_year)
+            to_insert, to_delete = self.diff_fpds_data(db_cursor=db_cursor,
+                                                       ds_cursor=ds_cursor,
+                                                       fiscal_year=fiscal_year)
 
         total_rows = len(to_insert)
         total_rows_delete = len(to_delete)
@@ -525,7 +528,8 @@ class Command(BaseCommand):
             self.set_lookup_maps()
 
             with timer('Get Broker FPDS data', logger.info):
-                fpds_broker_data = self.get_fpds_data(db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)
+                fpds_broker_data = self.get_fpds_data(
+                    db_cursor=db_cursor, fiscal_year=fiscal_year, to_insert=to_insert)
 
             with timer('Loading POP Location data', logger.info):
                 self.load_locations(fpds_broker_data=fpds_broker_data, total_rows=total_rows, pop_flag=True)

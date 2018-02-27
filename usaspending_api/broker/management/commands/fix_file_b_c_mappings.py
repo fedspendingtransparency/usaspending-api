@@ -26,10 +26,11 @@ financial_accounts_oc = [
 ]
 
 # Website columns need for update from financial_accounts_by_awards (Adds fain, uri, and piid columns)
-financial_accounts_awards = [('fain', ' ds_file_table'),
-                             ('uri', ' ds_file_table'),
-                             ('piid', ' ds_file_table')] + \
-                             financial_accounts_oc[:]
+financial_accounts_awards = [
+    ('fain', ' ds_file_table'),
+    ('uri', ' ds_file_table'),
+    ('piid', ' ds_file_table')
+] + financial_accounts_oc[:]
 
 # website -> broker mappings with specific mappings different from settings.py mappings
 broker_website_cols_mapping = {
@@ -43,7 +44,7 @@ broker_website_cols_mapping = {
     'availability_type_code': "COALESCE(availability_type_code, '''')",
     'direct_reimbursable': "CASE WHEN by_direct_reimbursable_fun = ''D'' then 1" +
     "WHEN by_direct_reimbursable_fun = ''R'' then 2 ELSE NULL END"
-    }
+}
 
 
 class Command(BaseCommand):
@@ -200,25 +201,26 @@ class Command(BaseCommand):
 
             with timer('retrieving rows to update for File B submission {}'.format(submission_id), logger.info):
                 get_rows_to_update_query = self.get_rows_to_update('B', submission_id,
-                                                                broker_cols_b, broker_cols_type_b,
-                                                                website_cols_b)
+                                                                   broker_cols_b, broker_cols_type_b,
+                                                                   website_cols_b)
                 ds_cursor.execute(get_rows_to_update_query)
-            ))
 
             with timer('updating rows for File B submission {}'.format(submission_id), logger.info):
                 update_rows = self.update_website_rows(
                     'financial_accounts_by_program_activity_object_class',
-                    'file_b_rows_to_update',  website_update_text_b, website_cols_joins_b
+                    'file_b_rows_to_update', website_update_text_b, website_cols_joins_b
                 )
 
                 ds_cursor.execute(update_rows)
 
             # File C updates
-            timer('retrieving rows to update for File C submission {}'.format(submission_id), logger.info):
-                get_rows_to_update_query = self.get_rows_to_update('C', submission_id,
-                                                                broker_cols_c, broker_cols_type_c,
-                                                                website_cols_c
-                                                                )
+            with timer('retrieving rows to update for File C submission {}'.format(submission_id), logger.info):
+                get_rows_to_update_query = self.get_rows_to_update(
+                    'C',
+                    submission_id,
+                    broker_cols_c,
+                    broker_cols_type_c,
+                    website_cols_c)
                 ds_cursor.execute(get_rows_to_update_query)
 
             with timer('updating rows for File C submission {}'.format(submission_id), logger.info):
