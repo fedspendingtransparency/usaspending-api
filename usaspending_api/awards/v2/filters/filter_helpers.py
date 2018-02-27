@@ -1,4 +1,4 @@
-from django.db.models import Sum, F, Q, FloatField, Case, When
+from django.db.models import Sum, F, Q, Case, When
 from django.db.models.functions import Coalesce
 
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -49,18 +49,19 @@ def date_or_fy_queryset(date_dict, table, fiscal_year_column, action_date_column
 
 def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_types=award_type_mapping,
                            calculate_totals=True):
-    """ Returns correct amount for transaction if loan (07, 08) vs all other award types (covers IDV)"""
+    """
+    Returns queryset with aggregation (annotated with aggregation_name) for transactions if loan (07, 08)
+    vs all other award types (covers IDV)
+    """
     aggregate_dict = {}
     if calculate_totals:
         qs = qs.annotate(total_subsidy_cost=Sum(Case(When(type__in=list(loan_type_mapping),
                                                           then=F('original_loan_subsidy_cost')),
-                                                     default=0,
-                                                     output_field=FloatField())))
+                                                     default=0)))
 
         qs = qs.annotate(total_obligation=Sum(Case(When(~Q(type__in=list(loan_type_mapping)),
                                                         then=F('federal_action_obligation')),
-                                                   default=0,
-                                                   output_field=FloatField())))
+                                                   default=0)))
 
     # Coalescing total_obligation and total_subsidy since fields can be null
     if not set(filter_types) & set(loan_type_mapping):
@@ -78,6 +79,10 @@ def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_type
 
 
 def get_total_transaction_columns(filters, model):
+    """
+    Returns array of query strings with column joins based on request filters. Used to calculate award amounts where
+    rows can be award type loan and/or all other award types
+    """
     total_transaction_columns = []
     award_types_requested = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
     awards_sans_loans = [award_type for award_type in award_type_mapping if type not in award_type_mapping]
