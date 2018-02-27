@@ -1,15 +1,13 @@
-from usaspending_api.accounts.models import (
-    TreasuryAppropriationAccount, AppropriationAccountBalances,
-    AppropriationAccountBalancesQuarterly)
-from usaspending_api.accounts.serializers import (
-    AppropriationAccountBalancesSerializer,
-    TasCategorySerializer,
-    TasSerializer)
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-    TasProgramActivityObjectClassQuarterly)
-from usaspending_api.common.mixins import FilterQuerysetMixin, AggregateQuerysetMixin
-from usaspending_api.common.views import DetailViewSet, AutocompleteView
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.accounts.models import AppropriationAccountBalances
+from usaspending_api.accounts.serializers import AppropriationAccountBalancesSerializer
+from usaspending_api.accounts.serializers import TasCategorySerializer
+from usaspending_api.accounts.serializers import TasSerializer
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.common.mixins import FilterQuerysetMixin
+from usaspending_api.common.mixins import AggregateQuerysetMixin
+from usaspending_api.common.views import DetailViewSet
+from usaspending_api.common.views import AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
 
 
@@ -46,13 +44,13 @@ class TASBalancesQuarterAggregate(FilterQuerysetMixin,
 class TASBalancesQuarterList(FilterQuerysetMixin,
                              DetailViewSet):
     """
-    Handle requests for quarterly financial data by appropriationappropriation
+    Handle requests for the latest quarter's financial data by appropriationappropriation
     account (tas)..
     """
     serializer_class = AppropriationAccountBalancesSerializer
 
     def get_queryset(self):
-        queryset = AppropriationAccountBalancesQuarterly.objects.all()
+        queryset = AppropriationAccountBalances.objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
@@ -91,13 +89,13 @@ class TASCategoryQuarterAggregate(FilterQuerysetMixin,
                                   AggregateQuerysetMixin,
                                   DetailViewSet):
     """
-    Handle requests for quarterly financial data by appropriationappropriation
+    Handle requests for the latest quarter's financial data by appropriationappropriation
     account (tas), program activity, and object class.
     """
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
-        queryset = TasProgramActivityObjectClassQuarterly.objects.all()
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
         queryset = self.filter_records(self.request, queryset=queryset)
         queryset = self.aggregate(self.request, queryset=queryset)
         queryset = self.order_records(self.request, queryset=queryset)
@@ -107,13 +105,13 @@ class TASCategoryQuarterAggregate(FilterQuerysetMixin,
 class TASCategoryQuarterList(FilterQuerysetMixin,
                              DetailViewSet):
     """
-    Handle requests for quarterly financial data by appropriationappropriation
+    Handle requests for the latest quarter's financial data by appropriationappropriation
     account (tas), program activity, and object class.
     """
     serializer_class = TasCategorySerializer
 
     def get_queryset(self):
-        queryset = TasProgramActivityObjectClassQuarterly.objects.all()
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
         queryset = self.serializer_class.setup_eager_loading(queryset)
         filtered_queryset = self.filter_records(self.request, queryset=queryset)
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
