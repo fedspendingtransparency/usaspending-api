@@ -192,7 +192,6 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
 
         last_count = len(open(split_csv_path).readlines())
         if last_count <= EXCEL_ROW_LIMIT:
-            # Will be hit when line 201 ((split_csv - 1) * EXCEL_ROW_LIMIT) > number of rows in source
             download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + last_count - 1
             reached_end = True
         else:
