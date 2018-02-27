@@ -113,11 +113,11 @@ def transaction_filter(filters):
             transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
             # flatten IDs
             transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
-            logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
+            logger.info('Found {} transactions based on keyword: {}'.format(len(transaction_ids), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
-            queryset = queryset.filter(**{'{}__isnull'.format('id'): False})
+            queryset = queryset.filter(id__isnull=False)
             queryset &= queryset.extra(
-                where=['\"transaction_normalized\".\"id\" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
+                where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
 
         # time_period
         elif key == "time_period":

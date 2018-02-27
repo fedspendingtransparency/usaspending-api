@@ -114,11 +114,11 @@ def subaward_filter(filters):
             transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
             # flatten IDs
             transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
-            logger.info('Found {} transactions based on keyword: {}'.format(len(list(transaction_ids)), keyword))
+            logger.info('Found {} transactions based on keyword: {}'.format(len(transaction_ids), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
-            queryset = queryset.filter(**{'{}__isnull'.format('award__latest_transaction__id'): False})
+            queryset = queryset.filter(award__latest_transaction__id__isnull=False)
             queryset &= queryset.extra(
-                where=['\"transaction_normalized\".\"id\" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
+                where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
 
         elif key == "time_period":
             or_queryset = None
