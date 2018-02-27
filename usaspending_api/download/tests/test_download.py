@@ -1,5 +1,4 @@
 import json
-import mock
 import os
 import pytest
 import random
@@ -358,22 +357,17 @@ def test_download_status_nonexistent_file_404(client):
 @pytest.mark.skip
 def test_download_transactions_limit(client, award_data):
     """Test limiting of csv results"""
-    test_db = 'postgres://{}:{}@{}:5432/{}'.format(
-        settings.DATABASES['default']['USER'], settings.DATABASES['default']['PASSWORD'],
-        settings.DATABASES['default']['HOST'], settings.DATABASES['default']['NAME'])
-    with mock.patch.dict(os.environ, {'DOWNLOAD_DATABASE_URL': test_db}):
-
-            dl_resp = client.post(
-                '/api/v2/download/transactions',
-                content_type='application/json',
-                data=json.dumps({
-                    "limit": 2,
-                    "filters": {"award_type_codes": []},
-                    "columns": []
-                }))
-            resp = client.get('/api/v2/download/status/?file_name={}'.format(dl_resp.json()['file_name']))
-            assert resp.status_code == status.HTTP_200_OK
-            assert resp.json()['total_rows'] == 2
+    dl_resp = client.post(
+        '/api/v2/download/transactions',
+        content_type='application/json',
+        data=json.dumps({
+            "limit": 2,
+            "filters": {"award_type_codes": []},
+            "columns": []
+        }))
+    resp = client.get('/api/v2/download/status/?file_name={}'.format(dl_resp.json()['file_name']))
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()['total_rows'] == 2
 
 
 def test_download_transactions_bad_limit(client, award_data):
