@@ -2,15 +2,15 @@ import contextlib
 import logging
 import time
 import timeit
+
 from calendar import monthrange, isleap
-
-from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
 from collections import OrderedDict
-
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.dateparse import parse_date
-from usaspending_api.references.models import Agency
+from fiscalyear import FiscalDateTime, FiscalQuarter, datetime
+
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.models import Agency
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,6 @@ QUOTABLE_TYPES = (str, datetime.date)
 
 def check_valid_toptier_agency(agency_id):
     """ Check if the ID provided (corresponding to Agency.id) is a valid toptier agency """
-
     agency = Agency.objects.filter(id=agency_id, toptier_flag=True).first()
     return agency is not None
 
@@ -98,24 +97,42 @@ def within_one_year(d1, d2):
 
 def generate_raw_quoted_query(queryset):
     """
-    Generates the raw sql from a queryset with quotable types quoted.
-    This function exists cause queryset.query doesn't quote some types such as
-    dates and strings. If Django is updated to fix this, please use that instead.
-    Note: To add types that should be in quotes in queryset.query, add it to
-          QUOTABLE_TYPES above
+    Generates the raw sql from a queryset with quotable types quoted. This function exists cause queryset.query doesn't
+    quote some types such as dates and strings. If Django is updated to fix this, please use that instead.
+    Note: To add types that should be in quotes in queryset.query, add it to QUOTABLE_TYPES above
     """
     sql, params = queryset.query.get_compiler(DEFAULT_DB_ALIAS).as_sql()
     str_fix_params = []
     for param in params:
-        str_fix_param = '\'{}\''.format(param) if isinstance(param, QUOTABLE_TYPES) else param
+        if isinstance(param, QUOTABLE_TYPES):
+            str_fix_param = '\'{}\''.format(param)
+        elif isinstance(param, list):
+            str_fix_param = 'ARRAY{}'.format(param)
+        else:
+            str_fix_param = param
         str_fix_params.append(str_fix_param)
     return sql % tuple(str_fix_params)
 
 
 def order_nested_object(nested_object):
-    """ Simply recursively order the item. To be used for standardizing objects for JSON dumps"""
+    """ Simply recursively order the item. To be used for standardizing objects for JSON dumps
+    Makes the assumption that any list of dictionaries does not contain a list or dictionary within itself """
     if isinstance(nested_object, list):
-        return sorted([order_nested_object(subitem) for subitem in nested_object])
+        if len(nested_object) > 0 and isinstance(nested_object[0], dict):
+            # Lists of dicts aren't handled by python's sorted(), so we handle sorting manually
+            sorted_subitems = []
+            sort_dict = {}
+            # Create a hash using keys & values
+            for subitem in nested_object:
+                hash_list = ['{}{}'.format(key, subitem[key]) for key in sorted(list(subitem.keys()))]
+                hash_str = '_'.join(str(hash_list))
+                sort_dict[hash_str] = subitem
+            # Sort by the new hash
+            for sorted_hash in sorted(list(sort_dict.keys())):
+                sorted_subitems.append(sort_dict[sorted_hash])
+            return sorted_subitems
+        else:
+            return sorted([order_nested_object(subitem) for subitem in nested_object])
     elif isinstance(nested_object, dict):
         return OrderedDict([(key, order_nested_object(nested_object[key])) for key in sorted(nested_object.keys())])
     else:
