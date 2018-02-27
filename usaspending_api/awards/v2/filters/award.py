@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # TODO: Performance when multiple false values are initially provided
 def award_filter(filters):
 
-    queryset = Award.objects.filter(latest_transaction_id__isnull=False, category__isnull=False)
+    queryset = Award.objects.filter(latest_transaction_id__isnull=False)
 
     faba_flag = False
     faba_queryset = FinancialAccountsByAwards.objects.filter(award_id__isnull=False)
