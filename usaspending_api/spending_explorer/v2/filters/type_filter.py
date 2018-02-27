@@ -8,7 +8,7 @@ from usaspending_api.common.helpers import generate_last_completed_fiscal_quarte
 from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
 
 
-def type_filter(_type, filters):
+def type_filter(_type, filters, limit=None):
     fiscal_year = None
     fiscal_quarter = None
     fiscal_date = None
@@ -49,6 +49,7 @@ def type_filter(_type, filters):
     # Recipient, Award Queryset
     alt_set = FinancialAccountsByAwards.objects.all().\
         exclude(transaction_obligated_amount__isnull=True).\
+        exclude(transaction_obligated_amount='NaN').\
         filter(submission__reporting_fiscal_quarter=fiscal_quarter).\
         filter(submission__reporting_fiscal_year=fiscal_year).\
         annotate(amount=Sum('transaction_obligated_amount'))
@@ -76,14 +77,11 @@ def type_filter(_type, filters):
             alt_set = exp.award_category()
 
         # Total value of filtered results
-        total = alt_set.aggregate(Sum('total'))
-        # There's only one item, we don't care about the key and just want the value
-        for _, value in total.items():
-            total = value
+        total = 0
 
-        if _type in ['award', 'award_category']:
-            results = alt_set.all()
-            for award in results:
+        results = alt_set.all()
+        for award in results:
+            if _type in ['award', 'award_category']:
                 code = None
                 for code_type in ('piid', 'fain', 'uri'):
                     if award[code_type]:
@@ -94,7 +92,9 @@ def type_filter(_type, filters):
                 award["code"] = code
                 if _type == 'award':
                     award["name"] = code
-            alt_set = results
+            total += award['total']
+
+        alt_set = results[:limit]
 
         results = {
             'total': total,
@@ -123,6 +123,8 @@ def type_filter(_type, filters):
         total = queryset.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
         for key, value in total.items():
             total = value
+
+        queryset = queryset[:limit]
 
         results = {
             'total': total,
