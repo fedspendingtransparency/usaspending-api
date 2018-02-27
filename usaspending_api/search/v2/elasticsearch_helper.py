@@ -58,17 +58,17 @@ def search_transactions(request_data, lower_limit, limit):
                     "bool": {
                         "must": [
                                   {"query_string": {"query": preprocess(keyword)}}],
-                              "filter": {
-                                "terms": {
-                                  "type": types
+                        "filter": {
+                            "terms": {
+                                "type": types
                                 }
                               }
                             }
                           },
-                          "sort": [{
-                              "award_id": {
+                        "sort": [{
+                              query_sort: {
                                   "order": request_data['order']}
-                          }]				  
+                          }]
                         }
 
     for index, award_types in indices_to_award_types.items():
