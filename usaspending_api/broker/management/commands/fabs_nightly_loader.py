@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.conf import settings
 
+from usaspending_api.common.helpers import fy
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
@@ -216,6 +217,8 @@ class Command(BaseCommand):
 
             if unique_fabs.first():
                 transaction_normalized_dict["update_date"] = datetime.utcnow()
+                transaction_normalized_dict["fiscal_year"] = fy(transaction_normalized_dict["action_date"])
+
                 # Update TransactionNormalized
                 TransactionNormalized.objects.filter(id=unique_fabs.first().transaction.id).\
                     update(**transaction_normalized_dict)
