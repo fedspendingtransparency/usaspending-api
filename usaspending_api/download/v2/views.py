@@ -7,7 +7,7 @@ from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound, ParseError
-from rest_framework_extensions.cache.decorators import cache_response
+from usaspending_api.common.cache_decorator import cache_response
 
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.awards.v2.filters.award import award_filter
