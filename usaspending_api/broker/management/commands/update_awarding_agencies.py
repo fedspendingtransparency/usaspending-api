@@ -1,10 +1,10 @@
 import logging
-import timeit
 
 from django.core.management.base import BaseCommand
 from datetime import datetime
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
+from usaspending_api.common.helpers import timer
 from usaspending_api.references.models import Agency
 
 
@@ -218,19 +218,12 @@ class Command(BaseCommand):
         limit = limit[0] if limit else 500000
 
         if options.get('contracts', None):
-            logger.info('Starting D1 (contracts/FPDS) awarding/funding agencies updates')
-            start = timeit.default_timer()
-            self.update_awarding_funding_agency(fiscal_year, 'D1', page=page, limit=limit)
-            end = timeit.default_timer()
-            logger.info('Finished D1 (contracts/FPDS) awarding agencies updates in ' + str(end - start) + ' seconds')
+            with timer('D1 (contracts/FPDS) awarding/funding agencies updates', logger.info):
+                self.update_awarding_funding_agency(fiscal_year, 'D1', page=page, limit=limit)
 
         elif options.get('assistance', None):
-            logger.info('Starting D2 (assistance/FABS) awarding/funding agencies updates')
-            start = timeit.default_timer()
-            self.update_awarding_funding_agency(fiscal_year, 'D2', page=page, limit=limit)
-            end = timeit.default_timer()
-            logger.info('Finished D2 (assistance/FABS) awarding/funding agencies updates in ' + str(end - start) +
-                        ' seconds')
+            with timer('D2 (assistance/FABS) awarding/funding agencies updates', logger.info):
+                self.update_awarding_funding_agency(fiscal_year, 'D2', page=page, limit=limit)
 
         else:
             logger.error('Not a valid data type: --assistance,--contracts')
