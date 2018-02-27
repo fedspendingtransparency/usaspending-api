@@ -40,7 +40,9 @@ logger = logging.getLogger(__name__)
 
 
 class SpendingOverTimeVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters, and returns spending by time. The amount of time is denoted by the "group" value.
+    """
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -142,7 +144,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
 
 class SpendingByCategoryVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters, and returns spending by the defined category/scope. 
+    The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
+    """
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -584,7 +589,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
 
 class SpendingByAwardVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters and fields, and returns the fields of the filtered awards.
+    """
     @total_ordering
     class MinType(object):
         def __le__(self, other):
@@ -689,6 +696,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
 
 class SpendingByAwardCountVisualizationViewSet(APIView):
+    """
+    This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Grants, etc.)
+    """
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -734,7 +744,9 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
 
 class SpendingByTransactionVisualizationViewSet(APIView):
-
+    """
+    This route takes keyword search fields, and returns the fields of the searched term.
+    """
     @total_ordering
     class MinType(object):
         def __le__(self, other):
@@ -802,7 +814,9 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
 
 class TransactionSummaryVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters, and returns the number of transactions and summation of federal action obligations.
+    """
     @cache_response()
     def post(self, request):
         """
@@ -826,7 +840,10 @@ class TransactionSummaryVisualizationViewSet(APIView):
 
 
 class SpendingByTransactionCountVisualizaitonViewSet(APIView):
+    """
+    This route takes keyword search fields, and returns the fields of the searched term.
 
+    """
     @cache_response()
     def post(self, request):
 

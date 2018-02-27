@@ -13,11 +13,9 @@ from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY
 
 
 class ToptierAgenciesViewSet(APIView):
-
+    """This route sends a request to the backend to retrieve all toptier agencies and related, relevant data."""
     @cache_response()
     def get(self, request, format=None):
-        """Return all toptier agencies and associated information"""
-
         sortable_columns = ['agency_id', 'agency_name', 'active_fy', 'active_fq', 'outlay_amount', 'obligated_amount',
                             'budget_authority_amount', 'current_total_budget_authority_amount',
                             'percentage_of_total_budget_authority']
