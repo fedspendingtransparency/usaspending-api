@@ -70,7 +70,7 @@ HEADER = [
     '--    The SQL definition is stored in a json file     --',
     '--    Look in matview_generator for the code.         --',
     '--                                                    --',
-    '--  DO NOT DIRECTLY EDIT THIS FILE!!!                 --',
+    '--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --',
     '--------------------------------------------------------',
 ]
 CLUSTERING_INDEX = None
@@ -252,8 +252,6 @@ def create_componentized_files(sql_json):
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
 
-    # final_sql_strings.extend(make_sql_header())
-    # final_sql_strings.extend(make_matview_drops(matview_name))
     sql_strings = make_sql_header() + make_matview_drops(matview_name)
     write_sql_file(sql_strings, filename_base + '__drops')
 
@@ -273,15 +271,6 @@ def create_componentized_files(sql_json):
         sql_strings = make_sql_header() + make_matview_refresh(matview_name)
         write_sql_file(sql_strings, filename_base + '__refresh')
 
-    # final_sql_strings.append('')
-    # final_sql_strings += create_indexes
-    # final_sql_strings.append('')
-
-    # final_sql_strings.extend(make_modification_sql(matview_temp_name))
-    # final_sql_strings.append('')
-    # final_sql_strings.extend(make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes))
-    # final_sql_strings.append('')
-
 
 def create_monolith_file(sql_json):
     sql_strings = create_all_sql_strings(sql_json)
@@ -290,6 +279,7 @@ def create_monolith_file(sql_json):
 
 
 def get_git_commit():
+    """ Get the first 8 characters of the current git commit hash + '$'. Else return None"""
     args = 'git log -n 1 --pretty=format:"%H"'.split(' ')
     shell = subprocess.run(args, stdout=subprocess.PIPE, check=True)
     if shell.stdout:
@@ -309,8 +299,8 @@ def main(source_file):
 
 
 if __name__ == '__main__':
-    COMMIT_HASH = get_git_commit() or str(uuid4())[:9]
-    RANDOM_CHARS = str(uuid4())[:3]
+    COMMIT_HASH = get_git_commit() or str(uuid4())[:9]  # If the hash is not returned, provide 9 random characters
+    RANDOM_CHARS = str(uuid4())[:3]  # Indexes must be unique across the schema. These 3 chars should provide uniqueness
     if len(sys.argv) > 1:
         print('Creating matview SQL using {}'.format(sys.argv[1]))
         main(sys.argv[1])
