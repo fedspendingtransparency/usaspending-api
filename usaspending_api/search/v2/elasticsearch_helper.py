@@ -4,11 +4,9 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
-<<<<<<< HEAD
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import award_categories
-=======
 from usaspending_api.core.elasticsearch.client import es_client_query
->>>>>>> dev
+
 logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
@@ -106,7 +104,6 @@ def get_total_results(keyword, sub_index, retries=3):
         return None
 
 
-<<<<<<< HEAD
 def clean_sub_index(sub_index):
     lookup = {"loans": "loans", "other": "other", "contract":
               "contracts", "direct": "direct_payments", "grant": "grants", "insurance": "insurance"}
@@ -164,21 +161,6 @@ def spending_by_transaction_count(filters, retries=3):
             logger.error('Was unable to parse aggregation responses.')
     else:
         return None
-=======
-def spending_by_transaction_count(request_data):
-    keyword = request_data['keyword']
-    response = {}
-
-    for category in indices_to_award_types.keys():
-        total = get_total_results(keyword, category)
-        if total is not None:
-            if category == 'directpayments':
-                category = 'direct_payments'
-            response[category] = total
-        else:
-            return total
-    return response
->>>>>>> dev
 
 
 def get_sum_aggregation_results(keyword, field='transaction_amount'):
