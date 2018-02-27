@@ -187,8 +187,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .values(
                         agency_name=F('awarding_toptier_agency_name'),
                         agency_abbreviation=F('awarding_toptier_agency_abbreviation'))
-                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                    .order_by('-aggregated_amount')
+
             elif scope == "subagency":
                 queryset = queryset \
                     .filter(
@@ -196,12 +195,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .values(
                         agency_name=F('awarding_subtier_agency_name'),
                         agency_abbreviation=F('awarding_subtier_agency_abbreviation'))
-                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                    .order_by('-aggregated_amount')
+
             elif scope == "office":
                     # NOT IMPLEMENTED IN UI
                     raise NotImplementedError
 
+            queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types)\
+                .order_by('-aggregated_amount')
             results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -222,8 +222,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .values(
                         agency_name=F('funding_toptier_agency_name'),
                         agency_abbreviation=F('funding_toptier_agency_abbreviation'))
-                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                    .order_by('-aggregated_amount')
+
             elif scope == "subagency":
                 queryset = queryset \
                     .filter(
@@ -231,12 +230,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .values(
                         agency_name=F('funding_subtier_agency_name'),
                         agency_abbreviation=F('funding_subtier_agency_abbreviation'))
-                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                    .order_by('-aggregated_amount')
+
             elif scope == "office":
                 # NOT IMPLEMENTED IN UI
                 raise NotImplementedError
 
+            queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
+                .order_by('-aggregated_amount')
             results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -343,15 +343,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     queryset = queryset \
                         .filter(product_or_service_code__isnull=False) \
                         .values(psc_code=F("product_or_service_code"))
-                    queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                        .order_by('-aggregated_amount')
                 else:
                     queryset = queryset \
                         .filter(psc_code__isnull=False) \
                         .values("psc_code")
-                    queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
-                        .order_by('-aggregated_amount')
 
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
+                    .order_by('-aggregated_amount')
                 # Begin DB hits here
                 results = list(queryset[lower_limit:upper_limit + 1])
 
