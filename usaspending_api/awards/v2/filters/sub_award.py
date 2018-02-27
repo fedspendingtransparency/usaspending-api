@@ -3,7 +3,7 @@ import logging
 
 from django.db.models import Q
 
-from usaspending_api.awards.models import Award, LegalEntity, FinancialAccountsByAwards
+from usaspending_api.awards.models import Subaward, LegalEntity
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import NAICS, PSC
@@ -13,12 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: Performance when multiple false values are initially provided
-def award_filter(filters):
+def subaward_filter(filters):
 
-    queryset = Award.objects.filter(latest_transaction_id__isnull=False)
-
-    faba_flag = False
-    faba_queryset = FinancialAccountsByAwards.objects.filter(award_id__isnull=False)
+    queryset = Subaward.objects.filter(award__latest_transaction_id__isnull=False, award__category__isnull=False)
     for key, value in filters.items():
 
         if value is None:
@@ -44,11 +41,7 @@ def award_filter(filters):
             'psc_codes',
             'contract_pricing_type_codes',
             'set_aside_type_codes',
-            'extent_competed_type_codes',
-            # next 3 keys used by federal account page
-            'federal_account_ids',
-            'object_class_ids',
-            'program_activity_ids'
+            'extent_competed_type_codes'
         ]
 
         if key not in key_list:
@@ -77,7 +70,7 @@ def award_filter(filters):
                     description__icontains=keyword).values('code')
             if naics_list.exists():
                 naics_match = True
-                naics_qs = queryset.filter(latest_transaction__contract_data__naics__in=naics_list)
+                naics_qs = queryset.filter(award__latest_transaction__contract_data__naics__in=naics_list)
 
             psc_match = False
             if len(keyword) == 4 and PSC.objects.all().filter(code=keyword).exists():
@@ -87,7 +80,7 @@ def award_filter(filters):
             if psc_list.exists():
                 psc_match = True
                 psc_qs = queryset.filter(
-                        latest_transaction__contract_data__product_or_service_code__in=psc_list)
+                    award__latest_transaction__contract_data__product_or_service_code__in=psc_list)
 
             duns_match = False
             non_parent_duns_list = LegalEntity.objects.all().values('legal_entity_id').filter(
@@ -99,8 +92,8 @@ def award_filter(filters):
                 duns_match = True
                 duns_qs = queryset.filter(recipient__in=duns_list)
 
-            piid_qs = queryset.filter(piid=keyword)
-            fain_qs = queryset.filter(fain=keyword)
+            piid_qs = queryset.filter(award__piid=keyword)
+            fain_qs = queryset.filter(award__fain=keyword)
 
             # Always filter on fain/piid because fast:
             queryset = piid_qs
@@ -123,7 +116,7 @@ def award_filter(filters):
             transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
             logger.info('Found {} transactions based on keyword: {}'.format(len(transaction_ids), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
-            queryset = queryset.filter(latest_transaction__id__isnull=False)
+            queryset = queryset.filter(award__latest_transaction__id__isnull=False)
             queryset &= queryset.extra(
                 where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
 
@@ -134,9 +127,8 @@ def award_filter(filters):
                 date_type = v.get("date_type", "action_date")
                 if date_type not in ["action_date", "last_modified_date"]:
                     raise InvalidParameterException('Invalid date_type: {}'.format(date_type))
-                date_field = (date_type if date_type == 'last_modified_date'
-                              else 'latest_transaction__{}'.format(date_type))
-
+                date_field = (date_type if date_type == 'action_date'
+                              else 'award__latest_transaction__{}'.format(date_type))
                 kwargs = {}
                 if v.get("start_date") is not None:
                     kwargs["{}__gte".format(date_field)] = v.get("start_date")
@@ -144,10 +136,10 @@ def award_filter(filters):
                     kwargs["{}__lte".format(date_field)] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if queryset_init:
-                    or_queryset |= Award.objects.filter(**kwargs)
+                    or_queryset |= Subaward.objects.filter(**kwargs)
                 else:
                     queryset_init = True
-                    or_queryset = Award.objects.filter(**kwargs)
+                    or_queryset = Subaward.objects.filter(**kwargs)
             if queryset_init:
                 queryset &= or_queryset
 
@@ -159,59 +151,53 @@ def award_filter(filters):
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                filter_obj = Q(type__in=or_queryset)
+                filter_obj = Q(award__type__in=or_queryset)
                 if idv_flag:
-                    filter_obj |= Q(latest_transaction__contract_data__pulled_from='IDV')
-                queryset &= Award.objects.filter(filter_obj)
+                    filter_obj |= Q(award__latest_transaction__contract_data__pulled_from='IDV')
+                queryset &= Subaward.objects.filter(filter_obj)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
-            funding_toptier = Q()
-            funding_subtier = Q()
-            awarding_toptier = Q()
-            awarding_subtier = Q()
+            or_queryset = None
+            funding_toptier = []
+            funding_subtier = []
+            awarding_toptier = []
+            awarding_subtier = []
             for v in value:
                 type = v["type"]
                 tier = v["tier"]
                 name = v["name"]
                 if type == "funding":
                     if tier == "toptier":
-                        funding_toptier |= Q(funding_agency__toptier_agency__name=name)
+                        funding_toptier.append(name)
                     elif tier == "subtier":
-                        funding_subtier |= Q(funding_agency__subtier_agency__name=name)
+                        funding_subtier.append(name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
-                        awarding_toptier |= Q(awarding_agency__toptier_agency__name=name)
+                        awarding_toptier.append(name)
                     elif tier == "subtier":
-                        awarding_subtier |= Q(awarding_agency__subtier_agency__name=name)
+                        awarding_subtier.append(name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
                     raise InvalidParameterException('Invalid filter: agencies ' + type + ' type is invalid.')
-
-            awarding_queryfilter = Q()
-            funding_queryfilter = Q()
-
-            # Since these are Q filters, no DB hits for boolean checks
-            if funding_toptier:
-                funding_queryfilter |= funding_toptier
-            if funding_subtier:
-                funding_queryfilter |= funding_subtier
-            if awarding_toptier:
-                awarding_queryfilter |= awarding_toptier
-            if awarding_subtier:
-                awarding_queryfilter |= awarding_subtier
-
-            queryset = queryset.filter(funding_queryfilter & awarding_queryfilter)
+            if len(funding_toptier) != 0:
+                queryset &= Subaward.objects.filter(funding_agency__toptier_agency__name__in=funding_toptier)
+            if len(funding_subtier) != 0:
+                queryset &= Subaward.objects.filter(funding_agency__subtier_agency__name__in=funding_subtier)
+            if len(awarding_toptier) != 0:
+                queryset &= Subaward.objects.filter(awarding_agency__toptier_agency__name__in=awarding_toptier)
+            if len(awarding_subtier) != 0:
+                queryset &= Subaward.objects.filter(awarding_agency__subtier_agency__name__in=awarding_subtier)
 
         elif key == "legal_entities":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(recipient__legal_entity_id__in=or_queryset)
+                queryset &= Subaward.objects.filter(recipient__legal_entity_id__in=or_queryset)
 
         elif key == "recipient_search_text":
             if len(value) != 1:
@@ -223,7 +209,7 @@ def award_filter(filters):
             if len(recipient_string) == 9:
                 filter_obj |= Q(recipient__recipient_unique_id__iexact=recipient_string)
 
-            queryset &= Award.objects.filter(filter_obj)
+            queryset &= Subaward.objects.filter(filter_obj)
 
         elif key == "recipient_scope":
             if value == "domestic":
@@ -234,12 +220,12 @@ def award_filter(filters):
                 raise InvalidParameterException('Invalid filter: recipient_scope type is invalid.')
 
         elif key == "recipient_locations":
-            or_queryset = geocode_filter_locations('recipient__location', value, 'Award')
+            or_queryset = geocode_filter_locations('recipient__location', value, 'Subaward')
             queryset &= or_queryset
 
         elif key == "recipient_type_names":
             if len(value) != 0:
-                queryset &= Award.objects.filter(
+                queryset &= Subaward.objects.filter(
                     recipient__business_categories__overlap=value
                 )
 
@@ -252,7 +238,7 @@ def award_filter(filters):
                 raise InvalidParameterException('Invalid filter: place_of_performance_scope is invalid.')
 
         elif key == "place_of_performance_locations":
-            or_queryset = geocode_filter_locations('place_of_performance', value, 'Award')
+            or_queryset = geocode_filter_locations('place_of_performance', value, 'Subaward')
 
             queryset &= or_queryset
 
@@ -262,24 +248,24 @@ def award_filter(filters):
             for v in value:
                 if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
                     if queryset_init:
-                        or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"],
-                                                            total_obligation__lt=v["upper_bound"])
+                        or_queryset |= Subaward.objects.filter(amount__gt=v["lower_bound"],
+                                                               amount__lt=v["upper_bound"])
                     else:
                         queryset_init = True
-                        or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"],
-                                                           total_obligation__lt=v["upper_bound"])
+                        or_queryset = Subaward.objects.filter(amount__gt=v["lower_bound"],
+                                                              amount__lt=v["upper_bound"])
                 elif v.get("lower_bound") is not None:
                     if queryset_init:
-                        or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"])
+                        or_queryset |= Subaward.objects.filter(amount__gt=v["lower_bound"])
                     else:
                         queryset_init = True
-                        or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"])
+                        or_queryset = Subaward.objects.filter(amount__gt=v["lower_bound"])
                 elif v.get("upper_bound") is not None:
                     if queryset_init:
-                        or_queryset |= Award.objects.filter(total_obligation__lt=v["upper_bound"])
+                        or_queryset |= Subaward.objects.filter(amount__lt=v["upper_bound"])
                     else:
                         queryset_init = True
-                        or_queryset = Award.objects.filter(total_obligation__lt=v["upper_bound"])
+                        or_queryset = Subaward.objects.filter(amount__lt=v["upper_bound"])
                 else:
                     raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
             if queryset_init:
@@ -289,75 +275,57 @@ def award_filter(filters):
             if len(value) != 0:
                 filter_obj = Q()
                 for val in value:
-                    filter_obj |= Q(piid__icontains=val) | Q(fain__icontains=val) | Q(uri__icontains=val)
+                    filter_obj |= (Q(award__piid__icontains=val) | Q(award__fain__icontains=val) |
+                                   Q(award__uri__icontains=val))
 
-                queryset &= Award.objects.filter(filter_obj)
+                queryset &= Subaward.objects.filter(filter_obj)
 
         elif key == "program_numbers":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(
-                        latest_transaction__assistance_data__cfda_number__in=or_queryset)
+                queryset &= Subaward.objects.filter(
+                    award__latest_transaction__assistance_data__cfda_number__in=or_queryset)
 
         elif key == "naics_codes":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(
-                        latest_transaction__contract_data__naics__in=or_queryset)
+                queryset &= Subaward.objects.filter(
+                    award__latest_transaction__contract_data__naics__in=or_queryset)
 
         elif key == "psc_codes":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(
-                        latest_transaction__contract_data__product_or_service_code__in=or_queryset)
+                queryset &= Subaward.objects.filter(
+                    award__latest_transaction__contract_data__product_or_service_code__in=or_queryset)
 
         elif key == "contract_pricing_type_codes":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(
-                        latest_transaction__contract_data__type_of_contract_pricing__in=or_queryset)
+                queryset &= Subaward.objects.filter(
+                    award__latest_transaction__contract_data__type_of_contract_pricing__in=or_queryset)
 
         elif key == "set_aside_type_codes":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(
-                        latest_transaction__contract_data__type_set_aside__in=or_queryset)
+                queryset &= Subaward.objects.filter(
+                    award__latest_transaction__contract_data__type_set_aside__in=or_queryset)
 
         elif key == "extent_competed_type_codes":
             or_queryset = []
             for v in value:
                 or_queryset.append(v)
             if len(or_queryset) != 0:
-                queryset &= Award.objects.filter(
-                        latest_transaction__contract_data__extent_competed__in=or_queryset)
-
-        # Federal Account Filter
-        elif key == "federal_account_ids":
-            faba_flag = True
-            faba_queryset &= FinancialAccountsByAwards.objects.filter(treasury_account__federal_account_id__in=value)
-
-        # Federal Account Filter
-        elif key == "object_class_ids":
-            faba_flag = True
-            faba_queryset &= FinancialAccountsByAwards.objects.filter(object_class_id__in=value)
-
-        # Federal Account Filter
-        elif key == "program_activity_ids":
-            faba_flag = True
-            faba_queryset &= FinancialAccountsByAwards.objects.filter(program_activity_id__in=value)
-
-    if faba_flag:
-        award_ids = faba_queryset.values('award_id')
-        queryset.filter(id__in=award_ids)
+                queryset &= Subaward.objects.filter(
+                    award__latest_transaction__contract_data__extent_competed__in=or_queryset)
 
     return queryset
