@@ -6,7 +6,7 @@ from django.db.models.functions import Concat
 from django.utils.dateparse import parse_date
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_extensions.cache.decorators import cache_response
+from usaspending_api.common.cache_decorator import cache_response
 
 from usaspending_api.accounts.models import (AppropriationAccountBalances,
                                              FederalAccount,

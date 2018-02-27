@@ -12,12 +12,12 @@ from django.db.models import Sum, F
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
-from rest_framework_extensions.cache.decorators import cache_response
 
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.models import Agency
 from usaspending_api.awards.v2.filters.view_selector import download_transaction_count
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, all_award_types_mappings
+from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.csv_helpers import sqs_queue
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import order_nested_object
