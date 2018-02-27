@@ -2,7 +2,6 @@ import random
 
 from usaspending_api.references.models import FilterHash
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.bulk_download.models import BulkDownloadJob
 
 """
 The USAspending API is a *mostly* readonly application. This
@@ -18,7 +17,7 @@ class ReadReplicaRouter(object):
 
     def db_for_read(self, model, **hints):
         # these are the only models we write to; to deal with replication lag just get them from the source db
-        if model in [FilterHash, DownloadJob, BulkDownloadJob]:
+        if model in [FilterHash, DownloadJob]:
             return 'db_source'
         return random.choice(['db_source', 'db_r1'])
 
