@@ -156,12 +156,12 @@ class DocumentApiRenderer(BrowsableAPIRenderer):
             git_head_file = open(BASE_DIR + "/.git/HEAD", "r")
 
             git_branch = str(git_head_file.read()).split("/")[-1]
-            git_branch = "https://github.com/fedspendingtransparency/usaspending-api/blob/" + git_branch + \
-                         "/usaspending_api/api_docs/api_documentation"
+            git_branch = "https://github.com/fedspendingtransparency/usaspending-api/blob/" \
+                         "{}/usaspending_api/api_docs/api_documentation".format(git_branch)
 
             doc_location = context_array[1].split()[0]
 
-            path = git_branch + str(doc_location)
+            path = "{}{}".format(git_branch, str(doc_location))
             path = path.replace("\n", "")
             path = path.replace(" ", "%20")
             doc_description = "<p>{}\n\nDocumentation on this endpoint can be found <a href={}>here<a>.</p>".\
