@@ -3,8 +3,10 @@ from django.db.models.functions import Coalesce
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.views import APIDocumentationView, APIDocumentationView2
 from usaspending_api.submissions.models import SubmissionAttributes
 from rest_framework.views import APIView
+
 from rest_framework.response import Response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.accounts.models import AppropriationAccountBalances
@@ -12,12 +14,13 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY
 
 
-class ToptierAgenciesViewSet(APIView):
-
+class ToptierAgenciesViewSet(APIDocumentationView2):
+    """
+    This route sends a request to the backend to retrieve all toptier agencies and related, relevant data. 
+    GITHUB DOCUMENTATION: /Toptier Agencies.md
+    """
     @cache_response()
     def get(self, request, format=None):
-        """Return all toptier agencies and associated information"""
-
         sortable_columns = ['agency_id', 'agency_name', 'active_fy', 'active_fq', 'outlay_amount', 'obligated_amount',
                             'budget_authority_amount', 'current_total_budget_authority_amount',
                             'percentage_of_total_budget_authority']

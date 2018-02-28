@@ -55,21 +55,27 @@ class BaseAutocompleteViewSet(APIView):
 
 
 class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
-
+    """
+    This route sends a request to the backend to retrieve awarding agencies matching the specified search text.
+    """
     @cache_response()
     def post(self, request):
         return self.agency_autocomplete(request)
 
 
 class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
-
+    """
+    This route sends a request to the backend to retrieve funding agencies matching the specified search text.
+    """
     @cache_response()
     def post(self, request):
         return self.agency_autocomplete(request)
 
 
 class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
-
+    """
+    This route sends a request to the backend to retrieve CFDA programs matching the specified search text.
+    """
     @cache_response()
     def post(self, request):
         """Return CFDA matches by number, title, or name"""
@@ -91,7 +97,9 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
 
 
 class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
-
+    """
+    This route sends a request to the backend to retrieve NAICS objects matching the specified search text.
+    """
     @cache_response()
     def post(self, request):
         """Return all NAICS table entries matching the provided search text"""
@@ -114,7 +122,11 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
 
 class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
-
+    """
+    This route sends a request to the backend to retrieve product or service (PSC) codes and their descriptions based 
+    on a search string. 
+    This may be the 4-character PSC code or a description string.
+    """
     @cache_response()
     def post(self, request):
         """Return all PSC table entries matching the provided search text"""
@@ -138,7 +150,10 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
 
 class RecipientAutocompleteViewSet(BaseAutocompleteViewSet):
-
+    """
+    This route sends a request to the backend to retrieve Parent and Recipient DUNS
+     matching the search text in order of similarity.
+    """
     @cache_response()
     def post(self, request):
         """Return a list of legal entity IDs whose recipient name contains search_text,

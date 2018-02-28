@@ -20,7 +20,8 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
-    """Returns financial spending data by object class."""
+    """Returns financial spending data by object class.
+    GITHUB DOCUMENTATION: /federal account/Avalible Object Classes.md"""
 
     @cache_response()
     def get(self, request, pk, format=None):
@@ -61,9 +62,16 @@ class ObjectClassFederalAccountsViewSet(APIView):
 
 
 class FiscalYearSnapshotFederalAccountsViewSet(APIView):
+    """
+    This route sends a request to the backend to retrieve budget information for a federal account. 
+    If no fiscal year is used, the federal accounts most recent fiscal year is used.
+    
+    
+    GITHUB DOCUMENTATION: /federal account/Fiscal Year Snapshot.md
+    
+    """
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
-
         fy = int(fy) or SubmissionAttributes.last_certified_fy()
         queryset = AppropriationAccountBalances.final_objects.filter(
             treasury_account_identifier__federal_account_id=int(pk)).filter(submission__reporting_fiscal_year=fy)
@@ -86,6 +94,11 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
 
 
 class SpendingOverTimeFederalAccountsViewSet(APIView):
+    """
+    This route takes a federal_account DB ID and returns the data reqired to visualized the spending over time graphic.
+    
+    GITHUB DOCUMENTATION: /federal account/Spending Over Time.md
+    """
     @cache_response()
     def post(self, request, pk, format=None):
         # create response
@@ -320,7 +333,10 @@ def federal_account_filter(filters, extra=""):
 
 class SpendingByCategoryFederalAccountsViewSet(APIView):
     """
-    https://gist.github.com/catherinedevlin/aa510ed9020431d2cbb9cc4045fa5835
+    This route takes a federal_account DB ID and returns the data required to visualized 
+    the Spending By Category graphic.
+    
+    GITHUB DOCUMENTATION: /federal account/Spending By Category.md
     """
 
     @cache_response()
@@ -365,6 +381,10 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
 
 
 class FederalAccountsViewSet(APIView):
+    """
+    This route sends a request to the backend to retrieve a list of federal accounts.
+    GITHUB DOCUMENTATION: /federal account/federal accounts.md
+    """
     @cache_response()
     def post(self, request, format=None):
         """Return all high-level Federal Account information"""

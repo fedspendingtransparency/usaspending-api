@@ -7,7 +7,9 @@ from usaspending_api.awards.models import Award
 
 
 class AwardLastUpdatedViewSet(APIView):
-    """Return all award spending by award type for a given fiscal year and agency id"""
+    """Return all award spending by award type for a given fiscal year and agency id.
+    GITHUB DOCUMENTATION: /Award Last Updated.md
+    """
 
     @cache_response()
     def get(self, request):
