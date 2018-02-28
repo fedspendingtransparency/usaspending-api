@@ -29,7 +29,8 @@ VALUE_MAPPINGS = {
         'download_name': 'prime_awards',
         'contract_data': 'latest_transaction__contract_data',
         'assistance_data': 'latest_transaction__assistance_data',
-        'filter_function': award_filter
+        'filter_function': award_filter,
+        'sort_columns': ['awarding_agency_id', 'generated_unique_award_id']
     },
     # Transaction Level
     'transactions': {
@@ -38,7 +39,8 @@ VALUE_MAPPINGS = {
         'download_name': 'prime_transactions',
         'contract_data': 'contract_data',
         'assistance_data': 'assistance_data',
-        'filter_function': transaction_filter
+        'filter_function': transaction_filter,
+        'sort_columns': ['awarding_agency_id', 'id']
     },
     # SubAward Level
     'sub_awards': {
@@ -47,7 +49,8 @@ VALUE_MAPPINGS = {
         'download_name': 'subawards',
         'contract_data': 'award__latest_transaction__contract_data',
         'assistance_data': 'award__latest_transaction__assistance_data',
-        'filter_function': subaward_filter
+        'filter_function': subaward_filter,
+        'sort_columns': ['awarding_agency_id', 'subaward_number']
     }
 }
 # Bulk Download still uses "prime awards" instead of "transactions"
