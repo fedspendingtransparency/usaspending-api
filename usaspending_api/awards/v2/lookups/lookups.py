@@ -1115,36 +1115,37 @@ award_type_mapping = {
     'S': 'Funded Space Act Agreement',
     'T': 'Training Grant'
 }
-
 contract_type_mapping = {
     'A': 'BPA Call',
     'B': 'Purchase Order',
     'C': 'Delivery Order',
     'D': 'Definitive Contract'
 }
-
 grant_type_mapping = {
     '02': 'Block Grant',
     '03': 'Formula Grant',
     '04': 'Project Grant',
     '05': 'Cooperative Agreement'
 }
-
 direct_payment_type_mapping = {
     '06': 'Direct Payment for Specified Use',
     '10': 'Direct Payment with Unrestricted Use'
 }
-
 loan_type_mapping = {
     '07': 'Direct Loan',
     '08': 'Guaranteed/Insured Loan'
 }
-
 other_type_mapping = {
     '09': 'Insurance',
     '11': 'Other Financial Assistance'
 }
-
 assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, **loan_type_mapping,
                            **other_type_mapping}
 non_loan_assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, **other_type_mapping}
+all_award_types_mappings = {
+    'contracts': list(contract_type_mapping.keys()),
+    'grants': list(grant_type_mapping.keys()),
+    'direct_payments': list(direct_payment_type_mapping.keys()),
+    'loans': list(loan_type_mapping.keys()),
+    'other_financial_assistance': list(other_type_mapping.keys())
+}
