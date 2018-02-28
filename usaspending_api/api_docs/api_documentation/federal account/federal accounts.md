@@ -1,5 +1,5 @@
 ## Federal Account
-**Route:** `v2/references/federal_accounts/`
+**Route:** `v2/federal_accounts/`
 
 **Method:** `POST`
 
