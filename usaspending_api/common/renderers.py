@@ -2,20 +2,12 @@ from rest_framework.renderers import BrowsableAPIRenderer
 from django.core.paginator import Page
 from rest_framework.request import override_method
 from django import forms
-from rest_framework import VERSION, exceptions, serializers, status
-from rest_framework.exceptions import ParseError
-from rest_framework.request import is_form_media_type
+from rest_framework import VERSION
 from django.utils.safestring import SafeText
 from usaspending_api.settings import BASE_DIR
 from collections import OrderedDict
 from django.conf import settings
 from rest_framework.settings import api_settings
-from django.template import Template, loader
-from rest_framework.compat import (
-    INDENT_SEPARATORS, LONG_SEPARATORS, SHORT_SEPARATORS, coreapi,
-    template_render
-)
-
 
 class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
     """Renders the browsable api, but excludes the HTML form."""
