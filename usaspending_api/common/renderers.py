@@ -9,6 +9,7 @@ from collections import OrderedDict
 from django.conf import settings
 from rest_framework.settings import api_settings
 
+
 class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
     """Renders the browsable api, but excludes the HTML form."""
 
