@@ -159,7 +159,7 @@ class DocumentApiRenderer(BrowsableAPIRenderer):
             git_branch = "https://github.com/fedspendingtransparency/usaspending-api/blob/" + git_branch + \
                          "/usaspending_api/api_docs/api_documentation"
 
-            doc_location = context_array[1]
+            doc_location = context_array[1].split()[0]
 
             path = git_branch + str(doc_location)
             path = path.replace("\n", "")
