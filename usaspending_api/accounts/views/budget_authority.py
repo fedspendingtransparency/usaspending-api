@@ -7,7 +7,8 @@ from usaspending_api.common.views import DetailViewSet
 
 
 class BudgetAuthorityViewSet(DetailViewSet):
-    """Return historical budget authority for a given agency id"""
+    """Return historical budget authority for a given agency id.
+    GITHUB DOCUMENTATION: /Budget Authority Agencies.md"""
 
     serializer_class = BudgetAuthoritySerializer
     ordering_fields = ('year', 'total')

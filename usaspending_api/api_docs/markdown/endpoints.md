@@ -84,26 +84,20 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/filter/](/api/v1/filter/) | POST | Returns a hash of the json body |
 | [/api/v1/hash/](/api/v1/hash/) | POST | Returns a previously input json body |
 | [/api/v2/awards/last_updated/](/api/v2/awards/last_updated/) | GET | Returns the last updated date for the Award data |
-| [/api/v2/autocomplete/awarding_agency/](/api/v2/autocomplete/awarding_agency/) | POST | Returns awarding agencies matching the specified search text |
-| [/api/v2/autocomplete/cfda/](/api/v2/autocomplete/cfda/) | POST | Returns CFDA programs matching the specified search text |
-| [/api/v2/autocomplete/funding_agency/](/api/v2/autocomplete/funding_agency/) | POST | Returns funding agencies matching the specified search text|
-| [/api/v2/autocomplete/naics/](/api/v2/autocomplete/naics/) | POST | Returns NAICS objects matching the specified search text |
-| [/api/v2/autocomplete/psc/](/api/v2/autocomplete/psc/) | POST | Returns product or service (PSC) codes and their descriptions based on a search string |
-| [/api/v2/autocomplete/recipient](/api/v2/autocomplete/recipient) | POST | Returns Parent and Recipient DUNS matching the search text in order of similarity |
 | [/api/v2/award_spending/award_category](/api/v2/award_spending/award_category) | GET | Returns Award Spending Amounts for all Award Category with Respective Top Tier and Sub Tier Agencies |
 | [/api/v2/award_spending/recipient](/api/v2/award_spending/recipient) | GET | Returns Award Spending Amounts for all Recipients with Respective Top Tier and Sub Tier Agencies |
-| [/api/v2/budget_authority/agencies/:cgac] | GET | Returns an agency's budget authority over the years|
+| /api/v2/budget_authority/agencies/:cgac | GET | Returns an agency's budget authority over the years|
 | [/api/v2/federal_accounts/](/api/v2/references/federal_accounts/) | POST | Returns a list of federal accounts |
-| [/api/v2/federal_accounts/:federal_account_id/available_object_classes] | GET | Returns minor object classes rolled up under major classes filtered by federal account |
-| [/api/v2/federal_accounts/:federal_account_id/available_object_classes] | GET | Returns minor object classes rolled up under major classes filtered by federal account |
-| [/api/v2/federal_accounts/:federal_account_id/fiscal_year_snapshot/:fiscal_year/] | GET | Returns  budget information for a federal account. If no fiscal year is used, the federal accounts most recent fiscal year is used |
-| [/api/v2/federal_accounts/:federal_account_id/spending_by_category/] | POST | Returns the data reqired to visualized the Spending By Category graphic |
-| [/api/v2/federal_accounts/:federal_account_id/spending_over_time/]| POST | Returns the data reqired to visualized the spending over time graphic |
-| [/api/v2/federal_obligations?fiscal_year=:fiscal_year&federal_account=:id] | GET | Returns an agency's federal obligations |
+| /api/v2/federal_accounts/:federal_account_id/available_object_classes | GET | Returns minor object classes rolled up under major classes filtered by federal account |
+| /api/v2/federal_accounts/:federal_account_id/available_object_classes | GET | Returns minor object classes rolled up under major classes filtered by federal account |
+| /api/v2/federal_accounts/:federal_account_id/fiscal_year_snapshot/:fiscal_year/ | GET | Returns  budget information for a federal account. If no fiscal year is used, the federal accounts most recent fiscal year is used |
+| /api/v2/federal_accounts/:federal_account_id/spending_by_category/ | POST | Returns the data reqired to visualized the Spending By Category graphic |
+| /api/v2/federal_accounts/:federal_account_id/spending_over_time/| POST | Returns the data reqired to visualized the spending over time graphic |
+| /api/v2/federal_obligations?fiscal_year=:fiscal_year&federal_account=:id | GET | Returns an agency's federal obligations |
 | [/api/v2/financial_balances/agencies](/api/v2/financial_balances/agencies) | GET | Returns financial balance information by funding agency and fiscal year |
-| [/api/v2/financial_spending/major_object_class?fiscal_year=:fiscal_year&funding_agency_id=:id] | GET | Returns Award Spending Amounts for all Recipients with Respective Top Tier and Sub Tier Agencies |
-| [/api/v2/financial_spending/object_class?fiscal_year=:fiscal_year&funding_agency_id=:id&major_object_class_code=:id] | GET | Returns Award Spending Amounts for all Recipients with Respective Top Tier and Sub Tier Agencies |
-| [/api/v2/references/agency/:agency_id/] | GET | Returns agency information |
+| /api/v2/financial_spending/major_object_class?fiscal_year=:fiscal_year&funding_agency_id=:id | GET | Returns Award Spending Amounts for all Recipients with Respective Top Tier and Sub Tier Agencies |
+| /api/v2/financial_spending/object_class?fiscal_year=:fiscal_year&funding_agency_id=:id&major_object_class_code=:id | GET | Returns Award Spending Amounts for all Recipients with Respective Top Tier and Sub Tier Agencies |
+| /api/v2/references/agency/:agency_id/ | GET | Returns agency information |
 | [/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/) | GET | Returns all toptier agencies and related, relevant data |
 | [/api/v2/search/spending_by_award/](/api/v2/search/spending_by_award/) | POST | Returns the fields of the filtered awards |
 | [/api/v2/search/spending_by_award_count/](/api/v2/search/spending_by_award_count/) | POST | Returns the number of awards in each award type |

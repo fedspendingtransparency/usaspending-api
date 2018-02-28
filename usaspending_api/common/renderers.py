@@ -5,6 +5,7 @@ from django import forms
 from rest_framework import VERSION, exceptions, serializers, status
 from rest_framework.exceptions import ParseError
 from rest_framework.request import is_form_media_type
+from django.utils.safestring import SafeText
 from usaspending_api.settings import BASE_DIR
 from collections import OrderedDict
 from django.conf import settings
@@ -80,9 +81,9 @@ class DocumentApiRenderer(BrowsableAPIRenderer):
                     accepted_media_type, renderer_context)
         return content
 
-    def get_rendered_html_form(self, data, view, method, request):
-        form = BrowsableAPIRenderer.get_rendered_html_form(self, data, view, method, request)
-        return form
+    # def get_rendered_html_form(self, data, view, method, request):
+    #     form = BrowsableAPIRenderer.get_rendered_html_form(self, data, view, method, request)
+    #     return form
 
     def get_context(self, data, accepted_media_type, renderer_context):
         """
@@ -151,41 +152,60 @@ class DocumentApiRenderer(BrowsableAPIRenderer):
             'csrf_header_name': csrf_header_name
         }
 
-        markdown_file = open(BASE_DIR + "/usaspending_api/api_docs/api_documentation/Toptier Agencies.md", "r")
-        markdown_text = markdown_file.read()
-        #print(markdown_text)
+        # markdown_file = open(BASE_DIR + "/usaspending_api/api_docs/api_documentation/Toptier Agencies.md", "r")
+        # markdown_text = markdown_file.read()
+        # print(markdown_text)
+        context_array = (context['description']).split('GITHUB DOCUMENTATION: ')
+        if len(context_array) > 1:
+            context_array[0] = context_array[0].replace('<p>', '')
+            context_array[1] = context_array[1].replace('</p>', '')
 
-        #context['description'] = markdown_text
+            git_head_file = open(BASE_DIR + "/.git/HEAD", "r")
+
+            git_branch = str(git_head_file.read()).split("/")[-1]
+            print(git_branch)
+            git_branch = "https://github.com/fedspendingtransparency/usaspending-api/blob/" + git_branch + \
+                         "/usaspending_api/api_docs/api_documentation"
+
+            doc_location = context_array[1]
+
+            path = git_branch + str(doc_location)
+            path = path.replace("\n", "")
+            path = path.replace(" ", "%20")
+            doc_description = "<p>" + context_array[0] + "\n\nDocumentation on this endpoint can be found here: " \
+                                                         "<a href=" + path + ">DOCUMENTATION<a></p>"
+
+            context['description'] = SafeText(doc_description)
+            print(context['description'])
 
         return context
 
-    def render(self, data, accepted_media_type=None, renderer_context=None):
-        """
-        Render the HTML for the browsable API representation.
-        """
-        print("template")
-        self.accepted_media_type = accepted_media_type or ''
-        self.renderer_context = renderer_context or {}
-        print("render context")
-        print(renderer_context)
-
-        template = loader.get_template(self.template)
-        print(template.template.__dict__)
-
-        markdown_file = open(BASE_DIR + "/usaspending_api/api_docs/api_documentation/Toptier Agencies.md", "r")
-        markdown_text = markdown_file.read()
-
-        context = self.get_context(data, accepted_media_type, renderer_context)
-
-
-        print(context)
-        ret = template_render(template, context, request=renderer_context['request'])
-
-        # Munge DELETE Response code to allow us to return content
-        # (Do this *after* we've rendered the template so that we include
-        # the normal deletion response code in the output)
-        response = renderer_context['response']
-        if response.status_code == status.HTTP_204_NO_CONTENT:
-            response.status_code = status.HTTP_200_OK
-
-        return ret
+    # def render(self, data, accepted_media_type=None, renderer_context=None):
+    #     """
+    #     Render the HTML for the browsable API representation.
+    #     """
+    #     print("template")
+    #     self.accepted_media_type = accepted_media_type or ''
+    #     self.renderer_context = renderer_context or {}
+    #     print("render context")
+    #     print(renderer_context)
+    #
+    #     template = loader.get_template(self.template)
+    #     print(template.template.__dict__)
+    #
+    #     markdown_file = open(BASE_DIR + "/usaspending_api/api_docs/api_documentation/Toptier Agencies.md", "r")
+    #     markdown_text = markdown_file.read()
+    #
+    #     context = self.get_context(data, accepted_media_type, renderer_context)
+    #
+    #     print(context)
+    #     ret = template_render(template, context, request=renderer_context['request'])
+    #
+    #     # Munge DELETE Response code to allow us to return content
+    #     # (Do this *after* we've rendered the template so that we include
+    #     # the normal deletion response code in the output)
+    #     response = renderer_context['response']
+    #     if response.status_code == status.HTTP_204_NO_CONTENT:
+    #         response.status_code = status.HTTP_200_OK
+    #
+    #     return ret
