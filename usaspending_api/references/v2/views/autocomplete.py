@@ -124,7 +124,7 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
     """
     This route sends a request to the backend to retrieve product or service (PSC) codes and their descriptions based 
-    on a search string. 
+    on a search string.
     This may be the 4-character PSC code or a description string.
     """
     @cache_response()

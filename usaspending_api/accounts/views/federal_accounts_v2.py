@@ -65,12 +65,10 @@ class ObjectClassFederalAccountsViewSet(APIDocumentationView):
 
 class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
     """
-    This route sends a request to the backend to retrieve budget information for a federal account. 
+    This route sends a request to the backend to retrieve budget information for a federal account.
     If no fiscal year is used, the federal accounts most recent fiscal year is used.
-    
-    
+
     GITHUB DOCUMENTATION: /federal_account/fiscal_year_snapshot.md
-    
     """
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
@@ -98,7 +96,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
 class SpendingOverTimeFederalAccountsViewSet(APIDocumentationView):
     """
     This route takes a federal_account DB ID and returns the data reqired to visualized the spending over time graphic.
-    
+
     GITHUB DOCUMENTATION: /federal_account/spending_over_time.md
     """
     @cache_response()
@@ -335,9 +333,9 @@ def federal_account_filter(filters, extra=""):
 
 class SpendingByCategoryFederalAccountsViewSet(APIDocumentationView):
     """
-    This route takes a federal_account DB ID and returns the data required to visualized 
+    This route takes a federal_account DB ID and returns the data required to visualized
     the Spending By Category graphic.
-    
+
     GITHUB DOCUMENTATION: /federal_account/spending_by_category.md
     """
 

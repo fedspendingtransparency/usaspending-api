@@ -108,4 +108,3 @@ class APIDocumentationView(APIView):
         response = APIView.dispatch(self, request, *args, **kwargs)
         # response.content = self.add_documentation(request, response.content)
         return response
-

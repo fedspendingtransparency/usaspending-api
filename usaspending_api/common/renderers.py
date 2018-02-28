@@ -17,8 +17,6 @@ from rest_framework.compat import (
 )
 
 
-
-
 class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
     """Renders the browsable api, but excludes the HTML form."""
 
@@ -77,8 +75,7 @@ class DocumentApiRenderer(BrowsableAPIRenderer):
     # template = 'rest_framework/doc_api.html'
 
     def get_content(self, renderer, data, accepted_media_type, renderer_context):
-        content = BrowsableAPIRenderer.get_content(self, renderer, data,
-                    accepted_media_type, renderer_context)
+        content = BrowsableAPIRenderer.get_content(self, renderer, data, accepted_media_type, renderer_context)
         return content
 
     # def get_rendered_html_form(self, data, view, method, request):

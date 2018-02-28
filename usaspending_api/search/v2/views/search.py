@@ -146,7 +146,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
 class SpendingByCategoryVisualizationViewSet(APIView):
     """
-    This route takes award filters, and returns spending by the defined category/scope. 
+    This route takes award filters, and returns spending by the defined category/scope.
     The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
     GITHUB DOCUMENTATION: /advanced_award_search/spending_by_category.md
     """
