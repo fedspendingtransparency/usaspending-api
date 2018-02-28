@@ -87,6 +87,13 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v2/award_spending/award_category](/api/v2/award_spending/award_category) | GET | Returns Award Spending Amounts for all Award Category with Respective Top Tier and Sub Tier Agencies |
 | [/api/v2/award_spending/recipient](/api/v2/award_spending/recipient) | GET | Returns Award Spending Amounts for all Recipients with Respective Top Tier and Sub Tier Agencies |
 | /api/v2/budget_authority/agencies/:cgac | GET | Returns an agency's budget authority over the years|
+| [/api/v2/bulk_download/list_agencies/](/api/v2/bulk_download/list_agencies/) | POST | This route lists all the agencies and the subagencies or federal accounts associated under specific agencies. |
+| [/api/v2/bulk_download/list_monthly_files/](/api/v2/bulk_download/list_monthly_files/) | POST | This route lists the monthly files associated with the requested params. |
+| [/api/v2/bulk_download/awards/](/api/v2/bulk_download/awards/) | POST | This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download. |
+| [/api/v2/download/count/](/api/v2/download/count/) | POST | Returns the number of transactions that would be included in a download request for the given filter set. |
+| [/api/v2/download/status/](/api/v2/download/status/) | POST | This route gets the current status of a download job that was earlier requested with the v2/download/awards/ or v2/download/transaction/ endpoint. |
+| [/api/v2/download/awards/](/api/v2/download/awards/) | POST | This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download. |
+| [/api/v2/download/transactions/](/api/v2/download/transactions/) | POST | This route sends a request to the backend to begin generating a zipfile of transaction data in CSV form for download. |
 | [/api/v2/federal_accounts/](/api/v2/references/federal_accounts/) | POST | Returns a list of federal accounts |
 | /api/v2/federal_accounts/:federal_account_id/available_object_classes | GET | Returns minor object classes rolled up under major classes filtered by federal account |
 | /api/v2/federal_accounts/:federal_account_id/available_object_classes | GET | Returns minor object classes rolled up under major classes filtered by federal account |
