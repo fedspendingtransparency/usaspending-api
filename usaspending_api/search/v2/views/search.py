@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 class SpendingOverTimeVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns spending by time. The amount of time is denoted by the "group" value.
-    GITHUB DOCUMENTATION: /advanced_award_search/spending_over_time.md
+    endpoint_doc: /advanced_award_search/spending_over_time.md
     """
     @cache_response()
     def post(self, request):
@@ -150,7 +150,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns spending by the defined category/scope.
     The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
-    GITHUB DOCUMENTATION: /advanced_award_search/spending_by_category.md
+    endpoint_doc: /advanced_award_search/spending_by_category.md
     """
     @cache_response()
     def post(self, request):
@@ -407,7 +407,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 class SpendingByGeographyVisualizationViewSet(APIView):
     """
         This route takes award filters, and returns spending by state code, county code, or congressional district code.
-        GITHUB DOCUMENTATION: /advanced award search/spending_by_geography.md
+        endpoint_doc: /advanced award search/spending_by_geography.md
     """
     geo_layer = None  # State, county or District
     geo_layer_filters = None  # Specific geo_layers to filter on
@@ -602,7 +602,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 class SpendingByAwardVisualizationViewSet(APIView):
     """
     This route takes award filters and fields, and returns the fields of the filtered awards.
-    GITHUB DOCUMENTATION: /advanced_award_search/spending_by_award.md
+    endpoint_doc: /advanced_award_search/spending_by_award.md
     """
     @total_ordering
     class MinType(object):
@@ -710,7 +710,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 class SpendingByAwardCountVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Grants, etc.)
-        GITHUB DOCUMENTATION: /advanced_award_search/spending_by_award_count.md
+        endpoint_doc: /advanced_award_search/spending_by_award_count.md
     """
     @cache_response()
     def post(self, request):
@@ -759,7 +759,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 class SpendingByTransactionVisualizationViewSet(APIView):
     """
     This route takes keyword search fields, and returns the fields of the searched term.
-        GITHUB DOCUMENTATION: /advanced_award_search/spending_by_transaction.md
+        endpoint_doc: /advanced_award_search/spending_by_transaction.md
     """
     @total_ordering
     class MinType(object):
@@ -816,7 +816,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 class TransactionSummaryVisualizationViewSet(APIView):
     """
     This route takes award filters, and returns the number of transactions and summation of federal action obligations.
-        GITHUB DOCUMENTATION: /advanced_award_search/transaction_spending_summary.md
+        endpoint_doc: /advanced_award_search/transaction_spending_summary.md
     """
     @cache_response()
     def post(self, request):
@@ -841,7 +841,7 @@ class TransactionSummaryVisualizationViewSet(APIView):
 class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     """
     This route takes keyword search fields, and returns the fields of the searched term.
-        GITHUB DOCUMENTATION: /advanced_award_search/spending_by_transaction_count.md
+        endpoint_doc: /advanced_award_search/spending_by_transaction_count.md
 
     """
     @cache_response()

@@ -16,7 +16,7 @@ from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY
 class ToptierAgenciesViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve all toptier agencies and related, relevant data.
-    GITHUB DOCUMENTATION: /toptier_agencies.md
+    endpoint_doc: /toptier_agencies.md
     """
     @cache_response()
     def get(self, request, format=None):

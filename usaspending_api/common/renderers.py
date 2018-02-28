@@ -141,7 +141,7 @@ class DocumentApiRenderer(BrowsableAPIRenderer):
         #
         # context['description'] = markdown_text
 
-        context_array = (context['description']).split('GITHUB DOCUMENTATION: ')
+        context_array = (context['description']).split('endpoint_doc: ')
         if len(context_array) > 1:
             context_array[0] = context_array[0].replace('<p>', '')
             context_array[1] = context_array[1].replace('</p>', '')

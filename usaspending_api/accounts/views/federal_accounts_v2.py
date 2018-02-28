@@ -22,7 +22,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 class ObjectClassFederalAccountsViewSet(APIDocumentationView):
     """Returns financial spending data by object class.
-    GITHUB DOCUMENTATION: /federal_account/avalible_object_classes.md"""
+    endpoint_doc: /federal_account/avalible_object_classes.md"""
 
     @cache_response()
     def get(self, request, pk, format=None):
@@ -67,7 +67,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
     This route sends a request to the backend to retrieve budget information for a federal account.
     If no fiscal year is used, the federal accounts most recent fiscal year is used.
 
-    GITHUB DOCUMENTATION: /federal_account/fiscal_year_snapshot.md
+    endpoint_doc: /federal_account/fiscal_year_snapshot.md
     """
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
@@ -96,7 +96,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIDocumentationView):
     """
     This route takes a federal_account DB ID and returns the data reqired to visualized the spending over time graphic.
 
-    GITHUB DOCUMENTATION: /federal_account/spending_over_time.md
+    endpoint_doc: /federal_account/spending_over_time.md
     """
     @cache_response()
     def post(self, request, pk, format=None):
@@ -335,7 +335,7 @@ class SpendingByCategoryFederalAccountsViewSet(APIDocumentationView):
     This route takes a federal_account DB ID and returns the data required to visualized
     the Spending By Category graphic.
 
-    GITHUB DOCUMENTATION: /federal_account/spending_by_category.md
+    endpoint_doc: /federal_account/spending_by_category.md
     """
 
     @cache_response()
@@ -382,7 +382,7 @@ class SpendingByCategoryFederalAccountsViewSet(APIDocumentationView):
 class FederalAccountsViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve a list of federal accounts.
-    GITHUB DOCUMENTATION: /federal_account/federal_account.md
+    endpoint_doc: /federal_account/federal_account.md
     """
     @cache_response()
     def post(self, request, format=None):
