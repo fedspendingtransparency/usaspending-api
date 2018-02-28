@@ -278,9 +278,14 @@ CACHE_ENVIRONMENT = 'disabled'
 CACHE_ENVIRONMENTS = {
     # Elasticache settings are changed during deployment, or can be set manually
     'elasticache': {
-        'BACKEND': 'django_elasticache.memcached.ElastiCache',
+        'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': 'ELASTICACHE-CONNECTION-STRING',
         'TIMEOUT': 'TIMEOUT-IN-SECONDS',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            # Note: ELASTICACHE-MASTER-STRING is currently only used by Prod and will be removed in other environments.
+            'MASTER_CACHE': 'ELASTICACHE-MASTER-STRING',
+        },
     },
     'local': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -318,9 +323,10 @@ SPAGHETTI_SAUCE = {
 # TERSE_TO_LONG UNUSED.  IF NEEDED, change LONG_TO_TERSE to a bidict or invert the dict.
 
 # Elasticsearch
-ES_HOSTNAME = os.environ.get('ES_HOSTNAME')
+ES_HOSTNAME = ""
 TRANSACTIONS_INDEX_ROOT = os.environ.get('ES_TRX_ROOT') or 'future-transactions'
 DOWNLOAD_QUERY_SIZE = 500000
+ES_TIMEOUT = 30
 
 LONG_TO_TERSE_LABELS = {
     "allocation_transfer_agency_id": "allocation_transfer_agency_id",
