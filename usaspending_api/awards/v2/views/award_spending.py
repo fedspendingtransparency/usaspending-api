@@ -12,7 +12,7 @@ from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 class AwardTypeAwardSpendingViewSet(DetailViewSet):
     """Return all award spending by award type for a given fiscal year and agency id
-    
+
     GITHUB DOCUMENTATION: /award_spending/award_category.md"""
 
     serializer_class = AwardTypeAwardSpendingSerializer
