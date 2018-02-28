@@ -6,6 +6,8 @@ from django.db.models.functions import Concat
 from django.utils.dateparse import parse_date
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from usaspending_api.common.views import APIDocumentationView
+
 from usaspending_api.common.cache_decorator import cache_response
 
 from usaspending_api.accounts.models import (AppropriationAccountBalances,
@@ -19,7 +21,7 @@ from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-class ObjectClassFederalAccountsViewSet(APIView):
+class ObjectClassFederalAccountsViewSet(APIDocumentationView):
     """Returns financial spending data by object class.
     GITHUB DOCUMENTATION: /federal account/Avalible Object Classes.md"""
 
@@ -61,7 +63,7 @@ class ObjectClassFederalAccountsViewSet(APIView):
         return Response({'results': result})
 
 
-class FiscalYearSnapshotFederalAccountsViewSet(APIView):
+class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve budget information for a federal account. 
     If no fiscal year is used, the federal accounts most recent fiscal year is used.
@@ -93,7 +95,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
             return Response({})
 
 
-class SpendingOverTimeFederalAccountsViewSet(APIView):
+class SpendingOverTimeFederalAccountsViewSet(APIDocumentationView):
     """
     This route takes a federal_account DB ID and returns the data reqired to visualized the spending over time graphic.
     
@@ -331,7 +333,7 @@ def federal_account_filter(filters, extra=""):
     return result
 
 
-class SpendingByCategoryFederalAccountsViewSet(APIView):
+class SpendingByCategoryFederalAccountsViewSet(APIDocumentationView):
     """
     This route takes a federal_account DB ID and returns the data required to visualized 
     the Spending By Category graphic.
@@ -380,7 +382,7 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
         return Response(result)
 
 
-class FederalAccountsViewSet(APIView):
+class FederalAccountsViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve a list of federal accounts.
     GITHUB DOCUMENTATION: /federal account/federal accounts.md

@@ -96,27 +96,6 @@ api_endpoint_dict = {"api/v2/references/toptier_agencies/": "test"}  # should li
 
 
 class APIDocumentationView(APIView):
-    #renderer_classes = APIView.renderer_classes
-    def dispatch(self, request, *args, **kwargs):
-        """
-        `.dispatch()` is pretty much the same as Django's regular dispatch,
-        but with extra hooks for startup, finalize, and exception handling.
-        """
-        response = APIView.dispatch(self, request, *args, **kwargs)
-
-        # print(response.content)
-        response.content = self.add_documentation(request, response.content)
-        return response
-
-    def add_documentation(self, request, content):
-        # find uri requested
-        print(request)
-        # find correct url in dict
-        print(str(content))
-        return content
-
-
-class APIDocumentationView2(APIView):
 
     renderer_classes = APIView.renderer_classes
 
@@ -127,7 +106,6 @@ class APIDocumentationView2(APIView):
         """
 
         response = APIView.dispatch(self, request, *args, **kwargs)
-        #print(response.content)
         # response.content = self.add_documentation(request, response.content)
         return response
 
