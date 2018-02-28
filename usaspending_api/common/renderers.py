@@ -152,31 +152,36 @@ class DocumentApiRenderer(BrowsableAPIRenderer):
             'csrf_header_name': csrf_header_name
         }
 
-        # markdown_file = open(BASE_DIR + "/usaspending_api/api_docs/api_documentation/Toptier Agencies.md", "r")
-        # markdown_text = markdown_file.read()
-        # print(markdown_text)
-        context_array = (context['description']).split('GITHUB DOCUMENTATION: ')
-        if len(context_array) > 1:
-            context_array[0] = context_array[0].replace('<p>', '')
-            context_array[1] = context_array[1].replace('</p>', '')
+        # File use
+        markdown_file = open(BASE_DIR + "/usaspending_api/api_docs/api_documentation/Toptier Agencies.md", "r")
+        markdown_text = markdown_file.read()
+        print(markdown_text)
 
-            git_head_file = open(BASE_DIR + "/.git/HEAD", "r")
+        context['description'] = markdown_text
 
-            git_branch = str(git_head_file.read()).split("/")[-1]
-            print(git_branch)
-            git_branch = "https://github.com/fedspendingtransparency/usaspending-api/blob/" + git_branch + \
-                         "/usaspending_api/api_docs/api_documentation"
-
-            doc_location = context_array[1]
-
-            path = git_branch + str(doc_location)
-            path = path.replace("\n", "")
-            path = path.replace(" ", "%20")
-            doc_description = "<p>" + context_array[0] + "\n\nDocumentation on this endpoint can be found here: " \
-                                                         "<a href=" + path + ">DOCUMENTATION<a></p>"
-
-            context['description'] = SafeText(doc_description)
-            print(context['description'])
+        # context_array = (context['description']).split('GITHUB DOCUMENTATION: ')
+        # if len(context_array) > 1:
+        #     context_array[0] = context_array[0].replace('<p>', '')
+        #     context_array[1] = context_array[1].replace('</p>', '')
+        #
+        #     git_head_file = open(BASE_DIR + "/.git/HEAD", "r")
+        #
+        #     git_branch = str(git_head_file.read()).split("/")[-1]
+        #     print(git_branch)
+        #     git_branch = "https://github.com/fedspendingtransparency/usaspending-api/blob/" + git_branch + \
+        #                  "/usaspending_api/api_docs/api_documentation"
+        #
+        #     doc_location = context_array[1]
+        #
+        #     path = git_branch + str(doc_location)
+        #     path = path.replace("\n", "")
+        #     path = path.replace(" ", "%20")
+        #     doc_description = "<p>" + context_array[0] + "\n\nDocumentation on this endpoint can be found here: " \
+        #                                                  "<a href=" + path + ">DOCUMENTATION<a></p>"
+        #
+        #     context['description'] = SafeText(doc_description)
+        #
+        #     print(context['description'])
 
         return context
 
