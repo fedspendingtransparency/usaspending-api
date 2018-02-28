@@ -8,7 +8,7 @@ class SpendingExplorerViewSet(APIView):
     """
     This route sends a request to the backend to retrieve spending data information through various types and filters.
     
-    GITHUB DOCUMENTATION: /Spending Explorer.md
+    GITHUB DOCUMENTATION: /spending_explorer.md
     """
     @cache_response()
     def post(self, request):

@@ -16,15 +16,15 @@ There are several downloadable endpoints, all with different features/constraint
 
 These downloads have a row constraint on them, meaning they have a hard limit to the number of records to include (currently that limit is `500,000` rows). The main benefit of using these endpoints, however, is that they allow various filters that are not supported by the Year Constraint Downloads.
 
-For downloading transactions, please use [Row Constraint Transactions](https://github.com/fedspendingtransparency/data-act-documentation/blob/master/usaspending/api-documentation/download/Row%20Constraint%20Transactions.md).
+For downloading transactions, please use [Advanced_Search_Transaction_Download](https://github.com/fedspendingtransparency/data-act-documentation/blob/master/usaspending/api-documentation/download/Advanced_Search_Transaction_Download.md).
 
-For downloading awards, please use [Row Constraint Awards](https://github.com/fedspendingtransparency/data-act-documentation/blob/master/usaspending/api-documentation/download/Row%20Constraint%20Awards.md).
+For downloading awards, please use [Advanced_Search_Award_Download](https://github.com/fedspendingtransparency/data-act-documentation/blob/master/usaspending/api-documentation/download/Advanced_Search_Award_Download.md).
 
 ### Year Constraint Downloads
 
 These downloads do not have a row constraint but they are limited to only a certain number of filters and the time range filter is limited to `1 year` at most. This allows you to download millions of rows for larger requests.
 
-For downloading transactions and subawards, please use [Year Constraint](https://github.com/fedspendingtransparency/data-act-documentation/blob/master/usaspending/api-documentation/download/Year%20Constraint.md).
+For downloading transactions and subawards, please use [Custom_Award_Data_Download](https://github.com/fedspendingtransparency/data-act-documentation/blob/master/usaspending/api-documentation/download/Custom_Award_Data_Download.md).
 
 ## Checking the status of the Download Generation
 

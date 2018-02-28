@@ -176,41 +176,11 @@ class DocumentApiRenderer(BrowsableAPIRenderer):
             path = git_branch + str(doc_location)
             path = path.replace("\n", "")
             path = path.replace(" ", "%20")
-            doc_description = "<p>" + context_array[0] + "\n\nDocumentation on this endpoint can be found here: " \
-                                                         "<a href=" + path + ">DOCUMENTATION<a></p>"
+            doc_description = "<p>" + context_array[0] + "\n\nDocumentation on this endpoint can be found " \
+                                                         "<a href=" + path + ">here<a>.</p>"
 
             context['description'] = SafeText(doc_description)
 
             print(context['description'])
 
         return context
-
-    # def render(self, data, accepted_media_type=None, renderer_context=None):
-    #     """
-    #     Render the HTML for the browsable API representation.
-    #     """
-    #     print("template")
-    #     self.accepted_media_type = accepted_media_type or ''
-    #     self.renderer_context = renderer_context or {}
-    #     print("render context")
-    #     print(renderer_context)
-    #
-    #     template = loader.get_template(self.template)
-    #     print(template.template.__dict__)
-    #
-    #     markdown_file = open(BASE_DIR + "/usaspending_api/api_docs/api_documentation/Toptier Agencies.md", "r")
-    #     markdown_text = markdown_file.read()
-    #
-    #     context = self.get_context(data, accepted_media_type, renderer_context)
-    #
-    #     print(context)
-    #     ret = template_render(template, context, request=renderer_context['request'])
-    #
-    #     # Munge DELETE Response code to allow us to return content
-    #     # (Do this *after* we've rendered the template so that we include
-    #     # the normal deletion response code in the output)
-    #     response = renderer_context['response']
-    #     if response.status_code == status.HTTP_204_NO_CONTENT:
-    #         response.status_code = status.HTTP_200_OK
-    #
-    #     return ret

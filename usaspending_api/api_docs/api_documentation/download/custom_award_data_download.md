@@ -1,4 +1,4 @@
-## [Year Constraint](#year-constraint)
+## [Custom Award Data Download](#Custom_Award_Data_Download)
 **Route:** `/v2/bulk_download/awards/`
 
 **Method:** `POST`
@@ -58,7 +58,7 @@ This route sends a request to the backend to begin generating a zipfile of award
    "total_size":null,
    "total_columns":null,
    "message":null,
-   "url":"/Volumes/exlinux/Users/catherine/werk/dataact/usaspending-api/downloads/5757660_968336105_awards.zip",
+   "url":"https://s3-us-gov-west-1.amazonaws.com:443/usaspending-bulk-download-staging/19832098_163223743_prime_transactions.zip",
    "seconds_elapsed":null
 }
 ```

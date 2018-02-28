@@ -14,7 +14,7 @@ from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY, DOD_ARM
 class AgencyViewSet(APIDocumentationView):
 
     """Return an agency name and active fy.
-    GITHUB DOCUMENTATION: /Agency.md"""
+    GITHUB DOCUMENTATION: /agency.md"""
     @cache_response()
     def get(self, request, pk, format=None):
         """Return the view's queryset."""

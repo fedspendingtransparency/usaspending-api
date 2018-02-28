@@ -11,7 +11,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 
 class AgenciesFinancialBalancesViewSet(DetailViewSet):
     """Returns financial balances by agency and the latest quarter for the given fiscal year.
-    GITHUB DOCUMENTATION: /Financial Balances.md"""
+    GITHUB DOCUMENTATION: /financial_balances/agencies.md"""
 
     serializer_class = AgenciesFinancialBalancesSerializer
 

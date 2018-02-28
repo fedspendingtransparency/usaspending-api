@@ -11,7 +11,7 @@ from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 class FederalAccountByObligationViewSet(DetailViewSet):
     """Returns a Appropriation Account Balance's obligated amount broken up by TAS.
     
-    GITHUB DOCUMENTATION: /Federal Obligations.md"""
+    GITHUB DOCUMENTATION: /federal_obligations.md"""
     serializer_class = FederalAccountByObligationSerializer
 
     def get_queryset(self):

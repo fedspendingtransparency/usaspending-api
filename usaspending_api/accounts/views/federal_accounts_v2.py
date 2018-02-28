@@ -23,7 +23,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 class ObjectClassFederalAccountsViewSet(APIDocumentationView):
     """Returns financial spending data by object class.
-    GITHUB DOCUMENTATION: /federal account/Avalible Object Classes.md"""
+    GITHUB DOCUMENTATION: /federal_account/avalible_object_classes.md"""
 
     @cache_response()
     def get(self, request, pk, format=None):
@@ -69,7 +69,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
     If no fiscal year is used, the federal accounts most recent fiscal year is used.
     
     
-    GITHUB DOCUMENTATION: /federal account/Fiscal Year Snapshot.md
+    GITHUB DOCUMENTATION: /federal_account/fiscal_year_snapshot.md
     
     """
     @cache_response()
@@ -99,7 +99,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIDocumentationView):
     """
     This route takes a federal_account DB ID and returns the data reqired to visualized the spending over time graphic.
     
-    GITHUB DOCUMENTATION: /federal account/Spending Over Time.md
+    GITHUB DOCUMENTATION: /federal_account/spending_over_time.md
     """
     @cache_response()
     def post(self, request, pk, format=None):
@@ -338,7 +338,7 @@ class SpendingByCategoryFederalAccountsViewSet(APIDocumentationView):
     This route takes a federal_account DB ID and returns the data required to visualized 
     the Spending By Category graphic.
     
-    GITHUB DOCUMENTATION: /federal account/Spending By Category.md
+    GITHUB DOCUMENTATION: /federal_account/spending_by_category.md
     """
 
     @cache_response()
@@ -385,7 +385,7 @@ class SpendingByCategoryFederalAccountsViewSet(APIDocumentationView):
 class FederalAccountsViewSet(APIDocumentationView):
     """
     This route sends a request to the backend to retrieve a list of federal accounts.
-    GITHUB DOCUMENTATION: /federal account/federal accounts.md
+    GITHUB DOCUMENTATION: /federal_account/federal_account.md
     """
     @cache_response()
     def post(self, request, format=None):
