@@ -74,14 +74,6 @@ class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
 class DocumentApiRenderer(BrowsableAPIRenderer):
     # template = 'rest_framework/doc_api.html'
 
-    def get_content(self, renderer, data, accepted_media_type, renderer_context):
-        content = BrowsableAPIRenderer.get_content(self, renderer, data, accepted_media_type, renderer_context)
-        return content
-
-    # def get_rendered_html_form(self, data, view, method, request):
-    #     form = BrowsableAPIRenderer.get_rendered_html_form(self, data, view, method, request)
-    #     return form
-
     def get_context(self, data, accepted_media_type, renderer_context):
         """
         Returns the context used to render.
