@@ -54,7 +54,7 @@ class Command(BaseCommand):
         # Iterate through the result dict and determine what needs to be deleted and what needs to be added
         for row in db_rows:
             if row['correction_late_delete_ind'] and row['correction_late_delete_ind'].upper() == 'D':
-                ids_to_delete += [row['afa_generated_unique']]
+                ids_to_delete += [row['afa_generated_unique'].upper()]
                 # remove the row from the list of rows from the Broker since once we delete it, we don't care about it.
                 # all that'll be left in db_rows are rows we want to insert
                 db_rows.remove(row)
