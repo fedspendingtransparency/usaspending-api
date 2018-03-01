@@ -1,4 +1,4 @@
-## Federal Account Spending Over Time - Depreciated
+## Federal Account Spending Over Time - Deprecated
 **Route:** `/api/v2/federal_accounts/<PK>/spending_over_time/`
 
 **Method:** `POST`

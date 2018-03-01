@@ -6,17 +6,17 @@
 This route takes award filters and fields, and returns the fields of the filtered awards.
 
 ### Request
-field: Defines what award variables are returned.
+fields: Defines what award variables are returned in an array using the Fields provided below.
 
-filter: Defines how the awards are filtered.  The filter object is defined here.
+filters: Defines how the awards are filtered.  The filter object is defined here.  Unique filters are compounded by AND operators.
 
 https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
 
-limit(**OPTIONAL**): how many results are returned
+limit (**OPTIONAL**): how many results are returned. If no limit is specified, the data is uncapped.
 
-page (**OPTIONAL**):  what page of results are returned
+page (**OPTIONAL**):  The page number that is currently returned.
 
-sort (**OPTIONAL**): Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first `field` provided.
+sort (**OPTIONAL**): Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first `field` provided. Example: ['Award ID']
 
 order (**OPTIONAL**): Optional parameter indicating what direction results should be sorted by. Valid options include `asc` for ascending order or `desc` for descending order. Defaults to `asc`.
 
@@ -159,13 +159,16 @@ The possible fields returned are split by contracts or assistace awards (loans, 
     ],
     "page_metadata": {
         "page": 1,
-        "count": 1,
-        "next": null,
-        "previous": null,
-        "hasNext": false,
-        "hasPrevious": false
+        "hasNext": true
     }
 }
+
+**page_metadata Descriptions**
+
+**page** - The current page number of results.
+
+**hasNext** - Is there another page.
+
 ```
 
 ### Errors

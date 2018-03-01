@@ -1,4 +1,4 @@
-## Federal Account Spending By Category - Depreciated
+## Federal Account Spending By Category - Deprecated
 **Route:** `/api/v2/federal_accounts/[federal_account_id]/spending_by_category/`
 
 **Method:** `POST`
