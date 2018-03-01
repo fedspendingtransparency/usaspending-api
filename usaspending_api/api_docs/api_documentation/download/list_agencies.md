@@ -9,7 +9,7 @@ This route lists all the agencies and the subagencies or federal accounts associ
 
 ```
 {
-    "agency": 1
+    "agency": 14
 }
 ```
 
@@ -67,7 +67,7 @@ The response includes 3 possible objects
 * `agencies` - list of all agencies, provided if no `agency` is provided in the request
     * `name`
     * `toptier_agency_id` - database id
-    * `cgac_code` - cgac_code (more for the backend usage)
+    * `cgac_code` - a unique code used by the government to identify agencies (Common Government-wide Accounting Classification)
 * `sub_agencies`- list of subtier agencies associated with the agency id provided
     * `subtier_agency_name`
 * `federal_accounts` - list of federal acounts associated with the agency id provided
