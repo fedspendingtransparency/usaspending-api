@@ -22,6 +22,8 @@ The USAspending API allows the public to access data published via the DATA Act 
 
 This guide is intended for users who are already familiar with APIs. If you're not sure what _endpoint_ means, and what `GET` and `POST` requests are, you'll probably find the [introductory tutorial](/docs/intro-tutorial) more useful.
 
+The USASpending API is in V2. V1 endpoints are currently deprecated.
+
 
 
 
