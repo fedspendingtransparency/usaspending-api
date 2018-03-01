@@ -22,6 +22,8 @@ The USAspending API allows the public to access data published via the DATA Act 
 
 This guide is intended for users who are already familiar with APIs. If you're not sure what _endpoint_ means, and what `GET` and `POST` requests are, you'll probably find the [introductory tutorial](/docs/intro-tutorial) more useful.
 
+The USASpending API is in V2. V1 endpoints are currently deprecated.
+
 
 
 
@@ -360,40 +362,46 @@ The response has three functional parts:
   * `req` - The special code corresponding to this POST request. See [Post request preservation]("#post-requests-preservation") for how to use this
   * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
 
-### CSV Bulk Downloads
+### Downloads
 
-Bulk CSV downloads are available via the `/api/v1/download/` endpoint. This supports any data endpoint via POST or GET. Because these CSV files can take some time to generate, the response of this endpoint contains the status of file generation and the location of the file once it is complete.
+The following endpoints are involved with generating files that reflect the site's underlying data. 
 
-In the following examples, 'request checksum' refers to the string returned by the `req` variable from the section on [POST request preservation](#post-requests-preservation).
+#### Award Data Archive
 
-Examples
-* To get a CSV of all Awards, you would access `/api/v1/download/awards/`
-* To get a CSV of all Awards with a particular set of filters, you can pass the request checksum, `/api/v1/download/awards/?req=CHECKSUM` or POST the request object to the endpoint
-* To check the status of a CSV download, make note of the `request_checksum` and return to the url, with `req=CHECKSUM` attached. For example, `/api/v1/download/awards/?req=CHECKSUM`
+On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. These can be found at [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive), or, if you prefer, you can also use the API's [List Downloads Endpoint](../api_documentation/download/list_downloads.md).
 
-Response
+#### Generating Download Files
 
+**Reminder**: Before using these endpoints, check the  [Award Data Archive](https://usaspending.gov/#/download_center/award_data_archive) for pre-generated files
+
+There are several downloadable endpoints, all with different features/constraints. 
+
+##### Row Constraint Downloads
+
+These downloads have a row constraint on them, meaning they have a hard limit to the number of records to include (currently that limit is `500,000` rows). The main benefit of using these endpoints, however, is that they allow various filters that are not supported by the Year Constraint Downloads.
+
+For downloading transactions, please use [Advanced_Search_Transaction_Download](../api_documentation/download/advanced_search_transaction_download.md).
+
+For downloading awards, please use [Advanced_Search_Award_Download](../api_documentation/download/advanced_search_award_download.md).
+
+##### Year Constraint Downloads
+
+These downloads do not have a row constraint but they are limited to only a certain number of filters and the time range filter is limited to `1 year` at most. This allows you to download millions of rows for larger requests.
+
+For downloading transactions and subawards, please use [Custom_Award_Data_Download](../api_documentation/download/custom_award_data_download.md).
+
+#### Checking the status of the Download Generation
+
+The responses of these endpoints includes a `file_name`, which will be used to check on the status of the requested download. For example, the response will look something like:
 ```
 {
-  "location": http://path_to_csv_file/something.csv,
-  "status": "This file has been requested, and is awaiting queueing",
-  "request_checksum": "e78f4722f85",
-  "request_path": "/api/v1/awards/",
-  "retry_url": "http://api_location/api/v1/awards/?req=e78f4722f85"
+   ...
+   "file_name":"5757660_968336105_awards.zip",
+   ...
 }
 ```
 
-* location - The URL where the file can be accessed (once it has been generated)
-* status - A plain english description of the current status of the file generation
-* request_checksum - The checksum of the request, which can be used to check the status
-* request_path - The path of the CSV request
-* retry_url - An easy to use URL to retry your download request, and check if it has been generated yet
-
-Expected response status codes:
-
-* 200 - The file is ready for download, and `location` contains the URL
-* 202 - The request has been queued for generation, and `location` is null
-* 400 - The endpoint or request checksum that was specified is not currently supported by CSV bulk downloads
+To check to see whether that request is complete, use the [Status Endpoint](../api_documentation/download/download_status.md) using `5757660_968336105_awards.zip`. Once complete, you can follow the `url` provided in the status response to finally download your data.
 
 ### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
   Summarized data is available for some of the endpoints listed above:
