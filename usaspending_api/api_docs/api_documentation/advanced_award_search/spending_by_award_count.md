@@ -7,7 +7,7 @@ This route takes award filters, and returns the number of awards in each award t
 
 ### Request
 
-filter: Defines how the awards are filtered.  The filter object is defined here.
+filters: Defines how the awards are filtered.  The filter object is defined here.
 
 https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
 
@@ -69,6 +69,10 @@ https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v
     }
 }
 ```
+**Response Documentation**
+The result set always returns how many grants, loans, contracts, direct payments, and other awards are returned with the specified filters.
+
+
 
 ### Errors
 Possible HTTP Status Codes:

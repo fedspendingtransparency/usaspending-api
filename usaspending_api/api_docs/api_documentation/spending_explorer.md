@@ -20,7 +20,7 @@ This route sends a request to the backend to retrieve spending data information 
 
 **type** - `required` - a string that contains the type of spending to explore on. It must be one of these values: *budget_function*, *budget_subfunction*, *federal_account*, *program_activity*, *object_class*, *recipients*, *awards*, *agency*
 
-**filters** - `optional` - string index values to filter explorers on.  The *quarter* field is cumulative and quarters are only available 45 days after their close. Also quarter data is not available before FY 2017 Q2.
+**filters** - `optional` - an object with the following key-value pairs that indicate what subset of results will be displayed. All values should be strings. The *quarter* field is cumulative and quarters are only available 45 days after their close. Also quarter data is not available before FY 2017 Q2.
   `filter options` - *budget_function*, *budget_subfunction*, *federal_account*, *program_activity*, *object_class*, *recipient*, *award*, *agency*, *fy*, *quarter*
 
 
@@ -84,7 +84,8 @@ This route sends a request to the backend to retrieve spending data information 
 
 **type** - The type of the response object.
 
-**code** - The Agency CGAC.  Only returned with a value if the *type* is set to *agency*
+**code** - Result determined by type. If the type is agency, the result is the agency CGAC.
+If the type is award, the result is Award ID.  All other types return Null.
 
 **amount**/**total** - The obligated amount expected by the type.
 
