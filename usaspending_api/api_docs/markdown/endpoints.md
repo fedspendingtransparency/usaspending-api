@@ -22,7 +22,6 @@ This page is intended for users who are already familiar with APIs. If you're no
 
 Endpoints do not currently require any authorization.
 
-The USASpending API is in V2. V1 endpoints are currently DEPRECIATED.
 
 ### Status Codes <a name="status-codes"></a>
 In general, status codes returned are as follows:

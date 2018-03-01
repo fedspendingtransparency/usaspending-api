@@ -1,4 +1,4 @@
-## [Spending by Category](#spending-by-category) Depreciated
+## [Spending by Category](#spending-by-category) - Deprecated
 **Route:** `/api/v2/search/spending_by_category/`
 
 **Method:** `POST`

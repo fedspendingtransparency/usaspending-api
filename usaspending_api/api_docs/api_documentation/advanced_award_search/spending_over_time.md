@@ -6,9 +6,9 @@
 This route takes award filters, and returns spending by time.  The amount of time is denoted by the "group" value.
 
 ### Request
-group: how the data is broken up.  ex: `"quarter", "fiscal_year", "month"`
+group: the unit of time that awards are aggregated by. You must use one of: month, quarter, fiscal_year.
 
-filter: how the awards are filtered.  The filter object is defined here.
+filters: how the awards are filtered.  The filter object is defined here.
 
 https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
 
@@ -50,6 +50,14 @@ https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v
     ]
 }
 ```
+**Response results Descriptions**
+
+**time_period** - an object containing what time period .
+
+**hasNext** - Boolean object. If true, there is another page of results.
+
+```
+
 
 ### Errors
 Possible HTTP Status Codes:
