@@ -32,8 +32,8 @@ class CustomCacheResponse(CacheResponse):
                 except Exception as e:
                     msg = 'Problem while writing to cache: path:\'{p}\' data:\'{d}\''
                     logger.exception(msg.format(p=str(request.path), d=str(request.data)))
-            else:
-                response['Cache-Trace'] = 'hit-cache'
+        else:
+            response['Cache-Trace'] = 'hit-cache'
 
         if not hasattr(response, '_closable_objects'):
             response._closable_objects = []
