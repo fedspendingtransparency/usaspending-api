@@ -4,7 +4,8 @@ mapping file and alias name. Here we grab all
 index patterns with source, replicate them with
 destination prefix. Once reindexing is complete,
 old indices are closed and given the selected alias.
-python manage.py reindex_elastic reindex-test future-transactions usaspending_api/etl/management/commands/sample_mapping.json mia
+python manage.py reindex_elastic reindex-test future-transactions
+usaspending_api/etl/management/commands/sample_mapping.json alias_name
 
 '''
 import os
@@ -23,7 +24,7 @@ logging.basicConfig(format='%(asctime)s |  %(message)s', level=logging.WARNING)
 MAX_RETRIES = 3
 INGEST_RATE = 10000
 
-ES_CLIENT = Elasticsearch('localhost:9200', timeout=300)
+ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 INDICES_SUB_NAMES = indices_to_award_types.keys()
 
 
