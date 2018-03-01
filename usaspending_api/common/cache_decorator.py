@@ -9,7 +9,6 @@ class CustomCacheResponse(CacheResponse):
     def process_cache_response(self, view_instance, view_method, request, args, kwargs):
         key = self.calculate_key(view_instance=view_instance, view_method=view_method,
                                  request=request, args=args, kwargs=kwargs)
-        print(key)
         response = None
         try:
             response = self.cache.get(key)
