@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from usaspending_api.search.v2.views.search import SpendingByAwardCountVisualizationViewSet
 from usaspending_api.search.v2.views.search import SpendingByAwardVisualizationViewSet
-from usaspending_api.search.v2.views.search import SpendingByCategoryVisualizationViewSet
+# from usaspending_api.search.v2.views.search import SpendingByCategoryVisualizationViewSet
 from usaspending_api.search.v2.views.search import SpendingByGeographyVisualizationViewSet
 from usaspending_api.search.v2.views.search import SpendingOverTimeVisualizationViewSet
 from usaspending_api.search.v2.views.search import TransactionSummaryVisualizationViewSet
