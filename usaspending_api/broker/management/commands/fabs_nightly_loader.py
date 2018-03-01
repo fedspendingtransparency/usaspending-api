@@ -12,8 +12,8 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import get_business_categories, get_business_type_description, \
-    get_assistance_type_description
+from usaspending_api.broker.helpers import (get_business_categories, get_business_type_description,
+                                            get_assistance_type_description)
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
