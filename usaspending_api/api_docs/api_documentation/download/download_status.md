@@ -3,7 +3,7 @@
 
 **Method:** `GET`
 
-This route gets the current status of a download job that _that has been requested_ with the `v2/download/awards/` or `v2/download/transaction/` endpoint _that same day_.
+This route gets the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day.
 
 ### Query Parameters Description
 
