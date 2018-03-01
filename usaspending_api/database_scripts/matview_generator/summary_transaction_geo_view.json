@@ -34,7 +34,8 @@
     "  SAA.\"abbreviation\" AS awarding_subtier_agency_abbreviation,",
     "  SFA.\"abbreviation\" AS funding_subtier_agency_abbreviation,",
     "",
-    "  SUM(\"transaction_normalized\".\"federal_action_obligation\") AS \"federal_action_obligation\",",
+    "  SUM(COALESCE(\"transaction_normalized\".\"federal_action_obligation\", 0))::NUMERIC(20, 2) AS \"federal_action_obligation\",",
+    "  SUM(COALESCE(\"transaction_normalized\".\"original_loan_subsidy_cost\", 0))::NUMERIC(20, 2) AS \"original_loan_subsidy_cost\",",
     "  count(*) AS counts",
     "FROM",
     "  \"transaction_normalized\"",
@@ -63,8 +64,7 @@
     "LEFT OUTER JOIN",
     "  \"subtier_agency\" AS SFA ON (FA.\"subtier_agency_id\" = SFA.\"subtier_agency_id\")",
     "WHERE",
-    "  \"transaction_normalized\".\"action_date\" >= '2007-10-01' AND",
-    "  \"transaction_normalized\".\"federal_action_obligation\" IS NOT NULL",
+    "  \"transaction_normalized\".\"action_date\" >= '2007-10-01'",
     "GROUP BY",
     "  cast(date_trunc('month', \"transaction_normalized\".\"action_date\") as date),",
     "  \"transaction_normalized\".\"fiscal_year\",",
@@ -177,6 +177,34 @@
       "name": "funding_subtier_agency_name",
       "where": "\"funding_subtier_agency_name\" IS NOT NULL",
       "columns": [{"name": "\"funding_subtier_agency_name\""}]
+    }, {
+      "name": "tuned_type_and_idv",
+      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
+      "columns": [{"name": "\"pulled_from\""}, {"name": "\"type\""}]
+    }, {
+      "name": "compound_geo_pop_1",
+      "where": "\"pop_country_code\" = 'USA'",
+      "columns": [{"name": "\"pop_country_code\""}, {"name": "\"pop_state_code\""}, {"name": "\"pop_county_code\""}, {"name": "\"fiscal_year\""}]
+    }, {
+      "name": "compound_geo_pop_2",
+      "where": "\"pop_country_code\" = 'USA'",
+      "columns": [{"name": "\"pop_country_code\""}, {"name": "\"pop_state_code\""}, {"name": "\"pop_congressional_code\""}, {"name": "\"fiscal_year\""}]
+    }, {
+      "name": "compound_geo_pop_3",
+      "where": "\"pop_country_code\" = 'USA'",
+      "columns": [{"name": "\"pop_country_code\""}, {"name": "\"pop_zip5\""}, {"name": "\"fiscal_year\""}]
+    }, {
+      "name": "compound_geo_rl_1",
+      "where": "\"recipient_location_country_code\" = 'USA'",
+      "columns": [{"name": "\"recipient_location_country_code\""}, {"name": "\"recipient_location_state_code\""}, {"name": "\"recipient_location_county_code\""}, {"name": "\"fiscal_year\""}]
+    }, {
+      "name": "compound_geo_rl_2",
+      "where": "\"recipient_location_country_code\" = 'USA'",
+      "columns": [{"name": "\"recipient_location_country_code\""}, {"name": "\"recipient_location_state_code\""}, {"name": "\"recipient_location_congressional_code\""}, {"name": "\"fiscal_year\""}]
+    }, {
+      "name": "compound_geo_rl_3",
+      "where": "\"recipient_location_country_code\" = 'USA'",
+      "columns": [{"name": "\"recipient_location_country_code\""}, {"name": "\"recipient_location_zip5\""}, {"name": "\"fiscal_year\""}]
     }
   ]
 }

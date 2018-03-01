@@ -1,11 +1,14 @@
+import itertools
+import logging
+
 from django.db.models import Q
 
 from usaspending_api.awards.models import Award, LegalEntity, FinancialAccountsByAwards
-from usaspending_api.references.models import NAICS, PSC
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-
-import logging
+from usaspending_api.awards.v2.filters.filter_helpers import get_total_transaction_columns
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.models import NAICS, PSC
+from usaspending_api.search.v2 import elasticsearch_helper
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +16,7 @@ logger = logging.getLogger(__name__)
 # TODO: Performance when multiple false values are initially provided
 def award_filter(filters):
 
-    queryset = Award.objects.filter(latest_transaction_id__isnull=False, category__isnull=False)
+    queryset = Award.objects.filter(latest_transaction_id__isnull=False)
 
     faba_flag = False
     faba_queryset = FinancialAccountsByAwards.objects.filter(award_id__isnull=False)
@@ -22,30 +25,32 @@ def award_filter(filters):
         if value is None:
             raise InvalidParameterException('Invalid filter: ' + key + ' has null as its value.')
 
-        key_list = ['keyword',
-                    'time_period',
-                    'award_type_codes',
-                    'agencies',
-                    'legal_entities',
-                    'recipient_search_text',
-                    'recipient_scope',
-                    'recipient_locations',
-                    'recipient_type_names',
-                    'place_of_performance_scope',
-                    'place_of_performance_locations',
-                    'award_amounts',
-                    'award_ids',
-                    'program_numbers',
-                    'naics_codes',
-                    'psc_codes',
-                    'contract_pricing_type_codes',
-                    'set_aside_type_codes',
-                    'extent_competed_type_codes',
-                    # next 3 keys used by federal account page
-                    'federal_account_ids',
-                    'object_class_ids',
-                    'program_activity_ids'
-                    ]
+        key_list = [
+            'keyword',
+            'elasticsearch_keyword',
+            'time_period',
+            'award_type_codes',
+            'agencies',
+            'legal_entities',
+            'recipient_search_text',
+            'recipient_scope',
+            'recipient_locations',
+            'recipient_type_names',
+            'place_of_performance_scope',
+            'place_of_performance_locations',
+            'award_amounts',
+            'award_ids',
+            'program_numbers',
+            'naics_codes',
+            'psc_codes',
+            'contract_pricing_type_codes',
+            'set_aside_type_codes',
+            'extent_competed_type_codes',
+            # next 3 keys used by federal account page
+            'federal_account_ids',
+            'object_class_ids',
+            'program_activity_ids'
+        ]
 
         if key not in key_list:
             raise InvalidParameterException('Invalid filter: ' + key + ' does not exist.')
@@ -112,15 +117,32 @@ def award_filter(filters):
             if duns_match:
                 queryset |= duns_qs
 
+        elif key == "elasticsearch_keyword":
+            keyword = value
+            transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field='transaction_id')
+            # flatten IDs
+            transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
+            logger.info('Found {} transactions based on keyword: {}'.format(len(transaction_ids), keyword))
+            transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
+            queryset = queryset.filter(latest_transaction__id__isnull=False)
+            queryset &= queryset.extra(
+                where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(','.join(transaction_ids))])
+
         elif key == "time_period":
             or_queryset = None
             queryset_init = False
             for v in value:
+                date_type = v.get("date_type", "action_date")
+                if date_type not in ["action_date", "last_modified_date"]:
+                    raise InvalidParameterException('Invalid date_type: {}'.format(date_type))
+                date_field = (date_type if date_type == 'last_modified_date'
+                              else 'latest_transaction__{}'.format(date_type))
+
                 kwargs = {}
                 if v.get("start_date") is not None:
-                    kwargs["latest_transaction__action_date__gte"] = v.get("start_date")
+                    kwargs["{}__gte".format(date_field)] = v.get("start_date")
                 if v.get("end_date") is not None:
-                    kwargs["latest_transaction__action_date__lte"] = v.get("end_date")
+                    kwargs["{}__lte".format(date_field)] = v.get("end_date")
                 # (may have to cast to date) (oct 1 to sept 30)
                 if queryset_init:
                     or_queryset |= Award.objects.filter(**kwargs)
@@ -236,31 +258,37 @@ def award_filter(filters):
             queryset &= or_queryset
 
         elif key == "award_amounts":
+            total_transaction_columns = get_total_transaction_columns(filters, Award)
             or_queryset = None
             queryset_init = False
             for v in value:
-                if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
-                    if queryset_init:
-                        or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"],
-                                                            total_obligation__lt=v["upper_bound"])
+                for column in total_transaction_columns:
+                    if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
+                        bounds_dict = {
+                            '{}__gte'.format(column): v['lower_bound'],
+                            '{}__lte'.format(column): v['upper_bound']
+                        }
+                        if queryset_init:
+                            or_queryset |= Award.objects.filter(**bounds_dict)
+                        else:
+                            queryset_init = True
+                            or_queryset = Award.objects.filter(**bounds_dict)
+                    elif v.get("lower_bound") is not None:
+                        bounds_dict = {'{}__gte'.format(column): v['lower_bound']}
+                        if queryset_init:
+                            or_queryset |= Award.objects.filter(**bounds_dict)
+                        else:
+                            queryset_init = True
+                            or_queryset = Award.objects.filter(**bounds_dict)
+                    elif v.get("upper_bound") is not None:
+                        bounds_dict = {'{}__lte'.format(column): v['upper_bound']}
+                        if queryset_init:
+                            or_queryset |= Award.objects.filter(**bounds_dict)
+                        else:
+                            queryset_init = True
+                            or_queryset = Award.objects.filter(**bounds_dict)
                     else:
-                        queryset_init = True
-                        or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"],
-                                                           total_obligation__lt=v["upper_bound"])
-                elif v.get("lower_bound") is not None:
-                    if queryset_init:
-                        or_queryset |= Award.objects.filter(total_obligation__gt=v["lower_bound"])
-                    else:
-                        queryset_init = True
-                        or_queryset = Award.objects.filter(total_obligation__gt=v["lower_bound"])
-                elif v.get("upper_bound") is not None:
-                    if queryset_init:
-                        or_queryset |= Award.objects.filter(total_obligation__lt=v["upper_bound"])
-                    else:
-                        queryset_init = True
-                        or_queryset = Award.objects.filter(total_obligation__lt=v["upper_bound"])
-                else:
-                    raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
+                        raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
             if queryset_init:
                 queryset &= or_queryset
 

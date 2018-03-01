@@ -369,7 +369,7 @@ query_paths = {
             'funding_sub_agency_name': 'latest_transaction__assistance_data__funding_sub_tier_agency_na',
             'last_modified_date': 'latest_transaction__assistance_data__modified_at',
             'non_federal_funding_amount': 'latest_transaction__assistance_data__non_federal_funding_amount',
-            'original_subsidy_cost': 'latest_transaction__assistance_data__original_loan_subsidy_cost',
+            'original_subsidy_cost': 'latest_transaction__original_loan_subsidy_cost',
             'period_of_performance_current_end_date': 'period_of_performance_current_end_date',
             'period_of_performance_start_date': 'period_of_performance_start_date',
             'primary_place_of_performance_city_name': 'latest_transaction__assistance_data__place_of_performance_city',
@@ -410,7 +410,8 @@ query_paths = {
             'recipient_zip_last_4_code': 'latest_transaction__assistance_data__legal_entity_zip_last4',
             'record_type_code': 'latest_transaction__assistance_data__record_type',
             'sai_number': 'latest_transaction__assistance_data__sai_number',
-            'total_funding_amount': 'latest_transaction__assistance_data__total_funding_amount'
+            'total_funding_amount': 'latest_transaction__assistance_data__total_funding_amount',
+            'total_subsidy_cost': 'total_subsidy_cost'
         }
     },
     'transaction': {
@@ -669,7 +670,8 @@ query_paths = {
         },
         'd2': {
             'action_date': 'action_date',
-            'action_type': 'action_type_description',
+            # 'action_type': 'action_type_description',
+            # TODO: Field under DAIMS v1.2, not yet in broker
             'action_type_code': 'action_type',
             'assistance_type_code': 'assistance_data__assistance_type',
             'award_description': 'assistance_data__award_description',
@@ -699,7 +701,7 @@ query_paths = {
             'last_modified_date': 'assistance_data__modified_at',
             'modification_number': 'modification_number',
             'non_federal_funding_amount': 'assistance_data__non_federal_funding_amount',
-            'original_subsidy_cost': 'assistance_data__original_loan_subsidy_cost',
+            'original_subsidy_cost': 'original_loan_subsidy_cost',
             'period_of_performance_current_end_date': 'period_of_performance_current_end_date',
             'period_of_performance_start_date': 'period_of_performance_start_date',
             'primary_place_of_performance_city_name': 'assistance_data__place_of_performance_city',
@@ -733,7 +735,8 @@ query_paths = {
             'recipient_zip_last_4_code': 'assistance_data__legal_entity_zip_last4',
             'record_type_code': 'assistance_data__record_type',
             'sai_number': 'assistance_data__sai_number',
-            'total_funding_amount': 'assistance_data__total_funding_amount'
+            'total_funding_amount': 'assistance_data__total_funding_amount',
+            'total_subsidy_cost': 'award__total_subsidy_cost'
         },
     },
     'subaward': {
@@ -1093,6 +1096,7 @@ human_names = {
             'total_funding_amount',
             'face_value_of_loan',
             'original_subsidy_cost',
+            'total_subsidy_cost',
             'period_of_performance_start_date',
             'period_of_performance_current_end_date',
             'awarding_agency_code',
@@ -1410,6 +1414,7 @@ human_names = {
             'total_funding_amount',
             'face_value_of_loan',
             'original_subsidy_cost',
+            'total_subsidy_cost',
             'action_date',
             'period_of_performance_start_date',
             'period_of_performance_current_end_date',
@@ -1462,7 +1467,7 @@ human_names = {
             # 'business_funds_indicator',  # TODO: Add when DAIMS Schema v1.2 in place
             'business_types_code',
             'action_type_code',
-            'action_type',
+            #  'action_type',  # TODO: Add when DAIMS Schema v1.2 in place
             'record_type_code',
             'fiscal_year_and_quarter_correction',
             'last_modified_date'
