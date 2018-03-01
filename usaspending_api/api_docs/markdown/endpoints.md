@@ -50,9 +50,7 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v2/download/transactions/](/api/v2/download/transactions/) | POST | This route sends a request to the backend to begin generating a zipfile of transaction data in CSV form for download. |
 | [/api/v2/federal_accounts/](/api/v2/references/federal_accounts/) | POST | Returns a list of federal accounts |
 | /api/v2/federal_accounts/:federal_account_id/available_object_classes | GET | Returns minor object classes rolled up under major classes filtered by federal account |
-| /api/v2/federal_accounts/:federal_account_id/available_object_classes | GET | Returns minor object classes rolled up under major classes filtered by federal account |
 | /api/v2/federal_accounts/:federal_account_id/fiscal_year_snapshot/:fiscal_year/ | GET | Returns  budget information for a federal account. If no fiscal year is used, the federal accounts most recent fiscal year is used |
-| /api/v2/federal_accounts/:federal_account_id/spending_by_category/ | POST | Returns the data reqired to visualized the Spending By Category graphic |
 | /api/v2/federal_accounts/:federal_account_id/spending_over_time/| POST | Returns the data reqired to visualized the spending over time graphic |
 | /api/v2/federal_obligations?fiscal_year=:fiscal_year&federal_account=:id | GET | Returns an agency's federal obligations |
 | [/api/v2/financial_balances/agencies](/api/v2/financial_balances/agencies) | GET | Returns financial balance information by funding agency and fiscal year |
@@ -62,7 +60,7 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/) | GET | Returns all toptier agencies and related, relevant data |
 | [/api/v2/search/spending_by_award/](/api/v2/search/spending_by_award/) | POST | Returns the fields of the filtered awards |
 | [/api/v2/search/spending_by_award_count/](/api/v2/search/spending_by_award_count/) | POST | Returns the number of awards in each award type |
-| [/api/v2/search/spending_by_geography/](/api/v2/search/spending_by_geography/) | POST | Returns the number of awards in each award type |
+| [/api/v2/search/spending_by_geography/](/api/v2/search/spending_by_geography/) | POST | This route takes award filters, and returns spending by state code, county code, or congressional district code |
 | [/api/v2/search/spending_by_transaction/](/api/v2/search/spending_by_transaction/) | POST | Returns the fields of the searched term |
 | [/api/v2/search/spending_by_transaction_count/](/api/v2/search/spending_by_transaction_count/) | POST | Returns the fields of the searched term |
 | [/api/v2/search/spending_over_time/](/api/v2/search/spending_over_time/) | POST | returns spending by time. The amount of time is denoted by the "group" value. |
