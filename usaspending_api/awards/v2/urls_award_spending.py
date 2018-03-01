@@ -7,6 +7,6 @@ award_category = views.AwardTypeAwardSpendingViewSet.as_view({'get': 'list'})
 recipient = views.RecipientAwardSpendingViewSet.as_view({'get': 'list'})
 
 urlpatterns = [
-    url(r'^award_category/', award_category, name='award-category-award-spending'),
+    # url(r'^award_category/', award_category, name='award-category-award-spending'),
     url(r'^recipient/', recipient, name='recipient-award-spending')
 ]
