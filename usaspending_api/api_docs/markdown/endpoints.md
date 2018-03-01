@@ -46,7 +46,6 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/accounts/awards/total/](/api/v1/accounts/awards/total/) | POST | Supports aggregation on treasury account symbol/program activity/object class/award records |
 | [/api/v1/awards/](/api/v1/awards/) | GET, POST | Returns a list of award records |
 | /api/v1/awards/:id | GET, POST | Returns a single award record with all fields |
-| [/api/v1/awards/autocomplete/](/api/v1/awards/autocomplete/) | POST | Supports autocomplete on award records |
 | [/api/v1/awards/total/](/api/v1/awards/total/) | POST | Supports aggregation on award records |
 | [/api/v1/federal_accounts/](/api/v1/federal_accounts/) | GET, POST | Returns a list of federal accounts |
 | /api/v1/federal_accounts/:id | GET, POST | Returns a single federal account record with all fields |
@@ -81,8 +80,6 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v1/references/recipients/:id](/api/v1/references/recipients/) | GET, POST | Returns a specific, detailed recipient record |
 | [/api/v1/references/recipients/autocomplete/](/api/v1/references/recipients/autocomplete/) | POST | Supports autocomplete on recipient records |
 | [/api/v1/submissions/](/api/v1/submissions/) | GET, POST | Returns a list of submissions |
-| [/api/v1/filter/](/api/v1/filter/) | POST | Returns a hash of the json body |
-| [/api/v1/hash/](/api/v1/hash/) | POST | Returns a previously input json body |
 | [/api/v2/awards/last_updated/](/api/v2/awards/last_updated/) | GET | Returns the last updated date for the Award data |
 | [/api/v2/award_spending/award_category](/api/v2/award_spending/award_category) | GET | Returns Award Spending Amounts for all Award Category with Respective Top Tier and Sub Tier Agencies |
 | [/api/v2/award_spending/recipient](/api/v2/award_spending/recipient) | GET | Returns Award Spending Amounts for all Recipients with Respective Top Tier and Sub Tier Agencies |
@@ -108,7 +105,6 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/) | GET | Returns all toptier agencies and related, relevant data |
 | [/api/v2/search/spending_by_award/](/api/v2/search/spending_by_award/) | POST | Returns the fields of the filtered awards |
 | [/api/v2/search/spending_by_award_count/](/api/v2/search/spending_by_award_count/) | POST | Returns the number of awards in each award type |
-| [/api/v2/search/spending_by_category/](/api/v2/search/spending_by_category/) | POST | Returns spending by the defined category/scope. The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword. |
 | [/api/v2/search/spending_by_transaction/](/api/v2/search/spending_by_transaction/) | POST | Returns the fields of the searched term |
 | [/api/v2/search/spending_by_transaction_count/](/api/v2/search/spending_by_transaction_count/) | POST | Returns the fields of the searched term |
 | [/api/v2/search/spending_over_time/](/api/v2/search/spending_over_time/) | POST | returns spending by time. The amount of time is denoted by the "group" value. |
