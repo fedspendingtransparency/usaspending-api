@@ -18,4 +18,3 @@ urlpatterns = [
     url(r'^spending_by_transaction', SpendingByTransactionVisualizationViewSet.as_view()),
     url(r'^transaction_spending_summary', TransactionSummaryVisualizationViewSet.as_view())
 ]
-print("git")
