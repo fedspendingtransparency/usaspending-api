@@ -24,7 +24,7 @@ class CustomCacheResponse(CacheResponse):
 
             if not response.status_code >= 400 or self.cache_errors:
                 if self.cache_errors:
-                    logger.exception(self.cache_errors)
+                    logger.error(self.cache_errors)
                 try:
                     self.cache.set(key, response, self.timeout)
                     response['Cache-Trace'] = 'set-cache'
