@@ -13,7 +13,7 @@ class CustomCacheResponse(CacheResponse):
         try:
             response = self.cache.get(key)
         except Exception as e:
-            msg = 'Problem while retriving key [{k}] from cache for path:\'{p}\''
+            msg = 'Problem while retrieving key [{k}] from cache for path:\'{p}\''
             logger.exception(msg.format(k=key, p=str(request.path)))
 
         if not response:
@@ -35,6 +35,7 @@ class CustomCacheResponse(CacheResponse):
         if not hasattr(response, '_closable_objects'):
             response._closable_objects = []
 
+        response['key'] = key
         return response
 
 
