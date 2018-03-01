@@ -9,7 +9,12 @@ This route sends a request to the backend to begin generating a zipfile of award
 
 ```
 {
-    "filters": {},
+    "filters": {"time_period": [
+        {
+            "start_date": "2001-01-01",
+            "end_date": "2001-01-31"
+        }
+    ]},
     "columns": [
         "award_type",
         "awarding_agency_code"
