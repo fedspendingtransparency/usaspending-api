@@ -7,12 +7,8 @@ logger = logging.getLogger('console')
 
 class CustomCacheResponse(CacheResponse):
     def process_cache_response(self, view_instance, view_method, request, args, kwargs):
-        clean_request = request
-        if 'auditTrail' in clean_request.__dict__:
-            del clean_request['auditTrail']
-
         key = self.calculate_key(view_instance=view_instance, view_method=view_method,
-                                 request=clean_request, args=args, kwargs=kwargs)
+                                 request=request, args=args, kwargs=kwargs)
         response = None
         try:
             response = self.cache.get(key)
@@ -21,8 +17,8 @@ class CustomCacheResponse(CacheResponse):
             logger.exception(msg.format(k=key, p=str(request.path)))
 
         if not response:
-            response = view_method(view_instance, clean_request, *args, **kwargs)
-            response = view_instance.finalize_response(clean_request, response, *args, **kwargs)
+            response = view_method(view_instance, request, *args, **kwargs)
+            response = view_instance.finalize_response(request, response, *args, **kwargs)
             response['Cache-Trace'] = 'no-cache'
             response.render()  # should be rendered, before picklining while storing to cache
 
