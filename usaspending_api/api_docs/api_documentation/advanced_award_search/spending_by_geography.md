@@ -12,7 +12,7 @@ geo_layer: Defines which geographical level should be returned in the request. O
 
 geo_layer_filter: Defines a filter for a specific geographic area correlating to the geo_layer. It is a list of strings that are the unique identifiers for the geographic location.
 
-- When `geo_layer` is `"state"` then the `geo_layer_filters` should be an array of state codes ex: `["MN", "WA", "DC"]`. The state is the `state_code`
+- When `geo_layer` is `"state"` then the `geo_layer_filters` should be an array of state codes ex: `["MN", "WA", "DC"]`.
 - When `geo_layer` is `"county"` then the `geo_layer_filters` should be an array of county codes. County codes are the county's state FIPS code concatenated with the county's FIPS code. ex: `["51041", "51117", "51179"]`.
 - When `geo_layer` is `"district"` then  the geo_layer filters should be an array of congressional district codes. The congressional district code is a concatenation of the state FIPS code + the Congressional District code including any leading zeros. ex: `["5109", "5109", "5109"]`.
 

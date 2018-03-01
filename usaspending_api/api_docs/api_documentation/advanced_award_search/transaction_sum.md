@@ -8,7 +8,7 @@ This route takes keyword search fields, and returns the fields of the searched t
 ### Request
 fields: Defines what award variables are returned.
 
-keyword: search-phrase user submitted to search on
+keyword: A Search Term used to filter on many different tables.
 
 ```
 {
