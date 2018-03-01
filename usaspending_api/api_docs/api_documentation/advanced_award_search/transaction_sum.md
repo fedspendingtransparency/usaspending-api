@@ -1,4 +1,4 @@
-## [Transaction Sum](#transaction-sum) DEPRECIATED
+## [Transaction Sum](#transaction-sum) - Deprecated
 **Route:** `/api/v2/search/transaction_sum/`
 
 **Method:** `POST`
@@ -6,7 +6,7 @@
 This route takes keyword search fields, and returns the fields of the searched term.
 
 ### Request
-field: Defines what award variables are returned.
+fields: Defines what award variables are returned.
 
 keyword: search-phrase user submitted to search on
 

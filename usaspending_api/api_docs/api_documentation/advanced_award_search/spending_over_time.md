@@ -52,7 +52,7 @@ https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v
 ```
 **Response results Descriptions**
 
-**time_period** - an object containing what time period .
+**time_period** - an object containing what time period the awards amount is filtered by.  This keys in this object are defined by the group request variable.
 
 **hasNext** - Boolean object. If true, there is another page of results.
 

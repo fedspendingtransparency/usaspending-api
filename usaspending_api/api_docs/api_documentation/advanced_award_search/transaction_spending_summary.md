@@ -3,13 +3,11 @@
 
 **Method:** `POST`
 
-This route takes award filters, and returns the number of transactions and summation of federal action obligations.
-
-MVP is to only surface prime awards. Later on sub-awards will be added
+This route returns the number of transactions and the sum of federal action obligations for prime awards given a set of award of filters.
 
 ### Request
 
-filter: Defines how the awards are filtered.  The filter object is defined here.
+filters: Defines how the awards are filtered.  The filter object is defined here.
 
 https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
 
@@ -51,7 +49,6 @@ https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v
 }
 ```
 
-
 ### Response (JSON)
 
 ```
@@ -75,7 +72,3 @@ Possible HTTP Status Codes:
   "detail": "Sample error message"
 }
 ```
-
-### Other Search Filters
-https://github.com/fedspendingtransparency/usaspending-website/wiki/Award-Search-Visualizations
-

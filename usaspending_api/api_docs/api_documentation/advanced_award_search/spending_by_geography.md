@@ -12,9 +12,9 @@ geo_layer: Defines which geographical level should be returned in the request. O
 
 geo_layer_filter: Defines a filter for a specific geographic area correlating to the geo_layer. It is a list of strings that are the unique identifiers for the geographic location.
 
-- When `geo_layer` is `"state"` then  `the geo_layer_filters` should be n array of state codes ex: `["MN", "WA", "DC"]`. The state is the `state_code`
-- When `geo_layer` is `"county"` then  the `the geo_layer_filters` should be the county `geo_id` ex: `["51041", "51117", "51179"]`. The county `shape_code` is a concatenation of the "state FIPS code" + the "county FIPS code".
-- When `geo_layer` is `"district"` then  the geo_layer filters should be the county geo_id ex: `["5109", "5109", "5109"]`. The county `shape_code` is a concatenation of the "state FIPS code" + the "Congressional District Code" including any leading Zeros.
+- When `geo_layer` is `"state"` then the `geo_layer_filters` should be an array of state codes ex: `["MN", "WA", "DC"]`. The state is the `state_code`
+- When `geo_layer` is `"county"` then the `geo_layer_filters` should be an array of county codes. County codes are the county's state FIPS code concatenated with the county's FIPS code. ex: `["51041", "51117", "51179"]`.
+- When `geo_layer` is `"district"` then  the geo_layer filters should be an array of congressional district codes. The congressional district code is a concatenation of the state FIPS code + the Congressional District code including any leading zeros. ex: `["5109", "5109", "5109"]`.
 
 filters: how the awards are filtered.  The filter object is defined here: [Filter Object](https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation)
 
@@ -22,23 +22,22 @@ filters: how the awards are filtered.  The filter object is defined here: [Filte
 ```JSON
 {
 	"scope": "place_of_performance",
-        "geo_layer": "state",
-        "geo_layer_filters":["MN", "WA", "DC"],
+	"geo_layer": "state",
+	"geo_layer_filters": ["MN", "WA", "DC"],
 	"filters": {
-	    "award_type_codes": ["A", "B", "03"],
-	    "award_ids": [1, 2, 3],
-	    "award_amounts": [
-		      {
-			"lower_bound": 1000000.00,
-			"upper_bound": 25000000.00
-		      },
-		      {
-			"upper_bound": 1000000.00
-		      },
-		      {
-			"lower_bound": 500000000.00
-		      }
-    	     ]
+		"award_type_codes": ["A", "B", "03"],
+		"award_ids": [1, 2, 3],
+		"award_amounts": [{
+				"lower_bound": 1000000.00,
+				"upper_bound": 25000000.00
+			},
+			{
+				"upper_bound": 1000000.00
+			},
+			{
+				"lower_bound": 500000000.00
+			}
+		]
 	}
 }
 ```
