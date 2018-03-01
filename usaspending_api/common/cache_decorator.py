@@ -23,14 +23,16 @@ class CustomCacheResponse(CacheResponse):
             response.render()  # should be rendered, before picklining while storing to cache
 
             if not response.status_code >= 400 or self.cache_errors:
+                if self.cache_errors:
+                    logger.error(self.cache_errors)
                 try:
                     self.cache.set(key, response, self.timeout)
                     response['Cache-Trace'] = 'set-cache'
                 except Exception as e:
                     msg = 'Problem while writing to cache: path:\'{p}\' data:\'{d}\''
                     logger.exception(msg.format(p=str(request.path), d=str(request.data)))
-            else:
-                response['Cache-Trace'] = 'hit-cache'
+        else:
+            response['Cache-Trace'] = 'hit-cache'
 
         if not hasattr(response, '_closable_objects'):
             response._closable_objects = []
