@@ -89,8 +89,6 @@ class LoggingMiddleware(MiddlewareMixin):
                 self.log["key"] = response._headers['key']
             if 'cache-trace' in response._headers:
                 self.log["cache_trace"] = response._headers['cache-trace']
-            if 'request' in response._headers:
-                self.log["request_for_key_gen"] = response._headers['request']
 
         if 100 <= status_code < 400:
             # Logged at an INFO level: 1xx (Informational), 2xx (Success), 3xx Redirection
