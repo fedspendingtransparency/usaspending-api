@@ -4,7 +4,7 @@ The following endpoints are involved with generating files that reflect the site
 
 ## Award Data Archive
 
-On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. These can be found at [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive), or, if you prefer, you can also use the API's [List Downloads Endpoint](https://github.com/fedspendingtransparency/data-act-documentation/blob/master/usaspending/api-documentation/download/List%20Downloads.md).
+On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. These can be found at [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive), or, if you prefer, you can also use the API's [List Downloads Endpoint](../List%20Downloads.md).
 
 ## Generating Download Files
 
