@@ -3,13 +3,13 @@
 
 **Method:** `POST`
 
-This route takes keyword search fields, and returns the fields of the searched term.
-
+This route takes keyword search terms and returns awards where a certain subset of fields match against the term. For more information about which fields are searched, refer to https://usaspending-help.zendesk.com/hc/en-us/articles/360001255774-Keyword-Search-Question-How-does-the-Keyword-Search-work-
 ### Request
-field: Defines what award variables are returned.
+fields: An array of string column names to return. See Fields list below.
 
-filter: Defines how the transactions are filtered.  Search term and pannel-name are required. Transaction type is one of pane they are looking at. Can be one of the following- ["Contracts", "Grants", "Direct Payments", "Loans", "Other"]
+filters: An object with `keyword` and `award_type_codes` keys. `keyword` should be a string that you are performing a keyword search operation with. `award_type_codes` is an array of strings of the award type codes that should be searched within.
 
+A list of award type codes can be found at http://fedspendingtransparency.github.io/whitepapers/types/
 https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
 
 limit(**OPTIONAL**): how many results are returned
@@ -22,15 +22,29 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
 
 ```
 {
-  "filters": {
-       "keyword": "Booz Allen",
-       "award_type_codes" : ["10"],
-       },
-  "fields": ["Award ID", "Recipient Name", "Action Date", "Transaction Amount", "Awarding Agency", "Awarding Sub Agency", "Award Type", "Funding Agency", "Funding Sub Agency", "Mod"],
-  "sort": "Recipient Name",
-  "order": "desc",
-  "page": 1,
-  "limit": 30,
+    "filters": {
+        "keyword": "money",
+        "award_type_codes": [
+            "A",
+            "B",
+            "C",
+            "D"
+        ]
+    },
+    "fields": [
+        "Award ID",
+        "Mod",
+        "Recipient Name",
+        "Action Date",
+        "Transaction Amount",
+        "Awarding Agency",
+        "Awarding Sub Agency",
+        "Award Type"
+    ],
+    "page": 1,
+    "limit": 35,
+    "sort": "Transaction Amount",
+    "order": "desc"
 }
 ```
 
@@ -41,8 +55,8 @@ order (**OPTIONAL**): Optional parameter indicating what direction results shoul
     "limit": 10,
     "results": [
         {
-            "internal_id": "9359566,
-            "Award ID": "9359566"",
+            "internal_id": "9359566",
+            "Award ID": "W15P7T06CN401",
             "Recipient Name": "MULTIPLE RECIPIENTS",
             "Action Date": "2018-12-23",
             "Transaction Amount": "481.00",

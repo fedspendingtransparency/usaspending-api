@@ -9,7 +9,7 @@ This route lists all the agencies and the subagencies or federal accounts associ
 
 ```
 {
-    "agency": 1,
+    "agency": 1
 }
 ```
 

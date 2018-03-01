@@ -2,7 +2,7 @@
 ## Financial Spending Major Object Class
 **Route**: `/api/v2/financial_spending/major_object_class?fiscal_year=[year]&funding_agency_id=[id]`
 
-Retrieve award obligation amounts broken down by object class.
+Retrieve award obligation amounts broken down by major object class.
 
 **Method**: `GET`
 

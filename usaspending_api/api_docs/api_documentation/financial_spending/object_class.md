@@ -2,11 +2,11 @@
 ## Financial Spending Major Object Class
 **Route**: `/api/v2/financial_spending/object_class?fiscal_year=[year]&funding_agency_id=[id]&major_object_class_code=[id]`
 
-This route sends a request to the backend to retrieve award obligation amounts for all object classes for a specified funding agency and major object class code based on the fiscal year.
+Retrieve award obligation amounts broken down by object class.
 
 **Method**: `GET`
 
-This route sends a request to the backend to retrieve awarded amounts for all recipients for a specified awarding agency based on the fiscal year, and optional award category.
+This route sends a request to the backend to retrieve award obligation amounts for all object classes for a specified funding agency and major object class code based on the fiscal year.
 
 **Query Parameters Description**
 
