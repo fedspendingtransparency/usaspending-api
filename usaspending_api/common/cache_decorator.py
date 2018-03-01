@@ -9,6 +9,7 @@ class CustomCacheResponse(CacheResponse):
     def process_cache_response(self, view_instance, view_method, request, args, kwargs):
         key = self.calculate_key(view_instance=view_instance, view_method=view_method,
                                  request=request, args=args, kwargs=kwargs)
+        print(key)
         response = None
         try:
             response = self.cache.get(key)
@@ -23,6 +24,8 @@ class CustomCacheResponse(CacheResponse):
             response.render()  # should be rendered, before picklining while storing to cache
 
             if not response.status_code >= 400 or self.cache_errors:
+                if self.cache_errors:
+                    logger.exception(self.cache_errors)
                 try:
                     self.cache.set(key, response, self.timeout)
                     response['Cache-Trace'] = 'set-cache'
