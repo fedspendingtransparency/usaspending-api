@@ -1,10 +1,10 @@
 {
-  "index_patterns": ["*"],
+  "index_patterns": ["transactions*"],
   "settings": {
     "index.mapping.ignore_malformed": true,
     "index.max_result_window" : 500000,
     "index": {
-      "number_of_shards" : 5,
+      "number_of_shards" : 3,
       "number_of_replicas" : 1
     }
   },
@@ -34,8 +34,7 @@
           "type": "text"
         },
         "display_award_id": {
-          "type": "text",
-          "fielddata": true
+          "type": "keyword"
         },
         "update_date": {
           "type": "date",
@@ -77,8 +76,7 @@
           "type": "text"
         },
         "type_description": {
-          "type": "text",
-          "fielddata": true
+          "type": "keyword"
         },
         "award_category": {
           "type": "text",
@@ -91,8 +89,7 @@
           "type": "text"
         },
         "recipient_name": {
-          "fielddata": true,
-          "type": "text"
+          "type": "keyword"
         },
 
         "action_date": {
@@ -117,22 +114,17 @@
           "index": false
         },
         "award_amount": {
-          "type": "scaled_float",
-          "scaling_factor": 100
+          "type": "float"
         },
         "transaction_amount": {
-          "type": "scaled_float",
-          "scaling_factor": 100
+          "type": "float"
         },
         "face_value_loan_guarantee": {
-          "type": "scaled_float",
-          "scaling_factor": 100
+          "type": "float"
         },
         "original_loan_subsidy_cost": {
-          "type": "scaled_float",
-          "scaling_factor": 100
+          "type": "float"
         },
-
         "awarding_agency_id": {
           "type": "integer",
           "index": false
@@ -142,15 +134,13 @@
           "index": false
         },
         "awarding_toptier_agency_name": {
-          "type": "text",
-          "fielddata": true
+          "type": "keyword"
         },
         "funding_toptier_agency_name": {
           "type": "text"
         },
         "awarding_subtier_agency_name": {
-          "type": "text",
-          "fielddata": true
+          "type": "keyword"
         },
         "funding_subtier_agency_name": {
           "type": "text"
@@ -196,7 +186,6 @@
           "type": "text",
           "index": false
         },
-
         "pop_country_code": {
           "type": "text",
           "index": false

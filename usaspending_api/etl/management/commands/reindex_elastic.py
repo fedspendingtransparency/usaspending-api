@@ -1,15 +1,24 @@
+'''
+This script required a source, destination,
+mapping file and alias name. Here we grab all
+index patterns with source, replicate them with
+destination prefix. Once reindexing is complete,
+old indices are closed and given the selected alias.
+'''
+import os
+import json
+import time
 import logging
 from elasticsearch import Elasticsearch
-import time
+from elasticsearch import ConnectionTimeout
 from usaspending_api import settings
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from django.core.management.base import BaseCommand
-import os
-import json
+
 
 logging.basicConfig(format='%(asctime)s |  %(message)s', level=logging.WARNING)
-RETRIES = 3
-INGEST_RATE = 296666/25.
+MAX_RETRIES = 3
+INGEST_RATE = 10000
 
 ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
 INDICES_SUB_NAMES = indices_to_award_types.keys()
@@ -26,12 +35,11 @@ class Command(BaseCommand):
             'source_prefix',
             default=settings.TRANSACTIONS_INDEX_ROOT,
             type=str,
-            help='Prefix of index')
+            help='Prefix of index that has data')
         parser.add_argument(
             'mapping_file',
-            default='../es_transaction_template.json',
             type=str,
-            help='Mapping file')
+            help='Absolute path to new mapping file')
         parser.add_argument(
             'alias_prefix',
             default='trans',
@@ -44,11 +52,9 @@ class Command(BaseCommand):
         self.source_prefix = options['source_prefix']
         self.dest_prefix = options['dest_prefix']
         self.alias_prefix = options['alias_prefix']
-        #TODO: 
+        # TODO:
         self.wipe = False
-        directory = os.path.dirname(os.path.abspath(__file__))
-        mappingfile = os.path.join(directory, options['mapping_file'])
-        with open(mappingfile) as f:
+        with open(options['mapping_file']) as f:
             data = json.load(f)
             self.mapping_file = json.dumps(data)
 
@@ -83,7 +89,9 @@ class Command(BaseCommand):
         try:
             response = ES_CLIENT.search(index=index_name)
             return response["hits"]["total"]
-        except:
+        except ConnectionError as e:
+            logging.error('[CONNECTION TIMEOUT] with ElasticSearch cluster: {e}'.
+                          format(e=str(e)))
             return -1
 
     def verify(self, source, target):
@@ -99,16 +107,17 @@ class Command(BaseCommand):
                     logging.warn('{} exists... passing ... '.format(dest))
                 else:
                     logging.warn('{} exists... deleting... {}'.format(dest))
-                    # ES_CLIENT.indices.delete(dest)
+                    ES_CLIENT.indices.delete(dest)
             if not ES_CLIENT.indices.exists(dest):
                 self.size, self.sleep_time = self.verify(source, dest)
                 logging.warn('Reindexing {} -- {} documents'.format(source, self.size))
                 try:
                     self.single_reindex(source, dest)
                     logging.info(source)
-                except Exception as e:
-                    logging.info('got exception')
-                    for attempt in range(RETRIES):
+                except (ConnectionTimeout) as e:
+                    logging.error('[CONNECTION TIMEOUT] with ElasticSearch cluster: {e}'.
+                                  format(e=str(e)))
+                    for attempt in range(MAX_RETRIES):
                         self.size, self.sleep_time = self.verify(source, dest)
                         if self.sleep_time > 0:
                             logging.warn('---------- Sleep_time of index >>> {} ------------------'
@@ -116,6 +125,7 @@ class Command(BaseCommand):
                             time.sleep(self.sleep_time)
         print('\n\n')
         index_name = self.dest_prefix + '*'
+        ES_CLIENT.indices.flush('*')
         time.sleep(5)
         count = self.get_total_count(index_name)
         logging.warn('Reindexed a total of {} documents'.format(count))
