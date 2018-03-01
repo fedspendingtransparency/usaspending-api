@@ -4,6 +4,8 @@ mapping file and alias name. Here we grab all
 index patterns with source, replicate them with
 destination prefix. Once reindexing is complete,
 old indices are closed and given the selected alias.
+python manage.py reindex_elastic reindex-test future-transactions usaspending_api/etl/management/commands/sample_mapping.json mia
+
 '''
 import os
 import json
@@ -11,16 +13,17 @@ import time
 import logging
 from elasticsearch import Elasticsearch
 from elasticsearch import ConnectionTimeout
+from elasticsearch import TransportError
 from usaspending_api import settings
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from django.core.management.base import BaseCommand
-
+from pprint import pprint
 
 logging.basicConfig(format='%(asctime)s |  %(message)s', level=logging.WARNING)
 MAX_RETRIES = 3
 INGEST_RATE = 10000
 
-ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
+ES_CLIENT = Elasticsearch('localhost:9200', timeout=300)
 INDICES_SUB_NAMES = indices_to_award_types.keys()
 
 
@@ -28,20 +31,20 @@ class Command(BaseCommand):
     # used by parent class
     def add_arguments(self, parser):
         parser.add_argument(
-            'dest_prefix',
+            '--dest_prefix',
             type=str,
             help='Prefix of output index')
         parser.add_argument(
-            'source_prefix',
+            '--source_prefix',
             default=settings.TRANSACTIONS_INDEX_ROOT,
             type=str,
             help='Prefix of index that has data')
         parser.add_argument(
-            'mapping_file',
+            '--mapping_file',
             type=str,
             help='Absolute path to new mapping file')
         parser.add_argument(
-            'alias_prefix',
+            '--alias_prefix',
             default='trans',
             type=str,
             help='Mapping file')
@@ -89,7 +92,7 @@ class Command(BaseCommand):
         try:
             response = ES_CLIENT.search(index=index_name)
             return response["hits"]["total"]
-        except ConnectionError as e:
+        except TransportError as e:
             logging.error('[CONNECTION TIMEOUT] with ElasticSearch cluster: {e}'.
                           format(e=str(e)))
             return -1
@@ -101,6 +104,9 @@ class Command(BaseCommand):
         return difference, difference/INGEST_RATE
 
     def controller(self):
+        logging.warn('Reindexing the following \n')
+        pprint(self.reindex_dict)
+        print('\n\n')
         for source, dest in self.reindex_dict.items():
             if ES_CLIENT.indices.exists(dest):
                 if not self.wipe:
@@ -114,6 +120,7 @@ class Command(BaseCommand):
                 try:
                     self.single_reindex(source, dest)
                     logging.info(source)
+                    ES_CLIENT.indices.flush('*')
                 except (ConnectionTimeout) as e:
                     logging.error('[CONNECTION TIMEOUT] with ElasticSearch cluster: {e}'.
                                   format(e=str(e)))
