@@ -5,7 +5,7 @@ or
 
 **Method:** `GET`
 
-This route sends a request to the backend to retrieve budget information for a federal account.  If no fiscal year is used, the federal accounts most recent fiscal year is used.
+This route sends a request to the backend to retrieve budget information for a federal account.  If no fiscal year is supplied, the federal account's most recent fiscal year is used.
 
 ### Response (JSON) 
 

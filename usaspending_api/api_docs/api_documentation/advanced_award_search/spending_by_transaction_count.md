@@ -14,8 +14,8 @@ This route takes keyword search fields, and returns the fields of the searched t
 {
     "filters": {
         "keyword": "Education",
-        "award_type": "prime", // out of scope
-        "description_only": true // out of scope
+        "award_type": "prime", // future enhancement
+        "description_only": true // future enhancement
     }
 }
 ```
