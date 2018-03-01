@@ -27,6 +27,15 @@ class GetPostQueryParamsKeyBit(bits.QueryParamsKeyBit):
         return params
 
 
+class QueryMethodKeyBit(bits.QueryParamsKeyBit):
+    """
+    Adds query method (POST, GET, OPTIONS) as a key bit
+    """
+
+    def get_source_dict(self, params, view_instance, view_method, request, args, kwargs):
+        return request.method
+
+
 class USAspendingKeyConstructor(DefaultKeyConstructor):
     """
     Handle cache key construction for API requests. If we never need to create
@@ -35,7 +44,8 @@ class USAspendingKeyConstructor(DefaultKeyConstructor):
     """
     path_bit = PathKeyBit()
     request_params = GetPostQueryParamsKeyBit()
-    unique_view_id = bits.UniqueMethodIdKeyBit()
+    # unique_view_id = bits.UniqueMethodIdKeyBit()
+    method_bit = QueryMethodKeyBit()
 
 
 usaspending_key_func = USAspendingKeyConstructor()

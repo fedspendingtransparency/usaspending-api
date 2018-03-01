@@ -7,6 +7,7 @@ logger = logging.getLogger('console')
 
 class CustomCacheResponse(CacheResponse):
     def process_cache_response(self, view_instance, view_method, request, args, kwargs):
+        response['request'] = request
         key = self.calculate_key(view_instance=view_instance, view_method=view_method,
                                  request=request, args=args, kwargs=kwargs)
         response = None
