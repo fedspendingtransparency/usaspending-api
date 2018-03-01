@@ -8,7 +8,7 @@ This route takes award filters and fields, and returns the fields of the filtere
 ### Request
 fields: Defines what award variables are returned in an array using the Fields provided below.
 
-filters: Defines how the awards are filtered.  The filter object is defined here.  Each Unique filter type is compounded by ORs the combined with the other filters by AND operators.
+filters: Defines how the awards are filtered.  The filter object is defined here.  Each top-level key in the filter object is compounded together using AND logic. However, when multiple values are provided for a specific key, those values are compounded using OR logic.
 
 https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
 
