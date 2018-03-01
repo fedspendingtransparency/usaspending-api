@@ -18,7 +18,7 @@ All Category Options:
 
 `scope`: Scope adds another level of aggregation to category.  The possible scopes are dependent on the category keyword.
 
-`filter`: how the awards are filtered.  The filter object is defined here: [Filter Object](https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation)
+`filters`: how the awards are filtered.  The filter object is defined here: [Filter Object](https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation)
 
 `limit` (**OPTIONAL**):  how many results are returned. Defaults to `10`
 

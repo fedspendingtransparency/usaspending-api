@@ -85,7 +85,7 @@ This route sends a request to the backend to retrieve spending data information 
 **type** - The type of the response object.
 
 **code** - Result determined by type. If the type is agency, the result is the agency CGAC.
-If the type is award, the result is Award ID.  All other types return Null.
+If the type is award, the result is Award ID.
 
 **amount**/**total** - The obligated amount expected by the type.
 

@@ -2,15 +2,11 @@
 ## Financial Spending Major Object Class
 **Route**: `/api/v2/financial_spending/object_class?fiscal_year=[year]&funding_agency_id=[id]&major_object_class_code=[id]`
 
-Retrieve Award Spending Amounts for all Recipients with Respective Top Tier and Sub Tier Agencies
+This route sends a request to the backend to retrieve award obligation amounts for all object classes for a specified funding agency and major object class code based on the fiscal year.
 
 **Method**: `GET`
 
 This route sends a request to the backend to retrieve awarded amounts for all recipients for a specified awarding agency based on the fiscal year, and optional award category.
-
-`Awarding Agency may be a Sub-Tier Agency.`
-
-`Recipients ordered by Obligated Amount.`
 
 **Query Parameters Description**
 
@@ -63,6 +59,6 @@ Possible HTTP Status Codes:
 - 500 : All other errors
 ```
 {
-    "message": "Missing required query parameters: fiscal_year, awarding_agency_id, major_object_class_code"
+    "message": "Missing required query parameters: fiscal_year, funding_agency_id, major_object_class_code"
 }
 ```

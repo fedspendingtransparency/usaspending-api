@@ -7,7 +7,7 @@ This route retrieves financial balance information by funding agency and fiscal 
 
 ### Sample Request
 
-`/api/v2/financial_balances/agencies?funding_agency=775&fiscal_year=2017`
+`/api/v2/financial_balances/agencies?funding_agency_id=775&fiscal_year=2017`
 
 ### Request Params
 
@@ -17,6 +17,16 @@ This route retrieves financial balance information by funding agency and fiscal 
 ### Response (JSON)
 
 ```
+{
+    "page_metadata": {
+        "count": 1,
+        "page": 1,
+        "has_next_page": false,
+        "has_previous_page": false,
+        "next": null,
+        "current": "http://localhost:8000/api/v2/financial_balances/agencies/?fiscal_year=2017&funding_agency_id=775&limit=100&page=1",
+        "previous": null
+    },
 "results": [
     {
       "budget_authority_amount": "120112040.58",
@@ -24,4 +34,5 @@ This route retrieves financial balance information by funding agency and fiscal 
       "outlay_amount": "8063724.83"
     }
 ]
+}
 ```

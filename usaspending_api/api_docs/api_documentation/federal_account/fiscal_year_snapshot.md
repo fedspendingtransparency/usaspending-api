@@ -1,4 +1,4 @@
-## Fiscal Year Snapshot - Depreciated
+## Fiscal Year Snapshot
 **Route:** `v2/federal_accounts/[federal_account_id]/fiscal_year_snapshot/[fiscal_year]/`
 or
 `v2/federal_accounts/[federal_account_id]/fiscal_year_snapshot/`

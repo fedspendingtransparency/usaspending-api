@@ -6,15 +6,17 @@
 This route takes award filters, and returns spending by state code, county code, or congressional district code.
 
 ### Request
-scope: Scope defines what location is used for filtering the aggregated_amount.
+scope: What type of data will be returned. Must be either: `place_of_performance` or `recipient_location`.
 
 geo_layer: Defines which geographical level should be returned in the request. Options include: "state", "county", "district"
 
 geo_layer_filter: Defines a filter for a specific geographic area correlating to the geo_layer. It is a list of strings that are the unique identifiers for the geographic location.
 
-- When `geo_layer` is `"state"` then  `the geo_layer_filters` should be the county `shape_code` ex: `["MN", "WA", "DC"]`. The state is the `state_code`
-- When `geo_layer` is `"county"` then  the `the geo_layer_filters` should be the county `geo_id` ex: `["51041", "51117", "51179"]`. The county `shape_code` is a concatenation of the `state_FIPS_code` + the `county_code`
-- When `geo_layer` is `"district"` then  the geo_layer filters should be the county geo_id ex: `["5109", "5109", "5109"]`. The county `shape_code` is a concatenation of the `state_FIPS_code` + the `congressional_code`
+- When `geo_layer` is `"state"` then  `the geo_layer_filters` should be the county `state_code` ex: `["MN", "WA", "DC"]`. The state is the `state_code`
+- When `geo_layer` is `"county"` then  the `the geo_layer_filters` should be the county `geo_id` ex: `["51041", "51117", "51179"]`. The county `shape_code` is a concatenation of the state FIPS code and the county FIPS code.
+- When `geo_layer` is `"district"` then  the geo_layer filters should be the county geo_id ex: `["5109", "5109", "5109"]`. The county `shape_code` is a concatenation of the "state FIPS code" + the "Congressional District Code" including any leading Zeros.
+
+filters: how the awards are filtered.  The filter object is defined here: [Filter Object](https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation)
 
 
 ```JSON
@@ -106,7 +108,7 @@ geo_layer_filter: Defines a filter for a specific geographic area correlating to
 ### Response Fields
 * `scope`: Choices are `place_of_performance` or `recipient_location` based on user's request
 * `geo_layer`: Choices are `state`, `country`, or `district`  that is based on user's request 
-* `shape_code`: Unique identifier used for mapping that is based on the `geo_layer`
+* `shape_code`: Identifier used for mapping that is based on the `geo_layer`
 * `display_name`: Display name for `shape code` for labels on map
 * `aggregated_amount`: Sum of `federal_action_obligation` from the filtered transactions 
 
@@ -120,8 +122,7 @@ Possible HTTP Status Codes:
   "detail": "Sample error message"
 }
 ```
-### Other Search Filters
-https://github.com/fedspendingtransparency/usaspending-website/wiki/Award-Search-Visualizations
+
 
 ## [Spending by Award](#spending-by-award)
 **Route:** `/api/v2/search/spending_by_award/`

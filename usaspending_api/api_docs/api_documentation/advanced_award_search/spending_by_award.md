@@ -8,11 +8,11 @@ This route takes award filters and fields, and returns the fields of the filtere
 ### Request
 fields: Defines what award variables are returned in an array using the Fields provided below.
 
-filters: Defines how the awards are filtered.  The filter object is defined here.  Unique filters are compounded by AND operators.
+filters: Defines how the awards are filtered.  The filter object is defined here.  Each Unique filter type is compounded by ORs the combined with the other filters by AND operators.
 
 https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v2-Documentation
 
-limit (**OPTIONAL**): how many results are returned. If no limit is specified, the data is uncapped.
+limit (**OPTIONAL**): how many results are returned. If no limit is specified, the limit is set to 10.
 
 page (**OPTIONAL**):  The page number that is currently returned.
 
@@ -167,7 +167,7 @@ The possible fields returned are split by contracts or assistace awards (loans, 
 
 **page** - The current page number of results.
 
-**hasNext** - Is there another page.
+**hasNext** - Boolean object. If true, there is another page of results.
 
 ```
 

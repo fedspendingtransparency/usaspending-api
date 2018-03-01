@@ -1,9 +1,9 @@
-## Avalible Object Classes - Depreciated
+## Available Object Classes
 **Route:** `v2/federal_accounts/[federal_account_id]/available_object_classes`
 
 **Method:** `GET`
 
-This route returns object classes that the specified federal account has alloted money to.
+This route returns object classes that the specified federal account has allotted money to.
 
 **Query Parameters Description:**
 

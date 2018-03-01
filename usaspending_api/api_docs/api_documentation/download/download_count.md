@@ -37,4 +37,4 @@ POST a JSON body:
 
 * `transaction_rows_gt_limit` is a boolean returning whether the transaction count is over the maximum row limit.
 
-**Note:** This endpoint will only count the rows for _transactions_. Frontend will disable the download button whenever transaction row count exceeds 500,000 regardless of the award row count. We'll name the key `transaction_rows` in case we need to add award counts in the future.
+**Note:** This endpoint will only count the rows for _transactions_. Frontend will disable the download button whenever transaction row count exceeds 500,000 regardless of the award row count.
