@@ -49,3 +49,5 @@ indices_to_award_types = {
     'loans': ('07', '08'),
     'other': ('09', '11'),
 }
+
+KEYWORD_DATATYPE_FIELDS = ['recipient_name', 'awarding_toptier_agency_name', 'awarding_subtier_agency_name']
