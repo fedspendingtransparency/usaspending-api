@@ -7,13 +7,13 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.conf import settings
 
-from usaspending_api.common.helpers import fy
+from usaspending_api.common.helpers import fy, timer
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import get_business_categories, get_business_type_description, \
-    get_assistance_type_description, timer
+from usaspending_api.broker.helpers import (get_business_categories, get_business_type_description,
+                                            get_assistance_type_description)
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
@@ -48,7 +48,7 @@ class Command(BaseCommand):
         # Iterate through the result dict and determine what needs to be deleted and what needs to be added
         for row in db_rows:
             if row['correction_late_delete_ind'] and row['correction_late_delete_ind'].upper() == 'D':
-                ids_to_delete += [row['afa_generated_unique']]
+                ids_to_delete += [row['afa_generated_unique'].upper()]
                 # remove the row from the list of rows from the Broker since once we delete it, we don't care about it.
                 # all that'll be left in db_rows are rows we want to insert
                 db_rows.remove(row)
