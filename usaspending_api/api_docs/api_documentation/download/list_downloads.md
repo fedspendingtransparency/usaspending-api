@@ -9,7 +9,7 @@ This route lists the monthly files associated with the requested params.
 
 ```
 {
-    "agency": 425,
+    "agency": 14,
     "fiscal_year": 2015,
     "type": "contracts"
 }
@@ -17,9 +17,9 @@ This route lists the monthly files associated with the requested params.
 
 ### Request Parameters Description
 
-* `agency` - specific agency database id. Retrived from the `list_agencies` endpoint.
-* `fiscal_year` - specific fiscal year to pull
-* `type` - specific type of awards/transactions ('contracts' or 'assistance')
+* `agency` - agency database id. Retrived from the `list_agencies` endpoint.
+* `fiscal_year` - fiscal year to pull
+* `type` - type of awards/transactions ('contracts' or 'assistance')
 
 ### Response (JSON)
 
