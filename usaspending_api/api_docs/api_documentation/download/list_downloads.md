@@ -1,5 +1,5 @@
 ## [List Downloads](#list-downloads)
-**Route:** `/v2/bulk_download/list_monthly_files/`
+**Route:** `/api/v2/bulk_download/list_monthly_files/`
 
 **Method:** `POST`
 

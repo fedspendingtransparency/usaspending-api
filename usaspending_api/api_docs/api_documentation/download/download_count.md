@@ -1,6 +1,6 @@
 ## [Download Count](#usaspending-api-documentation)
 
-**Route:** ` /v2/download/count/`
+**Route:** `/api/v2/download/count/`
 
 **Method:** `POST`
 

@@ -1,5 +1,5 @@
 ## [Download Status](#usaspending-api-documentation)
-**Route:** `/v2/download/status/`
+**Route:** `/api/v2/download/status/`
 
 **Method:** `GET`
 

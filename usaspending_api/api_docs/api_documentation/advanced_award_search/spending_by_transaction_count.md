@@ -6,9 +6,9 @@
 This route takes keyword search fields, and returns the fields of the searched term.
 
 ### Request
-field: Defines what award variables are returned.
+**field** - Defines what award variables are returned.
 
-keyword: search-phrase user submitted to search on
+**keyword** - search term used to query the database.
 
 ```
 {

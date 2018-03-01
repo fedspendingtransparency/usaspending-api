@@ -43,10 +43,10 @@ This route sends a request to the backend to retrieve all toptier agencies and r
 * `agency_id`: Agency ID. Used as a reference for other endpoints for agency related lookups.
 * `abbreviation`: The agency's acronym
 * `agency_name`: Agency name
-* `active_fy`: most recent fiscal year data is provided for that agency
-* `active_fq`: most recent fiscal quarter data is provided for that agency
+* `active_fy`: Agency's most recent submission year
+* `active_fq`: Agency's most recent submission quarter
 * `outlay_amount`: Agency's outlay amount
 * `obligated_amount`: Agency's obligated amount
 * `budget_authority_amount`: Agency total budget authority
 * `current_total_budget_authority_amount`: Govenment total budget authority for the respective fiscal year
-* `percentage_of_total_budget_authority`: budget_authority_amount / currnet_total_budget_amount
+* `percentage_of_total_budget_authority`: budget_authority_amount / current_total_budget_amount

@@ -1,5 +1,5 @@
 ## [Custom Award Data Download](#Custom_Award_Data_Download)
-**Route:** `/v2/bulk_download/awards/`
+**Route:** `/api/v2/bulk_download/awards/`
 
 **Method:** `POST`
 

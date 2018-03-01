@@ -1,5 +1,5 @@
 ## [List Agencies](#download-status)
-**Route:** `/v2/bulk_download/list_agencies/`
+**Route:** `/api/v2/bulk_download/list_agencies/`
 
 **Method:** `POST`
 

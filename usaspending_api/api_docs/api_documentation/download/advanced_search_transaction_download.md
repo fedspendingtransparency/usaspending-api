@@ -1,5 +1,5 @@
 ## [Advanced Search Transaction Download](#Advanced_Search_Transaction_Download)
-**Route:** `/v2/download/transactions/`
+**Route:** `/api/v2/download/transactions/`
 
 **Method:** `POST`
 

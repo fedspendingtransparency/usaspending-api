@@ -1,5 +1,5 @@
 ## [Advanced Search Award Download](#Advanced_Search_Award_Download)
-**Route:** `/v2/download/awards/`
+**Route:** `/api/v2/download/awards/`
 
 **Method:** `POST`
 

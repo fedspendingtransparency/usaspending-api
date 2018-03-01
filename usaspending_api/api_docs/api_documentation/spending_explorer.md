@@ -18,11 +18,11 @@ This route sends a request to the backend to retrieve spending data information 
 ```
 **Query Parameters Description**
 
-**type** - `required` - a string that contains the type of spending to explore on.
-  `explorer types` - *budget_function*, *budget_subfunction*, *federal_account*, *program_activity*, *object_class*, *recipients*, *awards*, *agency*
+**type** - `required` - a string that contains the type of spending to explore on. It must be one of these values: *budget_function*, *budget_subfunction*, *federal_account*, *program_activity*, *object_class*, *recipients*, *awards*, *agency*
 
-**filters** - `optional` - integer or string index values to filter explorers on.
-  `filter options` - *budget_function*, *budget_subfunction*, *federal_account*, *program_activity*, *object_class*, *recipient*, *award*, *agency*, *fy*
+**filters** - `optional` - string index values to filter explorers on.  The *quarter* field is cumulative and quarters are only available 45 days after their close. Also quarter data is not available before FY 2017 Q2.
+  `filter options` - *budget_function*, *budget_subfunction*, *federal_account*, *program_activity*, *object_class*, *recipient*, *award*, *agency*, *fy*, *quarter*
+
 
 ### Response (JSON)
 
@@ -78,11 +78,24 @@ This route sends a request to the backend to retrieve spending data information 
 }
 ```
 
+**Response Key Descriptions**
+
+**id** - The Database Id for the requested *type*
+
+**type** - The type of the response object.
+
+**code** - The Agency CGAC.  Only returned with a value if the *type* is set to *agency*
+
+**amount**/**total** - The obligated amount expected by the type.
+
+**name** - The name used to distinguish the object.
+
+
 ### Errors
 
 Possible HTTP Status Codes:
 
-- 400 : Missing parameters
+- 400 : Missing/invalid parameters. ie. the FY or Quarter is not available.
 
 - 500 : All other errors
 
