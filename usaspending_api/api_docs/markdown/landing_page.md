@@ -3,14 +3,12 @@
   <li><a href="/docs/using-the-api">Using this API</a></li>
   <li><a href="/docs/endpoints">Endpoints</a></li>
   <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
-  <li><a href="/docs/recipes">Request Recipes</a></li>
 
 </ul>
 [//]: # (Begin Content)
 
-###### Coming soon!
-We're working on new USASpending API documentation, please check back for its release.
-Until then, visit our GitHub wiki for our current documentation: https://github.com/fedspendingtransparency/usaspending-api/wiki
+###### Announcement
+The USASpending API is in V2. V1 endpoints are currently Deprecated.
 
 # The USAspending Application Programming Interface (API)
 
