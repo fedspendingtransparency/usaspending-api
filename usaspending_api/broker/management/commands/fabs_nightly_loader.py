@@ -7,13 +7,13 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.conf import settings
 
-from usaspending_api.common.helpers import fy
+from usaspending_api.common.helpers import fy, timer
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import get_business_categories, get_business_type_description, \
-    get_assistance_type_description, timer
+from usaspending_api.broker.helpers import (get_business_categories, get_business_type_description,
+                                            get_assistance_type_description)
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
@@ -37,26 +37,26 @@ class Command(BaseCommand):
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
                    'WHERE created_at >= %s ' \
-                   'AND (is_active = True OR UPPER(correction_late_delete_ind) = \'D\')'
+                   'AND (is_active IS True OR UPPER(correction_late_delete_ind) = \'D\')'
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
         db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
 
         ids_to_delete = []
+        final_db_rows = []
 
         # Iterate through the result dict and determine what needs to be deleted and what needs to be added
         for row in db_rows:
             if row['correction_late_delete_ind'] and row['correction_late_delete_ind'].upper() == 'D':
-                ids_to_delete += [row['afa_generated_unique'].upper()]
-                # remove the row from the list of rows from the Broker since once we delete it, we don't care about it.
-                # all that'll be left in db_rows are rows we want to insert
-                db_rows.remove(row)
+                ids_to_delete.append(row['afa_generated_unique'].upper())
+            else:
+                final_db_rows.append(row)
 
-        logger.info('Number of records to insert/update: %s' % str(len(db_rows)))
+        logger.info('Number of records to insert/update: %s' % str(len(final_db_rows)))
         logger.info('Number of records to delete: %s' % str(len(ids_to_delete)))
 
-        return db_rows, ids_to_delete
+        return final_db_rows, ids_to_delete
 
     @staticmethod
     def delete_stale_fabs(ids_to_delete=None):

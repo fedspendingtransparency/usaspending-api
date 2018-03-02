@@ -111,6 +111,7 @@
   "indexes": [
     {
       "name": "transaction_id",
+      "unique": true,
       "columns": [{"name": "\"transaction_id\"", "order": "ASC NULLS LAST"}]
     }, {
       "name": "action_date",

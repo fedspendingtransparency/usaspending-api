@@ -267,6 +267,7 @@ class AwardSerializer(LimitableSerializer):
             "total_outlay",
             "total_subsidy_cost",
             "date_signed",
+            "certified_date",
             "description",
             "piid",
             "fain",
@@ -280,7 +281,9 @@ class AwardSerializer(LimitableSerializer):
             "recipient",
             "date_signed__fy",
             "subaward_count",
-            "total_subaward_amount"
+            "total_subaward_amount",
+            "latest_transaction__assistance_data",
+            "latest_transaction__contract_data"
         ]
         nested_serializers = {
             "recipient": {
