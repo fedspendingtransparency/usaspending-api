@@ -267,6 +267,7 @@ class AwardSerializer(LimitableSerializer):
             "total_outlay",
             "total_subsidy_cost",
             "date_signed",
+            "certified_date",
             "description",
             "piid",
             "fain",
