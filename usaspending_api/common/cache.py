@@ -1,6 +1,8 @@
 from rest_framework_extensions.key_constructor import bits
 from rest_framework_extensions.key_constructor.constructors import DefaultKeyConstructor
 
+from usaspending_api.common.helpers import order_nested_object
+
 
 class PathKeyBit(bits.QueryParamsKeyBit):
     """
@@ -24,7 +26,7 @@ class GetPostQueryParamsKeyBit(bits.QueryParamsKeyBit):
         params.update(dict(request.data))
         if 'auditTrail' in params:
             del params['auditTrail']
-        return params
+        return order_nested_object(params)
 
 
 class USAspendingKeyConstructor(DefaultKeyConstructor):
