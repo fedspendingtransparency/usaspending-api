@@ -67,6 +67,7 @@ def generate_csvs(download_job, sqs_message=None):
     json_request = json.loads(download_job.json_request)
     columns = json_request.get('columns', None)
     limit = json_request.get('limit', None)
+    sort = json_request.get('sort', True)
 
     file_name = start_download(download_job)
     try:
@@ -84,7 +85,7 @@ def generate_csvs(download_job, sqs_message=None):
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, start_time, sqs_message, zipped_csvs, limit)
+            parse_source(source, columns, download_job, working_dir, start_time, sqs_message, zipped_csvs, limit, sort)
 
         # Remove temporary files and working directory
         shutil.rmtree(working_dir)
@@ -142,11 +143,15 @@ def get_csv_sources(json_request):
     return csv_sources
 
 
-def parse_source(source, columns, download_job, working_dir, start_time, message, zipped_csvs, limit):
+def parse_source(source, columns, download_job, working_dir, start_time, message, zipped_csvs, limit, sort=True):
     """Write to csv and zip files using the source data"""
     d_map = {'d1': 'contracts', 'd2': 'assistance'}
     source_name = '{}_{}'.format(d_map[source.file_type], VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
+
+    if sort:
+        sort_columns = VALUE_MAPPINGS[source.source_type]['sort_columns']
+        source_query = source_query.order_by(*sort_columns)
 
     reached_end = False
     split_csv = 1

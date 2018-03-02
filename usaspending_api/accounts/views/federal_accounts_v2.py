@@ -5,7 +5,8 @@ from django.db.models import F, Func, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Concat
 from django.utils.dateparse import parse_date
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from usaspending_api.common.views import APIDocumentationView
+
 from usaspending_api.common.cache_decorator import cache_response
 
 from usaspending_api.accounts.models import (AppropriationAccountBalances,
@@ -19,8 +20,9 @@ from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-class ObjectClassFederalAccountsViewSet(APIView):
-    """Returns financial spending data by object class."""
+class ObjectClassFederalAccountsViewSet(APIDocumentationView):
+    """Returns financial spending data by object class.
+    endpoint_doc: /federal_account/avalible_object_classes.md"""
 
     @cache_response()
     def get(self, request, pk, format=None):
@@ -60,10 +62,15 @@ class ObjectClassFederalAccountsViewSet(APIView):
         return Response({'results': result})
 
 
-class FiscalYearSnapshotFederalAccountsViewSet(APIView):
+class FiscalYearSnapshotFederalAccountsViewSet(APIDocumentationView):
+    """
+    This route sends a request to the backend to retrieve budget information for a federal account.
+    If no fiscal year is used, the federal accounts most recent fiscal year is used.
+
+    endpoint_doc: /federal_account/fiscal_year_snapshot.md
+    """
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
-
         fy = int(fy) or SubmissionAttributes.last_certified_fy()
         queryset = AppropriationAccountBalances.final_objects.filter(
             treasury_account_identifier__federal_account_id=int(pk)).filter(submission__reporting_fiscal_year=fy)
@@ -85,7 +92,12 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
             return Response({})
 
 
-class SpendingOverTimeFederalAccountsViewSet(APIView):
+class SpendingOverTimeFederalAccountsViewSet(APIDocumentationView):
+    """
+    This route takes a federal_account DB ID and returns the data reqired to visualized the spending over time graphic.
+
+    endpoint_doc: /federal_account/spending_over_time.md
+    """
     @cache_response()
     def post(self, request, pk, format=None):
         # create response
@@ -318,9 +330,12 @@ def federal_account_filter(filters, extra=""):
     return result
 
 
-class SpendingByCategoryFederalAccountsViewSet(APIView):
+class SpendingByCategoryFederalAccountsViewSet(APIDocumentationView):
     """
-    https://gist.github.com/catherinedevlin/aa510ed9020431d2cbb9cc4045fa5835
+    This route takes a federal_account DB ID and returns the data required to visualized
+    the Spending By Category graphic.
+
+    endpoint_doc: /federal_account/spending_by_category.md
     """
 
     @cache_response()
@@ -364,7 +379,11 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
         return Response(result)
 
 
-class FederalAccountsViewSet(APIView):
+class FederalAccountsViewSet(APIDocumentationView):
+    """
+    This route sends a request to the backend to retrieve a list of federal accounts.
+    endpoint_doc: /federal_account/federal_account.md
+    """
     @cache_response()
     def post(self, request, format=None):
         """Return all high-level Federal Account information"""
