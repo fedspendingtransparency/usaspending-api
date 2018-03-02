@@ -125,10 +125,9 @@ def order_nested_object(nested_object):
             sort_dict = {}
             # Create a hash using keys & values
             for subitem in nested_object:
-                ordered_item = order_nested_object(subitem)
                 hash_list = ['{}{}'.format(key, subitem[key]) for key in sorted(list(subitem.keys()))]
                 hash_str = '_'.join(str(hash_list))
-                sort_dict[hash_str] = ordered_item
+                sort_dict[hash_str] = order_nested_object(subitem)
             # Sort by the new hash
             for sorted_hash in sorted(list(sort_dict.keys())):
                 sorted_subitems.append(sort_dict[sorted_hash])

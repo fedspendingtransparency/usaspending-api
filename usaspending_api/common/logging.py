@@ -86,7 +86,7 @@ class LoggingMiddleware(MiddlewareMixin):
         self.log["traceback"] = None
         if response._headers:
             if 'key' in response._headers and len(response._headers['key']) >= 2:
-                self.log["key"] = response._headers['key'][1]
+                self.log["cache_key"] = response._headers['key'][1]
             if 'cache-trace' in response._headers and len(response._headers['cache-trace']) >= 2:
                 self.log["cache_trace"] = response._headers['cache-trace'][1]
 
