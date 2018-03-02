@@ -4,9 +4,12 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 
-transaction_index = 'CREATE INDEX transaction_normalized_id_asc_idx ON transaction_normalized(id ASC)'
-award_index = 'CREATE INDEX awards_id_asc_idx ON awards (id ASC)'
-subaward_index = 'CREATE INDEX subwards_id_asc_idx ON awards_subaward (id ASC)'
+transaction_index = ('CREATE INDEX transaction_normalized_id_asc_idx '
+                     'ON transaction_normalized(awarding_agency_id ASC, id ASC)')
+award_index = ('CREATE INDEX awards_id_asc_idx '
+               'ON awards (awarding_agency_id ASC, id ASC)')
+subaward_index = ('CREATE INDEX subwards_id_asc_idx '
+                  'ON awards_subaward (awarding_agency_id ASC, id ASC)')
 
 class Migration(migrations.Migration):
 
