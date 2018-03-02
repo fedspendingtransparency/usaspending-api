@@ -17,6 +17,6 @@ class SpendingExplorerViewSet(APIView):
         filters = json_request.get('filters', None)
 
         # Returned filtered queryset results
-        results = type_filter(_type, filters, limit=SPENDING_EXPLORER_LIMIT)
+        results = type_filter(_type, filters)
 
         return Response(results)
