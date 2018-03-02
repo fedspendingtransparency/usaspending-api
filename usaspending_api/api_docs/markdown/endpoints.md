@@ -10,7 +10,6 @@
   </ul>-->
   </li>
   <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
-  <li><a href="/docs/recipes">Request Recipes</a></li>
 
 </ul>
 
