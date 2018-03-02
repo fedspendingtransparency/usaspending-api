@@ -75,6 +75,11 @@ class BaseDownloadViewSet(APIView):
             json_request['limit'] = settings.MAX_DOWNLOAD_LIMIT
             return json_request
 
+        sort = json_request.get('sort', False)
+        if not isinstance(sort, bool):
+            raise InvalidParameterException('Sort param must be true or false')
+        json_request['sort'] = sort
+
         # Validate required parameters
         for required_param in ['award_levels', 'filters']:
             if required_param not in json_request:
@@ -174,6 +179,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['awards']
         request.data['constraint_type'] = 'row_count'
+        request.data['sort'] = False
         return BaseDownloadViewSet.post(self, request)
 
 
@@ -181,12 +187,14 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['award_levels'] = ['transactions']
         request.data['constraint_type'] = 'row_count'
+        request.data['sort'] = False
         return BaseDownloadViewSet.post(self, request)
 
 
 class YearLimitedDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data['constraint_type'] = 'year'
+        request.data['sort'] = True
 
         # TODO: update front end to use the Common Filter Object and get rid of this function
         self.process_filters(request.data)
