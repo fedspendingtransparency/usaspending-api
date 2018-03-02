@@ -50,6 +50,7 @@ def award_spending_data(db):
     )
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_award_category_endpoint(client, award_spending_data):
     """Test the award_category endpoint."""

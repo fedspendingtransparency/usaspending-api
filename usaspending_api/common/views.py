@@ -90,3 +90,21 @@ class MarkdownView(TemplateView):
         # Add in the markdown to the context, for use in the template tags
         context.update({'markdown': self.markdown})
         return context
+
+
+api_endpoint_dict = {"api/v2/references/toptier_agencies/": "test"}  # should link to markdown
+
+
+class APIDocumentationView(APIView):
+
+    renderer_classes = APIView.renderer_classes
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        `.dispatch()` is pretty much the same as Django's regular dispatch,
+        but with extra hooks for startup, finalize, and exception handling.
+        """
+
+        response = APIView.dispatch(self, request, *args, **kwargs)
+        # response.content = self.add_documentation(request, response.content)
+        return response

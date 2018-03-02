@@ -212,6 +212,7 @@ class TransactionNormalizedSerializer(LimitableSerializer):
             "action_type_description",
             "action_date__fy",
             "federal_action_obligation",
+            "original_loan_subsidy_cost",
             "modification_number",
             "awarding_agency",
             "funding_agency",
@@ -264,7 +265,9 @@ class AwardSerializer(LimitableSerializer):
             "category",
             "total_obligation",
             "total_outlay",
+            "total_subsidy_cost",
             "date_signed",
+            "certified_date",
             "description",
             "piid",
             "fain",
@@ -278,7 +281,9 @@ class AwardSerializer(LimitableSerializer):
             "recipient",
             "date_signed__fy",
             "subaward_count",
-            "total_subaward_amount"
+            "total_subaward_amount",
+            "latest_transaction__assistance_data",
+            "latest_transaction__contract_data"
         ]
         nested_serializers = {
             "recipient": {
