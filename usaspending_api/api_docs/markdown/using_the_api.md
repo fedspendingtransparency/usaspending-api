@@ -213,7 +213,7 @@ The following is an example body for the `/v1/awards/?page=1&limit=200` POST req
       "value": "treasury"
     }
     ```
-    * `fy` - Evaluates whether the field (in general, this should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a four-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017. Does not need `value_format` as it is assumed.
+    * `fy` - Evaluates whether the field (in general, this should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a four-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017. Does not need `value_format`, as this is assumed.
     ```
     {
       "field": "date_signed",
@@ -221,7 +221,7 @@ The following is an example body for the `/v1/awards/?page=1&limit=200` POST req
       "value": 2017
     }
     ```
-    * `range_intersect` - Evaluates if the range defined by a two-field list intersects with the range defined by the two length array `value`. `value` can be a single item _only_ if `value_format` is also set to a range converting value. An example of where this is useful is when a contract spans multiple fiscal years, to evaluate whether it overlaps with any one particular fiscal year - that is, the range defined by `period_of_performance_start` to `period_of_performance_end` intersects with the fiscal year.
+    * `range_intersect` - Evaluates if the range defined by a two-field list intersects with the range defined by the two-length array `value`. `value` can be a single item _only_ if `value_format` is also set to a range converting value. An example of where this is useful is when a contract spans multiple fiscal years and you are trying to evaluate whether it overlaps with any one particular fiscal year --that is, whether the range defined by `period_of_performance_start` to `period_of_performance_end` intersects with the fiscal year.
 
     For example, if your `field` parameter defines a range as `[3,5]` then the following ranges will intersect:
       * `[2,3]` - As the 3 overlaps
@@ -246,10 +246,10 @@ The following is an example body for the `/v1/awards/?page=1&limit=200` POST req
       "value_format": "fy"
     }
     ```
-  * `value` - Specifies the value to compare the field against. Some operations require specific datatypes for the value, and they are documented in the `operation` section.
+  * `value` - Specifies the value to compare the field against. Some operations require specific datatypes for the value; these are documented in the `operation` section.
   * `value_format` - Specifies the format for the value. Only used in some operations where noted. Valid choices are enumerated below.
-    * `fy` - Treats a single value as a fiscal year range.
-  * `combine_method` - This is a special field which modifies how the filter behaves. When `combine_method` is specified, the only other allowed parameter on the filter is `filters` which should contain an array of filter objects. The `combine_method` will be used to logically join the filters in this list. Options are `AND` or `OR`.
+    * `fy` - Treats a single value as a fiscal-year range.
+  * `combine_method` - This is a special field that modifies how the filter behaves. When `combine_method` is specified, the only other allowed parameter on the filter is `filters`, which should contain an array of filter objects. The `combine_method` will be used to logically join the filters in this list. Options are `AND` or `OR`.
   ```
   {
     "combine_method": "OR",
@@ -269,7 +269,7 @@ The following is an example body for the `/v1/awards/?page=1&limit=200` POST req
   ```
 
 #### Response (JSON)
-The response object structure is the same whether you are making a GET or a POST request. An example of a response from `/v1/awards/` can be found below:
+The response object structure is the same whether you are making a GET or a POST request. An example of a response from `/v1/awards/` is as follows:
 
 ```
 {
@@ -352,22 +352,22 @@ The response object structure is the same whether you are making a GET or a POST
 ```
 
 ### Response Description
-The response has three functional parts:
+An USAspending API v1 response has three functional parts:
   * `page_metadata` - Includes data about the pagination and any page-level metadata specific to the endpoint.
     * `page` - What page is currently being returned.
-    * `has_next_page` - Whether or not there is a page after this one.
+    * `has_next_page` - Whether or not there is a page after the current page.
     * `next` - The link to the next page of this response, if applicable.
     * `previous` - The link to the previous page of this response, if applicable.
-  * `req` - The special code corresponding to this POST request. See [Post request preservation]("#post-requests-preservation") for how to use this
-  * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
+  * `req` - The special code corresponding to this POST request. See [Post request preservation]("#post-requests-preservation") for instructions on how to use this
+  * `results` - An array of objects corresponding to the data returned by the specified endpoint. This will _always_ be an array, even if the number of results is only one.
 
 ### Downloads
 
-The following endpoints are involved with generating files that reflect the site's underlying data. 
+The endpoints described in this section generate files that reflect the site's underlying data.
 
 #### Award Data Archive
 
-On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. These can be found at [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive), or, if you prefer, you can also use the API's [List Downloads Endpoint](../api_documentation/download/list_downloads.md).
+On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. You can find these on the [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive) page. You can also access this information via the API's [List Downloads Endpoint](../api_documentation/download/list_downloads.md).
 
 #### Generating Download Files
 
@@ -377,11 +377,11 @@ There are several downloadable endpoints, all with different features/constraint
 
 ##### Row Constraint Downloads
 
-These downloads have a row constraint on them, meaning they have a hard limit to the number of records to include (currently that limit is `500,000` rows). The main benefit of using these endpoints, however, is that they allow various filters that are not supported by the Year Constraint Downloads.
+These downloads have a row constraint on them, meaning there is a hard limit to the number of records to include (currently that limit is `500,000` rows). The main benefit of using these endpoints is that they allow various filters that are not supported by the Year Constraint Downloads.
 
-For downloading transactions, please use [Advanced_Search_Transaction_Download](../api_documentation/download/advanced_search_transaction_download.md).
+To download transactions, please use [Advanced_Search_Transaction_Download](../api_documentation/download/advanced_search_transaction_download.md).
 
-For downloading awards, please use [Advanced_Search_Award_Download](../api_documentation/download/advanced_search_award_download.md).
+To download awards, please use [Advanced_Search_Award_Download](../api_documentation/download/advanced_search_award_download.md).
 
 ##### Year Constraint Downloads
 
