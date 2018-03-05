@@ -6,13 +6,11 @@
 --  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
 --------------------------------------------------------
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_psc_codes RENAME TO summary_view_psc_codes_old;
-ALTER INDEX IF EXISTS idx_78684541$0e9__unique_pk RENAME TO idx_78684541$0e9__unique_pk_old;
-ALTER INDEX IF EXISTS idx_78684541$0e9__action_date RENAME TO idx_78684541$0e9__action_date_old;
-ALTER INDEX IF EXISTS idx_78684541$0e9__type RENAME TO idx_78684541$0e9__type_old;
-ALTER INDEX IF EXISTS idx_78684541$0e9__tuned_type_and_idv RENAME TO idx_78684541$0e9__tuned_type_and_idv_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$677_unique_pk RENAME TO idx_af8ca7ca$677_unique_pk_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$677_action_date RENAME TO idx_af8ca7ca$677_action_date_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$677_type RENAME TO idx_af8ca7ca$677_type_old;
 
 ALTER MATERIALIZED VIEW summary_view_psc_codes_temp RENAME TO summary_view_psc_codes;
-ALTER INDEX idx_78684541$0e9__unique_pk_temp RENAME TO idx_78684541$0e9__unique_pk;
-ALTER INDEX idx_78684541$0e9__action_date_temp RENAME TO idx_78684541$0e9__action_date;
-ALTER INDEX idx_78684541$0e9__type_temp RENAME TO idx_78684541$0e9__type;
-ALTER INDEX idx_78684541$0e9__tuned_type_and_idv_temp RENAME TO idx_78684541$0e9__tuned_type_and_idv;
+ALTER INDEX idx_af8ca7ca$677_unique_pk_temp RENAME TO idx_af8ca7ca$677_unique_pk;
+ALTER INDEX idx_af8ca7ca$677_action_date_temp RENAME TO idx_af8ca7ca$677_action_date;
+ALTER INDEX idx_af8ca7ca$677_type_temp RENAME TO idx_af8ca7ca$677_type;

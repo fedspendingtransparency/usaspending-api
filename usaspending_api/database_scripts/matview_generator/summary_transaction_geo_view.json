@@ -184,10 +184,6 @@
       "where": "\"funding_subtier_agency_name\" IS NOT NULL",
       "columns": [{"name": "\"funding_subtier_agency_name\""}]
     }, {
-      "name": "tuned_type_and_idv",
-      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
-      "columns": [{"name": "\"pulled_from\""}, {"name": "\"type\""}]
-    }, {
       "name": "compound_geo_pop_1",
       "where": "\"pop_country_code\" = 'USA'",
       "columns": [{"name": "\"pop_country_code\""}, {"name": "\"pop_state_code\""}, {"name": "\"pop_county_code\""}, {"name": "\"fiscal_year\""}]
