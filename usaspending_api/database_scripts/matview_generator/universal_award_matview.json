@@ -125,6 +125,7 @@
   "indexes": [
     {
       "name": "id",
+      "unique": true,
       "columns": [{"name": "\"award_id\""}]
     }, {
       "name": "category",
@@ -318,6 +319,15 @@
       "name": "recipient_name_ts_vector",
       "method": "GIN",
       "columns": [{"name": "\"recipient_name_ts_vector\""}]
-    }
+     }, {
+      "name": "compound_psc_fy",
+      "columns": [{"name": "\"product_or_service_code\""}, {"name": "\"fiscal_year\""}]
+     }, {
+      "name": "compound_naics_fy",
+      "columns": [{"name": "\"naics_code\""}, {"name": "\"fiscal_year\""}]
+     }, {
+      "name": "compound_cfda_fy",
+      "columns": [{"name": "\"cfda_number\""}, {"name": "\"fiscal_year\""}]
+     }
   ]
 }

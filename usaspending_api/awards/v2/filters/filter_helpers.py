@@ -1,9 +1,14 @@
+from django.db.models import Sum, F, Q, Case, When
+from django.db.models.functions import Coalesce
+
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
 from usaspending_api.common.helpers import dates_are_fiscal_year_bookends
 from usaspending_api.common.helpers import generate_all_fiscal_years_in_range
 from usaspending_api.common.helpers import generate_date_from_string
 from usaspending_api.common.helpers import dates_are_month_bookends
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping
+from usaspending_api.awards.models import TransactionNormalized
 
 
 def date_or_fy_queryset(date_dict, table, fiscal_year_column, action_date_column):
@@ -42,7 +47,56 @@ def date_or_fy_queryset(date_dict, table, fiscal_year_column, action_date_column
     return False, None
 
 
-def total_obligation_queryset(amount_obj, model):
+def sum_transaction_amount(qs, aggregated_name='transaction_amount', filter_types=award_type_mapping,
+                           calculate_totals=True):
+    """
+    Returns queryset with aggregation (annotated with aggregation_name) for transactions if loan (07, 08)
+    vs all other award types (covers IDV)
+    """
+    aggregate_dict = {}
+    if calculate_totals:
+        qs = qs.annotate(total_subsidy_cost=Sum(Case(When(type__in=list(loan_type_mapping),
+                                                          then=F('original_loan_subsidy_cost')),
+                                                     default=0)))
+
+        qs = qs.annotate(total_obligation=Sum(Case(When(~Q(type__in=list(loan_type_mapping)),
+                                                        then=F('federal_action_obligation')),
+                                                   default=0)))
+
+    # Coalescing total_obligation and total_subsidy since fields can be null
+    if not set(filter_types) & set(loan_type_mapping):
+        # just sans loans
+        aggregate_dict[aggregated_name] = Coalesce(F('total_obligation'), 0)
+    elif set(filter_types) <= set(loan_type_mapping):
+        # just loans
+        aggregate_dict[aggregated_name] = Coalesce(F('total_subsidy_cost'), 0)
+    else:
+        # mix of loans and other award types
+        # Adding null field to a populated field will return null, used Coalesce to fixes that
+        aggregate_dict[aggregated_name] = Coalesce(F('total_subsidy_cost'), 0) + Coalesce(F('total_obligation'), 0)
+
+    return qs.annotate(**aggregate_dict)
+
+
+def get_total_transaction_columns(filters, model):
+    """
+    Returns array of query strings with column joins based on request filters. Used to calculate award amounts where
+    rows can be award type loan and/or all other award types
+    """
+    total_transaction_columns = []
+    award_types_requested = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
+    awards_sans_loans = [award_type for award_type in award_type_mapping if type not in award_type_mapping]
+    award_join = 'award__' if model == TransactionNormalized else ''
+    if set(award_types_requested) & set(loan_type_mapping):
+        # if there are any loans
+        total_transaction_columns.append('{}total_subsidy_cost'.format(award_join))
+    if set(award_types_requested) & set(awards_sans_loans):
+        # if there is anything else besides loans
+        total_transaction_columns.append('{}total_obligation'.format(award_join))
+    return total_transaction_columns
+
+
+def total_obligation_queryset(amount_obj, model, filters):
     bins = []
     for v in amount_obj:
         lower_bound = v.get("lower_bound")
@@ -52,6 +106,8 @@ def total_obligation_queryset(amount_obj, model):
                 bins.append(key)
                 break
 
+    total_transaction_columns = get_total_transaction_columns(filters, model)
+
     if len(bins) == len(amount_obj):
         return True, model.objects.filter(total_obl_bin__in=bins)
     else:
@@ -59,37 +115,37 @@ def total_obligation_queryset(amount_obj, model):
         queryset_init = False
 
         for v in amount_obj:
-            if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
-                if queryset_init:
-                    or_queryset |= model.objects.filter(
-                        total_obligation__gte=v["lower_bound"],
-                        total_obligation__lte=v["upper_bound"]
-                    )
+            for column in total_transaction_columns:
+                if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
+                    bound_dict = {
+                        '{}__gte'.format(column): v["lower_bound"],
+                        '{}__lte'.format(column): v["upper_bound"]
+                    }
+                    if queryset_init:
+                        or_queryset |= model.objects.filter(**bound_dict)
+                    else:
+                        queryset_init = True
+                        or_queryset = model.objects.filter(**bound_dict)
+                elif v.get("lower_bound") is not None:
+                    bound_dict = {
+                        '{}__gte'.format(column): v["lower_bound"]
+                    }
+                    if queryset_init:
+                        or_queryset |= model.objects.filter(**bound_dict)
+                    else:
+                        queryset_init = True
+                        or_queryset = model.objects.filter(**bound_dict)
+                elif v.get("upper_bound") is not None:
+                    bound_dict = {
+                        '{}__lte'.format(column): v["upper_bound"]
+                    }
+                    if queryset_init:
+                        or_queryset |= model.objects.filter(**bound_dict)
+                    else:
+                        queryset_init = True
+                        or_queryset = model.objects.filter(**bound_dict)
                 else:
-                    queryset_init = True
-                    or_queryset = model.objects.filter(
-                        total_obligation__gte=v["lower_bound"],
-                        total_obligation__lte=v["upper_bound"])
-            elif v.get("lower_bound") is not None:
-                if queryset_init:
-                    or_queryset |= model.objects.filter(
-                        total_obligation__gte=v["lower_bound"]
-                    )
-                else:
-                    queryset_init = True
-                    or_queryset = model.objects.filter(
-                        total_obligation__gte=v["lower_bound"])
-            elif v.get("upper_bound") is not None:
-                if queryset_init:
-                    or_queryset |= model.objects.filter(
-                        total_obligation__lte=v["upper_bound"]
-                    )
-                else:
-                    queryset_init = True
-                    or_queryset = model.objects.filter(
-                        total_obligation__lte=v["upper_bound"])
-            else:
-                raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
+                    raise InvalidParameterException('Invalid filter: award amount has incorrect object.')
     if queryset_init:
         return True, or_queryset
     return False, None

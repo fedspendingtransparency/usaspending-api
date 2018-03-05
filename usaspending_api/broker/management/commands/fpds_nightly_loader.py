@@ -3,13 +3,13 @@ import csv
 import logging
 import os
 import re
-import timeit
 import urllib.request
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.conf import settings
 
+from usaspending_api.common.helpers import fy, timer
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFPDS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
@@ -18,11 +18,6 @@ from usaspending_api.broker.helpers import get_business_categories, set_legal_en
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_award_categories
-
-# start = timeit.default_timer()
-# function_call
-# end = timeit.default_timer()
-# time elapsed = str(end - start)
 
 
 logger = logging.getLogger('console')
@@ -240,6 +235,7 @@ class Command(BaseCommand):
 
             if unique_fpds.first():
                 transaction_normalized_dict["update_date"] = datetime.utcnow()
+                transaction_normalized_dict["fiscal_year"] = fy(transaction_normalized_dict["action_date"])
 
                 # update TransactionNormalized
                 TransactionNormalized.objects.filter(id=unique_fpds.first().transaction.id).\
@@ -283,48 +279,30 @@ class Command(BaseCommand):
 
         logger.info('Processing data for FPDS starting from %s' % date)
 
-        logger.info('Retrieving FPDS Data...')
-        start = timeit.default_timer()
-        to_insert, ids_to_delete = self.get_fpds_data(date=date)
-        end = timeit.default_timer()
-        logger.info('Finished diff-ing FPDS data in ' + str(end - start) + ' seconds')
+        with timer('retrieving/diff-ing FPDS Data', logger.info):
+            to_insert, ids_to_delete = self.get_fpds_data(date=date)
 
         total_rows = len(to_insert)
         total_rows_delete = len(ids_to_delete)
 
         if total_rows_delete > 0:
-            logger.info('Deleting stale FPDS data...')
-            start = timeit.default_timer()
-            self.delete_stale_fpds(ids_to_delete=ids_to_delete)
-            end = timeit.default_timer()
-            logger.info('Finished deleting stale FPDS data in ' + str(end - start) + ' seconds')
+            with timer('deleting stale FPDS data', logger.info):
+                self.delete_stale_fpds(ids_to_delete=ids_to_delete)
         else:
             logger.info('Nothing to delete...')
 
         if total_rows > 0:
-            logger.info('Inserting new FPDS data...')
-            start = timeit.default_timer()
-            self.insert_new_fpds(to_insert=to_insert, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished inserting new FPDS data in ' + str(end - start) + ' seconds')
+            with timer('inserting new FPDS data', logger.info):
+                self.insert_new_fpds(to_insert=to_insert, total_rows=total_rows)
 
-            logger.info('Updating awards to reflect their latest associated transaction info...')
-            start = timeit.default_timer()
-            update_awards(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+            with timer('updating awards to reflect their latest associated transaction info', logger.info):
+                update_awards(tuple(award_update_id_list))
 
-            logger.info('Updating contract-specific awards to reflect their latest transaction info...')
-            start = timeit.default_timer()
-            update_contract_awards(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating contract specific awards in ' + str(end - start) + ' seconds')
+            with timer('updating contract-specific awards to reflect their latest transaction info', logger.info):
+                update_contract_awards(tuple(award_update_id_list))
 
-            logger.info('Updating award category variables...')
-            start = timeit.default_timer()
-            update_award_categories(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+            with timer('updating award category variables', logger.info):
+                update_award_categories(tuple(award_update_id_list))
         else:
             logger.info('Nothing to insert...')
 

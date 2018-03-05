@@ -1,5 +1,4 @@
 import logging
-import timeit
 import os
 import boto
 import smart_open
@@ -8,20 +7,16 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.conf import settings
 
+from usaspending_api.common.helpers import fy, timer
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers import get_business_categories, get_business_type_description, \
-    get_assistance_type_description
+from usaspending_api.broker.helpers import (get_business_categories, get_business_type_description,
+                                            get_assistance_type_description)
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
 from usaspending_api.references.models import LegalEntity, Agency
 from usaspending_api.etl.award_helpers import update_awards, update_award_categories
-
-# start = timeit.default_timer()
-# function_call
-# end = timeit.default_timer()
-# time elapsed = str(end - start)
 
 
 logger = logging.getLogger('console')
@@ -42,26 +37,26 @@ class Command(BaseCommand):
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
                    'WHERE created_at >= %s ' \
-                   'AND (is_active = True OR UPPER(correction_late_delete_ind) = \'D\')'
+                   'AND (is_active IS True OR UPPER(correction_late_delete_ind) = \'D\')'
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
         db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
 
         ids_to_delete = []
+        final_db_rows = []
 
         # Iterate through the result dict and determine what needs to be deleted and what needs to be added
         for row in db_rows:
             if row['correction_late_delete_ind'] and row['correction_late_delete_ind'].upper() == 'D':
-                ids_to_delete += [row['afa_generated_unique']]
-                # remove the row from the list of rows from the Broker since once we delete it, we don't care about it.
-                # all that'll be left in db_rows are rows we want to insert
-                db_rows.remove(row)
+                ids_to_delete.append(row['afa_generated_unique'].upper())
+            else:
+                final_db_rows.append(row)
 
-        logger.info('Number of records to insert/update: %s' % str(len(db_rows)))
+        logger.info('Number of records to insert/update: %s' % str(len(final_db_rows)))
         logger.info('Number of records to delete: %s' % str(len(ids_to_delete)))
 
-        return db_rows, ids_to_delete
+        return final_db_rows, ids_to_delete
 
     @staticmethod
     def delete_stale_fabs(ids_to_delete=None):
@@ -147,10 +142,23 @@ class Command(BaseCommand):
 
             # Generate the unique Award ID
             # "ASST_AW_" + awarding_sub_tier_agency_c + fain + uri
+
+            # this will raise an exception if the cast to an int fails, that's ok since we don't want to process
+            # non-numeric record type values
+            record_type_int = int(row['record_type'])
+            if record_type_int == 1:
+                uri = row['uri'] if row['uri'] else '-NONE-'
+                fain = '-NONE-'
+            elif record_type_int == 2:
+                uri = '-NONE-'
+                fain = row['fain'] if row['fain'] else '-NONE-'
+            else:
+                raise Exception('Invalid record type encountered for the following afa_generated_unique record: %s' %
+                                row['afa_generated_unique'])
+
             generated_unique_id = 'ASST_AW_' +\
                 (row['awarding_sub_tier_agency_c'] if row['awarding_sub_tier_agency_c'] else '-NONE-') + '_' + \
-                (row['fain'] if row['fain'] else '-NONE-') + '_' + \
-                (row['uri'] if row['uri'] else '-NONE-')
+                fain + '_' + uri
 
             # Create the summary Award
             (created, award) = Award.get_or_create_summary_award(generated_unique_award_id=generated_unique_id,
@@ -203,6 +211,8 @@ class Command(BaseCommand):
 
             if unique_fabs.first():
                 transaction_normalized_dict["update_date"] = datetime.utcnow()
+                transaction_normalized_dict["fiscal_year"] = fy(transaction_normalized_dict["action_date"])
+
                 # Update TransactionNormalized
                 TransactionNormalized.objects.filter(id=unique_fabs.first().transaction.id).\
                     update(**transaction_normalized_dict)
@@ -271,11 +281,8 @@ class Command(BaseCommand):
         logger.info('Processing data for FABS starting from %s' % date)
 
         # Retrieve FABS data
-        logger.info('Retrieving FABS Data...')
-        start = timeit.default_timer()
-        to_insert, ids_to_delete = self.get_fabs_data(date=date)
-        end = timeit.default_timer()
-        logger.info('Finished diff-ing FABS data in ' + str(end - start) + ' seconds')
+        with timer('retrieving/diff-ing FABS Data', logger.info):
+            to_insert, ids_to_delete = self.get_fabs_data(date=date)
 
         total_rows = len(to_insert)
         total_rows_delete = len(ids_to_delete)
@@ -285,35 +292,23 @@ class Command(BaseCommand):
             self.send_deletes_to_elasticsearch(ids_to_delete)
 
             # Delete FABS records by ID
-            logger.info('Deleting stale FABS data...')
-            start = timeit.default_timer()
-            self.delete_stale_fabs(ids_to_delete=ids_to_delete)
-            end = timeit.default_timer()
-            logger.info('Finished deleting stale FABS data in ' + str(end - start) + ' seconds')
+            with timer('deleting stale FABS data', logger.info):
+                self.delete_stale_fabs(ids_to_delete=ids_to_delete)
         else:
             logger.info('Nothing to delete...')
 
         if total_rows > 0:
             # Add FABS records
-            logger.info('Inserting new FABS data...')
-            start = timeit.default_timer()
-            self.insert_new_fabs(to_insert=to_insert, total_rows=total_rows)
-            end = timeit.default_timer()
-            logger.info('Finished inserting new FABS data in ' + str(end - start) + ' seconds')
+            with timer('inserting new FABS data', logger.info):
+                self.insert_new_fabs(to_insert=to_insert, total_rows=total_rows)
 
             # Update Awards based on changed FABS records
-            logger.info('Updating awards to reflect their latest associated transaction info...')
-            start = timeit.default_timer()
-            update_awards(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating awards in ' + str(end - start) + ' seconds')
+            with timer('updating awards to reflect their latest associated transaction info', logger.info):
+                update_awards(tuple(award_update_id_list))
 
             # Update AwardCategories based on changed FABS records
-            logger.info('Updating award category variables...')
-            start = timeit.default_timer()
-            update_award_categories(tuple(award_update_id_list))
-            end = timeit.default_timer()
-            logger.info('Finished updating award category variables in ' + str(end - start) + ' seconds')
+            with timer('updating award category variables', logger.info):
+                update_award_categories(tuple(award_update_id_list))
         else:
             logger.info('Nothing to insert...')
 

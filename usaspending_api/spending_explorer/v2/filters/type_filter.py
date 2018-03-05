@@ -8,7 +8,7 @@ from usaspending_api.common.helpers import generate_last_completed_fiscal_quarte
 from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
 
 
-def type_filter(_type, filters):
+def type_filter(_type, filters, limit=None):
     fiscal_year = None
     fiscal_quarter = None
     fiscal_date = None
@@ -93,7 +93,8 @@ def type_filter(_type, filters):
                 if _type == 'award':
                     award["name"] = code
             total += award['total']
-        alt_set = results
+
+        alt_set = results[:limit] if _type == 'award' else results
 
         results = {
             'total': total,
@@ -122,6 +123,8 @@ def type_filter(_type, filters):
         total = queryset.aggregate(Sum('obligations_incurred_by_program_object_class_cpe'))
         for key, value in total.items():
             total = value
+
+        queryset = queryset[:limit] if _type == 'award' else queryset
 
         results = {
             'total': total,

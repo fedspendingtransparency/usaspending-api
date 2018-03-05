@@ -3,10 +3,11 @@
 --    The SQL definition is stored in a json file     --
 --    Look in matview_generator for the code.         --
 --                                                    --
---  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
+--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --
 --------------------------------------------------------
 CREATE MATERIALIZED VIEW summary_award_view_temp AS
 SELECT
+  MD5(array_to_string(sort(array_agg("awards"."id"::int)), ' ')) AS pk,
   "transaction_normalized"."action_date",
   "transaction_normalized"."fiscal_year",
   "awards"."type",

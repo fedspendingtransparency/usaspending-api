@@ -1,7 +1,9 @@
 {
   "final_name": "summary_view_naics_codes",
+  "refresh": true,
   "matview_sql": [
     "SELECT",
+    "  MD5(array_to_string(sort(array_agg(\"transaction_normalized\".\"id\"::int)), ' ')) AS pk,",
     "  \"transaction_normalized\".\"action_date\",",
     "  \"transaction_normalized\".\"fiscal_year\",",
     "  \"transaction_normalized\".\"type\",",
@@ -27,6 +29,10 @@
   ],
   "indexes": [
     {
+      "name": "unique_pk",
+      "unique": true,
+      "columns": [{"name": "\"pk\""}]
+    }, {
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {

@@ -178,7 +178,7 @@ def matview_search_filter(filters, model):
             )
 
         elif key == "award_amounts":
-            success, and_queryset = total_obligation_queryset(value, model)
+            success, and_queryset = total_obligation_queryset(value, model, filters)
             if success:
                 queryset &= and_queryset
 

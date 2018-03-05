@@ -3,10 +3,11 @@
 --    The SQL definition is stored in a json file     --
 --    Look in matview_generator for the code.         --
 --                                                    --
---  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
+--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --
 --------------------------------------------------------
 CREATE MATERIALIZED VIEW summary_transaction_month_view_temp AS
 SELECT
+  MD5(array_to_string(sort(array_agg("transaction_normalized"."id"::int)), ' ')) AS pk,
   cast(date_trunc('month', "transaction_normalized"."action_date") as date) as "action_date",
   "transaction_normalized"."fiscal_year",
   "transaction_normalized"."type",

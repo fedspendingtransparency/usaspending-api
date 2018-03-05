@@ -1,18 +1,20 @@
 from django.db.models import F, Sum
 from usaspending_api.references.models import Agency
 from usaspending_api.submissions.models import SubmissionAttributes
-from rest_framework.views import APIView
+from usaspending_api.common.views import APIDocumentationView
+
 from rest_framework.response import Response
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
-from rest_framework_extensions.cache.decorators import cache_response
+from usaspending_api.common.cache_decorator import cache_response
 
 from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY, DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
-class AgencyViewSet(APIView):
+class AgencyViewSet(APIDocumentationView):
 
-    """Return an agency name and active fy"""
+    """Return an agency name and active fy.
+    endpoint_doc: /agency.md"""
     @cache_response()
     def get(self, request, pk, format=None):
         """Return the view's queryset."""
