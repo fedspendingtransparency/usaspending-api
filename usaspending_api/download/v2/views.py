@@ -172,7 +172,7 @@ class BaseDownloadViewSet(APIDocumentationView):
 
 class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.    
+    This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
     endpoint_doc: /download/advanced_search_award_download.md
     """
 
@@ -184,8 +184,8 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.    
-    
+    This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
+
     endpoint_doc: /download/advanced_search_transaction_download.md
     """
 
@@ -198,7 +198,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
 class YearLimitedDownloadViewSet(BaseDownloadViewSet):
     """
     This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.    
-        
+
     endpoint_doc: /download/custom_award_data_download.md
     """
 
@@ -267,7 +267,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
 class DownloadStatusViewSet(BaseDownloadViewSet):
     """
     This route gets the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day.
-    
+
     endpoint_doc: /download/download_status.md
     """
 
@@ -285,7 +285,7 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
 class DownloadTransactionCountViewSet(APIDocumentationView):
     """
     Returns the number of transactions that would be included in a download request for the given filter set.
-    
+
     endpoint_doc: /download/download_count.md
     """
     @cache_response()
