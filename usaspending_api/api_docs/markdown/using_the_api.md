@@ -385,13 +385,13 @@ To download awards, please use [Advanced_Search_Award_Download](../api_documenta
 
 ##### Year Constraint Downloads
 
-These downloads do not have a row constraint but they are limited to only a certain number of filters and the time range filter is limited to `1 year` at most. This allows you to download millions of rows for larger requests.
+These downloads do not have a row constraint, but they are limited to a certain number of filters and the time-range filter is limited to `1 year`, at most. This allows you to download millions of rows for larger requests.
 
-For downloading transactions and subawards, please use [Custom_Award_Data_Download](../api_documentation/download/custom_award_data_download.md).
+To download transactions and subawards, please use [Custom_Award_Data_Download](../api_documentation/download/custom_award_data_download.md).
 
 #### Checking the status of the Download Generation
 
-The responses of these endpoints includes a `file_name`, which will be used to check on the status of the requested download. For example, the response will look something like:
+The responses of these endpoints includes a `file_name`, which will be used to check on the status of the requested download. For example, the response will look something like this:
 ```
 {
    ...
@@ -400,7 +400,7 @@ The responses of these endpoints includes a `file_name`, which will be used to c
 }
 ```
 
-To check to see whether that request is complete, use the [Status Endpoint](../api_documentation/download/download_status.md) using `5757660_968336105_awards.zip`. Once complete, you can follow the `url` provided in the status response to finally download your data.
+To check to see whether that request is complete, use the [Status Endpoint](../api_documentation/download/download_status.md) using `5757660_968336105_awards.zip`. Once it's complete, you can follow the `url` provided in the status response to download your data.
 
 ### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
   Summarized data is available for some of the endpoints listed above:
@@ -409,22 +409,22 @@ To check to see whether that request is complete, use the [Status Endpoint](../a
   * **/v1/transactions/total/**
   * more coming soon
 
-  You can get summarized data via a `POST` request that specifies:
+  You can get summarized data via a `POST` request that specifies the following:
 
-  * `field`: the field to be summarized (this supports Django's foreign key traversal; for more details on this see `field` in [POST Requests](#post-requests)).
-  * `aggregate`: the aggregate function to use when summarizing the data (defaults to `sum`; `avg`, `count`, `min`, and `max` are also supported)
-  * `group`: the field to group by (optional; if not specified, data will be summarized across all objects)
-  * `date_part`: applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
+  * `field`: The field to be summarized (this supports Django's foreign key traversal; for more details on this see `field` in [POST Requests](#post-requests)).
+  * `aggregate`: The aggregate function to use when summarizing the data (defaults to `sum`; `avg`, `count`, `min`, and `max` are also supported)
+  * `group`: The field to group by (optional; if not specified, data will be summarized across all objects)
+  * `date_part`: Applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
   * `show_nulls`: Whether to display results where the `group` data or the aggregate field data is null. In effect, this sets `show_null_aggregates` and `show_null_groups` to true. Defaults to false.
   * `show_null_groups`: Whether to display aggregates where all the `group` data is null. Defaults to false.
   * `show_null_aggregates`: Whether to display entries where the aggregate is null. 
 
   Requests to the summary endpoints can also contain the `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
 
-  The `results` portion of the response will contain:
+  The `results` portion of the response will contain the following:
 
-  * `item`: the value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
-  * `aggregate`: the summarized data
+  * `item`: The value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
+  * `aggregate`: The summarized data
 
   To order the response by the items being returned via the `group` parameter, you can specify an `order` in the request: `"order": ["item"]`. To order the response by the aggregate values themselves, add `"order": ["aggregate]` to the request.
 
@@ -519,8 +519,8 @@ To check to see whether that request is complete, use the [Status Endpoint](../a
 ### Pagination <a name="pagination"></a>
   To control the number of items returned on a single "page" of a request or to request a specific page number, use the following URL parameters:
 
-  * `page` - specifies the page of results to return. The default is 1.
-  * `limit` - specifies the maximum number of items to return in a response page. The default is 100.
+  * `page` - Specifies the page of results to return. The default is 1.
+  * `limit` - Specifies the maximum number of items to return in a response page. The default is 100.
 
   For example, the following request will limit the awards on a single page to 20 and will return page 5 of the results:
 
@@ -535,7 +535,7 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
 
 #### Options
   * `fields` - A list of fields to be searched for autocomplete. This allows for foreign key traversal using the usual Django patterns. This should _always_ be a list, even if the length is only one.
-  * `value` - The value to use as the autocomplete pattern. Typically a string, but could be a number in uncommon circumstances. The search will currently _always_ be case insensitive.
+  * `value` - The value to use as the autocomplete pattern. It is typically a string, but it could be a number in uncommon circumstances. The search will currently _always_ be case insensitive.
   * `mode` - _Optional_ - The search mode. Options available are:
     * `contains` - Matches if the field's value contains the specified value.
     * `startswith` - Matches if the field's value starts with the specified value.
@@ -645,7 +645,7 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
   * `matched_objects` - Only exists if `matched_objects` was specified in the request. An object broken up by specified `fields` with matching objects from the autocomplete query stored in arrays.
 
 ### Geographical Hierarchy Queries <a name="geographical-hierarchy-queries"></a>
-This is a special type of autocomplete query which allows users to search for geographical locations in a hierarchy.
+This is a special type of autocomplete query that allows users to search for geographical locations in a hierarchy.
 
 #### Body
 ```
@@ -712,10 +712,10 @@ This is a special type of autocomplete query which allows users to search for ge
   }
 ```
 #### Response Description
-  * `place` - The value of the place. e.g. A country's name, or a county name, etc.
-  * `matched_ids` - An array of `location_id`s that match the given data. This can be used to look up awards, recipients, or other data by requesting these ids.
+  * `place` - The value of the place -- for example, a country name, a county name, etc.
+  * `matched_ids` - An array of `location_id`s that match the given data. You can request these ids to look up awards, recipients, or other data.
   * `place_type` - The type of place. Options are:
-    * `CONGRESSIONAL DISTRICT` - These are searched using the pattern `XX-##` where `XX` designates a state code, and `##` designates the district number. For example, `VA-06` is district `06` in Virginia.
+    * `CONGRESSIONAL DISTRICT` - These are searched using the pattern `XX-##`, where `XX` designates a state code and `##` designates the district number. For example, `VA-06` is district `06` in Virginia.
     * `COUNTRY`
     * `CITY`
     * `COUNTY`
@@ -723,12 +723,12 @@ This is a special type of autocomplete query which allows users to search for ge
     * `ZIP`
     * `POSTAL CODE` - Used for foreign postal codes
     * `PROVINCE`
-  * `parent` - The parent of the object, in a logical hierarchy. The parents for each type are listed below:
+  * `parent` - The parent of the object in a logical hierarchy. The parents for each type are listed below:
     * `CONGRESSIONAL DISTRICT` - Will specify the parent as the state containing the district.
     * `COUNTRY` - Will specify the parent as the country code for reference purposes.
     * `CITY` - Will specify the state the city is in for domestic cities, or the country for foreign cities.
     * `COUNTY` - Will specify the state the the city is in for domestic cities.
     * `STATE` - Will specify the country the state is in.
-    * `ZIP` - Will specify the state the zip code falls in. If a zip code falls in multiple states, two results will be generated.
+    * `ZIP` - Will specify the state the ZIP code falls in. If a ZIP code falls in multiple states, two results will be generated.
     * `POSTAL CODE` - Will specify the country the postal code falls in.
     * `PROVINCE` - Will specify the country the province is in.
