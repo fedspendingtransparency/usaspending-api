@@ -173,7 +173,7 @@ class BaseDownloadViewSet(APIDocumentationView):
 class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     """
     This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
-    
+
     endpoint_doc: /download/advanced_search_award_download.md
     """
 
@@ -185,7 +185,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of transaction data in CSV form for 
+    This route sends a request to the backend to begin generating a zipfile of transaction data in CSV form for
     download.
 
     endpoint_doc: /download/advanced_search_transaction_download.md
