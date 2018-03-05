@@ -17,11 +17,11 @@
 
 # Using the USAspending Application Program Interface (API) <a name="introduction"></a>
 
-The USAspending API allows the public to access data published via the DATA Act Data Broker or via USAspending.
+The USAspending API allows the public to access data published via the DATA Act Data Broker and USAspending.
 
 This guide is intended for users who are already familiar with APIs. If you're not sure what _endpoint_ means, and what `GET` and `POST` requests are, you'll probably find the [introductory tutorial](/docs/intro-tutorial) more useful.
 
-The USASpending API is in V2. V1 endpoints are currently deprecated.
+The USAspending API is in V2. V1 endpoints are currently deprecated.
 
 
 
@@ -29,7 +29,7 @@ The USASpending API is in V2. V1 endpoints are currently deprecated.
 
 
 #### GET Requests <a name="get-requests"></a>
-GET requests support simple equality filters for fields in the underlying data model. These can be specified by attaching field value pairs to the endpoint as URL parameters:
+GET requests support simple equality filters for fields in the underlying data model. Specify these by attaching field value pairs to the endpoint as URL parameters:
 
 `/v1/awards?type=B`
 
@@ -38,7 +38,7 @@ Field names support Django's foreign key traversal; for more details on this see
 `/v1/awards/?type=B&awarding_agency__toptier_agency__cgac_code=073`
 
 #### POST Requests <a name="post-requests"></a>
-The structure of the post request allows for a flexible and complex query.
+The structure of a POST request allows for a flexible and complex query.
 
 #### POST Request Preservation <a name="post-requests-preservation"></a>
 All requests will return a `req` object in their response. This code allows you to share and preserve POST requests from page to page. You can send a request to any endpoint and specify the `req` from any request to re-run that request. For example, if you sent a POST request to `/api/v1/awards/` and returned a `req` of `abcd` you could re-run that request by hitting:
@@ -63,10 +63,10 @@ Or by POSTing
   "req": "abcd"
 }
 ```
-Would get the second page of the previous request.
+You would get the second page of the previous request.
 
 #### Body (JSON)
-Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. The API expects the content in JSON format, so the requests's content-type header should be set to `application/json`.
+The following is an example body for the `/v1/awards/?page=1&limit=200` POST request. The API expects the content in JSON format, so the request's content-type header should be set to `application/json`.
 
 ```
 {
@@ -93,7 +93,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
 * `exclude` - _Optional_ - What fields to exclude from the return. Must be a list.
 * `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
 * `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name. For example, to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
-* `verbose` - _Optional_ - Endpoints that return lists of items (`/awards/` and `/accounts/`, for example) return a default list of fields. To instead return all fields, set this value to `true`. Note that you can also use the `fields` and `exclude` options to override the default field list. Default: false.
+* `verbose` - _Optional_ - Endpoints that return lists of items `/awards/` and `/accounts/`, for example return a default list of fields. To instead return all fields, set this value to `true`. Note that you can also use the `fields` and `exclude` options to override the default field list. Default: false.
 * `filters` - _Optional_ - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_.
   * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__fpds_code` will filter on the field `fpds_code` for the referenced object stored in `funding_agency`.
   * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. To negate an operation, use `not_`. For example, `not_equals` or `not_in`. The options for this field are:
@@ -165,7 +165,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": "BOEING"
     }
     ```
-    * `contained_by` - A special operation for array fields, matches where the value of the field is entirely contained by the specified array.
+    * `contained_by` - A special operation for array fields; matches where the value of the field is entirely contained by the specified array.
     ```
     {
       "field": "business_categories",
@@ -173,7 +173,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": ["local_government", "woman_owned_business"]
     }
     ```
-    * `overlap` - A special operation for array fields, matches where the value of the field has any overlap with the specified array.
+    * `overlap` - A special operation for array fields; matches where the value of the field has any overlap with the specified array.
     ```
     {
       "field": "business_categories",
@@ -189,7 +189,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": "0"
     }
     ```
-    * `is_null` - Evaluates if the field is null or not null. `value` must be either `true` or `false`.
+    * `is_null` - Evaluates whether the field is null or not null. `value` must be either `true` or `false`.
     ```
     {
       "field": "awarding_agency",
@@ -213,7 +213,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": "treasury"
     }
     ```
-    * `fy` - Evaluates if the field (generally should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a 4-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017. Does not need `value_format` as it is assumed.
+    * `fy` - Evaluates whether the field (in general, this should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a four-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017. Does not need `value_format` as it is assumed.
     ```
     {
       "field": "date_signed",

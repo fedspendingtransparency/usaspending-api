@@ -24,7 +24,7 @@
 
 # Introductory Tutorial <a name="introduction"></a>
 
-Welcome to the introductory USASpending API tutorial. This tutorial is designed for people who aren't familiar with APIs and how to use them. If you already know what an _endpoint_ is and the difference between `GET` and `POST`, you'll want to visit [Using the API](/docs/using-the-api).
+Welcome to the introductory USAspending API tutorial. This tutorial is designed for people who aren't familiar with APIs and how to use them. If you already know what an _endpoint_ is and the difference between `GET` and `POST`, you'll want to visit [Using the API](/docs/using-the-api).
 
 ## What's an API? <a name="whats-an-api"></a>
 
@@ -34,26 +34,26 @@ If you're looking for federal spending data that's designed to be read by humans
 
 ## Using the API <a name="using-the-api"></a>
 
-Over the next few sections, we will discuss the different methods for accessing the API, how to filter the data, how to use autocomplete endpoints, and how to find more information.
+The next few sections will cover different ways to access the API, how to filter the data, how to use autocomplete endpoints, and how to find more information.
 
 You do not need to complete this tutorial in its entirety to get started. Feel free to stop and experiment with your own ideas as you progress.
 
 ## Endpoint Overview <a name="endpoint-overview"></a>
 
-When you type a url into your browser, it usually returns a web page: a document that your browser knows how to display for you to read. APIs use urls, too--but instead of returning formatted web pages, API urls return data structured to be easy for computers to parse. API urls are called _endpoints_. Just as many webpages make up a web site, many endpoints make up an API.
+When you type a URL into your browser, it usually returns a web page: a document that your browser knows how to display for you to read. APIs use URLs too, but instead of returning formatted web pages, API URLs return data that is structured so computers can easily parse it. API URLs are called _endpoints_. Just as many pages make up a website, many endpoints make up an API.
 
-The USASpending API supports a number of endpoints. For example `/api/v2/search/spending_by_award/` is our advanced award search endpoint for the Spending by Award table.
+The USASpending API supports a number of endpoints. For example `/api/v2/search/spending_by_award/` is our Advanced Award Search endpoint for the Spending by Award table.
 
 
 #### GET vs POST requests <a name="get-vs-post"></a>
 
 Most endpoints support both GET and POST methods for making a request.
 
-Requests for a specific record, where the numerical identifier is known, are done via a GET request. For example, a request to `/api/v2/references/agency/456/` would retreive the agency's metadata with identifier `456`.
+Requests for a specific record (with a known numerical identifier), are made via a GET request. For example, a request to `/api/v2/references/agency/456/` would retrieve the agency's metadata with identifier `456`.
 
-Simple filters can also be used in a GET request. An example of this would be `//api/v2/financial_balances/agencies?funding_agency=775&fiscal_year=2017` would retrieves financial balance information by funding agency, with the identifier of `775` and a fiscal year of `2017`.
+You can also use simple filters in a GET request. An example of this would be `/api/v2/financial_balances/agencies?funding_agency=775&fiscal_year=2017`, which would retrieves financial balance information by funding agency, with the identifier of `775` and a fiscal year of `2017`.
 
-POST requests are used when more advanced filtering is required. For example, `/api/v2/search/spending_by_award/` would have filters as such:
+POST requests are leveraged in situations where more advanced filtering is required. For example, `/api/v2/search/spending_by_award/` would have filters as such:
 ```
 {
   "filters": {
@@ -100,4 +100,4 @@ POST requests are used when more advanced filtering is required. For example, `/
 }
 ```
 
-For more details, please continue to the full API documentation [here](/docs/endpoints)
+For more details on USAspending API requests, please continue to the full API documentation [here](/docs/endpoints)
