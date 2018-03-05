@@ -266,7 +266,8 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
 
 class DownloadStatusViewSet(BaseDownloadViewSet):
     """
-    This route gets the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day.
+    This route gets the current status of a download job that that has been requested with the `v2/download/awards/` or
+     `v2/download/transaction/` endpoint that same day.
 
     endpoint_doc: /download/download_status.md
     """
