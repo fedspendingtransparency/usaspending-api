@@ -37,26 +37,26 @@ class Command(BaseCommand):
         db_query = 'SELECT * ' \
                    'FROM published_award_financial_assistance ' \
                    'WHERE created_at >= %s ' \
-                   'AND (is_active = True OR UPPER(correction_late_delete_ind) = \'D\')'
+                   'AND (is_active IS True OR UPPER(correction_late_delete_ind) = \'D\')'
         db_args = [date]
 
         db_cursor.execute(db_query, db_args)
         db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
 
         ids_to_delete = []
+        final_db_rows = []
 
         # Iterate through the result dict and determine what needs to be deleted and what needs to be added
         for row in db_rows:
             if row['correction_late_delete_ind'] and row['correction_late_delete_ind'].upper() == 'D':
-                ids_to_delete += [row['afa_generated_unique'].upper()]
-                # remove the row from the list of rows from the Broker since once we delete it, we don't care about it.
-                # all that'll be left in db_rows are rows we want to insert
-                db_rows.remove(row)
+                ids_to_delete.append(row['afa_generated_unique'].upper())
+            else:
+                final_db_rows.append(row)
 
-        logger.info('Number of records to insert/update: %s' % str(len(db_rows)))
+        logger.info('Number of records to insert/update: %s' % str(len(final_db_rows)))
         logger.info('Number of records to delete: %s' % str(len(ids_to_delete)))
 
-        return db_rows, ids_to_delete
+        return final_db_rows, ids_to_delete
 
     @staticmethod
     def delete_stale_fabs(ids_to_delete=None):
