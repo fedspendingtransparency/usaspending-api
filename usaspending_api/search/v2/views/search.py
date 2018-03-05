@@ -795,14 +795,6 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
         results = []
         for transaction in response[:validated_payload['limit']]:
-            transaction["internal_id"] = transaction["Award ID"]
-            if 'display_award_id' in transaction:
-                transaction["Award ID"] = transaction['display_award_id']
-                del transaction['display_award_id']
-            # elif award_type != 'contracts':
-            #     transaction["Award ID"] = transaction['fain']
-            # else:
-            #     transaction["Award ID"] = transaction['piid']
             results.append(transaction)
 
         response = {
