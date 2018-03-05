@@ -94,7 +94,7 @@ class Command(BaseCommand):
             response = ES_CLIENT.search(index=index_name)
             return response["hits"]["total"]
         except TransportError as e:
-            logging.error('[CONNECTION TIMEOUT] with ElasticSearch cluster: {e}'.
+            logging.error('[TRANSPORT ERROR] with ElasticSearch cluster: {e}'.
                           format(e=str(e)))
             return -1
 
@@ -113,7 +113,7 @@ class Command(BaseCommand):
                 if not self.wipe:
                     logging.warn('{} exists... passing ... '.format(dest))
                 else:
-                    logging.warn('{} exists... deleting... {}'.format(dest))
+                    logging.warn('{} exists... dropping... {}'.format(dest))
                     ES_CLIENT.indices.delete(dest)
             if not ES_CLIENT.indices.exists(dest):
                 self.size, self.sleep_time = self.verify(source, dest)
