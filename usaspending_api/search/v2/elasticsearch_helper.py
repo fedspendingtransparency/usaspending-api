@@ -46,7 +46,7 @@ def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
                         }
                     },
                     {
-                      "multi_match": {
+                      "query_string": {
                             "query": keyword,
                             "fields": fields
                         }

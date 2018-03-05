@@ -76,7 +76,12 @@
           "type": "text"
         },
         "type_description": {
-          "type": "keyword"
+          "type": "keyword",
+          "fields": {
+            "raw": { 
+              "type": "text"
+            }
+          }
         },
         "award_category": {
           "type": "text",
@@ -89,9 +94,13 @@
           "type": "text"
         },
         "recipient_name": {
-          "type": "keyword"
+          "type": "keyword",
+          "fields": {
+            "raw": { 
+              "type": "text"
+            }
+          }
         },
-
         "action_date": {
           "type": "date",
           "format": "yyyy-MM-dd"
@@ -134,13 +143,23 @@
           "index": false
         },
         "awarding_toptier_agency_name": {
-          "type": "keyword"
+          "type": "keyword",
+          "fields": {
+            "raw": { 
+              "type": "text"
+            }
+          }
         },
         "funding_toptier_agency_name": {
           "type": "text"
         },
         "awarding_subtier_agency_name": {
-          "type": "keyword"
+          "type": "keyword",
+          "fields": {
+            "raw": { 
+              "type": "text"
+            }
+          }
         },
         "funding_subtier_agency_name": {
           "type": "text"
