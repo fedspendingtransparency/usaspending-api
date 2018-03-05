@@ -49,7 +49,7 @@ The USASpending API supports a number of endpoints. For example `/api/v2/search/
 
 Most endpoints support both GET and POST methods for making a request.
 
-Requests for a specific record (with a known numerical identifier), are made via a GET request. For example, a request to `/api/v2/references/agency/456/` would retrieve the agency's metadata with identifier `456`.
+Requests for a specific record (with a known numerical identifier) are made via a GET request. For example, a request to `/api/v2/references/agency/456/` would retrieve the agency's metadata with identifier `456`.
 
 You can also use simple filters in a GET request. An example of this would be `/api/v2/financial_balances/agencies?funding_agency=775&fiscal_year=2017`, which would retrieves financial balance information by funding agency, with the identifier of `775` and a fiscal year of `2017`.
 
