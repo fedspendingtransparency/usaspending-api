@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import sys
+import subprocess
 from uuid import uuid4
 
 # Usage: python matview_sql_generator.py (from usaspending_api/database_scripts/matview_generator)
@@ -72,17 +73,38 @@ HEADER = [
     '--  DO NOT DIRECTLY EDIT THIS FILE!!!                 --',
     '--------------------------------------------------------',
 ]
-MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
-RANDOM_CHARS = str(uuid4())[:8]
 CLUSTERING_INDEX = None
+COMMIT_HASH = ''
 DEST_FOLDER = '../matviews/'
+MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
 OVERWRITE_FILE = True
+RANDOM_CHARS = ''
 
 
 def ingest_json(path):
     with open(path) as f:
         doc = json.load(f)
     return doc
+
+
+def generate_uid(characters=8, filename=None):
+    git_hash = get_git_commit(characters - 1, filename)
+    if git_hash is None:
+        return str(uuid4())[:characters]
+    else:
+        return git_hash + '$'
+
+
+def get_git_commit(characters=8, filename=None):
+    cmd = 'git log -n 1 --pretty=format:"%H"'
+    if filename and os.path.isfile(filename):
+        cmd += ' -- {}'.format(filename)
+    args = cmd.split(' ')
+    shell = subprocess.run(args, stdout=subprocess.PIPE, check=True)
+    if shell.stdout:
+        # First character is a '#' so skip it
+        return shell.stdout[1:characters + 1].decode()
+    return None
 
 
 def create_index_string(matview_name, index_name, idx):
@@ -94,7 +116,7 @@ def create_index_string(matview_name, index_name, idx):
     idx_where = ' WHERE ' + idx['where'] if idx.get('where', None) else ''
     idx_with = ''
     if idx_method.upper() == 'BTREE':
-        idx_with = ' WITH (fillfactor = 100)'  # reduce btree index size by 10%
+        idx_with = ' WITH (fillfactor = 97)'  # reduce btree index size by 7% from the default 10% free-space
 
     idx_cols = []
     for col in idx['columns']:
@@ -153,7 +175,7 @@ def make_indexes_sql(sql_json, matview_name):
     for idx in sql_json['indexes']:
         if len(idx['name']) > MAX_NAME_LENGTH:
             raise Exception('Desired index name is too long. Keep under {} chars'.format(MAX_NAME_LENGTH))
-        final_index = 'idx_' + RANDOM_CHARS + '__' + idx['name']
+        final_index = 'idx_' + COMMIT_HASH + RANDOM_CHARS + '__' + idx['name']
         unique_name_list.append(final_index)
         tmp_index = final_index + '_temp'
         old_index = final_index + '_old'
@@ -288,6 +310,10 @@ def create_monolith_file(sql_json):
 
 
 def main(source_file):
+    global COMMIT_HASH
+    global RANDOM_CHARS
+    COMMIT_HASH = generate_uid(9, source_file)
+    RANDOM_CHARS = str(uuid4())[:3]
     try:
         sql_json = ingest_json(source_file)
     except Exception as e:
@@ -307,7 +333,6 @@ if __name__ == '__main__':
         if ans.lower() in ['y', 'yes']:
             all_files = glob.glob('*.json')
             for f in all_files:
-                RANDOM_CHARS = str(uuid4())[:8]
                 print('\n==== {}'.format(f))
                 main(f)
         else:
