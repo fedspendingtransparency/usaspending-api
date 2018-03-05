@@ -16,16 +16,13 @@ from elasticsearch import Elasticsearch
 from elasticsearch import ConnectionTimeout
 from elasticsearch import TransportError
 from usaspending_api import settings
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from django.core.management.base import BaseCommand
-from pprint import pprint
 
 logging.basicConfig(format='%(asctime)s |  %(message)s', level=logging.WARNING)
 MAX_RETRIES = 3
 INGEST_RATE = 10000
 
 ES_CLIENT = Elasticsearch(settings.ES_HOSTNAME, timeout=300)
-INDICES_SUB_NAMES = indices_to_award_types.keys()
 
 
 class Command(BaseCommand):
@@ -140,8 +137,7 @@ class Command(BaseCommand):
         logging.warn('****   FINISHED REINDEXING  ****')
 
         for source, dest in self.reindex_dict.items():
-            transaction_category = next((s for s in INDICES_SUB_NAMES if dest.find(s) != -1), None)
-            alias_name = '{}-{}'.format(self.source_prefix, transaction_category)
+            alias_name = dest.replace(self.dest_prefix, self.alias_prefix)
             logging.warn('ALIAS NAME ----     {}'.format(alias_name))
             logging.warn('CLOSING -------     {}'.format(source))
             logging.warn('NEW INDEX  ----     {}'.format(dest))
