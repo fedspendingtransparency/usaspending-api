@@ -366,7 +366,7 @@ The endpoints described in this section generate files that reflect the site's u
 
 #### Award Data Archive
 
-On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. You can find these on the [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive) page. You can also access this information via the API's [List Downloads Endpoint](https://dev-api.usaspending.gov/api/v2/bulk_download/list_monthly_files/).
+On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. You can find these on the [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive) page. You can also access this information via the API's [List Downloads Endpoint](https://api.usaspending.gov/api/v2/bulk_download/list_monthly_files/).
 
 #### Generating Download Files
 
@@ -378,15 +378,15 @@ There are several downloadable endpoints, all with different features/constraint
 
 These downloads have a row constraint on them, meaning there is a hard limit to the number of records to include (currently that limit is `500,000` rows). The main benefit of using these endpoints is that they allow various filters that are not supported by the Year Constraint Downloads.
 
-To download transactions, please use [Advanced_Search_Transaction_Download](https://dev-api.usaspending.gov/api/v2/download/transactions/).
+To download transactions, please use [Advanced_Search_Transaction_Download](https://api.usaspending.gov/api/v2/download/transactions/).
 
-To download awards, please use [Advanced_Search_Award_Download](https://dev-api.usaspending.gov/api/v2/download/awards/).
+To download awards, please use [Advanced_Search_Award_Download](https://api.usaspending.gov/api/v2/download/awards/).
 
 ##### Year Constraint Downloads
 
 These downloads do not have a row constraint, but they are limited to a certain number of filters and the time-range filter is limited to `1 year`, at most. This allows you to download millions of rows for larger requests.
 
-To download transactions and subawards, please use [Custom_Award_Data_Download](https://dev-api.usaspending.gov/api/v2/bulk_download/awards/).
+To download transactions and subawards, please use [Custom_Award_Data_Download](https://api.usaspending.gov/api/v2/bulk_download/awards/).
 
 #### Checking the status of the Download Generation
 
@@ -399,7 +399,7 @@ The responses of these endpoints includes a `file_name`, which will be used to c
 }
 ```
 
-To check to see whether that request is complete, use the [Status Endpoint](https://dev-api.usaspending.gov/api/v2/download/status/) using `5757660_968336105_awards.zip`. Once it's complete, you can follow the `url` provided in the status response to download your data.
+To check to see whether that request is complete, use the [Status Endpoint](https://api.usaspending.gov/api/v2/download/status/) using `5757660_968336105_awards.zip`. Once it's complete, you can follow the `url` provided in the status response to download your data.
 
 ### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
   Summarized data is available for some of the endpoints listed above:
