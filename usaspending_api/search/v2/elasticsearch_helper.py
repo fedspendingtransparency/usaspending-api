@@ -2,6 +2,7 @@ import logging
 import re
 from django.conf import settings
 
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import KEYWORD_DATATYPE_FIELDS
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_LOOKUP
 from usaspending_api.core.elasticsearch.client import es_client_query
@@ -9,6 +10,7 @@ logger = logging.getLogger('console')
 
 TRANSACTIONS_INDEX_ROOT = settings.TRANSACTIONS_INDEX_ROOT
 DOWNLOAD_QUERY_SIZE = settings.DOWNLOAD_QUERY_SIZE
+KEYWORD_DATATYPE_FIELDS = ['{}.raw'.format(i) for i in KEYWORD_DATATYPE_FIELDS]
 
 TRANSACTIONS_LOOKUP.update({v: k for k, v in TRANSACTIONS_LOOKUP.items()})
 
@@ -80,6 +82,27 @@ def search_transactions_contracts_query(query_fields, lower_limit, limit, keywor
     return query
 
 
+def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
+    keyword = preprocess(keyword)
+    query = {
+            "dis_max": {
+                "queries": [{
+                  'query_string': {
+                        'query': keyword
+                        }
+                    },
+                    {
+                      "multi_match": {
+                            "query": keyword,
+                            "fields": fields
+                        }
+                    }
+                ]
+            }
+        }
+    return query
+
+
 def search_transactions(request_data, lower_limit, limit):
     '''
     filters: dictionary
@@ -97,7 +120,7 @@ def search_transactions(request_data, lower_limit, limit):
     query_fields.extend(['piid', 'fain', 'uri', 'display_award_id'])
     query_sort = TRANSACTIONS_LOOKUP[request_data['sort']]
     types = request_data['award_type_codes']
-
+    
     for index, award_types in indices_to_award_types.items():
         if sorted(award_types) == sorted(request_data['award_type_codes']):
             index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
@@ -142,13 +165,7 @@ def search_transactions(request_data, lower_limit, limit):
 
 def get_total_results(keyword, sub_index, retries=3):
     index_name = '{}-{}*'.format(TRANSACTIONS_INDEX_ROOT, sub_index.replace('_', ''))
-    query = {
-        'query': {
-            'query_string': {
-                'query': preprocess(keyword)
-            }
-        }
-    }
+    query = {'query': base_query(keyword)}
 
     response = es_client_query(index=index_name, body=query, retries=retries)
     if response:
@@ -182,11 +199,7 @@ def get_sum_aggregation_results(keyword, field='transaction_amount'):
     """
     index_name = '{}-*'.format(TRANSACTIONS_INDEX_ROOT)
     query = {
-        'query': {
-            'query_string': {
-                'query': preprocess(keyword)
-            }
-        },
+        'query': base_query(keyword),
         'aggs': {
             'transaction_sum': {
                 'sum': {
@@ -228,7 +241,7 @@ def get_download_ids(keyword, field, size=10000):
     for i in range(n_iter):
         query = {
             "_source": [field],
-            "query": {"query_string": {"query": preprocess(keyword)}},
+            "query": base_query(keyword),
             "aggs": {
                 "results": {
                     "terms": {
@@ -256,8 +269,7 @@ def get_download_ids(keyword, field, size=10000):
 def get_sum_and_count_aggregation_results(keyword):
     index_name = '{}-*'.format(TRANSACTIONS_INDEX_ROOT)
     query = {
-        "query": {
-            "query_string": {"query": preprocess(keyword)}},
+        "query": base_query(keyword),
         "aggs": {
             "prime_awards_obligation_amount": {
                 "sum": {

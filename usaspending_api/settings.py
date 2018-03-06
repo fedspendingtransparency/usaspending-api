@@ -168,6 +168,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'usaspending_api.common.pagination.UsaspendingPagination',
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
+        'usaspending_api.common.renderers.DocumentApiRenderer',
         'usaspending_api.common.renderers.BrowsableAPIRendererWithoutForms',
     ),
 }
@@ -278,9 +279,14 @@ CACHE_ENVIRONMENT = 'disabled'
 CACHE_ENVIRONMENTS = {
     # Elasticache settings are changed during deployment, or can be set manually
     'elasticache': {
-        'BACKEND': 'django_elasticache.memcached.ElastiCache',
+        'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': 'ELASTICACHE-CONNECTION-STRING',
         'TIMEOUT': 'TIMEOUT-IN-SECONDS',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            # Note: ELASTICACHE-MASTER-STRING is currently only used by Prod and will be removed in other environments.
+            'MASTER_CACHE': 'ELASTICACHE-MASTER-STRING',
+        },
     },
     'local': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
