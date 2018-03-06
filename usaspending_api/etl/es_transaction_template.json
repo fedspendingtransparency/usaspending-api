@@ -262,8 +262,7 @@
           "index": false
         },
         "type": {
-          "type": "text",
-          "fielddata": true,
+          "type": "keyword",
           "null_value": "NULL"
         }
       }
