@@ -77,6 +77,7 @@
         },
         "type_description": {
           "type": "keyword",
+          "null_value": "NULL",
           "fields": {
             "raw": { 
               "type": "text"
@@ -85,7 +86,8 @@
         },
         "award_category": {
           "type": "text",
-          "index": false
+          "feilddata": true,
+          "null_value": "NULL" 
         },
         "recipient_unique_id": {
           "type": "text"
@@ -123,16 +125,20 @@
           "index": false
         },
         "award_amount": {
-          "type": "float"
+          "type": "scaled_float",
+          "scaling_factor": 100
         },
         "transaction_amount": {
-          "type": "float"
+          "type": "scaled_float",
+          "scaling_factor": 100
         },
         "face_value_loan_guarantee": {
-          "type": "float"
+          "type": "scaled_float",
+          "scaling_factor": 100
         },
         "original_loan_subsidy_cost": {
-          "type": "float"
+          "type": "scaled_float",
+          "scaling_factor": 100
         },
         "awarding_agency_id": {
           "type": "integer",
