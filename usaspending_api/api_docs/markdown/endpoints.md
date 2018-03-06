@@ -47,7 +47,7 @@ To reduce unnecessary data transfer, most endpoints return a default set of info
 | [/api/v2/download/status/](/api/v2/download/status/) | POST | This route gets the current status of a download job that was earlier requested with the v2/download/awards/ or v2/download/transaction/ endpoint. |
 | [/api/v2/download/awards/](/api/v2/download/awards/) | POST | This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download. |
 | [/api/v2/download/transactions/](/api/v2/download/transactions/) | POST | This route sends a request to the backend to begin generating a zipfile of transaction data in CSV form for download. |
-| [/api/v2/federal_accounts/](/api/v2/references/federal_accounts/) | POST | Returns a list of federal accounts |
+| [/api/v2/federal_accounts/](/api/v2/federal_accounts/) | POST | Returns a list of federal accounts |
 | /api/v2/federal_accounts/:federal_account_id/available_object_classes | GET | Returns minor object classes rolled up under major classes filtered by federal account |
 | /api/v2/federal_accounts/:federal_account_id/fiscal_year_snapshot/:fiscal_year/ | GET | Returns  budget information for a federal account. If no fiscal year is used, the federal accounts most recent fiscal year is used |
 | /api/v2/federal_accounts/:federal_account_id/spending_over_time/| POST | Returns the data reqired to visualized the spending over time graphic |
