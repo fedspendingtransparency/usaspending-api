@@ -32,8 +32,6 @@ In general, status codes returned are as follows:
 
 The currently available endpoints are listed in the following table.
 
-To reduce unnecessary data transfer, most endpoints return a default set of information about the items being requested. To override the default field list, use the `fields`, `exclude`, and `verbose` options (see [POST Requests](#post-requests) for more information).
-
 ## Endpoint Index <a name="endpoint-index"></a>
 
 | Endpoint | Methods | Description |
