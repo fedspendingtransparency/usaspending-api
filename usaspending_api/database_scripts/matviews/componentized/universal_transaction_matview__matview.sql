@@ -12,9 +12,17 @@ SELECT
     ' ', "transaction_fpds"."naics",
     ' ', "naics"."description",
     ' ', "psc"."description",
-    ' ', "awards"."description")) AS keyword_string,
-  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,
+    ' ', "awards"."description")) AS keyword_ts_vector,
+  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_ts_vector,
   to_tsvector(coalesce("legal_entity"."recipient_name", '')) AS recipient_name_ts_vector,
+
+  UPPER(CONCAT(
+    "legal_entity"."recipient_name",
+    ' ', "transaction_fpds"."naics",
+    ' ', "naics"."description",
+    ' ', "psc"."description",
+    ' ', "awards"."description")) AS keyword_string,
+  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,
 
   "transaction_normalized"."id" AS transaction_id,
   "transaction_normalized"."action_date"::date,

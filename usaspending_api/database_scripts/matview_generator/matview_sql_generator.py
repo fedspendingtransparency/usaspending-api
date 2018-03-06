@@ -315,8 +315,6 @@ def main(source_file):
 
 
 if __name__ == '__main__':
-    COMMIT_HASH = get_git_commit() or str(uuid4())[:9]  # If the hash is not returned, provide 9 random characters
-    RANDOM_CHARS = str(uuid4())[:3]  # Indexes must be unique across the schema. These 3 chars should provide uniqueness
     if len(sys.argv) > 1:
         print('Creating matview SQL using {}'.format(sys.argv[1]))
         main(sys.argv[1])

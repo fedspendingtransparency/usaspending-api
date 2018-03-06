@@ -12,9 +12,17 @@ SELECT
     ' ', contract_data."naics",
     ' ', contract_data."naics_description",
     ' ', "psc"."description",
-    ' ', "awards"."description")) AS keyword_string,
-  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,
+    ' ', "awards"."description")) AS keyword_ts_vector,
+  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_ts_vector,
   to_tsvector(coalesce(recipient."recipient_name", '')) AS recipient_name_ts_vector,
+
+  UPPER(CONCAT(
+    recipient."recipient_name",
+    ' ', contract_data."naics",
+    ' ', contract_data."naics_description",
+    ' ', "psc"."description",
+    ' ', "awards"."description")) AS keyword_string,
+  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,
 
   "awards"."id" AS award_id,
   "awards"."category",

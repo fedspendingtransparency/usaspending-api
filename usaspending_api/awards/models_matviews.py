@@ -8,8 +8,8 @@ warnings.simplefilter("ignore", CacheKeyWarning)
 
 
 class UniversalTransactionView(models.Model):
-    keyword_string = SearchVectorField()
-    award_id_string = SearchVectorField()
+    keyword_ts_vector = SearchVectorField()
+    award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
     transaction_id = models.IntegerField()
     action_date = models.DateField(blank=True, null=False)
@@ -136,8 +136,8 @@ class SummaryTransactionView(models.Model):
 
 
 class UniversalAwardView(models.Model):
-    keyword_string = SearchVectorField()
-    award_id_string = SearchVectorField()
+    keyword_ts_vector = SearchVectorField()
+    award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
     award_id = models.IntegerField(blank=False, null=False, primary_key=True)
     category = models.TextField()

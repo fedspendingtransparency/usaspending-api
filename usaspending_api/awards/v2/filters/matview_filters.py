@@ -58,8 +58,8 @@ def matview_search_filter(filters, model):
             # keyword_string & award_id_string are Postgres TS_vectors.
             # keyword_string = recipient_name + naics_code + naics_description + psc_description + awards_description
             # award_id_string = piid + fain + uri
-            compound_or = Q(keyword_string=keyword) | \
-                Q(award_id_string=keyword) | \
+            compound_or = Q(keyword_ts_vector=keyword) | \
+                Q(award_ts_vector=keyword) | \
                 Q(recipient_unique_id=upper_kw) | \
                 Q(parent_recipient_unique_id=keyword)
 
@@ -188,7 +188,7 @@ def matview_search_filter(filters, model):
                 for val in value:
                     # award_id_string is a Postgres TS_vector
                     # award_id_string = piid + fain + uri
-                    filter_obj |= Q(award_id_string=val)
+                    filter_obj |= Q(award_ts_vector=val)
                 queryset &= model.objects.filter(filter_obj)
 
         elif key == "program_numbers":
