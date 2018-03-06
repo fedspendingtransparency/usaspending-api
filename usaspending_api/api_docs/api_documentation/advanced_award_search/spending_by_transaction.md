@@ -93,4 +93,5 @@ The possible fields returned are split by contracts or assistace awards (loans, 
 ### Errors
 Possible HTTP Status Codes:
 * 400 : Missing parameters or limit is not a valid, positive integer
+* 422 : if the request is technically valid but doesn't conform with all constraints
 * 500 : All other errors
