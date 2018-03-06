@@ -11,17 +11,16 @@
   </ul>-->
   </li>
   <li><a href="/docs/endpoints">Endpoints</a></li>
-  <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
 </ul>
 [//]: # (Begin Content)
 
 # Using the USAspending Application Program Interface (API) <a name="introduction"></a>
 
-The USAspending API allows the public to access data published via the DATA Act Data Broker or via USAspending.
+The USAspending API allows the public to access data published via the DATA Act Data Broker and USAspending.
 
 This guide is intended for users who are already familiar with APIs. If you're not sure what _endpoint_ means, and what `GET` and `POST` requests are, you'll probably find the [introductory tutorial](/docs/intro-tutorial) more useful.
 
-The USASpending API is in V2. V1 endpoints are currently deprecated.
+The USAspending API is in V2. V1 endpoints are currently deprecated.
 
 
 
@@ -29,7 +28,7 @@ The USASpending API is in V2. V1 endpoints are currently deprecated.
 
 
 #### GET Requests <a name="get-requests"></a>
-GET requests support simple equality filters for fields in the underlying data model. These can be specified by attaching field value pairs to the endpoint as URL parameters:
+GET requests support simple equality filters for fields in the underlying data model. Specify these by attaching field value pairs to the endpoint as URL parameters:
 
 `/v1/awards?type=B`
 
@@ -38,7 +37,7 @@ Field names support Django's foreign key traversal; for more details on this see
 `/v1/awards/?type=B&awarding_agency__toptier_agency__cgac_code=073`
 
 #### POST Requests <a name="post-requests"></a>
-The structure of the post request allows for a flexible and complex query.
+The structure of a POST request allows for a flexible and complex query.
 
 #### POST Request Preservation <a name="post-requests-preservation"></a>
 All requests will return a `req` object in their response. This code allows you to share and preserve POST requests from page to page. You can send a request to any endpoint and specify the `req` from any request to re-run that request. For example, if you sent a POST request to `/api/v1/awards/` and returned a `req` of `abcd` you could re-run that request by hitting:
@@ -63,10 +62,10 @@ Or by POSTing
   "req": "abcd"
 }
 ```
-Would get the second page of the previous request.
+You would get the second page of the previous request.
 
 #### Body (JSON)
-Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. The API expects the content in JSON format, so the requests's content-type header should be set to `application/json`.
+The following is an example body for the `/v1/awards/?page=1&limit=200` POST request. The API expects the content in JSON format, so the request's content-type header should be set to `application/json`.
 
 ```
 {
@@ -93,7 +92,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
 * `exclude` - _Optional_ - What fields to exclude from the return. Must be a list.
 * `fields` - _Optional_ - What fields to return. Must be a list. Omitting this will return all fields.
 * `order` - _Optional_ - Specify the ordering of the results. This should _always_ be a list, even if it is only of length one. It will order by the first entry, then the second, then the third, and so on in order. This defaults to ascending. To get descending order, put a `-` in front of the field name. For example, to sort descending on `awarding_agency__name`, put `-awarding_agency__name` in the list.
-* `verbose` - _Optional_ - Endpoints that return lists of items (`/awards/` and `/accounts/`, for example) return a default list of fields. To instead return all fields, set this value to `true`. Note that you can also use the `fields` and `exclude` options to override the default field list. Default: false.
+* `verbose` - _Optional_ - Endpoints that return lists of items `/awards/` and `/accounts/`, for example return a default list of fields. To instead return all fields, set this value to `true`. Note that you can also use the `fields` and `exclude` options to override the default field list. Default: false.
 * `filters` - _Optional_ - An array of objects specifying how to filter the dataset. When multiple filters are specified in the root list, they will be joined via _and_.
   * `field` - A string specifying the field to compare the value to. This supports Django's foreign key relationship traversal; therefore, `funding_agency__fpds_code` will filter on the field `fpds_code` for the referenced object stored in `funding_agency`.
   * `operation` - The operation to use to compare the field to the value. Some operations place requirements upon the data type in the values parameter, noted below. To negate an operation, use `not_`. For example, `not_equals` or `not_in`. The options for this field are:
@@ -165,7 +164,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": "BOEING"
     }
     ```
-    * `contained_by` - A special operation for array fields, matches where the value of the field is entirely contained by the specified array.
+    * `contained_by` - A special operation for array fields; matches where the value of the field is entirely contained by the specified array.
     ```
     {
       "field": "business_categories",
@@ -173,7 +172,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": ["local_government", "woman_owned_business"]
     }
     ```
-    * `overlap` - A special operation for array fields, matches where the value of the field has any overlap with the specified array.
+    * `overlap` - A special operation for array fields; matches where the value of the field has any overlap with the specified array.
     ```
     {
       "field": "business_categories",
@@ -189,7 +188,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": "0"
     }
     ```
-    * `is_null` - Evaluates if the field is null or not null. `value` must be either `true` or `false`.
+    * `is_null` - Evaluates whether the field is null or not null. `value` must be either `true` or `false`.
     ```
     {
       "field": "awarding_agency",
@@ -213,7 +212,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": "treasury"
     }
     ```
-    * `fy` - Evaluates if the field (generally should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a 4-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017. Does not need `value_format` as it is assumed.
+    * `fy` - Evaluates whether the field (in general, this should be a datetime field) falls within the federal fiscal year specified as `value`. `value` should be a four-digit integer specifying the fiscal year. An example of a fiscal year is FY 2017 which runs from October 1st 2016 to September 30th 2017. Does not need `value_format`, as this is assumed.
     ```
     {
       "field": "date_signed",
@@ -221,7 +220,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value": 2017
     }
     ```
-    * `range_intersect` - Evaluates if the range defined by a two-field list intersects with the range defined by the two length array `value`. `value` can be a single item _only_ if `value_format` is also set to a range converting value. An example of where this is useful is when a contract spans multiple fiscal years, to evaluate whether it overlaps with any one particular fiscal year - that is, the range defined by `period_of_performance_start` to `period_of_performance_end` intersects with the fiscal year.
+    * `range_intersect` - Evaluates if the range defined by a two-field list intersects with the range defined by the two-length array `value`. `value` can be a single item _only_ if `value_format` is also set to a range converting value. An example of where this is useful is when a contract spans multiple fiscal years and you are trying to evaluate whether it overlaps with any one particular fiscal year --that is, whether the range defined by `period_of_performance_start` to `period_of_performance_end` intersects with the fiscal year.
 
     For example, if your `field` parameter defines a range as `[3,5]` then the following ranges will intersect:
       * `[2,3]` - As the 3 overlaps
@@ -246,10 +245,10 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
       "value_format": "fy"
     }
     ```
-  * `value` - Specifies the value to compare the field against. Some operations require specific datatypes for the value, and they are documented in the `operation` section.
+  * `value` - Specifies the value to compare the field against. Some operations require specific datatypes for the value; these are documented in the `operation` section.
   * `value_format` - Specifies the format for the value. Only used in some operations where noted. Valid choices are enumerated below.
-    * `fy` - Treats a single value as a fiscal year range.
-  * `combine_method` - This is a special field which modifies how the filter behaves. When `combine_method` is specified, the only other allowed parameter on the filter is `filters` which should contain an array of filter objects. The `combine_method` will be used to logically join the filters in this list. Options are `AND` or `OR`.
+    * `fy` - Treats a single value as a fiscal-year range.
+  * `combine_method` - This is a special field that modifies how the filter behaves. When `combine_method` is specified, the only other allowed parameter on the filter is `filters`, which should contain an array of filter objects. The `combine_method` will be used to logically join the filters in this list. Options are `AND` or `OR`.
   ```
   {
     "combine_method": "OR",
@@ -269,7 +268,7 @@ Below is an example body for the `/v1/awards/?page=1&limit=200` POST request. Th
   ```
 
 #### Response (JSON)
-The response object structure is the same whether you are making a GET or a POST request. An example of a response from `/v1/awards/` can be found below:
+The response object structure is the same whether you are making a GET or a POST request. An example of a response from `/v1/awards/` is as follows:
 
 ```
 {
@@ -352,22 +351,22 @@ The response object structure is the same whether you are making a GET or a POST
 ```
 
 ### Response Description
-The response has three functional parts:
+An USAspending API v1 response has three functional parts:
   * `page_metadata` - Includes data about the pagination and any page-level metadata specific to the endpoint.
     * `page` - What page is currently being returned.
-    * `has_next_page` - Whether or not there is a page after this one.
+    * `has_next_page` - Whether or not there is a page after the current page.
     * `next` - The link to the next page of this response, if applicable.
     * `previous` - The link to the previous page of this response, if applicable.
-  * `req` - The special code corresponding to this POST request. See [Post request preservation]("#post-requests-preservation") for how to use this
-  * `results` - An array of objects corresponding to the data returned by the specified endpoint. Will _always_ be an array, even if the number of results is only one.
+  * `req` - The special code corresponding to this POST request. See [Post request preservation]("#post-requests-preservation") for instructions on how to use this
+  * `results` - An array of objects corresponding to the data returned by the specified endpoint. This will _always_ be an array, even if the number of results is only one.
 
 ### Downloads
 
-The following endpoints are involved with generating files that reflect the site's underlying data. 
+The endpoints described in this section generate files that reflect the site's underlying data.
 
 #### Award Data Archive
 
-On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. These can be found at [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive), or, if you prefer, you can also use the API's [List Downloads Endpoint](../api_documentation/download/list_downloads.md).
+On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. You can find these on the [Award Data Archive](https://beta.usaspending.gov/#/download_center/award_data_archive) page. You can also access this information via the API's [List Downloads Endpoint](https://api.usaspending.gov/api/v2/bulk_download/list_monthly_files/).
 
 #### Generating Download Files
 
@@ -377,21 +376,21 @@ There are several downloadable endpoints, all with different features/constraint
 
 ##### Row Constraint Downloads
 
-These downloads have a row constraint on them, meaning they have a hard limit to the number of records to include (currently that limit is `500,000` rows). The main benefit of using these endpoints, however, is that they allow various filters that are not supported by the Year Constraint Downloads.
+These downloads have a row constraint on them, meaning there is a hard limit to the number of records to include (currently that limit is `500,000` rows). The main benefit of using these endpoints is that they allow various filters that are not supported by the Year Constraint Downloads.
 
-For downloading transactions, please use [Advanced_Search_Transaction_Download](../api_documentation/download/advanced_search_transaction_download.md).
+To download transactions, please use [Advanced_Search_Transaction_Download](https://api.usaspending.gov/api/v2/download/transactions/).
 
-For downloading awards, please use [Advanced_Search_Award_Download](../api_documentation/download/advanced_search_award_download.md).
+To download awards, please use [Advanced_Search_Award_Download](https://api.usaspending.gov/api/v2/download/awards/).
 
 ##### Year Constraint Downloads
 
-These downloads do not have a row constraint but they are limited to only a certain number of filters and the time range filter is limited to `1 year` at most. This allows you to download millions of rows for larger requests.
+These downloads do not have a row constraint, but they are limited to a certain number of filters and the time-range filter is limited to `1 year`, at most. This allows you to download millions of rows for larger requests.
 
-For downloading transactions and subawards, please use [Custom_Award_Data_Download](../api_documentation/download/custom_award_data_download.md).
+To download transactions and subawards, please use [Custom_Award_Data_Download](https://api.usaspending.gov/api/v2/bulk_download/awards/).
 
 #### Checking the status of the Download Generation
 
-The responses of these endpoints includes a `file_name`, which will be used to check on the status of the requested download. For example, the response will look something like:
+The responses of these endpoints includes a `file_name`, which will be used to check on the status of the requested download. For example, the response will look something like this:
 ```
 {
    ...
@@ -400,7 +399,7 @@ The responses of these endpoints includes a `file_name`, which will be used to c
 }
 ```
 
-To check to see whether that request is complete, use the [Status Endpoint](../api_documentation/download/download_status.md) using `5757660_968336105_awards.zip`. Once complete, you can follow the `url` provided in the status response to finally download your data.
+To check to see whether that request is complete, use the [Status Endpoint](https://api.usaspending.gov/api/v2/download/status/) using `5757660_968336105_awards.zip`. Once it's complete, you can follow the `url` provided in the status response to download your data.
 
 ### Summary Endpoints and Methods <a name="summary-endpoints-and-methods"></a>
   Summarized data is available for some of the endpoints listed above:
@@ -409,22 +408,22 @@ To check to see whether that request is complete, use the [Status Endpoint](../a
   * **/v1/transactions/total/**
   * more coming soon
 
-  You can get summarized data via a `POST` request that specifies:
+  You can get summarized data via a `POST` request that specifies the following:
 
-  * `field`: the field to be summarized (this supports Django's foreign key traversal; for more details on this see `field` in [POST Requests](#post-requests)).
-  * `aggregate`: the aggregate function to use when summarizing the data (defaults to `sum`; `avg`, `count`, `min`, and `max` are also supported)
-  * `group`: the field to group by (optional; if not specified, data will be summarized across all objects)
-  * `date_part`: applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
+  * `field`: The field to be summarized (this supports Django's foreign key traversal; for more details on this see `field` in [POST Requests](#post-requests)).
+  * `aggregate`: The aggregate function to use when summarizing the data (defaults to `sum`; `avg`, `count`, `min`, and `max` are also supported)
+  * `group`: The field to group by (optional; if not specified, data will be summarized across all objects)
+  * `date_part`: Applies only when `group` is a data field and specifies which part of the date to group by; `year`, `month`, and `day` are currently supported, and `quarter` is coming soon
   * `show_nulls`: Whether to display results where the `group` data or the aggregate field data is null. In effect, this sets `show_null_aggregates` and `show_null_groups` to true. Defaults to false.
   * `show_null_groups`: Whether to display aggregates where all the `group` data is null. Defaults to false.
   * `show_null_aggregates`: Whether to display entries where the aggregate is null. 
 
   Requests to the summary endpoints can also contain the `filters` parameters as described in [POST Requests](#post-requests). **Note:** If you're filtering the data, the filters are applied before the data is summarized.
 
-  The `results` portion of the response will contain:
+  The `results` portion of the response will contain the following:
 
-  * `item`: the value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
-  * `aggregate`: the summarized data
+  * `item`: The value of the field in the request's `group` parameter (if the request did not supply `group`, `item` will not be included)
+  * `aggregate`: The summarized data
 
   To order the response by the items being returned via the `group` parameter, you can specify an `order` in the request: `"order": ["item"]`. To order the response by the aggregate values themselves, add `"order": ["aggregate]` to the request.
 
@@ -519,8 +518,8 @@ To check to see whether that request is complete, use the [Status Endpoint](../a
 ### Pagination <a name="pagination"></a>
   To control the number of items returned on a single "page" of a request or to request a specific page number, use the following URL parameters:
 
-  * `page` - specifies the page of results to return. The default is 1.
-  * `limit` - specifies the maximum number of items to return in a response page. The default is 100.
+  * `page` - Specifies the page of results to return. The default is 1.
+  * `limit` - Specifies the maximum number of items to return in a response page. The default is 100.
 
   For example, the following request will limit the awards on a single page to 20 and will return page 5 of the results:
 
@@ -535,7 +534,7 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
 
 #### Options
   * `fields` - A list of fields to be searched for autocomplete. This allows for foreign key traversal using the usual Django patterns. This should _always_ be a list, even if the length is only one.
-  * `value` - The value to use as the autocomplete pattern. Typically a string, but could be a number in uncommon circumstances. The search will currently _always_ be case insensitive.
+  * `value` - The value to use as the autocomplete pattern. It is typically a string, but it could be a number in uncommon circumstances. The search will currently _always_ be case insensitive.
   * `mode` - _Optional_ - The search mode. Options available are:
     * `contains` - Matches if the field's value contains the specified value.
     * `startswith` - Matches if the field's value starts with the specified value.
@@ -645,7 +644,7 @@ These endpoints currently only support POST requests. Let's look at `/api/v1/awa
   * `matched_objects` - Only exists if `matched_objects` was specified in the request. An object broken up by specified `fields` with matching objects from the autocomplete query stored in arrays.
 
 ### Geographical Hierarchy Queries <a name="geographical-hierarchy-queries"></a>
-This is a special type of autocomplete query which allows users to search for geographical locations in a hierarchy.
+This is a special type of autocomplete query that allows users to search for geographical locations in a hierarchy.
 
 #### Body
 ```
@@ -712,10 +711,10 @@ This is a special type of autocomplete query which allows users to search for ge
   }
 ```
 #### Response Description
-  * `place` - The value of the place. e.g. A country's name, or a county name, etc.
-  * `matched_ids` - An array of `location_id`s that match the given data. This can be used to look up awards, recipients, or other data by requesting these ids.
+  * `place` - The value of the place -- for example, a country name, a county name, etc.
+  * `matched_ids` - An array of `location_id`s that match the given data. You can request these ids to look up awards, recipients, or other data.
   * `place_type` - The type of place. Options are:
-    * `CONGRESSIONAL DISTRICT` - These are searched using the pattern `XX-##` where `XX` designates a state code, and `##` designates the district number. For example, `VA-06` is district `06` in Virginia.
+    * `CONGRESSIONAL DISTRICT` - These are searched using the pattern `XX-##`, where `XX` designates a state code and `##` designates the district number. For example, `VA-06` is district `06` in Virginia.
     * `COUNTRY`
     * `CITY`
     * `COUNTY`
@@ -723,12 +722,12 @@ This is a special type of autocomplete query which allows users to search for ge
     * `ZIP`
     * `POSTAL CODE` - Used for foreign postal codes
     * `PROVINCE`
-  * `parent` - The parent of the object, in a logical hierarchy. The parents for each type are listed below:
+  * `parent` - The parent of the object in a logical hierarchy. The parents for each type are listed below:
     * `CONGRESSIONAL DISTRICT` - Will specify the parent as the state containing the district.
     * `COUNTRY` - Will specify the parent as the country code for reference purposes.
     * `CITY` - Will specify the state the city is in for domestic cities, or the country for foreign cities.
     * `COUNTY` - Will specify the state the the city is in for domestic cities.
     * `STATE` - Will specify the country the state is in.
-    * `ZIP` - Will specify the state the zip code falls in. If a zip code falls in multiple states, two results will be generated.
+    * `ZIP` - Will specify the state the ZIP code falls in. If a ZIP code falls in multiple states, two results will be generated.
     * `POSTAL CODE` - Will specify the country the postal code falls in.
     * `PROVINCE` - Will specify the country the province is in.

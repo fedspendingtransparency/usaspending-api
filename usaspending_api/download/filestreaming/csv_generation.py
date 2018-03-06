@@ -169,18 +169,23 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
                 message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
             time.sleep(60)
 
-        if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT:
-            # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
-            write_to_log(message='Attempting to terminate process (pid {})'.format(psql_process.pid),
-                         download_job=download_job, is_error=True)
-            psql_process.terminate()
+        if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT or psql_process.exitcode != 0:
+            if psql_process.is_alive():
+                # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
+                write_to_log(message='Attempting to terminate process (pid {})'.format(psql_process.pid),
+                             download_job=download_job, is_error=True)
+                psql_process.terminate()
+                e = TimeoutError('Download job lasted longer than {} hours'.format(str(MAX_VISIBILITY_TIMEOUT / 3600)))
+            else:
+                # An error occurred in the PSQL process
+                e = Exception('PSQL command failed. Please see the logs for details.')
 
             # Remove all temp files
             os.close(temp_file)
             os.remove(temp_file_path)
             shutil.rmtree(working_dir)
             zipped_csvs.close()
-            raise TimeoutError('Download job lasted longer than {} hours'.format(str(MAX_VISIBILITY_TIMEOUT/3600)))
+            raise e
 
         # Write it to the zip
         zipped_csvs.write(split_csv_path, split_csv_name)
@@ -273,12 +278,13 @@ def execute_psql(temp_sql_file_path, split_csv_path):
     try:
         # Generate the csv with \copy
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
-        subprocess.call(['psql', '-o', split_csv_path, os.environ['DOWNLOAD_DATABASE_URL']], stdin=cat_command.stdout,
-                        stderr=subprocess.STDOUT)
+        subprocess.check_output(['psql', '-o', split_csv_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
+                                 'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-        # We do not want to raise the error e because it will print the connection string to the logs
-        logger.error('An error occurred running the PSQL command')
-        raise Exception('An error occurred running the PSQL command')
+        # Not logging the command as it can contain the database connection string
+        e.cmd = '[redacted]'
+        logger.error(e)
+        raise e
     except Exception as e:
         logger.error(e)
         raise e

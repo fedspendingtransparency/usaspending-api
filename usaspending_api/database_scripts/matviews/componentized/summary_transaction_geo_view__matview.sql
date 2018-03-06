@@ -7,6 +7,7 @@
 --------------------------------------------------------
 CREATE MATERIALIZED VIEW summary_transaction_geo_view_temp AS
 SELECT
+  MD5(array_to_string(sort(array_agg("transaction_normalized"."id"::int)), ' ')) AS pk,
   cast(date_trunc('month', "transaction_normalized"."action_date") as date) as "action_date",
   "transaction_normalized"."fiscal_year",
   "transaction_normalized"."type",

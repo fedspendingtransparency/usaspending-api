@@ -65,6 +65,7 @@ https://github.com/fedspendingtransparency/usaspending-api/wiki/Search-Filters-v
 ### Errors
 Possible HTTP Status Codes:
 * 400 : Missing parameters or limit is not a valid, positive integer
+* 422 : if the request is technically valid but doesn't conform with all constraints
 * 500 : All other errors
 
 ```
