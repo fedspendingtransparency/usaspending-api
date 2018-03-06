@@ -16,7 +16,6 @@
   </li>
   <li><a href="/docs/using-the-api">Using this API</a></li>
   <li><a href="/docs/endpoints">Endpoints</a></li>
-  <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
 
 </ul>
 
@@ -42,7 +41,7 @@ You do not need to complete this tutorial in its entirety to get started. Feel f
 
 When you type a URL into your browser, it usually returns a web page: a document that your browser knows how to display for you to read. APIs use URLs too, but instead of returning formatted web pages, API URLs return data that is structured so computers can easily parse it. API URLs are called _endpoints_. Just as many pages make up a website, many endpoints make up an API.
 
-The USASpending API supports a number of endpoints. For example `/api/v2/search/spending_by_award/` is our Advanced Award Search endpoint for the Spending by Award table.
+The USAspending API supports a number of endpoints. For example `/api/v2/search/spending_by_award/` is our Advanced Award Search endpoint for the Spending by Award table.
 
 
 #### GET vs POST requests <a name="get-vs-post"></a>

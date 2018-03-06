@@ -11,7 +11,6 @@
   </ul>-->
   </li>
   <li><a href="/docs/endpoints">Endpoints</a></li>
-  <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
 </ul>
 [//]: # (Begin Content)
 

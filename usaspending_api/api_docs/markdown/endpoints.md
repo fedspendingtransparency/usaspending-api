@@ -9,7 +9,6 @@
     <li><a href="#endpoint-index">Endpoint Index</a></li>
   </ul>-->
   </li>
-  <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
 
 </ul>
 

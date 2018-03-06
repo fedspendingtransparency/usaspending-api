@@ -2,7 +2,6 @@
   <li><a href="/docs/intro-tutorial">Introductory Tutorial</a></li>
   <li><a href="/docs/using-the-api">Using this API</a></li>
   <li><a href="/docs/endpoints">Endpoints</a></li>
-  <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
 
 </ul>
 [//]: # (Begin Content)
