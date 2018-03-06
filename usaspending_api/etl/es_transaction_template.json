@@ -77,7 +77,6 @@
         },
         "type_description": {
           "type": "keyword",
-          "null_value": "NULL",
           "fields": {
             "raw": { 
               "type": "text"
@@ -261,6 +260,11 @@
         "recipient_location_congressional_code": {
           "type": "text",
           "index": false
+        },
+        "type": {
+          "type": "text",
+          "fielddata": true,
+          "null_value": "NULL"
         }
       }
     }
