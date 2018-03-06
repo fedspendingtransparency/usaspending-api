@@ -82,7 +82,7 @@
         },
         "award_category": {
           "type": "text",
-          "fielddata": true
+          "index": false
         },
         "recipient_unique_id": {
           "type": "text"
@@ -190,16 +190,11 @@
         },
         "pulled_from": {
           "type": "text",
-          "fielddata": true
+          "index": false
         },
         "type": {
-            "type": "text",
-            "fields": {
-                "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                }
-            }
+          "type": "text",
+          "index": false
         },
 
         "pop_country_code": {
