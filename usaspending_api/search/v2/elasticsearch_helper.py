@@ -120,7 +120,6 @@ def search_transactions(request_data, lower_limit, limit):
     query_fields.extend(['piid', 'fain', 'uri', 'display_award_id'])
     query_sort = TRANSACTIONS_LOOKUP[request_data['sort']]
     types = request_data['award_type_codes']
-    
     for index, award_types in indices_to_award_types.items():
         if sorted(award_types) == sorted(request_data['award_type_codes']):
             index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
