@@ -4,7 +4,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.spending_explorer.v2.filters.type_filter import type_filter
 
 # Limits the amount of results the spending explorer returns
-SPENDING_EXPLORER_LIMIT = 5000
+SPENDING_EXPLORER_LIMIT = 500
 
 
 class SpendingExplorerViewSet(APIView):
@@ -21,6 +21,6 @@ class SpendingExplorerViewSet(APIView):
         filters = json_request.get('filters', None)
 
         # Returned filtered queryset results
-        results = type_filter(_type, filters, limit=SPENDING_EXPLORER_LIMIT)
+        results = type_filter(_type, filters, SPENDING_EXPLORER_LIMIT)
 
         return Response(results)

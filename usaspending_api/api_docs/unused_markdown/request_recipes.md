@@ -2,7 +2,6 @@
   <li><a href="/docs/intro-tutorial">Introductory Tutorial</a></li>
   <li><a href="/docs/using-the-api">Using this API</a></li>
   <li><a href="/docs/endpoints">Endpoints</a></li>
-  <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
   <li><a href="/docs/recipes">Request Recipes</a>
   <!--<ul>
     <li><a href="#award-recipes">Award Recipes</a></li>
