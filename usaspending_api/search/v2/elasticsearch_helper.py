@@ -33,9 +33,10 @@ def format_for_frontend(response):
     response = [result['_source'] for result in response]
     return [swap_keys(result) for result in response]
 
+
 def search_transactions_contracts_query(query_fields, lower_limit, limit, keyword, types, query_sort, request_data):
     query = {
-        	"_source": query_fields,
+            "_source": query_fields,
             "from": lower_limit,
             "size": limit,
             "query": {
@@ -43,9 +44,7 @@ def search_transactions_contracts_query(query_fields, lower_limit, limit, keywor
                     "must": [
                         {
                             "query_string": {
-                                "query": preprocess(keyword)
-                            }
-        				},
+                                "query": preprocess(keyword)}},
                         {
                             "bool": {
                                 "should": [
@@ -80,6 +79,7 @@ def search_transactions_contracts_query(query_fields, lower_limit, limit, keywor
         }
     return query
 
+
 def search_transactions(request_data, lower_limit, limit):
     '''
     filters: dictionary
@@ -90,7 +90,6 @@ def search_transactions(request_data, lower_limit, limit):
     limit: integer
 
     if transaction_type_code not found, return results for contracts
-    
     the two queries below are for contracts and all other award types.
     '''
     keyword = request_data['keyword']
@@ -101,15 +100,16 @@ def search_transactions(request_data, lower_limit, limit):
 
     for index, award_types in indices_to_award_types.items():
         if sorted(award_types) == sorted(request_data['award_type_codes']):
-            #index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
-            index_name = "mega_index"
+            index_name = '{}*'.format(TRANSACTIONS_INDEX_ROOT)
             break
     else:
         logger.exception('Bad/Missing Award Types. Did not meet 100% of a category\'s types')
         return False, 'Bad/Missing Award Types requested', None
-    
-    if any(x in types for x in ["A","B","C","D"]):
-        query = search_transactions_contracts_query(query_fields, lower_limit, limit, keyword, types, query_sort, request_data)
+    if any(x in types for x in ["A", "B", "C", "D"]):
+        query = search_transactions_contracts_query(query_fields,
+                                                    lower_limit, limit,
+                                                    keyword, types,
+                                                    query_sort, request_data)
     else:
         query = {
                     "_source": query_fields,
