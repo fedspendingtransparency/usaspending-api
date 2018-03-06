@@ -17,11 +17,13 @@ from usaspending_api.awards.models_matviews import UniversalAwardView
 from usaspending_api.awards.models_matviews import UniversalTransactionView
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter
+from usaspending_api.awards.v2.filters.filter_helpers import sum_transaction_amount
 from usaspending_api.awards.v2.filters.view_selector import can_use_view
 from usaspending_api.awards.v2.filters.view_selector import get_view_queryset
 from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
 from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
 from usaspending_api.awards.v2.filters.view_selector import spending_over_time
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.awards.v2.lookups.lookups import non_loan_assistance_type_mapping
@@ -45,7 +47,10 @@ logger = logging.getLogger(__name__)
 
 
 class SpendingOverTimeVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters, and returns spending by time. The amount of time is denoted by the "group" value.
+    endpoint_doc: /advanced_award_search/spending_over_time.md
+    """
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -62,9 +67,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             raise InvalidParameterException('group does not have a valid value')
 
         queryset = spending_over_time(filters)
+        filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
 
         # define what values are needed in the sql query
-        queryset = queryset.values('action_date', 'federal_action_obligation')
+        queryset = queryset.values('action_date', 'federal_action_obligation', 'original_loan_subsidy_cost')
 
         # build response
         response = {'group': group, 'results': []}
@@ -74,19 +80,18 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         if group == 'fy' or group == 'fiscal_year':
 
-            fy_set = queryset.values('fiscal_year')\
-                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+            fy_set = sum_transaction_amount(queryset.values('fiscal_year'), filter_types=filter_types)
 
             for trans in fy_set:
                 key = {'fiscal_year': str(trans['fiscal_year'])}
                 key = str(key)
-                group_results[key] = trans['federal_action_obligation']
+                group_results[key] = trans['transaction_amount']
 
         elif group == 'm' or group == 'month':
 
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
-                .values('fiscal_year', 'month') \
-                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+                .values('fiscal_year', 'month')
+            month_set = sum_transaction_amount(month_set, filter_types=filter_types)
 
             for trans in month_set:
                 # Convert month to fiscal month
@@ -94,13 +99,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
                 key = {'fiscal_year': str(trans['fiscal_year']), 'month': str(fiscal_month)}
                 key = str(key)
-                group_results[key] = trans['federal_action_obligation']
+                group_results[key] = trans['transaction_amount']
             nested_order = 'month'
         else:  # quarterly, take months and add them up
 
             month_set = queryset.annotate(month=ExtractMonth('action_date')) \
-                .values('fiscal_year', 'month') \
-                .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+                .values('fiscal_year', 'month')
+            month_set = sum_transaction_amount(month_set, filter_types=filter_types)
 
             for trans in month_set:
                 # Convert month to quarter
@@ -111,10 +116,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
                 # If key exists {fy : quarter}, aggregate
                 if group_results.get(key) is None:
-                    group_results[key] = trans['federal_action_obligation']
+                    group_results[key] = trans['transaction_amount']
                 else:
-                    if trans['federal_action_obligation']:
-                        group_results[key] = group_results.get(key) + trans['federal_action_obligation']
+                    if trans['transaction_amount']:
+                        group_results[key] = group_results.get(key) + trans['transaction_amount']
                     else:
                         group_results[key] = group_results.get(key)
             nested_order = 'quarter'
@@ -142,7 +147,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
 
 class SpendingByCategoryVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters, and returns spending by the defined category/scope.
+    The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
+    endpoint_doc: /advanced_award_search/spending_by_category.md
+    """
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -171,6 +180,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         # filter queryset
         queryset = matview_search_filter(filters, UniversalTransactionView)
 
+        filter_types = filters['award_type_codes'] if 'award_type_codes' in filters else award_type_mapping
+
         # filter the transactions by category
         if category == "awarding_agency":
             potential_scopes = ["agency", "subagency"]
@@ -182,22 +193,22 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .filter(awarding_toptier_agency_name__isnull=False) \
                     .values(
                         agency_name=F('awarding_toptier_agency_name'),
-                        agency_abbreviation=F('awarding_toptier_agency_abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                    .order_by('-aggregated_amount')
+                        agency_abbreviation=F('awarding_toptier_agency_abbreviation'))
+
             elif scope == "subagency":
                 queryset = queryset \
                     .filter(
                         awarding_subtier_agency_name__isnull=False) \
                     .values(
                         agency_name=F('awarding_subtier_agency_name'),
-                        agency_abbreviation=F('awarding_subtier_agency_abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
-                    .order_by('-aggregated_amount')
+                        agency_abbreviation=F('awarding_subtier_agency_abbreviation'))
+
             elif scope == "office":
                     # NOT IMPLEMENTED IN UI
                     raise NotImplementedError
 
+            queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types)\
+                .order_by('-aggregated_amount')
             results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -217,22 +228,22 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .filter(funding_toptier_agency_name__isnull=False) \
                     .values(
                         agency_name=F('funding_toptier_agency_name'),
-                        agency_abbreviation=F('funding_toptier_agency_abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                    .order_by('-aggregated_amount')
+                        agency_abbreviation=F('funding_toptier_agency_abbreviation'))
+
             elif scope == "subagency":
                 queryset = queryset \
                     .filter(
                         funding_subtier_agency_name__isnull=False) \
                     .values(
                         agency_name=F('funding_subtier_agency_name'),
-                        agency_abbreviation=F('funding_subtier_agency_abbreviation')) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation'))\
-                    .order_by('-aggregated_amount')
+                        agency_abbreviation=F('funding_subtier_agency_abbreviation'))
+
             elif scope == "office":
                 # NOT IMPLEMENTED IN UI
                 raise NotImplementedError
 
+            queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
+                .order_by('-aggregated_amount')
             results = list(queryset[lower_limit:upper_limit + 1])
 
             page_metadata = get_simple_pagination_metadata(len(results), limit, page)
@@ -245,8 +256,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif category == "recipient":
             if scope == "duns":
                 queryset = queryset \
-                    .values(legal_entity_id=F("recipient_id")) \
-                    .annotate(aggregated_amount=Sum("federal_action_obligation")) \
+                    .values(legal_entity_id=F("recipient_id"))
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
+                    .order_by('-aggregated_amount') \
                     .values("aggregated_amount", "legal_entity_id", "recipient_name") \
                     .order_by("-aggregated_amount")
 
@@ -258,8 +270,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
             elif scope == "parent_duns":
                 queryset = queryset \
-                    .filter(parent_recipient_unique_id__isnull=False) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .filter(parent_recipient_unique_id__isnull=False)
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types,
+                                                  calculate_totals=False) \
                     .values(
                         'aggregated_amount',
                         'recipient_name',
@@ -285,8 +298,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     .filter(
                         federal_action_obligation__isnull=False,
                         cfda_number__isnull=False) \
-                    .values(cfda_program_number=F("cfda_number")) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values(cfda_program_number=F("cfda_number"))
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
                     .values(
                         "aggregated_amount",
                         "cfda_program_number",
@@ -313,8 +326,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 queryset = queryset \
                     .filter(
                         cfda_number__isnull=False) \
-                    .values(cfda_program_number=F("cfda_number")) \
-                    .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                    .values(cfda_program_number=F("cfda_number"))
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
                     .values(
                         "aggregated_amount",
                         "cfda_program_number",
@@ -336,16 +349,14 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                     queryset = get_view_queryset(filters, 'SummaryPscCodesView')
                     queryset = queryset \
                         .filter(product_or_service_code__isnull=False) \
-                        .values(psc_code=F("product_or_service_code")) \
-                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                        .order_by('-aggregated_amount')
+                        .values(psc_code=F("product_or_service_code"))
                 else:
                     queryset = queryset \
                         .filter(psc_code__isnull=False) \
-                        .values("psc_code") \
-                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
-                        .order_by('-aggregated_amount')
+                        .values("psc_code")
 
+                queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
+                    .order_by('-aggregated_amount')
                 # Begin DB hits here
                 results = list(queryset[lower_limit:upper_limit + 1])
 
@@ -360,9 +371,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 if can_use_view(filters, 'SummaryNaicsCodesView'):
                     queryset = get_view_queryset(filters, 'SummaryNaicsCodesView')
                     queryset = queryset \
-                        .filter(naics__isnull=False) \
-                        .values('naics_code') \
-                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .filter(naics_code__isnull=False) \
+                        .values('naics_code')
+                    queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
                         .order_by('-aggregated_amount') \
                         .values(
                             'naics_code',
@@ -371,8 +382,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
                 else:
                     queryset = queryset \
                         .filter(naics_code__isnull=False) \
-                        .values("naics_code") \
-                        .annotate(aggregated_amount=Sum('federal_action_obligation')) \
+                        .values("naics_code")
+                    queryset = sum_transaction_amount(queryset, 'aggregated_amount', filter_types=filter_types) \
                         .order_by('-aggregated_amount') \
                         .values(
                             'naics_code',
@@ -394,6 +405,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):
+    """
+        This route takes award filters, and returns spending by state code, county code, or congressional district code.
+        endpoint_doc: /advanced award search/spending_by_geography.md
+    """
     geo_layer = None  # State, county or District
     geo_layer_filters = None  # Specific geo_layers to filter on
     queryset = None  # Transaction queryset
@@ -510,15 +525,16 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             filter_args['{}__isnull'.format(loc_lookup)] = False
 
         self.geo_queryset = self.queryset.filter(**filter_args) \
-            .values(*lookup_fields) \
-            .annotate(federal_action_obligation=Sum('federal_action_obligation'))
+            .values(*lookup_fields)
+        filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
+        self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types)
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
         results = [
             {
                 'shape_code': x[loc_lookup],
-                'aggregated_amount': x['federal_action_obligation'],
+                'aggregated_amount': x['transaction_amount'],
                 'display_name': code_to_state.get(x[loc_lookup], {'name': 'None'}).get('name').title()
             } for x in self.geo_queryset
         ]
@@ -546,10 +562,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Codes in location table ex: '01', '1', '1.0'
         # Cast will group codes as a float and will combine inconsistent codes
         self.geo_queryset = self.queryset.filter(**kwargs) \
-            .values(*fields_list) \
-            .annotate(federal_action_obligation=Sum('federal_action_obligation'),
-                      code_as_float=Cast(loc_lookup, FloatField())
-                      )
+            .values(*fields_list)
+        self.geo_queryset = self.geo_queryset.annotate(code_as_float=Cast(loc_lookup, FloatField()))
+        filter_types = self.filters['award_type_codes'] if 'award_type_codes' in self.filters else award_type_mapping
+        self.geo_queryset = sum_transaction_amount(self.geo_queryset, filter_types=filter_types)
 
         return self.geo_queryset
 
@@ -559,7 +575,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             {
                 'shape_code': code_to_state.get(x[state_lookup])['fips'] +
                 pad_codes(self.geo_layer, x['code_as_float']),
-                'aggregated_amount': x['federal_action_obligation'],
+                'aggregated_amount': x['transaction_amount'],
                 'display_name': x[county_name].title() if x[county_name] is not None
                 else x[county_name]
             }
@@ -574,7 +590,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             {
                 'shape_code': code_to_state.get(x[state_lookup])['fips'] +
                 pad_codes(self.geo_layer, x['code_as_float']),
-                'aggregated_amount': x['federal_action_obligation'],
+                'aggregated_amount': x['transaction_amount'],
                 'display_name': x[state_lookup] + '-' +
                 pad_codes(self.geo_layer, x['code_as_float'])
             } for x in self.geo_queryset
@@ -584,7 +600,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
 
 class SpendingByAwardVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters and fields, and returns the fields of the filtered awards.
+    endpoint_doc: /advanced_award_search/spending_by_award.md
+    """
     @total_ordering
     class MinType(object):
         def __le__(self, other):
@@ -637,7 +656,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 values.add(non_loan_assistance_award_mapping.get(field))
 
         # Modify queryset to be ordered if we specify "sort" in the request
-        if sort:
+        if sort and "no intersection" not in filters["award_type_codes"]:
             if set(filters["award_type_codes"]) <= set(contract_type_mapping):
                 sort_filters = [award_contracts_mapping[sort]]
             elif set(filters["award_type_codes"]) <= set(loan_type_mapping):  # loans
@@ -689,6 +708,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
 
 class SpendingByAwardCountVisualizationViewSet(APIView):
+    """
+    This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Grants, etc.)
+        endpoint_doc: /advanced_award_search/spending_by_award_count.md
+    """
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -734,7 +757,10 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
 
 class SpendingByTransactionVisualizationViewSet(APIView):
-
+    """
+    This route takes keyword search fields, and returns the fields of the searched term.
+        endpoint_doc: /advanced_award_search/spending_by_transaction.md
+    """
     @total_ordering
     class MinType(object):
         def __le__(self, other):
@@ -788,7 +814,10 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
 
 class TransactionSummaryVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters, and returns the number of transactions and summation of federal action obligations.
+        endpoint_doc: /advanced_award_search/transaction_spending_summary.md
+    """
     @cache_response()
     def post(self, request):
         """
@@ -810,7 +839,11 @@ class TransactionSummaryVisualizationViewSet(APIView):
 
 
 class SpendingByTransactionCountVisualizaitonViewSet(APIView):
+    """
+    This route takes keyword search fields, and returns the fields of the searched term.
+        endpoint_doc: /advanced_award_search/spending_by_transaction_count.md
 
+    """
     @cache_response()
     def post(self, request):
 

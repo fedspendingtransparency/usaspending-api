@@ -24,6 +24,8 @@ class DownloadJob(models.Model):
     error_message = models.TextField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    monthly_download = models.BooleanField(default=False)
+    json_request = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = True

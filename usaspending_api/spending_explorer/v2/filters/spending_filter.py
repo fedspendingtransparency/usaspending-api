@@ -1,6 +1,5 @@
 import logging
 
-from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
@@ -56,7 +55,7 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # recipient
             elif key == 'recipient':
-                and_alt_set = alt_set.filter(award__recipient_id=value)
+                and_alt_set = alt_set.filter(award__recipient__recipient_name=value)
                 alt_set &= and_alt_set
 
             # award, award_category
@@ -113,9 +112,7 @@ def spending_filter(alt_set, queryset, filters, _type):
             # recipient
             elif key == 'recipient':
                 and_queryset = queryset.\
-                    filter(treasury_account__in=alt_set.
-                           filter(award__in=Award.objects.all().
-                                  filter(recipient_id=value)).
+                    filter(treasury_account__in=alt_set.filter(award__recipient__recipient_name=value).
                            values_list('treasury_account_id', flat=True))
                 queryset &= and_queryset
 

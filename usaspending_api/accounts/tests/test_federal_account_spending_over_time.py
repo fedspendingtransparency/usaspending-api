@@ -169,6 +169,7 @@ fy2016_payload = {
 }
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_federal_account_spending_over_time(client, financial_spending_data):
     """Test grouping over time"""
