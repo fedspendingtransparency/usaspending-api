@@ -285,3 +285,6 @@ def execute_psql(temp_sql_file_path, split_csv_path):
         e.cmd = '[redacted]'
         logger.error(e)
         raise e
+    except Exception as e:
+        logger.error(e)
+        raise e
