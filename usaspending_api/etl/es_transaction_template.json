@@ -85,8 +85,7 @@
         },
         "award_category": {
           "type": "text",
-          "feilddata": true,
-          "null_value": "NULL" 
+          "index": false
         },
         "recipient_unique_id": {
           "type": "text"
@@ -260,10 +259,6 @@
         "recipient_location_congressional_code": {
           "type": "text",
           "index": false
-        },
-        "type": {
-          "type": "keyword",
-          "null_value": "NULL"
         }
       }
     }
