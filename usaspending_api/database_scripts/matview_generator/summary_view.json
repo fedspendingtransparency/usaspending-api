@@ -1,7 +1,9 @@
 {
   "final_name": "summary_view",
+  "refresh": true,
   "matview_sql": [
     "SELECT",
+    "  MD5(array_to_string(sort(array_agg(\"transaction_normalized\".\"id\"::int)), ' ')) AS pk,",
     "  \"transaction_normalized\".\"action_date\",",
     "  \"transaction_normalized\".\"fiscal_year\",",
     "  \"awards\".\"type\",",
@@ -60,6 +62,10 @@
   ],
   "indexes": [
     {
+      "name": "unique_pk",
+      "unique": true,
+      "columns": [{"name": "\"pk\""}]
+    }, {
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {
@@ -96,10 +102,6 @@
       "name": "funding_subtier_agency_name",
       "where": "\"funding_subtier_agency_name\" IS NOT NULL",
       "columns": [{"name": "\"funding_subtier_agency_name\""}]
-    }, {
-      "name": "tuned_type_and_idv",
-      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
-      "columns": [{"name": "\"type\""}, {"name": "\"pulled_from\""}]
-     }
+    }
   ]
 }
