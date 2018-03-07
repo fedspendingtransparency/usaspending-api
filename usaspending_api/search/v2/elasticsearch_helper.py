@@ -46,7 +46,7 @@ def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
                         }
                     },
                     {
-                      "multi_match": {
+                      "query_string": {
                             "query": keyword,
                             "fields": fields
                         }
@@ -70,7 +70,7 @@ def search_transactions(request_data, lower_limit, limit):
     '''
     keyword = request_data['keyword']
     query_fields = [TRANSACTIONS_LOOKUP[i] for i in request_data['fields']]
-    query_fields.extend(['piid', 'fain', 'uri', 'display_award_id'])
+    query_fields.extend(['award_id'])
     query_sort = TRANSACTIONS_LOOKUP[request_data['sort']]
     query = {
         '_source': query_fields,
