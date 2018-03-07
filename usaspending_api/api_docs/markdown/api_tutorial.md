@@ -14,7 +14,6 @@
     <li><a href="#other">Other Information</a></li>
   </ul>-->
   </li>
-  <li><a href="/docs/using-the-api">Using this API</a></li>
   <li><a href="/docs/endpoints">Endpoints</a></li>
 
 </ul>
