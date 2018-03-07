@@ -183,7 +183,7 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job):
         log_time = time.time()
         split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
                                output_name_template='{}_%s.csv'.format(source_name))
-        write_to_log(message='Splitting csvs took {} seconds'.format(log_time), download_job=download_job)
+        write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - log_time), download_job=download_job)
 
         # Zip the split CSVs into one zipfile
         log_time = time.time()
@@ -191,7 +191,8 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job):
         for split_csv_part in split_csvs:
             zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
         zipped_csvs.close()
-        write_to_log(message='Writing to zipfile took {} seconds'.format(log_time), download_job=download_job)
+        write_to_log(message='Writing to zipfile took {} seconds'.format(time.time() - log_time),
+                     download_job=download_job)
     except Exception as e:
         logger.error(e)
         raise e
@@ -290,7 +291,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
 
-        write_to_log(message='Wrote {}, took {} seconds'.format(os.path.basename(source_path), log_time),
+        write_to_log(message='Wrote {}, took {} seconds'.format(os.path.basename(source_path), time.time() - log_time),
                      download_job=download_job)
     except subprocess.CalledProcessError as e:
         # Not logging the command as it can contain the database connection string
