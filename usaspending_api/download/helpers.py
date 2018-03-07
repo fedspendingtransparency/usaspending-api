@@ -1,4 +1,5 @@
 import boto
+import csv
 import logging
 import math
 import mimetypes
@@ -15,20 +16,25 @@ from usaspending_api.common.exceptions import InvalidParameterException
 logger = logging.getLogger('console')
 
 
-def check_types_and_assign_defaults(request_dict, defaults_dict):
+def check_types_and_assign_defaults(old_dict, new_dict, defaults_dict):
+    """Validates the types of the old_dict, and assigns them to the new_dict"""
     for field in defaults_dict.keys():
-        request_dict[field] = request_dict.get(field, defaults_dict[field])
+        # Set the new value to the old value, or the default if it doesn't exist
+        new_dict[field] = old_dict.get(field, defaults_dict[field])
+
         # Validate the field's data type
-        if not isinstance(request_dict[field], type(defaults_dict[field])):
+        if not isinstance(new_dict[field], type(defaults_dict[field])):
             type_name = type(defaults_dict[field]).__name__
             raise InvalidParameterException('{} parameter not provided as a {}'.format(field, type_name))
+
         # Remove empty filters
-        if request_dict[field] == defaults_dict[field]:
-            del(request_dict[field])
+        if new_dict[field] == defaults_dict[field]:
+            del(new_dict[field])
 
 
 def parse_limit(json_request):
-    """Extracts the `limit` from a request and validates"""
+    """Validates the limit from a json_request
+    Returns the limit as an int"""
     limit = json_request.get('limit')
     if limit:
         try:
@@ -43,7 +49,9 @@ def parse_limit(json_request):
     return limit   # None is a workable slice argument
 
 
-def validate_time_periods(filters):
+def validate_time_periods(filters, new_request):
+    """Validates passed time_period filters, or assigns the default values.
+    Returns the number of days selected by the user"""
     default_date_values = {
         'start_date': '1000-01-01',
         'end_date': datetime.strftime(datetime.utcnow(), '%Y-%m-%d'),
@@ -53,9 +61,10 @@ def validate_time_periods(filters):
     # Enforcing that time_period always has content
     if len(filters.get('time_period', [])) == 0:
         filters['time_period'] = [default_date_values]
+    new_request['filters']['time_period'] = filters['time_period']
 
     total_range_count = 0
-    for date_range in filters['time_period']:
+    for date_range in new_request['filters']['time_period']:
         # Empty strings, Nones, or missing keys should be replaced with the default values
         for key in default_date_values:
             date_range[key] = date_range.get(key, default_date_values[key])
@@ -75,7 +84,7 @@ def validate_time_periods(filters):
         # Validate and derive date type
         if date_range['date_type'] not in ['action_date', 'last_modified_date']:
             raise InvalidParameterException(
-                'Invalid parameter within time_period\'s date_type: {}'.format(filters['date_type']))
+                'Invalid parameter within time_period\'s date_type: {}'.format(date_range['date_type']))
 
     return total_range_count
 
@@ -150,6 +159,7 @@ def _upload_part(bucketname, regionname, multipart_id, part_num, source_path, of
 
 
 def write_to_download_log(message, download_job=None, is_debug=False, is_error=False, other_params={}):
+    """Handles logging for the downloader instance"""
     if settings.IS_LOCAL:
         log_dict = message
     else:
@@ -175,3 +185,48 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
         logger.debug(log_dict)
     else:
         logger.info(log_dict)
+
+
+# Split csv function mostly copied from Jordi Rivero's solution
+# https://gist.github.com/jrivero/1085501
+def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='output_%s.csv', output_path='.',
+              keep_headers=True):
+    """Splits a CSV file into multiple pieces.
+
+    A quick bastardization of the Python CSV library.
+    Arguments:
+        `row_limit`: The number of rows you want in each output file. 10,000 by default.
+        `output_name_template`: A %s-style template for the numbered output files.
+        `output_path`: Where to stick the output files.
+        `keep_headers`: Whether or not to print the headers in each output file.
+    Example usage:
+        >> from toolbox import csv_splitter;
+        >> csv_splitter.split('/home/ben/input.csv');
+    """
+    split_csvs = []
+    reader = csv.reader(open(file_path, 'r'), delimiter=delimiter)
+    current_piece = 1
+    current_out_path = os.path.join(
+        output_path,
+        output_name_template % current_piece
+    )
+    split_csvs.append(current_out_path)
+    current_out_writer = csv.writer(open(current_out_path, 'w'), delimiter=delimiter)
+    current_limit = row_limit
+    if keep_headers:
+        headers = next(reader)
+        current_out_writer.writerow(headers)
+    for i, row in enumerate(reader):
+        if i + 1 > current_limit:
+            current_piece += 1
+            current_limit = row_limit * current_piece
+            current_out_path = os.path.join(
+                output_path,
+                output_name_template % current_piece
+            )
+            split_csvs.append(current_out_path)
+            current_out_writer = csv.writer(open(current_out_path, 'w'), delimiter=delimiter)
+            if keep_headers:
+                current_out_writer.writerow(headers)
+        current_out_writer.writerow(row)
+    return split_csvs
