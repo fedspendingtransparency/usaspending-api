@@ -45,7 +45,7 @@ class BaseDownloadViewSet(APIView):
         cached_download = DownloadJob.objects.filter(
             json_request=ordered_json_request,
             update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
-        if cached_download:
+        if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
             cached_filename = cached_download[0]['file_name']
             return self.get_download_response(file_name=cached_filename)
@@ -64,43 +64,46 @@ class BaseDownloadViewSet(APIView):
 
         return self.get_download_response(file_name=timestamped_file_name)
 
-    def validate_request(self, json_request):
+    def validate_request(self, request_data):
         """Analyze request and raise any formatting errors as Exceptions"""
-        constraint_type = json_request.get('constraint_type', None)
+        json_request = {}
+        constraint_type = request_data.get('constraint_type', None)
 
         # Overriding all other filters if the keyword filter is provided in year-constraint download
-        if constraint_type == 'year' and 'elasticsearch_keyword' in json_request['filters']:
-            json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword'],
+        if constraint_type == 'year' and 'elasticsearch_keyword' in request_data['filters']:
+            request_data['filters'] = {'elasticsearch_keyword': request_data['filters']['elasticsearch_keyword'],
                                        'award_type_codes': list(award_type_mapping.keys())}
-            json_request['limit'] = settings.MAX_DOWNLOAD_LIMIT
-            return json_request
+            request_data['limit'] = settings.MAX_DOWNLOAD_LIMIT
+            return request_data
 
         # Validate required parameters
         for required_param in ['award_levels', 'filters']:
-            if required_param not in json_request:
+            if required_param not in request_data:
                 raise InvalidParameterException(
                     'Missing one or more required query parameters: {}'.format(required_param))
 
-        if not isinstance(json_request['award_levels'], list):
+        if not isinstance(request_data['award_levels'], list):
             raise InvalidParameterException('Award levels parameter not provided as a list')
-        elif len(json_request['award_levels']) == 0:
+        elif len(request_data['award_levels']) == 0:
             raise InvalidParameterException('At least one award level is required.')
-        for award_level in json_request['award_levels']:
+        for award_level in request_data['award_levels']:
             if award_level not in VALUE_MAPPINGS:
                 raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
+        json_request['award_levels'] = request_data['award_levels']
 
-        if not isinstance(json_request['filters'], dict):
+        if not isinstance(request_data['filters'], dict):
             raise InvalidParameterException('Filters parameter not provided as a dict')
-        elif len(json_request['filters']) == 0:
+        elif len(request_data['filters']) == 0:
             raise InvalidParameterException('At least one filter is required.')
+        json_request['filters'] = {}
 
         # Set defaults of non-required parameters
-        json_request['columns'] = json_request.get('columns', [])
-        json_request['file_format'] = json_request.get('file_format', 'csv')
+        json_request['columns'] = request_data.get('columns', [])
+        json_request['file_format'] = request_data.get('file_format', 'csv')
 
         # Validate shared filter types and assign defaults
-        filters = json_request['filters']
-        check_types_and_assign_defaults(filters, SHARED_FILTER_DEFAULTS)
+        filters = request_data['filters']
+        check_types_and_assign_defaults(filters, json_request['filters'], SHARED_FILTER_DEFAULTS)
 
         # Validate award type types
         if not filters.get('award_type_codes', None) or len(filters['award_type_codes']) < 1:
@@ -108,23 +111,24 @@ class BaseDownloadViewSet(APIView):
         for award_type_code in filters['award_type_codes']:
             if award_type_code not in award_type_mapping:
                 raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
+        json_request['filters']['award_type_codes'] = filters['award_type_codes']
 
         # Validate time periods
-        total_range_count = validate_time_periods(filters)
+        total_range_count = validate_time_periods(filters, json_request)
 
         if constraint_type == 'row_count':
             # Validate limit exists and is below MAX_DOWNLOAD_LIMIT
-            json_request['limit'] = parse_limit(json_request)
+            json_request['limit'] = parse_limit(request_data)
 
             # Validate row_count-constrainted filter types and assign defaults
-            check_types_and_assign_defaults(filters, ROW_CONSTRAINT_FILTER_DEFAULTS)
+            check_types_and_assign_defaults(filters, json_request['filters'], ROW_CONSTRAINT_FILTER_DEFAULTS)
         elif constraint_type == 'year':
             # Validate combined total dates within one year (allow for leap years)
             if total_range_count > 366:
                 raise InvalidParameterException('Invalid Parameter: time_period total days must be within a year')
 
             # Validate year-constrainted filter types and assign defaults
-            check_types_and_assign_defaults(filters, YEAR_CONSTRAINT_FILTER_DEFAULTS)
+            check_types_and_assign_defaults(filters, json_request['filters'], YEAR_CONSTRAINT_FILTER_DEFAULTS)
         else:
             raise InvalidParameterException('Invalid parameter: constraint_type must be "row_count" or "year"')
 
@@ -242,6 +246,8 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
                 if filters['sub_agency']:
                     filters['agencies'].append({'type': 'awarding', 'tier': 'subtier', 'name': filters['sub_agency']})
                 del filters['sub_agency']
+        elif 'sub_agency' in filters:
+            del filters['sub_agency']
         del filters['agency']
 
         request_data['filters'] = filters

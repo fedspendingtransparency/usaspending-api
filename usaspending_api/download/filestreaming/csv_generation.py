@@ -14,7 +14,7 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping
 from usaspending_api.common.helpers import generate_raw_quoted_query
-from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload,
+from usaspending_api.download.helpers import (verify_requested_columns_available, multipart_upload, split_csv,
                                               write_to_download_log as write_to_log)
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
 from usaspending_api.download.v2 import download_column_historical_lookups
@@ -147,61 +147,60 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
     d_map = {'d1': 'contracts', 'd2': 'assistance'}
     source_name = '{}_{}'.format(d_map[source.file_type], VALUE_MAPPINGS[source.source_type]['download_name'])
     source_query = source.row_emitter(columns)
+    source_path = os.path.join(working_dir, '{}.csv'.format(source_name))
 
-    reached_end = False
-    split_csv = 1
-    while not reached_end:
-        start_split_writing = time.time()
-        split_csv_name = '{}_{}.csv'.format(source_name, split_csv)
-        split_csv_path = os.path.join(working_dir, split_csv_name)
+    # Generate the query file; values, limits, dates fixed
+    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job)
 
-        # Generate the query file; values, limits, dates fixed
-        temp_file, temp_file_path = generate_temp_query_file(split_csv, source_query, limit, source, download_job)
+    start_time = time.time()
 
-        # Run the PSQL command as a separate Process
-        psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, split_csv_path,))
-        psql_process.start()
+    # Run the PSQL command as a separate Process
+    psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path,))
+    psql_process.start()
 
-        # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of
-        # DOWNLOAD_VISIBILITY_TIMEOUT
-        while psql_process.is_alive() and (time.time() - start_time) < MAX_VISIBILITY_TIMEOUT:
-            if message:
-                message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
-            time.sleep(60)
+    # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of
+    # DOWNLOAD_VISIBILITY_TIMEOUT
+    while psql_process.is_alive() and (time.time() - start_time) < MAX_VISIBILITY_TIMEOUT:
+        if message:
+            message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
+        time.sleep(60)
 
-        if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT or psql_process.exitcode != 0:
-            if psql_process.is_alive():
-                # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
-                write_to_log(message='Attempting to terminate process (pid {})'.format(psql_process.pid),
-                             download_job=download_job, is_error=True)
-                psql_process.terminate()
-                e = TimeoutError('Download job lasted longer than {} hours'.format(str(MAX_VISIBILITY_TIMEOUT / 3600)))
-            else:
-                # An error occurred in the PSQL process
-                e = Exception('PSQL command failed. Please see the logs for details.')
+    if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT or psql_process.exitcode != 0:
+        if psql_process.is_alive():
+            # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
+            write_to_log(message='Attempting to terminate process (pid {})'.format(psql_process.pid),
+                         download_job=download_job, is_error=True)
+            psql_process.terminate()
+            e = TimeoutError('Download job lasted longer than {} hours'.format(str(MAX_VISIBILITY_TIMEOUT / 3600)))
+        else:
+            # An error occurred in the PSQL process
+            e = Exception('PSQL command failed. Please see the logs for details.')
 
-            # Remove all temp files
-            os.close(temp_file)
-            os.remove(temp_file_path)
-            shutil.rmtree(working_dir)
-            zipped_csvs.close()
-            raise e
-
-        # Write it to the zip
-        zipped_csvs.write(split_csv_path, split_csv_name)
-        write_to_log(message='Wrote {}, took {} seconds'.format(split_csv_name, time.time() - start_split_writing),
-                     download_job=download_job)
-
-        # Remove temporary files
+        # Remove all temp files
         os.close(temp_file)
         os.remove(temp_file_path)
+        shutil.rmtree(working_dir)
+        zipped_csvs.close()
+        raise e
 
-        last_count = len(open(split_csv_path).readlines())
-        if last_count <= EXCEL_ROW_LIMIT:
-            download_job.number_of_rows += EXCEL_ROW_LIMIT * (split_csv - 1) + last_count - 1
-            reached_end = True
-        else:
-            split_csv += 1
+    write_to_log(message='Wrote {}, took {} seconds'.format(source_name, time.time() - start_time),
+                 download_job=download_job)
+
+    # Split csv into smaller csvs
+    start_time = time.time()
+    split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_name_template='{}_%s.csv'.format(source_name),
+                           output_path=working_dir)
+    write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - start_time), download_job=download_job)
+
+    # Write it to the zip
+    start_time = time.time()
+    for split_csv_part in split_csvs:
+        zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
+    write_to_log(message='Creating zipfile took {} seconds'.format(time.time() - start_time), download_job=download_job)
+
+    # Remove temporary files
+    os.close(temp_file)
+    os.remove(temp_file_path)
 
 
 def start_download(download_job):
@@ -228,10 +227,10 @@ def finish_download(download_job):
     return download_job.file_name
 
 
-def generate_temp_query_file(split_csv, source_query, limit, source, download_job):
-    csv_limit = split_csv * EXCEL_ROW_LIMIT
-    csv_query_split = source_query[csv_limit - EXCEL_ROW_LIMIT:csv_limit if (not limit or csv_limit < limit) else limit]
-    csv_query_raw = generate_raw_quoted_query(csv_query_split)
+def generate_temp_query_file(source_query, limit, source, download_job):
+    if limit:
+        source_query = source_query[limit]
+    csv_query_raw = generate_raw_quoted_query(source_query)
     csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
 
     write_to_log(message='Creating PSQL Query: {}'.format(csv_query_annotated), download_job=download_job,
