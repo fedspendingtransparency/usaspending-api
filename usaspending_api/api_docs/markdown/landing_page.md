@@ -1,16 +1,12 @@
 <ul class="nav nav-stacked" id="sidebar">
   <li><a href="/docs/intro-tutorial">Introductory Tutorial</a></li>
-  <li><a href="/docs/using-the-api">Using this API</a></li>
   <li><a href="/docs/endpoints">Endpoints</a></li>
-  <li><a href="/docs/data-dictionary">Data Dictionary</a></li>
-  <li><a href="/docs/recipes">Request Recipes</a></li>
 
 </ul>
 [//]: # (Begin Content)
 
-###### Coming soon!
-We're working on new USASpending API documentation, please check back for its release.
-Until then, visit our GitHub wiki for our current documentation: https://github.com/fedspendingtransparency/usaspending-api/wiki
+###### Announcement
+The USASpending API is in V2. V1 endpoints are currently Deprecated.
 
 # The USAspending Application Programming Interface (API)
 
@@ -22,9 +18,7 @@ The data include spending on _awards_ (_e.g._, who received federal contracts or
 
 **New to APIs?** Check out our [introductory tutorial](/docs/intro-tutorial) on the API to learn the ropes.
 
-**Familiar with APIs?** Familiar with APIs? See the [Using this API](/docs/using-the-api) section for how to request specific sets of data and examples of filters. OR jump right into the data with our [list of available Endpoints](/docs/endpoints).
-
-**New to government financial data?** Check out our [data dictionary](/docs/data-dictionary) to learn to navigate it.
+**Familiar with APIs?** Jump right into the data with our [list of available Endpoints](/docs/endpoints).
 
 ## Background <a name="background"></a>
 

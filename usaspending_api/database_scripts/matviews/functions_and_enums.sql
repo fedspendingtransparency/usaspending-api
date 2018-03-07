@@ -1,3 +1,8 @@
+-- Postgres Extensions necessary for some views
+
+CREATE EXTENSION IF NOT EXISTS intarray;
+
+
 -- The function(s) and enum(s) below were originally created for the materialized views
 
 CREATE TYPE total_obligation_bins AS ENUM ('<1M', '1M..25M', '25M..100M', '100M..500M', '>500M');

@@ -124,6 +124,7 @@ base_payload = {
 }
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_federal_account_spending_by_category(client, financial_spending_data):
     """Test grouping over all available categories"""
@@ -147,6 +148,7 @@ def test_federal_account_spending_by_category(client, financial_spending_data):
     assert results['Under/Assistant Secretaries'] == 2000000
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_federal_account_spending_by_category_all_results(client, financial_spending_data):
 
@@ -159,6 +161,7 @@ def test_federal_account_spending_by_category_all_results(client, financial_spen
     assert results['Under/Assistant Secretaries'] == 4000000
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_federal_account_spending_by_category_major_obj_filter(client, financial_spending_data):
 
@@ -171,6 +174,7 @@ def test_federal_account_spending_by_category_major_obj_filter(client, financial
     assert results['Under/Assistant Secretaries'] == 3000000
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_federal_account_spending_by_category_filter_program_activity(client, financial_spending_data):
 
@@ -183,6 +187,7 @@ def test_federal_account_spending_by_category_filter_program_activity(client, fi
     assert 'Under/Assistant Secretaries' not in results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_federal_account_spending_by_category_filter_date(client, financial_spending_data):
 
