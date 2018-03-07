@@ -180,7 +180,7 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
                 log_dict[param] = other_params[param]
 
     if is_error:
-        logger.error(log_dict)
+        logger.exception(log_dict)
     elif is_debug:
         logger.debug(log_dict)
     else:
@@ -190,7 +190,7 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
 # Split csv function mostly copied from Jordi Rivero's solution
 # https://gist.github.com/jrivero/1085501
 def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='output_%s.csv', output_path='.',
-              keep_headers=True):
+              keep_headers=True, split_csvs=[]):
     """Splits a CSV file into multiple pieces.
 
     A quick bastardization of the Python CSV library.
@@ -203,30 +203,33 @@ def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='o
         >> from toolbox import csv_splitter;
         >> csv_splitter.split('/home/ben/input.csv');
     """
-    split_csvs = []
-    reader = csv.reader(open(file_path, 'r'), delimiter=delimiter)
-    current_piece = 1
-    current_out_path = os.path.join(
-        output_path,
-        output_name_template % current_piece
-    )
-    split_csvs.append(current_out_path)
-    current_out_writer = csv.writer(open(current_out_path, 'w'), delimiter=delimiter)
-    current_limit = row_limit
-    if keep_headers:
-        headers = next(reader)
-        current_out_writer.writerow(headers)
-    for i, row in enumerate(reader):
-        if i + 1 > current_limit:
-            current_piece += 1
-            current_limit = row_limit * current_piece
-            current_out_path = os.path.join(
-                output_path,
-                output_name_template % current_piece
-            )
-            split_csvs.append(current_out_path)
-            current_out_writer = csv.writer(open(current_out_path, 'w'), delimiter=delimiter)
-            if keep_headers:
-                current_out_writer.writerow(headers)
-        current_out_writer.writerow(row)
-    return split_csvs
+    try:
+        reader = csv.reader(open(file_path, 'r'), delimiter=delimiter)
+        current_piece = 1
+        current_out_path = os.path.join(
+            output_path,
+            output_name_template % current_piece
+        )
+        split_csvs.append(current_out_path)
+        current_out_writer = csv.writer(open(current_out_path, 'w'), delimiter=delimiter)
+        current_limit = row_limit
+        if keep_headers:
+            headers = next(reader)
+            current_out_writer.writerow(headers)
+        for i, row in enumerate(reader):
+            if i + 1 > current_limit:
+                current_piece += 1
+                current_limit = row_limit * current_piece
+                current_out_path = os.path.join(
+                    output_path,
+                    output_name_template % current_piece
+                )
+                split_csvs.append(current_out_path)
+                current_out_writer = csv.writer(open(current_out_path, 'w'), delimiter=delimiter)
+                if keep_headers:
+                    current_out_writer.writerow(headers)
+            current_out_writer.writerow(row)
+        return split_csvs
+    except Exception as e:
+        logger.error(e)
+        raise e

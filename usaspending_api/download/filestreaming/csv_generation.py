@@ -75,7 +75,6 @@ def generate_csvs(download_job, sqs_message=None):
         working_dir = os.path.splitext(file_path)[0]
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
-        zipped_csvs = zipfile.ZipFile(file_path, 'w', allowZip64=True)
 
         write_to_log(message='Generating {}'.format(file_name), download_job=download_job)
 
@@ -84,15 +83,17 @@ def generate_csvs(download_job, sqs_message=None):
         for source in sources:
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(source, columns, download_job, working_dir, start_time, sqs_message, zipped_csvs, limit)
-
-        # Remove temporary files and working directory
-        shutil.rmtree(working_dir)
-        zipped_csvs.close()
+            parse_source(source, columns, download_job, working_dir, start_time, sqs_message, file_path, limit)
         download_job.file_size = os.stat(file_path).st_size
     except Exception as e:
-        logger.error(e)
-        handle_file_generation_exception(file_path, download_job, 'write', str(e))
+        # Set error message; job_status_id will be set in generate_zip.handle()
+        download_job.error_message = 'An exception was raised while attempting to write the file:\n{}'.format(e)
+        download_job.save()
+        raise Exception(download_job.error_message)
+    finally:
+        # Remove working directory
+        if os.path.exists(working_dir):
+            shutil.rmtree(working_dir)
 
     try:
         # push file to S3 bucket, if not local
@@ -102,13 +103,17 @@ def generate_csvs(download_job, sqs_message=None):
             start_uploading = time.time()
             multipart_upload(bucket, region, file_path, os.path.basename(file_path), acl='public-read',
                              parallel_processes=multiprocessing.cpu_count())
-            os.remove(file_path)
-
             write_to_log(message='Uploading took {} seconds'.format(time.time() - start_uploading),
                          download_job=download_job)
     except Exception as e:
-        logger.error(e)
-        handle_file_generation_exception(file_path, download_job, 'upload', str(e))
+        # Set error message; job_status_id will be set in generate_zip.handle()
+        download_job.error_message = 'An exception was raised while attempting to upload the file:\n{}'.format(e)
+        download_job.save()
+        raise Exception(download_job.error_message)
+    finally:
+        # Remove generated file
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
     return finish_download(download_job)
 
@@ -142,7 +147,7 @@ def get_csv_sources(json_request):
     return csv_sources
 
 
-def parse_source(source, columns, download_job, working_dir, start_time, message, zipped_csvs, limit):
+def parse_source(source, columns, download_job, working_dir, start_time, message, zipfile_path, limit):
     """Write to csv and zip files using the source data"""
     d_map = {'d1': 'contracts', 'd2': 'assistance'}
     source_name = '{}_{}'.format(d_map[source.file_type], VALUE_MAPPINGS[source.source_type]['download_name'])
@@ -153,54 +158,43 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
     temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job)
 
     start_time = time.time()
+    try:
+        # Create a separate process to run the PSQL command; wait
+        psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path, download_job,))
+        psql_process.start()
+        wait_for_process(psql_process, start_time, download_job)
 
-    # Run the PSQL command as a separate Process
-    psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path,))
-    psql_process.start()
-
-    # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of
-    # DOWNLOAD_VISIBILITY_TIMEOUT
-    while psql_process.is_alive() and (time.time() - start_time) < MAX_VISIBILITY_TIMEOUT:
-        if message:
-            message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
-        time.sleep(60)
-
-    if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT or psql_process.exitcode != 0:
-        if psql_process.is_alive():
-            # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
-            write_to_log(message='Attempting to terminate process (pid {})'.format(psql_process.pid),
-                         download_job=download_job, is_error=True)
-            psql_process.terminate()
-            e = TimeoutError('Download job lasted longer than {} hours'.format(str(MAX_VISIBILITY_TIMEOUT / 3600)))
-        else:
-            # An error occurred in the PSQL process
-            e = Exception('PSQL command failed. Please see the logs for details.')
-
-        # Remove all temp files
+        # Create a separate process to split the large csv into smaller csvs and write to zip; wait
+        zip_process = multiprocessing.Process(target=split_and_zip_csvs, args=(zipfile_path, source_path, source_name,
+                                                                               download_job,))
+        zip_process.start()
+        wait_for_process(zip_process, start_time, download_job)
+    except Exception as e:
+        raise e
+    finally:
+        # Remove temporary files
         os.close(temp_file)
         os.remove(temp_file_path)
-        shutil.rmtree(working_dir)
+
+
+def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job):
+    try:
+        # Split CSV into separate files
+        log_time = time.time()
+        split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_path=os.path.dirname(source_path),
+                               output_name_template='{}_%s.csv'.format(source_name))
+        write_to_log(message='Splitting csvs took {} seconds'.format(log_time), download_job=download_job)
+
+        # Zip the split CSVs into one zipfile
+        log_time = time.time()
+        zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', allowZip64=True)
+        for split_csv_part in split_csvs:
+            zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
         zipped_csvs.close()
+        write_to_log(message='Writing to zipfile took {} seconds'.format(log_time), download_job=download_job)
+    except Exception as e:
+        logger.error(e)
         raise e
-
-    write_to_log(message='Wrote {}, took {} seconds'.format(source_name, time.time() - start_time),
-                 download_job=download_job)
-
-    # Split csv into smaller csvs
-    start_time = time.time()
-    split_csvs = split_csv(source_path, row_limit=EXCEL_ROW_LIMIT, output_name_template='{}_%s.csv'.format(source_name),
-                           output_path=working_dir)
-    write_to_log(message='Splitting csvs took {} seconds'.format(time.time() - start_time), download_job=download_job)
-
-    # Write it to the zip
-    start_time = time.time()
-    for split_csv_part in split_csvs:
-        zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
-    write_to_log(message='Creating zipfile took {} seconds'.format(time.time() - start_time), download_job=download_job)
-
-    # Remove temporary files
-    os.close(temp_file)
-    os.remove(temp_file_path)
 
 
 def start_download(download_job):
@@ -227,6 +221,33 @@ def finish_download(download_job):
     return download_job.file_name
 
 
+def wait_for_process(process, start_time, download_job):
+    """Wait for the process to complete, throw errors for timeouts or Process exceptions"""
+    log_time = time.time()
+
+    # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
+    while process.is_alive() and (time.time() - start_time) < MAX_VISIBILITY_TIMEOUT:
+        if message:
+            message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
+        time.sleep(60)
+
+    if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT or process.exitcode != 0:
+        if process.is_alive():
+            # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
+            write_to_log(message='Attempting to terminate process (pid {})'.format(process.pid),
+                         download_job=download_job, is_error=True)
+            process.terminate()
+            e = TimeoutError('DownloadJob {} lasted longer than {} hours'.format(download_job.download_job_id,
+                                                                                 str(MAX_VISIBILITY_TIMEOUT / 3600)))
+        else:
+            # An error occurred in the process
+            e = Exception('Command failed. Please see the logs for details.')
+
+        raise e
+
+    return time.time() - log_time
+
+
 def generate_temp_query_file(source_query, limit, source, download_job):
     if limit:
         source_query = source_query[limit]
@@ -244,19 +265,6 @@ def generate_temp_query_file(source_query, limit, source, download_job):
     return temp_sql_file, temp_sql_file_path
 
 
-def handle_file_generation_exception(file_path, download_job, error_type, error):
-    """Removes the temporary file, updates the job, and raises the exception"""
-    logger.error(error)
-    if os.path.exists(file_path):
-        os.remove(file_path)
-
-    # Set error message; job_status_id will be set in generate_zip.handle()
-    download_job.error_message = 'An exception was raised while attempting to {} the CSV:\n{}'.format(error_type, error)
-    download_job.save()
-
-    raise Exception(download_job.error_message)
-
-
 def apply_annotations_to_sql(raw_query, aliases):
     """
     Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
@@ -272,13 +280,18 @@ def apply_annotations_to_sql(raw_query, aliases):
     return raw_query.replace(select_string, new_select_string)
 
 
-def execute_psql(temp_sql_file_path, split_csv_path):
+def execute_psql(temp_sql_file_path, source_path, download_job):
     """Executes a single PSQL command within its own Subprocess"""
     try:
         # Generate the csv with \copy
+        log_time = time.time()
+
         cat_command = subprocess.Popen(['cat', temp_sql_file_path], stdout=subprocess.PIPE)
-        subprocess.check_output(['psql', '-o', split_csv_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
+        subprocess.check_output(['psql', '-o', source_path, os.environ['DOWNLOAD_DATABASE_URL'], '-v',
                                  'ON_ERROR_STOP=1'], stdin=cat_command.stdout, stderr=subprocess.STDOUT)
+
+        write_to_log(message='Wrote {}, took {} seconds'.format(os.path.basename(source_path), log_time),
+                     download_job=download_job)
     except subprocess.CalledProcessError as e:
         # Not logging the command as it can contain the database connection string
         e.cmd = '[redacted]'
