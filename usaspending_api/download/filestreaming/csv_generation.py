@@ -162,13 +162,13 @@ def parse_source(source, columns, download_job, working_dir, start_time, message
         # Create a separate process to run the PSQL command; wait
         psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path, download_job,))
         psql_process.start()
-        wait_for_process(psql_process, start_time, download_job)
+        wait_for_process(psql_process, start_time, download_job, message)
 
         # Create a separate process to split the large csv into smaller csvs and write to zip; wait
         zip_process = multiprocessing.Process(target=split_and_zip_csvs, args=(zipfile_path, source_path, source_name,
                                                                                download_job,))
         zip_process.start()
-        wait_for_process(zip_process, start_time, download_job)
+        wait_for_process(zip_process, start_time, download_job, message)
     except Exception as e:
         raise e
     finally:
@@ -221,7 +221,7 @@ def finish_download(download_job):
     return download_job.file_name
 
 
-def wait_for_process(process, start_time, download_job):
+def wait_for_process(process, start_time, download_job, message):
     """Wait for the process to complete, throw errors for timeouts or Process exceptions"""
     log_time = time.time()
 
