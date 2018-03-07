@@ -190,7 +190,7 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
 # Split csv function mostly copied from Jordi Rivero's solution
 # https://gist.github.com/jrivero/1085501
 def split_csv(file_path, delimiter=',', row_limit=10000, output_name_template='output_%s.csv', output_path='.',
-              keep_headers=True, split_csvs=[]):
+              keep_headers=True):
     """Splits a CSV file into multiple pieces.
 
     A quick bastardization of the Python CSV library.

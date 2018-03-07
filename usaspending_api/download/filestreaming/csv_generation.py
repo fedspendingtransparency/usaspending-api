@@ -190,12 +190,15 @@ def split_and_zip_csvs(zipfile_path, source_path, source_name, download_job):
         zipped_csvs = zipfile.ZipFile(zipfile_path, 'a', allowZip64=True)
         for split_csv_part in split_csvs:
             zipped_csvs.write(split_csv_part, os.path.basename(split_csv_part))
-        zipped_csvs.close()
+
         write_to_log(message='Writing to zipfile took {} seconds'.format(time.time() - log_time),
                      download_job=download_job)
     except Exception as e:
         logger.error(e)
         raise e
+    finally:
+        if zipped_csvs:
+            zipped_csvs.close()
 
 
 def start_download(download_job):
