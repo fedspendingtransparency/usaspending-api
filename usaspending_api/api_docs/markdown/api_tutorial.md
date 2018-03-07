@@ -14,7 +14,6 @@
     <li><a href="#other">Other Information</a></li>
   </ul>-->
   </li>
-  <li><a href="/docs/using-the-api">Using this API</a></li>
   <li><a href="/docs/endpoints">Endpoints</a></li>
 
 </ul>
@@ -23,7 +22,7 @@
 
 # Introductory Tutorial <a name="introduction"></a>
 
-Welcome to the introductory USAspending API tutorial. This tutorial is designed for people who aren't familiar with APIs and how to use them. If you already know what an _endpoint_ is and the difference between `GET` and `POST`, you'll want to visit [Using the API](/docs/using-the-api).
+Welcome to the introductory USAspending API tutorial. This tutorial is designed for people who aren't familiar with APIs and how to use them. If you already know what an _endpoint_ is and the difference between `GET` and `POST`, you'll want to visit [Endpoints](/docs/endpoints).
 
 ## What's an API? <a name="whats-an-api"></a>
 

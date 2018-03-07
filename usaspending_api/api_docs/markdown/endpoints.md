@@ -1,7 +1,6 @@
 
 <ul class="nav nav-stacked" id="sidebar">
   <li><a href="/docs/intro-tutorial">Introductory Tutorial</a></li>
-  <li><a href="/docs/using-the-api">Using this API</a></li>
   <li><a href="/docs/endpoints">Endpoints</a>
   <!--<ul>
     <li><a href="#status-codes">Status Codes</a></li>
