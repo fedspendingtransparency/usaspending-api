@@ -3,13 +3,23 @@
   "refresh": true,
   "matview_sql": [
     "SELECT",
+    "  to_tsvector(CONCAT(",
+    "    recipient.\"recipient_name\",",
+    "    ' ', contract_data.\"naics\",",
+    "    ' ', contract_data.\"naics_description\",",
+    "    ' ', \"psc\".\"description\",",
+    "    ' ', \"awards\".\"description\")) AS keyword_ts_vector,",
+    "  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_ts_vector,",
+    "  to_tsvector(coalesce(recipient.\"recipient_name\", '')) AS recipient_name_ts_vector,",
+    "",
     "  UPPER(CONCAT(",
     "    recipient.\"recipient_name\",",
     "    ' ', contract_data.\"naics\",",
     "    ' ', contract_data.\"naics_description\",",
-    "    ' ', psc.\"description\",",
+    "    ' ', \"psc\".\"description\",",
     "    ' ', \"awards\".\"description\")) AS keyword_string,",
     "  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,",
+    "",
     "  \"awards\".\"id\" AS award_id,",
     "  \"awards\".\"category\",",
     "  \"awards\".\"type\",",
@@ -306,22 +316,34 @@
       "method": "GIN",
       "columns": [{"name": "\"business_categories\""}]
     }, {
-      "name": "gin_keyword_string",
+      "name": "keyword_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "\"keyword_ts_vector\""}]
+    }, {
+      "name": "award_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "\"award_ts_vector\""}]
+    }, {
+      "name": "recipient_name_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "\"recipient_name_ts_vector\""}]
+    }, {
+      "name": "keyword_id",
       "method": "GIN",
       "columns": [{"name": "\"keyword_string\"", "opclass": "gin_trgm_ops"}]
     }, {
-      "name": "gin_award_id_string",
+      "name": "award_id_string",
       "method": "GIN",
       "columns": [{"name": "\"award_id_string\"", "opclass": "gin_trgm_ops"}]
-     }, {
+    }, {
       "name": "compound_psc_fy",
       "columns": [{"name": "\"product_or_service_code\""}, {"name": "\"fiscal_year\""}]
-     }, {
+    }, {
       "name": "compound_naics_fy",
       "columns": [{"name": "\"naics_code\""}, {"name": "\"fiscal_year\""}]
-     }, {
+    }, {
       "name": "compound_cfda_fy",
       "columns": [{"name": "\"cfda_number\""}, {"name": "\"fiscal_year\""}]
-     }
+    }
   ]
 }
