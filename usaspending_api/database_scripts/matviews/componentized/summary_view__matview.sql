@@ -7,6 +7,7 @@
 --------------------------------------------------------
 CREATE MATERIALIZED VIEW summary_view_temp AS
 SELECT
+  MD5(array_to_string(sort(array_agg("transaction_normalized"."id"::int)), ' ')) AS pk,
   "transaction_normalized"."action_date",
   "transaction_normalized"."fiscal_year",
   "awards"."type",
