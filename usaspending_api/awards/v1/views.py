@@ -24,7 +24,7 @@ class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedD
         return queryset
 
 
-class AwardViewSet(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
+class AwardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     ## Spending data by Award (i.e. a grant, contract, loan, etc)
     This endpoint allows you to search and filter by almost any attribute of an award object.
@@ -45,11 +45,27 @@ class AwardViewSet(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
 
-    def list(self, request, *args, **kwargs):
-        return super(CachedDetailViewSet, self).list(request, *args, **kwargs)
 
-    def retrieve(self, request, *args, **kwargs):
-        return super(DetailViewSet, self).retrieve(request, *args, **kwargs)
+class AwardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
+    """
+    ## Spending data by Award (i.e. a grant, contract, loan, etc)
+    This endpoint allows you to search and filter by almost any attribute of an award object.
+    """
+    filter_map = {
+        'awarding_fpds': 'awarding_agency__fpds_code',
+        'funding_fpds': 'funding_agency__fpds_code',
+    }
+    serializer_class = AwardSerializer
+
+    def get_queryset(self):
+        """
+        Return the view's queryset.
+        """
+        queryset = Award.nonempty.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset, filter_map=self.filter_map)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
 
 
 class SubawardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
@@ -84,7 +100,7 @@ class SubawardAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
-class SubawardViewSet(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
+class SubawardListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     ## Spending data by Subaward
     This endpoint allows you to search and filter by almost any attribute of a subaward object.
@@ -101,11 +117,23 @@ class SubawardViewSet(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
         queryset = self.order_records(self.request, queryset=queryset)
         return queryset
 
-    def list(self, request, *args, **kwargs):
-        return super(CachedDetailViewSet, self).list(request, *args, **kwargs)
 
-    def retrieve(self, request, *args, **kwargs):
-        return super(DetailViewSet, self).retrieve(request, *args, **kwargs)
+class SubawardRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
+    """
+    ## Spending data by Subaward
+    This endpoint allows you to search and filter by almost any attribute of a subaward object.
+    """
+    serializer_class = SubawardSerializer
+
+    def get_queryset(self):
+        """
+        Return the view's queryset.
+        """
+        queryset = Subaward.objects.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
 
 
 class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
@@ -122,7 +150,7 @@ class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
-class TransactionViewset(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
+class TransactionListViewset(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handles requests for award transaction data.
     """
@@ -138,8 +166,19 @@ class TransactionViewset(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
 
-    def list(self, request, *args, **kwargs):
-        return super(CachedDetailViewSet, self).list(request, *args, **kwargs)
 
-    def retrieve(self, request, *args, **kwargs):
-        return super(DetailViewSet, self).retrieve(request, *args, **kwargs)
+class TransactionRetrieveViewset(FilterQuerysetMixin, DetailViewSet):
+    """
+    Handles requests for award transaction data.
+    """
+    serializer_class = TransactionNormalizedSerializer
+
+    def get_queryset(self):
+        """
+        Return the view's queryset.
+        """
+        queryset = TransactionNormalized.objects.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset

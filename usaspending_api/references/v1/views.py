@@ -133,7 +133,7 @@ class AgencyEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
-class CfdaEndpoint(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
+class CfdaListEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Return information about CFDA Programs
     """
@@ -148,14 +148,24 @@ class CfdaEndpoint(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
 
-    def list(self, request, *args, **kwargs):
-        return super(CachedDetailViewSet, self).list(request, *args, **kwargs)
 
-    def retrieve(self, request, *args, **kwargs):
-        return super(DetailViewSet, self).retrieve(request, *args, **kwargs)
+class CfdaRetrieveEndpoint(FilterQuerysetMixin, DetailViewSet):
+    """
+    Return information about CFDA Programs
+    """
+    serializer_class = CfdaSerializer
+    lookup_field = "program_number"
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = Cfda.objects.all()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        filtered_queryset = self.filter_records(self.request, queryset=queryset)
+        ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
+        return ordered_queryset
 
 
-class RecipientViewSet(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
+class RecipientListViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Returns information about award recipients and vendors
     """
@@ -169,11 +179,20 @@ class RecipientViewSet(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
         queryset = self.order_records(self.request, queryset=queryset)
         return queryset
 
-    def list(self, request, *args, **kwargs):
-        return super(CachedDetailViewSet, self).list(request, *args, **kwargs)
 
-    def retrieve(self, request, *args, **kwargs):
-        return super(DetailViewSet, self).retrieve(request, *args, **kwargs)
+class RecipientRetrieveViewSet(FilterQuerysetMixin, DetailViewSet):
+    """
+    Returns information about award recipients and vendors
+    """
+    serializer_class = LegalEntitySerializer
+
+    def get_queryset(self):
+        """Return the view's queryset."""
+        queryset = LegalEntity.objects.all().exclude(recipient_unique_id__isnull=True)
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = self.order_records(self.request, queryset=queryset)
+        return queryset
 
 
 class RecipientAutocomplete(FilterQuerysetMixin, AutocompleteView):
