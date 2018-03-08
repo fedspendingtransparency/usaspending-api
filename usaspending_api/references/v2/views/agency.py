@@ -12,13 +12,15 @@ from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY, DOD_ARM
 
 
 class AgencyViewSet(APIDocumentationView):
-
-    """Return an agency name and active fy.
-    endpoint_doc: /agency.md"""
+    """
+    Return an agency name and active fy.
+    endpoint_doc: /agency.md
+    """
     @cache_response()
     def get(self, request, pk, format=None):
-        """Return the view's queryset."""
-
+        """
+        Return the view's queryset.
+        """
         response = {'results': {}}
         # get id from url
         agency_id = int(pk)
