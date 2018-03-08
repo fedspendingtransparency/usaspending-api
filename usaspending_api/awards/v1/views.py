@@ -24,7 +24,7 @@ class AwardAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedD
         return queryset
 
 
-class AwardViewSet(FilterQuerysetMixin, CachedDetailViewSet, DetailViewSet):
+class AwardViewSet(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
     """
     ## Spending data by Award (i.e. a grant, contract, loan, etc)
     This endpoint allows you to search and filter by almost any attribute of an award object.
@@ -84,7 +84,7 @@ class SubawardAutocomplete(FilterQuerysetMixin, AutocompleteView):
         return ordered_queryset
 
 
-class SubawardViewSet(FilterQuerysetMixin, DetailViewSet):
+class SubawardViewSet(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
     """
     ## Spending data by Subaward
     This endpoint allows you to search and filter by almost any attribute of a subaward object.
@@ -101,6 +101,12 @@ class SubawardViewSet(FilterQuerysetMixin, DetailViewSet):
         queryset = self.order_records(self.request, queryset=queryset)
         return queryset
 
+    def list(self, request, *args, **kwargs):
+        return super(CachedDetailViewSet, self).list(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        return super(DetailViewSet, self).retrieve(request, *args, **kwargs)
+
 
 class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDetailViewSet):
     """
@@ -116,7 +122,7 @@ class TransactionAggregateViewSet(FilterQuerysetMixin, AggregateQuerysetMixin, C
         return queryset
 
 
-class TransactionViewset(FilterQuerysetMixin, CachedDetailViewSet, DetailViewSet):
+class TransactionViewset(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
     """
     Handles requests for award transaction data.
     """

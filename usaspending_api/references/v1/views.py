@@ -9,7 +9,7 @@ from usaspending_api.common.cache_decorator import cache_response
 
 from usaspending_api.common.api_request_utils import GeoCompleteHandler
 from usaspending_api.common.mixins import FilterQuerysetMixin
-from usaspending_api.common.views import CachedDetailViewSet, AutocompleteView
+from usaspending_api.common.views import DetailViewSet, CachedDetailViewSet, AutocompleteView
 from usaspending_api.references.models import Location, Agency, LegalEntity, Cfda, Definition, FilterHash
 from usaspending_api.references.v1.serializers import LocationSerializer, AgencySerializer, LegalEntitySerializer, \
     CfdaSerializer, DefinitionSerializer, FilterSerializer, HashSerializer
@@ -133,7 +133,7 @@ class AgencyEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
         return ordered_queryset
 
 
-class CfdaEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
+class CfdaEndpoint(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
     """
     Return information about CFDA Programs
     """
@@ -148,8 +148,14 @@ class CfdaEndpoint(FilterQuerysetMixin, CachedDetailViewSet):
         ordered_queryset = self.order_records(self.request, queryset=filtered_queryset)
         return ordered_queryset
 
+    def list(self, request, *args, **kwargs):
+        return super(CachedDetailViewSet, self).list(request, *args, **kwargs)
 
-class RecipientViewSet(FilterQuerysetMixin, CachedDetailViewSet):
+    def retrieve(self, request, *args, **kwargs):
+        return super(DetailViewSet, self).retrieve(request, *args, **kwargs)
+
+
+class RecipientViewSet(FilterQuerysetMixin, DetailViewSet, CachedDetailViewSet):
     """
     Returns information about award recipients and vendors
     """
@@ -162,6 +168,12 @@ class RecipientViewSet(FilterQuerysetMixin, CachedDetailViewSet):
         queryset = self.filter_records(self.request, queryset=queryset)
         queryset = self.order_records(self.request, queryset=queryset)
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        return super(CachedDetailViewSet, self).list(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        return super(DetailViewSet, self).retrieve(request, *args, **kwargs)
 
 
 class RecipientAutocomplete(FilterQuerysetMixin, AutocompleteView):
