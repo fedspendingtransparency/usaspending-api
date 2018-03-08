@@ -6,6 +6,20 @@
     "index": {
       "number_of_shards" : 5,
       "number_of_replicas" : 1
+    },
+    "analysis" : {
+        "analyzer" : {
+            "stemmer_analyzer" : {
+                "tokenizer" : "standard",
+                "filter" : ["standard", "lowercase", "my_stemmer"]
+            }
+        },
+        "filter" : {
+            "my_stemmer" : {
+                "type" : "stemmer",
+                "name" : "minimal_english"
+            }
+        }
     }
   },
   "sort": {
@@ -61,24 +75,28 @@
           "type": "text"
         },
         "award_description": {
-          "type": "text"
+          "type": "text",
+          "analyzer": "stemmer_analyzer"
         },
 
         "product_or_service_code": {
           "type": "text"
         },
         "product_or_service_description": {
-          "type": "text"
+          "type": "text",
+          "analyzer": "stemmer_analyzer"
         },
         "naics_code": {
           "type": "text"
         },
         "naics_description": {
-          "type": "text"
+          "type": "text",
+          "analyzer": "stemmer_analyzer"
         },
         "type_description": {
           "type": "text",
-          "fielddata": true
+          "fielddata": true,
+          "analyzer": "stemmer_analyzer"
         },
         "award_category": {
           "type": "text",
