@@ -4,7 +4,7 @@ from usaspending_api.common.mixins import FilterQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet
 
 
-class SubmissionAttributesViewSet(FilterQuerysetMixin, DetailViewSet):
+class SubmissionAttributesViewSet(FilterQuerysetMixin, CachedDetailViewSet):
     """
     Handles requests for information about data submissions.
     """
