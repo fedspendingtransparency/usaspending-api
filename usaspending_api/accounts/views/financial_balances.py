@@ -5,14 +5,15 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.common.views import DetailViewSet
+from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
-class AgenciesFinancialBalancesViewSet(DetailViewSet):
-    """Returns financial balances by agency and the latest quarter for the given fiscal year.
-    endpoint_doc: /financial_balances/agencies.md"""
-
+class AgenciesFinancialBalancesViewSet(CachedDetailViewSet):
+    """
+    Returns financial balances by agency and the latest quarter for the given fiscal year.
+    endpoint_doc: /financial_balances/agencies.md
+    """
     serializer_class = AgenciesFinancialBalancesSerializer
 
     def get_queryset(self, pk=None):
