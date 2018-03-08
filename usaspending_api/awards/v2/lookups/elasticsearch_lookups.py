@@ -14,8 +14,9 @@ TRANSACTIONS_LOOKUP = {"Recipient Name": "recipient_name",
                        "Loan Value": "face_value_loan_guarantee",
                        "Subsidy Cost": "original_loan_subsidy_cost",
                        "Mod": "modification_number",
-                       "Award ID": "award_id",
-                       "awarding_agency_id": "awarding_agency_id"}
+                       "Award ID": "display_award_id",
+                       "awarding_agency_id": "awarding_agency_id",
+                       "internal_id": "award_id"}
 
 award_type_mapping = {
     '02': 'Grants',

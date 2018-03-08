@@ -1,10 +1,10 @@
 {
-  "index_patterns": ["*"],
+  "index_patterns": ["*transactions*"],
   "settings": {
     "index.mapping.ignore_malformed": true,
     "index.max_result_window" : 500000,
     "index": {
-      "number_of_shards" : 5,
+      "number_of_shards" : 3,
       "number_of_replicas" : 1
     },
     "analysis" : {
@@ -49,8 +49,7 @@
           "type": "text"
         },
         "display_award_id": {
-          "type": "text",
-          "fielddata": true
+          "type": "keyword"
         },
         "update_date": {
           "type": "date",
@@ -113,10 +112,13 @@
           "type": "text"
         },
         "recipient_name": {
-          "fielddata": true,
-          "type": "text"
+          "type": "keyword",
+          "fields": {
+            "raw": { 
+              "type": "text"
+            }
+          }
         },
-
         "action_date": {
           "type": "date",
           "format": "yyyy-MM-dd"
@@ -154,7 +156,6 @@
           "type": "scaled_float",
           "scaling_factor": 100
         },
-
         "awarding_agency_id": {
           "type": "integer",
           "index": false
@@ -164,15 +165,23 @@
           "index": false
         },
         "awarding_toptier_agency_name": {
-          "type": "text",
-          "fielddata": true
+          "type": "keyword",
+          "fields": {
+            "raw": { 
+              "type": "text"
+            }
+          }
         },
         "funding_toptier_agency_name": {
           "type": "text"
         },
         "awarding_subtier_agency_name": {
-          "type": "text",
-          "fielddata": true
+          "type": "keyword",
+          "fields": {
+            "raw": { 
+              "type": "text"
+            }
+          }
         },
         "funding_subtier_agency_name": {
           "type": "text"
@@ -218,7 +227,6 @@
           "type": "text",
           "index": false
         },
-
         "pop_country_code": {
           "type": "text",
           "index": false
