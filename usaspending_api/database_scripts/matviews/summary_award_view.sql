@@ -10,6 +10,7 @@ DROP MATERIALIZED VIEW IF EXISTS summary_award_view_old CASCADE;
 
 CREATE MATERIALIZED VIEW summary_award_view_temp AS
 SELECT
+  MD5(array_to_string(sort(array_agg("awards"."id"::int)), ' ')) AS pk,
   "transaction_normalized"."action_date",
   "transaction_normalized"."fiscal_year",
   "awards"."type",
@@ -67,43 +68,43 @@ GROUP BY
   SAA."abbreviation",
   SFA."abbreviation";
 
-CREATE INDEX idx_41d94d83__action_date_temp ON summary_award_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_41d94d83__type_temp ON summary_award_view_temp USING BTREE("type") WITH (fillfactor = 100);
-CREATE INDEX idx_41d94d83__fy_temp ON summary_award_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 100);
-CREATE INDEX idx_41d94d83__pulled_from_temp ON summary_award_view_temp USING BTREE("pulled_from") WITH (fillfactor = 100) WHERE "pulled_from" IS NOT NULL;
-CREATE INDEX idx_41d94d83__awarding_agency_id_temp ON summary_award_view_temp USING BTREE("awarding_agency_id" ASC NULLS LAST) WITH (fillfactor = 100) WHERE "awarding_agency_id" IS NOT NULL;
-CREATE INDEX idx_41d94d83__funding_agency_id_temp ON summary_award_view_temp USING BTREE("funding_agency_id" ASC NULLS LAST) WITH (fillfactor = 100) WHERE "funding_agency_id" IS NOT NULL;
-CREATE INDEX idx_41d94d83__awarding_toptier_agency_name_temp ON summary_award_view_temp USING BTREE("awarding_toptier_agency_name") WITH (fillfactor = 100) WHERE "awarding_toptier_agency_name" IS NOT NULL;
-CREATE INDEX idx_41d94d83__awarding_subtier_agency_name_temp ON summary_award_view_temp USING BTREE("awarding_subtier_agency_name") WITH (fillfactor = 100) WHERE "awarding_subtier_agency_name" IS NOT NULL;
-CREATE INDEX idx_41d94d83__funding_toptier_agency_name_temp ON summary_award_view_temp USING BTREE("funding_toptier_agency_name") WITH (fillfactor = 100) WHERE "funding_toptier_agency_name" IS NOT NULL;
-CREATE INDEX idx_41d94d83__funding_subtier_agency_name_temp ON summary_award_view_temp USING BTREE("funding_subtier_agency_name") WITH (fillfactor = 100) WHERE "funding_subtier_agency_name" IS NOT NULL;
-CREATE INDEX idx_41d94d83__tuned_type_and_idv_temp ON summary_award_view_temp USING BTREE("pulled_from", "type") WITH (fillfactor = 100) WHERE "type" IS NULL AND "pulled_from" IS NOT NULL;
+CREATE UNIQUE INDEX idx_af8ca7ca$a6a_unique_pk_temp ON summary_award_view_temp USING BTREE("pk") WITH (fillfactor = 97);
+CREATE INDEX idx_af8ca7ca$a6a_action_date_temp ON summary_award_view_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 97);
+CREATE INDEX idx_af8ca7ca$a6a_type_temp ON summary_award_view_temp USING BTREE("type") WITH (fillfactor = 97);
+CREATE INDEX idx_af8ca7ca$a6a_fy_temp ON summary_award_view_temp USING BTREE("fiscal_year" DESC NULLS LAST) WITH (fillfactor = 97);
+CREATE INDEX idx_af8ca7ca$a6a_pulled_from_temp ON summary_award_view_temp USING BTREE("pulled_from") WITH (fillfactor = 97) WHERE "pulled_from" IS NOT NULL;
+CREATE INDEX idx_af8ca7ca$a6a_awarding_agency_id_temp ON summary_award_view_temp USING BTREE("awarding_agency_id" ASC NULLS LAST) WITH (fillfactor = 97) WHERE "awarding_agency_id" IS NOT NULL;
+CREATE INDEX idx_af8ca7ca$a6a_funding_agency_id_temp ON summary_award_view_temp USING BTREE("funding_agency_id" ASC NULLS LAST) WITH (fillfactor = 97) WHERE "funding_agency_id" IS NOT NULL;
+CREATE INDEX idx_af8ca7ca$a6a_awarding_toptier_agency_name_temp ON summary_award_view_temp USING BTREE("awarding_toptier_agency_name") WITH (fillfactor = 97) WHERE "awarding_toptier_agency_name" IS NOT NULL;
+CREATE INDEX idx_af8ca7ca$a6a_awarding_subtier_agency_name_temp ON summary_award_view_temp USING BTREE("awarding_subtier_agency_name") WITH (fillfactor = 97) WHERE "awarding_subtier_agency_name" IS NOT NULL;
+CREATE INDEX idx_af8ca7ca$a6a_funding_toptier_agency_name_temp ON summary_award_view_temp USING BTREE("funding_toptier_agency_name") WITH (fillfactor = 97) WHERE "funding_toptier_agency_name" IS NOT NULL;
+CREATE INDEX idx_af8ca7ca$a6a_funding_subtier_agency_name_temp ON summary_award_view_temp USING BTREE("funding_subtier_agency_name") WITH (fillfactor = 97) WHERE "funding_subtier_agency_name" IS NOT NULL;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_award_view RENAME TO summary_award_view_old;
-ALTER INDEX IF EXISTS idx_41d94d83__action_date RENAME TO idx_41d94d83__action_date_old;
-ALTER INDEX IF EXISTS idx_41d94d83__type RENAME TO idx_41d94d83__type_old;
-ALTER INDEX IF EXISTS idx_41d94d83__fy RENAME TO idx_41d94d83__fy_old;
-ALTER INDEX IF EXISTS idx_41d94d83__pulled_from RENAME TO idx_41d94d83__pulled_from_old;
-ALTER INDEX IF EXISTS idx_41d94d83__awarding_agency_id RENAME TO idx_41d94d83__awarding_agency_id_old;
-ALTER INDEX IF EXISTS idx_41d94d83__funding_agency_id RENAME TO idx_41d94d83__funding_agency_id_old;
-ALTER INDEX IF EXISTS idx_41d94d83__awarding_toptier_agency_name RENAME TO idx_41d94d83__awarding_toptier_agency_name_old;
-ALTER INDEX IF EXISTS idx_41d94d83__awarding_subtier_agency_name RENAME TO idx_41d94d83__awarding_subtier_agency_name_old;
-ALTER INDEX IF EXISTS idx_41d94d83__funding_toptier_agency_name RENAME TO idx_41d94d83__funding_toptier_agency_name_old;
-ALTER INDEX IF EXISTS idx_41d94d83__funding_subtier_agency_name RENAME TO idx_41d94d83__funding_subtier_agency_name_old;
-ALTER INDEX IF EXISTS idx_41d94d83__tuned_type_and_idv RENAME TO idx_41d94d83__tuned_type_and_idv_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_unique_pk RENAME TO idx_af8ca7ca$a6a_unique_pk_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_action_date RENAME TO idx_af8ca7ca$a6a_action_date_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_type RENAME TO idx_af8ca7ca$a6a_type_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_fy RENAME TO idx_af8ca7ca$a6a_fy_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_pulled_from RENAME TO idx_af8ca7ca$a6a_pulled_from_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_awarding_agency_id RENAME TO idx_af8ca7ca$a6a_awarding_agency_id_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_funding_agency_id RENAME TO idx_af8ca7ca$a6a_funding_agency_id_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_awarding_toptier_agency_name RENAME TO idx_af8ca7ca$a6a_awarding_toptier_agency_name_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_awarding_subtier_agency_name RENAME TO idx_af8ca7ca$a6a_awarding_subtier_agency_name_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_funding_toptier_agency_name RENAME TO idx_af8ca7ca$a6a_funding_toptier_agency_name_old;
+ALTER INDEX IF EXISTS idx_af8ca7ca$a6a_funding_subtier_agency_name RENAME TO idx_af8ca7ca$a6a_funding_subtier_agency_name_old;
 
 ALTER MATERIALIZED VIEW summary_award_view_temp RENAME TO summary_award_view;
-ALTER INDEX idx_41d94d83__action_date_temp RENAME TO idx_41d94d83__action_date;
-ALTER INDEX idx_41d94d83__type_temp RENAME TO idx_41d94d83__type;
-ALTER INDEX idx_41d94d83__fy_temp RENAME TO idx_41d94d83__fy;
-ALTER INDEX idx_41d94d83__pulled_from_temp RENAME TO idx_41d94d83__pulled_from;
-ALTER INDEX idx_41d94d83__awarding_agency_id_temp RENAME TO idx_41d94d83__awarding_agency_id;
-ALTER INDEX idx_41d94d83__funding_agency_id_temp RENAME TO idx_41d94d83__funding_agency_id;
-ALTER INDEX idx_41d94d83__awarding_toptier_agency_name_temp RENAME TO idx_41d94d83__awarding_toptier_agency_name;
-ALTER INDEX idx_41d94d83__awarding_subtier_agency_name_temp RENAME TO idx_41d94d83__awarding_subtier_agency_name;
-ALTER INDEX idx_41d94d83__funding_toptier_agency_name_temp RENAME TO idx_41d94d83__funding_toptier_agency_name;
-ALTER INDEX idx_41d94d83__funding_subtier_agency_name_temp RENAME TO idx_41d94d83__funding_subtier_agency_name;
-ALTER INDEX idx_41d94d83__tuned_type_and_idv_temp RENAME TO idx_41d94d83__tuned_type_and_idv;
+ALTER INDEX idx_af8ca7ca$a6a_unique_pk_temp RENAME TO idx_af8ca7ca$a6a_unique_pk;
+ALTER INDEX idx_af8ca7ca$a6a_action_date_temp RENAME TO idx_af8ca7ca$a6a_action_date;
+ALTER INDEX idx_af8ca7ca$a6a_type_temp RENAME TO idx_af8ca7ca$a6a_type;
+ALTER INDEX idx_af8ca7ca$a6a_fy_temp RENAME TO idx_af8ca7ca$a6a_fy;
+ALTER INDEX idx_af8ca7ca$a6a_pulled_from_temp RENAME TO idx_af8ca7ca$a6a_pulled_from;
+ALTER INDEX idx_af8ca7ca$a6a_awarding_agency_id_temp RENAME TO idx_af8ca7ca$a6a_awarding_agency_id;
+ALTER INDEX idx_af8ca7ca$a6a_funding_agency_id_temp RENAME TO idx_af8ca7ca$a6a_funding_agency_id;
+ALTER INDEX idx_af8ca7ca$a6a_awarding_toptier_agency_name_temp RENAME TO idx_af8ca7ca$a6a_awarding_toptier_agency_name;
+ALTER INDEX idx_af8ca7ca$a6a_awarding_subtier_agency_name_temp RENAME TO idx_af8ca7ca$a6a_awarding_subtier_agency_name;
+ALTER INDEX idx_af8ca7ca$a6a_funding_toptier_agency_name_temp RENAME TO idx_af8ca7ca$a6a_funding_toptier_agency_name;
+ALTER INDEX idx_af8ca7ca$a6a_funding_subtier_agency_name_temp RENAME TO idx_af8ca7ca$a6a_funding_subtier_agency_name;
 
 ANALYZE VERBOSE summary_award_view;
 GRANT SELECT ON summary_award_view TO readonly;

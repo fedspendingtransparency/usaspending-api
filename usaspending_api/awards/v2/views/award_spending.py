@@ -5,15 +5,16 @@ from usaspending_api.awards.serializers_v2.serializers import AwardTypeAwardSpen
     RecipientAwardSpendingSerializer
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import check_valid_toptier_agency
-from usaspending_api.common.views import DetailViewSet
+from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
-class AwardTypeAwardSpendingViewSet(DetailViewSet):
-    """Return all award spending by award type for a given fiscal year and agency id
-
-    endpoint_doc: /award_spending/award_category.md"""
+class AwardTypeAwardSpendingViewSet(CachedDetailViewSet):
+    """
+    Return all award spending by award type for a given fiscal year and agency id
+    endpoint_doc: /award_spending/award_category.md
+    """
 
     serializer_class = AwardTypeAwardSpendingSerializer
 
@@ -50,9 +51,11 @@ class AwardTypeAwardSpendingViewSet(DetailViewSet):
         return queryset
 
 
-class RecipientAwardSpendingViewSet(DetailViewSet):
-    """Return all award spending by recipient for a given fiscal year and agency id
-    endpoint_doc: /award_spending/recipient.md"""
+class RecipientAwardSpendingViewSet(CachedDetailViewSet):
+    """
+    Return all award spending by recipient for a given fiscal year and agency id
+    endpoint_doc: /award_spending/recipient.md
+    """
 
     serializer_class = RecipientAwardSpendingSerializer
 
