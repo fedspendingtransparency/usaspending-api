@@ -2,20 +2,23 @@ from django.db.models import F, Sum
 
 from usaspending_api.accounts.serializers import FederalAccountByObligationSerializer
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.views import DetailViewSet
+from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
-class FederalAccountByObligationViewSet(DetailViewSet):
-    """Returns a Appropriation Account Balance's obligated amount broken up by TAS.
-
-    endpoint_doc: /federal_obligations.md"""
+class FederalAccountByObligationViewSet(CachedDetailViewSet):
+    """
+    Returns a Appropriation Account Balance's obligated amount broken up by TAS.
+    endpoint_doc: /federal_obligations.md
+    """
     serializer_class = FederalAccountByObligationSerializer
 
     def get_queryset(self):
-        """Returns FY total obligations by account in descending order."""
+        """
+        Returns FY total obligations by account in descending order.
+        """
         # Retrieve post request payload
         json_request = self.request.query_params
         # Retrieve fiscal_year & agency_identifier from request
