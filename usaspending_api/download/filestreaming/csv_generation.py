@@ -254,7 +254,7 @@ def wait_for_process(process, start_time, download_job, message):
 
 def generate_temp_query_file(source_query, limit, source, download_job):
     if limit:
-        source_query = source_query[limit]
+        source_query = source_query[:limit]
     csv_query_raw = generate_raw_quoted_query(source_query)
     csv_query_annotated = apply_annotations_to_sql(csv_query_raw, source.human_names)
 
