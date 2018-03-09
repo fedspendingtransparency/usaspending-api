@@ -225,7 +225,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('Missing one or more required query parameters: filters')
 
         # Validate keyword search first, remove all other filters
-        if 'keyword' in filters:
+        if len(filters.keys()) == 1 and 'keyword' in filters:
             request_data['filters'] = {'elasticsearch_keyword': filters['keyword']}
             return
 
