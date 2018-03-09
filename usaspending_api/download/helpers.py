@@ -180,7 +180,7 @@ def write_to_download_log(message, download_job=None, is_debug=False, is_error=F
                 log_dict[param] = other_params[param]
 
     if is_error:
-        logger.error(log_dict)
+        logger.exception(log_dict)
     elif is_debug:
         logger.debug(log_dict)
     else:

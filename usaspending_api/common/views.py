@@ -41,8 +41,7 @@ class AutocompleteView(AutocompleteResponseMixin,
 
 class DetailViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Handles the views for endpoints that request a detailed
-    view of model objects (either in the form of a single
+    Handles the views for endpoints that request a detailed view of model objects (either in the form of a single
     object or a list of objects).
     """
 
@@ -52,7 +51,6 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
         context = super(DetailViewSet, self).get_serializer_context()
         return {**context}
 
-    @cache_response()
     def list(self, request, *args, **kwargs):
         try:
             # Get the queryset (this will handle filtering and ordering)
@@ -74,9 +72,22 @@ class DetailViewSet(viewsets.ReadOnlyModelViewSet):
             self.exception_logger.exception(e)
             return Response(response, status=status_code)
 
-    @cache_response()
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
+
+
+class CachedDetailViewSet(DetailViewSet):
+    """
+    Caches the responses for some specific views that use DetailViewSet
+    """
+
+    @cache_response()
+    def list(self, request, *args, **kwargs):
+        return super(DetailViewSet, self).list(request, *args, **kwargs)
+
+    @cache_response()
+    def retrieve(self, request, *args, **kwargs):
+        return super(DetailViewSet, self).retrieve(request, *args, **kwargs)
 
 
 class MarkdownView(TemplateView):
