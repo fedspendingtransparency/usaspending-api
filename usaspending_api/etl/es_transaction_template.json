@@ -6,6 +6,21 @@
     "index": {
       "number_of_shards" : 3,
       "number_of_replicas" : 1
+    },
+    "analysis" : {
+        "analyzer" : {
+            "ngram_analyzer" : {
+                "tokenizer" : "standard",
+                "filter" : ["standard", "lowercase", "ngram_filter"]
+            }
+        },
+        "filter" : {
+            "ngram_filter" : {
+	          "type": "nGram",
+	          "min_gram": 3,
+	          "max_gram": 30
+            }
+        }
     }
   },
   "sort": {
@@ -60,20 +75,23 @@
           "type": "text"
         },
         "award_description": {
-          "type": "text"
+          "type": "text",
+          "analyzer": "ngram_analyzer"
         },
 
         "product_or_service_code": {
           "type": "text"
         },
         "product_or_service_description": {
-          "type": "text"
+          "type": "text",
+          "analyzer": "ngram_analyzer"
         },
         "naics_code": {
           "type": "text"
         },
         "naics_description": {
-          "type": "text"
+          "type": "text",
+          "analyzer": "ngram_analyzer"
         },
         "type_description": {
           "type": "keyword",
