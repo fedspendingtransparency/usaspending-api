@@ -53,7 +53,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--index_name',
             type=str,
-            help='Set an index name')
+            help='Set an index name to ingest data into',
+            default='staging_transactions')
         parser.add_argument(
             '-d',
             '--deleted',
