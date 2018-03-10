@@ -11,7 +11,8 @@ from datetime import datetime
 from django.db import connection
 from elasticsearch import helpers
 from time import perf_counter, sleep
-
+from usaspending_api import settings
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
 # ==============================================================================
@@ -234,10 +235,10 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     return
 
 
-def streaming_post_to_es(client, chunk, index_name, job_id=None):
+def streaming_post_to_es(client, chunk, index_name, job_id=None, doc_type='transaction_mapping'):
     success, failed = 0, 0
     try:
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type='transaction_mapping'):
+        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type=doc_type):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -249,6 +250,12 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None):
     return success, failed
 
 
+def put_alias(client, index, alias_name, award_type_codes):
+    alias_body = {'filter': {'terms': {"type": award_type_codes}}}
+    client.indices.delete_alias(index, alias_name)
+    client.indices.put_alias(index, alias_name, body=alias_body)
+
+
 def post_to_elasticsearch(client, job, config, chunksize=250000):
     printf({'msg': 'Populating ES Index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
     start = perf_counter()
@@ -258,8 +265,19 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         print(e)
         raise SystemExit
     if not does_index_exist:
-        printf({'msg': 'Creating index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
-        client.indices.create(index=job.index)  # removed body paramter since behavior wasn't reliable
+        printf({'msg': 'Creating index "{}"'.format(job.index), 'job':
+                job.name, 'f': 'ES Ingest'})
+        client.indices.create(index=job.index, body=config['mapping'])
+        indices_to_award_types['contracts'] += ('NULL',)
+        printf({'msg': 'Creating aliases for index {}'.format(job.index), 'job': job.name, 'f': 'ES Alias Put'})
+
+        for award_type, award_type_codes in indices_to_award_types.items():
+            alias_name = '{}-{}'.format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+            printf({'msg': 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),
+                   'job': job.name, 'f': 'ES Alias Put'})
+
+            # put_alias(client, job.index, award_type, award_type_codes)
+
     elif does_index_exist and config['recreate']:
         printf({'msg': 'Deleting existing index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})
         client.indices.delete(job.index)
@@ -280,7 +298,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             'job': job.name,
             'f': 'ES Ingest'
         })
-        streaming_post_to_es(client, chunk, job.index, job.name)
+        streaming_post_to_es(client, chunk, job.index, job.name, doc_type=config['doc_type'])
         printf({
             'msg': 'Iteration group #{} took {}s'.format(count, perf_counter() - iteration),
             'job': job.name,
@@ -402,7 +420,7 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def delete_transactions_from_es(client, id_list, job_id, config, index=None, size=50000):
+def delete_transactions_from_es(client, id_list, job_id, config, index=None):
     '''
     id_list = [{key:'key1',col:'tranaction_id'},
                {key:'key2',col:'generated_unique_transaction_id'}],
@@ -431,10 +449,10 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None, siz
         values_generator = chunks(values, 1000)
         for v in values_generator:
             body = filter_query(column, v)
-            response = client.search(index=index, body=json.dumps(body), size=size)
+            response = client.search(index=index, body=json.dumps(body), size=config['max_query_size'])
             delete_body = delete_query(response)
             try:
-                client.delete_by_query(index=index, body=json.dumps(delete_body), size=size)
+                client.delete_by_query(index=index, body=json.dumps(delete_body), size=config['max_query_size'])
             except Exception as e:
                 printf({'msg': '[ERROR][ERROR][ERROR]\n{}'.format(str(e)), 'f': 'ES Delete', 'job': job_id})
     end_ = client.search(index=index)['hits']['total']

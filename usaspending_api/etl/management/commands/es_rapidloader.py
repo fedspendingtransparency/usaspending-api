@@ -1,4 +1,5 @@
 import os
+import json
 
 from datetime import datetime
 from django.core.management.base import BaseCommand
@@ -15,7 +16,6 @@ from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
 from usaspending_api.etl.es_etl_helpers import printf
-
 
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. Generate the full list of fiscal years and award descriptions to process as jobs
@@ -51,6 +51,10 @@ class Command(BaseCommand):
             type=str,
             help='Set for a custom location of output files')
         parser.add_argument(
+            '--index_name',
+            type=str,
+            help='Set an index name')
+        parser.add_argument(
             '-d',
             '--deleted',
             action='store_true',
@@ -85,6 +89,13 @@ class Command(BaseCommand):
         self.config['recreate'] = options['recreate']
         self.config['stale'] = options['stale']
         self.config['keep'] = options['keep']
+        self.config['index_name'] = options['index_name']
+        mappingfile = os.path.join(settings.BASE_DIR, 'usaspending_api/etl/es_transaction_mapping.json')
+        with open(mappingfile) as f:
+            mapping_dict = json.load(f)
+            self.config['mapping'] = json.dumps(mapping_dict)
+        self.config['doc_type'] = str(list(mapping_dict['mappings'].keys())[0])
+        self.config['max_query_size'] = mapping_dict['settings']['index.max_result_window']
 
         if not options['since']:
             # Due to the queries used for fetching postgres data, `starting_date` needs to be present and a date
@@ -110,13 +121,11 @@ class Command(BaseCommand):
 
         download_queue = Queue()  # Queue for jobs whch need a csv downloaded
         es_ingest_queue = Queue(10)  # Queue for jobs which have a csv and are ready for ES ingest
-
         job_id = 0
         for fy in self.config['fiscal_years']:
             for awd_cat_idx in AWARD_DESC_CATEGORIES.keys():
                 job_id += 1
-                award_category = AWARD_DESC_CATEGORIES[awd_cat_idx]
-                index = '{}-{}-{}'.format(settings.TRANSACTIONS_INDEX_ROOT, award_category, fy)
+                index = self.config['index_name']
                 filename = '{dir}{fy}_transactions_{type}.csv'.format(
                     dir=self.config['directory'],
                     fy=fy,
