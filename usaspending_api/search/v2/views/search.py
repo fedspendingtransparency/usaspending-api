@@ -47,7 +47,10 @@ logger = logging.getLogger(__name__)
 
 
 class SpendingOverTimeVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters, and returns spending by time. The amount of time is denoted by the "group" value.
+    endpoint_doc: /advanced_award_search/spending_over_time.md
+    """
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -144,7 +147,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
 
 class SpendingByCategoryVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters, and returns spending by the defined category/scope.
+    The category is defined by the category keyword, and the scope is defined by is denoted by the scope keyword.
+    endpoint_doc: /advanced_award_search/spending_by_category.md
+    """
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -398,6 +405,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
 
 class SpendingByGeographyVisualizationViewSet(APIView):
+    """
+        This route takes award filters, and returns spending by state code, county code, or congressional district code.
+        endpoint_doc: /advanced award search/spending_by_geography.md
+    """
     geo_layer = None  # State, county or District
     geo_layer_filters = None  # Specific geo_layers to filter on
     queryset = None  # Transaction queryset
@@ -589,7 +600,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
 
 class SpendingByAwardVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters and fields, and returns the fields of the filtered awards.
+    endpoint_doc: /advanced_award_search/spending_by_award.md
+    """
     @total_ordering
     class MinType(object):
         def __le__(self, other):
@@ -694,6 +708,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
 
 class SpendingByAwardCountVisualizationViewSet(APIView):
+    """
+    This route takes award filters, and returns the number of awards in each award type (Contracts, Loans, Grants, etc.)
+        endpoint_doc: /advanced_award_search/spending_by_award_count.md
+    """
     @cache_response()
     def post(self, request):
         """Return all budget function/subfunction titles matching the provided search text"""
@@ -739,7 +757,10 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
 
 class SpendingByTransactionVisualizationViewSet(APIView):
-
+    """
+    This route takes keyword search fields, and returns the fields of the searched term.
+        endpoint_doc: /advanced_award_search/spending_by_transaction.md
+    """
     @total_ordering
     class MinType(object):
         def __le__(self, other):
@@ -774,14 +795,6 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
         results = []
         for transaction in response[:validated_payload['limit']]:
-            transaction["internal_id"] = transaction["Award ID"]
-            if 'display_award_id' in transaction:
-                transaction["Award ID"] = transaction['display_award_id']
-                del transaction['display_award_id']
-            # elif award_type != 'contracts':
-            #     transaction["Award ID"] = transaction['fain']
-            # else:
-            #     transaction["Award ID"] = transaction['piid']
             results.append(transaction)
 
         response = {
@@ -793,7 +806,10 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
 
 class TransactionSummaryVisualizationViewSet(APIView):
-
+    """
+    This route takes award filters, and returns the number of transactions and summation of federal action obligations.
+        endpoint_doc: /advanced_award_search/transaction_spending_summary.md
+    """
     @cache_response()
     def post(self, request):
         """
@@ -815,7 +831,11 @@ class TransactionSummaryVisualizationViewSet(APIView):
 
 
 class SpendingByTransactionCountVisualizaitonViewSet(APIView):
+    """
+    This route takes keyword search fields, and returns the fields of the searched term.
+        endpoint_doc: /advanced_award_search/spending_by_transaction_count.md
 
+    """
     @cache_response()
     def post(self, request):
 

@@ -1,7 +1,9 @@
 {
   "final_name": "summary_transaction_geo_view",
+  "refresh": true,
   "matview_sql": [
     "SELECT",
+    "  MD5(array_to_string(sort(array_agg(\"transaction_normalized\".\"id\"::int)), ' ')) AS pk,",
     "  cast(date_trunc('month', \"transaction_normalized\".\"action_date\") as date) as \"action_date\",",
     "  \"transaction_normalized\".\"fiscal_year\",",
     "  \"transaction_normalized\".\"type\",",
@@ -102,6 +104,10 @@
   ],
   "indexes": [
     {
+      "name": "unique_pk",
+      "unique": true,
+      "columns": [{"name": "\"pk\""}]
+    }, {
       "name": "date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {
@@ -177,10 +183,6 @@
       "name": "funding_subtier_agency_name",
       "where": "\"funding_subtier_agency_name\" IS NOT NULL",
       "columns": [{"name": "\"funding_subtier_agency_name\""}]
-    }, {
-      "name": "tuned_type_and_idv",
-      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
-      "columns": [{"name": "\"pulled_from\""}, {"name": "\"type\""}]
     }, {
       "name": "compound_geo_pop_1",
       "where": "\"pop_country_code\" = 'USA'",

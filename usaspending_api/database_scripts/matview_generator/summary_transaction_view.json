@@ -1,7 +1,9 @@
 {
   "final_name": "summary_transaction_view",
+  "refresh": true,
   "matview_sql": [
     "SELECT",
+    "  MD5(array_to_string(sort(array_agg(\"transaction_normalized\".\"id\"::int)), ' ')) AS pk,",
     "  \"transaction_normalized\".\"action_date\",",
     "  \"transaction_normalized\".\"fiscal_year\",",
     "  \"transaction_normalized\".\"type\",",
@@ -129,6 +131,10 @@
   ],
   "indexes": [
     {
+      "name": "unique_pk",
+      "unique": true,
+      "columns": [{"name": "\"pk\""}]
+    }, {
         "name": "ordered_action_date",
         "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {
@@ -244,10 +250,6 @@
       "name": "business_categories",
       "method": "GIN",
       "columns": [{"name": "\"business_categories\""}]
-    }, {
-      "name": "tuned_type_and_idv",
-      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
-      "columns": [{"name": "\"pulled_from\""}, {"name": "\"type\""}]
     }, {
       "name": "compound_geo_pop_1",
       "where": "\"pop_country_code\" = 'USA'",

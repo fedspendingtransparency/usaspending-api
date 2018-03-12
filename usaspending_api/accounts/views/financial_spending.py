@@ -5,12 +5,15 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.common.views import DetailViewSet
+from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
-class ObjectClassFinancialSpendingViewSet(DetailViewSet):
-    """Returns financial spending data by object class for the latest quarter based on the given fiscal year."""
+class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
+    """
+    Returns financial spending data by object class for the latest quarter based on the given fiscal year.
+    endpoint_doc: /financial_spending/major_object_class.md
+    """
 
     serializer_class = ObjectClassFinancialSpendingSerializer
 
@@ -81,8 +84,11 @@ class ObjectClassFinancialSpendingViewSet(DetailViewSet):
         return queryset
 
 
-class MinorObjectClassFinancialSpendingViewSet(DetailViewSet):
-    """Returns financial spending data by object class for the latest quarter in the given fiscal year."""
+class MinorObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
+    """
+    Returns financial spending data by object class for the latest quarter in the given fiscal year.
+    endpoint_doc: /financial_spending/object_class.md
+    """
 
     serializer_class = MinorObjectClassFinancialSpendingSerializer
 

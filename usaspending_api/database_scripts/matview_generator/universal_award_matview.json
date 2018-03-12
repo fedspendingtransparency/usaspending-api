@@ -123,6 +123,7 @@
   "indexes": [
     {
       "name": "id",
+      "unique": true,
       "columns": [{"name": "\"award_id\""}]
     }, {
       "name": "category",
