@@ -84,9 +84,13 @@
           }
         },
         "award_category": {
-          "type": "text",
-          "fielddata": true
-        },
+            "type": "keyword",
+            "fields": {
+              "raw": { 
+                "type": "text"
+              }
+            }
+          },
         "recipient_unique_id": {
           "type": "text"
         },
@@ -202,17 +206,16 @@
           "index": false
         },
         "pulled_from": {
-          "type": "text",
-          "fielddata": true
-        },
-        "type": {
-            "type": "text",
+            "type": "keyword",
             "fields": {
-                "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                }
+              "raw": { 
+                "type": "text"
+              }
             }
+          },
+        "type": {
+          "type": "text",
+          "index": false
         },
         "pop_country_code": {
           "type": "text",
