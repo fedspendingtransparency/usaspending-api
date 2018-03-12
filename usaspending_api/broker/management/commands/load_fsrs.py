@@ -22,7 +22,7 @@ class Command(BaseCommand):
     help = "Load new FSRS data from broker."
 
     @staticmethod
-    def get_award_data(db_cursor, award_type, max_id):
+    def get_award_data(db_cursor, award_type, max_id, ids=None):
         """ Gets data for all new awards from broker with ID greater than the ones already stored for the given
             award type
         """
@@ -35,8 +35,12 @@ class Command(BaseCommand):
         else:
             # TODO contracting_office_aid equivalent? Do we even need it?
             query_columns.extend(['fain'])
-        query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type +\
-                " WHERE id > " + str(max_id) + " ORDER BY id"
+        if max_id:
+            query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type +\
+                    " WHERE id > " + str(max_id) + " ORDER BY id"
+        elif isinstance(ids, list) and len(ids) > 0:
+            query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type +\
+                    " WHERE id = ANY(\'{{{}}}\'::int[])".format(','.join(ids))
 
         db_cursor.execute(query)
 
@@ -71,7 +75,7 @@ class Command(BaseCommand):
             if not award:
                 logger.warning(
                    "Internal ID {} cannot find award with agency_id {}, referenced_idv_agency_iden {}, piid {}, "
-                   "parent_award_id {}; skipping...".format(row['internal_id'], row['contract_agency_code'],
+                   "parent_award_id {};".format(row['internal_id'], row['contract_agency_code'],
                                                             row['contract_idv_agency_code'], row['contract_number'],
                                                             row['idv_reference_number']))
                 return None
@@ -88,7 +92,7 @@ class Command(BaseCommand):
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
                 logger.warning(
-                    "Internal ID {} cannot find award with fain {}; skipping...".
+                    "Internal ID {} cannot find award with fain {};".
                     format(row['internal_id'], row['fain']))
                 return None
         return award
@@ -142,26 +146,21 @@ class Command(BaseCommand):
     def gather_shared_award_data(self, data, award_type):
         """ Creates a dictionary with internal IDs as keys that stores data for each award that's shared between all
             its subawards so we don't have to query the DB repeatedly
+            Note: subawards without a matching award will still be processed, just without a matching id which may be
+                  matched later
         """
         shared_data = {}
         logger.info("Starting shared data gathering")
         counter = 0
         new_awards = len(data)
         logger.info(str(new_awards) + " new awards to process.")
-        skip_count = 0
         for row in data:
             counter += 1
             if counter % LOG_LIMIT == 0:
                 logger.info(
-                    "Processed " + str(counter) + " of " + str(new_awards) + " new awards. Skipped " + str(skip_count)
+                    "Processed " + str(counter) + " of " + str(new_awards) + " new awards."
                 )
-                skip_count = 0
-
             award = self.get_award(row, award_type)
-
-            if not award:
-                skip_count += 1
-                continue
 
             # set shared data content
             shared_data[row['internal_id']] = {'award': award}
@@ -250,8 +249,8 @@ class Command(BaseCommand):
                 'recipient': recipient,
                 'data_source': "DBR",
                 'cfda': cfda,
-                'awarding_agency': shared_mappings['award'].awarding_agency,
-                'funding_agency': shared_mappings['award'].funding_agency,
+                'awarding_agency': shared_mappings['award'].awarding_agency if shared_mappings['award'] else None,
+                'funding_agency': shared_mappings['award'].funding_agency if shared_mappings['award'] else None,
                 'place_of_performance': place_of_performance,
                 'subaward_number': row['subaward_num'],
                 'amount': row['subaward_amount'],
@@ -269,7 +268,8 @@ class Command(BaseCommand):
             # Either we're starting with an empty table in regards to this award type or we've deleted all
             # subawards related to the internal_id, either way we just create the subaward
             Subaward.objects.create(**subaward_dict)
-            award_update_id_list.append(shared_mappings['award'].id)
+            if shared_mappings['award']:
+                award_update_id_list.append(shared_mappings['award'].id)
 
     def process_subawards(self, db_cursor, shared_award_mappings, award_type, subaward_type, max_id):
         """ Process the subawards and insert them as we go """
@@ -312,6 +312,29 @@ class Command(BaseCommand):
 
         self.process_subawards(db_cursor, shared_award_mappings, award_type, subaward_type, max_id)
 
+
+    def cleanup_broken_links(self, db_cursor):
+        broken_links = 0
+        fixed_ids = []
+        for award_type in ['procurement', 'grant']:
+            broken_subawards = Subaward.objects.filter(award_id__isnull=True, award_type=award_type)
+            if not broken_subawards:
+                continue
+            broken_links += len(broken_subawards)
+            broker_awards_ids = [broken_subaward.broker_award_id for broken_subaward in broken_subawards]
+            broker_award_data = self.get_award_data(db_cursor, award_type, ids=broker_awards_ids)
+            broker_mappings = self.gather_shared_award_data(broker_award_data, award_type)
+            for broken_subaward in broken_subawards:
+                award = broker_mappings[broken_subaward.internal_id]
+                if award:
+                    broken_subaward.award = award
+                    broken_subaward.awarding_agency = award.awarding_agency
+                    broken_subaward.funding_agency = award.funding_agency
+                    broken_subaward.save()
+                    fixed_ids.append(award.id)
+        award_update_id_list.extend(fixed_ids)
+        logger.info('Fixed {} of {} broken links'.format(len(fixed_ids), broken_links))
+
     @db_transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting FSRS data load...')
@@ -325,6 +348,10 @@ class Command(BaseCommand):
         self.process_award_type(db_cursor, "grant", "subgrant")
 
         logger.info('Completed FSRS data load...')
+
+        # Must be before update_award_subawards, or recall it after
+        logger.info('Cleaning up previous subawards without parent awards...')
+        self.cleanup_broken_links(db_cursor)
 
         logger.info('Updating related award metadata...')
         update_award_subawards(tuple(award_update_id_list))
