@@ -84,9 +84,13 @@
           }
         },
         "award_category": {
-          "type": "text",
-          "index": false
-        },
+            "type": "keyword",
+            "fields": {
+              "raw": { 
+                "type": "text"
+              }
+            }
+          },
         "recipient_unique_id": {
           "type": "text"
         },
@@ -202,9 +206,13 @@
           "index": false
         },
         "pulled_from": {
-          "type": "text",
-          "index": false
-        },
+            "type": "keyword",
+            "fields": {
+              "raw": { 
+                "type": "text"
+              }
+            }
+          },
         "type": {
           "type": "text",
           "index": false
