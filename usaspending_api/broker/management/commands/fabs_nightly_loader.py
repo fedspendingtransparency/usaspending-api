@@ -93,10 +93,6 @@ class Command(BaseCommand):
         db_query += ' LIMIT %d'
         db_args.append(limit)
 
-        print(db_query % tuple(db_args))
-
-        exit()
-
         db_cursor.execute(db_query, db_args)
         db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
 
