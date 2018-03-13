@@ -42,7 +42,7 @@ DELETE FROM legal_entity AS le
 USING le_subaward
 WHERE le_subaward.legal_entity_id = le.legal_entity_id;
 
--- Delete teh subaward locations
+-- Delete the subaward locations
 DELETE FROM references_location as loc
 USING sub_location
 WHERE sub_location.location_id = loc.location_id;
