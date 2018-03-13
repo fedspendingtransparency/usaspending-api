@@ -23,6 +23,7 @@ DOWNLOAD_VISIBILITY_TIMEOUT = 60*10
 MAX_VISIBILITY_TIMEOUT = 60*60*4
 BUFFER_SIZE = (5 * 1024 ** 2)
 EXCEL_ROW_LIMIT = 1000000
+WAIT_FOR_PROCESS_SLEEP = 5
 
 logger = logging.getLogger('console')
 
@@ -233,7 +234,7 @@ def wait_for_process(process, start_time, download_job, message):
     while process.is_alive() and (time.time() - start_time) < MAX_VISIBILITY_TIMEOUT:
         if message:
             message.change_visibility(VisibilityTimeout=DOWNLOAD_VISIBILITY_TIMEOUT)
-        time.sleep(60)
+        time.sleep(WAIT_FOR_PROCESS_SLEEP)
 
     if (time.time() - start_time) >= MAX_VISIBILITY_TIMEOUT or process.exitcode != 0:
         if process.is_alive():
