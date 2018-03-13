@@ -97,14 +97,23 @@ def matview_search_filter(filters, model):
                     if tier == "toptier":
                         funding_toptier |= Q(funding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        funding_subtier |= Q(funding_subtier_agency_name=name)
+                        if 'toptier_name' in v:
+                            funding_subtier |= (Q(funding_subtier_agency_name=name) &
+                                                Q(funding_toptier_agency_name=v['toptier_name']))
+                        else:
+                            funding_subtier |= Q(funding_subtier_agency_name=name)
+
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 elif type == "awarding":
                     if tier == "toptier":
                         awarding_toptier |= Q(awarding_toptier_agency_name=name)
                     elif tier == "subtier":
-                        awarding_subtier |= Q(awarding_subtier_agency_name=name)
+                        if 'toptier_name' in v:
+                            awarding_subtier |= (Q(awarding_subtier_agency_name=name) &
+                                                 Q(awarding_toptier_agency_name=v['toptier_name']))
+                        else:
+                            awarding_subtier |= Q(awarding_subtier_agency_name=name)
                     else:
                         raise InvalidParameterException('Invalid filter: agencies ' + tier + ' tier is invalid.')
                 else:
