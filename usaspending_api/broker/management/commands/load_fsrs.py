@@ -35,12 +35,13 @@ class Command(BaseCommand):
         else:
             # TODO contracting_office_aid equivalent? Do we even need it?
             query_columns.extend(['fain'])
-        if max_id:
+
+        if isinstance(ids, list) and len(ids) > 0:
             query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type +\
+                    " WHERE id = ANY(\'{{{}}}\'::int[]) ORDER BY id".format(','.join([str(id) for id in ids]))
+        else:
+            query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type + \
                     " WHERE id > " + str(max_id) + " ORDER BY id"
-        elif isinstance(ids, list) and len(ids) > 0:
-            query = "SELECT " + ",".join(query_columns) + " FROM fsrs_" + award_type +\
-                    " WHERE id = ANY(\'{{{}}}\'::int[])".format(','.join(ids))
 
         db_cursor.execute(query)
 
@@ -236,6 +237,10 @@ class Command(BaseCommand):
         if row['internal_id'] in shared_award_mappings:
             shared_mappings = shared_award_mappings[row['internal_id']]
 
+            for key in row:
+                if isinstance(row[key], str):
+                    row[key] = row[key].upper()
+
             cfda = None
             # check if the key exists and if it isn't empty (only here for grants)
             if 'cfda_numbers' in row and row['cfda_numbers']:
@@ -281,11 +286,6 @@ class Command(BaseCommand):
         while len(subaward_list) > 0:
             logger.info("Processing next 10,000 subawards, starting at offset: " + str(current_offset))
             for row in subaward_list:
-
-                for key in row:
-                    if isinstance(row[key], str):
-                        row[key] = row[key].upper()
-
                 self.create_subaward(row, shared_award_mappings, award_type)
 
             current_offset += QUERY_LIMIT
@@ -322,10 +322,11 @@ class Command(BaseCommand):
                 continue
             broken_links += len(broken_subawards)
             broker_awards_ids = [broken_subaward.broker_award_id for broken_subaward in broken_subawards]
-            broker_award_data = self.get_award_data(db_cursor, award_type, ids=broker_awards_ids)
+            broker_award_data = self.get_award_data(db_cursor, award_type, None, ids=broker_awards_ids)
             broker_mappings = self.gather_shared_award_data(broker_award_data, award_type)
             for broken_subaward in broken_subawards:
-                award = broker_mappings[broken_subaward.internal_id]
+                award_data = broker_mappings.get(broken_subaward.internal_id.lower())
+                award = award_data.get('award') if award_data else None
                 if award:
                     broken_subaward.award = award
                     broken_subaward.awarding_agency = award.awarding_agency
@@ -341,6 +342,11 @@ class Command(BaseCommand):
 
         db_cursor = connections['data_broker'].cursor()
 
+        # This is called at the start to prevent duplicating efforts
+        # It may be called later but requires update_award_subawards to be called after
+        logger.info('Cleaning up previous subawards without parent awards...')
+        self.cleanup_broken_links(db_cursor)
+
         logger.info('Get Broker FSRS procurement data...')
         self.process_award_type(db_cursor, "procurement", "subcontract")
 
@@ -348,10 +354,6 @@ class Command(BaseCommand):
         self.process_award_type(db_cursor, "grant", "subgrant")
 
         logger.info('Completed FSRS data load...')
-
-        # Must be before update_award_subawards, or recall it after
-        logger.info('Cleaning up previous subawards without parent awards...')
-        self.cleanup_broken_links(db_cursor)
 
         logger.info('Updating related award metadata...')
         update_award_subawards(tuple(award_update_id_list))
