@@ -77,8 +77,8 @@ class Command(BaseCommand):
                 logger.warning(
                    "Internal ID {} cannot find award with agency_id {}, referenced_idv_agency_iden {}, piid {}, "
                    "parent_award_id {};".format(row['internal_id'], row['contract_agency_code'],
-                                                            row['contract_idv_agency_code'], row['contract_number'],
-                                                            row['idv_reference_number']))
+                                                row['contract_idv_agency_code'], row['contract_number'],
+                                                row['idv_reference_number']))
                 return None
         else:
             # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
@@ -311,7 +311,6 @@ class Command(BaseCommand):
             Subaward.objects.filter(internal_id__in=internal_ids, award_type=award_type).delete()
 
         self.process_subawards(db_cursor, shared_award_mappings, award_type, subaward_type, max_id)
-
 
     def cleanup_broken_links(self, db_cursor):
         broken_links = 0
