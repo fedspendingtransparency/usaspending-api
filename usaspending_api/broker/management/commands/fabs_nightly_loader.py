@@ -60,7 +60,7 @@ class Command(BaseCommand):
         return final_db_rows, ids_to_delete
 
     @staticmethod
-    def get_fabs_historical_data(date, fiscal_year=None, limit=500000):
+    def get_fabs_historical_data(date, fiscal_year=None):
         logger.info('Getting historical data...')
         db_cursor = connections['data_broker'].cursor()
 
@@ -89,9 +89,6 @@ class Command(BaseCommand):
 
             db_query += ' AND action_date::Date BETWEEN %s AND %s'
             db_args += [fy_begin, fy_end]
-
-        db_query += ' LIMIT %d'
-        db_args.append(limit)
 
         db_cursor.execute(db_query, db_args)
         db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
@@ -353,9 +350,6 @@ class Command(BaseCommand):
                     raise InvalidParameterException('Fiscal year is not in the proper integer format: YYYY')
 
                 to_insert, ids_to_delete = self.get_fabs_historical_data(date=date, fiscal_year=fiscal_year)
-                while len(to_insert) == 0 and fiscal_year >= 1900:
-                    fiscal_year -= 1
-                    to_insert, ids_to_delete = self.get_fabs_historical_data(date=date, fiscal_year=fiscal_year)
             else:
                 to_insert, ids_to_delete = self.get_fabs_data(date=date)
 
