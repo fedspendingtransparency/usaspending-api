@@ -74,10 +74,11 @@ class Command(BaseCommand):
                 AND
                 is_active IS TRUE
                 AND
-                updated_at = '%s 00:00:00'
+                updated_at = %s
         '''
 
-        db_args = [date]
+        date_time = date + ' 00:00:00'
+        db_args = [date_time]
         if fiscal_year:
             if db_args:
                 db_query += ' AND'
@@ -87,7 +88,7 @@ class Command(BaseCommand):
             fy_begin = '10/01/' + str(fiscal_year - 1)
             fy_end = '09/30/' + str(fiscal_year)
 
-            db_query += ' AND action_date::Date BETWEEN %s AND %s'
+            db_query += ' action_date::Date BETWEEN %s AND %s'
             db_args += [fy_begin, fy_end]
 
         db_cursor.execute(db_query, db_args)
