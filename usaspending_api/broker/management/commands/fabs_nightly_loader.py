@@ -353,6 +353,9 @@ class Command(BaseCommand):
                     raise InvalidParameterException('Fiscal year is not in the proper integer format: YYYY')
 
                 to_insert, ids_to_delete = self.get_fabs_historical_data(date=date, fiscal_year=fiscal_year)
+                while len(to_insert) == 0 and fiscal_year >= 1900:
+                    fiscal_year -= 1
+                    to_insert, ids_to_delete = self.get_fabs_historical_data(date=date, fiscal_year=fiscal_year)
             else:
                 to_insert, ids_to_delete = self.get_fabs_data(date=date)
 
