@@ -53,7 +53,7 @@ def update_awards(award_tuple=None):
     sql_update += (
         'UPDATE awards a '
         'SET awarding_agency_id = l.awarding_agency_id, '
-        'certified_date = l.certified_date, '
+        'certified_date = l.action_date, '
         'date_signed = e.action_date, '
         'description = e.description, '
         'funding_agency_id = l.funding_agency_id, '
