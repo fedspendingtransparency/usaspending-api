@@ -3,7 +3,7 @@
 --    The SQL definition is stored in a json file     --
 --    Look in matview_generator for the code.         --
 --                                                    --
---  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
+--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --
 --------------------------------------------------------
 DROP MATERIALIZED VIEW IF EXISTS summary_view_psc_codes_temp CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS summary_view_psc_codes_old CASCADE;
@@ -32,19 +32,22 @@ GROUP BY
   "transaction_fpds"."pulled_from",
   "transaction_fpds"."product_or_service_code";
 
-CREATE UNIQUE INDEX idx_af8ca7ca$677_unique_pk_temp ON summary_view_psc_codes_temp USING BTREE("pk") WITH (fillfactor = 97);
-CREATE INDEX idx_af8ca7ca$677_action_date_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 97);
-CREATE INDEX idx_af8ca7ca$677_type_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST, "type") WITH (fillfactor = 97);
+CREATE UNIQUE INDEX idx_1b698194$c4b_unique_pk_temp ON summary_view_psc_codes_temp USING BTREE("pk") WITH (fillfactor = 97);
+CREATE INDEX idx_1b698194$c4b_action_date_temp ON summary_view_psc_codes_temp USING BTREE("action_date" DESC NULLS LAST) WITH (fillfactor = 97);
+CREATE INDEX idx_1b698194$c4b_type_temp ON summary_view_psc_codes_temp USING BTREE("type") WITH (fillfactor = 97);
+CREATE INDEX idx_1b698194$c4b_pulled_from_temp ON summary_view_psc_codes_temp USING BTREE("pulled_from") WITH (fillfactor = 97) WHERE "pulled_from" IS NOT NULL;
 
 ALTER MATERIALIZED VIEW IF EXISTS summary_view_psc_codes RENAME TO summary_view_psc_codes_old;
-ALTER INDEX IF EXISTS idx_af8ca7ca$677_unique_pk RENAME TO idx_af8ca7ca$677_unique_pk_old;
-ALTER INDEX IF EXISTS idx_af8ca7ca$677_action_date RENAME TO idx_af8ca7ca$677_action_date_old;
-ALTER INDEX IF EXISTS idx_af8ca7ca$677_type RENAME TO idx_af8ca7ca$677_type_old;
+ALTER INDEX IF EXISTS idx_1b698194$c4b_unique_pk RENAME TO idx_1b698194$c4b_unique_pk_old;
+ALTER INDEX IF EXISTS idx_1b698194$c4b_action_date RENAME TO idx_1b698194$c4b_action_date_old;
+ALTER INDEX IF EXISTS idx_1b698194$c4b_type RENAME TO idx_1b698194$c4b_type_old;
+ALTER INDEX IF EXISTS idx_1b698194$c4b_pulled_from RENAME TO idx_1b698194$c4b_pulled_from_old;
 
 ALTER MATERIALIZED VIEW summary_view_psc_codes_temp RENAME TO summary_view_psc_codes;
-ALTER INDEX idx_af8ca7ca$677_unique_pk_temp RENAME TO idx_af8ca7ca$677_unique_pk;
-ALTER INDEX idx_af8ca7ca$677_action_date_temp RENAME TO idx_af8ca7ca$677_action_date;
-ALTER INDEX idx_af8ca7ca$677_type_temp RENAME TO idx_af8ca7ca$677_type;
+ALTER INDEX idx_1b698194$c4b_unique_pk_temp RENAME TO idx_1b698194$c4b_unique_pk;
+ALTER INDEX idx_1b698194$c4b_action_date_temp RENAME TO idx_1b698194$c4b_action_date;
+ALTER INDEX idx_1b698194$c4b_type_temp RENAME TO idx_1b698194$c4b_type;
+ALTER INDEX idx_1b698194$c4b_pulled_from_temp RENAME TO idx_1b698194$c4b_pulled_from;
 
 ANALYZE VERBOSE summary_view_psc_codes;
 GRANT SELECT ON summary_view_psc_codes TO readonly;

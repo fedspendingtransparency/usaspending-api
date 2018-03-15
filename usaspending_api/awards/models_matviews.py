@@ -2,13 +2,15 @@ import warnings
 from django.db import models
 from django.core.cache import CacheKeyWarning
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.search import SearchVectorField
 
 warnings.simplefilter("ignore", CacheKeyWarning)
 
 
 class UniversalTransactionView(models.Model):
-    keyword_string = models.TextField()
-    award_id_string = models.TextField()
+    keyword_ts_vector = SearchVectorField()
+    award_ts_vector = SearchVectorField()
+    recipient_name_ts_vector = SearchVectorField()
     transaction_id = models.IntegerField()
     action_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()
@@ -134,8 +136,9 @@ class SummaryTransactionView(models.Model):
 
 
 class UniversalAwardView(models.Model):
-    keyword_string = models.TextField()
-    award_id_string = models.TextField()
+    keyword_ts_vector = SearchVectorField()
+    award_ts_vector = SearchVectorField()
+    recipient_name_ts_vector = SearchVectorField()
     award_id = models.IntegerField(blank=False, null=False, primary_key=True)
     category = models.TextField()
     type = models.TextField()
