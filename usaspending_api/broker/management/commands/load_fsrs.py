@@ -1,4 +1,5 @@
 import logging
+import time
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction
@@ -12,10 +13,14 @@ from usaspending_api.etl.award_helpers import update_award_subawards
 logger = logging.getLogger('console')
 exception_logger = logging.getLogger("exceptions")
 
-QUERY_LIMIT = 10000
+QUERY_LIMIT = 1000
 LOG_LIMIT = 10000
 
 award_update_id_list = []
+
+rec_loc = 0
+le = 0
+pop_loc = 0
 
 
 class Command(BaseCommand):
@@ -55,9 +60,9 @@ class Command(BaseCommand):
             agency = get_valid_awarding_agency(row)
 
             if not agency:
-                logger.warning(
-                    "Internal ID {} cannot find matching agency with subtier code {}".
-                    format(row['internal_id'], row['contracting_office_aid']))
+                # logger.warning(
+                #     "Internal ID {} cannot find matching agency with subtier code {}".
+                #     format(row['internal_id'], row['contracting_office_aid']))
                 return None
 
             # Find the award to attach this sub-contract to, using the generated unique ID:
@@ -74,11 +79,11 @@ class Command(BaseCommand):
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                logger.warning(
-                   "Internal ID {} cannot find award with agency_id {}, referenced_idv_agency_iden {}, piid {}, "
-                   "parent_award_id {};".format(row['internal_id'], row['contract_agency_code'],
-                                                row['contract_idv_agency_code'], row['contract_number'],
-                                                row['idv_reference_number']))
+                # logger.warning(
+                #    "Internal ID {} cannot find award with agency_id {}, referenced_idv_agency_iden {}, piid {}, "
+                #    "parent_award_id {};".format(row['internal_id'], row['contract_agency_code'],
+                #                                 row['contract_idv_agency_code'], row['contract_number'],
+                #                                 row['idv_reference_number']))
                 return None
         else:
             # Find the award to attach this sub-contract to. We perform this lookup by finding the Award containing
@@ -88,18 +93,22 @@ class Command(BaseCommand):
             award = all_awards.first()
 
             if all_awards.count() > 1:
-                logger.warning("Multiple awards found with fain {}".format(row['fain']))
+                # logger.warning("Multiple awards found with fain {}".format(row['fain']))
+                pass
 
             # We don't have a matching award for this subcontract, log a warning and continue to the next row
             if not award:
-                logger.warning(
-                    "Internal ID {} cannot find award with fain {};".
-                    format(row['internal_id'], row['fain']))
+                # logger.warning(
+                #     "Internal ID {} cannot find award with fain {};".
+                #     format(row['internal_id'], row['fain']))
                 return None
         return award
 
     @staticmethod
     def get_subaward_references(row, award_type):
+        global rec_loc
+        global le
+        global pop_loc
         # Create Recipient/Location entries specific to this subaward row
         if award_type == 'procurement':
             location_value_map = location_d1_recipient_mapper(row)
@@ -118,13 +127,17 @@ class Command(BaseCommand):
 
         location_value_map.pop("location_zip")
 
+        start = time.time()
         recipient_location = Location.objects.create(**location_value_map)
+        rec_loc += (time.time() - start)
+        start = time.time()
         recipient = LegalEntity.objects.create(
             recipient_unique_id=row['duns'],
             recipient_name=recipient_name,
             parent_recipient_unique_id=row['parent_duns'],
             location=recipient_location
         )
+        le += (time.time() - start)
         # recipient.save()
         # recipient = load_data_into_model(model_instance=recipient, data=row, save=True)
 
@@ -140,7 +153,9 @@ class Command(BaseCommand):
 
         pop_value_map.pop("location_zip")
 
+        start = time.time()
         place_of_performance = Location.objects.create(**pop_value_map)
+        pop_loc += (time.time() - start)
 
         return recipient, place_of_performance
 
@@ -236,7 +251,6 @@ class Command(BaseCommand):
         # finding one or more parts of the shared data for it and we don't want to insert it.
         if row['internal_id'] in shared_award_mappings:
             shared_mappings = shared_award_mappings[row['internal_id']]
-
             for key in row:
                 if isinstance(row[key], str):
                     row[key] = row[key].upper()
@@ -277,19 +291,32 @@ class Command(BaseCommand):
                 award_update_id_list.append(shared_mappings['award'].id)
 
     def process_subawards(self, db_cursor, shared_award_mappings, award_type, subaward_type, max_id):
+        global rec_loc
+        global le
+        global pop_loc
+
         """ Process the subawards and insert them as we go """
         current_offset = 0
 
         subaward_list = self.gather_next_subawards(db_cursor, award_type, subaward_type, max_id, current_offset)
 
+        total_subawards = len(subaward_list)
+
         # run as long as we get any results for the subawards, stop as soon as we run out
         while len(subaward_list) > 0:
-            logger.info("Processing next 10,000 subawards, starting at offset: " + str(current_offset))
+            print(len(subaward_list))
             for row in subaward_list:
                 self.create_subaward(row, shared_award_mappings, award_type)
 
             current_offset += QUERY_LIMIT
+            start = time.time()
             subaward_list = self.gather_next_subawards(db_cursor, award_type, subaward_type, max_id, current_offset)
+            logger.info('gathering subawards took {} seconds'.format(time.time() - start))
+            total_subawards += len(subaward_list)
+        logger.info('Average rec_loc = {} seconds'.format(rec_loc/total_subawards))
+        logger.info('Average legal entity = {} seconds'.format(le / total_subawards))
+        logger.info('Average pop_loc = {} seconds'.format(pop_loc / total_subawards))
+        exit()
 
     def process_award_type(self, db_cursor, award_type, subaward_type):
         """ Do all the processing for the award type given """
@@ -300,6 +327,11 @@ class Command(BaseCommand):
         # set max ID to 0 if we don't have any relevant records
         if not max_id:
             max_id = 0
+        diff = 10000
+        if award_type == 'grant':
+            max_id = 532822 - diff
+        else:
+            max_id = 182657 - diff
 
         fsrs_award_data = self.get_award_data(db_cursor, award_type, max_id)
         shared_award_mappings = self.gather_shared_award_data(fsrs_award_data, award_type)
