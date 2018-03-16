@@ -7,9 +7,17 @@ from usaspending_api.references.models import PSC
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from .filter_helpers import date_or_fy_queryset, total_obligation_queryset
 from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.awards.models_matviews import UniversalAwardView, UniversalTransactionView
 
 
 logger = logging.getLogger(__name__)
+
+def universal_award_matview_filter(filters):
+    return matview_search_filter(filters, UniversalAwardView)
+
+
+def universal_transaction_matview_filter(filters):
+    return matview_search_filter(filters, UniversalTransactionView)
 
 
 def matview_search_filter(filters, model):
