@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # TODO: Performance when multiple false values are initially provided
 def subaward_filter(filters):
 
-    queryset = Subaward.objects.filter(award__is_null=False, award__latest_transaction__isnull=False,
+    queryset = Subaward.objects.filter(award_id__isnull=False, award__latest_transaction_id__isnull=False,
                                        award__category__isnull=False)
     for key, value in filters.items():
 
