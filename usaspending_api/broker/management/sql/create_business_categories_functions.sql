@@ -5,9 +5,15 @@ declare
 begin
 
     -- SMALL BUSINESS
+    if small_business_competitive IS TRUE
+    then
+        bc_arr := bc_arr || array['small_business'];
+    end if;
+
+    -- CATEGORY BUSINESS
     if small_business_competitive IS TRUE or for_profit_organization IS TRUE
     then
-        bc_arr := bc_arr || array['small_business', 'category_business'];
+        bc_arr := bc_arr || array['category_business'];
     end if;
 
     -- MINORITY BUSINESS
