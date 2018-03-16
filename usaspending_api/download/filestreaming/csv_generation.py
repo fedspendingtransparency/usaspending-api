@@ -276,7 +276,7 @@ def apply_annotations_to_sql(raw_query, aliases):
     want to use the efficiency of psql's \copy method and keep the column names, we need to allow these scenarios. This
     function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
-    select_string = re.findall('SELECT (.*) FROM', raw_query)[0]
+    select_string = re.findall('SELECT (.*?) FROM', raw_query)[0]
     selects = [select.strip() for select in select_string.split(',')]
     if len(selects) != len(aliases):
         raise Exception("Length of alises doesn't match the columns in selects")
