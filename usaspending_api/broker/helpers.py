@@ -333,9 +333,13 @@ def get_business_categories(row, data_type):
     elif data_type == 'fpds':
         legal_entity_bool_dict = build_legal_entity_booleans_dict(row)
         # SMALL BUSINESS
+        if legal_entity_bool_dict['small_business_competitive'] is True:
+            business_category_set |= {'small_business'}
+
+        # CATEGORY BUSINESS
         if legal_entity_bool_dict['small_business_competitive'] is True \
                 or legal_entity_bool_dict['for_profit_organization'] is True:
-            business_category_set |= {'small_business', 'category_business'}
+            business_category_set |= {'category_business'}
 
         # MINORITY BUSINESS
         if legal_entity_bool_dict['alaskan_native_owned_corpo'] is True:
