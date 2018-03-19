@@ -815,7 +815,7 @@ class TransactionFABS(models.Model):
 
 class Subaward(DataSourceTrackedModel):
     # Foreign keys
-    award = models.ForeignKey(Award, models.CASCADE, related_name="subawards")
+    award = models.ForeignKey(Award, models.CASCADE, related_name="subawards", null=True)
     recipient = models.ForeignKey(LegalEntity, models.DO_NOTHING)
     cfda = models.ForeignKey(Cfda, models.DO_NOTHING, related_name="related_subawards", null=True)
     awarding_agency = models.ForeignKey(Agency, models.DO_NOTHING, related_name="awarding_subawards", null=True)
