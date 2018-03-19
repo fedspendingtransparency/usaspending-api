@@ -266,6 +266,7 @@ class AwardSerializer(LimitableSerializer):
             "total_obligation",
             "total_outlay",
             "total_subsidy_cost",
+            "total_loan_value",
             "date_signed",
             "certified_date",
             "description",
