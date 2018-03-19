@@ -22,14 +22,4 @@ class Migration(migrations.Migration):
             name='face_value_loan_guarantee',
             field=models.DecimalField(blank=True, decimal_places=2, help_text='The face_value_loan_guarantee for loan type transactions', max_digits=23, null=True),
         ),
-        migrations.AlterField(
-            model_name='award',
-            name='total_subsidy_cost',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='The total of the original_loan_subsidy_cost from associated transactions', max_digits=23, null=True),
-        ),
-        migrations.AlterField(
-            model_name='transactionnormalized',
-            name='original_loan_subsidy_cost',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='The original_loan_subsidy_cost for loan type transactions', max_digits=23, null=True),
-        ),
     ]

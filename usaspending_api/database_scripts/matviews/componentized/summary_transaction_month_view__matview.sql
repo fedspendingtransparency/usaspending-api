@@ -54,7 +54,7 @@ SELECT
   "transaction_fpds"."type_set_aside",
   "transaction_fpds"."extent_competed",
   SUM(COALESCE("transaction_normalized"."federal_action_obligation", 0))::NUMERIC(20, 2) AS "federal_action_obligation",
-  SUM(COALESCE("transaction_normalized"."original_loan_subsidy_cost", 0))::NUMERIC(23, 2) AS "original_loan_subsidy_cost",
+  SUM(COALESCE("transaction_normalized"."original_loan_subsidy_cost", 0))::NUMERIC(20, 2) AS "original_loan_subsidy_cost",
   SUM(COALESCE("transaction_normalized"."face_value_loan_guarantee", 0))::NUMERIC(23, 2) AS "face_value_loan_guarantee",
   count(*) AS counts
 FROM
