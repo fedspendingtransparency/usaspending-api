@@ -47,7 +47,6 @@ SELECT
   "awards"."period_of_performance_start_date",
   "awards"."period_of_performance_current_end_date",
 
-  assistance_data."face_value_loan_guarantee",
   assistance_data."original_loan_subsidy_cost",
   assistance_data."face_value_loan_guarantee",
 
