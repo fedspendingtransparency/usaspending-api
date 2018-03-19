@@ -20,7 +20,7 @@ class UniversalTransactionView(models.Model):
     award_category = models.TextField()
     total_obligation = models.DecimalField(
         max_digits=15, decimal_places=2, blank=True, null=True)
-    total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    total_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     total_obl_bin = models.TextField()
     fain = models.TextField()
@@ -152,7 +152,7 @@ class UniversalAwardView(models.Model):
     total_obligation = models.DecimalField(
         max_digits=15, decimal_places=2, blank=True,
         null=True)
-    total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    total_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     total_obl_bin = models.TextField()
 
@@ -576,7 +576,7 @@ class AwardMatview(models.Model):
     total_obligation = models.DecimalField(max_digits=15, decimal_places=2)
     total_outlay = models.DecimalField(max_digits=15, decimal_places=2)
     total_subaward_amount = models.DecimalField(max_digits=15, decimal_places=2)
-    total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    total_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     type = models.TextField()
     type_description = models.TextField()

@@ -173,7 +173,7 @@ class Award(DataSourceTrackedModel):
                                                      "award")
     total_outlay = models.DecimalField(max_digits=15, db_index=True, decimal_places=2, null=True,
                                        help_text="The total amount of money paid out for this award")
-    total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True,
+    total_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True,
                                              help_text="The total of the original_loan_subsidy_cost from associated "
                                                        "transactions")
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True,
@@ -335,7 +335,7 @@ class TransactionNormalized(models.Model):
                                                     null=True,
                                                     help_text="The obligation of the federal government for this "
                                                               "transaction")
-    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True,
+    original_loan_subsidy_cost = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True,
                                                      help_text="The original_loan_subsidy_cost for loan type "
                                                                "transactions")
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True,
