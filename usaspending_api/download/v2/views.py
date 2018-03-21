@@ -10,7 +10,7 @@ from django.conf import settings
 from django.db.models import Sum, F
 
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from usaspending_api.common.views import APIDocumentationView
 from rest_framework.exceptions import NotFound
 
 from usaspending_api.accounts.models import FederalAccount
@@ -32,7 +32,7 @@ from usaspending_api.download.models import DownloadJob
 from usaspending_api.references.models import ToptierAgency
 
 
-class BaseDownloadViewSet(APIView):
+class BaseDownloadViewSet(APIDocumentationView):
     s3_handler = S3Handler(name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
     def post(self, request):
@@ -45,7 +45,7 @@ class BaseDownloadViewSet(APIView):
         cached_download = DownloadJob.objects.filter(
             json_request=ordered_json_request,
             update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
-        if cached_download:
+        if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
             cached_filename = cached_download[0]['file_name']
             return self.get_download_response(file_name=cached_filename)
@@ -64,43 +64,46 @@ class BaseDownloadViewSet(APIView):
 
         return self.get_download_response(file_name=timestamped_file_name)
 
-    def validate_request(self, json_request):
+    def validate_request(self, request_data):
         """Analyze request and raise any formatting errors as Exceptions"""
-        constraint_type = json_request.get('constraint_type', None)
+        json_request = {}
+        constraint_type = request_data.get('constraint_type', None)
 
         # Overriding all other filters if the keyword filter is provided in year-constraint download
-        if constraint_type == 'year' and 'elasticsearch_keyword' in json_request['filters']:
-            json_request['filters'] = {'elasticsearch_keyword': json_request['filters']['elasticsearch_keyword'],
+        if constraint_type == 'year' and 'elasticsearch_keyword' in request_data['filters']:
+            request_data['filters'] = {'elasticsearch_keyword': request_data['filters']['elasticsearch_keyword'],
                                        'award_type_codes': list(award_type_mapping.keys())}
-            json_request['limit'] = settings.MAX_DOWNLOAD_LIMIT
-            return json_request
+            request_data['limit'] = settings.MAX_DOWNLOAD_LIMIT
+            return request_data
 
         # Validate required parameters
         for required_param in ['award_levels', 'filters']:
-            if required_param not in json_request:
+            if required_param not in request_data:
                 raise InvalidParameterException(
                     'Missing one or more required query parameters: {}'.format(required_param))
 
-        if not isinstance(json_request['award_levels'], list):
+        if not isinstance(request_data['award_levels'], list):
             raise InvalidParameterException('Award levels parameter not provided as a list')
-        elif len(json_request['award_levels']) == 0:
+        elif len(request_data['award_levels']) == 0:
             raise InvalidParameterException('At least one award level is required.')
-        for award_level in json_request['award_levels']:
+        for award_level in request_data['award_levels']:
             if award_level not in VALUE_MAPPINGS:
                 raise InvalidParameterException('Invalid award_level: {}'.format(award_level))
+        json_request['award_levels'] = request_data['award_levels']
 
-        if not isinstance(json_request['filters'], dict):
+        if not isinstance(request_data['filters'], dict):
             raise InvalidParameterException('Filters parameter not provided as a dict')
-        elif len(json_request['filters']) == 0:
+        elif len(request_data['filters']) == 0:
             raise InvalidParameterException('At least one filter is required.')
+        json_request['filters'] = {}
 
         # Set defaults of non-required parameters
-        json_request['columns'] = json_request.get('columns', [])
-        json_request['file_format'] = json_request.get('file_format', 'csv')
+        json_request['columns'] = request_data.get('columns', [])
+        json_request['file_format'] = request_data.get('file_format', 'csv')
 
         # Validate shared filter types and assign defaults
-        filters = json_request['filters']
-        check_types_and_assign_defaults(filters, SHARED_FILTER_DEFAULTS)
+        filters = request_data['filters']
+        check_types_and_assign_defaults(filters, json_request['filters'], SHARED_FILTER_DEFAULTS)
 
         # Validate award type types
         if not filters.get('award_type_codes', None) or len(filters['award_type_codes']) < 1:
@@ -108,23 +111,24 @@ class BaseDownloadViewSet(APIView):
         for award_type_code in filters['award_type_codes']:
             if award_type_code not in award_type_mapping:
                 raise InvalidParameterException('Invalid award_type: {}'.format(award_type_code))
+        json_request['filters']['award_type_codes'] = filters['award_type_codes']
 
         # Validate time periods
-        total_range_count = validate_time_periods(filters)
+        total_range_count = validate_time_periods(filters, json_request)
 
         if constraint_type == 'row_count':
             # Validate limit exists and is below MAX_DOWNLOAD_LIMIT
-            json_request['limit'] = parse_limit(json_request)
+            json_request['limit'] = parse_limit(request_data)
 
             # Validate row_count-constrainted filter types and assign defaults
-            check_types_and_assign_defaults(filters, ROW_CONSTRAINT_FILTER_DEFAULTS)
+            check_types_and_assign_defaults(filters, json_request['filters'], ROW_CONSTRAINT_FILTER_DEFAULTS)
         elif constraint_type == 'year':
             # Validate combined total dates within one year (allow for leap years)
             if total_range_count > 366:
                 raise InvalidParameterException('Invalid Parameter: time_period total days must be within a year')
 
             # Validate year-constrainted filter types and assign defaults
-            check_types_and_assign_defaults(filters, YEAR_CONSTRAINT_FILTER_DEFAULTS)
+            check_types_and_assign_defaults(filters, json_request['filters'], YEAR_CONSTRAINT_FILTER_DEFAULTS)
         else:
             raise InvalidParameterException('Invalid parameter: constraint_type must be "row_count" or "year"')
 
@@ -171,6 +175,12 @@ class BaseDownloadViewSet(APIView):
 
 
 class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
+
+    endpoint_doc: /download/advanced_search_award_download.md
+    """
+
     def post(self, request):
         request.data['award_levels'] = ['awards']
         request.data['constraint_type'] = 'row_count'
@@ -178,6 +188,13 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
 
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to the backend to begin generating a zipfile of transaction data in CSV form for
+    download.
+
+    endpoint_doc: /download/advanced_search_transaction_download.md
+    """
+
     def post(self, request):
         request.data['award_levels'] = ['transactions']
         request.data['constraint_type'] = 'row_count'
@@ -185,6 +202,12 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
 
 
 class YearLimitedDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
+
+    endpoint_doc: /download/custom_award_data_download.md
+    """
+
     def post(self, request):
         request.data['constraint_type'] = 'year'
 
@@ -202,7 +225,8 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             raise InvalidParameterException('Missing one or more required query parameters: filters')
 
         # Validate keyword search first, remove all other filters
-        if 'keyword' in filters:
+        if 'keyword' in filters and len(filters.keys()) == 1:
+
             request_data['filters'] = {'elasticsearch_keyword': filters['keyword']}
             return
 
@@ -244,12 +268,20 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
                 del filters['sub_agency']
             else:
                 filters['agencies'] = [{'type': 'awarding', 'tier': 'toptier', 'name': toptier_name}]
+
         del filters['agency']
 
         request_data['filters'] = filters
 
 
 class DownloadStatusViewSet(BaseDownloadViewSet):
+    """
+    This route gets the current status of a download job that that has been requested with the `v2/download/awards/` or
+     `v2/download/transaction/` endpoint that same day.
+
+    endpoint_doc: /download/download_status.md
+    """
+
     def get(self, request):
         """Obtain status for the download job matching the file name provided"""
         get_request = request.query_params
@@ -261,8 +293,12 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
         return self.get_download_response(file_name=file_name)
 
 
-class DownloadTransactionCountViewSet(APIView):
+class DownloadTransactionCountViewSet(APIDocumentationView):
+    """
+    Returns the number of transactions that would be included in a download request for the given filter set.
 
+    endpoint_doc: /download/download_count.md
+    """
     @cache_response()
     def post(self, request):
         """Returns boolean of whether a download request is greater than the max limit. """
@@ -289,7 +325,12 @@ class DownloadTransactionCountViewSet(APIView):
         return Response(result)
 
 
-class DownloadListAgenciesViewSet(APIView):
+class DownloadListAgenciesViewSet(APIDocumentationView):
+    """
+    This route lists all the agencies and the subagencies or federal accounts associated under specific agencies.
+
+    endpoint_doc: /download/list_agencies.md
+    """
     modified_agencies_list = os.path.join(settings.BASE_DIR, 'usaspending_api', 'data',
                                           'modified_authoritative_agency_list.csv')
     sub_agencies_map = {}
@@ -367,7 +408,12 @@ class DownloadListAgenciesViewSet(APIView):
         return Response(response_data)
 
 
-class ListMonthlyDownloadsViewset(APIView):
+class ListMonthlyDownloadsViewset(APIDocumentationView):
+    """
+    This route lists all the agencies and the subagencies or federal accounts associated under specific agencies.
+
+    endpoint_doc: /download/list_downloads.md
+    """
     s3_handler = S3Handler(name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, region=settings.BULK_DOWNLOAD_AWS_REGION)
 
     # This is intentionally not cached so that the latest updates to these monthly generated files are always returned

@@ -105,6 +105,8 @@ def generate_raw_quoted_query(queryset):
     str_fix_params = []
     for param in params:
         if isinstance(param, QUOTABLE_TYPES):
+            # single quotes are escaped with two '' for strings in sql
+            param = param.replace('\'', '\'\'') if isinstance(param, str) else param
             str_fix_param = '\'{}\''.format(param)
         elif isinstance(param, list):
             str_fix_param = 'ARRAY{}'.format(param)
@@ -115,8 +117,9 @@ def generate_raw_quoted_query(queryset):
 
 
 def order_nested_object(nested_object):
-    """ Simply recursively order the item. To be used for standardizing objects for JSON dumps
-    Makes the assumption that any list of dictionaries does not contain a list or dictionary within itself """
+    """
+    Simply recursively order the item. To be used for standardizing objects for JSON dumps
+    """
     if isinstance(nested_object, list):
         if len(nested_object) > 0 and isinstance(nested_object[0], dict):
             # Lists of dicts aren't handled by python's sorted(), so we handle sorting manually
@@ -126,7 +129,7 @@ def order_nested_object(nested_object):
             for subitem in nested_object:
                 hash_list = ['{}{}'.format(key, subitem[key]) for key in sorted(list(subitem.keys()))]
                 hash_str = '_'.join(str(hash_list))
-                sort_dict[hash_str] = subitem
+                sort_dict[hash_str] = order_nested_object(subitem)
             # Sort by the new hash
             for sorted_hash in sorted(list(sort_dict.keys())):
                 sorted_subitems.append(sort_dict[sorted_hash])

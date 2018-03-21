@@ -344,12 +344,12 @@ def gather_deleted_ids(config):
         bucket.download_file(obj.key, file_path)
 
         # Ingests the CSV into a dataframe. pandas thinks some ids are dates, so disable parsing
-        data = pd.DataFrame.from_csv(file_path, parse_dates=False)
+        data = pd.read_csv(file_path, dtype=str)
 
         if 'detached_award_proc_unique' in data:
-            new_ids = ['cont_tx_' + x for x in data['detached_award_proc_unique'].values]
+            new_ids = ['CONT_TX_' + x.upper() for x in data['detached_award_proc_unique'].values]
         elif 'afa_generated_unique' in data:
-            new_ids = ['asst_tx_' + x for x in data['afa_generated_unique'].values]
+            new_ids = ['ASST_TX_' + x.upper() for x in data['afa_generated_unique'].values]
         else:
             printf({'msg': '  [Missing valid col] in {}'.format(obj.key)})
 

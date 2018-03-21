@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import subprocess
 import sys
 from uuid import uuid4
 
@@ -69,20 +70,41 @@ HEADER = [
     '--    The SQL definition is stored in a json file     --',
     '--    Look in matview_generator for the code.         --',
     '--                                                    --',
-    '--  DO NOT DIRECTLY EDIT THIS FILE!!!                 --',
+    '--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --',
     '--------------------------------------------------------',
 ]
-MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
-RANDOM_CHARS = str(uuid4())[:8]
 CLUSTERING_INDEX = None
+COMMIT_HASH = ''
 DEST_FOLDER = '../matviews/'
+MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
 OVERWRITE_FILE = True
+RANDOM_CHARS = ''
 
 
 def ingest_json(path):
     with open(path) as f:
         doc = json.load(f)
     return doc
+
+
+def generate_uid(characters=8, filename=None):
+    git_hash = get_git_commit(characters - 1, filename)
+    if git_hash is None:
+        return str(uuid4())[:characters]
+    else:
+        return git_hash + '$'
+
+
+def get_git_commit(characters=8, filename=None):
+    cmd = 'git log -n 1 --pretty=format:"%H"'
+    if filename and os.path.isfile(filename):
+        cmd += ' -- {}'.format(filename)
+    args = cmd.split(' ')
+    shell = subprocess.run(args, stdout=subprocess.PIPE, check=True)
+    if shell.stdout:
+        # First character is a '#' so skip it
+        return shell.stdout[1:characters + 1].decode()
+    return None
 
 
 def create_index_string(matview_name, index_name, idx):
@@ -94,7 +116,7 @@ def create_index_string(matview_name, index_name, idx):
     idx_where = ' WHERE ' + idx['where'] if idx.get('where', None) else ''
     idx_with = ''
     if idx_method.upper() == 'BTREE':
-        idx_with = ' WITH (fillfactor = 100)'  # reduce btree index size by 10%
+        idx_with = ' WITH (fillfactor = 97)'  # reduce btree index size by 7% from the default 10% free-space
 
     idx_cols = []
     for col in idx['columns']:
@@ -153,7 +175,8 @@ def make_indexes_sql(sql_json, matview_name):
     for idx in sql_json['indexes']:
         if len(idx['name']) > MAX_NAME_LENGTH:
             raise Exception('Desired index name is too long. Keep under {} chars'.format(MAX_NAME_LENGTH))
-        final_index = 'idx_' + RANDOM_CHARS + '__' + idx['name']
+
+        final_index = 'idx_' + COMMIT_HASH + RANDOM_CHARS + '_' + idx['name']
         unique_name_list.append(final_index)
         tmp_index = final_index + '_temp'
         old_index = final_index + '_old'
@@ -250,8 +273,6 @@ def create_componentized_files(sql_json):
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
 
-    # final_sql_strings.extend(make_sql_header())
-    # final_sql_strings.extend(make_matview_drops(matview_name))
     sql_strings = make_sql_header() + make_matview_drops(matview_name)
     write_sql_file(sql_strings, filename_base + '__drops')
 
@@ -271,15 +292,6 @@ def create_componentized_files(sql_json):
         sql_strings = make_sql_header() + make_matview_refresh(matview_name)
         write_sql_file(sql_strings, filename_base + '__refresh')
 
-    # final_sql_strings.append('')
-    # final_sql_strings += create_indexes
-    # final_sql_strings.append('')
-
-    # final_sql_strings.extend(make_modification_sql(matview_temp_name))
-    # final_sql_strings.append('')
-    # final_sql_strings.extend(make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes))
-    # final_sql_strings.append('')
-
 
 def create_monolith_file(sql_json):
     sql_strings = create_all_sql_strings(sql_json)
@@ -288,6 +300,10 @@ def create_monolith_file(sql_json):
 
 
 def main(source_file):
+    global COMMIT_HASH
+    global RANDOM_CHARS
+    COMMIT_HASH = generate_uid(9, source_file)
+    RANDOM_CHARS = str(uuid4())[:3]
     try:
         sql_json = ingest_json(source_file)
     except Exception as e:
@@ -307,7 +323,6 @@ if __name__ == '__main__':
         if ans.lower() in ['y', 'yes']:
             all_files = glob.glob('*.json')
             for f in all_files:
-                RANDOM_CHARS = str(uuid4())[:8]
                 print('\n==== {}'.format(f))
                 main(f)
         else:

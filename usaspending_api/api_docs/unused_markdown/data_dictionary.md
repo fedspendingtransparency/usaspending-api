@@ -12,7 +12,6 @@
     <li><a href="#references">Reference Endpoints</a>
   </ul>-->
   </li>
-  <li><a href="/docs/recipes">Request Recipes</a></li>
 </ul>
 
 [//]: # (Begin Content)

@@ -3,13 +3,23 @@
   "refresh": true,
   "matview_sql": [
     "SELECT",
+    "  to_tsvector(CONCAT(",
+    "    recipient.\"recipient_name\",",
+    "    ' ', contract_data.\"naics\",",
+    "    ' ', contract_data.\"naics_description\",",
+    "    ' ', \"psc\".\"description\",",
+    "    ' ', \"awards\".\"description\")) AS keyword_ts_vector,",
+    "  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_ts_vector,",
+    "  to_tsvector(coalesce(recipient.\"recipient_name\", '')) AS recipient_name_ts_vector,",
+    "",
     "  UPPER(CONCAT(",
     "    recipient.\"recipient_name\",",
     "    ' ', contract_data.\"naics\",",
     "    ' ', contract_data.\"naics_description\",",
-    "    ' ', psc.\"description\",",
+    "    ' ', \"psc\".\"description\",",
     "    ' ', \"awards\".\"description\")) AS keyword_string,",
     "  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,",
+    "",
     "  \"awards\".\"id\" AS award_id,",
     "  \"awards\".\"category\",",
     "  \"awards\".\"type\",",
@@ -20,6 +30,7 @@
     "  \"awards\".\"total_obligation\",",
     "  obligation_to_enum(\"awards\".\"total_obligation\") AS total_obl_bin,",
     "  \"awards\".\"total_subsidy_cost\",",
+    "  \"awards\".\"total_loan_value\",",
     "",
     "  \"awards\".\"recipient_id\",",
     "  UPPER(recipient.\"recipient_name\") AS recipient_name,",
@@ -32,8 +43,8 @@
     "  \"awards\".\"period_of_performance_start_date\",",
     "  \"awards\".\"period_of_performance_current_end_date\",",
     "",
-    "  assistance_data.\"face_value_loan_guarantee\",",
     "  assistance_data.\"original_loan_subsidy_cost\",",
+    "  assistance_data.\"face_value_loan_guarantee\",",
     "",
     "  latest_transaction.\"awarding_agency_id\",",
     "  latest_transaction.\"funding_agency_id\",",
@@ -123,6 +134,7 @@
   "indexes": [
     {
       "name": "id",
+      "unique": true,
       "columns": [{"name": "\"award_id\""}]
     }, {
       "name": "category",
@@ -160,8 +172,15 @@
       "where": "\"total_subsidy_cost\" IS NOT NULL",
       "columns": [{"name": "\"total_subsidy_cost\""}]
     }, {
+      "name": "total_loan_value",
+      "where": "\"total_loan_value\" IS NOT NULL",
+      "columns": [{"name": "\"total_loan_value\""}]
+    }, {
       "name": "ordered_total_subsidy_cost",
       "columns": [{"name": "\"total_subsidy_cost\"", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "ordered_total_loan_value",
+      "columns": [{"name": "\"total_loan_value\"", "order": "DESC NULLS LAST"}]
     }, {
       "name": "period_of_performance_start_date",
       "columns": [{"name": "\"period_of_performance_start_date\"", "order": "DESC NULLS LAST"}]
@@ -305,22 +324,34 @@
       "method": "GIN",
       "columns": [{"name": "\"business_categories\""}]
     }, {
-      "name": "gin_keyword_string",
+      "name": "keyword_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "\"keyword_ts_vector\""}]
+    }, {
+      "name": "award_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "\"award_ts_vector\""}]
+    }, {
+      "name": "recipient_name_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "\"recipient_name_ts_vector\""}]
+    }, {
+      "name": "keyword_id",
       "method": "GIN",
       "columns": [{"name": "\"keyword_string\"", "opclass": "gin_trgm_ops"}]
     }, {
-      "name": "gin_award_id_string",
+      "name": "award_id_string",
       "method": "GIN",
       "columns": [{"name": "\"award_id_string\"", "opclass": "gin_trgm_ops"}]
-     }, {
+    }, {
       "name": "compound_psc_fy",
       "columns": [{"name": "\"product_or_service_code\""}, {"name": "\"fiscal_year\""}]
-     }, {
+    }, {
       "name": "compound_naics_fy",
       "columns": [{"name": "\"naics_code\""}, {"name": "\"fiscal_year\""}]
-     }, {
+    }, {
       "name": "compound_cfda_fy",
       "columns": [{"name": "\"cfda_number\""}, {"name": "\"fiscal_year\""}]
-     }
+    }
   ]
 }

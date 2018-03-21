@@ -3,6 +3,15 @@
   "refresh": true,
   "matview_sql": [
     "SELECT",
+    "  to_tsvector(CONCAT(",
+    "    \"legal_entity\".\"recipient_name\",",
+    "    ' ', \"transaction_fpds\".\"naics\",",
+    "    ' ', \"naics\".\"description\",",
+    "    ' ', \"psc\".\"description\",",
+    "    ' ', \"awards\".\"description\")) AS keyword_ts_vector,",
+    "  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_ts_vector,",
+    "  to_tsvector(coalesce(\"legal_entity\".\"recipient_name\", '')) AS recipient_name_ts_vector,",
+    "",
     "  UPPER(CONCAT(",
     "    \"legal_entity\".\"recipient_name\",",
     "    ' ', \"transaction_fpds\".\"naics\",",
@@ -10,6 +19,7 @@
     "    ' ', \"psc\".\"description\",",
     "    ' ', \"awards\".\"description\")) AS keyword_string,",
     "  UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,",
+    "",
     "  \"transaction_normalized\".\"id\" AS transaction_id,",
     "  \"transaction_normalized\".\"action_date\"::date,",
     "  \"transaction_normalized\".\"fiscal_year\",",
@@ -19,12 +29,14 @@
     "  \"awards\".\"category\" AS award_category,",
     "  \"awards\".\"total_obligation\",",
     "  \"awards\".\"total_subsidy_cost\",",
+    "  \"awards\".\"total_loan_value\",",
     "  obligation_to_enum(\"awards\".\"total_obligation\") AS total_obl_bin,",
     "  \"awards\".\"fain\",",
     "  \"awards\".\"uri\",",
     "  \"awards\".\"piid\",",
     "  COALESCE(\"transaction_normalized\".\"federal_action_obligation\", 0)::NUMERIC(20, 2) AS \"federal_action_obligation\",",
     "  COALESCE(\"transaction_normalized\".\"original_loan_subsidy_cost\", 0)::NUMERIC(20, 2) AS \"original_loan_subsidy_cost\",",
+    "  COALESCE(\"transaction_normalized\".\"face_value_loan_guarantee\", 0)::NUMERIC(23, 2) AS \"face_value_loan_guarantee\",",
     "  \"transaction_normalized\".\"description\" AS transaction_description,",
     "  \"transaction_normalized\".\"modification_number\",",
     "",
@@ -111,6 +123,7 @@
   "indexes": [
     {
       "name": "transaction_id",
+      "unique": true,
       "columns": [{"name": "\"transaction_id\"", "order": "ASC NULLS LAST"}]
     }, {
       "name": "action_date",
@@ -150,8 +163,15 @@
       "where": "\"total_subsidy_cost\" IS NOT NULL",
       "columns": [{"name": "\"total_subsidy_cost\""}]
     }, {
+      "name": "total_loan_value",
+      "where": "\"total_loan_value\" IS NOT NULL",
+      "columns": [{"name": "\"total_loan_value\""}]
+    }, {
       "name": "ordered_total_subsidy_cost",
       "columns": [{"name": "\"total_subsidy_cost\"", "order": "DESC NULLS LAST"}]
+    }, {
+      "name": "ordered_total_loan_value",
+      "columns": [{"name": "\"total_loan_value\"", "order": "DESC NULLS LAST"}]
     }, {
       "name": "pop_country_code",
       "where": "\"pop_country_code\" IS NOT NULL",
@@ -188,10 +208,6 @@
       "name": "recipient_id",
       "where": "\"recipient_id\" IS NOT NULL",
       "columns": [{"name": "\"recipient_id\""}]
-    }, {
-      "name": "recipient_name",
-      "where": "\"recipient_name\" IS NOT NULL",
-      "columns": [{"name": "\"recipient_name\""}]
     }, {
       "name": "recipient_unique_id",
       "where": "\"recipient_unique_id\" IS NOT NULL",
@@ -284,17 +300,25 @@
       "method": "GIN",
       "columns": [{"name": "\"business_categories\""}]
     }, {
-      "name": "keyword_string",
+      "name": "keyword_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "\"keyword_ts_vector\""}]
+    }, {
+      "name": "award_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "\"award_ts_vector\""}]
+    }, {
+      "name": "recipient_name_ts_vector",
+      "method": "GIN",
+      "columns": [{"name": "\"recipient_name_ts_vector\""}]
+    }, {
+      "name": "keyword_id",
       "method": "GIN",
       "columns": [{"name": "\"keyword_string\"", "opclass": "gin_trgm_ops"}]
     }, {
       "name": "award_id_string",
       "method": "GIN",
       "columns": [{"name": "\"award_id_string\"", "opclass": "gin_trgm_ops"}]
-     }, {
-      "name": "tuned_type_and_idv",
-      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
-      "columns": [{"name": "\"pulled_from\""}, {"name": "\"type\""}]
     }, {
       "name": "compound_geo_pop_1",
       "where": "\"pop_country_code\" = 'USA'",

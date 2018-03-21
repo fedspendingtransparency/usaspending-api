@@ -94,7 +94,7 @@ def type_filter(_type, filters, limit=None):
                     award["name"] = code
             total += award['total']
 
-        alt_set = results[:limit]
+        alt_set = results[:limit] if _type == 'award' else results
 
         results = {
             'total': total,
@@ -124,7 +124,7 @@ def type_filter(_type, filters, limit=None):
         for key, value in total.items():
             total = value
 
-        queryset = queryset[:limit]
+        queryset = queryset[:limit] if _type == 'award' else queryset
 
         results = {
             'total': total,

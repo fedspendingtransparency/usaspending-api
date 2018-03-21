@@ -3,10 +3,19 @@
 --    The SQL definition is stored in a json file     --
 --    Look in matview_generator for the code.         --
 --                                                    --
---  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
+--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --
 --------------------------------------------------------
 CREATE MATERIALIZED VIEW universal_transaction_matview_temp AS
 SELECT
+  to_tsvector(CONCAT(
+    "legal_entity"."recipient_name",
+    ' ', "transaction_fpds"."naics",
+    ' ', "naics"."description",
+    ' ', "psc"."description",
+    ' ', "awards"."description")) AS keyword_ts_vector,
+  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_ts_vector,
+  to_tsvector(coalesce("legal_entity"."recipient_name", '')) AS recipient_name_ts_vector,
+
   UPPER(CONCAT(
     "legal_entity"."recipient_name",
     ' ', "transaction_fpds"."naics",
@@ -14,6 +23,7 @@ SELECT
     ' ', "psc"."description",
     ' ', "awards"."description")) AS keyword_string,
   UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,
+
   "transaction_normalized"."id" AS transaction_id,
   "transaction_normalized"."action_date"::date,
   "transaction_normalized"."fiscal_year",
@@ -23,12 +33,14 @@ SELECT
   "awards"."category" AS award_category,
   "awards"."total_obligation",
   "awards"."total_subsidy_cost",
+  "awards"."total_loan_value",
   obligation_to_enum("awards"."total_obligation") AS total_obl_bin,
   "awards"."fain",
   "awards"."uri",
   "awards"."piid",
   COALESCE("transaction_normalized"."federal_action_obligation", 0)::NUMERIC(20, 2) AS "federal_action_obligation",
   COALESCE("transaction_normalized"."original_loan_subsidy_cost", 0)::NUMERIC(20, 2) AS "original_loan_subsidy_cost",
+  COALESCE("transaction_normalized"."face_value_loan_guarantee", 0)::NUMERIC(23, 2) AS "face_value_loan_guarantee",
   "transaction_normalized"."description" AS transaction_description,
   "transaction_normalized"."modification_number",
 

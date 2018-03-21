@@ -168,6 +168,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'usaspending_api.common.pagination.UsaspendingPagination',
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
+        'usaspending_api.common.renderers.DocumentApiRenderer',
         'usaspending_api.common.renderers.BrowsableAPIRendererWithoutForms',
     ),
 }
@@ -216,18 +217,14 @@ LOGGING = {
     'handlers': {
         'server': {
             'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/server.log'),
-            'maxBytes': 1024*1024*20,  # 20 MB
-            'backupCount': 5,
             'formatter': 'user_readable'
         },
         'console_file': {
             'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'filename': os.path.join(BASE_DIR, 'usaspending_api/logs/console.log'),
-            'maxBytes': 1024*1024*2,  # 2 MB
-            'backupCount': 5,
             'formatter': 'specifics'
         },
         'console': {

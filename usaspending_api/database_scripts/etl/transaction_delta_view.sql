@@ -9,8 +9,8 @@ SELECT
   FABS.afa_generated_unique,
 
   CASE
-    WHEN FPDS.detached_award_proc_unique IS NOT NULL THEN 'cont_tx_' || FPDS.detached_award_proc_unique
-    WHEN FABS.afa_generated_unique IS NOT NULL THEN 'asst_tx_' || FABS.afa_generated_unique
+    WHEN FPDS.detached_award_proc_unique IS NOT NULL THEN 'CONT_TX_' || UPPER(FPDS.detached_award_proc_unique)
+    WHEN FABS.afa_generated_unique IS NOT NULL THEN 'ASST_TX_' || UPPER(FABS.afa_generated_unique)
     ELSE NULL  -- if this happens: Activate Batsignal
   END AS generated_unique_transaction_id,
 
@@ -45,8 +45,8 @@ SELECT
   UAM.fiscal_year AS award_fiscal_year,
   UAM.total_obligation AS award_amount,
   UTM.federal_action_obligation AS transaction_amount,
-  UAM.face_value_loan_guarantee,
-  UAM.original_loan_subsidy_cost,
+  UTM.face_value_loan_guarantee,
+  UTM.original_loan_subsidy_cost,
 
   UTM.awarding_agency_id,
   UTM.funding_agency_id,

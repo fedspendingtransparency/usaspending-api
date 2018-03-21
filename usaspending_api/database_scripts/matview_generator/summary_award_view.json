@@ -1,7 +1,9 @@
 {
   "final_name": "summary_award_view",
+  "refresh": true,
   "matview_sql": [
     "SELECT",
+    "  MD5(array_to_string(sort(array_agg(\"awards\".\"id\"::int)), ' ')) AS pk,",
     "  \"transaction_normalized\".\"action_date\",",
     "  \"transaction_normalized\".\"fiscal_year\",",
     "  \"awards\".\"type\",",
@@ -21,6 +23,7 @@
     "",
     "  SUM(COALESCE(\"transaction_normalized\".\"federal_action_obligation\", 0))::NUMERIC(20, 2) AS \"federal_action_obligation\",",
     "  SUM(COALESCE(\"transaction_normalized\".\"original_loan_subsidy_cost\", 0))::NUMERIC(20, 2) AS \"original_loan_subsidy_cost\",",
+    "  SUM(COALESCE(\"transaction_normalized\".\"face_value_loan_guarantee\", 0))::NUMERIC(23, 2) AS \"face_value_loan_guarantee\",",
     "  COUNT(*) counts",
     "FROM",
     "  \"awards\"",
@@ -61,6 +64,10 @@
   ],
   "indexes": [
     {
+      "name": "unique_pk",
+      "unique": true,
+      "columns": [{"name": "\"pk\""}]
+    }, {
       "name": "action_date",
       "columns": [{"name": "\"action_date\"", "order": "DESC NULLS LAST"}]
     }, {
@@ -97,10 +104,6 @@
       "name": "funding_subtier_agency_name",
       "where": "\"funding_subtier_agency_name\" IS NOT NULL",
       "columns": [{"name": "\"funding_subtier_agency_name\""}]
-    }, {
-      "name": "tuned_type_and_idv",
-      "where": "\"type\" IS NULL AND \"pulled_from\" IS NOT NULL",
-      "columns": [{"name": "\"pulled_from\""}, {"name": "\"type\""}]
     }
   ]
 }

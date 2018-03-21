@@ -13,9 +13,9 @@ def test_glossary_endpoint(client, glossary_data):
     # Sorry to squash these together, but I don't want to load the guide data
     # multiple times
 
-    resp = client.get('/api/v1/references/glossary/')
+    resp = client.get('/api/v1/references/glossary/?limit=9999')  # get all glossary terms
     assert resp.status_code == 200
-    assert len(resp.data["results"]) > 70
+    assert len(resp.data["results"]) == 118
 
     resp = client.get(
         '/api/v1/references/glossary/agency-identifier/')
