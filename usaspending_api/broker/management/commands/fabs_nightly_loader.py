@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.conf import settings
 
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import fy, timer
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
@@ -57,6 +58,45 @@ class Command(BaseCommand):
         logger.info('Number of records to delete: %s' % str(len(ids_to_delete)))
 
         return final_db_rows, ids_to_delete
+
+    @staticmethod
+    def get_fabs_historical_data(date, fiscal_year=None):
+        logger.info('Getting historical data...')
+        db_cursor = connections['data_broker'].cursor()
+
+        # The ORDER BY is important here because deletions must happen in a specific order and that order is defined
+        # by the Broker's PK since every modification is a new row
+        db_query = '''
+            SELECT *
+            FROM published_award_financial_assistance AS pafa
+            WHERE
+                is_historical IS TRUE
+                AND
+                is_active IS TRUE
+                AND
+                updated_at = %s
+        '''
+
+        date_time = date + ' 00:00:00'
+        db_args = [date_time]
+        if fiscal_year:
+            if db_args:
+                db_query += ' AND'
+            else:
+                db_query += ' WHERE'
+
+            fy_begin = '10/01/' + str(fiscal_year - 1)
+            fy_end = '09/30/' + str(fiscal_year)
+
+            db_query += ' action_date::Date BETWEEN %s AND %s'
+            db_args += [fy_begin, fy_end]
+
+        db_cursor.execute(db_query, db_args)
+        db_rows = dictfetchall(db_cursor)  # this returns an OrderedDict
+
+        logger.info('Number of records to insert/update: %s' % str(len(db_rows)))
+
+        return db_rows, []
 
     @staticmethod
     def delete_stale_fabs(ids_to_delete=None):
@@ -255,6 +295,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            '-d',
             '--date',
             dest="date",
             nargs='+',
@@ -262,9 +303,29 @@ class Command(BaseCommand):
             help="(OPTIONAL) Date from which to start the nightly loader. Expected format: MM/DD/YYYY"
         )
 
+        parser.add_argument(
+            '-hl',
+            '--historical',
+            dest="historical",
+            action='store_true',
+            default=False,
+            help='Flag to run FABS nightly load for historical data'
+        )
+
+        parser.add_argument(
+            '-fy',
+            '--fiscal_year',
+            dest="fiscal_year",
+            nargs='+',
+            type=int,
+            help="Year for which to run the historical load"
+        )
+
     @transaction.atomic
     def handle(self, *args, **options):
         logger.info('Starting FABS nightly data load...')
+        historical_flag = options.get('historical')
+        fiscal_year = options.get('fiscal_year')
 
         # Use date provided or pull most recent ExternalDataLoadDate
         if options.get('date'):
@@ -280,9 +341,18 @@ class Command(BaseCommand):
 
         logger.info('Processing data for FABS starting from %s' % date)
 
+        to_insert, ids_to_delete = 0, 0
         # Retrieve FABS data
         with timer('retrieving/diff-ing FABS Data', logger.info):
-            to_insert, ids_to_delete = self.get_fabs_data(date=date)
+            if historical_flag:
+                try:
+                    fiscal_year = int(fiscal_year[0])
+                except:
+                    raise InvalidParameterException('Fiscal year is not in the proper integer format: YYYY')
+
+                to_insert, ids_to_delete = self.get_fabs_historical_data(date=date, fiscal_year=fiscal_year)
+            else:
+                to_insert, ids_to_delete = self.get_fabs_data(date=date)
 
         total_rows = len(to_insert)
         total_rows_delete = len(ids_to_delete)
