@@ -758,8 +758,8 @@ query_paths = {
             'prime_awardee_name': 'award__latest_transaction__contract_data__awardee_or_recipient_legal',
             'subawardee_duns': 'recipient__recipient_unique_id',
             'subawardee_name': 'recipient__recipient_name',
-            'subawardee_parent_duns': 'award__latest_transaction__contract_data__ultimate_parent_unique_ide',
-            'subawardee_parent_name': 'award__latest_transaction__contract_data__ultimate_parent_legal_enti',
+            'subawardee_parent_duns': 'recipient__parent_recipient_unique_id',
+            # 'subawardee_parent_name': 'recipient__parent_recipient_name', -- need to add this column
             'subawardee_address_line_1': 'recipient__location__address_line1',
             'subawardee_city_name': 'recipient__location__city_name',
             'subawardee_state_code': 'recipient__location__state_code',
