@@ -34,6 +34,7 @@ SELECT
   "awards"."total_obligation",
   obligation_to_enum("awards"."total_obligation") AS total_obl_bin,
   "awards"."total_subsidy_cost",
+  "awards"."total_loan_value",
 
   "awards"."recipient_id",
   UPPER(recipient."recipient_name") AS recipient_name,
@@ -46,8 +47,8 @@ SELECT
   "awards"."period_of_performance_start_date",
   "awards"."period_of_performance_current_end_date",
 
-  assistance_data."face_value_loan_guarantee",
   assistance_data."original_loan_subsidy_cost",
+  assistance_data."face_value_loan_guarantee",
 
   latest_transaction."awarding_agency_id",
   latest_transaction."funding_agency_id",
