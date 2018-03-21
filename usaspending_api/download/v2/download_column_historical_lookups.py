@@ -1493,7 +1493,7 @@ human_names = {
             'subawardee_duns',
             'subawardee_name',
             'subawardee_parent_duns',
-            'subawardee_parent_name',
+            # 'subawardee_parent_name', -- put back once we have this column
             'subawardee_address_line_1',
             'subawardee_city_name',
             'subawardee_state_code',
