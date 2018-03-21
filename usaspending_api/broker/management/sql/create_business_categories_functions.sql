@@ -106,7 +106,14 @@ declare
 begin
 
 -- BUSINESS (FOR-PROFIT ORGANIZATION)
-    if contracting_officers_deter = 'S' or women_owned_small_business IS TRUE or economically_disadvantaged IS TRUE or joint_venture_women_owned IS TRUE or emerging_small_business IS TRUE or self_certified_small_disad IS TRUE or small_agricultural_coopera IS TRUE or small_disadvantaged_busine IS TRUE
+    if contracting_officers_deter = 'S' or
+       women_owned_small_business   IS TRUE or
+       economically_disadvantaged   IS TRUE or
+       joint_venture_women_owned    IS TRUE or
+       emerging_small_business      IS TRUE or
+       self_certified_small_disad   IS TRUE or
+       small_agricultural_coopera   IS TRUE or
+       small_disadvantaged_busine   IS TRUE
     then
         bc_arr := bc_arr || array['small_business'];
     end if;
@@ -151,7 +158,17 @@ begin
         bc_arr := bc_arr || array['limited_liability_corporation'];
     end if;
 
-    if for_profit_organization IS TRUE or (bc_arr && array['small_business', 'other_than_small_business', 'corporate_entity_tax_exempt','corporate_entity_not_tax_exempt', 'partnership_or_limited_liability_partnership', 'sole_proprietorship', 'manufacturer_of_goods', 'subchapter_s_corporation', 'limited_liability_corporation'])
+    if for_profit_organization IS TRUE or (bc_arr && array[
+        'small_business',
+        'other_than_small_business',
+        'corporate_entity_tax_exempt',
+        'corporate_entity_not_tax_exempt',
+        'partnership_or_limited_liability_partnership',
+        'sole_proprietorship',
+        'manufacturer_of_goods',
+        'subchapter_s_corporation',
+        'limited_liability_corporation'
+    ])
     then
         bc_arr := bc_arr || array['category_business'];
     end if;
@@ -207,7 +224,18 @@ begin
         bc_arr := bc_arr || array['other_minority_owned_business'];
     end if;
 
-    if minority_owned_business IS TRUE or (bc_arr && array['alaskan_native_owned_business', 'american_indian_owned_business', 'asian_pacific_american_owned_business', 'black_american_owned_business', 'hispanic_american_owned_business', 'native_american_owned_business', 'native_hawaiian_owned_business', 'subcontinent_asian_indian_american_owned_business', 'tribally_owned_business', 'other_minority_owned_business'])
+    if minority_owned_business IS TRUE or (bc_arr && array[
+        'alaskan_native_owned_business',
+        'american_indian_owned_business',
+        'asian_pacific_american_owned_business',
+        'black_american_owned_business',
+        'hispanic_american_owned_business',
+        'native_american_owned_business',
+        'native_hawaiian_owned_business',
+        'subcontinent_asian_indian_american_owned_business',
+        'tribally_owned_business',
+        'other_minority_owned_business'
+    ])
     then
         bc_arr := bc_arr || array['minority_owned_business'];
     end if;
@@ -233,7 +261,12 @@ begin
         bc_arr := bc_arr || array['joint_venture_economically_disadvantaged_women_owned_small_business'];
     end if;
 
-    if woman_owned_business IS TRUE or (bc_arr && array['women_owned_small_business', 'economically_disadvantaged_women_owned_small_business', 'joint_venture_women_owned_small_business', 'joint_venture_economically_disadvantaged_women_owned_small_business'])
+    if woman_owned_business IS TRUE or (bc_arr && array[
+        'women_owned_small_business',
+        'economically_disadvantaged_women_owned_small_business',
+        'joint_venture_women_owned_small_business',
+        'joint_venture_economically_disadvantaged_women_owned_small_business'
+    ])
     then
         bc_arr := bc_arr || array['woman_owned_business'];
     end if;
@@ -244,7 +277,9 @@ begin
         bc_arr := bc_arr || array['service_disabled_veteran_owned_business'];
     end if;
 
-    if veteran_owned_business IS TRUE or (bc_arr && array['service_disabled_veteran_owned_business'])
+    if veteran_owned_business IS TRUE or (bc_arr && array[
+        'service_disabled_veteran_owned_business'
+    ])
     then
         bc_arr := bc_arr || array['veteran_owned_business'];
     end if;
@@ -353,7 +388,28 @@ begin
         bc_arr := bc_arr || array['veterinary_hospital'];
     end if;
 
-    if bc_arr && array['8a_program_participant', 'ability_one_program', 'dot_certified_disadvantaged_business_enterprise', 'emerging_small_business', 'federally_funded_research_and_development_corp', 'historically_underutilized_business_firm', 'labor_surplus_area_firm', 'sba_certified_8a_joint_venture', 'self_certified_small_disadvanted_business', 'small_agricultural_cooperative', 'small_disadvantaged_business', 'community_developed_corporation_owned_firm', 'us_owned_business', 'foreign_owned_and_us_located_business', 'foreign_owned_and_located_business', 'foreign_government', 'international_organization', 'domestic_shelter', 'hospital', 'veterinary_hospital']
+    if bc_arr && array[
+        '8a_program_participant',
+        'ability_one_program',
+        'dot_certified_disadvantaged_business_enterprise',
+        'emerging_small_business',
+        'federally_funded_research_and_development_corp',
+        'historically_underutilized_business_firm',
+        'labor_surplus_area_firm',
+        'sba_certified_8a_joint_venture',
+        'self_certified_small_disadvanted_business',
+        'small_agricultural_cooperative',
+        'small_disadvantaged_business',
+        'community_developed_corporation_owned_firm',
+        'us_owned_business',
+        'foreign_owned_and_us_located_business',
+        'foreign_owned_and_located_business',
+        'foreign_government',
+        'international_organization',
+        'domestic_shelter',
+        'hospital',
+        'veterinary_hospital'
+     ]
     then
         bc_arr := bc_arr || array['special_designations'];
     end if;
@@ -369,7 +425,12 @@ begin
         bc_arr := bc_arr || array['community_development_corporations'];
     end if;
 
-    if nonprofit_organization IS TRUE or other_not_for_profit_organ IS TRUE or (bc_arr && array['foundation', 'community_development_corporations'])
+    if nonprofit_organization       IS TRUE or
+       other_not_for_profit_organ   IS TRUE or
+       (bc_arr && array[
+            'foundation',
+            'community_development_corporations'
+       ])
     then
         bc_arr := bc_arr || array['nonprofit'];
     end if;
@@ -380,7 +441,10 @@ begin
         bc_arr := bc_arr || array['educational_institution'];
     end if;
 
-    if state_controlled_instituti IS TRUE or c1862_land_grant_college IS TRUE or c1890_land_grant_college IS TRUE or c1994_land_grant_college IS TRUE
+    if state_controlled_instituti   IS TRUE or
+       c1862_land_grant_college     IS TRUE or
+       c1890_land_grant_college     IS TRUE or
+       c1994_land_grant_college     IS TRUE
     then
         bc_arr := bc_arr || array['public_institution_of_higher_education'];
     end if;
@@ -390,7 +454,12 @@ begin
         bc_arr := bc_arr || array['private_institution_of_higher_education'];
     end if;
 
-    if minority_institution IS TRUE or historically_black_college IS TRUE or tribal_college IS TRUE or alaskan_native_servicing_i IS TRUE or native_hawaiian_servicing IS TRUE or hispanic_servicing_institu IS TRUE
+    if minority_institution         IS TRUE or
+       historically_black_college   IS TRUE or
+       tribal_college               IS TRUE or
+       alaskan_native_servicing_i   IS TRUE or
+       native_hawaiian_servicing    IS TRUE or
+       hispanic_servicing_institu   IS TRUE
     then
         bc_arr := bc_arr || array['minority_serving_institution_of_higher_education'];
     end if;
@@ -405,13 +474,22 @@ begin
         bc_arr := bc_arr || array['veterinary_college'];
     end if;
 
-    if bc_arr && array['educational_institution', 'public_institution_of_higher_education', 'private_institution_of_higher_education', 'minority_serving_institution_of_higher_education', 'school_of_forestry', 'veterinary_college']
+    if bc_arr && array[
+        'educational_institution',
+        'public_institution_of_higher_education',
+        'private_institution_of_higher_education',
+        'minority_serving_institution_of_higher_education',
+        'school_of_forestry',
+        'veterinary_college'
+    ]
     then
         bc_arr := bc_arr || array['higher_education'];
     end if;
 
 -- GOVERNMENT
-    if us_federal_government IS TRUE or federal_agency IS TRUE or us_government_entity IS TRUE
+    if us_federal_government    IS TRUE or
+       federal_agency           IS TRUE or
+       us_government_entity     IS TRUE
     then
         bc_arr := bc_arr || array['national_government'];
     end if;
@@ -431,22 +509,43 @@ begin
         bc_arr := bc_arr || array['council_of_governments'];
     end if;
 
-    if city_local_government IS TRUE or county_local_government IS TRUE or inter_municipal_local_gove IS TRUE or municipality_local_governm IS TRUE or township_local_government IS TRUE or us_local_government IS TRUE or local_government_owned IS TRUE or school_district_local_gove IS TRUE
+    if city_local_government        IS TRUE or
+       county_local_government      IS TRUE or
+       inter_municipal_local_gove   IS TRUE or
+       municipality_local_governm   IS TRUE or
+       township_local_government    IS TRUE or
+       us_local_government          IS TRUE or
+       local_government_owned       IS TRUE or
+       school_district_local_gove   IS TRUE
     then
         bc_arr := bc_arr || array['local_government'];
     end if;
 
-    if us_tribal_government IS TRUE or indian_tribe_federally_rec IS TRUE
+    if us_tribal_government         IS TRUE or
+       indian_tribe_federally_rec   IS TRUE
     then
         bc_arr := bc_arr || array['indian_native_american_tribal_government'];
     end if;
 
-    if housing_authorities_public IS TRUE or airport_authority IS TRUE or port_authority IS TRUE or transit_authority IS TRUE or planning_commission IS TRUE
+    if housing_authorities_public   IS TRUE or
+       airport_authority            IS TRUE or
+       port_authority               IS TRUE or
+       transit_authority            IS TRUE or
+       planning_commission          IS TRUE
     then
         bc_arr := bc_arr || array['authorities_and_commissions'];
     end if;
 
-    if bc_arr && array['national_government', 'regional_and_state_government', 'us_territory_or_possession', 'local_government', 'indian_native_american_tribal_government', 'authorities_and_commissions', 'interstate_entity', 'council_of_governments']
+    if bc_arr && array[
+        'national_government',
+        'regional_and_state_government',
+        'us_territory_or_possession',
+        'local_government',
+        'indian_native_american_tribal_government',
+        'authorities_and_commissions',
+        'interstate_entity',
+        'council_of_governments'
+    ]
     then
         bc_arr := bc_arr || array['government'];
     end if;
@@ -499,7 +598,11 @@ begin
         bc_arr := bc_arr || array['minority_serving_institution_of_higher_education'];
     end if;
 
-    if bc_arr && array['public_institution_of_higher_education', 'private_institution_of_higher_education', 'minority_serving_institution_of_higher_education']
+    if bc_arr && array[
+        'public_institution_of_higher_education',
+        'private_institution_of_higher_education',
+        'minority_serving_institution_of_higher_education'
+    ]
     then
         bc_arr := bc_arr || array['higher_education'];
     end if;
@@ -535,7 +638,14 @@ begin
         bc_arr := bc_arr || array['authorities_and_commissions'];
     end if;
 
-    if bc_arr && array['regional_and_state_government', 'us_territory_or_possession', 'local_government', 'indian_native_american_tribal_government', 'authorities_and_commissions', 'regional_organization']
+    if bc_arr && array[
+        'regional_and_state_government',
+        'us_territory_or_possession',
+        'local_government',
+        'indian_native_american_tribal_government',
+        'authorities_and_commissions',
+        'regional_organization'
+    ]
     then
         bc_arr := bc_arr || array['government'];
     end if;
