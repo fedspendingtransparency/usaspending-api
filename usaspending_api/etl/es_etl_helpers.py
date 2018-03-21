@@ -277,6 +277,8 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
                    'job': job.name, 'f': 'ES Alias Put'})
 
             # put_alias(client, job.index, award_type, award_type_codes)
+            # need to close the previous index.. the alias putting and closing should be at the end
+            # of the script for the reload
 
     elif does_index_exist and config['recreate']:
         printf({'msg': 'Deleting existing index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})

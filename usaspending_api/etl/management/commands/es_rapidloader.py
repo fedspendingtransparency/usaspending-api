@@ -54,7 +54,13 @@ class Command(BaseCommand):
             '--index_name',
             type=str,
             help='Set an index name to ingest data into',
-            default='staging_transactions')
+            default='staging_transactions2') # fast fix, might wnat to have a dating naming convention
+                                             # wiht a prefix that != settings.TRANSACTIONS_INDEX_ROOT
+        # parser.add_argument(
+        #     '--previous_index',
+        #     type=str,
+        #     help='Set an index name to ingest data into',
+        #     default='staging_transactions')
         parser.add_argument(
             '-d',
             '--deleted',
@@ -91,6 +97,8 @@ class Command(BaseCommand):
         self.config['stale'] = options['stale']
         self.config['keep'] = options['keep']
         self.config['index_name'] = options['index_name']
+        # self.config['previous_index'] = options['previous_index']
+
         mappingfile = os.path.join(settings.BASE_DIR, 'usaspending_api/etl/es_transaction_mapping.json')
         with open(mappingfile) as f:
             mapping_dict = json.load(f)
