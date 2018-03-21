@@ -351,31 +351,31 @@ def get_business_categories(row, data_type):
                 or legal_entity_bool_dict['self_certified_small_disad'] is True \
                 or legal_entity_bool_dict['small_agricultural_coopera'] is True \
                 or legal_entity_bool_dict['small_disadvantaged_busine'] is True:
-            business_category_set |= {'small_business'}
+            business_category_set.add('small_business')
 
         if row.get('contracting_officers_deter') == 'O':
-            business_category_set |= {'other_than_small_business'}
+            business_category_set.add('other_than_small_business')
 
         if legal_entity_bool_dict['corporate_entity_tax_exemp'] is True:
-            business_category_set |= {'corporate_entity_tax_exempt'}
+            business_category_set.add('corporate_entity_tax_exempt')
 
         if legal_entity_bool_dict['corporate_entity_not_tax_e'] is True:
-            business_category_set |= {'corporate_entity_not_tax_exempt'}
+            business_category_set.add('corporate_entity_not_tax_exempt')
 
         if legal_entity_bool_dict['partnership_or_limited_lia'] is True:
-            business_category_set |= {'partnership_or_limited_liability_partnership'}
+            business_category_set.add('partnership_or_limited_liability_partnership')
 
         if legal_entity_bool_dict['sole_proprietorship'] is True:
-            business_category_set |= {'sole_proprietorship'}
+            business_category_set.add('sole_proprietorship')
 
         if legal_entity_bool_dict['manufacturer_of_goods'] is True:
-            business_category_set |= {'manufacturer_of_goods'}
+            business_category_set.add('manufacturer_of_goods')
 
         if legal_entity_bool_dict['subchapter_s_corporation'] is True:
-            business_category_set |= {'subchapter_s_corporation'}
+            business_category_set.add('subchapter_s_corporation')
 
         if legal_entity_bool_dict['limited_liability_corporat'] is True:
-            business_category_set |= {'limited_liability_corporation'}
+            business_category_set.add('limited_liability_corporation')
 
         if legal_entity_bool_dict['for_profit_organization'] is True or \
                 (business_category_set & {'small_business', 'other_than_small_business',
@@ -383,7 +383,7 @@ def get_business_categories(row, data_type):
                                           'partnership_or_limited_liability_partnership', 'sole_proprietorship',
                                           'manufacturer_of_goods', 'subchapter_s_corporation',
                                           'limited_liability_corporation'}):
-            business_category_set |= {'category_business'}
+            business_category_set.add('category_business')
 
         # MINORITY BUSINESS
         if legal_entity_bool_dict['alaskan_native_owned_corpo'] is True:
