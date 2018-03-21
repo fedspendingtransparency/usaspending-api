@@ -1,8 +1,8 @@
+import argparse
 import glob
 import json
 import os
 import subprocess
-import sys
 from uuid import uuid4
 
 # Usage: python matview_sql_generator.py (from usaspending_api/database_scripts/matview_generator)
@@ -76,8 +76,9 @@ HEADER = [
 CLUSTERING_INDEX = None
 COMMIT_HASH = ''
 DEST_FOLDER = '../matviews/'
+COMPONENT_DIR = 'componentized/'
+HERE = os.path.abspath(os.path.dirname(__file__))
 MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
-OVERWRITE_FILE = True
 RANDOM_CHARS = ''
 
 
@@ -252,11 +253,6 @@ def create_all_sql_strings(sql_json):
 
 def write_sql_file(str_list, filename):
     fname = filename + '.sql'
-    if not OVERWRITE_FILE:
-        sequence = 0
-        while os.path.isfile(fname):
-            sequence += 1
-            fname = filename + str(sequence) + '.sql'
 
     print('Creating file: {}'.format(fname))
     with open(fname, 'w') as f:
@@ -266,7 +262,7 @@ def write_sql_file(str_list, filename):
 
 
 def create_componentized_files(sql_json):
-    filename_base = DEST_FOLDER + 'componentized/' + sql_json['final_name']
+    filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json['final_name'])
 
     matview_name = sql_json['final_name']
     matview_temp_name = matview_name + '_temp'
@@ -296,7 +292,7 @@ def create_componentized_files(sql_json):
 def create_monolith_file(sql_json):
     sql_strings = create_all_sql_strings(sql_json)
     print('Preparing to store "{}" in sql file'.format(sql_json['final_name']))
-    write_sql_file(sql_strings, DEST_FOLDER + sql_json['final_name'])
+    write_sql_file(sql_strings, os.path.join(DEST_FOLDER, sql_json['final_name']))
 
 
 def main(source_file):
@@ -304,6 +300,7 @@ def main(source_file):
     global RANDOM_CHARS
     COMMIT_HASH = generate_uid(9, source_file)
     RANDOM_CHARS = str(uuid4())[:3]
+
     try:
         sql_json = ingest_json(source_file)
     except Exception as e:
@@ -315,15 +312,31 @@ def main(source_file):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        print('Creating matview SQL using {}'.format(sys.argv[1]))
-        main(sys.argv[1])
+    arg_parser = argparse.ArgumentParser(
+        prog='matview_sql_generator.py',
+        description='Generates all of the necessary SQL files for jenkins scripts')
+    arg_parser.add_argument(
+        '--dest',
+        type=str,
+        default='../matviews/',
+        help='Destination folder for all generated sql files')
+    arg_parser.add_argument(
+        '--file',
+        type=str,
+        default=None,
+        help='filepath to the json file containing the sql description')
+    args = arg_parser.parse_args()
+
+    DEST_FOLDER = args.dest
+    if not os.path.exists(os.path.join(DEST_FOLDER, COMPONENT_DIR)):
+        os.makedirs(os.path.join(DEST_FOLDER, COMPONENT_DIR))
+
+    if args.file is not None:
+        if os.path.isfile(args.file):
+            print('Creating matview SQL using {}'.format(args.file))
+            main(args.file)
     else:
-        ans = input('Would you like to run on all json files in dir? (y/N): ')
-        if ans.lower() in ['y', 'yes']:
-            all_files = glob.glob('*.json')
-            for f in all_files:
-                print('\n==== {}'.format(f))
-                main(f)
-        else:
-            print('Quitting....\n')
+        all_files = glob.glob(os.path.join(HERE, '*.json'))
+        for f in all_files:
+            print('\n==== {}'.format(f))
+            main(f)
