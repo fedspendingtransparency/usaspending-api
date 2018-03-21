@@ -3,12 +3,14 @@ from django.db.models import Sum
 from usaspending_api.accounts.serializers import BudgetAuthoritySerializer
 from usaspending_api.accounts.models import BudgetAuthority
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.views import DetailViewSet
+from usaspending_api.common.views import CachedDetailViewSet
 
 
-class BudgetAuthorityViewSet(DetailViewSet):
-    """Return historical budget authority for a given agency id.
-    endpoint_doc: /budget_authority/agencies.md"""
+class BudgetAuthorityViewSet(CachedDetailViewSet):
+    """
+    Return historical budget authority for a given agency id.
+    endpoint_doc: /budget_authority/agencies.md
+    """
 
     serializer_class = BudgetAuthoritySerializer
     ordering_fields = ('year', 'total')

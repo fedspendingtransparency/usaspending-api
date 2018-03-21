@@ -3,9 +3,9 @@ from django.conf.urls import url
 from usaspending_api.awards.v1 import views
 
 # map reqest types to viewset method; replace this with a router
-subaward_list = views.SubawardViewSet.as_view({
+subaward_list = views.SubawardListViewSet.as_view({
     'get': 'list', 'post': 'list'})
-subaward_detail = views.SubawardViewSet.as_view({
+subaward_detail = views.SubawardRetrieveViewSet.as_view({
     'get': 'retrieve', 'post': 'retrieve'})
 subaward_total = views.SubawardAggregateViewSet.as_view({
     'get': 'list', 'post': 'list'})

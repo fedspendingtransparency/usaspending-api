@@ -1,8 +1,8 @@
 import glob
 import json
 import os
-import sys
 import subprocess
+import sys
 from uuid import uuid4
 
 # Usage: python matview_sql_generator.py (from usaspending_api/database_scripts/matview_generator)
@@ -70,7 +70,7 @@ HEADER = [
     '--    The SQL definition is stored in a json file     --',
     '--    Look in matview_generator for the code.         --',
     '--                                                    --',
-    '--  DO NOT DIRECTLY EDIT THIS FILE!!!                 --',
+    '--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --',
     '--------------------------------------------------------',
 ]
 CLUSTERING_INDEX = None
@@ -175,6 +175,7 @@ def make_indexes_sql(sql_json, matview_name):
     for idx in sql_json['indexes']:
         if len(idx['name']) > MAX_NAME_LENGTH:
             raise Exception('Desired index name is too long. Keep under {} chars'.format(MAX_NAME_LENGTH))
+
         final_index = 'idx_' + COMMIT_HASH + RANDOM_CHARS + '_' + idx['name']
         unique_name_list.append(final_index)
         tmp_index = final_index + '_temp'
@@ -272,8 +273,6 @@ def create_componentized_files(sql_json):
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(sql_json, matview_temp_name)
 
-    # final_sql_strings.extend(make_sql_header())
-    # final_sql_strings.extend(make_matview_drops(matview_name))
     sql_strings = make_sql_header() + make_matview_drops(matview_name)
     write_sql_file(sql_strings, filename_base + '__drops')
 
@@ -292,15 +291,6 @@ def create_componentized_files(sql_json):
     if 'refresh' in sql_json and sql_json['refresh'] is True:
         sql_strings = make_sql_header() + make_matview_refresh(matview_name)
         write_sql_file(sql_strings, filename_base + '__refresh')
-
-    # final_sql_strings.append('')
-    # final_sql_strings += create_indexes
-    # final_sql_strings.append('')
-
-    # final_sql_strings.extend(make_modification_sql(matview_temp_name))
-    # final_sql_strings.append('')
-    # final_sql_strings.extend(make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes))
-    # final_sql_strings.append('')
 
 
 def create_monolith_file(sql_json):

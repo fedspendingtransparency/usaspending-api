@@ -28,7 +28,7 @@ loan_award_mapping = {
     'Award ID': 'fain',
     'Recipient Name': 'recipient_name',
     'Issued Date': 'action_date',
-    'Loan Value': 'face_value_loan_guarantee',
+    'Loan Value': 'total_loan_value',
     'Subsidy Cost': 'total_subsidy_cost',
     'Awarding Agency': 'awarding_toptier_agency_name',
     'Awarding Sub Agency': 'awarding_subtier_agency_name',

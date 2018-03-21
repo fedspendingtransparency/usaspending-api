@@ -3,17 +3,27 @@
 --    The SQL definition is stored in a json file     --
 --    Look in matview_generator for the code.         --
 --                                                    --
---  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
+--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --
 --------------------------------------------------------
 CREATE MATERIALIZED VIEW universal_award_matview_temp AS
 SELECT
+  to_tsvector(CONCAT(
+    recipient."recipient_name",
+    ' ', contract_data."naics",
+    ' ', contract_data."naics_description",
+    ' ', "psc"."description",
+    ' ', "awards"."description")) AS keyword_ts_vector,
+  to_tsvector(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_ts_vector,
+  to_tsvector(coalesce(recipient."recipient_name", '')) AS recipient_name_ts_vector,
+
   UPPER(CONCAT(
     recipient."recipient_name",
     ' ', contract_data."naics",
     ' ', contract_data."naics_description",
-    ' ', psc."description",
+    ' ', "psc"."description",
     ' ', "awards"."description")) AS keyword_string,
   UPPER(CONCAT(awards.piid, ' ', awards.fain, ' ', awards.uri)) AS award_id_string,
+
   "awards"."id" AS award_id,
   "awards"."category",
   "awards"."type",
@@ -24,6 +34,7 @@ SELECT
   "awards"."total_obligation",
   obligation_to_enum("awards"."total_obligation") AS total_obl_bin,
   "awards"."total_subsidy_cost",
+  "awards"."total_loan_value",
 
   "awards"."recipient_id",
   UPPER(recipient."recipient_name") AS recipient_name,
@@ -36,8 +47,8 @@ SELECT
   "awards"."period_of_performance_start_date",
   "awards"."period_of_performance_current_end_date",
 
-  assistance_data."face_value_loan_guarantee",
   assistance_data."original_loan_subsidy_cost",
+  assistance_data."face_value_loan_guarantee",
 
   latest_transaction."awarding_agency_id",
   latest_transaction."funding_agency_id",

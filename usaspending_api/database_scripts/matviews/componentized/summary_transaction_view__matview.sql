@@ -3,7 +3,7 @@
 --    The SQL definition is stored in a json file     --
 --    Look in matview_generator for the code.         --
 --                                                    --
---  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
+--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --
 --------------------------------------------------------
 CREATE MATERIALIZED VIEW summary_transaction_view_temp AS
 SELECT
@@ -54,6 +54,7 @@ SELECT
   "transaction_fpds"."extent_competed",
   SUM(COALESCE("transaction_normalized"."federal_action_obligation", 0))::NUMERIC(20, 2) AS "federal_action_obligation",
   SUM(COALESCE("transaction_normalized"."original_loan_subsidy_cost", 0))::NUMERIC(20, 2) AS "original_loan_subsidy_cost",
+  SUM(COALESCE("transaction_normalized"."face_value_loan_guarantee", 0))::NUMERIC(23, 2) AS "face_value_loan_guarantee",
   count(*) AS counts
 FROM
   "transaction_normalized"

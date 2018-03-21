@@ -105,6 +105,8 @@ def generate_raw_quoted_query(queryset):
     str_fix_params = []
     for param in params:
         if isinstance(param, QUOTABLE_TYPES):
+            # single quotes are escaped with two '' for strings in sql
+            param = param.replace('\'', '\'\'') if isinstance(param, str) else param
             str_fix_param = '\'{}\''.format(param)
         elif isinstance(param, list):
             str_fix_param = 'ARRAY{}'.format(param)

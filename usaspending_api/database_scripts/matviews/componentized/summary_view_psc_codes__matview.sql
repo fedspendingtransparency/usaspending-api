@@ -3,7 +3,7 @@
 --    The SQL definition is stored in a json file     --
 --    Look in matview_generator for the code.         --
 --                                                    --
---  DO NOT DIRECTLY EDIT THIS FILE!!!                 --
+--         !!DO NOT DIRECTLY EDIT THIS FILE!!         --
 --------------------------------------------------------
 CREATE MATERIALIZED VIEW summary_view_psc_codes_temp AS
 SELECT
@@ -15,6 +15,7 @@ SELECT
   "transaction_fpds"."product_or_service_code",
   SUM(COALESCE("transaction_normalized"."federal_action_obligation", 0))::NUMERIC(20, 2) AS "federal_action_obligation",
   0::NUMERIC(20, 2) AS "original_loan_subsidy_cost",
+  0::NUMERIC(23, 2) AS "face_value_loan_guarantee",
   COUNT(*) counts
 FROM
   "transaction_normalized"
