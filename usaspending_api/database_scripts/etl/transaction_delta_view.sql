@@ -45,8 +45,8 @@ SELECT
   UAM.fiscal_year AS award_fiscal_year,
   UAM.total_obligation AS award_amount,
   UTM.federal_action_obligation AS transaction_amount,
-  UAM.face_value_loan_guarantee,
-  UAM.original_loan_subsidy_cost,
+  UTM.face_value_loan_guarantee,
+  UTM.original_loan_subsidy_cost,
 
   UTM.awarding_agency_id,
   UTM.funding_agency_id,
