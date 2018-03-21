@@ -211,7 +211,7 @@ LOGGING = {
         'user_readable': {
             '()': "pythonjsonlogger.jsonlogger.JsonFormatter",
             'format': "%(timestamp)s %(status)s %(method)s %(path)s %(status_code)s %(remote_addr)s %(host)s " +
-                      "%(response_ms)d %(message)s %(request)s %(traceback)s"
+                      "%(response_ms)d %(message)s %(request)s %(traceback)s %(error_msg)s"
         }
     },
     'handlers': {
@@ -237,7 +237,7 @@ LOGGING = {
         'server': {
             'handlers': ['server'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         },
         'console': {
             'handlers': ['console', 'console_file'],
