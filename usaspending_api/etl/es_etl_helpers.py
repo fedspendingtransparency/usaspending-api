@@ -10,6 +10,8 @@ from collections import defaultdict
 from datetime import datetime
 from django.db import connection
 from elasticsearch import helpers
+from elasticsearch import TransportError
+
 from time import perf_counter, sleep
 from usaspending_api import settings
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import indices_to_award_types
@@ -252,8 +254,32 @@ def streaming_post_to_es(client, chunk, index_name, job_id=None, doc_type='trans
 
 def put_alias(client, index, alias_name, award_type_codes):
     alias_body = {'filter': {'terms': {"type": award_type_codes}}}
-    client.indices.delete_alias(index, alias_name)
+    try:
+        client.indices.delete_alias(index, alias_name)
+    except TransportError as e:
+        print(e)
     client.indices.put_alias(index, alias_name, body=alias_body)
+
+
+def reset_indices(client, new_index, old_index):
+    # add null values to contracts alias
+    indices_to_award_types['contracts'] += ('NULL',)
+
+    for award_type, award_type_codes in indices_to_award_types.items():
+        alias_name = '{}-{}'.format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
+        printf({'msg': 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),
+                'job': '', 'f': 'ES Alias Put'})
+        put_alias(client, new_index, alias_name, award_type_codes)
+
+    old_index_patterns = old_index + '*'
+    old_indices = client.indices.get(old_index_patterns).keys()
+    for index in old_indices:
+        try:
+            client.indices.close(index)
+            printf({'msg': 'Closing index "{}"'.format(index), 'job': '', 'f': 'ES Index Close'})
+        except (TransportError, Exception) as e:
+            print(e)
+            # raise SystemExit
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
@@ -270,15 +296,6 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         client.indices.create(index=job.index, body=config['mapping'])
         indices_to_award_types['contracts'] += ('NULL',)
         printf({'msg': 'Creating aliases for index {}'.format(job.index), 'job': job.name, 'f': 'ES Alias Put'})
-
-        for award_type, award_type_codes in indices_to_award_types.items():
-            alias_name = '{}-{}'.format(settings.TRANSACTIONS_INDEX_ROOT, award_type)
-            printf({'msg': 'Putting alias "{}" with award codes {}'.format(alias_name, award_type_codes),
-                   'job': job.name, 'f': 'ES Alias Put'})
-
-            # put_alias(client, job.index, award_type, award_type_codes)
-            # need to close the previous index.. the alias putting and closing should be at the end
-            # of the script for the reload
 
     elif does_index_exist and config['recreate']:
         printf({'msg': 'Deleting existing index "{}"'.format(job.index), 'job': job.name, 'f': 'ES Ingest'})

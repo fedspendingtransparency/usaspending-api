@@ -15,8 +15,8 @@ from usaspending_api.etl.es_etl_helpers import DataJob
 from usaspending_api.etl.es_etl_helpers import deleted_transactions
 from usaspending_api.etl.es_etl_helpers import download_db_records
 from usaspending_api.etl.es_etl_helpers import es_data_loader
+from usaspending_api.etl.es_etl_helpers import reset_indices
 from usaspending_api.etl.es_etl_helpers import printf
-
 # SCRIPT OBJECTIVES and ORDER OF EXECUTION STEPS
 # 1. Generate the full list of fiscal years and award descriptions to process as jobs
 # 2. Iterate by job
@@ -54,13 +54,12 @@ class Command(BaseCommand):
             '--index_name',
             type=str,
             help='Set an index name to ingest data into',
-            default='staging_transactions2') # fast fix, might wnat to have a dating naming convention
-                                             # wiht a prefix that != settings.TRANSACTIONS_INDEX_ROOT
-        # parser.add_argument(
-        #     '--previous_index',
-        #     type=str,
-        #     help='Set an index name to ingest data into',
-        #     default='staging_transactions')
+            default='staging_transactions')
+        parser.add_argument(
+            '--previous_index',
+            type=str,
+            help='Set an index name to ingest data into',
+            default='-transactions')
         parser.add_argument(
             '-d',
             '--deleted',
@@ -97,7 +96,7 @@ class Command(BaseCommand):
         self.config['stale'] = options['stale']
         self.config['keep'] = options['keep']
         self.config['index_name'] = options['index_name']
-        # self.config['previous_index'] = options['previous_index']
+        self.config['previous_index'] = options['previous_index']
 
         mappingfile = os.path.join(settings.BASE_DIR, 'usaspending_api/etl/es_transaction_mapping.json')
         with open(mappingfile) as f:
@@ -178,6 +177,11 @@ class Command(BaseCommand):
             s3_delete_process.join()
         download_proccess.join()
         es_index_process.join()
+
+        if self.config['recreate']:
+            print('got recreate')
+            reset_indices(ES, self.config['index_name'], self.config['previous_index'])
+        print('done')
 
 
 def set_config():
