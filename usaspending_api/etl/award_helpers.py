@@ -40,7 +40,8 @@ def update_awards(award_tuple=None):
     sql_txn_totals = (
         'txn_totals AS ('
         'SELECT award_id, SUM(federal_action_obligation) AS total_obligation, '
-        'SUM(original_loan_subsidy_cost) AS total_subsidy_cost '
+        'SUM(original_loan_subsidy_cost) AS total_subsidy_cost, '
+        'SUM(face_value_loan_guarantee) AS total_loan_value '
         'FROM transaction_normalized ')
     if award_tuple:
         sql_txn_totals += 'WHERE award_id IN %s '
@@ -64,6 +65,7 @@ def update_awards(award_tuple=None):
         'recipient_id = l.recipient_id, '
         'total_obligation = t.total_obligation, '
         'total_subsidy_cost = t.total_subsidy_cost, '
+        'total_loan_value = t.total_loan_value, '
         'latest_transaction_id = l.id, '
         'type = l.type, '
         'type_description = l.type_description '
