@@ -262,7 +262,9 @@ def put_alias(client, index, alias_name, award_type_codes):
 
 
 def reset_indices(client, new_index, old_index):
+    client.indices.refresh(new_index)
     # add null values to contracts alias
+
     indices_to_award_types['contracts'] += ('NULL',)
 
     for award_type, award_type_codes in indices_to_award_types.items():
@@ -281,6 +283,11 @@ def reset_indices(client, new_index, old_index):
         except (TransportError, Exception) as e:
             print(e)
             # raise SystemExit
+
+    index_settings = dict(refresh_interval='1s', number_of_replicas=1)
+    index_settings = dict(index=index_settings)
+    client.indices.put_settings(index_settings, new_index)
+    client.indices.refresh(new_index)
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
