@@ -275,6 +275,7 @@ def reset_indices(client, new_index, old_index):
     old_indices = client.indices.get(old_index_patterns).keys()
     for index in old_indices:
         try:
+            client.indices.delete_alias(index, '_all')
             client.indices.close(index)
             printf({'msg': 'Closing index "{}"'.format(index), 'job': '', 'f': 'ES Index Close'})
         except (TransportError, Exception) as e:
