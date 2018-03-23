@@ -44,9 +44,11 @@ class BaseDownloadViewSet(APIDocumentationView):
         updated_date_timestamp = datetime.datetime.strftime(datetime.datetime.utcnow(), '%Y-%m-%d')
         cached_download = DownloadJob.objects.filter(
             json_request=ordered_json_request,
-            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
+            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('download_job_id', 'file_name')
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
+            write_to_log(message='Generating file from cached download job ID: {}'
+                         .format(cached_download[0]['download_job_id']))
             cached_filename = cached_download[0]['file_name']
             return self.get_download_response(file_name=cached_filename)
 
@@ -197,6 +199,19 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data['award_levels'] = ['transactions']
+        request.data['constraint_type'] = 'row_count'
+        return BaseDownloadViewSet.post(self, request)
+
+
+class RowLimitedSubawardDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to the backend to begin generating a zipfile of subaward data in CSV form for download.
+
+    endpoint_doc: /download/advanced_search_subaward_download.md
+    """
+
+    def post(self, request):
+        request.data['award_levels'] = ['sub_awards']
         request.data['constraint_type'] = 'row_count'
         return BaseDownloadViewSet.post(self, request)
 
