@@ -759,7 +759,8 @@ query_paths = {
             'prime_award_principal_place_city': 'award__latest_transaction__contract_data__place_of_perform_city_name',
             'prime_award_principal_place_state': 'award__latest_transaction__contract_data__place_of_performance_state',
             'prime_award_principal_place_zip': 'award__latest_transaction__contract_data__place_of_performance_zip4a',
-            'prime_award_principal_place_country': 'award__latest_transaction__contract_data__place_of_perform_country_c',
+            'prime_award_principal_place_country':
+                'award__latest_transaction__contract_data__place_of_perform_country_c',
             'subawardee_duns': 'recipient__recipient_unique_id',
             'subawardee_name': 'recipient__recipient_name',
             'subawardee_parent_duns': 'recipient__parent_recipient_unique_id',
@@ -811,9 +812,11 @@ query_paths = {
             'prime_awardee_duns': 'award__latest_transaction__assistance_data__awardee_or_recipient_uniqu',
             'prime_awardee_name': 'award__latest_transaction__assistance_data__awardee_or_recipient_legal',
             'prime_award_principal_place_city': 'award__latest_transaction__assistance_data__place_of_performance_city',
-            'prime_award_principal_place_state': 'award__latest_transaction__assistance_data__place_of_perform_state_nam',
+            'prime_award_principal_place_state':
+                'award__latest_transaction__assistance_data__place_of_perform_state_nam',
             'prime_award_principal_place_zip': 'award__latest_transaction__assistance_data__place_of_performance_zip4a',
-            'prime_award_principal_place_country': 'award__latest_transaction__assistance_data__place_of_perform_country_c',
+            'prime_award_principal_place_country':
+                'award__latest_transaction__assistance_data__place_of_perform_country_c',
             'subawardee_duns': 'recipient__recipient_unique_id',
             'subawardee_name': 'recipient__recipient_name',
             'subawardee_address_line_1': 'recipient__location__address_line1',
