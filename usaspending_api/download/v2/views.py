@@ -44,7 +44,7 @@ class BaseDownloadViewSet(APIDocumentationView):
         updated_date_timestamp = datetime.datetime.strftime(datetime.datetime.utcnow(), '%Y-%m-%d')
         cached_download = DownloadJob.objects.filter(
             json_request=ordered_json_request,
-            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('download_job_id')
+            update_date__gte=updated_date_timestamp).exclude(job_status_id=4).values('file_name')
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
             cached_filename = cached_download[0]['file_name']
